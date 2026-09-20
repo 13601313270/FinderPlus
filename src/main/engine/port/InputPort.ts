@@ -1,5 +1,6 @@
 import type { Value, ValueKind } from '../data/Value'
 import type { Edge } from '../graph/Edge'
+import type { Node } from '../node/Node'
 
 export type InputPortBindRejectReason = 'kind-not-allowed' | 'single-port-occupied'
 
@@ -19,6 +20,9 @@ export interface InputPortOptions {
 
 /** 输入端口：节点接收值的入口 */
 export class InputPort {
+  /** 所属节点，由 Node 登记端口时注入；没人认领时，通知就没人接 */
+  private owner: Node | undefined
+
   /**
    * 边 -> 该边最后一次送来的值。
    * 值为 undefined 表示「连线已建立，但上游还没送来过值」。
@@ -71,8 +75,13 @@ export class InputPort {
     const changed = this.incoming.get(edge)?.fingerprint !== value.fingerprint
     this.incoming.set(edge, value)
     if (changed) {
-      // 通知节点
+      this.owner?.onInputChanged()
     }
+  }
+
+  /** 认领：由 Node 登记端口时调用 */
+  setOwner(owner: Node): void {
+    this.owner = owner
   }
 
   /** 是否能绑定Edge */
@@ -92,13 +101,13 @@ export class InputPort {
   /** 绑定Edge，设置值为undefined */
   bindEdge(edge: Edge) {
     this.incoming.set(edge, undefined)
-    // 通知节点
+    this.owner?.onInputChanged()
   }
 
   // 解绑Edge，清空值为undefined
   unbindEdge(edge: Edge): { result: true } | { result: false, message: string } {
     this.incoming.delete(edge)
-    // 通知节点
+    this.owner?.onInputChanged()
     return { result: true };
   }
 }

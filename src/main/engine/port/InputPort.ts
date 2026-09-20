@@ -4,8 +4,11 @@ import type { Edge } from '../graph/Edge'
 export type InputPortBindRejectReason = 'kind-not-allowed' | 'single-port-occupied'
 
 export interface InputPortOptions {
-  /** 允许接入的值类型 */
-  readonly accepts?: readonly ValueKind[]
+  /**
+   * 允许接入的值类型。必须显式声明，空数组就是不接受任何类型——
+   * 即使是透传、日志这类端口，也得给自己划出范围。
+   */
+  readonly accepts: readonly ValueKind[]
   /** 必填：没有任何输入（含默认值）时，节点不应运行 */
   readonly required?: boolean
   /** 多值：允许多条连线接入，值按无序集合语义看待 */
@@ -27,11 +30,11 @@ export class InputPort {
 
   constructor(
     readonly id: string,
-    private readonly options: InputPortOptions = {}
+    private readonly options: InputPortOptions
   ) { }
 
   get accepts(): readonly ValueKind[] {
-    return this.options.accepts ?? []
+    return this.options.accepts
   }
 
   get required(): boolean {

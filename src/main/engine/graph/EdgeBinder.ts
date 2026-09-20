@@ -34,25 +34,25 @@ export class EdgeBinder {
       return { ok: false, reason: 'already-bound' }
     }
     const edge = new Edge(startPort, endPort)
-    startPort.edges.add(edge)
     const result = endPort.canBindEdge(edge)
     if (result.result === false) {
-      return {
-        ok: false, reason: result.message
-      }
+      return { ok: false, reason: result.message }
     }
+
+    startPort.edges.add(edge)
     endPort.bindEdge(edge)
-    // setTimeout(() => {
-    //   if (startPort.value !== undefined) {
-    //     edge.transferData(startPort.value)
-    //   }
-    // }, 0)
+
+    // 连上时上游可能已经算过值，同步补送一次，让下游的输入值立刻与图结构一致。
+    // 只补「值」，不触发「算」——重算由调度层按自己的节奏来。
+    if (startPort.value !== undefined) {
+      edge.transferData(startPort.value)
+    }
     return { ok: true, edge }
   }
 
   /**
    * 断开连线：两端一律从边自身读，调用方不需要（也没机会）传错端口。
-   * 输入侧连值带关系一起丢掉，并因此置脏——输入集合变了，下游得知道自己可以重算。
+   * 输入侧连值带关系一起丢掉——输入集合变了，下游得知道自己可以重算（通知节点待补）。
    */
   disconnect(edge: Edge): void {
     edge.startPort.edges.delete(edge)

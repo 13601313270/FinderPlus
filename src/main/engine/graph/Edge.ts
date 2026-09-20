@@ -1,3 +1,4 @@
+import { Value } from '../data/Value'
 import type { InputPort } from '../port/InputPort'
 import type { OutputPort } from '../port/OutputPort'
 
@@ -12,4 +13,9 @@ export class Edge {
     readonly startPort: OutputPort,
     readonly endPort: InputPort
   ) {}
+
+  // 把数据从startPort端口传到endPort端口
+  transferData(value: Value): void {
+    this.endPort.receive(this, value)
+  }
 }

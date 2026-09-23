@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
-import { TextInputNode } from './index'
+import { TextInputNode } from './node'
 
 /**
  * 文本输入节点的渲染组件。

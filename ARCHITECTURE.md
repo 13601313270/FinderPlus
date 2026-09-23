@@ -29,12 +29,12 @@ src/
 │  │  ├─ graph/Edge.ts           # 边：remember 一端 start 一端 end
 │  │  └─ graph/EdgeBinder.ts     # 连线的唯一写入方
 │  └─ nodePlugin/                # 节点插件目录
-│     ├─ TextInputNode/          # 一个节点 = 一个目录
-│     │  ├─ index.ts             # 引擎逻辑（继承 Node）
-│     │  └─ render.vue           # 该节点的渲染组件
-│     └─ TextDisplayNode/
-│        ├─ index.ts
-│        └─ render.vue
+     ├─ TextInputNode/          # 一个节点 = 一个目录
+     │  ├─ node.ts              # 引擎逻辑（继承 Node）
+     │  └─ render.vue           # 该节点的渲染组件
+     └─ TextDisplayNode/
+        ├─ node.ts
+        └─ render.vue
 └─ renderer/src/
    ├─ App.vue                    # 测试画布：建图 + 渲染
    └─ assets/styles/variables.less
@@ -62,7 +62,7 @@ src/
 
 每个节点 = `nodePlugin/<节点名>/` 一个目录，内含：
 
-- `index.ts`：引擎逻辑。定义节点类（`extends Node`），声明端口，实现 `onInputChanged`。
+- `node.ts`：引擎逻辑。定义节点类（`extends Node`），声明端口，实现 `onInputChanged`。
 - `render.vue`：该节点的渲染组件。`defineProps<{ id: string }>()`，`id` 指明它控制场景里的哪个节点。
 
 render.vue 通过 `workspaceScene.getNode(id)` 拿**活引用**后直接读 / 改节点状态，**不走 IPC**——这正是「引擎纯逻辑」这一约束换来的收益。
@@ -106,7 +106,7 @@ input 节点是特例：它用 writable computed，`@input` 赋值会标记 dirt
 - ✅ 图数据模型（Node / InputPort / OutputPort / Value / Edge / Scene）
 - ✅ `EdgeBinder` 连线唯一写入方，`connect` 时补送上游已算的值
 - ✅ `Scene` 顶层容器 + 按 id 的 O(1) 查找 + `removeNode` 先断边
-- ✅ `nodePlugin/<节点>/index.ts + render.vue` 插件目录约定
+- ✅ `nodePlugin/<节点>/node.ts + render.vue` 插件目录约定
 - ✅ `workspaceScene` 单例 + render 进程直接持有
 - ✅ Node 观察者机制，解决 Vue 响应式断链
 - ✅ 测试画布 `App.vue`：输入节点连线展示节点，验证 `输入 → 展示` 链路

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
-import { TextDisplayNode } from './index'
+import { TextDisplayNode } from './node'
 
 /**
  * 文本展示节点的渲染组件。

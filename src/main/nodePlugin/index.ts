@@ -2,6 +2,7 @@ import type { Node } from '../engine/node/Node'
 import type { NodePluginManifest } from './manifest'
 import { manifest as textInputManifest } from './TextInputNode'
 import { manifest as textDisplayManifest } from './TextDisplayNode'
+import { manifest as numberInputManifest } from './NumberInputNode'
 
 /**
  * 插件注册表：所有节点插件的 manifest 汇总。
@@ -11,7 +12,8 @@ import { manifest as textDisplayManifest } from './TextDisplayNode'
  */
 export const nodeManifests: readonly NodePluginManifest[] = [
   textInputManifest,
-  textDisplayManifest
+  textDisplayManifest,
+  numberInputManifest
 ]
 
 const byType = new Map<string, NodePluginManifest>(nodeManifests.map((m) => [m.type, m]))

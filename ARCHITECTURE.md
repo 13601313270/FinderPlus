@@ -36,7 +36,11 @@ src/
      │     │  ├─ index.ts            # 该插件的 manifest（声明 nodeClass 与 render）
      │     │  ├─ node.ts             # 引擎逻辑（继承 Node）
      │     │  └─ render.vue          # 该节点的渲染组件
-     │     └─ TextDisplayNode/
+     │     ├─ TextDisplayNode/
+     │     │  ├─ index.ts
+     │     │  ├─ node.ts
+     │     │  └─ render.vue
+     │     └─ NumberInputNode/       # 数字输入框：无输入端口，单个 number 输出
      │        ├─ index.ts
      │        ├─ node.ts
      │        └─ render.vue
@@ -94,6 +98,11 @@ src/
 **使用方（App.vue）只按 `node.type` 从注册表拿 manifest**，用 `new manifest.nodeClass(id)` 构造、
 `<component :is="manifest.render">` 渲染——「节点类 ↔ 渲染组件」的配对只存在插件自己的 index.ts 一处，
 从结构上杜绝把渲染组件绑错到别的节点类型。
+
+**唯一还需要手写的地方就是注册表本身**：`nodePlugin/index.ts` 里的 `nodeManifests` 是一份手写清单，
+新增节点类型要补一行 import + 一个数组项（这是「加节点」全部需要动的核心文件，就这两行）。
+它没做成自动发现（`import.meta.glob`）是自觉的取舍：清单是显式的，谁注册了什么一眼可见，
+代价是新增节点时漏写一行 = 节点在画布上「不存在」。想要真正 drop-in 时再换成 glob 即可。
 
 render.vue 通过 `workspaceScene.getNode(id)` 拿**活引用**后直接读 / 改节点状态，**不走 IPC**——这正是「引擎纯逻辑」这一约束换来的收益。
 
@@ -230,12 +239,17 @@ render.vue 里的节点引用常被 Vue 包了一层（`ref(node)` 会把普通�
 - ✅ 连线渲染 `EdgeLayer.vue`：**端口到端口**的连线（端点取端口圆点中心），线中央的 × 一键解除该 Edge
 - ✅ 端口圆点 `NodePorts.vue`：左侧 InputPort、右侧 OutputPort，有几个画几个（数量取自 node.ts 声明）
 - ✅ 节点外壳 `NodeShell.vue`：定位 + 内容 + 端口统一收口，render.vue 只画内容（新增节点类型不再重复通用件）
+- ✅ 第三个节点类型 `NumberInputNode`（数字输入框：**无输入端口**，单个 `number` 输出）——实测「加一个节点类型」= 新增一个插件目录（`node.ts` + `render.vue` + `index.ts`）+ 注册表一行；引擎（Node / 端口 / Value / Edge / Scene）、通用渲染件（NodeShell / NodePorts / EdgeLayer / elements.ts）、构建配置**一律零改动**
 
 **待做 ⚠️**（不要当现状读）
 - 成环检测（摘要：connect 前由上层判定，代码未实现）
 - 从端口拖拽连线交互（摘要：端口圆点目前只是「显示 + 端点」，建边仍由 App.vue 在代码里 `connect`）
 - 完整序列化 / 反序列化（`Value` 已有 `toJSON`，没有整图导出）
 - 主进程侧 Scene 与 IPC 桥（如 `node:get`）
+- 插件自动发现（摘要：`nodePlugin/index.ts` 是手写清单，新增节点要自己补一行）
+- `number` 的下游消费者（摘要：画布上现有输入端口只有 `TextDisplayNode` 的 `string`，
+  `NumberInputNode` 的数字输出会被引擎按 `kind` 判为 `kind-not-allowed`，接不进去；
+  想看到数字真正流起来，得再加一个数字展示节点）
 
 ## 10. 构建与检查
 

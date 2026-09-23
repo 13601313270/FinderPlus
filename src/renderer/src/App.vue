@@ -3,6 +3,7 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { workspaceScene } from '../../main/engine/graph/SceneRegistry'
 import { TextInputNode } from '../../main/nodePlugin/TextInputNode/node'
 import { TextDisplayNode } from '../../main/nodePlugin/TextDisplayNode/node'
+import { NumberInputNode } from '../../main/nodePlugin/NumberInputNode/node'
 import { manifestFor } from '../../main/nodePlugin'
 import {
   viewport,
@@ -34,8 +35,18 @@ if (!connect.ok) {
 // 给个初始值做基线，之后在输入框里改动应实时反映到展示
 input.setText('你好，引擎！')
 
+// —— 新节点类型：数字输入框 ——
+// 它没有输入端口，只有一个 'number' 输出端口。这里不接下游，只为验证「新增节点类型
+// 不改引擎、不改通用渲染件，只加一个插件目录 + 注册表一行」这件事成立：
+// 左侧应该没有圆点、右侧应该只有一个圆点，改数字时卡片里的输出读数跟着变。
+// 注意它接不进 TextDisplayNode：那个输入端口只 accepts 'string'，引擎会按 kind 拒掉。
+const number = new NumberInputNode('test-number-input')
+number.setPosition(60, 260)
+workspaceScene.addNode(number)
+number.setNumber(42)
+
 // 渲染组件一律按 node.type 从注册表取 manifest，杜绝自己把渲染组件绑错节点。
-const nodes = [input, display]
+const nodes = [input, display, number]
 
 // —— 无限画布：平移 + 缩放 ——
 // 视口状态（x/y 平移偏移、scale 缩放）由 canvas/viewport 单例承载；世界层把三者
@@ -128,7 +139,7 @@ onUnmounted(() => {
   <section class="stage">
     <header class="stage__header">
       <div class="stage__intro">
-        <h2 class="stage__title">测试画布：输入框 → 展示节点</h2>
+        <h2 class="stage__title">测试画布：文本输入 → 展示，外加数字输入节点</h2>
         <p class="stage__hint">
           拖动手柄移动卡片；拖动空白处或滚轮平移；Ctrl/Cmd + 滚轮（或双指捏合）缩放；点连线中间的 × 断开两个节点。
         </p>

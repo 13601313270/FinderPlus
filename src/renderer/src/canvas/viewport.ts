@@ -67,6 +67,18 @@ export function resetViewport(): void {
 }
 
 /**
+ * 画布容器内的屏幕坐标 → 世界坐标。
+ * 由 屏幕 = 世界 × scale + 平移 反推：世界 = (屏幕 − 平移) / scale
+ *
+ * @param screenX 画布容器内的屏幕 x（相对于容器左上角，不是 window）
+ * @param screenY 画布容器内的屏幕 y
+ * @returns [worldX, worldY]
+ */
+export function screenToWorld(screenX: number, screenY: number): [number, number] {
+  return [(screenX - viewport.x) / viewport.scale, (screenY - viewport.y) / viewport.scale]
+}
+
+/**
  * 不改变缩放，把指定**世界点**平移到画布中央（小地图点击 / 拖拽导航用）。
  * 由 屏幕 = 世界 × scale + 平移，要求该世界点落到屏幕中心，得 平移 = 屏幕中心 − 世界 × scale。
  *

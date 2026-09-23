@@ -47,12 +47,9 @@ const REASON_TEXT: Record<string, string> = {
 /** 端口命中半径（屏幕像素）：圆点才 12px，给点容错 */
 const PORT_HIT_RADIUS = 24
 
-const NOTICE_DURATION = 2600
-
 // 拖拽期间要用的「源」，不属于展示状态，留在模块里即可
 let sourceNodeId: string | null = null
 let sourcePort: OutputPort | null = null
-let noticeTimer: number | undefined
 
 /**
  * 开始拖拽连线。只认 OutputPort（右侧圆点）——连线的方向就是「输出 -> 输入」。

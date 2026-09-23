@@ -20,6 +20,8 @@ const props = defineProps<{
   node: NodeLike & PortsOwnerLike
   /** 该节点的内容组件，App.vue 按 node.type 从注册表取好再传进来 */
   render: Component | undefined
+  /** 是否处于「跟随鼠标放置」状态：true 时穿透指针事件，让点击能落到画布空白处 */
+  floating?: boolean
 }>()
 
 // 外壳的世界坐标：跟随 node.position（拖拽时 onChanged 会推着它走）
@@ -30,7 +32,12 @@ const shellEl = nodeElementRef(props.node.id)
 </script>
 
 <template>
-  <div :ref="shellEl" class="node-shell" :style="{ left: `${position[0]}px`, top: `${position[1]}px` }">
+  <div
+    :ref="shellEl"
+    class="node-shell"
+    :class="{ 'node-shell--floating': floating }"
+    :style="{ left: `${position[0]}px`, top: `${position[1]}px` }"
+  >
     <component :is="render" :id="node.id" />
     <NodePorts :node-id="node.id" :node="node" />
   </div>
@@ -40,5 +47,11 @@ const shellEl = nodeElementRef(props.node.id)
 .node-shell {
   // 外壳是定位元素：既是节点在世界坐标里的落点，也是端口圆点的 containing block（offsetParent）
   position: absolute;
+
+  &--floating {
+    // 跟随放置中：穿透指针事件，让点击落到画布空白处触发"固定"逻辑；半透明做视觉提示
+    pointer-events: none;
+    opacity: 0.75;
+  }
 }
 </style>

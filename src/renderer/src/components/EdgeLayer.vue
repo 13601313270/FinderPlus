@@ -49,6 +49,17 @@ function keyOf(edge: Edge): number {
   return key
 }
 
+/**
+ * 小于这个缩放就不再画删除按钮。
+ *
+ * 按钮现在是跟着世界层缩放的（不做反向补偿），22px 的圆点缩到 30% 只剩 6px 出头，
+ * 既看不清也点不准，留着只是糊在连线上的噪声；连线本身照画，只是暂时没有删除入口，
+ * 放大回来按钮自然回来。
+ */
+const REMOVE_BUTTON_MIN_SCALE = 0.3
+
+const showRemoveButtons = computed(() => viewport.scale >= REMOVE_BUTTON_MIN_SCALE)
+
 // 节点位置变化只有 Node.onChanged 会广播（Scene 只报结构变化），所以这里订阅一遍所有节点。
 // 订阅列表跟着场景结构走：每次结构变化都重新订一份，节点增删都不会漏。
 let unsubscribeScene: (() => void) | undefined
@@ -109,26 +120,26 @@ function removeEdge(edge: Edge): void {
   </svg>
 
   <!--
-    删除按钮跟线一起放在世界层，位置就是连线中点；但世界层带着 scale，
-    所以按钮自己除以 scale 抵掉缩放，屏幕上始终是同样大小（缩到 20% 也点得到）。
+    删除按钮跟线一起放在世界层，位置就是连线中点，**不做反向补偿**：它跟节点卡片一样吃
+    世界层的 scale，缩小时跟着一起变小。
+    小到一定程度就干脆不画了——缩到 30% 时按钮只剩六七个像素，看不清也点不准，
+    留在线上只是噪声。连线本身照画，只是那会儿没有删除入口。
   -->
-  <button
-    v-for="line in lines"
-    :key="`remove-${keyOf(line.edge)}`"
-    class="edges__remove"
-    type="button"
-    title="断开两个节点之间的连接"
-    aria-label="断开两个节点之间的连接"
-    :style="{
-      left: `${line.mid.x}px`,
-      top: `${line.mid.y}px`,
-      transform: `translate(-50%, -50%) scale(${1 / viewport.scale})`
-    }"
-    @pointerdown.stop
-    @click.stop="removeEdge(line.edge)"
-  >
-    ×
-  </button>
+  <template v-if="showRemoveButtons">
+    <button
+      v-for="line in lines"
+      :key="`remove-${keyOf(line.edge)}`"
+      class="edges__remove"
+      type="button"
+      title="断开两个节点之间的连接"
+      aria-label="断开两个节点之间的连接"
+      :style="{ left: `${line.mid.x}px`, top: `${line.mid.y}px` }"
+      @pointerdown.stop
+      @click.stop="removeEdge(line.edge)"
+    >
+      ×
+    </button>
+  </template>
 </template>
 
 <style scoped lang="less">
@@ -152,8 +163,11 @@ function removeEdge(edge: Edge): void {
     display: flex;
     align-items: center;
     justify-content: center;
+    // 尺寸是世界坐标下的尺寸：跟节点卡片一样被世界层的 scale 一起缩放
     width: 22px;
     height: 22px;
+    // 让圆心落在连线中点上（世界坐标）。这里只做居中，不再乘 1/scale 补偿缩放
+    transform: translate(-50%, -50%);
     padding: 0;
     border: 1px solid #d5d9e0;
     border-radius: 50%;

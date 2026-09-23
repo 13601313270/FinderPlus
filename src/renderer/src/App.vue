@@ -2,9 +2,6 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import type { Node } from '../../main/engine/node/Node'
 import { workspaceScene } from '../../main/engine/graph/SceneRegistry'
-import { TextInputNode } from '../../main/nodePlugin/TextInputNode/node'
-import { TextDisplayNode } from '../../main/nodePlugin/TextDisplayNode/node'
-import { NumberInputNode } from '../../main/nodePlugin/NumberInputNode/node'
 import { manifestFor, getNodeManifest } from '../../main/nodePlugin'
 import { viewport, panViewport, zoomViewportAt, screenToWorld } from '@renderer/canvas/viewport'
 import EdgeLayer from './components/EdgeLayer.vue'
@@ -14,26 +11,7 @@ import Minimap from './components/Minimap.vue'
 import NodePalette from './components/NodePalette.vue'
 import { connectNotice } from '@renderer/canvas/connectionDrag'
 
-// —— 测试画布初始化：构造几个演示节点，加进 Scene ——
-// 这些节点加进 Scene 后，会被下面的 computed nodes 自动读到并渲染。
-// 真实使用时可以清空这段，只保留 Scene + 调色板。
-
-const input = new TextInputNode('test-input')
-const display = new TextDisplayNode('test-display')
-input.setPosition(60, 60)
-display.setPosition(420, 60)
-workspaceScene.addNode(input)
-workspaceScene.addNode(display)
-const connect = workspaceScene.connect(input.textOutput, display.textInput)
-if (!connect.ok) {
-  console.error('[test-canvas] connect failed:', connect.reason)
-}
-input.setText('你好，引擎！')
-
-const number = new NumberInputNode('test-number-input')
-number.setPosition(60, 260)
-workspaceScene.addNode(number)
-number.setNumber(42)
+// 空白画布：没有预置节点。所有节点都从左上角「＋」调色板添加。
 
 // —— 节点列表：响应 Scene 结构变化 ——
 // Scene 是普通类容器，Vue 追踪不到它的 Map 变化。通过 sceneTick 手动触发 computed 重算，

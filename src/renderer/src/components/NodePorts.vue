@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import {
   portElementRef,
+  portKey,
   type CanvasElementRef,
   type PortLike,
   type PortSide,
   type PortsOwnerLike
 } from '@renderer/canvas/elements'
+import { connectionDrag, startConnectDrag } from '@renderer/canvas/connectionDrag'
 
 /**
  * 端口圆点：把节点两侧的端口画成小圆圈——左边 InputPort、右边 OutputPort，
@@ -49,6 +51,24 @@ function titleOf(port: PortLike, direction: string): string {
   const kinds = port.accepts ?? (port.kind ? [port.kind] : [])
   return kinds.length > 0 ? `${direction}端口 ${port.id}（${kinds.join(' / ')}）` : `${direction}端口 ${port.id}`
 }
+
+/**
+ * 从输出端口圆点按下 -> 开始拉线。连线方向是「输出 -> 输入」，所以只有右侧圆点是拖拽源，
+ * 左侧圆点只当落点。端口只报 id，真端口由拖拽模块回场景里取（不掺和 Vue 代理那套身份问题）。
+ */
+function onOutputPointerDown(port: PortLike, event: PointerEvent): void {
+  startConnectDrag(props.nodeId, port.id, event)
+}
+
+/** 拖拽中的高亮：源端口、落点（接得上/接不上） */
+function highlightOf(side: PortSide, port: PortLike): string {
+  if (!connectionDrag.active) return ''
+
+  const key = portKey(props.nodeId, side, port.id)
+  if (key === connectionDrag.sourceKey) return 'port--source'
+  if (key !== connectionDrag.targetKey) return ''
+  return connectionDrag.targetOk ? 'port--target' : 'port--invalid'
+}
 </script>
 
 <template>
@@ -57,16 +77,20 @@ function titleOf(port: PortLike, direction: string): string {
     :key="`in:${port.id}`"
     :ref="refFor('in', port)"
     class="port port--in"
+    :class="highlightOf('in', port)"
     :style="{ top: topOf(index, node?.inputPorts.length ?? 1) }"
     :title="titleOf(port, '输入')"
   />
+  <!-- 输出端口是连线的起点：按下它开始拉线（连线方向「输出 -> 输入」） -->
   <span
     v-for="(port, index) in node?.outputPorts ?? []"
     :key="`out:${port.id}`"
     :ref="refFor('out', port)"
     class="port port--out"
+    :class="highlightOf('out', port)"
     :style="{ top: topOf(index, node?.outputPorts.length ?? 1) }"
     :title="titleOf(port, '输出')"
+    @pointerdown="onOutputPointerDown(port, $event)"
   />
 </template>
 
@@ -89,6 +113,24 @@ function titleOf(port: PortLike, direction: string): string {
 
   &--out {
     right: -6px;
+    cursor: crosshair;
+  }
+
+  // 拖拽中的三种高亮：起点、可落点、落不上
+  &--source,
+  &--target,
+  &--invalid {
+    box-shadow: 0 0 0 4px rgba(59, 124, 255, 0.18);
+  }
+
+  &--target {
+    border-color: @color-ok;
+    box-shadow: 0 0 0 4px rgba(46, 174, 103, 0.22);
+  }
+
+  &--invalid {
+    border-color: @color-danger;
+    box-shadow: 0 0 0 4px rgba(217, 75, 75, 0.2);
   }
 }
 </style>

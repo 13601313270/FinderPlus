@@ -47,11 +47,13 @@ src/
 └─ renderer/src/
    ├─ App.vue                    # 测试画布：建图 + 渲染 + 无限画布视口交互
    ├─ components/EdgeLayer.vue   # 连线层：每条 Edge 画一根线 + 线中央的删除按钮
+   ├─ components/ConnectionPreview.vue  # 拖拽连线的预览虚线（屏幕层，跟指针/落点）
    ├─ components/NodeShell.vue   # 节点外壳：世界定位 + 内容组件 + 两侧端口（所有节点通用）
    ├─ components/NodePorts.vue   # 端口圆点：左侧 InputPort / 右侧 OutputPort，有几个画几个
    ├─ canvas/viewport.ts         # 视口单例：平移偏移 + 缩放，屏幕↔世界坐标换算
    ├─ canvas/elements.ts         # 卡片 / 端口元素登记 + 世界坐标测量（连线的端点从这来）
    ├─ canvas/edges.ts            # 连线的纯几何：一条 Edge -> 世界坐标的起点/终点/中点
+   ├─ canvas/connectionDrag.ts   # 拖拽连线：拖拽状态 + 落点判定 + 调 Scene.connect
    ├─ composables/useNodePosition.ts  # 节点定位 + 拖拽（含视口缩放补偿），纯 UI 逻辑
    └─ assets/styles/variables.less
 ```
@@ -61,7 +63,7 @@ src/
 | 类 | 职责 | 关键约束 |
 |----|------|---------|
 | `Node` | 节点的抽象基类：`type` 标识、端口登记、观察者机制 | 不含 `run` 统一入口，各节点自己定节奏 |
-| `InputPort` | 接收上游值；多值按无序集合 | `accepts` 必填，空数组 = 不接受任何类型 |
+| `InputPort` | 接收上游值；多值按无序集合 | `accepts` 必填，空数组 = 不接受任何类型；`canBindKind(kind)` 是连线校验的唯一出处（UI 拖拽也拿它做实时判定，不另抄一份规则） |
 | `OutputPort` | 产出值并沿边派发；按指纹比对是否真变了 | `commit` 只在变了时才 notify |
 | `Value` | 值类型基类，提供 `fingerprint` | 子类如 `StringValue` |
 | `Edge` | 一条连线的端点记录 | 构造时两端就给定，别处不许自己 `new` |
@@ -209,6 +211,33 @@ render.vue 里的节点引用常被 Vue 包了一层（`ref(node)` 会把普通�
   默认会被 SVG 自己的视口裁掉（真正限制可见范围的是画布容器的 `overflow: hidden`）；
 - 删除按钮跟世界层一起被 `scale` 缩放，所以按钮自己乘 `1 / viewport.scale` 抵掉，屏幕上始终 22px，缩到 20% 也点得到。
 
+### 7.5 拖拽连线（Port → Port）
+
+按住某个节点的 **OutputPort 圆点**，拖到另一个节点的 **InputPort 圆点**上松手，就建立这条边。
+方向固定为「输出 → 输入」，所以只有右侧圆点是拖拽源，左侧圆点只当落点。
+
+- **状态**：`canvas/connectionDrag.ts` 导出模块级 reactive 单例（跟 `viewport` 一个路子），
+  拖拽源在 NodePorts、预览线在 ConnectionPreview、落点判定与 `connect` 都在这个模块里收口。
+- **预览线**：`ConnectionPreview.vue` 画在**屏幕层**（画布容器里、世界层之外）。因此坐标全程用
+  **client 坐标**，不用折算世界坐标、不吃 zoom；线宽恒定，且排在世界层之后，压在所有节点之上。
+  虚线表示「还没连上」，命中端口时终点**吸附到圆点圆心**。
+- **落点判定**：`elements.ts` 的 `findPortNear(clientX, clientY, 'in', 24)` 在注册表里找最近的输入
+  圆点，半径按**屏幕像素**算——缩到 20% 时圆点只有几像素，但手感不该跟着变小。
+- **判定用引擎的规则**：把候选交给 `InputPort.canBindKind(source.kind)`（就是 `EdgeBinder.connect`
+  用的那个方法），接不上时预览线和目标圆点变红，并**不会**在旁边另抄一份类型规则。
+  UI 只额外加一条：同一个节点的端口之间不许连（那是自环）。
+- **落点即松手位置**：`pointerup` 时按那一刻的坐标重新命中一次，而不是沿用最后一次 `pointermove` 的结果。
+- **真端口一律回 Scene 取**：注册表和拖拽状态里存的是 `节点id:侧:端口id` 这种字符串键，
+  落点/起点都按 id 回 `workspaceScene` 找真端口 —— 既绕开「Vue 代理 vs 原始对象」的身份问题（见 7.3），
+  也保证 `Scene.connect` 收到的是引擎里那个端口对象。写入仍然只有 `workspaceScene.connect` 一处。
+- **失败提示**：引擎只给判定（`already-bound` / `kind-not-allowed` / `single-port-occupied`），
+  文案在 `connectionDrag.ts` 里翻译成人话，App.vue 头部显示 2.6 秒。这行提示是**常驻占位**（只切透明度），
+  否则它一出现就会把画布往下顶、所有节点跟着跳。
+
+> ⚠️ 成环检测仍未实现。现在用户能自己拉线，跨节点的环路在理论上变得可达（当前画布上的节点
+> 要么没输入、要么没输出，构造不出来）。要补的话，落点就在 `connectionDrag.ts` 的
+> `isConnectable` / connect 之前：判「从目标节点出发能不能绕回源节点」。
+
 ## 8. 数据流链路（核心：输入影响展示）
 
 ```
@@ -239,11 +268,12 @@ render.vue 里的节点引用常被 Vue 包了一层（`ref(node)` 会把普通�
 - ✅ 连线渲染 `EdgeLayer.vue`：**端口到端口**的连线（端点取端口圆点中心），线中央的 × 一键解除该 Edge
 - ✅ 端口圆点 `NodePorts.vue`：左侧 InputPort、右侧 OutputPort，有几个画几个（数量取自 node.ts 声明）
 - ✅ 节点外壳 `NodeShell.vue`：定位 + 内容 + 端口统一收口，render.vue 只画内容（新增节点类型不再重复通用件）
+- ✅ **拖拽连线**：按住 OutputPort 圆点拖到 InputPort 圆点松手即建边；预览虚线（命中时吸附圆点）、
+  实时可连/不可连着色、失败原因提示；能不能连由引擎的 `canBindKind` 判，UI 不复制规则
 - ✅ 第三个节点类型 `NumberInputNode`（数字输入框：**无输入端口**，单个 `number` 输出）——实测「加一个节点类型」= 新增一个插件目录（`node.ts` + `render.vue` + `index.ts`）+ 注册表一行；引擎（Node / 端口 / Value / Edge / Scene）、通用渲染件（NodeShell / NodePorts / EdgeLayer / elements.ts）、构建配置**一律零改动**
 
 **待做 ⚠️**（不要当现状读）
-- 成环检测（摘要：connect 前由上层判定，代码未实现）
-- 从端口拖拽连线交互（摘要：端口圆点目前只是「显示 + 端点」，建边仍由 App.vue 在代码里 `connect`）
+- 成环检测（摘要：`connect` 前由上层判定；拖拽连线的入口已经找好，代码仍未实现）
 - 完整序列化 / 反序列化（`Value` 已有 `toJSON`，没有整图导出）
 - 主进程侧 Scene 与 IPC 桥（如 `node:get`）
 - 插件自动发现（摘要：`nodePlugin/index.ts` 是手写清单，新增节点要自己补一行）

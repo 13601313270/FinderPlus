@@ -34,7 +34,7 @@ export class EdgeBinder {
       return { ok: false, reason: 'already-bound' }
     }
     const edge = new Edge(startPort, endPort)
-    const result = endPort.canBindEdge(edge)
+    const result = endPort.canBindEdge(startPort)
     if (result.result === false) {
       return { ok: false, reason: result.message }
     }

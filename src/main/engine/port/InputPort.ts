@@ -1,6 +1,7 @@
 import type { Value, ValueKind } from '../data/Value'
 import type { Edge } from '../graph/Edge'
 import type { Node } from '../node/Node'
+import { OutputPort } from './OutputPort'
 
 export type InputPortBindRejectReason = 'kind-not-allowed' | 'single-port-occupied'
 
@@ -84,10 +85,14 @@ export class InputPort {
     this.owner = owner
   }
 
-  /** 是否能绑定Edge */
-  canBindEdge(edge: Edge): { result: true } | { result: false, message: InputPortBindRejectReason } {
+  /**
+   * 能不能接入某种类型。连线前的校验只跟「端口规则 + 上游类型」有关，跟边本身无关——
+   * 所以这里收的是 kind，不是整条 Edge：UI 拖拽连线时也能拿它做实时判定，
+   * 不必自己抄一遍规则，更不必先造一条边。
+   */
+  canBindEdge(startPort: OutputPort): { result: true } | { result: false, message: InputPortBindRejectReason } {
+    const kind = startPort.kind
     // 检查值类型是否符合要求
-    const kind = edge.startPort.kind
     if (!this.accepts.includes(kind)) {
       return { result: false, message: 'kind-not-allowed' }
     }

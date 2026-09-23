@@ -139,6 +139,13 @@ onUnmounted(() => {
 
 <template>
   <section class="stage">
+    <!-- 顶部拖动条：macOS 窗口标题栏已隐藏（titleBarStyle: 'hiddenInset'），
+         这条区域用 -webkit-app-region: drag 让用户能按住它拖动整个软件窗口。
+         注意：drag 区域内放不了按钮（点击会被系统吞掉），所以只用纯文本。 -->
+    <header class="stage__dragbar">
+      <span class="stage__dragbar-label">CanvasDesk · 拖动此区域移动窗口</span>
+    </header>
+
     <header class="stage__header">
       <div class="stage__intro">
         <h2 class="stage__title">测试画布：文本输入 → 展示，外加数字输入节点</h2>
@@ -186,7 +193,27 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  padding: 24px;
+  padding: 0 24px 24px;
+
+  &__dragbar {
+    // 占住窗口最顶一行作为系统可拖动区域
+    height: 30px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 -24px;
+    background: #e9edf3;
+    border-radius: @radius-md @radius-md 0 0;
+    user-select: none;
+    cursor: default;
+    -webkit-app-region: drag;
+  }
+
+  &__dragbar-label {
+    color: @color-text-weak;
+    font-size: 12px;
+  }
 
   &__header {
     display: flex;

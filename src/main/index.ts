@@ -1,6 +1,7 @@
 import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'node:path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
+import { openDatabase, closeDatabase } from './db/database'
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -34,8 +35,11 @@ function createWindow(): void {
   }
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   electronApp.setAppUserModelId('com.canvasdesk.app')
+
+  // 数据库：启动时打开（读磁盘 / 新建 + 建表），窗口创建前就绪
+  await openDatabase()
 
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
@@ -54,4 +58,9 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit()
   }
+})
+
+app.on('before-quit', () => {
+  // 关门前把数据库落盘并释放 WASM 内存
+  closeDatabase()
 })

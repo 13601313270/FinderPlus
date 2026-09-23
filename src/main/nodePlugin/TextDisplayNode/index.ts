@@ -28,5 +28,6 @@ export class TextDisplayNode extends Node {
   onInputChanged(): void {
     const [first] = this.textInput.value
     this.displayed = first instanceof StringValue ? first.value : ''
+    this.notifyChanged()
   }
 }

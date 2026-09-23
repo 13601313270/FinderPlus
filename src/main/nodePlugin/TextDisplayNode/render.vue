@@ -1,22 +1,36 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { TextDisplayNode } from './index'
 
 /**
  * 文本展示节点的渲染组件。
  *
- * 同文本输入节点：id 定位场景里的节点，getNode 拿活引用后直接读它的 text。
- * 节点缺失时显示占位文案。
+ * 引擎里的 displayed 只是普通类字段，Vue 追踪不到，所以不能靠 computed 自动刷新。
+ * 这里在挂载时拿到活引用，订阅 node.onChanged —— 上游把新值推进来、节点刷新后，
+ * 回调里把 text 写进本地 ref，Vue 才会重渲染。
  */
 const props = defineProps<{ id: string }>()
 
-const displayNode = computed(() => {
-  const node = workspaceScene.getNode(props.id)
-  return node instanceof TextDisplayNode ? node : undefined
+const displayNode = ref<TextDisplayNode | undefined>(undefined)
+const text = ref('')
+
+let unsubscribe: (() => void) | undefined
+
+onMounted(() => {
+  const found = workspaceScene.getNode(props.id)
+  if (found instanceof TextDisplayNode) {
+    displayNode.value = found
+    text.value = found.text
+    unsubscribe = found.onChanged(() => {
+      text.value = found.text
+    })
+  }
 })
 
-const text = computed(() => displayNode.value?.text ?? '')
+onUnmounted(() => {
+  unsubscribe?.()
+})
 </script>
 
 <template>

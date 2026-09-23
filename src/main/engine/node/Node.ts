@@ -17,7 +17,23 @@ export abstract class Node {
   private readonly inputs: InputPort[] = []
   private readonly outputs: OutputPort[] = []
 
+  /** 变化订阅者。UI 靠它把引擎里的普通字段同步成 Vue 响应式状态 */
+  private readonly listeners = new Set<() => void>()
+
   constructor(readonly id: string) {}
+
+  /** 订阅节点变化，返回取消订阅函数 */
+  onChanged(fn: () => void): () => void {
+    this.listeners.add(fn)
+    return () => {
+      this.listeners.delete(fn)
+    }
+  }
+
+  /** 通知所有订阅者「我的可见状态变了」。子类在状态更新的收尾调用 */
+  protected notifyChanged(): void {
+    this.listeners.forEach((fn) => fn())
+  }
 
   get inputPorts(): readonly InputPort[] {
     return this.inputs

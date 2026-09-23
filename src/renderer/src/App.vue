@@ -135,16 +135,6 @@ onUnmounted(() => {
       <span class="stage__dragbar-label">CanvasDesk · 拖动此区域移动窗口</span>
     </header>
 
-    <header class="stage__header">
-      <div class="stage__intro">
-        <!-- 连线失败的一次性提示（类型不匹配 / 端口已占用 / 自环），引擎只给判定，文案在 connectionDrag 里翻译。
-             位置一直占着（只切透明度），否则提示一出现就会把画布往下顶、节点跟着跳。 -->
-        <p class="stage__notice" :class="{ 'stage__notice--on': !!connectNotice.text }">
-          {{ connectNotice.text }}
-        </p>
-      </div>
-    </header>
-
     <!-- 节点用 position 绝对定位在世界层内，世界层整体 transform 承载平移 + 缩放 -->
     <div
       ref="canvasEl"
@@ -152,6 +142,12 @@ onUnmounted(() => {
       :style="gridStyle"
       @pointerdown="onCanvasPointerDown"
     >
+      <!-- 连线失败的一次性提示（类型不匹配 / 端口已占用 / 自环）：浮在画布顶层，
+           不占布局、不挡指针，引擎只给判定，文案在 connectionDrag 里翻译。 -->
+      <p class="stage__notice" :class="{ 'stage__notice--on': !!connectNotice.text }">
+        {{ connectNotice.text }}
+      </p>
+
       <div class="stage__world" :style="worldStyle">
         <!-- 连线层排在节点之前：线画在卡片下面，不会盖住节点内容 -->
         <EdgeLayer />
@@ -173,7 +169,6 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  padding: 0 24px 24px;
 
   &__dragbar {
     // 占住窗口最顶一行作为系统可拖动区域
@@ -182,9 +177,7 @@ onUnmounted(() => {
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 0 -24px;
     background: #e9edf3;
-    border-radius: @radius-md @radius-md 0 0;
     user-select: none;
     cursor: default;
     -webkit-app-region: drag;
@@ -195,20 +188,22 @@ onUnmounted(() => {
     font-size: 12px;
   }
 
-  &__header {
-    margin-bottom: 16px;
-  }
-
-  &__intro {
-    min-width: 0;
-  }
-
   &__notice {
-    // 常驻占位（高度写死），提示出现时不会把下面的画布顶下去
-    min-height: 18px;
+    // 浮在画布顶部居中：不占布局，提示出现/消失都不会让画布跳
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    z-index: 10;
     margin: 0;
+    padding: 4px 12px;
+    border-radius: @radius-md;
+    background: rgba(255, 255, 255, 0.92);
     color: @color-danger;
     font-size: 13px;
+    line-height: 1.4;
+    white-space: nowrap;
+    pointer-events: none;
+    transform: translateX(-50%);
     opacity: 0;
     transition: opacity 0.15s ease;
 
@@ -221,8 +216,6 @@ onUnmounted(() => {
     position: relative;
     flex: 1;
     min-height: 320px;
-    border: 1px dashed #d5d9e0;
-    border-radius: @radius-md;
     overflow: hidden;
     cursor: grab;
     touch-action: none; // 阻止触摸默认滚动/缩放，让 pointer 事件接管平移

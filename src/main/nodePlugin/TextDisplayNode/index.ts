@@ -1,6 +1,6 @@
-import { StringValue } from '../data/StringValue'
-import { InputPort } from '../port/InputPort'
-import { Node } from './Node'
+import { StringValue } from '../../engine/data/StringValue'
+import { InputPort } from '../../engine/port/InputPort'
+import { Node } from '../../engine/node/Node'
 
 /**
  * 字符串展示节点：把上游送来的字符串显示出来。

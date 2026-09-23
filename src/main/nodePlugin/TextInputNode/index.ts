@@ -1,6 +1,6 @@
-import { StringValue } from '../data/StringValue'
-import { OutputPort } from '../port/OutputPort'
-import { Node } from './Node'
+import { StringValue } from '../../engine/data/StringValue'
+import { OutputPort } from '../../engine/port/OutputPort'
+import { Node } from '../../engine/node/Node'
 
 /**
  * 字符串输入框节点：源头节点，框里写什么就往外送什么。

@@ -7,7 +7,8 @@ import { Node } from '../../engine/node/Node'
  * 没有输出端口——它的产出就是「展示」这件事本身，UI 直接读 text。
  */
 export class TextDisplayNode extends Node {
-  readonly type = 'text-display'
+  static readonly TYPE = 'text-display'
+  readonly type = TextDisplayNode.TYPE
 
   /** 输入端口：只接受字符串 */
   readonly textInput = new InputPort('text', { accepts: ['string'] })

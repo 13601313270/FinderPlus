@@ -7,7 +7,8 @@ import { Node } from '../../engine/node/Node'
  * 没有输入端口，只有一个字符串输出。
  */
 export class TextInputNode extends Node {
-  readonly type = 'text-input'
+  static readonly TYPE = 'text-input'
+  readonly type = TextInputNode.TYPE
 
   /** 输出端口：字符串 */
   readonly textOutput = new OutputPort('text', 'string')

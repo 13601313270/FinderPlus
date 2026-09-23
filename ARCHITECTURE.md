@@ -29,12 +29,17 @@ src/
 │  │  ├─ graph/Edge.ts           # 边：remember 一端 start 一端 end
 │  │  └─ graph/EdgeBinder.ts     # 连线的唯一写入方
 │  └─ nodePlugin/                # 节点插件目录
-     ├─ TextInputNode/          # 一个节点 = 一个目录
-     │  ├─ node.ts              # 引擎逻辑（继承 Node）
-     │  └─ render.vue           # 该节点的渲染组件
-     └─ TextDisplayNode/
-        ├─ node.ts
-        └─ render.vue
+     │     ├─ manifest.ts            # NodePluginManifest 类型（node↔render 配对契约）
+     │     ├─ index.ts               # 注册表：按节点 type 汇总各插件 manifest
+     │     ├─ vue-shim.d.ts          # 让主进程 tsc 能解析 *.vue 导入
+     │     ├─ TextInputNode/         # 一个节点 = 一个目录
+     │     │  ├─ index.ts            # 该插件的 manifest（声明 nodeClass 与 render）
+     │     │  ├─ node.ts             # 引擎逻辑（继承 Node）
+     │     │  └─ render.vue          # 该节点的渲染组件
+     │     └─ TextDisplayNode/
+     │        ├─ index.ts
+     │        ├─ node.ts
+     │        └─ render.vue
 └─ renderer/src/
    ├─ App.vue                    # 测试画布：建图 + 渲染
    └─ assets/styles/variables.less
@@ -64,6 +69,22 @@ src/
 
 - `node.ts`：引擎逻辑。定义节点类（`extends Node`），声明端口，实现 `onInputChanged`。
 - `render.vue`：该节点的渲染组件。`defineProps<{ id: string }>()`，`id` 指明它控制场景里的哪个节点。
+- `index.ts`：该插件的 **manifest**，把上面的 nodeClass 和 render 钉死在同一份声明里：
+
+```js
+{
+  type:      TextInputNode.TYPE,   // 单真相源，取节点类静态 TYPE（如 'text-input'）
+  nodeClass: TextInputNode,
+  render:    TextInputNodeRender
+}
+```
+
+`nodePlugin/index.ts` 是注册表：把各插件的 manifest 汇总成 `type → manifest` 映射并导出
+`getNodeManifest(type)` / `manifestFor(node)`。
+
+**使用方（App.vue）只按 `node.type` 从注册表拿 manifest**，用 `new manifest.nodeClass(id)` 构造、
+`<component :is="manifest.render">` 渲染——「节点类 ↔ 渲染组件」的配对只存在插件自己的 index.ts 一处，
+从结构上杜绝把渲染组件绑错到别的节点类型。
 
 render.vue 通过 `workspaceScene.getNode(id)` 拿**活引用**后直接读 / 改节点状态，**不走 IPC**——这正是「引擎纯逻辑」这一约束换来的收益。
 
@@ -106,7 +127,8 @@ input 节点是特例：它用 writable computed，`@input` 赋值会标记 dirt
 - ✅ 图数据模型（Node / InputPort / OutputPort / Value / Edge / Scene）
 - ✅ `EdgeBinder` 连线唯一写入方，`connect` 时补送上游已算的值
 - ✅ `Scene` 顶层容器 + 按 id 的 O(1) 查找 + `removeNode` 先断边
-- ✅ `nodePlugin/<节点>/node.ts + render.vue` 插件目录约定
+- ✅ `nodePlugin/<节点>/index.ts(manifest) + node.ts + render.vue` 插件目录约定
+- ✅ `nodePlugin/index.ts` 类型→渲染组件注册表，App.vue 按 node.type 取 manifest 渲染
 - ✅ `workspaceScene` 单例 + render 进程直接持有
 - ✅ Node 观察者机制，解决 Vue 响应式断链
 - ✅ 测试画布 `App.vue`：输入节点连线展示节点，验证 `输入 → 展示` 链路
@@ -115,7 +137,6 @@ input 节点是特例：它用 writable computed，`@input` 赋值会标记 dirt
 - 成环检测（摘要：connect 前由上层判定，代码未实现）
 - 完整序列化 / 反序列化（`Value` 已有 `toJSON`，没有整图导出）
 - 主进程侧 Scene 与 IPC 桥（如 `node:get`）
-- 类型 → 渲染组件的注册表（当前 `App.vue` 是直接 `import`）
 
 ## 8. 构建与检查
 

@@ -3,6 +3,7 @@ import { workspaceScene } from '../../../main/engine/graph/SceneRegistry'
 import type { OutputPort } from '../../../main/engine/port/OutputPort'
 import type { InputPort } from '../../../main/engine/port/InputPort'
 import { findPortNear, portKey } from './elements'
+import { clearCanvasNotice, showCanvasNotice } from './notice'
 
 /**
  * 端口连线拖拽：按住某个节点的 OutputPort 圆点，拖到另一个节点的 InputPort 圆点上松手，就建立连接。
@@ -73,7 +74,7 @@ export function startConnectDrag(nodeId: string, portId: string, event: PointerE
   const rect = dot.getBoundingClientRect()
   sourceNodeId = nodeId
   sourcePort = port
-  clearNotice()
+  clearCanvasNotice()
 
   connectionDrag.active = true
   connectionDrag.sourceKey = portKey(nodeId, 'out', portId)
@@ -108,7 +109,7 @@ function onPointerUp(event: PointerEvent): void {
   if (!from || !fromNode || !hit) return // 松在空白处：什么都不做，等于取消
 
   if (hit.nodeId === fromNode) {
-    showNotice('同一个节点的端口之间不能连线')
+    showCanvasNotice('同一个节点的端口之间不能连线', 'error')
     return
   }
 
@@ -117,7 +118,7 @@ function onPointerUp(event: PointerEvent): void {
 
   // 唯一的写入入口；能不能连由引擎判（跟预览时用的是同一套规则）
   const result = workspaceScene.connect(from, target)
-  if (!result.ok) showNotice(REASON_TEXT[result.reason] ?? `连接失败：${result.reason}`)
+  if (!result.ok) showCanvasNotice(REASON_TEXT[result.reason] ?? `连接失败：${result.reason}`, 'error')
 }
 
 /** 指针下面的候选端口 + 预览线终点（吸附到圆心）。拖拽过程中反复调用 */
@@ -163,17 +164,6 @@ export function endDrag(): void {
   window.removeEventListener('pointermove', onPointerMove)
   window.removeEventListener('pointerup', onPointerUp)
   window.removeEventListener('pointercancel', endDrag)
-}
-
-function showNotice(text: string): void {
-  connectNotice.text = text
-  window.clearTimeout(noticeTimer)
-  noticeTimer = window.setTimeout(clearNotice, NOTICE_DURATION)
-}
-
-function clearNotice(): void {
-  window.clearTimeout(noticeTimer)
-  connectNotice.text = ''
 }
 
 // —— 注册键 -> 场景里真实的端口 ——

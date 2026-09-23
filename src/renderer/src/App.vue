@@ -5,15 +5,11 @@ import { TextInputNode } from '../../main/nodePlugin/TextInputNode/node'
 import { TextDisplayNode } from '../../main/nodePlugin/TextDisplayNode/node'
 import { NumberInputNode } from '../../main/nodePlugin/NumberInputNode/node'
 import { manifestFor } from '../../main/nodePlugin'
-import {
-  viewport,
-  panViewport,
-  zoomViewportAt,
-  resetViewport
-} from '@renderer/canvas/viewport'
+import { viewport, panViewport, zoomViewportAt } from '@renderer/canvas/viewport'
 import EdgeLayer from './components/EdgeLayer.vue'
 import NodeShell from './components/NodeShell.vue'
 import ConnectionPreview from './components/ConnectionPreview.vue'
+import Minimap from './components/Minimap.vue'
 import { connectNotice } from '@renderer/canvas/connectionDrag'
 
 // 测试画布：验证「输入框能不能影响下游展示」，顺带验证节点可拖拽、位置写回引擎。
@@ -117,14 +113,7 @@ function onWheel(e: WheelEvent): void {
   }
 }
 
-// —— 顶栏缩放按钮：绕画布中心缩放 ——
-function zoomAroundCenter(factor: number): void {
-  const rect = canvasEl.value?.getBoundingClientRect()
-  if (!rect) return
-  zoomViewportAt(rect.width / 2, rect.height / 2, factor)
-}
-const zoomIn = (): void => zoomAroundCenter(1.2)
-const zoomOut = (): void => zoomAroundCenter(1 / 1.2)
+// 放大 / 缩小 / 复位按钮已收进小地图面板（Minimap.vue），顶栏不再放。
 
 // wheel 需要 preventDefault 阻止页面滚动，得用非 passive 监听器（Vue 默认不加 passive，
 // 但显式 { passive: false } 最稳，也把挂载/卸载集中在一处）。
@@ -154,13 +143,6 @@ onUnmounted(() => {
           {{ connectNotice.text }}
         </p>
       </div>
-
-      <div class="stage__zoom">
-        <button class="stage__zoom-btn" type="button" title="缩小" @click="zoomOut">−</button>
-        <span class="stage__zoom-value">{{ Math.round(viewport.scale * 100) }}%</span>
-        <button class="stage__zoom-btn" type="button" title="放大" @click="zoomIn">＋</button>
-        <button class="stage__zoom-reset" type="button" @click="resetViewport">复位</button>
-      </div>
     </header>
 
     <!-- 节点用 position 绝对定位在世界层内，世界层整体 transform 承载平移 + 缩放 -->
@@ -179,6 +161,9 @@ onUnmounted(() => {
 
       <!-- 连线拖拽的预览线画在屏幕层（世界层之外）：不吃缩放，线宽恒定，且压在节点之上 -->
       <ConnectionPreview />
+
+      <!-- 小地图浮层：全貌预览 + 缩放控件；拖动顶部条可挪动它 -->
+      <Minimap />
     </div>
   </section>
 </template>
@@ -211,10 +196,6 @@ onUnmounted(() => {
   }
 
   &__header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 16px;
     margin-bottom: 16px;
   }
 
@@ -233,52 +214,6 @@ onUnmounted(() => {
 
     &--on {
       opacity: 1;
-    }
-  }
-
-  &__zoom {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-shrink: 0;
-  }
-
-  &__zoom-btn {
-    width: 30px;
-    height: 30px;
-    border: 1px solid #d5d9e0;
-    border-radius: 6px;
-    background: @color-surface;
-    color: @color-text;
-    font-size: 16px;
-    line-height: 1;
-    cursor: pointer;
-
-    &:hover {
-      background: #eef1f5;
-    }
-  }
-
-  &__zoom-value {
-    min-width: 52px;
-    text-align: center;
-    font-variant-numeric: tabular-nums;
-    color: @color-text-weak;
-    font-size: 13px;
-  }
-
-  &__zoom-reset {
-    height: 30px;
-    padding: 0 10px;
-    border: 1px solid #d5d9e0;
-    border-radius: 6px;
-    background: @color-surface;
-    color: @color-text;
-    font-size: 13px;
-    cursor: pointer;
-
-    &:hover {
-      background: #eef1f5;
     }
   }
 

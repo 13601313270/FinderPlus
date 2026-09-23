@@ -65,3 +65,17 @@ export function resetViewport(): void {
   viewport.y = 0
   viewport.scale = 1
 }
+
+/**
+ * 不改变缩放，把指定**世界点**平移到画布中央（小地图点击 / 拖拽导航用）。
+ * 由 屏幕 = 世界 × scale + 平移，要求该世界点落到屏幕中心，得 平移 = 屏幕中心 − 世界 × scale。
+ *
+ * @param wx 目标世界 x
+ * @param wy 目标世界 y
+ * @param width 画布容器屏幕宽
+ * @param height 画布容器屏幕高
+ */
+export function centerViewportOn(wx: number, wy: number, width: number, height: number): void {
+  viewport.x = width / 2 - wx * viewport.scale
+  viewport.y = height / 2 - wy * viewport.scale
+}

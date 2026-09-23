@@ -34,4 +34,14 @@ export class TextInputNode extends Node {
 
   /** 没有输入端口，永远收不到通知 */
   onInputChanged(): void {}
+
+  saveState(): Record<string, unknown> {
+    return { content: this.content }
+  }
+
+  readState(state: Record<string, unknown>): void {
+    // 恢复源头值 → 触发 commit，下游才能收到
+    const text = typeof state.content === 'string' ? state.content : ''
+    this.setText(text)
+  }
 }

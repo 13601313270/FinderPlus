@@ -76,4 +76,26 @@ export abstract class Node {
    * 所以这里只负责「把通知接住」，具体动作交给子类。
    */
   abstract onInputChanged(): void
+
+  /**
+   * 把节点的**内部运行状态**序列化成一个 plain object。
+   *
+   * 只存节点自己独有的字段（比如 TextInputNode 的 content、NumberInputNode 的 number）。
+   * 基类字段（id、type、position、端口形状）由外层持久化层统一读写，子类不用管。
+   *
+   * 返回值必须是 JSON-safe 的（string / number / boolean / null / array / 嵌套 object），
+   * 不能包含 class instance、function、undefined。
+   */
+  abstract saveState(): Record<string, unknown>
+
+  /**
+   * 从 saveState 返回的 plain object 里恢复节点内部状态。
+   *
+   * 实现时要考虑：
+   * - 字段可能缺失（老版本存的数据），要给默认值或做类型守卫；
+   * - 恢复源头节点的值时**应该触发输出 commit**——下游需要收到值才能正常显示；
+   * - 恢复展示/计算节点的值通常是冗余的（连好边后上游 commit 会自动刷新），
+   *   但写进去可以让「断开状态下也能看到上次结果」。
+   */
+  abstract readState(state: Record<string, unknown>): void
 }

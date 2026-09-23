@@ -31,4 +31,13 @@ export class TextDisplayNode extends Node {
     this.displayed = first instanceof StringValue ? first.value : ''
     this.notifyChanged()
   }
+
+  saveState(): Record<string, unknown> {
+    // displayed 是上游派生出来的，恢复时上游 commit 会自动刷回来，不用存
+    return {}
+  }
+
+  readState(_state: Record<string, unknown>): void {
+    // 啥也不做——派生状态等上游恢复后自然会刷新
+  }
 }

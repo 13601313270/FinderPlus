@@ -65,6 +65,7 @@ export abstract class Node {
 
   /** 子类构造时登记自己的输出端口 */
   protected addOutput(port: OutputPort): void {
+    port.setOwner(this)
     this.outputs.push(port)
   }
 

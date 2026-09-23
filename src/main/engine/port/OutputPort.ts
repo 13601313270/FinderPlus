@@ -1,5 +1,6 @@
 import type { Value, ValueKind } from '../data/Value'
 import type { Edge } from '../graph/Edge'
+import type { Node } from '../node/Node'
 
 /**
  * 输出端口：节点产出值的出口。
@@ -17,6 +18,9 @@ export class OutputPort {
   /** 当前值，undefined 表示该节点从未计算过 */
   private currentValue: Value | undefined
 
+  /** 所属节点，由 Node 登记端口时注入 */
+  private owner: Node | undefined
+
   constructor(
     readonly id: string,
     /** 本端口产出的类型，连线校验与端口样式都用它 */
@@ -25,6 +29,16 @@ export class OutputPort {
 
   get value(): Value | undefined {
     return this.currentValue
+  }
+
+  /** 认领：由 Node 登记端口时调用。让端口能反查所属节点（Edge 存 DB 时需要 start_node_id） */
+  setOwner(owner: Node): void {
+    this.owner = owner
+  }
+
+  /** 取所属节点，可能为 undefined（极端情况下端口未被 Node 认领） */
+  getOwner(): Node | undefined {
+    return this.owner
   }
 
   /**

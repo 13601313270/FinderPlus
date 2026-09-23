@@ -85,6 +85,11 @@ export class InputPort {
     this.owner = owner
   }
 
+  /** 取所属节点，可能为 undefined（极端情况下端口未被 Node 认领） */
+  getOwner(): Node | undefined {
+    return this.owner
+  }
+
   /**
    * 能不能接入某种类型。连线前的校验只跟「端口规则 + 上游类型」有关，跟边本身无关——
    * 所以这里收的是 kind，不是整条 Edge：UI 拖拽连线时也能拿它做实时判定，

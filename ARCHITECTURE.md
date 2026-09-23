@@ -41,7 +41,9 @@ src/
      │        ├─ node.ts
      │        └─ render.vue
 └─ renderer/src/
-   ├─ App.vue                    # 测试画布：建图 + 渲染
+   ├─ App.vue                    # 测试画布：建图 + 渲染 + 无限画布视口交互
+   ├─ canvas/viewport.ts         # 视口单例：平移偏移 + 缩放，屏幕↔世界坐标换算
+   ├─ composables/useNodePosition.ts  # 节点定位 + 拖拽（含视口缩放补偿），纯 UI 逻辑
    └─ assets/styles/variables.less
 ```
 
@@ -106,7 +108,19 @@ notifyChanged(): void                    // 子类在状态更新的收尾调用
 
 input 节点是特例：它用 writable computed，`@input` 赋值会标记 dirty 触发 get 重算，所以不必走观察者也能自洽。
 
-## 6. 数据流链路（核心：输入影响展示）
+## 6. 无限画布视口（平移 + 缩放）
+
+画布是「无限」的：节点存的是**世界坐标**（`Node.position`），画布只是其中一个观察窗口，窗口的位置与倍率就是**视口状态**。
+
+- `src/renderer/src/canvas/viewport.ts` 导出模块级 `reactive` 单例 `viewport = { x, y, scale }`，外加 `panViewport / zoomViewportAt / resetViewport` 三个写入函数。
+- **坐标换算**：`屏幕 = 世界 × scale + (x, y)`。`zoomViewportAt` 以画布内某点为锚，缩放前后保持该点「底下」的世界坐标不动，故光标指哪朝哪缩。
+- App.vue 把视口折成一条 CSS `transform: translate(x,y) scale(s)` 套在**世界层**（`.stage__world`）上；节点渲染组件仍按世界坐标 `left/top` 绝对定位落进世界层内，统一被缩放平移。
+- 交互：拖拽空白处平移、普通滚轮平移、`Ctrl/Cmd + 滚轮`（或触控板捏合）缩放、顶栏按钮缩放/复位。
+- **节点拖拽的 scale 补偿**：`useNodePosition` 拖拽拿到的指针位移是屏幕像素，落点要写回世界坐标，故除以当前 `scale`。它是纯 UI 逻辑，已放在 renderer 侧（`composables/useNodePosition.ts`），内部直接读 `viewport.scale`，不再由 render.vue 传入，也避免 main 侧的 `nodePlugin` 反向依赖 renderer。
+
+> 视口是**渲染进程的 UI 状态**，不写进引擎：引擎只存节点世界坐标，怎么平移缩放是视图层的事。
+
+## 7. 数据流链路（核心：输入影响展示）
 
 ```
 用户输入 @input
@@ -121,7 +135,7 @@ input 节点是特例：它用 writable computed，`@input` 赋值会标记 dirt
 
 整条链的关键是 **OutputPort/InputPort 都按指纹比对**——上游没变，下游绝不会被打扰。
 
-## 7. 当前已实现 vs 待做
+## 8. 当前已实现 vs 待做
 
 **已实现**
 - ✅ 图数据模型（Node / InputPort / OutputPort / Value / Edge / Scene）
@@ -132,13 +146,14 @@ input 节点是特例：它用 writable computed，`@input` 赋值会标记 dirt
 - ✅ `workspaceScene` 单例 + render 进程直接持有
 - ✅ Node 观察者机制，解决 Vue 响应式断链
 - ✅ 测试画布 `App.vue`：输入节点连线展示节点，验证 `输入 → 展示` 链路
+- ✅ 无限画布视口：平移（拖拽空白 / 滚轮）+ 缩放（Ctrl/Cmd + 滚轮 / 顶栏按钮），节点拖拽按 scale 补偿
 
 **待做 ⚠️**（不要当现状读）
 - 成环检测（摘要：connect 前由上层判定，代码未实现）
 - 完整序列化 / 反序列化（`Value` 已有 `toJSON`，没有整图导出）
 - 主进程侧 Scene 与 IPC 桥（如 `node:get`）
 
-## 8. 构建与检查
+## 9. 构建与检查
 
 ```bash
 npm run typecheck   # tsc(node) + vue-tsc(web) 双重检查引擎与 render.vue

@@ -1,4 +1,5 @@
 import { computed, watch, ref, type Ref } from 'vue'
+import { viewport } from '@renderer/canvas/viewport'
 
 /**
  * 本逻辑只依赖节点这几个可见成员。
@@ -25,6 +26,9 @@ export interface NodeLike {
  *
  * 所以这里用 computed + watch 持续跟随 getNode：节点一旦就绪就切换订阅，
  * 迟到也不丢更新，两个节点视图的拖拽才一致。
+ *
+ * 这是纯 UI 逻辑（依赖 Vue 响应式 + 画布视口），故放在 renderer 侧而非 nodePlugin：
+ * 拖拽拿到的指针位移是屏幕像素，除以视口缩放 viewport.scale 才等于世界位移。
  */
 export interface NodePositionView {
   /** 节点的当前坐标，渲染组件把它映射成 left/top */
@@ -63,9 +67,10 @@ export function useNodePosition(getNode: () => NodeLike | undefined): NodePositi
 
   function move(e: PointerEvent): void {
     if (!dragging || !lastNode) return
+    const scale = viewport.scale || 1
     lastNode.setPosition(
-      startPos[0] + (e.clientX - startClientX),
-      startPos[1] + (e.clientY - startClientY)
+      startPos[0] + (e.clientX - startClientX) / scale,
+      startPos[1] + (e.clientY - startClientY) / scale
     )
   }
 

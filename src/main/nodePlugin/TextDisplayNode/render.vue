@@ -2,7 +2,7 @@
 import { onMounted, onUnmounted, ref } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { TextDisplayNode } from './node'
-import { useNodePosition } from '../useNodePosition'
+import { useNodePosition } from '@renderer/composables/useNodePosition'
 
 /**
  * 文本展示节点的渲染组件。

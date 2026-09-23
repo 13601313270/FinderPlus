@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { TextInputNode } from './node'
-import { useNodePosition } from '../useNodePosition'
+import { useNodePosition } from '@renderer/composables/useNodePosition'
 
 /**
  * 文本输入节点的渲染组件。

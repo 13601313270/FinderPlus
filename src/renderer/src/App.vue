@@ -1,10 +1,17 @@
 <script setup lang="ts">
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { workspaceScene } from '../../main/engine/graph/SceneRegistry'
 import { TextInputNode } from '../../main/nodePlugin/TextInputNode/node'
 import { TextDisplayNode } from '../../main/nodePlugin/TextDisplayNode/node'
 import { manifestFor } from '../../main/nodePlugin'
+import {
+  viewport,
+  panViewport,
+  zoomViewportAt,
+  resetViewport
+} from '@renderer/canvas/viewport'
 
-// 测试画布：极简，只验证「输入框能不能影响下游展示」，顺带验证节点可拖拽、位置写回引擎。
+// 测试画布：验证「输入框能不能影响下游展示」，顺带验证节点可拖拽、位置写回引擎。
 
 const input = new TextInputNode('test-input')
 const display = new TextDisplayNode('test-display')
@@ -27,18 +34,122 @@ input.setText('你好，引擎！')
 
 // 渲染组件一律按 node.type 从注册表取 manifest，杜绝自己把渲染组件绑错节点。
 const nodes = [input, display]
+
+// —— 无限画布：平移 + 缩放 ——
+// 视口状态（x/y 平移偏移、scale 缩放）由 canvas/viewport 单例承载；世界层把三者
+// 折成一条 CSS transform，节点的 world 坐标落进层内即被统一缩放平移，实现无限画布。
+
+const canvasEl = ref<HTMLElement | null>(null)
+
+const worldStyle = computed(() => ({
+  transform: `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.scale})`
+}))
+
+// 点状网格背景随视口一起动：background-size 随缩放改变点距，background-position 跟随平移，
+// 给「无限」一个可感知的视觉锚点（节点之外的空白也有参照）。
+const GRID_GAP = 24
+const gridStyle = computed(() => ({
+  backgroundSize: `${GRID_GAP * viewport.scale}px ${GRID_GAP * viewport.scale}px`,
+  backgroundPosition: `${viewport.x}px ${viewport.y}px`
+}))
+
+// —— 拖拽空白处平移 ——
+let panning = false
+let lastClientX = 0
+let lastClientY = 0
+
+function onCanvasPointerDown(e: PointerEvent): void {
+  // 只认画布空白背景：点中节点时，交给节点自己的拖拽逻辑，别抢。
+  if (e.target !== canvasEl.value) return
+  e.preventDefault()
+  panning = true
+  lastClientX = e.clientX
+  lastClientY = e.clientY
+  window.addEventListener('pointermove', onPanMove)
+  window.addEventListener('pointerup', onPanEnd)
+}
+
+function onPanMove(e: PointerEvent): void {
+  if (!panning) return
+  // panViewport 收的是「增量」：取本次相对上次事件的位移逐段累加，
+  // 而不是把「起点 + 累计位移」这个绝对位置再当增量加一遍（那样会越拖越快）。
+  const dx = e.clientX - lastClientX
+  const dy = e.clientY - lastClientY
+  lastClientX = e.clientX
+  lastClientY = e.clientY
+  panViewport(dx, dy)
+}
+
+function onPanEnd(): void {
+  panning = false
+  window.removeEventListener('pointermove', onPanMove)
+  window.removeEventListener('pointerup', onPanEnd)
+}
+
+// —— 滚轮：普通滚轮平移（「滚动调整位置」），Ctrl/Cmd + 滚轮缩放（含触控板双指捏合） ——
+function onWheel(e: WheelEvent): void {
+  e.preventDefault()
+  const rect = canvasEl.value?.getBoundingClientRect()
+  if (!rect) return
+  const px = e.clientX - rect.left
+  const py = e.clientY - rect.top
+
+  if (e.ctrlKey || e.metaKey) {
+    // 以光标为锚缩放：光标底下的内容保持不动，不会越缩越偏
+    zoomViewportAt(px, py, Math.exp(-e.deltaY * 0.002))
+  } else {
+    panViewport(-e.deltaX, -e.deltaY)
+  }
+}
+
+// —— 顶栏缩放按钮：绕画布中心缩放 ——
+function zoomAroundCenter(factor: number): void {
+  const rect = canvasEl.value?.getBoundingClientRect()
+  if (!rect) return
+  zoomViewportAt(rect.width / 2, rect.height / 2, factor)
+}
+const zoomIn = (): void => zoomAroundCenter(1.2)
+const zoomOut = (): void => zoomAroundCenter(1 / 1.2)
+
+// wheel 需要 preventDefault 阻止页面滚动，得用非 passive 监听器（Vue 默认不加 passive，
+// 但显式 { passive: false } 最稳，也把挂载/卸载集中在一处）。
+onMounted(() => {
+  canvasEl.value?.addEventListener('wheel', onWheel, { passive: false })
+})
+
+onUnmounted(() => {
+  canvasEl.value?.removeEventListener('wheel', onWheel)
+})
 </script>
 
 <template>
   <section class="stage">
     <header class="stage__header">
-      <h2 class="stage__title">测试画布：输入框 → 展示节点</h2>
-      <p class="stage__hint">拖动手柄移动卡片；在输入框里打字，另一张卡片应立即同步更新。</p>
+      <div class="stage__intro">
+        <h2 class="stage__title">测试画布：输入框 → 展示节点</h2>
+        <p class="stage__hint">
+          拖动手柄移动卡片；拖动空白处或滚轮平移；Ctrl/Cmd + 滚轮（或双指捏合）缩放。
+        </p>
+      </div>
+
+      <div class="stage__zoom">
+        <button class="stage__zoom-btn" type="button" title="缩小" @click="zoomOut">−</button>
+        <span class="stage__zoom-value">{{ Math.round(viewport.scale * 100) }}%</span>
+        <button class="stage__zoom-btn" type="button" title="放大" @click="zoomIn">＋</button>
+        <button class="stage__zoom-reset" type="button" @click="resetViewport">复位</button>
+      </div>
     </header>
 
-    <!-- 节点用 position 绝对定位在画布上，拖拽时即改即动 -->
-    <div class="stage__canvas">
-      <component v-for="node in nodes" :key="node.id" :is="manifestFor(node)?.render" :id="node.id" />
+    <!-- 节点用 position 绝对定位在世界层内，世界层整体 transform 承载平移 + 缩放 -->
+    <div
+      ref="canvasEl"
+      class="stage__canvas"
+      :style="gridStyle"
+      @pointerdown="onCanvasPointerDown"
+    >
+      <div class="stage__world" :style="worldStyle">
+        <component v-for="node in nodes" :key="node.id" :is="manifestFor(node)?.render" :id="node.id" />
+      </div>
     </div>
   </section>
 </template>
@@ -51,7 +162,15 @@ const nodes = [input, display]
   padding: 24px;
 
   &__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
     margin-bottom: 16px;
+  }
+
+  &__intro {
+    min-width: 0;
   }
 
   &__title {
@@ -65,6 +184,52 @@ const nodes = [input, display]
     font-size: 13px;
   }
 
+  &__zoom {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  &__zoom-btn {
+    width: 30px;
+    height: 30px;
+    border: 1px solid #d5d9e0;
+    border-radius: 6px;
+    background: @color-surface;
+    color: @color-text;
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+
+    &:hover {
+      background: #eef1f5;
+    }
+  }
+
+  &__zoom-value {
+    min-width: 52px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    color: @color-text-weak;
+    font-size: 13px;
+  }
+
+  &__zoom-reset {
+    height: 30px;
+    padding: 0 10px;
+    border: 1px solid #d5d9e0;
+    border-radius: 6px;
+    background: @color-surface;
+    color: @color-text;
+    font-size: 13px;
+    cursor: pointer;
+
+    &:hover {
+      background: #eef1f5;
+    }
+  }
+
   &__canvas {
     position: relative;
     flex: 1;
@@ -72,6 +237,25 @@ const nodes = [input, display]
     border: 1px dashed #d5d9e0;
     border-radius: @radius-md;
     overflow: hidden;
+    cursor: grab;
+    touch-action: none; // 阻止触摸默认滚动/缩放，让 pointer 事件接管平移
+    background-color: #fbfcfe;
+    background-image: radial-gradient(circle, #cfd4dc 1px, transparent 1px);
+    background-repeat: repeat;
+
+    &:active {
+      cursor: grabbing;
+    }
+  }
+
+  &__world {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 0;
+    height: 0;
+    transform-origin: 0 0;
+    will-change: transform;
   }
 }
 </style>

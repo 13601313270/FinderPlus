@@ -5,7 +5,11 @@ import { TextInputNode } from './node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
 
 /**
- * 文本输入节点的渲染组件。
+ * 文本输入节点的渲染组件（只画卡片内容）。
+ *
+ * 定位、两侧端口这些所有节点共用的东西由 NodeShell 兜底，这里不碰：
+ * - 卡片不再自己 `position: absolute`，直接填满外壳；
+ * - 端口圆点由 NodeShell 里的 <NodePorts> 统一画，不必每个 render.vue 再放一份。
  *
  * id 指明它控制场景里的哪个节点；引擎是纯逻辑，渲染进程能直接握住同一份
  * Scene 单例，所以这里用 workspaceScene.getNode(id) 取活引用，不用走 IPC。
@@ -23,12 +27,12 @@ const text = computed({
   set: (value: string) => inputNode.value?.setText(value)
 })
 
-// 卡片定位 + 拖拽，落点写回 node.position；输入框本身不参与拖拽，隔着手柄拖才动。
-const { position, startDrag } = useNodePosition(() => inputNode.value)
+// 只要拖拽（落点写回 node.position）；位置本身由外壳跟随 node.position 展示。
+const { startDrag } = useNodePosition(() => inputNode.value)
 </script>
 
 <template>
-  <div class="node" :style="{ left: position[0] + 'px', top: position[1] + 'px' }">
+  <div class="node">
     <span class="node__handle" title="拖动节点" @pointerdown="startDrag">{{ inputNode?.type ?? '?' }}</span>
     <input
       class="render-input"
@@ -43,7 +47,6 @@ const { position, startDrag } = useNodePosition(() => inputNode.value)
 
 <style scoped lang="less">
 .node {
-  position: absolute;
   display: flex;
   flex-direction: column;
   gap: 6px;

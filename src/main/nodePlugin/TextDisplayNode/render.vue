@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref, shallowRef } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { TextDisplayNode } from './node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
 
 /**
- * 文本展示节点的渲染组件。
+ * 文本展示节点的渲染组件（只画卡片内容）。
+ *
+ * 定位、两侧端口这些所有节点共用的东西由 NodeShell 兜底，这里不碰。
  *
  * 引擎里的 displayed 只是普通类字段，Vue 追踪不到，所以不能靠 computed 自动刷新。
  * 这里在挂载时拿到活引用，订阅 node.onChanged —— 上游把新值推进来、节点刷新后，
@@ -13,13 +15,16 @@ import { useNodePosition } from '@renderer/composables/useNodePosition'
  */
 const props = defineProps<{ id: string }>()
 
-const displayNode = ref<TextDisplayNode | undefined>(undefined)
+// 用 shallowRef 而不是 ref：ref 会把节点实例深转换成 reactive 代理，于是从这里读到的
+// 端口对象不再是引擎里那个端口（按身份比对的连线层会认不出来）。引擎对象有自己的一套
+// 通知机制（onChanged），本来也不需要 Vue 去代理它，这里只关心「引用换没换」。
+const displayNode = shallowRef<TextDisplayNode | undefined>(undefined)
 const text = ref('')
 
 let unsubscribe: (() => void) | undefined
 
-// 卡片定位 + 拖拽；节点在 onMounted 才解析到，所以传 getter，内部取最新引用。
-const { position, startDrag } = useNodePosition(() => displayNode.value)
+// 只要拖拽（落点写回 node.position）；位置本身由外壳跟随 node.position 展示。
+const { startDrag } = useNodePosition(() => displayNode.value)
 
 onMounted(() => {
   const found = workspaceScene.getNode(props.id)
@@ -38,7 +43,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="node" :style="{ left: position[0] + 'px', top: position[1] + 'px' }">
+  <div class="node">
     <span class="node__handle" title="拖动节点" @pointerdown="startDrag">{{ displayNode?.type ?? '?' }}</span>
     <div class="render-display" :class="{ 'render-display--empty': !text }">
       {{ text || (displayNode ? '（暂无输出）' : '节点不存在') }}
@@ -48,7 +53,6 @@ onUnmounted(() => {
 
 <style scoped lang="less">
 .node {
-  position: absolute;
   display: flex;
   flex-direction: column;
   gap: 6px;

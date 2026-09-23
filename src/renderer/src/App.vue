@@ -10,6 +10,8 @@ import {
   zoomViewportAt,
   resetViewport
 } from '@renderer/canvas/viewport'
+import EdgeLayer from './components/EdgeLayer.vue'
+import NodeShell from './components/NodeShell.vue'
 
 // 测试画布：验证「输入框能不能影响下游展示」，顺带验证节点可拖拽、位置写回引擎。
 
@@ -128,7 +130,7 @@ onUnmounted(() => {
       <div class="stage__intro">
         <h2 class="stage__title">测试画布：输入框 → 展示节点</h2>
         <p class="stage__hint">
-          拖动手柄移动卡片；拖动空白处或滚轮平移；Ctrl/Cmd + 滚轮（或双指捏合）缩放。
+          拖动手柄移动卡片；拖动空白处或滚轮平移；Ctrl/Cmd + 滚轮（或双指捏合）缩放；点连线中间的 × 断开两个节点。
         </p>
       </div>
 
@@ -148,7 +150,10 @@ onUnmounted(() => {
       @pointerdown="onCanvasPointerDown"
     >
       <div class="stage__world" :style="worldStyle">
-        <component v-for="node in nodes" :key="node.id" :is="manifestFor(node)?.render" :id="node.id" />
+        <!-- 连线层排在节点之前：线画在卡片下面，不会盖住节点内容 -->
+        <EdgeLayer />
+        <!-- 每个节点 = 外壳（定位 + 端口，通用）+ 内容（render.vue，节点自定义） -->
+        <NodeShell v-for="node in nodes" :key="node.id" :node="node" :render="manifestFor(node)?.render" />
       </div>
     </div>
   </section>

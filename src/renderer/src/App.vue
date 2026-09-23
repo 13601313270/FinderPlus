@@ -148,11 +148,6 @@ onUnmounted(() => {
 
     <header class="stage__header">
       <div class="stage__intro">
-        <h2 class="stage__title">测试画布：文本输入 → 展示，外加数字输入节点</h2>
-        <p class="stage__hint">
-          拖动手柄移动卡片；拖动空白处或滚轮平移；Ctrl/Cmd + 滚轮（或双指捏合）缩放；点连线中间的 × 断开两个节点；
-          按住右侧端口圆点拖到左侧端口圆点即可连线。
-        </p>
         <!-- 连线失败的一次性提示（类型不匹配 / 端口已占用 / 自环），引擎只给判定，文案在 connectionDrag 里翻译。
              位置一直占着（只切透明度），否则提示一出现就会把画布往下顶、节点跟着跳。 -->
         <p class="stage__notice" :class="{ 'stage__notice--on': !!connectNotice.text }">
@@ -227,21 +222,10 @@ onUnmounted(() => {
     min-width: 0;
   }
 
-  &__title {
-    margin: 0 0 8px;
-    font-size: 20px;
-  }
-
-  &__hint {
-    margin: 0;
-    color: @color-text-weak;
-    font-size: 13px;
-  }
-
   &__notice {
     // 常驻占位（高度写死），提示出现时不会把下面的画布顶下去
     min-height: 18px;
-    margin: 6px 0 0;
+    margin: 0;
     color: @color-danger;
     font-size: 13px;
     opacity: 0;

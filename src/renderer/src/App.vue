@@ -4,10 +4,14 @@ import { TextInputNode } from '../../main/nodePlugin/TextInputNode/node'
 import { TextDisplayNode } from '../../main/nodePlugin/TextDisplayNode/node'
 import { manifestFor } from '../../main/nodePlugin'
 
-// 测试画布：极简，只验证「输入框能不能影响下游展示」。
+// 测试画布：极简，只验证「输入框能不能影响下游展示」，顺带验证节点可拖拽、位置写回引擎。
 
 const input = new TextInputNode('test-input')
 const display = new TextDisplayNode('test-display')
+
+// 给两张卡片一个初始落点，别叠在一起
+input.setPosition(60, 60)
+display.setPosition(420, 60)
 
 workspaceScene.addNode(input)
 workspaceScene.addNode(display)
@@ -26,20 +30,29 @@ const nodes = [input, display]
 </script>
 
 <template>
-  <div class="stage">
-    <h2 class="stage__title">测试画布：输入框 → 展示节点</h2>
-    <p class="stage__hint">在输入框里打字，右侧展示应立即同步更新。</p>
+  <section class="stage">
+    <header class="stage__header">
+      <h2 class="stage__title">测试画布：输入框 → 展示节点</h2>
+      <p class="stage__hint">拖动手柄移动卡片；在输入框里打字，另一张卡片应立即同步更新。</p>
+    </header>
 
-    <section v-for="node in nodes" :key="node.id" class="node-card">
-      <span class="node-card__label">{{ manifestFor(node)?.type ?? node.type }}</span>
-      <component :is="manifestFor(node)?.render" :id="node.id" />
-    </section>
-  </div>
+    <!-- 节点用 position 绝对定位在画布上，拖拽时即改即动 -->
+    <div class="stage__canvas">
+      <component v-for="node in nodes" :key="node.id" :is="manifestFor(node)?.render" :id="node.id" />
+    </div>
+  </section>
 </template>
 
 <style scoped lang="less">
 .stage {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
   padding: 24px;
+
+  &__header {
+    margin-bottom: 16px;
+  }
 
   &__title {
     margin: 0 0 8px;
@@ -47,25 +60,18 @@ const nodes = [input, display]
   }
 
   &__hint {
-    margin: 0 0 24px;
+    margin: 0;
     color: @color-text-weak;
     font-size: 13px;
   }
-}
 
-.node-card {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  max-width: 360px;
-  margin-bottom: @space-md;
-  padding: @space-md;
-  background: @color-surface;
-  border-radius: @radius-md;
-
-  &__label {
-    font-size: 12px;
-    color: @color-text-weak;
+  &__canvas {
+    position: relative;
+    flex: 1;
+    min-height: 320px;
+    border: 1px dashed #d5d9e0;
+    border-radius: @radius-md;
+    overflow: hidden;
   }
 }
 </style>

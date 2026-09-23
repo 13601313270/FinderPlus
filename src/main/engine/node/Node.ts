@@ -17,10 +17,24 @@ export abstract class Node {
   private readonly inputs: InputPort[] = []
   private readonly outputs: OutputPort[] = []
 
+  /** 节点在画布上的坐标。引擎只负责存与通知，怎么拖由渲染组件决定 */
+  private positionValue: [number, number] = [0, 0]
+
   /** 变化订阅者。UI 靠它把引擎里的普通字段同步成 Vue 响应式状态 */
   private readonly listeners = new Set<() => void>()
 
   constructor(readonly id: string) {}
+
+  /** 节点当前位置（只读元组，防止外部直接改值绕过通知） */
+  get position(): readonly [number, number] {
+    return this.positionValue
+  }
+
+  /** 更新节点位置并通知观察者。拖拽的最终落点都走这里 */
+  setPosition(x: number, y: number): void {
+    this.positionValue = [x, y]
+    this.notifyChanged()
+  }
 
   /** 订阅节点变化，返回取消订阅函数 */
   onChanged(fn: () => void): () => void {

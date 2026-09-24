@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import type { Node } from '../../main/engine/node/Node'
 import { workspaceScene } from '../../main/engine/graph/SceneRegistry'
 import { manifestFor, getNodeManifest } from '../../main/nodePlugin'
@@ -10,6 +10,7 @@ import ConnectionPreview from './components/ConnectionPreview.vue'
 import Minimap from './components/Minimap.vue'
 import NodePalette from './components/NodePalette.vue'
 import { connectNotice } from '@renderer/canvas/connectionDrag'
+import { IpcStorage } from '@renderer/composables/IpcStorage'
 
 // 空白画布：没有预置节点。所有节点都从左上角「＋」调色板添加。
 
@@ -170,6 +171,82 @@ function onWindowPointerMove(e: PointerEvent): void {
   onTrackingMove(e)
 }
 
+// —— 启动：从主进程 DB 读数据 → 重建 Scene → attachStorage 自动持久化后续变化 ——
+// 这个函数在 App 初始化阶段同步执行，比 onMounted 更早——节点必须在渲染组件挂载前就绪，
+// 否则 render.vue 里 workspaceScene.getNode(id) 会拿到 undefined。
+
+let viewportPersistTimer: ReturnType<typeof setTimeout> | undefined
+
+async function bootstrapScene(): Promise<void> {
+  let data: Awaited<ReturnType<typeof window.canvasDeskDb.loadCanvas>> | undefined
+  try {
+    data = await window.canvasDeskDb.loadCanvas()
+  } catch (err) {
+    console.warn('[bootstrap] loadCanvas 失败，从空白画布开始：', err)
+  }
+
+  // —— 1. 节点先全部 addNode（端口就绪了才能连边）——
+  for (const row of data?.nodes ?? []) {
+    const manifest = getNodeManifest(row.type)
+    if (!manifest) {
+      console.warn(`[bootstrap] 未知节点类型跳过：${row.type} (id=${row.id})`)
+      continue
+    }
+    const node = new manifest.nodeClass(row.id)
+    node.setPosition(row.posX, row.posY)
+    workspaceScene.addNode(node)
+  }
+
+  // —— 2. 节点内部状态（源头节点 readState 会 commit，连边下游能立刻收到）——
+  for (const row of data?.nodes ?? []) {
+    const node = workspaceScene.getNode(row.id)
+    if (!node) continue
+    let params: Record<string, unknown> = {}
+    try {
+      params = JSON.parse(row.paramsJson)
+    } catch (err) {
+      console.warn(`[bootstrap] 节点 ${row.id} params JSON 解析失败：`, err)
+    }
+    node.readState(params)
+  }
+
+  // —— 3. 边最后建（端口必须先存在）——
+  for (const row of data?.edges ?? []) {
+    const startNode = workspaceScene.getNode(row.startNodeId)
+    const endNode = workspaceScene.getNode(row.endNodeId)
+    if (!startNode || !endNode) continue
+    const startPort = startNode.outputPorts.find((p) => p.id === row.startPortId)
+    const endPort = endNode.inputPorts.find((p) => p.id === row.endPortId)
+    if (!startPort || !endPort) continue
+    workspaceScene.connect(startPort, endPort, row.id)
+  }
+
+  // —— 4. 恢复视口 + attachStorage ——
+  if (data?.viewport) {
+    viewport.x = data.viewport.x
+    viewport.y = data.viewport.y
+    viewport.scale = data.viewport.scale
+  }
+
+  // 重建完成后才 attachStorage——期间 addNode/connect 里的 storage?.xxx() 都是空转，
+  // 不然会把刚从 DB 读出来的东西再写回去（重复且浪费 IO）
+  workspaceScene.attachStorage(new IpcStorage())
+}
+
+// —— 视口持久化：debounce 500ms，拖拽/缩放停下来再写 DB ——
+watch(
+  () => [viewport.x, viewport.y, viewport.scale] as const,
+  ([x, y, scale]) => {
+    clearTimeout(viewportPersistTimer)
+    viewportPersistTimer = setTimeout(() => {
+      workspaceScene.saveViewport(x, y, scale)
+    }, 500)
+  }
+)
+
+// 立即启动 bootstrap（不在 onMounted 里——要早于子组件挂载）
+bootstrapScene()
+
 onMounted(() => {
   canvasEl.value?.addEventListener('wheel', onWheel, { passive: false })
   // 全局监听 pointermove：
@@ -184,6 +261,7 @@ onUnmounted(() => {
   window.removeEventListener('pointermove', onWindowPointerMove)
   unsubscribeScene?.()
   document.body.style.cursor = ''
+  clearTimeout(viewportPersistTimer)
 })
 </script>
 

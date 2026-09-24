@@ -29,11 +29,11 @@ export class EdgeBinder {
    * 3、4 由 Edge 的构造参数完成，所以边一诞生就是两端完整的，不存在只配了一头的中间态；
    * 而且在返回之前没有任何人拿到这条边，外界看不到半成品。
    */
-  connect(startPort: OutputPort, endPort: InputPort): ConnectResult {
+  connect(startPort: OutputPort, endPort: InputPort, edgeId?: string): ConnectResult {
     if (this.hasEdgeBetween(startPort, endPort)) {
       return { ok: false, reason: 'already-bound' }
     }
-    const edge = new Edge(startPort, endPort)
+    const edge = new Edge(startPort, endPort, edgeId)
     const result = endPort.canBindEdge(startPort)
     if (result.result === false) {
       return { ok: false, reason: result.message }

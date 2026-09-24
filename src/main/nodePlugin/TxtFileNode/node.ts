@@ -10,6 +10,8 @@ import { FileNode } from '../FileNode/node'
  */
 export class TxtFileNode extends FileNode {
   static readonly TYPE = 'txt-file'
+  static override readonly EXTENSIONS = ['.txt']
+
   readonly type = TxtFileNode.TYPE
 
   /** 文本内容输出 */
@@ -21,10 +23,6 @@ export class TxtFileNode extends FileNode {
   constructor(id: string) {
     super(id)
     this.addOutput(this.contentOutput)
-  }
-
-  getAcceptedExtensions(): string[] {
-    return ['.txt']
   }
 
   /** 节点对外暴露的文本内容 */

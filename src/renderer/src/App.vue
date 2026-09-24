@@ -2,7 +2,8 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import type { Node } from '../../main/engine/node/Node'
 import { workspaceScene } from '../../main/engine/graph/SceneRegistry'
-import { manifestFor, getNodeManifest } from '../../main/nodePlugin'
+import { manifestFor, getNodeManifest, resolveByExtension } from '../../main/nodePlugin'
+import type { FileNode } from '../../main/nodePlugin/FileNode/node'
 import { viewport, panViewport, zoomViewportAt, screenToWorld } from '@renderer/canvas/viewport'
 import EdgeLayer from './components/EdgeLayer.vue'
 import NodeShell from './components/NodeShell.vue'
@@ -103,6 +104,138 @@ function stopTracking(): void {
   if (!trackingNode.value) return
   trackingNode.value = null
   document.body.style.cursor = ''
+}
+
+// —— 拖文件进来自动创建 FileNode ——
+
+/** 从文件名里提取后缀（含点），无后缀返回空串 */
+function extractExtension(fileName: string): string {
+  const idx = fileName.lastIndexOf('.')
+  return idx >= 0 ? fileName.slice(idx) : ''
+}
+
+/**
+ * 画布 dragover：无条件 preventDefault + dropEffect = 'copy'，
+ * 浏览器/Electron 才会允许 drop 事件触发。
+ *
+ * 注意：Electron 的 dragover 事件里 dataTransfer.files 通常是空的，
+ *       文件列表只在 drop 时才填充，所以这里**不能**用 files.length 来判断——
+ *       否则 preventDefault 永远不调用，Electron 会走默认导航逻辑。
+ *
+ *       用 dataTransfer.types 里是否包含 'Files' 来判断"是不是文件拖拽"。
+ */
+function onCanvasDragOver(e: DragEvent): void {
+  if (!e.dataTransfer) return
+  const isFileDrag = Array.from(e.dataTransfer.types).includes('Files')
+  if (isFileDrag) {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'copy'
+  }
+}
+
+/**
+ * 全局 dragover/drop 拦截：
+ *
+ * Electron 默认会在拖文件进窗口时尝试"打开文件"（导航到 file:// URL），
+ * 哪怕画布的 dragover 已经 prevent 了，只要用户把文件拖到画布外的区域
+ * （比如顶部 dragbar、窗口边缘白边），Electron 仍然会触发默认导航导致白屏。
+ *
+ * 所以在 document 级别统一 preventDefault，然后只让画布的 drop handler 处理业务。
+ */
+function onGlobalDragOver(e: DragEvent): void {
+  if (!e.dataTransfer) return
+  if (Array.from(e.dataTransfer.types).includes('Files')) {
+    e.preventDefault()
+  }
+}
+
+function onGlobalDrop(e: DragEvent): void {
+  if (!e.dataTransfer) return
+  if (Array.from(e.dataTransfer.types).includes('Files')) {
+    // 只有落到画布上时画布自己的 drop handler 才会处理；
+    // 这里只是兜底阻止 Electron 默认打开文件
+    e.preventDefault()
+  }
+}
+
+/**
+ * 画布 drop：根据拖入文件的后缀，自动构造对应的 FileNode 子类，
+ * 把文件复制到画布目录，放置在 drop 位置的世界坐标，然后走跟随/固定流程。
+ *
+ * 内容填充交给 render.vue 的挂载兜底：它看到 node.fileName 已有值但 content 为空
+ * 就会自动 readText + setContent——App.vue 不耦合 TxtFileNode 等子类细节。
+ */
+async function onCanvasDrop(e: DragEvent): Promise<void> {
+  console.log('[drop] onCanvasDrop 触发')
+  if (!e.dataTransfer) {
+    console.warn('[drop] dataTransfer 为空')
+    return
+  }
+  const files = e.dataTransfer.files
+  console.log('[drop] files.length =', files?.length, 'types =', Array.from(e.dataTransfer.types))
+  if (!files || files.length === 0) return
+
+  // 已在 dragover 里放行，这里再 prevent 一次确保浏览器不做默认打开
+  e.preventDefault()
+
+  // 取画布内的落点屏幕坐标
+  const canvasRect = canvasEl.value?.getBoundingClientRect()
+  if (!canvasRect) return
+  const dropSX = e.clientX - canvasRect.left
+  const dropSY = e.clientY - canvasRect.top
+  const [wx, wy] = screenToWorld(dropSX, dropSY)
+
+  // 只处理第一个能被承接的文件（简化版；后续可扩展多文件批量创建）
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i]
+    const ext = extractExtension(file.name)
+    console.log(`[drop] 文件 ${i}: name="${file.name}" ext="${ext}" size=${file.size} path=`, (() => { try { return window.fileApi.getPathForFile(file) } catch { return '<getterror>' } })())
+    const manifest = resolveByExtension(ext)
+    if (!manifest) {
+      console.warn(`[drop] 无对应节点承接的文件类型：${file.name} (${ext})`)
+      continue
+    }
+    console.log('[drop] 匹配 manifest type =', manifest.type)
+
+    // 通过 preload 特权 API 反查真实磁盘路径（contextIsolation 下 File.path 拿不到）
+    let sourcePath: string
+    try {
+      sourcePath = window.fileApi.getPathForFile(file)
+    } catch (err) {
+      console.warn(`[drop] 反查路径失败：`, err)
+      continue
+    }
+    if (!sourcePath) {
+      console.warn(`[drop] 无法获取文件 ${file.name} 的系统路径`)
+      continue
+    }
+
+    // 如果已有节点在跟随，先固定它
+    if (trackingNode.value) {
+      trackingNode.value = null
+    }
+
+    const node = new manifest.nodeClass(generateNodeId(manifest.type))
+    node.setPosition(wx, wy)
+
+    try {
+      // 让主进程把文件复制到画布目录（copyFileSync + 重名去重）
+      const copied = await window.fileApi.copyPath(sourcePath)
+      console.log('[drop] 复制成功：', copied)
+      // 用复制后的 fileName（可能加了 _1 后缀）写节点
+      ;(node as FileNode).setFile(copied.fileName, copied.size)
+    } catch (err) {
+      console.warn(`[drop] 文件 ${file.name} 复制失败：`, err)
+      continue
+    }
+
+    workspaceScene.addNode(node)
+    console.log('[drop] 节点已加入 Scene：', node.id)
+
+    trackingNode.value = node
+    document.body.style.cursor = 'crosshair'
+    break // 只处理第一个文件就够了
+  }
 }
 
 // —— 节点右键菜单 ——
@@ -327,6 +460,10 @@ onMounted(() => {
   window.addEventListener('pointermove', onWindowPointerMove)
   // 全局 mousedown：点击菜单外部时关闭右键菜单
   document.addEventListener('mousedown', onDocumentMouseDown)
+  // 全局拖拽兜底：文件拖到画布外区域（顶部 dragbar 等）时阻止 Electron 默认打开文件导致白屏
+  // 画布上的业务逻辑仍由 stage__canvas 的 @dragover / @drop 处理
+  document.addEventListener('dragover', onGlobalDragOver)
+  document.addEventListener('drop', onGlobalDrop)
   unsubscribeScene = workspaceScene.onChanged(onSceneChanged)
 })
 
@@ -334,6 +471,8 @@ onUnmounted(() => {
   canvasEl.value?.removeEventListener('wheel', onWheel)
   window.removeEventListener('pointermove', onWindowPointerMove)
   document.removeEventListener('mousedown', onDocumentMouseDown)
+  document.removeEventListener('dragover', onGlobalDragOver)
+  document.removeEventListener('drop', onGlobalDrop)
   unsubscribeScene?.()
   document.body.style.cursor = ''
   clearTimeout(viewportPersistTimer)
@@ -355,6 +494,8 @@ onUnmounted(() => {
       class="stage__canvas"
       :style="gridStyle"
       @pointerdown="onCanvasPointerDown"
+      @dragover="onCanvasDragOver"
+      @drop="onCanvasDrop"
     >
       <!-- 节点调色板：画布左上角的「＋」按钮，悬浮展开可选类型 -->
       <NodePalette @select-type="onSelectType" />

@@ -5,7 +5,8 @@ import { Node } from '../../engine/node/Node'
  *
  * 子类需要自己声明：
  * - type（节点类型标识，如 'txt-file'）
- * - getAcceptedExtensions()：原生对话框接受的扩展名（如 ['.txt']）
+ * - static EXTENSIONS: readonly string[]（如 ['.txt']）—— 声明本节点类承接哪些文件后缀，
+ *   用于拖拽分发：App.vue 根据拖入文件的后缀，反查哪个 FileNode 子类来承接。
  * - 输出端口形状（不同文件类型输出不同 Value：txt 输出 StringValue，
  *   图片输出 FileValue 等，基类不定义端口）
  * - 子类自己的值 commit 逻辑（放 render.vue 或子类自身的业务方法里，
@@ -17,17 +18,22 @@ import { Node } from '../../engine/node/Node'
  * 由 render.vue 在 setFile 之后串联调用。
  */
 export abstract class FileNode extends Node {
+  /** 本节点类承接的文件后缀列表（子类必须覆盖为非空数组） */
+  static readonly EXTENSIONS: readonly string[] = []
+
   /** 当前已选文件名（相对于画布目录）；空串表示未选 */
   protected fileNameValue = ''
 
   /** 文件字节大小；未选时为 0 */
   protected fileSizeValue = 0
 
-  /** 原生对话框接受的扩展名列表，子类声明 */
-  abstract getAcceptedExtensions(): string[]
-
   constructor(id: string) {
     super(id)
+  }
+
+  /** 实例方法：返回本节点类承接的后缀列表，转发到静态 EXTENSIONS */
+  getAcceptedExtensions(): string[] {
+    return [...(this.constructor as typeof FileNode).EXTENSIONS]
   }
 
   get fileName(): string {

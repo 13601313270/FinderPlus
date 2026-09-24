@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron'
+import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 
 const api = {
@@ -51,6 +51,16 @@ const canvasDeskDb = {
 
 const fileApi = {
   /**
+   * 从拖拽事件的 File 对象反查文件系统绝对路径。
+   *
+   * Electron 在 contextIsolation 下会剥离 File 对象的非标准 `.path` 属性，
+   * 渲染进程直接拿不到——所以这里用 preload 特权 API webUtils.getPathForFile，
+   * 它接受 File 对象（File 可以安全穿过 contextBridge，内部是原生引用），
+   * 返回真实磁盘路径，然后再走主进程 copyPath IPC 复制到画布目录。
+   */
+  getPathForFile: (file: File): string => webUtils.getPathForFile(file),
+
+  /**
    * 打开原生文件对话框，选中的文件会被复制到"文稿/CanvasDesk/我的画布"。
    * 返回复制后的文件名和大小；用户取消则返回 null。
    */
@@ -59,6 +69,13 @@ const fileApi = {
     extensions: string[]
   }): Promise<{ fileName: string; size: number } | null> =>
     ipcRenderer.invoke('file:selectAndCopy', args),
+
+  /**
+   * 把磁盘上已有的文件直接复制到画布目录（不弹窗）。
+   * 配合 getPathForFile 用：renderer 拿 File → 调 getPathForFile 拿绝对路径 → 调本方法复制。
+   */
+  copyPath: (sourcePath: string): Promise<{ fileName: string; size: number }> =>
+    ipcRenderer.invoke('file:copyPath', { sourcePath }),
 
   /** 读取画布目录下指定文件的文本内容（给文本类文件节点用） */
   readText: (fileName: string): Promise<string> => ipcRenderer.invoke('file:readText', fileName),

@@ -160,6 +160,23 @@ function registerIpcHandlers(): void {
     return readFileSync(targetPath, 'utf-8')
   })
 
+  /**
+   * 把一个**已经在磁盘上存在**的文件（比如拖拽进来的，源路径由 Electron File.path 提供）
+   * 复制到画布目录。和 selectAndCopy 的区别是：不弹对话框，直接按路径 copyFileSync。
+   * 返回复制后的文件名（已处理重名冲突）和大小。
+   */
+  ipcMain.handle('file:copyPath', (_e, args: {
+    sourcePath: string
+  }): { fileName: string; size: number } => {
+    const canvasDir = getCanvasDir()
+    ensureCanvasDir()
+    const targetName = resolveNonCollidingName(canvasDir, basename(args.sourcePath))
+    const targetPath = join(canvasDir, targetName)
+    copyFileSync(args.sourcePath, targetPath)
+    const stat = readFileSync(targetPath)
+    return { fileName: targetName, size: stat.length }
+  })
+
   // 删除画布目录下的文件。用于文件节点清空、重新选择时清理旧副本
   ipcMain.handle('file:delete', (_e, fileName: string): void => {
     const targetPath = join(getCanvasDir(), fileName)

@@ -9,6 +9,8 @@ import NodeShell from './components/NodeShell.vue'
 import ConnectionPreview from './components/ConnectionPreview.vue'
 import Minimap from './components/Minimap.vue'
 import NodePalette from './components/NodePalette.vue'
+import ContextMenu, { type MenuItem } from './components/ContextMenu.vue'
+import type { NodeMenuItem } from '../../main/engine/node/Node'
 import { connectNotice } from '@renderer/canvas/connectionDrag'
 import { IpcStorage } from '@renderer/composables/IpcStorage'
 
@@ -101,6 +103,76 @@ function stopTracking(): void {
   if (!trackingNode.value) return
   trackingNode.value = null
   document.body.style.cursor = ''
+}
+
+// —— 节点右键菜单 ——
+
+/** 菜单根元素 DOM 引用，用函数 ref 在模板里绑定 */
+let menuRoot: HTMLElement | null = null
+const setMenuRoot = (ref: unknown) => {
+  // v-if 切换时 Vue 会先以 null 调用；组件挂载时传入组件实例
+  if (ref === null || ref === undefined) {
+    menuRoot = null
+    return
+  }
+  // ContextMenu 通过 defineExpose 暴露 menuEl
+  const exposed = ref as { menuEl?: HTMLElement | null }
+  menuRoot = exposed.menuEl ?? null
+}
+
+/** 右键菜单状态 */
+const contextMenu = ref<{
+  visible: boolean
+  x: number
+  y: number
+  nodeId: string | null
+}>({ visible: false, x: 0, y: 0, nodeId: null })
+
+/**
+ * 把 Node 声明的菜单项描述符（纯数据）映射成带 action 的菜单项。
+ *
+ * 描述符由 Node.contextMenuItems() 提供——子类 override 它声明自己有哪些操作；
+ * action 执行由 App.vue 统一分发——它持有 Scene 引用（removeNode 需要它），
+ * Node 不该反向依赖 Scene。
+ */
+function buildMenuItems(node: Node): MenuItem[] {
+  const handlers: Record<string, () => void> = {
+    delete: () => workspaceScene.removeNode(node)
+    // —— 新操作的 handler 加在这里 ——
+  }
+
+  return node.contextMenuItems().map((desc: NodeMenuItem) => ({
+    id: desc.id,
+    label: desc.label,
+    danger: desc.danger,
+    action: handlers[desc.id] ?? (() => {
+      console.warn(`[context-menu] 未注册的操作：${desc.id}（节点 ${node.type} 声明了但 App 没处理）`)
+    })
+  }))
+}
+
+/** 节点外壳发来的右键事件 */
+function onNodeContextMenu(nodeId: string, clientX: number, clientY: number): void {
+  contextMenu.value = { visible: true, x: clientX, y: clientY, nodeId }
+}
+
+/** 关闭右键菜单 */
+function closeContextMenu(): void {
+  contextMenu.value.visible = false
+  contextMenu.value.nodeId = null
+}
+
+/**
+ * document 级 mousedown 监听：点击菜单外部时关闭菜单。
+ * 用 mousedown 而不是 click——click 会等 mouseup，而右键的 contextmenu 事件也会在 click 之前触发，
+ * 用 mousedown 可以更早响应、避免竞态。
+ */
+function onDocumentMouseDown(e: MouseEvent): void {
+  if (!contextMenu.value.visible) return
+  // 菜单内部点击不关闭（菜单项自己处理关闭）
+  const target = e.target as unknown as globalThis.Node | null
+  if (target && menuRoot?.contains(target)) return
+  closeContextMenu()
 }
 
 // —— 拖拽空白处平移 ——
@@ -253,12 +325,15 @@ onMounted(() => {
   // 1. 持续缓存鼠标位置（供下次 palette 选择时用）
   // 2. 放置模式下让节点跟随（不要求鼠标按下）
   window.addEventListener('pointermove', onWindowPointerMove)
+  // 全局 mousedown：点击菜单外部时关闭右键菜单
+  document.addEventListener('mousedown', onDocumentMouseDown)
   unsubscribeScene = workspaceScene.onChanged(onSceneChanged)
 })
 
 onUnmounted(() => {
   canvasEl.value?.removeEventListener('wheel', onWheel)
   window.removeEventListener('pointermove', onWindowPointerMove)
+  document.removeEventListener('mousedown', onDocumentMouseDown)
   unsubscribeScene?.()
   document.body.style.cursor = ''
   clearTimeout(viewportPersistTimer)
@@ -301,6 +376,7 @@ onUnmounted(() => {
           :node="node"
           :render="manifestFor(node)?.render"
           :floating="trackingNode?.id === node.id"
+          @contextmenu="onNodeContextMenu"
         />
       </div>
 
@@ -309,6 +385,16 @@ onUnmounted(() => {
 
       <!-- 小地图浮层：全貌预览 + 缩放控件；拖动顶部条可挪动它 -->
       <Minimap />
+
+      <!-- 节点右键菜单：fixed 屏幕坐标，不受世界层平移缩放影响 -->
+      <ContextMenu
+        v-if="contextMenu.visible && contextMenu.nodeId"
+        :ref="setMenuRoot"
+        :x="contextMenu.x"
+        :y="contextMenu.y"
+        :items="buildMenuItems(workspaceScene.getNode(contextMenu.nodeId)!)"
+        @close="closeContextMenu"
+      />
     </div>
   </section>
 </template>

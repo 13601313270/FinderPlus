@@ -2,6 +2,21 @@ import type { InputPort } from '../port/InputPort'
 import type { OutputPort } from '../port/OutputPort'
 
 /**
+ * 节点右键菜单项的纯描述符——只有声明，不含执行逻辑。
+ *
+ * 执行逻辑由渲染层（App.vue）负责：它知道 Scene、知道怎么 removeNode，
+ * 而引擎层的 Node 不该持有这些依赖。
+ */
+export interface NodeMenuItem {
+  /** 操作唯一标识，用来在 App.vue 里分发到对应的执行逻辑 */
+  readonly id: string
+  /** 菜单显示文案 */
+  readonly label: string
+  /** 是否为危险操作（删除等，UI 会高亮成红色） */
+  readonly danger?: boolean
+}
+
+/**
  * 节点基类：一堆端口 + 自己的一套参数，外加「什么时候算」的自主权。
  *
  * - 端口在子类的字段里声明，构造时用 addInput / addOutput 登记给基类。
@@ -99,4 +114,14 @@ export abstract class Node {
    *   但写进去可以让「断开状态下也能看到上次结果」。
    */
   abstract readState(state: Record<string, unknown>): void
+
+  /**
+   * 右键菜单项声明。子类按需要 override，在 super 返回的基础上追加自己的项。
+   *
+   * 默认包含「删除节点」——这是所有节点都有的通用操作，执行逻辑在 App.vue 里统一处理。
+   * 子类如果有专属操作（如 TextInputNode 的「清空内容」），override 时记得保留 super 的结果。
+   */
+  contextMenuItems(): NodeMenuItem[] {
+    return [{ id: 'delete', label: '删除节点', danger: true }]
+  }
 }

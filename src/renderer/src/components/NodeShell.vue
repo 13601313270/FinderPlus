@@ -25,10 +25,22 @@ const props = defineProps<{
   floating?: boolean
 }>()
 
+const emit = defineEmits<{
+  (e: 'contextmenu', nodeId: string, clientX: number, clientY: number): void
+}>()
+
 const { position } = useNodePosition(() => props.node)
 
 // 外壳根元素登记进测量注册表
 const shellEl = nodeElementRef(props.node.id)
+
+/** 右键：阻止浏览器默认菜单，通知父组件弹出节点菜单 */
+function onContextMenu(e: MouseEvent): void {
+  if (props.floating) return // 跟随放置中的节点不触发
+  e.preventDefault()
+  e.stopPropagation()
+  emit('contextmenu', props.node.id, e.clientX, e.clientY)
+}
 </script>
 
 <template>
@@ -37,6 +49,7 @@ const shellEl = nodeElementRef(props.node.id)
     class="node-shell"
     :class="{ 'node-shell--floating': floating }"
     :style="{ left: `${position[0]}px`, top: `${position[1]}px` }"
+    @contextmenu="onContextMenu"
   >
     <div class="ports-col ports-col--left">
       <NodePorts :node-id="node.id" :node="node" side="in" />

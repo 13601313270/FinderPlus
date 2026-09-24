@@ -1,19 +1,24 @@
 import type { InputPort } from '../port/InputPort'
 import type { OutputPort } from '../port/OutputPort'
+import type { Scene } from '../graph/Scene'
 
 /**
- * 节点右键菜单项的纯描述符——只有声明，不含执行逻辑。
+ * 节点右键菜单项描述符。run 必填——所有操作的执行函数都由节点自己声明，
+ * 避免 App.vue 维护一个按 id 分发的 handler Map（节点种类一多就无限膨胀）。
  *
- * 执行逻辑由渲染层（App.vue）负责：它知道 Scene、知道怎么 removeNode，
- * 而引擎层的 Node 不该持有这些依赖。
+ * 通用操作（如 delete）的 run 在基类 contextMenuItems 里给默认实现，
+ * 子类专属操作（如 TextInputNode 的"清空"）直接在自己的 override 里追加，
+ * App.vue 不再需要感知任何具体操作。
  */
 export interface NodeMenuItem {
-  /** 操作唯一标识，用来在 App.vue 里分发到对应的执行逻辑 */
+  /** 操作唯一标识 */
   readonly id: string
   /** 菜单显示文案 */
   readonly label: string
   /** 是否为危险操作（删除等，UI 会高亮成红色） */
   readonly danger?: boolean
+  /** 点击时的执行函数，必填 */
+  readonly run: () => void
 }
 
 /**
@@ -37,6 +42,9 @@ export abstract class Node {
 
   /** 变化订阅者。UI 靠它把引擎里的普通字段同步成 Vue 响应式状态 */
   private readonly listeners = new Set<() => void>()
+
+  /** 所属 Scene 引用，由 Scene.addNode 时注入。右键菜单里的通用操作（如删除）需要它 */
+  private sceneRef?: Scene
 
   constructor(readonly id: string) {}
 
@@ -85,6 +93,14 @@ export abstract class Node {
   }
 
   /**
+   * 绑定所属 Scene，由 Scene.addNode 调用。
+   * 节点自身不应主动调它——节点跟 Scene 的关系是 Scene 主动接管的。
+   */
+  bindScene(scene: Scene): void {
+    this.sceneRef = scene
+  }
+
+  /**
    * 输入端口的通知入口：有新值送来、或连线增删时被端口调用。
    *
    * 基类不给默认实现——收到通知之后做什么、要不要做，各节点差别太大：
@@ -118,10 +134,18 @@ export abstract class Node {
   /**
    * 右键菜单项声明。子类按需要 override，在 super 返回的基础上追加自己的项。
    *
-   * 默认包含「删除节点」——这是所有节点都有的通用操作，执行逻辑在 App.vue 里统一处理。
-   * 子类如果有专属操作（如 TextInputNode 的「清空内容」），override 时记得保留 super 的结果。
+   * 默认包含「删除节点」——run 依赖 bindScene 注入的 sceneRef。
+   * 子类如果有专属操作（如 TextInputNode 的「清空内容」），override 时追加即可，
+   * 不需要改动 App.vue。
    */
   contextMenuItems(): NodeMenuItem[] {
-    return [{ id: 'delete', label: '删除节点', danger: true }]
+    return [
+      {
+        id: 'delete',
+        label: '删除节点',
+        danger: true,
+        run: () => this.sceneRef?.removeNode(this)
+      }
+    ]
   }
 }

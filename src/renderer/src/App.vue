@@ -284,25 +284,16 @@ const contextMenu = ref<{
 }>({ visible: false, x: 0, y: 0, nodeId: null })
 
 /**
- * 把 Node 声明的菜单项描述符（纯数据）映射成带 action 的菜单项。
- *
- * 描述符由 Node.contextMenuItems() 提供——子类 override 它声明自己有哪些操作；
- * action 执行由 App.vue 统一分发——它持有 Scene 引用（removeNode 需要它），
- * Node 不该反向依赖 Scene。
+ * 把 Node 声明的菜单项描述符转成 ContextMenu 需要的 MenuItem。
+ * 现在 NodeMenuItem.run 是必填，直接透传就行——
+ * 所有操作的执行函数都由节点自己提供，App 不再维护 handlers Map。
  */
 function buildMenuItems(node: Node): MenuItem[] {
-  const handlers: Record<string, () => void> = {
-    delete: () => workspaceScene.removeNode(node)
-    // —— 新操作的 handler 加在这里 ——
-  }
-
   return node.contextMenuItems().map((desc: NodeMenuItem) => ({
     id: desc.id,
     label: desc.label,
     danger: desc.danger,
-    action: handlers[desc.id] ?? (() => {
-      console.warn(`[context-menu] 未注册的操作：${desc.id}（节点 ${node.type} 声明了但 App 没处理）`)
-    })
+    action: desc.run
   }))
 }
 

@@ -68,6 +68,7 @@ export class Scene {
     if (this.nodesById.has(node.id)) {
       throw new Error(`[Scene] duplicate node id: ${node.id}`)
     }
+    node.bindScene(this)
     this.nodesById.set(node.id, node)
     this.storage?.saveNode(node)
     this.registerNodePersistence(node)

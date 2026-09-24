@@ -85,10 +85,11 @@ const fileApi = {
 
   /**
    * 启动 OS 级文件拖拽（拖出画布到桌面/系统文件夹）。
-   * 主进程用 webContents.startDrag 让 OS 接管，fire-and-forget 不等待返回。
+   * 返回主进程实际 startDrag 用的 fullPath（或 null）——renderer 用它区分
+   * "自己 startDrag 引发的意外 drop"和"外部拖进来的文件"。
    */
-  startDrag: (fileName: string): void =>
-    ipcRenderer.send('file:startDrag', { fileName }),
+  startDrag: (fileName: string): Promise<string | null> =>
+    ipcRenderer.invoke('file:startDrag', { fileName }),
 
   /** 检查画布目录下文件是否还存在（外部拖拽结束后判断节点要不要删） */
   exists: (fileName: string): Promise<boolean> => ipcRenderer.invoke('file:exists', fileName)

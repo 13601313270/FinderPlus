@@ -194,20 +194,23 @@ function registerIpcHandlers(): void {
    * 启动系统级文件拖拽：渲染进程检测到用户把文件节点拖出窗口边界时调这个，
    * 主进程用 `webContents.startDrag` 让 OS 接管拖拽（拖到桌面/文件夹就是移动/复制）。
    *
-   * 这是 fire-and-forget——startDrag 不阻塞主进程，OS 拖拽结束后不需要我们回信号给 renderer。
-   * renderer 侧用 pointerup + file:exists 判断"拖拽结果"（是移动出去了还是取消了）。
+   * 同步返回实际用到的 fullPath——renderer 需要这个路径来区分"自己 startDrag 引发的
+   * 意外 drop"和"Finder 等外部拖进来的文件"：App.vue 的 onCanvasDrop 会对比
+   * dataTransfer.files 的 path 和这个 fullPath，命中则跳过，避免创建重复节点。
    */
-  ipcMain.on('file:startDrag', async (e, args: { fileName: string }) => {
+  ipcMain.handle('file:startDrag', async (_e, args: { fileName: string }): Promise<string | null> => {
     const fullPath = join(getCanvasDir(), args.fileName)
     if (!existsSync(fullPath)) {
       console.warn(`[file:startDrag] 文件不存在：${fullPath}`)
-      return
+      return null
     }
     try {
       const icon = await app.getFileIcon(fullPath)
-      e.sender.startDrag({ file: fullPath, icon })
+      _e.sender.startDrag({ file: fullPath, icon })
+      return fullPath
     } catch (err) {
       console.warn('[file:startDrag] 启动拖拽失败：', err)
+      return null
     }
   })
 

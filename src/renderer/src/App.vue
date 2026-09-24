@@ -14,6 +14,7 @@ import ContextMenu, { type MenuItem } from './components/ContextMenu.vue'
 import type { NodeMenuItem } from '../../main/engine/node/Node'
 import { connectNotice } from '@renderer/canvas/connectionDrag'
 import { IpcStorage } from '@renderer/composables/IpcStorage'
+import { isSelfDragDrop, clearSelfDragDrop } from '@renderer/composables/useFileDragOut'
 
 // 空白画布：没有预置节点。所有节点都从左上角「＋」调色板添加。
 
@@ -125,6 +126,8 @@ function extractExtension(fileName: string): string {
  *       用 dataTransfer.types 里是否包含 'Files' 来判断"是不是文件拖拽"。
  */
 function onCanvasDragOver(e: DragEvent): void {
+  // 路径匹配才精确过滤——Finder 拖进来和自拖自的 dropEffect 都应该正常显示，
+  // 真正的分流在 onCanvasDrop 里做（那个时候才能拿到文件列表做路径对比）
   if (!e.dataTransfer) return
   const isFileDrag = Array.from(e.dataTransfer.types).includes('Files')
   if (isFileDrag) {
@@ -185,58 +188,75 @@ async function onCanvasDrop(e: DragEvent): Promise<void> {
   const dropSY = e.clientY - canvasRect.top
   const [wx, wy] = screenToWorld(dropSX, dropSY)
 
-  // 只处理第一个能被承接的文件（简化版；后续可扩展多文件批量创建）
-  for (let i = 0; i < files.length; i++) {
-    const file = files[i]
-    const ext = extractExtension(file.name)
-    console.log(`[drop] 文件 ${i}: name="${file.name}" ext="${ext}" size=${file.size} path=`, (() => { try { return window.fileApi.getPathForFile(file) } catch { return '<getterror>' } })())
-    const manifest = resolveByExtension(ext)
-    if (!manifest) {
-      console.warn(`[drop] 无对应节点承接的文件类型：${file.name} (${ext})`)
-      continue
+  try {
+    // 只处理第一个能被承接的文件（简化版；后续可扩展多文件批量创建）
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i]
+      // 路径匹配：这一份是不是我们自己 startDrag 引发的意外 drop？
+      // getPathForFile 是 Electron preload 特权 API，纯浏览器环境没有；
+      // try 包一下以防万一，没拿到路径的文件就当外部文件处理（放行）
+      let filePath = ''
+      try {
+        filePath = window.fileApi.getPathForFile(file)
+      } catch { /* ignore */ }
+      if (filePath && isSelfDragDrop(filePath)) {
+        console.log(`[drop] 跳过自拖自文件（已在路径匹配中命中）：${file.name}`)
+        continue
+      }
+
+      const ext = extractExtension(file.name)
+      console.log(`[drop] 文件 ${i}: name="${file.name}" ext="${ext}" size=${file.size}`)
+      const manifest = resolveByExtension(ext)
+      if (!manifest) {
+        console.warn(`[drop] 无对应节点承接的文件类型：${file.name} (${ext})`)
+        continue
+      }
+      console.log('[drop] 匹配 manifest type =', manifest.type)
+
+      // 通过 preload 特权 API 反查真实磁盘路径（contextIsolation 下 File.path 拿不到）
+      let sourcePath: string
+      try {
+        sourcePath = filePath || window.fileApi.getPathForFile(file)
+      } catch (err) {
+        console.warn(`[drop] 反查路径失败：`, err)
+        continue
+      }
+      if (!sourcePath) {
+        console.warn(`[drop] 无法获取文件 ${file.name} 的系统路径`)
+        continue
+      }
+
+      // 如果已有节点在跟随，先固定它
+      if (trackingNode.value) {
+        trackingNode.value = null
+      }
+
+      const node = new manifest.nodeClass(generateNodeId(manifest.type))
+      node.setPosition(wx, wy)
+
+      try {
+        // 让主进程把文件复制到画布目录（copyFileSync + 重名去重）
+        const copied = await window.fileApi.copyPath(sourcePath)
+        console.log('[drop] 复制成功：', copied)
+        // 用复制后的 fileName（可能加了 _1 后缀）写节点
+        ;(node as FileNode).setFile(copied.fileName, copied.size)
+      } catch (err) {
+        console.warn(`[drop] 文件 ${file.name} 复制失败：`, err)
+        continue
+      }
+
+      workspaceScene.addNode(node)
+      console.log('[drop] 节点已加入 Scene：', node.id)
+
+      // 文件 drop 已经让用户选好了落点——**不进入跟随放置模式**。
+      // 跟随放置只用于「调色板 → 选中类型 → 画布空白处点击固定」那条路径：
+      // 因为调色板选中时鼠标还在节点上，得等用户选落点再固定。
+      // 文件拖进来不一样，drop 的位置本身就是用户想要的位置。
+      break // 只处理第一个文件就够了
     }
-    console.log('[drop] 匹配 manifest type =', manifest.type)
-
-    // 通过 preload 特权 API 反查真实磁盘路径（contextIsolation 下 File.path 拿不到）
-    let sourcePath: string
-    try {
-      sourcePath = window.fileApi.getPathForFile(file)
-    } catch (err) {
-      console.warn(`[drop] 反查路径失败：`, err)
-      continue
-    }
-    if (!sourcePath) {
-      console.warn(`[drop] 无法获取文件 ${file.name} 的系统路径`)
-      continue
-    }
-
-    // 如果已有节点在跟随，先固定它
-    if (trackingNode.value) {
-      trackingNode.value = null
-    }
-
-    const node = new manifest.nodeClass(generateNodeId(manifest.type))
-    node.setPosition(wx, wy)
-
-    try {
-      // 让主进程把文件复制到画布目录（copyFileSync + 重名去重）
-      const copied = await window.fileApi.copyPath(sourcePath)
-      console.log('[drop] 复制成功：', copied)
-      // 用复制后的 fileName（可能加了 _1 后缀）写节点
-      ;(node as FileNode).setFile(copied.fileName, copied.size)
-    } catch (err) {
-      console.warn(`[drop] 文件 ${file.name} 复制失败：`, err)
-      continue
-    }
-
-    workspaceScene.addNode(node)
-    console.log('[drop] 节点已加入 Scene：', node.id)
-
-    // 文件 drop 已经让用户选好了落点——**不进入跟随放置模式**。
-    // 跟随放置只用于「调色板 → 选中类型 → 画布空白处点击固定」那条路径：
-    // 因为调色板选中时鼠标还在节点上，得等用户选落点再固定。
-    // 文件拖进来不一样，drop 的位置本身就是用户想要的位置。
-    break // 只处理第一个文件就够了
+  } finally {
+    // 无论有没有命中自拖自，处理完都清掉缓存。
+    clearSelfDragDrop()
   }
 }
 

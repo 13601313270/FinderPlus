@@ -15,7 +15,7 @@ const fileNode = computed(() => {
 // —— 拖拽：窗口内移动（useNodePosition）+ 拖出外部（useFileDragOut）——
 // 文件类节点独有的"拖出到桌面/文件夹"能力抽成了 useFileDragOut，
 // 10 种文件节点共用同一份实现，这里只传 getter。
-const { dragOutOpts, draggingOut, cleanup: cleanupDragOut } = useFileDragOut(() => fileNode.value)
+const { dragOutOpts, cleanup: cleanupDragOut } = useFileDragOut(() => fileNode.value)
 const { startDrag } = useNodePosition(() => fileNode.value, dragOutOpts)
 
 // —— 文件名 / 文件大小 的 Vue 响应式包装 ——
@@ -105,7 +105,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="file-card" :class="{ 'file-card--dragging-out': draggingOut }">
+  <div class="file-card">
     <!-- 图标区：像系统文件图标一样，上面有个折角小三角 -->
     <div
       class="file-card__icon"
@@ -170,11 +170,6 @@ onMounted(async () => {
   border: 1px solid #d5d9e0;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-
-  &--dragging-out {
-    opacity: 0.5;
-    filter: grayscale(0.5);
-  }
 
   &__icon {
     width: 64px;

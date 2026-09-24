@@ -214,17 +214,33 @@ export function measureNodeBox(id: string, position: readonly [number, number]):
 /**
  * 端口圆点的中心（世界坐标）。圆点还没登记时返回 undefined，由调用方兜底。
  *
- * 外壳是节点的定位元素，圆点则可能嵌在中间的 ports-col 里——所以偏移要沿着
- * offsetParent 链累加，直到 node-shell：
+ * —— 为什么不用 offsetParent 链累加（之前的方案）——
  *
- *   dot.offsetLeft  + ports-col.offsetLeft  + shell.clientLeft = dot 中心的 x 相对壳
- *   dot.offsetTop   + ports-col.offsetTop   + shell.clientTop  = dot 中心的 y 相对壳
+ * 旧方案沿 offsetParent 链累加 offsetLeft/offsetTop + clientLeft/Top，再
+ * 加 node.position 得到世界坐标。但 offsetLeft/Top 都是**整数值**，会丢弃
+ * 浏览器在以下场景产生的 sub-pixel：
  *
- * offsetLeft 是相对 offsetParent 的 padding 边，而节点世界坐标对应外壳的
- * 边框盒左上角，差的正是壳的 clientLeft/clientTop——最外层那一次要补上。
- * 中间层（ports-col 没有边框）clientLeft 是 0，补了也无害，所以统一处理。
+ *   - ports-col 用 space-evenly 均分 port-item，容器高度不能整除时会产生 0.5px
+ *     级的 sub-pixel 分配，offsetTop 把它四舍五入吞掉；
+ *   - port 圆点有负 margin 探出 ports-col 边缘，负 margin 参与 flex 空间分配
+ *     时浏览器同样会产生 sub-pixel，offsetLeft 取整丢失精度。
  *
- * 全部用 offset* 布局值，不受世界层 transform（scale）影响，直接就是世界坐标。
+ * 世界层有 scale 时，0.5px 的世界误差在屏幕上被放大到 0.5 × scale 像素，
+ * 肉眼就能看出"线没正好落在圆点中心"。
+ *
+ * —— 新方案：用真实渲染后的浮点 rect 做比例换算 ——
+ *
+ * 1. 量 dot 和 shell 的 getBoundingClientRect() —— 都是**浮点**屏幕坐标，
+ *    包含世界层 transform 的缩放和平移；
+ * 2. 算出 dot 中心相对 shell 左上角的**屏幕偏移**；
+ * 3. 用 shell 自己的 scale（rect.width / offsetWidth）反算成**世界偏移**——
+ *    offsetWidth 是不受 transform 影响的布局尺寸，rect.width 是经过 transform
+ *    的屏幕尺寸，两者之比就是 world 层当前的 scale；
+ * 4. 世界坐标 = node.position + 世界偏移。
+ *
+ * 全程不读 viewport reactive → Vue computed 不会把 viewport 当依赖，
+ * pan/zoom 时 lines 不会被迫重算，保持原有的高效路径：EdgeLayer 算一次，
+ * 世界层 transform 带着里面的 SVG 一起动。
  */
 export function measurePortCenter(
   nodeId: string,
@@ -239,18 +255,25 @@ export function measurePortCenter(
   const shell = nodeElements.get(nodeId)
   if (!shell) return undefined
 
-  // 沿 offsetParent 链累加到 node-shell
-  let cur: HTMLElement | null = dot
-  let accLeft = dot.offsetWidth / 2
-  let accTop = dot.offsetHeight / 2
-  while (cur && cur !== shell) {
-    accLeft += cur.offsetLeft + cur.clientLeft
-    accTop += cur.offsetTop + cur.clientTop
-    cur = cur.offsetParent as HTMLElement | null
-  }
+  // shell 刚挂载完还没 layout 时 offsetWidth/Height 是 0，除零会产生 NaN/Infinity
+  // 并一路传下去变成坏掉的线。这里 return undefined，让调用方走 card-edge 中点兜底。
+  if (shell.offsetWidth === 0 || shell.offsetHeight === 0) return undefined
+
+  const dotRect = dot.getBoundingClientRect()
+  const shellRect = shell.getBoundingClientRect()
+
+  // 圆点中心相对 shell 左上角的**屏幕**偏移
+  const screenOffsetX = dotRect.left + dotRect.width / 2 - shellRect.left
+  const screenOffsetY = dotRect.top + dotRect.height / 2 - shellRect.top
+
+  // 把屏幕偏移换算成**世界**偏移：
+  //   shellRect.width  = shell.offsetWidth × viewport.scale
+  //   世界偏移 = 屏幕偏移 / scale = 屏幕偏移 × (shell.offsetWidth / shellRect.width)
+  const scaleX = shellRect.width / shell.offsetWidth
+  const scaleY = shellRect.height / shell.offsetHeight
 
   return {
-    x: nodePosition[0] + accLeft,
-    y: nodePosition[1] + accTop
+    x: nodePosition[0] + screenOffsetX / scaleX,
+    y: nodePosition[1] + screenOffsetY / scaleY
   }
 }

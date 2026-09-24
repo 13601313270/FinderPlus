@@ -3,6 +3,7 @@ import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { TxtFileNode } from './node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
+import { useFileDragOut } from '@renderer/composables/useFileDragOut'
 
 const props = defineProps<{ id: string }>()
 
@@ -11,8 +12,11 @@ const fileNode = computed(() => {
   return node instanceof TxtFileNode ? node : undefined
 })
 
-// 拖拽：和其他节点一致
-const { startDrag } = useNodePosition(() => fileNode.value)
+// —— 拖拽：窗口内移动（useNodePosition）+ 拖出外部（useFileDragOut）——
+// 文件类节点独有的"拖出到桌面/文件夹"能力抽成了 useFileDragOut，
+// 10 种文件节点共用同一份实现，这里只传 getter。
+const { dragOutOpts, draggingOut, cleanup: cleanupDragOut } = useFileDragOut(() => fileNode.value)
+const { startDrag } = useNodePosition(() => fileNode.value, dragOutOpts)
 
 // —— 文件名 / 文件大小 的 Vue 响应式包装 ——
 // Node 基类用 onChanged/notifyChanged 广播变化，但 Vue 追踪不了普通 class 字段。
@@ -41,7 +45,10 @@ watch(
   { immediate: true, flush: 'sync' }
 )
 
-onUnmounted(() => unsubscribe?.())
+onUnmounted(() => {
+  unsubscribe?.()
+  cleanupDragOut()
+})
 
 /** 格式化文件大小 */
 function formatSize(bytes: number): string {
@@ -98,9 +105,13 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="file-card">
+  <div class="file-card" :class="{ 'file-card--dragging-out': draggingOut }">
     <!-- 图标区：像系统文件图标一样，上面有个折角小三角 -->
-    <div class="file-card__icon" @pointerdown="startDrag" title="拖动节点">
+    <div
+      class="file-card__icon"
+      @pointerdown="startDrag"
+      :title="fileNode?.fileName ? '拖动节点 · 拖出窗口移动文件' : '拖动节点（未选文件）'"
+    >
       <svg class="file-card__icon-svg" viewBox="0 0 64 72" fill="none" xmlns="http://www.w3.org/2000/svg">
         <!-- 文件主体 -->
         <path
@@ -159,6 +170,11 @@ onMounted(async () => {
   border: 1px solid #d5d9e0;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+
+  &--dragging-out {
+    opacity: 0.5;
+    filter: grayscale(0.5);
+  }
 
   &__icon {
     width: 64px;

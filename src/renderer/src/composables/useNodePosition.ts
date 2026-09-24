@@ -14,6 +14,25 @@ export interface NodeLike {
 }
 
 /**
+ * useNodePosition 的可选配置——启用"拖出窗口 → 交给 OS 级文件拖拽"能力。
+ *
+ * 不传 opts（或 enableDragOut = false）时，行为和原来完全一致：
+ * pointermove 始终 setPosition，直到 pointerup 结束。
+ *
+ * 传了 enableDragOut = true 后，pointermove 会额外检测鼠标是否越出窗口边界
+ * （clientX/Y < 0 或 > innerWidth/innerHeight）。第一次越界时：
+ * - 立刻移除 window 上的 pointermove/pointerup 监听
+ * - 调 opts.onDragOut() 交给调用方处理（典型场景：调主进程 startDrag 启动 OS 文件拖拽）
+ * - 内部 setPosition 不再继续
+ */
+export interface DragOutOpts {
+  /** 是否启用"拖出窗口边界 → 交给外部"能力。非文件节点保持 false（默认） */
+  enableDragOut?: boolean
+  /** 越界时回调，通常由文件类节点调 IPC 启动 OS 级文件拖拽 */
+  onDragOut?: () => void
+}
+
+/**
  * 「位置 + 拖拽」共用逻辑：两个节点视图都要把卡片拖来拖去、并把落点写回
  * node.setPosition。拖拽只认引擎里的 position 为单一真相源——
  * - startDrag 记录起点，pointermove 算出增量后实时 setPosition；
@@ -37,7 +56,20 @@ export interface NodePositionView {
   startDrag(e: PointerEvent): void
 }
 
-export function useNodePosition(getNode: () => NodeLike | undefined): NodePositionView {
+/** 判断 PointerEvent 的 clientX/Y 是否越出浏览器视口边界（窗口外） */
+function isOutOfWindow(e: PointerEvent): boolean {
+  return (
+    e.clientX < 0 ||
+    e.clientY < 0 ||
+    e.clientX > window.innerWidth ||
+    e.clientY > window.innerHeight
+  )
+}
+
+export function useNodePosition(
+  getNode: () => NodeLike | undefined,
+  dragOutOpts?: DragOutOpts
+): NodePositionView {
   const node = computed(() => getNode())
   const position = ref<readonly [number, number]>([0, 0])
 
@@ -67,6 +99,14 @@ export function useNodePosition(getNode: () => NodeLike | undefined): NodePositi
 
   function move(e: PointerEvent): void {
     if (!dragging || !lastNode) return
+
+    // 边界检测：允许外部拖出 + 鼠标越界 → 终止内部拖拽、交给调用方
+    if (dragOutOpts?.enableDragOut && isOutOfWindow(e)) {
+      end() // 先清理 window 监听，防止外部拖拽期间残留
+      dragOutOpts.onDragOut?.()
+      return
+    }
+
     const scale = viewport.scale || 1
     lastNode.setPosition(
       startPos[0] + (e.clientX - startClientX) / scale,

@@ -189,6 +189,32 @@ function registerIpcHandlers(): void {
       }
     }
   })
+
+  /**
+   * 启动系统级文件拖拽：渲染进程检测到用户把文件节点拖出窗口边界时调这个，
+   * 主进程用 `webContents.startDrag` 让 OS 接管拖拽（拖到桌面/文件夹就是移动/复制）。
+   *
+   * 这是 fire-and-forget——startDrag 不阻塞主进程，OS 拖拽结束后不需要我们回信号给 renderer。
+   * renderer 侧用 pointerup + file:exists 判断"拖拽结果"（是移动出去了还是取消了）。
+   */
+  ipcMain.on('file:startDrag', async (e, args: { fileName: string }) => {
+    const fullPath = join(getCanvasDir(), args.fileName)
+    if (!existsSync(fullPath)) {
+      console.warn(`[file:startDrag] 文件不存在：${fullPath}`)
+      return
+    }
+    try {
+      const icon = await app.getFileIcon(fullPath)
+      e.sender.startDrag({ file: fullPath, icon })
+    } catch (err) {
+      console.warn('[file:startDrag] 启动拖拽失败：', err)
+    }
+  })
+
+  /** 检查画布目录下文件是否还存在（用于外部拖拽结束后判断是否要删节点） */
+  ipcMain.handle('file:exists', (_e, fileName: string): boolean => {
+    return existsSync(join(getCanvasDir(), fileName))
+  })
 }
 
 /** 目标目录下已存在同名文件时，返回加数字后缀的不冲突文件名 */

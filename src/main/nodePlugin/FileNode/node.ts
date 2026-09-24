@@ -44,6 +44,11 @@ export abstract class FileNode extends Node {
     return this.fileSizeValue
   }
 
+  /** 是否已选中文件（fileName 非空才算选中）。用于判断是否启用"拖出外部"能力 */
+  get hasFile(): boolean {
+    return this.fileNameValue.length > 0
+  }
+
   /** 写入已选文件状态。render.vue 调完 IPC 后用这个回写节点 */
   setFile(fileName: string, fileSize: number): void {
     if (fileName === this.fileNameValue) return

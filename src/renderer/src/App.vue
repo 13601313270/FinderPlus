@@ -232,8 +232,10 @@ async function onCanvasDrop(e: DragEvent): Promise<void> {
     workspaceScene.addNode(node)
     console.log('[drop] 节点已加入 Scene：', node.id)
 
-    trackingNode.value = node
-    document.body.style.cursor = 'crosshair'
+    // 文件 drop 已经让用户选好了落点——**不进入跟随放置模式**。
+    // 跟随放置只用于「调色板 → 选中类型 → 画布空白处点击固定」那条路径：
+    // 因为调色板选中时鼠标还在节点上，得等用户选落点再固定。
+    // 文件拖进来不一样，drop 的位置本身就是用户想要的位置。
     break // 只处理第一个文件就够了
   }
 }

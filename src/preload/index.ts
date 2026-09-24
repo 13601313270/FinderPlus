@@ -81,7 +81,17 @@ const fileApi = {
   readText: (fileName: string): Promise<string> => ipcRenderer.invoke('file:readText', fileName),
 
   /** 删除画布目录下指定文件（文件节点清空或重新选择时清理旧副本） */
-  delete: (fileName: string): Promise<void> => ipcRenderer.invoke('file:delete', fileName)
+  delete: (fileName: string): Promise<void> => ipcRenderer.invoke('file:delete', fileName),
+
+  /**
+   * 启动 OS 级文件拖拽（拖出画布到桌面/系统文件夹）。
+   * 主进程用 webContents.startDrag 让 OS 接管，fire-and-forget 不等待返回。
+   */
+  startDrag: (fileName: string): void =>
+    ipcRenderer.send('file:startDrag', { fileName }),
+
+  /** 检查画布目录下文件是否还存在（外部拖拽结束后判断节点要不要删） */
+  exists: (fileName: string): Promise<boolean> => ipcRenderer.invoke('file:exists', fileName)
 }
 
 if (process.contextIsolated) {

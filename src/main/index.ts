@@ -2,7 +2,7 @@ import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
 import { join, basename, extname } from 'node:path'
 import { copyFileSync, existsSync, readFileSync, unlinkSync } from 'node:fs'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
-import { openDatabase, closeDatabase, getDatabase } from './db/database'
+import { openDatabase, closeDatabase, getDatabase, persist } from './db/database'
 import { SqliteStorage } from './db/SqliteStorage'
 import { ensureCanvasDir, getCanvasDir } from './paths'
 
@@ -63,7 +63,6 @@ function registerIpcHandlers(): void {
          updated_at = excluded.updated_at`,
       [args.id, args.type, args.posX, args.posY, args.paramsJson, now, now]
     )
-    const { persist } = require('./db/database') as typeof import('./db/database')
     persist()
     return true
   })
@@ -71,7 +70,6 @@ function registerIpcHandlers(): void {
   ipcMain.handle('db:deleteNode', (_e, nodeId: string) => {
     const db = getDatabase()
     db.run('DELETE FROM nodes WHERE id = ?', [nodeId])
-    const { persist } = require('./db/database') as typeof import('./db/database')
     persist()
     return true
   })
@@ -94,7 +92,6 @@ function registerIpcHandlers(): void {
          end_port_id = excluded.end_port_id`,
       [args.id, args.startNodeId, args.startPortId, args.endNodeId, args.endPortId]
     )
-    const { persist } = require('./db/database') as typeof import('./db/database')
     persist()
     return true
   })
@@ -102,7 +99,6 @@ function registerIpcHandlers(): void {
   ipcMain.handle('db:deleteEdge', (_e, edgeId: string) => {
     const db = getDatabase()
     db.run('DELETE FROM edges WHERE id = ?', [edgeId])
-    const { persist } = require('./db/database') as typeof import('./db/database')
     persist()
     return true
   })
@@ -120,7 +116,6 @@ function registerIpcHandlers(): void {
          updated_at = excluded.updated_at`,
       [args.x, args.y, args.scale, now]
     )
-    const { persist } = require('./db/database') as typeof import('./db/database')
     persist()
     return true
   })

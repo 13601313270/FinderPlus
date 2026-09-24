@@ -17,8 +17,8 @@ export interface NodeMenuItem {
   readonly label: string
   /** 是否为危险操作（删除等，UI 会高亮成红色） */
   readonly danger?: boolean
-  /** 点击时的执行函数，必填 */
-  readonly run: () => void
+  /** 点击时的执行函数，必填——同步或异步均可 */
+  readonly run: () => void | Promise<void>
 }
 
 /**
@@ -132,6 +132,19 @@ export abstract class Node {
   abstract readState(state: Record<string, unknown>): void
 
   /**
+   * 删除前钩子，异步。Scene.removeNode 会先 await 它再真正断开边、删记录、落库。
+   * 子类 override 做清理工作——比如 FileNode 需要先删文件系统里的文件，
+   * 或者展示节点需要弹确认框。
+   *
+   * 基类空实现：大部分节点没有异步清理需求，不强制 override。
+   * 这里不做 try/catch，子类抛出的错误会中断删除流程（Scene 会直接冒泡），
+   * 让调用方决定要不要吞。
+   */
+  beforeDestroy(): Promise<void> | void {
+    // 默认什么也不做
+  }
+
+  /**
    * 右键菜单项声明。子类按需要 override，在 super 返回的基础上追加自己的项。
    *
    * 默认包含「删除节点」——run 依赖 bindScene 注入的 sceneRef。
@@ -144,7 +157,10 @@ export abstract class Node {
         id: 'delete',
         label: '删除节点',
         danger: true,
-        run: () => this.sceneRef?.removeNode(this)
+        run: async () => {
+          const scene = this.sceneRef
+          if (scene) await scene.removeNode(this)
+        }
       }
     ]
   }

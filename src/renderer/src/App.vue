@@ -283,6 +283,12 @@ const contextMenu = ref<{
   nodeId: string | null
 }>({ visible: false, x: 0, y: 0, nodeId: null })
 
+/** 菜单指向的节点——如果节点被删除了，这里返回 undefined，模板 v-if 会自动把菜单撤掉 */
+const targetNode = computed<Node | undefined>(() => {
+  const id = contextMenu.value.nodeId
+  return id ? workspaceScene.getNode(id) : undefined
+})
+
 /**
  * 把 Node 声明的菜单项描述符转成 ContextMenu 需要的 MenuItem。
  * 现在 NodeMenuItem.run 是必填，直接透传就行——
@@ -542,11 +548,11 @@ onUnmounted(() => {
 
       <!-- 节点右键菜单：fixed 屏幕坐标，不受世界层平移缩放影响 -->
       <ContextMenu
-        v-if="contextMenu.visible && contextMenu.nodeId"
+        v-if="contextMenu.visible && targetNode"
         :ref="setMenuRoot"
         :x="contextMenu.x"
         :y="contextMenu.y"
-        :items="buildMenuItems(workspaceScene.getNode(contextMenu.nodeId)!)"
+        :items="buildMenuItems(targetNode)"
         @close="closeContextMenu"
       />
     </div>

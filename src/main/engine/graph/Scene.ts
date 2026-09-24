@@ -75,8 +75,10 @@ export class Scene {
     this.notifyChanged()
   }
 
-  removeNode(node: Node): void {
+  async removeNode(node: Node): Promise<void> {
     if (!this.nodesById.has(node.id)) return
+    // 先让节点自己做清理或阻止删除——子类 throw 会直接冒泡中断后续步骤
+    await node.beforeDestroy()
     this.disconnectNodeEdges(node)
     this.nodesById.delete(node.id)
     this.storage?.deleteNode(node.id)

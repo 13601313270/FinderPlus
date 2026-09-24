@@ -76,4 +76,21 @@ export abstract class FileNode extends Node {
     // 只恢复文件名；内容由 render.vue 挂载时发现 fileName 存在后自动读回
     this.fileNameValue = name
   }
+
+  /**
+   * 删除节点前：把画布目录里的文件副本也清掉，不留垃圾。
+   * 空文件不调 IPC，省一次开销。
+   */
+  async beforeDestroy(): Promise<void> {
+    if (this.fileNameValue) {
+      try {
+        // @ts-ignore — tsconfig.node.json 编译本文件时不把 preload 的 Window 扩展带进来，
+        // 但运行时本文件只在 renderer 里执行，window.fileApi 一定存在
+        await window.fileApi.delete(this.fileNameValue)
+      } catch (err) {
+        // 文件可能已被用户手动删了，静默忽略——节点本身还是要删的
+        console.warn('[FileNode] 删除文件失败：', this.fileNameValue, err)
+      }
+    }
+  }
 }

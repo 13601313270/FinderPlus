@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 
-/** 菜单项：id 用于区分点击哪个，label 是显示文案，action 是点击回调 */
+/** 菜单项：id 用于区分点击哪个，label 是显示文案，action 是点击回调（同步或异步均可） */
 export interface MenuItem {
   id: string
   label: string
-  action: () => void
+  action: () => void | Promise<void>
   danger?: boolean
 }
 
@@ -32,9 +32,12 @@ const menuStyle = computed(() => ({
 }))
 
 /** 点击某个菜单项：执行 action → 通知父组件关闭 */
-function onItemClick(item: MenuItem): void {
-  item.action()
-  emit('close')
+async function onItemClick(item: MenuItem): Promise<void> {
+  try {
+    await item.action()
+  } finally {
+    emit('close')
+  }
 }
 </script>
 

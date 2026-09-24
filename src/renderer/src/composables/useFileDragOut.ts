@@ -1,5 +1,4 @@
 import type { DragOutOpts } from './useNodePosition'
-import { workspaceScene } from '../../../main/engine/graph/SceneRegistry'
 
 /**
  * 最近一次 startDrag 主进程返回的 fullPath（如果有的话）。
@@ -81,19 +80,6 @@ export function useFileDragOut(getNode: () => FileDragLike | undefined): FileDra
     function onPointerUp(): void {
       document.removeEventListener('pointerup', onPointerUp)
       cleanupDragOut = undefined
-
-      // OS 可能还在落盘/移动文件，稍微等一下再 exists 判断
-      setTimeout(async () => {
-        const n = getNode()
-        if (!n) return
-        const stillThere = await window.fileApi.exists(n.fileName)
-        if (!stillThere) {
-          // 文件被移动出去了 → 删节点
-          const instance = workspaceScene.getNode(n.id)
-          if (instance) workspaceScene.removeNode(instance)
-        }
-        // 还在：用户取消了拖拽或做的是复制（源文件保留），节点不动
-      }, 300)
     }
 
     document.addEventListener('pointerup', onPointerUp)

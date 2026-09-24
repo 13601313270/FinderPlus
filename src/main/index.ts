@@ -1,8 +1,10 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
-import { join } from 'node:path'
+import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
+import { join, basename, extname } from 'node:path'
+import { copyFileSync, existsSync, readFileSync, unlinkSync } from 'node:fs'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { openDatabase, closeDatabase, getDatabase } from './db/database'
 import { SqliteStorage } from './db/SqliteStorage'
+import { ensureCanvasDir, getCanvasDir } from './paths'
 
 let storage: SqliteStorage | null = null
 
@@ -132,10 +134,69 @@ function registerIpcHandlers(): void {
       viewport: storage.loadViewport()
     }
   })
+
+  // —— 文件操作：给文件节点用 ——
+  // 文件选择 + 复制到画布目录（合并成一步，避免渲染进程知道原始路径）
+  ipcMain.handle('file:selectAndCopy', async (_e, args: {
+    title?: string
+    extensions: string[] // 如 ['.txt']
+  }): Promise<{ fileName: string; size: number } | null> => {
+    const result = await dialog.showOpenDialog({
+      title: args.title ?? '选择文件',
+      properties: ['openFile'],
+      filters: [{ name: '文件', extensions: args.extensions.map((e) => e.replace(/^\./, '')) }]
+    })
+    if (result.canceled || result.filePaths.length === 0) return null
+
+    const sourcePath = result.filePaths[0]
+    const canvasDir = getCanvasDir()
+    ensureCanvasDir()
+    // 文件名冲突处理：已存在则追加 _1, _2, …
+    const targetName = resolveNonCollidingName(canvasDir, basename(sourcePath))
+    const targetPath = join(canvasDir, targetName)
+    copyFileSync(sourcePath, targetPath)
+    const stat = readFileSync(targetPath) // 仅用于取 size
+    return { fileName: targetName, size: stat.length }
+  })
+
+  // 读画布目录下的文本文件内容（给 TxtFileNode 用）
+  ipcMain.handle('file:readText', (_e, fileName: string): string => {
+    const targetPath = join(getCanvasDir(), fileName)
+    return readFileSync(targetPath, 'utf-8')
+  })
+
+  // 删除画布目录下的文件。用于文件节点清空、重新选择时清理旧副本
+  ipcMain.handle('file:delete', (_e, fileName: string): void => {
+    const targetPath = join(getCanvasDir(), fileName)
+    try {
+      unlinkSync(targetPath)
+    } catch (err: unknown) {
+      // 文件不存在或已被外部删除时静默忽略，其他情况打 warn
+      if ((err as NodeJS.ErrnoException)?.code !== 'ENOENT') {
+        console.warn('[file:delete] 删除失败：', fileName, err)
+      }
+    }
+  })
+}
+
+/** 目标目录下已存在同名文件时，返回加数字后缀的不冲突文件名 */
+function resolveNonCollidingName(dir: string, fileName: string): string {
+  if (!existsSync(join(dir, fileName))) return fileName
+  const ext = extname(fileName)
+  const stem = fileName.slice(0, fileName.length - ext.length)
+  let i = 1
+  while (true) {
+    const candidate = `${stem}_${i}${ext}`
+    if (!existsSync(join(dir, candidate))) return candidate
+    i++
+  }
 }
 
 app.whenReady().then(async () => {
   electronApp.setAppUserModelId('com.canvasdesk.app')
+
+  // 画布文件目录：文稿/CanvasDesk/我的画布（不存在则递归创建）
+  ensureCanvasDir()
 
   // 数据库：启动时打开（读磁盘 / 新建 + 建表）
   const db = await openDatabase()

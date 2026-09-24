@@ -17,6 +17,8 @@ export interface InputPortOptions {
   readonly multiple?: boolean
   /** 未接线时可采用的值，是否采用由节点自己决定 */
   readonly defaultValue?: Value
+  /** 端口文本标记，UI 显示用；不填则回退到 id */
+  readonly label?: string
 }
 
 /** 输入端口：节点接收值的入口 */
@@ -52,6 +54,10 @@ export class InputPort {
 
   get defaultValue(): Value | undefined {
     return this.options.defaultValue
+  }
+
+  get label(): string {
+    return this.options.label ?? this.id
   }
 
   /** 多值端口取值：无序集合，只含算出来有值的那些 */

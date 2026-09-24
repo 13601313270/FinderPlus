@@ -13,7 +13,7 @@ export class TxtFileNode extends FileNode {
   readonly type = TxtFileNode.TYPE
 
   /** 文本内容输出 */
-  readonly contentOutput = new OutputPort('content', 'string')
+  readonly contentOutput = new OutputPort('content', 'string', '文本')
 
   /** 当前文本内容；空节点初始化为空串 */
   private contentValue = ''

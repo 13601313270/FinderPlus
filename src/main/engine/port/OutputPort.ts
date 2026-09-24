@@ -24,7 +24,9 @@ export class OutputPort {
   constructor(
     readonly id: string,
     /** 本端口产出的类型，连线校验与端口样式都用它 */
-    readonly kind: ValueKind
+    readonly kind: ValueKind,
+    /** 端口文本标记，UI 显示用；不填则回退到 id */
+    readonly label?: string
   ) { }
 
   get value(): Value | undefined {

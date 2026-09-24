@@ -4,119 +4,150 @@ import {
   portKey,
   type CanvasElementRef,
   type PortLike,
-  type PortSide,
-  type PortsOwnerLike
+  type PortSide
 } from '@renderer/canvas/elements'
 import { connectionDrag, startConnectDrag } from '@renderer/canvas/connectionDrag'
 
 /**
- * 端口圆点：把节点两侧的端口画成小圆圈——左边 InputPort、右边 OutputPort，
- * 有几个端口就画几个（数量、id、类型全部来自 node.ts 的端口声明，不在这里重复维护）。
+ * 某一侧的端口列：圆点 + label，按竖向均分排列。
  *
- * 每个节点都由 NodeShell 包一层，NodeShell 里放一个 <NodePorts>：
- * 它既是给人看的（一眼看出从哪个端口进出），也是给连线层量的（圆点位置就是连线端点）。
+ * NodeShell 是三列 flex（左输入 / 中内容 / 右输出），两侧各放一个 NodePorts——
+ * 所以它只关心「我这侧有哪些端口」，不问节点结构。
  *
- * 位置：绝对定位在外壳上，圆心正好压在外壳的侧边线上（外壳是定位元素，所以这里是它
- * 的绝对定位子元素；**不要**再套一层容器，否则圆点的 offsetParent 变了，测量会偏）。
- * 竖向按端口个数均分：n 个端口时第 i 个落在 (i+1)/(n+1) 的高度上——1 个端口正好居中。
- *
- * 用 fragment 作根（两个 v-for 直接产出圆点），就是为了让圆点保持外壳的直接子元素。
+ * 圆点的 offsetParent 是父层的 .ports-col（NodeShell 提供，position: relative），
+ * 所以注册表量位置时会沿着 offsetParent 链累加到 node-shell，具体见 measurePortCenter。
  */
 const props = defineProps<{
-  /** 节点 id：登记圆点用，也是它在 Scene 里的身份 */
   nodeId: string
-  /** 节点实例。解析不到时（id 对不上 / 已被删）不画端口 */
-  node: PortsOwnerLike | undefined
+  node: {
+    readonly inputPorts: readonly PortLike[]
+    readonly outputPorts: readonly PortLike[]
+  } | undefined
+  side: PortSide
 }>()
 
-// 每个端口一个**稳定**的函数 ref：函数身份要是每次都变，Vue 每次 patch 都会「卸旧装新」，
-// 注册表跟着空转。按「侧 + 端口 id」缓存住，同一个端口每次拿到的都是同一个 ref。
-const refByPort = new Map<string, CanvasElementRef>()
+const ports = () => props.side === 'in' ? (props.node?.inputPorts ?? []) : (props.node?.outputPorts ?? [])
 
-function refFor(side: PortSide, port: PortLike): CanvasElementRef {
-  const key = `${side}:${port.id}`
+// 同一个端口缓存同一个 ref，避免 Vue patch 时空转
+const refByPort = new Map<string, CanvasElementRef>()
+function refFor(port: PortLike): CanvasElementRef {
+  const key = `${props.side}:${port.id}`
   let ref = refByPort.get(key)
   if (!ref) {
-    ref = portElementRef(props.nodeId, side, port)
+    ref = portElementRef(props.nodeId, props.side, port)
     refByPort.set(key, ref)
   }
   return ref
 }
 
-function topOf(index: number, count: number): string {
-  return `${((index + 1) / (count + 1)) * 100}%`
-}
-
 function titleOf(port: PortLike, direction: string): string {
   const kinds = port.accepts ?? (port.kind ? [port.kind] : [])
-  return kinds.length > 0 ? `${direction}端口 ${port.id}（${kinds.join(' / ')}）` : `${direction}端口 ${port.id}`
+  const label = port.label ?? port.id
+  return kinds.length > 0 ? `${direction}端口 ${label}（${kinds.join(' / ')}）` : `${direction}端口 ${label}`
+}
+
+function displayLabel(port: PortLike): string {
+  return port.label ?? port.id
 }
 
 /**
- * 从输出端口圆点按下 -> 开始拉线。连线方向是「输出 -> 输入」，所以只有右侧圆点是拖拽源，
- * 左侧圆点只当落点。端口只报 id，真端口由拖拽模块回场景里取（不掺和 Vue 代理那套身份问题）。
+ * 端口的值类型：
+ * - 输入端口：accepts（可能多个，取第一个作主展示）
+ * - 输出端口：kind（单个）
  */
+function displayKind(port: PortLike): string {
+  if (port.accepts?.length) return port.accepts[0]
+  if (port.kind) return port.kind
+  return ''
+}
+
 function onOutputPointerDown(port: PortLike, event: PointerEvent): void {
   startConnectDrag(props.nodeId, port.id, event)
 }
 
-/** 拖拽中的高亮：源端口、落点（接得上/接不上） */
-function highlightOf(side: PortSide, port: PortLike): string {
+function highlightOf(port: PortLike): string {
   if (!connectionDrag.active) return ''
-
-  const key = portKey(props.nodeId, side, port.id)
+  const key = portKey(props.nodeId, props.side, port.id)
   if (key === connectionDrag.sourceKey) return 'port--source'
   if (key !== connectionDrag.targetKey) return ''
   return connectionDrag.targetOk ? 'port--target' : 'port--invalid'
 }
+
+const isIn = props.side === 'in'
 </script>
 
 <template>
-  <span
-    v-for="(port, index) in node?.inputPorts ?? []"
-    :key="`in:${port.id}`"
-    :ref="refFor('in', port)"
-    class="port port--in"
-    :class="highlightOf('in', port)"
-    :style="{ top: topOf(index, node?.inputPorts.length ?? 1) }"
-    :title="titleOf(port, '输入')"
-  />
-  <!-- 输出端口是连线的起点：按下它开始拉线（连线方向「输出 -> 输入」） -->
-  <span
-    v-for="(port, index) in node?.outputPorts ?? []"
-    :key="`out:${port.id}`"
-    :ref="refFor('out', port)"
-    class="port port--out"
-    :class="highlightOf('out', port)"
-    :style="{ top: topOf(index, node?.outputPorts.length ?? 1) }"
-    :title="titleOf(port, '输出')"
-    @pointerdown="onOutputPointerDown(port, $event)"
-  />
+  <template v-for="port in ports()" :key="port.id">
+    <!--
+      每个端口项占一个 flex item：圆点 + label 水平排列。
+      左列：圆点在右（紧贴 content 那侧），label 在左；
+      右列：圆点在左（紧贴 content 那侧），label 在右。
+      这样圆点探出 ports-col 边缘正好落在 content 侧线上。
+    -->
+    <div class="port-item" :class="{ 'port-item--left': isIn, 'port-item--right': !isIn }">
+      <!-- 左列：label 在圆点左边，文本右对齐（靠近圆点） -->
+      <div v-if="isIn" class="port-label port-label--right-edge">
+        <span class="port-label__main">{{ displayLabel(port) }}</span>
+        <span v-if="displayKind(port)" class="port-label__kind">{{ displayKind(port) }}</span>
+      </div>
+
+      <span
+        :ref="refFor(port)"
+        class="port"
+        :class="[isIn ? 'port--in' : 'port--out', highlightOf(port)]"
+        :title="titleOf(port, isIn ? '输入' : '输出')"
+        @pointerdown="!isIn && onOutputPointerDown(port, $event)"
+      />
+
+      <!-- 右列：label 在圆点右边，文本左对齐（靠近圆点） -->
+      <div v-if="!isIn" class="port-label port-label--left-edge">
+        <span class="port-label__main">{{ displayLabel(port) }}</span>
+        <span v-if="displayKind(port)" class="port-label__kind">{{ displayKind(port) }}</span>
+      </div>
+    </div>
+  </template>
 </template>
 
 <style scoped lang="less">
+.port-item {
+  display: flex;
+  align-items: center;
+  position: relative;
+  // 两行 label + 圆点：11px + 8px + 间距 ≈ 22px，留一点余量
+  min-height: 28px;
+
+  &--left {
+    justify-content: flex-end;
+  }
+
+  &--right {
+    justify-content: flex-start;
+  }
+}
+
 .port {
-  position: absolute;
   box-sizing: border-box;
   width: 12px;
   height: 12px;
-  // 圆心压在卡片的侧边线上：向左/右各探出半个圆点，再用 margin-top 把竖向上提半个
-  margin-top: -6px;
   border: 2px solid @color-primary;
   border-radius: 50%;
   background: @color-surface;
   user-select: none;
-
-  &--in {
-    left: -6px;
-  }
+  flex-shrink: 0;
 
   &--out {
-    right: -6px;
     cursor: crosshair;
   }
 
-  // 拖拽中的三种高亮：起点、可落点、落不上
+  // 从 ports-col 里探出到 content 侧线：圆心正好在 ports-col 边缘
+  &--in {
+    margin-right: -6px;
+  }
+
+  &--out {
+    margin-left: -6px;
+  }
+
   &--source,
   &--target,
   &--invalid {
@@ -131,6 +162,40 @@ function highlightOf(side: PortSide, port: PortLike): string {
   &--invalid {
     border-color: @color-danger;
     box-shadow: 0 0 0 4px rgba(217, 75, 75, 0.2);
+  }
+}
+
+.port-label {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  white-space: nowrap;
+  pointer-events: none;
+
+  &--right-edge {
+    align-items: flex-end; // 左列：文字右对齐，靠圆点那侧
+    text-align: right;
+    margin-right: 4px;
+  }
+
+  &--left-edge {
+    align-items: flex-start; // 右列：文字左对齐，靠圆点那侧
+    text-align: left;
+    margin-left: 4px;
+  }
+
+  &__main {
+    font-size: 11px;
+    line-height: 1.1;
+    color: @color-text-weak;
+  }
+
+  &__kind {
+    font-size: 9px;
+    line-height: 1;
+    color: lighten(@color-text-weak, 25%); // 比主 label 更淡
+    text-transform: lowercase;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   }
 }
 </style>

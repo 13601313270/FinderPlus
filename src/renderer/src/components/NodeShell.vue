@@ -7,27 +7,27 @@ import NodePorts from './NodePorts.vue'
 /**
  * 节点外壳：所有节点在画布上共用的「容器层」。
  *
- * 一个节点 = 外壳 + 内容 + 端口，其中只有「内容」是节点自己定义的（render.vue），
- * 外壳和端口对所有节点都一样，所以收在这里、由 App.vue 统一包一层：
- * - 外壳负责**世界定位**（绝对定位到 node.position，订阅 onChanged 跟着拖拽走）；
- * - 内容组件（render.vue）只管画卡片本体，不再自己绝对定位；
- * - NodePorts 画两侧端口圆点，圆点直接落在外壳里（外壳是它们的 offsetParent）。
+ * 结构是左-中-右三列 flex，井水不犯河水：
+ * ┌──────────┬──────────────┬──────────┐
+ * │ ports-col │  node-content │ ports-col │
+ * │  (in)     │  render.vue   │  (out)    │
+ * └──────────┴──────────────┴──────────┘
  *
- * 这样以后加节点类型，render.vue 只写内容，不再重复「定位、端口」这些通用件。
+ * - node-shell 本身只负责世界定位（position: absolute），
+ *   视觉边框 / 阴影全部由 render.vue 里的 .node 提供。
+ * - 端口列和 content 同高（align-items: stretch），
+ *   端口竖向用 flex space-evenly 自然均分高度，
+ *   圆点用负 margin 探出到 content 侧线（圆心正好对齐外壳边框）。
  */
 const props = defineProps<{
-  /** 节点实例。外壳 / 端口只需要它的通用成员，所以用最小结构接口，不依赖 Node 类 */
   node: NodeLike & PortsOwnerLike
-  /** 该节点的内容组件，App.vue 按 node.type 从注册表取好再传进来 */
   render: Component | undefined
-  /** 是否处于「跟随鼠标放置」状态：true 时穿透指针事件，让点击能落到画布空白处 */
   floating?: boolean
 }>()
 
-// 外壳的世界坐标：跟随 node.position（拖拽时 onChanged 会推着它走）
 const { position } = useNodePosition(() => props.node)
 
-// 把外壳登记进测量注册表：端口圆点以外壳为基准量位置，卡片尺寸也等于外壳尺寸
+// 外壳根元素登记进测量注册表
 const shellEl = nodeElementRef(props.node.id)
 </script>
 
@@ -38,20 +38,49 @@ const shellEl = nodeElementRef(props.node.id)
     :class="{ 'node-shell--floating': floating }"
     :style="{ left: `${position[0]}px`, top: `${position[1]}px` }"
   >
-    <component :is="render" :id="node.id" />
-    <NodePorts :node-id="node.id" :node="node" />
+    <div class="ports-col ports-col--left">
+      <NodePorts :node-id="node.id" :node="node" side="in" />
+    </div>
+    <div class="node-content">
+      <component :is="render" :id="node.id" />
+    </div>
+    <div class="ports-col ports-col--right">
+      <NodePorts :node-id="node.id" :node="node" side="out" />
+    </div>
   </div>
 </template>
 
 <style scoped lang="less">
 .node-shell {
-  // 外壳是定位元素：既是节点在世界坐标里的落点，也是端口圆点的 containing block（offsetParent）
   position: absolute;
+  display: flex;
+  align-items: stretch; // 两侧 ports-col 高度跟随 content
 
   &--floating {
-    // 跟随放置中：穿透指针事件，让点击落到画布空白处触发"固定"逻辑；半透明做视觉提示
     pointer-events: none;
     opacity: 0.75;
   }
+}
+
+.ports-col {
+  position: relative; // 给内部端口项的 absolute 留 containing block（其实现在不用 absolute）
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly; // 端口竖向均分，1 个端口正好居中
+  flex-shrink: 0;
+
+  &--left {
+    // 圆点向右探出 6px（在 NodePorts 里 .port--in { margin-right: -6px }）
+    // 所以 ports-col--left 的右边缘 = content 左边线（圆点圆心正好在这条线上）
+    min-width: 20px; // 留 label 空间（左列 label 在圆点左边，有负 margin 补偿）
+  }
+
+  &--right {
+    min-width: 20px;
+  }
+}
+
+.node-content {
+  flex: 0 0 auto; // 不让 content 被两侧挤扁
 }
 </style>

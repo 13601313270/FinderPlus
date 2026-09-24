@@ -47,6 +47,8 @@ export interface PortLike {
   readonly accepts?: readonly string[]
   /** 输出端口才有：产出的类型 */
   readonly kind?: string
+  /** 端口文本标记，用于在圆点旁显示；不填则回退到 id */
+  readonly label?: string
 }
 
 /** 能提供端口的节点（Node 基类的最小结构子集），NodePorts 用它枚举两侧端口 */
@@ -212,14 +214,17 @@ export function measureNodeBox(id: string, position: readonly [number, number]):
 /**
  * 端口圆点的中心（世界坐标）。圆点还没登记时返回 undefined，由调用方兜底。
  *
- * 圆点相对外壳的偏移 = offsetLeft/Top + 自身一半 + 外壳边框宽（clientLeft/Top）：
- * offsetLeft 是相对 offsetParent 的 **padding 边**算的，而节点世界坐标对应外壳的
- * **边框盒**左上角，差的正是边框宽，补上才对得齐。
- * 前提是圆点的 offsetParent 就是外壳本身 —— NodePorts 不套中间容器，外壳又是定位元素。
+ * 外壳是节点的定位元素，圆点则可能嵌在中间的 ports-col 里——所以偏移要沿着
+ * offsetParent 链累加，直到 node-shell：
  *
- * offsetLeft / offsetTop 取整到像素（端口按百分比分布，落点常带小数），所以结果可能有
- * 半像素以内的误差——端点被 12px 的圆点盖住，看不出来，不值得为此去读 getBoundingClientRect
- * 再把 scale 除回来。
+ *   dot.offsetLeft  + ports-col.offsetLeft  + shell.clientLeft = dot 中心的 x 相对壳
+ *   dot.offsetTop   + ports-col.offsetTop   + shell.clientTop  = dot 中心的 y 相对壳
+ *
+ * offsetLeft 是相对 offsetParent 的 padding 边，而节点世界坐标对应外壳的
+ * 边框盒左上角，差的正是壳的 clientLeft/clientTop——最外层那一次要补上。
+ * 中间层（ports-col 没有边框）clientLeft 是 0，补了也无害，所以统一处理。
+ *
+ * 全部用 offset* 布局值，不受世界层 transform（scale）影响，直接就是世界坐标。
  */
 export function measurePortCenter(
   nodeId: string,
@@ -231,9 +236,21 @@ export function measurePortCenter(
   if (!registered) return undefined
 
   const dot = registered.el
-  const card = nodeElements.get(nodeId)
+  const shell = nodeElements.get(nodeId)
+  if (!shell) return undefined
+
+  // 沿 offsetParent 链累加到 node-shell
+  let cur: HTMLElement | null = dot
+  let accLeft = dot.offsetWidth / 2
+  let accTop = dot.offsetHeight / 2
+  while (cur && cur !== shell) {
+    accLeft += cur.offsetLeft + cur.clientLeft
+    accTop += cur.offsetTop + cur.clientTop
+    cur = cur.offsetParent as HTMLElement | null
+  }
+
   return {
-    x: nodePosition[0] + dot.offsetLeft + dot.offsetWidth / 2 + (card?.clientLeft ?? 0),
-    y: nodePosition[1] + dot.offsetTop + dot.offsetHeight / 2 + (card?.clientTop ?? 0)
+    x: nodePosition[0] + accLeft,
+    y: nodePosition[1] + accTop
   }
 }

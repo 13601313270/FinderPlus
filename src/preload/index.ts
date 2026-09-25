@@ -92,7 +92,14 @@ const fileApi = {
     ipcRenderer.invoke('file:startDrag', { fileName }),
 
   /** 检查画布目录下文件是否还存在（外部拖拽结束后判断节点要不要删） */
-  exists: (fileName: string): Promise<boolean> => ipcRenderer.invoke('file:exists', fileName)
+  exists: (fileName: string): Promise<boolean> => ipcRenderer.invoke('file:exists', fileName),
+
+  /**
+   * 用系统默认应用打开画布目录下的文件。
+   * shell.openPath 的返回值（成功空串 / 失败错误信息）被主进程包装成 { ok, error } 返回。
+   */
+  openInSystem: (fileName: string): Promise<{ ok: boolean; error?: string }> =>
+    ipcRenderer.invoke('file:openInSystem', fileName)
 }
 
 if (process.contextIsolated) {

@@ -214,9 +214,32 @@ function registerIpcHandlers(): void {
     }
   })
 
-  /** 检查画布目录下文件是否还存在（用于外部拖拽结束后判断是否要删节点） */
+  /** 检查画布目录下文件是否还存在（外部拖拽结束后判断节点要不要删） */
   ipcMain.handle('file:exists', (_e, fileName: string): boolean => {
     return existsSync(join(getCanvasDir(), fileName))
+  })
+
+  /**
+   * 用系统默认应用打开画布目录下的文件。
+   * 双击文件节点图标时调用——用户想在 Finder 关联的 App 里编辑/预览文件。
+   *
+   * 返回 { ok } 表示成功；{ ok: false, error } 带失败原因。
+   * shell.openPath 在目标文件不存在或关联应用被卸载时会返回非空错误信息。
+   */
+  ipcMain.handle('file:openInSystem', async (_e, fileName: string): Promise<{ ok: boolean; error?: string }> => {
+    const fullPath = join(getCanvasDir(), fileName)
+    if (!existsSync(fullPath)) {
+      return { ok: false, error: '文件不存在' }
+    }
+    try {
+      const err = await shell.openPath(fullPath)
+      if (err) {
+        return { ok: false, error: err }
+      }
+      return { ok: true }
+    } catch (err) {
+      return { ok: false, error: String(err) }
+    }
   })
 }
 

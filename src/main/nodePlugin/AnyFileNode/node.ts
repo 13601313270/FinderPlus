@@ -1,9 +1,12 @@
+import { FileValue } from '../../engine/data/FileValue'
+import { OutputPort } from '../../engine/port/OutputPort'
 import { FileNode } from '../FileNode/node'
 
 /**
  * 兜底文件节点：承接所有未被具体文件节点（如 TxtFileNode）命中的后缀。
- * 本身不定义任何端口，只做文件"占位 + 管理"用途，
- * 让画板可以作为一个文件管理器使用。
+ *
+ * - fileOutput：FileValue（通用文件类型，kind = 'file'），
+ *   下游接 'file' 类型的节点都能连上
  */
 export class AnyFileNode extends FileNode {
   static readonly TYPE = 'any-file'
@@ -15,7 +18,11 @@ export class AnyFileNode extends FileNode {
 
   readonly type = AnyFileNode.TYPE
 
+  /** 文件输出（FileValue，kind = 'file'） */
+  readonly fileOutput = new OutputPort('file', FileValue, '文件')
+
   constructor(id: string) {
     super(id)
+    this.addOutput(this.fileOutput)
   }
 }

@@ -138,6 +138,12 @@ function registerIpcHandlers(): void {
     return readFileSync(targetPath, 'utf-8')
   })
 
+  // 读画布目录下的任意文件，返回 base64 编码（给通用文件节点用）
+  ipcMain.handle('file:readBinary', (_e, fileName: string): string => {
+    const targetPath = join(getCanvasDir(), fileName)
+    return readFileSync(targetPath, 'base64')
+  })
+
   /**
    * 把一个**已经在磁盘上存在**的文件（比如拖拽进来的，源路径由 Electron File.path 提供）
    * 复制到画布目录。

@@ -70,6 +70,9 @@ const fileApi = {
   /** 读取画布目录下指定文件的文本内容（给文本类文件节点用） */
   readText: (fileName: string): Promise<string> => ipcRenderer.invoke('file:readText', fileName),
 
+  /** 读取画布目录下指定文件的二进制内容，返回 base64 字符串（给通用文件节点用） */
+  readBinary: (fileName: string): Promise<string> => ipcRenderer.invoke('file:readBinary', fileName),
+
   /** 删除画布目录下指定文件（文件节点清空或重新选择时清理旧副本） */
   delete: (fileName: string): Promise<void> => ipcRenderer.invoke('file:delete', fileName),
 

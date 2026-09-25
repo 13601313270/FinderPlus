@@ -1,18 +1,21 @@
 import { FileValue } from '../../engine/data/FileValue'
-import { TxtFileValue } from '../../engine/data/TxtFileValue'
 import { InputPort } from '../../engine/port/InputPort'
 import { Node } from '../../engine/node/Node'
 
 /**
  * 文件信息展示节点：把上游送来的 FileValue 的元信息（name / size / type）显示出来。
  * 没有输出端口——它的产出就是「展示」这件事本身，UI 直接读字段。
+ *
+ * 输入端口 accepts 只列 FileValue，因为 FileValue 本身就能接住所有子类
+ * （canBindEdge 用 prototype instanceof 检查，TxtFileValue 是 FileValue 子类，
+ * 能被 [FileValue] 接受，无需重复声明）。
  */
 export class FileInfoNode extends Node {
   static readonly TYPE = 'file-info'
   readonly type = FileInfoNode.TYPE
 
-  /** 输入端口：接受通用文件 + TXT 专用文件 */
-  readonly fileInput = new InputPort('file', { accepts: [FileValue, TxtFileValue], label: '文件' })
+  /** 输入端口：接受 FileValue 及其所有子类（如 TxtFileValue） */
+  readonly fileInput = new InputPort('file', { accepts: [FileValue], label: '文件' })
 
   private fileName = ''
   private fileSize = 0

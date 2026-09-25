@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed, ref, watch, onUnmounted } from 'vue'
+import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
+import { FileValue } from '../../engine/data/FileValue'
 import { AnyFileNode } from './node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
 import { useFileDragOut } from '@renderer/composables/useFileDragOut'
@@ -47,6 +48,63 @@ watch(
 onUnmounted(() => {
   unsubscribe?.()
   cleanupDragOut()
+})
+
+/** base64 → Uint8Array（显式用 ArrayBuffer 构造，规避新版 TS 的 ArrayBufferLike 泛型差异） */
+function base64ToBytes(base64: string): Uint8Array {
+  const binary = atob(base64)
+  const len = binary.length
+  const bytes = new Uint8Array(new ArrayBuffer(len))
+  for (let i = 0; i < len; i++) bytes[i] = binary.charCodeAt(i)
+  return bytes
+}
+
+/** 计算 SHA-256 hex 摘要（用 Web Crypto API） */
+async function sha256Hex(bytes: Uint8Array): Promise<string> {
+  // 新版 TS 的 Uint8Array 泛型与旧 DOM BufferSource 定义不兼容，强转
+  const buf = await crypto.subtle.digest('SHA-256', bytes as unknown as BufferSource)
+  return Array.from(new Uint8Array(buf))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('')
+}
+
+/** 文件后缀 → 推测 MIME（无后缀返回空串，File 构造时可省略） */
+function guessMime(name: string): string {
+  const map: Record<string, string> = {
+    '.pdf': 'application/pdf', '.zip': 'application/zip',
+    '.json': 'application/json', '.xml': 'application/xml',
+    '.html': 'text/html', '.htm': 'text/html',
+    '.css': 'text/css', '.md': 'text/markdown',
+    '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg',
+    '.gif': 'image/gif', '.svg': 'image/svg+xml', '.webp': 'image/webp',
+    '.mp3': 'audio/mpeg', '.wav': 'audio/wav',
+    '.mp4': 'video/mp4', '.mov': 'video/quicktime',
+    '.txt': 'text/plain', '.csv': 'text/csv',
+  }
+  const lastDot = name.lastIndexOf('.')
+  if (lastDot < 0) return ''
+  return map[name.slice(lastDot).toLowerCase()] ?? ''
+}
+
+/** 读取文件字节、构造 FileValue 并 commit 到 fileOutput */
+async function commitFileValue(node: AnyFileNode): Promise<void> {
+  try {
+    const base64 = await window.fileApi.readBinary(node.fileName)
+    const bytes = base64ToBytes(base64)
+    const hash = await sha256Hex(bytes)
+    const mime = guessMime(node.fileName)
+    // 新版 TS 的 Uint8Array 泛型与旧 DOM BlobPart 定义不兼容，强转
+    const file = new File([bytes as unknown as BlobPart], node.fileName, mime ? { type: mime } : undefined)
+    node.fileOutput.commit(new FileValue(file, hash))
+  } catch { /* 文件可能已被用户删了，静默忽略 */ }
+}
+
+// 挂载时：如果已有 fileName（拖拽进来的 / 持久化恢复的），读内容 commit FileValue
+onMounted(async () => {
+  const node = fileNode.value
+  if (node?.fileName) {
+    await commitFileValue(node)
+  }
 })
 
 /** 格式化文件大小 */

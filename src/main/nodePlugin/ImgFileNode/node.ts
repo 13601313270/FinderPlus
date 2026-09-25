@@ -42,6 +42,11 @@ export class ImgFileNode extends FileNode {
   /** 卡片宽度（世界像素）。高度由 render.vue 按 width × 图片比例推出来，引擎只存宽度 */
   private previewWidthValue = DEFAULT_PREVIEW_WIDTH
 
+  /** 图片天然宽度（像素）。render.vue 的 img load 时回写；0 表示尚未加载 */
+  private naturalWidthValue = 0
+  /** 图片天然高度（像素）。render.vue 的 img load 时回写；0 表示尚未加载 */
+  private naturalHeightValue = 0
+
   constructor(id: string) {
     super(id)
     this.addOutput(this.fileOutput)
@@ -80,6 +85,49 @@ export class ImgFileNode extends FileNode {
     const hash = djb2(base64)
     this.fileOutput.commit(new ImgFileValue(file, hash))
     this.notifyChanged()
+  }
+
+  /** 当前图片天然宽度（像素）；0 表示尚未加载 */
+  get naturalWidth(): number {
+    return this.naturalWidthValue
+  }
+
+  /** 当前图片天然高度（像素）；0 表示尚未加载 */
+  get naturalHeight(): number {
+    return this.naturalHeightValue
+  }
+
+  /**
+   * 写入图片天然宽高，由 render.vue 的 img load 事件触发。
+   * 只存不 commit——宽高是展示层的辅助信息，不影响下游数据流转。
+   */
+  setNaturalSize(width: number, height: number): void {
+    if (width === this.naturalWidthValue && height === this.naturalHeightValue) return
+    this.naturalWidthValue = width
+    this.naturalHeightValue = height
+  }
+
+  /**
+   * 图片类型（MIME），从文件名后缀推断。render.vue 展示用。
+   */
+  get imageType(): string {
+    return this.fileName ? inferImageMime(this.fileName) : ''
+  }
+
+  /**
+   * 展示用格式名（JPEG / PNG / GIF / WebP / BMP），从 MIME 转。未知 MIME 兜底返回原 MIME。
+   */
+  get displayFormat(): string {
+    const mime = this.imageType
+    if (!mime) return ''
+    const map: Record<string, string> = {
+      'image/jpeg': 'JPEG',
+      'image/png': 'PNG',
+      'image/gif': 'GIF',
+      'image/webp': 'WebP',
+      'image/bmp': 'BMP'
+    }
+    return map[mime] ?? mime
   }
 
   saveState(): Record<string, unknown> {

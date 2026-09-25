@@ -102,6 +102,8 @@ function onImgLoad(e: Event): void {
   const img = e.target as HTMLImageElement
   if (img.naturalWidth && img.naturalHeight) {
     aspectRatio.value = img.naturalWidth / img.naturalHeight
+    // 把天然宽高回写到节点，供右键菜单的"信息"弹窗展示
+    fileNode.value?.setNaturalSize(img.naturalWidth, img.naturalHeight)
   }
 }
 
@@ -177,7 +179,7 @@ onUnmounted(() => {
       </svg>
     </div>
 
-    <!-- 文件名 -->
+    <!-- 文件名 + 格式/像素 -->
     <div class="file-card__name-row">
       <span v-if="fileName" class="file-card__name" :title="fileName">
         {{ fileName }}
@@ -185,6 +187,16 @@ onUnmounted(() => {
       <span v-else class="file-card__name file-card__name--empty">未选择文件</span>
       <span v-if="fileSize" class="file-card__size">
         {{ formatSize(fileSize) }}
+      </span>
+      <!-- 格式 + 原始像素：文件名下方一行，弱色 -->
+      <span
+        v-if="fileName && fileNode?.displayFormat"
+        class="file-card__meta"
+      >
+        {{ fileNode.displayFormat }}
+        <template v-if="fileNode.naturalWidth && fileNode.naturalHeight">
+          · {{ fileNode.naturalWidth }}×{{ fileNode.naturalHeight }}px
+        </template>
       </span>
     </div>
 
@@ -271,6 +283,12 @@ onUnmounted(() => {
     display: block;
     color: @color-text-weak;
     font-size: 11px;
+  }
+
+  &__meta {
+    display: block;
+    color: #9aa1ad;
+    font-size: 10px;
   }
 
   &__resize-handle {

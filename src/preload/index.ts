@@ -92,7 +92,20 @@ const fileApi = {
    * shell.openPath 的返回值（成功空串 / 失败错误信息）被主进程包装成 { ok, error } 返回。
    */
   openInSystem: (fileName: string): Promise<{ ok: boolean; error?: string }> =>
-    ipcRenderer.invoke('file:openInSystem', fileName)
+    ipcRenderer.invoke('file:openInSystem', fileName),
+
+  /**
+   * 监听画布目录下文件变化。
+   * 主进程 fs.watch 监听到变化后 debounce 300ms 推送 fileName（相对画布目录的短名，如 'a.txt'），
+   * renderer 里的文件节点用这个事件触发重读 + commit 输出端口。
+   *
+   * 返回取消订阅函数。
+   */
+  onChanged: (callback: (fileName: string) => void): (() => void) => {
+    const handler = (_e: Electron.IpcRendererEvent, fileName: string) => callback(fileName)
+    ipcRenderer.on('file:changed', handler)
+    return () => ipcRenderer.removeListener('file:changed', handler)
+  }
 }
 
 if (process.contextIsolated) {

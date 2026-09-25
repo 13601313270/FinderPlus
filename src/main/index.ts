@@ -1,12 +1,60 @@
 import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join, basename, extname } from 'node:path'
-import { copyFileSync, existsSync, readFileSync, unlinkSync } from 'node:fs'
+import { copyFileSync, existsSync, readFileSync, unlinkSync, watch } from 'node:fs'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { openDatabase, closeDatabase, getDatabase, persist } from './db/database'
 import { SqliteStorage } from './db/SqliteStorage'
 import { ensureCanvasDir, getCanvasDir } from './paths'
 
 let storage: SqliteStorage | null = null
+let canvasWatcher: ReturnType<typeof watch> | null = null
+
+/**
+ * 启动画布目录文件监听。
+ * 监听整个画布目录（文稿/CanvasDesk/我的画布），任何文件变化（修改/新增/删除）
+ * 都会 debounce 300ms 后通过 webContents.send('file:changed', fileName) 推送给 renderer，
+ * 让 TxtFileNode / ImgFileNode 等文件节点重新读取并 commit 输出端口。
+ *
+ * fs.watch 在不同平台有差异：
+ * - macOS 默认只给 change 事件（目录级），文件名要从 filename 参数拿
+ * - 某些编辑器原子保存（写临时文件 + rename）会连续触发多次，debounce 搞定
+ *
+ * 只启动一个 watcher（整个进程一个画布目录），跟随 BrowserWindow 生命周期——
+ * 窗口全关就停掉 watcher，避免进程后台挂着监听。
+ */
+function startCanvasWatcher(): void {
+  if (canvasWatcher) return
+  canvasWatcher = watch(getCanvasDir(), { encoding: 'utf-8' }, (_event, fileName) => {
+    if (!fileName) return
+    debouncePushChange(fileName)
+  })
+  console.log('[main] 画布目录文件监听已启动：', getCanvasDir())
+}
+
+/** 防止短时间内对同一个文件重复推送（编辑器保存连发事件） */
+const pendingPushes = new Map<string, NodeJS.Timeout>()
+function debouncePushChange(fileName: string): void {
+  const existing = pendingPushes.get(fileName)
+  if (existing) clearTimeout(existing)
+  const timer = setTimeout(() => {
+    pendingPushes.delete(fileName)
+    // 推送给所有窗口（目前只有一个，但多窗口扩展时自然生效）
+    for (const win of BrowserWindow.getAllWindows()) {
+      win.webContents.send('file:changed', fileName)
+    }
+  }, 300)
+  pendingPushes.set(fileName, timer)
+}
+
+function stopCanvasWatcher(): void {
+  if (canvasWatcher) {
+    canvasWatcher.close()
+    canvasWatcher = null
+    pendingPushes.forEach(t => clearTimeout(t))
+    pendingPushes.clear()
+    console.log('[main] 画布目录文件监听已停止')
+  }
+}
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -257,6 +305,7 @@ app.whenReady().then(async () => {
   })
 
   createWindow()
+  startCanvasWatcher()
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
@@ -264,11 +313,13 @@ app.whenReady().then(async () => {
 })
 
 app.on('window-all-closed', () => {
+  stopCanvasWatcher()
   if (process.platform !== 'darwin') {
     app.quit()
   }
 })
 
 app.on('before-quit', () => {
+  stopCanvasWatcher()
   closeDatabase()
 })

@@ -30,6 +30,7 @@ const fileName = ref('')
 const fileSize = ref(0)
 
 let unsubscribe: (() => void) | undefined
+let unsubscribeFile: (() => void) | undefined
 watch(
   fileNode,
   (n) => {
@@ -52,6 +53,7 @@ watch(
 onUnmounted(() => {
   unsubscribe?.()
   cleanupDragOut()
+  unsubscribeFile?.()
 })
 
 /** 格式化文件大小 */
@@ -62,6 +64,7 @@ function formatSize(bytes: number): string {
 }
 
 // 挂载时：如果有 fileName 但没内容，自动读一次兜底
+// 同时订阅画布目录文件变化，外部编辑器改了文件 → 自动重读 + commit 下游
 onMounted(async () => {
   const node = fileNode.value
   if (!node) return
@@ -71,6 +74,17 @@ onMounted(async () => {
       node.setContent(text)
     } catch { /* 文件可能已被用户删了，静默忽略 */ }
   }
+
+  // 订阅文件变化：fileName 匹配时重读 + setContent
+  // setContent 内部会自动 commit contentOutput 和 fileOutput → 下游自动收到
+  unsubscribeFile = window.fileApi.onChanged(async (changedName) => {
+    const current = fileNode.value
+    if (!current || current.fileName !== changedName) return
+    try {
+      const text = await window.fileApi.readText(changedName)
+      current.setContent(text)
+    } catch { /* 文件被删/读不到，静默忽略 */ }
+  })
 })
 </script>
 

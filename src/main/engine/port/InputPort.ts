@@ -3,8 +3,8 @@ import type { Edge } from '../graph/Edge'
 import type { Node } from '../node/Node'
 import { OutputPort } from './OutputPort'
 
-/** 任何带 KIND 静态属性的 Value 子类 */
-type ValueClass = { readonly KIND: ValueKind; prototype: Value; new (...args: any[]): Value }
+/** 任何带 VALUE_NAME 静态属性的 Value 子类 */
+type ValueClass = { readonly VALUE_NAME: ValueKind; prototype: Value; new (...args: any[]): Value }
 
 export type InputPortBindRejectReason = 'kind-not-allowed' | 'single-port-occupied'
 
@@ -43,9 +43,9 @@ export class InputPort {
     private readonly options: InputPortOptions
   ) { }
 
-  /** 接受的类型标签列表（从 Value 子类的静态 KIND 提取，供 UI 展示） */
-  get accepts(): readonly string[] {
-    return this.options.accepts.map(cls => cls.KIND)
+  /** 接受的类型标签名列表（从 Value 子类的静态 VALUE_NAME 提取，供 UI 展示） */
+  get acceptValueNames(): readonly string[] {
+    return this.options.accepts.map(cls => cls.VALUE_NAME)
   }
 
   get required(): boolean {

@@ -43,10 +43,10 @@ export interface NodeBox {
  */
 export interface PortLike {
   readonly id: string
-  /** 输入端口才有：允许接入的类型 */
-  readonly accepts?: readonly string[]
-  /** 输出端口才有：产出的类型 */
-  readonly kind?: string
+  /** 输入端口才有：允许接入的 Value 类型标签名 */
+  readonly acceptValueNames?: readonly string[]
+  /** 输出端口才有：产出的 Value 类型标签名 */
+  readonly outputValueName?: string
   /** 端口文本标记，用于在圆点旁显示；不填则回退到 id */
   readonly label?: string
 }

@@ -41,7 +41,7 @@ function refFor(port: PortLike): CanvasElementRef {
 }
 
 function titleOf(port: PortLike, direction: string): string {
-  const kinds = port.accepts ?? (port.kind ? [port.kind] : [])
+  const kinds = port.acceptValueNames ?? (port.outputValueName ? [port.outputValueName] : [])
   const label = port.label ?? port.id
   return kinds.length > 0 ? `${direction}端口 ${label}（${kinds.join(' / ')}）` : `${direction}端口 ${label}`
 }
@@ -52,12 +52,12 @@ function displayLabel(port: PortLike): string {
 
 /**
  * 端口的值类型：
- * - 输入端口：accepts（可能多个，取第一个作主展示）
- * - 输出端口：kind（单个）
+ * - 输入端口：acceptValueNames（可能多个，取第一个作主展示）
+ * - 输出端口：outputValueName（单个）
  */
 function displayKind(port: PortLike): string {
-  if (port.accepts?.length) return port.accepts[0]
-  if (port.kind) return port.kind
+  if (port.acceptValueNames?.length) return port.acceptValueNames[0]
+  if (port.outputValueName) return port.outputValueName
   return ''
 }
 

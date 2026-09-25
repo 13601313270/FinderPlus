@@ -16,10 +16,10 @@ export type ValueKind = string
 
 export abstract class Value {
   /**
-   * 类级别的类型标签：端口构造时直接从 Value 子类取 KIND，
+   * 类级别的 Value 类型标签名：端口构造时直接从子类取 VALUE_NAME，
    * 不再手写字符串，编译期类型安全。
    */
-  static readonly KIND: ValueKind = ''
+  static readonly VALUE_NAME: ValueKind = ''
 
   /**
    * 内容指纹：构造时算好的不可变字段，内容相同则指纹相同。

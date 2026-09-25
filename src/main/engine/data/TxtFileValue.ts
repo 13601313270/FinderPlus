@@ -9,5 +9,5 @@ import type { ValueKind } from './Value'
  * 而不是宽泛的 accepts: [FileValue] 来者不拒。
  */
 export class TxtFileValue extends FileValue {
-  static override readonly KIND: ValueKind = 'txt-file'
+  static override readonly VALUE_NAME: ValueKind = 'txt-file'
 }

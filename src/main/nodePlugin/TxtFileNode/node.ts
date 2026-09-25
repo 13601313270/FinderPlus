@@ -10,7 +10,10 @@ import { FileNode } from '../FileNode/node'
  */
 export class TxtFileNode extends FileNode {
   static readonly TYPE = 'txt-file'
-  static override readonly EXTENSIONS = ['.txt']
+
+  static override acceptsExtension(ext: string): boolean {
+    return ext === '.txt'
+  }
 
   readonly type = TxtFileNode.TYPE
 

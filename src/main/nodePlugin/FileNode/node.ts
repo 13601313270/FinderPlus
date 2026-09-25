@@ -5,8 +5,11 @@ import { Node } from '../../engine/node/Node'
  *
  * 子类需要自己声明：
  * - type（节点类型标识，如 'txt-file'）
- * - static EXTENSIONS: readonly string[]（如 ['.txt']）—— 声明本节点类承接哪些文件后缀，
- *   用于拖拽分发：App.vue 根据拖入文件的后缀，反查哪个 FileNode 子类来承接。
+ * - static acceptsExtension(ext): boolean —— 判断本节点类是否承接给定后缀。
+ *   后缀已经过 resolveByExtension 归一化（小写、以点开头，如 '.txt'），
+ *   子类直接按自己的规则返回 true/false 即可。
+ * - static isFallback?: boolean —— 兜底节点设为 true。resolveByExtension
+ *   先走一遍非兜底节点，没命中再走兜底，确保具体节点优先。
  * - 输出端口形状（不同文件类型输出不同 Value：txt 输出 StringValue，
  *   图片输出 FileValue 等，基类不定义端口）
  * - 子类自己的值 commit 逻辑（放 render.vue 或子类自身的业务方法里，
@@ -18,8 +21,13 @@ import { Node } from '../../engine/node/Node'
  * 由 render.vue 在 setFile 之后串联调用。
  */
 export abstract class FileNode extends Node {
-  /** 本节点类承接的文件后缀列表（子类必须覆盖为非空数组） */
-  static readonly EXTENSIONS: readonly string[] = []
+  /** 是否为兜底节点（兜底节点在 resolveByExtension 里排第二轮） */
+  static isFallback: boolean = false
+
+  /** 判断是否承接给定后缀。子类 override 实现自己的匹配逻辑；默认 false 不接任何 */
+  static acceptsExtension(_ext: string): boolean {
+    return false
+  }
 
   /** 当前已选文件名（相对于画布目录）；空串表示未选 */
   protected fileNameValue = ''

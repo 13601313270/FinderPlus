@@ -34,11 +34,13 @@ export function manifestFor(node: Node): NodePluginManifest | undefined {
 /**
  * 根据文件后缀反查承接该后缀的 FileNode 子类 manifest。
  *
- * 用于拖拽分发：App.vue 拖入文件后，拿到后缀（如 '.txt'），
+ * 用于拖拽分发：App.vue 拖入文件后，拿到后缀（如 'txt'），
  * 用这个函数找到 TxtFileNode 的 manifest，然后构造节点、走跟随/放置流程。
  *
  * 匹配逻辑：大小写不敏感；后缀带不带点都能识别（传 'txt' 或 '.txt' 都行）。
- * 多个子类承接同一后缀时，返回注册表中最先声明的那个。
+ * 遍历分两轮：先扫非兜底节点，没命中再扫兜底节点（isFallback=true），
+ * 确保具体节点优先于兜底。同一轮内多个子类同时返回 true 时，
+ * 返回注册表中最先声明的那个。
  */
 export function resolveByExtension(ext: string): NodePluginManifest | undefined {
   // 归一化：小写 + 确保以点开头
@@ -47,10 +49,22 @@ export function resolveByExtension(ext: string): NodePluginManifest | undefined 
   for (const manifest of nodeManifests) {
     const cls = manifest.nodeClass
     if (!(cls.prototype instanceof FileNode)) continue
-    const extensions = (cls as unknown as typeof FileNode).EXTENSIONS
-    if (extensions.some((e) => e.toLowerCase() === normalized)) {
+    const fileCls = cls as unknown as typeof FileNode
+    if (fileCls.isFallback) continue
+    if (fileCls.acceptsExtension(normalized)) {
       return manifest
     }
   }
+
+  for (const manifest of nodeManifests) {
+    const cls = manifest.nodeClass
+    if (!(cls.prototype instanceof FileNode)) continue
+    const fileCls = cls as unknown as typeof FileNode
+    if (!fileCls.isFallback) continue
+    if (fileCls.acceptsExtension(normalized)) {
+      return manifest
+    }
+  }
+
   return undefined
 }

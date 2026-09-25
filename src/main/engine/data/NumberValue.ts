@@ -11,7 +11,4 @@ export class NumberValue extends Value {
     this.fingerprint = `number:${value}`
   }
 
-  toJSON(): { kind: 'number'; value: number } {
-    return { kind: 'number', value: this.value }
-  }
 }

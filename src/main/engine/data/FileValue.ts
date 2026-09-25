@@ -25,8 +25,4 @@ export class FileValue extends Value {
     this.fingerprint = `file:${contentHash}`
   }
 
-  /** 纯数据形式：File 本身不可 JSON 化，这里只给出元信息 */
-  toJSON(): { kind: 'file'; name: string; type: string; size: number } {
-    return { kind: 'file', name: this.file.name, type: this.file.type, size: this.file.size }
-  }
 }

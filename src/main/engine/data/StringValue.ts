@@ -11,7 +11,4 @@ export class StringValue extends Value {
     this.fingerprint = `string:${value}`
   }
 
-  toJSON(): { kind: 'string'; value: string } {
-    return { kind: 'string', value: this.value }
-  }
 }

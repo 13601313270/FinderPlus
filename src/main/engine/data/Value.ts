@@ -27,12 +27,6 @@ export abstract class Value {
    */
   abstract readonly fingerprint: string
 
-  /**
-   * 纯数据形式（只含句柄，不含字节）。
-   * 用于 IPC 传给渲染进程、写日志、调试快照。
-   */
-  abstract toJSON(): { kind: ValueKind }
-
   /** 值相等 = 类型相同且指纹相同 */
   equals(other: Value | null | undefined): boolean {
     return other != null && other.kind === this.kind && other.fingerprint === this.fingerprint

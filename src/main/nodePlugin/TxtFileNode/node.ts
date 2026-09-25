@@ -1,19 +1,8 @@
+import { djb2 } from '../../engine/data/hash'
 import { TxtFileValue } from '../../engine/data/TxtFileValue'
 import { StringValue } from '../../engine/data/StringValue'
 import { OutputPort } from '../../engine/port/OutputPort'
 import { FileNode } from '../FileNode/node'
-
-/**
- * djb2 字符串 hash：32 位，同步、无依赖。
- * 只用于变更检测，不是安全 hash，碰撞概率够用。
- */
-function djb2(str: string): string {
-  let hash = 5381
-  for (let i = 0; i < str.length; i++) {
-    hash = ((hash << 5) + hash + str.charCodeAt(i)) | 0
-  }
-  return (hash >>> 0).toString(16)
-}
 
 /**
  * TXT 文件节点：选中 .txt 文件后由渲染端读取内容，节点负责持有内容并从两个输出端口送出。

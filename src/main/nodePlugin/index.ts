@@ -5,6 +5,7 @@ import { manifest as textInputManifest } from './TextInputNode'
 import { manifest as textDisplayManifest } from './TextDisplayNode'
 import { manifest as numberInputManifest } from './NumberInputNode'
 import { manifest as txtFileManifest } from './TxtFileNode'
+import { manifest as imgFileManifest } from './ImgFileNode'
 import { manifest as anyFileManifest } from './AnyFileNode'
 import { manifest as fileInfoManifest } from './FileInfoNode'
 
@@ -26,7 +27,8 @@ const functionalManifests: NodePluginManifest[] = [
 ]
 
 const fileManifests: NodePluginManifest[] = [
-  txtFileManifest
+  txtFileManifest,
+  imgFileManifest
 ]
 
 const fallbackManifests: NodePluginManifest[] = [

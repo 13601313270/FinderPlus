@@ -5,18 +5,36 @@ import { manifest as textInputManifest } from './TextInputNode'
 import { manifest as textDisplayManifest } from './TextDisplayNode'
 import { manifest as numberInputManifest } from './NumberInputNode'
 import { manifest as txtFileManifest } from './TxtFileNode'
+import { manifest as anyFileManifest } from './AnyFileNode'
 
 /**
  * 插件注册表：所有节点插件的 manifest 汇总。
  *
  * 使用方只认这里的 type -> manifest 映射，不再自己 import 具体 node.ts / render.vue，
  * 「节点类 ↔ 渲染组件」的配对由各插件 index.ts 声明、这里统一收口。
+ *
+ * 数组顺序很重要：resolveByExtension 单遍扫描，先命中先返回。
+ * 所以拆成三组 merge：功能节点 → 具体文件节点 → 兜底文件节点。
+ * 多个兜底节点之间按 anyFileGroup 内声明顺序决定优先级。
  */
-export const nodeManifests: readonly NodePluginManifest[] = [
+const functionalManifests: NodePluginManifest[] = [
   textInputManifest,
   textDisplayManifest,
-  numberInputManifest,
+  numberInputManifest
+]
+
+const fileManifests: NodePluginManifest[] = [
   txtFileManifest
+]
+
+const fallbackManifests: NodePluginManifest[] = [
+  anyFileManifest
+]
+
+export const nodeManifests: readonly NodePluginManifest[] = [
+  ...functionalManifests,
+  ...fileManifests,
+  ...fallbackManifests
 ]
 
 const byType = new Map<string, NodePluginManifest>(nodeManifests.map((m) => [m.type, m]))
@@ -38,9 +56,8 @@ export function manifestFor(node: Node): NodePluginManifest | undefined {
  * 用这个函数找到 TxtFileNode 的 manifest，然后构造节点、走跟随/放置流程。
  *
  * 匹配逻辑：大小写不敏感；后缀带不带点都能识别（传 'txt' 或 '.txt' 都行）。
- * 遍历分两轮：先扫非兜底节点，没命中再扫兜底节点（isFallback=true），
- * 确保具体节点优先于兜底。同一轮内多个子类同时返回 true 时，
- * 返回注册表中最先声明的那个。
+ * 单遍扫描 nodeManifests 数组，先命中先返回——数组顺序（功能节点 →
+ * 具体文件节点 → 兜底文件节点）天然保证兜底排在最后。
  */
 export function resolveByExtension(ext: string): NodePluginManifest | undefined {
   // 归一化：小写 + 确保以点开头
@@ -50,21 +67,9 @@ export function resolveByExtension(ext: string): NodePluginManifest | undefined 
     const cls = manifest.nodeClass
     if (!(cls.prototype instanceof FileNode)) continue
     const fileCls = cls as unknown as typeof FileNode
-    if (fileCls.isFallback) continue
     if (fileCls.acceptsExtension(normalized)) {
       return manifest
     }
   }
-
-  for (const manifest of nodeManifests) {
-    const cls = manifest.nodeClass
-    if (!(cls.prototype instanceof FileNode)) continue
-    const fileCls = cls as unknown as typeof FileNode
-    if (!fileCls.isFallback) continue
-    if (fileCls.acceptsExtension(normalized)) {
-      return manifest
-    }
-  }
-
   return undefined
 }

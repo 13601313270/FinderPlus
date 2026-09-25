@@ -4,12 +4,11 @@ import { Value } from './Value'
 export class NumberValue extends Value {
   readonly kind = 'number' as const
 
+  readonly fingerprint: string
+
   constructor(readonly value: number) {
     super()
-  }
-
-  get fingerprint(): string {
-    return `number:${this.value}`
+    this.fingerprint = `number:${value}`
   }
 
   toJSON(): { kind: 'number'; value: number } {

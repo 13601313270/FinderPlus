@@ -3,21 +3,26 @@ import { Value } from './Value'
 /**
  * 文件传输子：直接包裹一个 File。
  * 名称、类型、体积、字节访问都在 File 自身，不再额外引入句柄或描述信息。
+ *
+ * 指纹由调用方在构造时传入内容 hash，确保指纹精确反映文件内容变化——
+ * 同名同类型同体积但内容不同的文件，hash 必然不同，不会被误判成"没变"。
+ *
+ * 调用方责任：构造 FileValue 之前必须已读取文件字节并计算好内容 hash
+ * （如 SHA-256 或更快的 djb2/xxhash 等）。
  */
 export class FileValue extends Value {
   readonly kind = 'file' as const
 
-  constructor(readonly file: File) {
-    super()
-  }
+  /** 内容 hash 指纹：文件内容相同则 hash 相同 */
+  readonly fingerprint: string
 
-  /**
-   * 指纹只能取 File 的元信息：File 的字节是异步读的，而端口比对必须同步。
-   * 刻意不含 lastModified：Node 里新建 File 会带上当前时间，会把「没变」误判成「变了」。
-   * 代价：同名同类型同体积但内容不同时指纹不变（例如原地覆盖一张同尺寸的图）。
-   */
-  get fingerprint(): string {
-    return `file:${this.file.name}:${this.file.type}:${this.file.size}`
+  constructor(
+    readonly file: File,
+    /** 调用方预先算好的文件内容 hash；设为必填是为了杜绝 name/type/size 三元组的不严谨兜底 */
+    contentHash: string
+  ) {
+    super()
+    this.fingerprint = `file:${contentHash}`
   }
 
   /** 纯数据形式：File 本身不可 JSON 化，这里只给出元信息 */

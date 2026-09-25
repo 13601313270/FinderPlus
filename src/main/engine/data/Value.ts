@@ -19,11 +19,13 @@ export abstract class Value {
   abstract readonly kind: ValueKind
 
   /**
-   * 内容指纹：内容相同则指纹相同。
+   * 内容指纹：构造时算好的不可变字段，内容相同则指纹相同。
    * 上游靠它判断「我这次重算后到底有没有变」，端口靠它决定要不要往派发；
    * 同时它也是执行缓存键的一部分。
+   *
+   * 指纹在 Value 构造时一次性生成，下游只做字符串比较，不触发任何重计算。
    */
-  abstract get fingerprint(): string
+  abstract readonly fingerprint: string
 
   /**
    * 纯数据形式（只含句柄，不含字节）。

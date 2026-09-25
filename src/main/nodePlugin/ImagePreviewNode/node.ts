@@ -33,7 +33,7 @@ export class ImagePreviewNode extends Node {
   }
 
   /** 拖入文件落点命中本节点时被调用；本节点不接收文件，返回 false */
-  isPositionAcceptFileDrop(relativeX: number, relativeY: number): boolean {
+  isPositionAcceptFileDrop(_relativeX: number, _relativeY: number): boolean {
     return true
   }
 

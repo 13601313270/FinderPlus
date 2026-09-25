@@ -8,6 +8,8 @@ import { viewport } from '@renderer/canvas/viewport'
  * 换成成员结构等价的最小接口，App/节点实现测都能通过。
  */
 export interface NodeLike {
+  /** 节点唯一 id，App 结算时用它从 Scene 找回真实 Node 实例 */
+  readonly id: string
   readonly position: readonly [number, number]
   readonly box: readonly [number, number]
   setPosition(x: number, y: number): void
@@ -38,6 +40,28 @@ export interface DragOutOpts {
   confirmDelayMs?: number
   /** 越界确认后回调；参数是 startDrag 时节点的原始位置，调用方应还原它 */
   onDragOut?: (startPos: readonly [number, number]) => void
+}
+
+/**
+ * 当前正在被拖拽的节点（模块级单例）。
+ *
+ * 用途：把「节点拖到另一个节点上」的结算交给 App 全局调度——被拖节点 A
+ * 只负责移动、不感知任何投放语义；useNodePosition 在 startDrag 时把 A 记到这里，
+ * App.vue 在松手事件里读它 + 鼠标坐标命中目标 B，再调 B.onNodeDrop(A)。
+ *
+ * 清除由 App 统一做（松手结算完成后置 null），useNodePosition 不负责——
+ * 避免 App 的 pointerup 处理器和本组合式函数的 end() 触发顺序互相踩。
+ */
+let draggingNode: NodeLike | null = null
+
+/** 读取当前正在被拖拽的节点（App 的松手结算用） */
+export function getDraggingNode(): NodeLike | null {
+  return draggingNode
+}
+
+/** 清除拖拽记录。App 在松手结算完成后调用（含「未命中任何接收节点」的情况） */
+export function clearDraggingNode(): void {
+  draggingNode = null
 }
 
 /**
@@ -164,6 +188,11 @@ export function useNodePosition(
     )
   }
 
+  /**
+   * 结束拖拽。
+   * 由 dragOut/越界路径触发或 pointerup 触发。不做投放结算——那由 App 的
+   * 松手事件统一处理（读 getDraggingNode + 命中目标 + 调 onNodeDrop）。
+   */
   function end(): void {
     dragging = false
     clearDragOutTimer()
@@ -178,6 +207,7 @@ export function useNodePosition(
     startClientX = e.clientX
     startClientY = e.clientY
     startPos = [...lastNode.position]
+    draggingNode = lastNode // 记录「当前在拖拽的节点」，App 松手结算时读取
     window.addEventListener('pointermove', move)
     window.addEventListener('pointerup', end)
   }

@@ -15,6 +15,7 @@ import type { NodeMenuItem } from '../../main/engine/node/Node'
 import { connectNotice } from '@renderer/canvas/connectionDrag'
 import { IpcStorage } from '@renderer/composables/IpcStorage'
 import { isSelfDragDrop, clearSelfDragDrop } from '@renderer/composables/useFileDragOut'
+import { getDraggingNode, clearDraggingNode } from '@renderer/composables/useNodePosition'
 
 // 空白画布：没有预置节点。所有节点都从左上角「＋」调色板添加。
 
@@ -436,6 +437,35 @@ function onPanEnd(): void {
   window.removeEventListener('pointerup', onPanEnd)
 }
 
+// —— 节点投放结算：把节点 A 拖到节点 B 上（一次性工作）——
+// 被拖节点 A 由 useNodePosition 在 startDrag 时记录（getDraggingNode），A 自身不感知投放语义；
+// 松手时 App 用鼠标坐标命中目标 B，由 B 决定是否接受并执行 onNodeDrop 的一次性工作。
+function onGlobalPointerUp(e: PointerEvent): void {
+  const dragged = getDraggingNode()
+  if (!dragged) return
+  try {
+    const canvasRect = canvasEl.value?.getBoundingClientRect()
+    if (!canvasRect) return
+    const draggedNode = workspaceScene.getNode(dragged.id)
+    if (!draggedNode) return
+    const [wx, wy] = screenToWorld(e.clientX - canvasRect.left, e.clientY - canvasRect.top)
+    for (const node of workspaceScene.allNodes) {
+      if (node === draggedNode) continue
+      const [bx, by] = node.position
+      const [bw, bh] = node.box
+      if (bw <= 0 || bh <= 0) continue // 无边界（轴为 0）不参与命中
+      if (wx >= bx && wx <= bx + bw && wy >= by && wy <= by + bh) {
+        if (node.isPositionAcceptNodeDrop(draggedNode)) {
+          node.onNodeDrop(draggedNode)
+        }
+        break // 一次投放只结算遍历序最靠前的第一个命中节点
+      }
+    }
+  } finally {
+    clearDraggingNode() // 无论是否命中，松手即清
+  }
+}
+
 // —— 滚轮：普通滚轮平移，Ctrl/Cmd + 滚轮缩放 ——
 function onWheel(e: WheelEvent): void {
   e.preventDefault()
@@ -545,6 +575,8 @@ onMounted(() => {
   // 1. 持续缓存鼠标位置（供下次 palette 选择时用）
   // 2. 放置模式下让节点跟随（不要求鼠标按下）
   window.addEventListener('pointermove', onWindowPointerMove)
+  // 节点投放结算：常驻监听 pointerup（先于 useNodePosition 拖拽时临时注册的 handler 执行）
+  window.addEventListener('pointerup', onGlobalPointerUp)
   // 全局 mousedown：点击菜单外部时关闭右键菜单
   document.addEventListener('mousedown', onDocumentMouseDown)
   // 全局拖拽兜底：文件拖到画布外区域（顶部 dragbar 等）时阻止 Electron 默认打开文件导致白屏
@@ -557,6 +589,7 @@ onMounted(() => {
 onUnmounted(() => {
   canvasEl.value?.removeEventListener('wheel', onWheel)
   window.removeEventListener('pointermove', onWindowPointerMove)
+  window.removeEventListener('pointerup', onGlobalPointerUp)
   document.removeEventListener('mousedown', onDocumentMouseDown)
   document.removeEventListener('dragover', onGlobalDragOver)
   document.removeEventListener('drop', onGlobalDrop)

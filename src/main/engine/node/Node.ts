@@ -133,6 +133,9 @@ export abstract class Node {
     this.notifyChanged()
   }
 
+  /** 节点拖拽悬停态底层值（独立于文件悬停态 isInFileDropZoneValue）。对外用 get isInNodeDropZone */
+  public isInNodeDropZoneValue: boolean = false
+
   testIsInFileDropZone(relativeX: number, relativeY: number): boolean {
     const newValue = this.isPositionAcceptFileDrop(relativeX, relativeY)
     const hasChange = newValue !== this.isInFileDropZoneValue
@@ -141,6 +144,55 @@ export abstract class Node {
     }
     return newValue
   }
+
+  /**
+   * 节点拖入判定：另一个节点（source）被拖到本节点上时，本节点决定是否接受它。
+   *
+   * 与文件拖入（isPositionAcceptFileDrop/onFileDrop）对称但接收的是 **Node 实例本身**——
+   * 接受方持有被拖节点的引用，可实时订阅它并从其输出端口读数据。
+   *
+   * 默认拒绝（返回 false）。需要接受节点拖入的节点（如图片压缩节点）override 它。
+   */
+  isPositionAcceptNodeDrop(_source: Node): boolean {
+    return false
+  }
+
+  /**
+   * 节点 drop 结算：被拖节点（source）松手落在本节点上、且接受判定通过时被调用。
+   * @returns true = 本节点接管该被拖节点（不再视为普通移动）；false = 不处理
+   */
+  onNodeDrop(_source: Node): boolean {
+    return false
+  }
+
+  /** 节点拖拽悬停态：dragover 划过本节点且愿意接受时为 true。与文件悬停态（isInFileDropZoneValue）独立 */
+  get isInNodeDropZone(): boolean {
+    return this.isInNodeDropZoneValue
+  }
+
+  /** 供子类/渲染层写入悬停态；有变化才写并通知观察者 */
+  setIsInNodeDropZoneValue(newValue: boolean): void {
+    if (newValue === this.isInNodeDropZoneValue) return
+    this.isInNodeDropZoneValue = newValue
+    this.notifyChanged()
+  }
+
+  /**
+   * 节点拖入的接受判定 + 悬停态联动（仿 testIsInFileDropZone）：
+   * 算 isPositionAcceptNodeDrop(source) → 有变化才写悬停态 → 返回是否接受。
+   * 拖拽 move 时对候选目标调用，实现方不需自己维护悬停态。
+   */
+  testAcceptNodeDrop(source: Node): boolean {
+    const ok = this.isPositionAcceptNodeDrop(source)
+    this.setIsInNodeDropZoneValue(ok)
+    return ok
+  }
+
+  /** 渲染层用：拖拽离开目标或 drop 结束时清除悬停态 */
+  clearNodeDropActive(): void {
+    this.setIsInNodeDropZoneValue(false)
+  }
+
 
   /**
    * 绑定所属 Scene，由 Scene.addNode 调用。

@@ -62,8 +62,13 @@ export abstract class FileNode extends Node {
    * @param size 文件字节大小
    * @returns 是否成功接收文件（true 会触发 setFile 写回节点）
    */
-  isPositionAcceptFileDrop(relativeX: number, relativeY: number): boolean {
+  isPositionAcceptFileDrop(_relativeX: number, _relativeY: number): boolean {
     return false
+  }
+
+  /** 拖入文件 drop 提交。基类不劫持任何文件；子类想接管时 override 为接收逻辑即可。 */
+  onFileDrop(_sourcePath: string): void {
+    // 默认不处理
   }
 
   onInputChanged(): void {}

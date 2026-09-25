@@ -129,11 +129,11 @@ export class ImgFileNode extends FileNode {
     }
   }
 
-  isPositionAcceptFileDrop(relativeX: number, relativeY: number): boolean {
+  isPositionAcceptFileDrop(_relativeX: number, _relativeY: number): boolean {
     return false
   }
   
-  onFileDrop(sourcePath: string): void {
+  onFileDrop(_sourcePath: string): void {
     // 本节点不接收文件，不处理
   }
 }

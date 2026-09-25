@@ -140,16 +140,19 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="file-card" :style="{ width: previewWidth + 'px' }">
+  <div
+    class="file-card"
+    :style="{ width: previewWidth + 'px' }"
+    @pointerdown="startDrag"
+    @dblclick="openInSystem(fileNode?.fileName)"
+    :title="fileNode?.fileName
+      ? '拖动节点 · 拖出窗口移动文件 · 双击用系统默认应用打开'
+      : '拖动节点（未选文件）'"
+  >
     <!-- 图标区：内嵌缩略图，CSS aspect-ratio 保持原图比例 -->
     <div
       class="file-card__icon"
       :style="{ aspectRatio: aspectRatio }"
-      @pointerdown="startDrag"
-      @dblclick="openInSystem(fileNode?.fileName)"
-      :title="fileNode?.fileName
-        ? '拖动节点 · 拖出窗口移动文件 · 双击用系统默认应用打开'
-        : '拖动节点（未选文件）'"
     >
       <img
         v-if="thumbnailUrl"
@@ -206,21 +209,21 @@ onUnmounted(() => {
   border: 1px solid #d5d9e0;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  cursor: grab;
+  user-select: none;
+  &:active { cursor: grabbing; }
 
   &__icon {
     width: 100%;
     // aspect-ratio 由模板绑定：初始 4/3，图片 load 后换成天然比例
     border-radius: 6px;
     overflow: hidden;
-    cursor: grab;
-    user-select: none;
     background: #f4f5f7;
     border: 1px solid #e5e7eb;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    &:active { cursor: grabbing; }
   }
 
   &__img {

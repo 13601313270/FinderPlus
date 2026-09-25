@@ -75,16 +75,16 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="file-card">
+  <div
+    class="file-card"
+    @pointerdown="startDrag"
+    @dblclick="openInSystem(fileNode?.fileName)"
+    :title="fileNode?.fileName
+      ? '拖动节点 · 拖出窗口移动文件 · 双击用系统默认应用打开'
+      : '拖动节点（未选文件）'"
+  >
     <!-- 图标区：像系统文件图标一样，上面有个折角小三角 -->
-    <div
-      class="file-card__icon"
-      @pointerdown="startDrag"
-      @dblclick="openInSystem(fileNode?.fileName)"
-      :title="fileNode?.fileName
-        ? '拖动节点 · 拖出窗口移动文件 · 双击用系统默认应用打开'
-        : '拖动节点（未选文件）'"
-    >
+    <div class="file-card__icon">
       <svg class="file-card__icon-svg" viewBox="0 0 64 72" fill="none" xmlns="http://www.w3.org/2000/svg">
         <!-- 文件主体 -->
         <path
@@ -128,13 +128,13 @@ onMounted(async () => {
   border: 1px solid #d5d9e0;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  cursor: grab;
+  user-select: none;
+  &:active { cursor: grabbing; }
 
   &__icon {
     width: 64px;
     height: 72px;
-    cursor: grab;
-    user-select: none;
-    &:active { cursor: grabbing; }
   }
 
   &__icon-svg {

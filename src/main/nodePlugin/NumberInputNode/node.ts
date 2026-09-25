@@ -26,8 +26,12 @@ export class NumberInputNode extends Node {
   }
 
   /** 拖入文件落点命中本节点时被调用；本节点不接收文件，返回 false */
-  acceptFileDrop(_fileName: string, _size: number): boolean {
+  isPositionAcceptFileDrop(relativeX: number, relativeY: number): boolean {
     return false
+  }
+
+  onFileDrop(sourcePath: string): void {
+    // 本节点不接收文件，不处理
   }
 
   /** 框里的当前数值，UI 直接读它 */

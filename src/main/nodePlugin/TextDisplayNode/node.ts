@@ -23,8 +23,12 @@ export class TextDisplayNode extends Node {
   }
 
   /** 拖入文件落点命中本节点时被调用；本节点不接收文件，返回 false */
-  acceptFileDrop(_fileName: string, _size: number): boolean {
+  isPositionAcceptFileDrop(relativeX: number, relativeY: number): boolean {
     return false
+  }
+
+  onFileDrop(sourcePath: string): void {
+    // 本节点不接收文件，不处理
   }
 
   /** 当前展示的内容。没接输入、或上游还没算过时是空串 */

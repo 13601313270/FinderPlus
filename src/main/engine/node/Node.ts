@@ -52,7 +52,7 @@ export abstract class Node {
   /** 所属 Scene 引用，由 Scene.addNode 时注入。右键菜单里的通用操作（如删除）需要它 */
   private sceneRef?: Scene
 
-  constructor(readonly id: string) {}
+  constructor(readonly id: string) { }
 
   /** 节点当前位置（只读元组，防止外部直接改值绕过通知） */
   get position(): readonly [number, number] {
@@ -118,13 +118,29 @@ export abstract class Node {
   /**
    * 外部文件拖入画布、落点命中本节点内容区时被调用（渲染进程在 drop 时触达）。
    *
-   * @param fileName 已复制到画布目录后的文件名（可能带 _1 去重后缀）
-   * @param size     文件字节数
+   * @param relativeX 相对节点位置的 X 坐标
+   * @param relativeY 相对节点位置的 Y 坐标
    * @returns true = 本节点劫持该文件（渲染进程不再新建节点）；false = 不处理
    *
    * 引擎层只拿结果：文件复制由渲染进程经 IPC copyPath 完成，节点不碰 Electron。
    */
-  abstract acceptFileDrop(fileName: string, size: number): boolean
+  abstract isPositionAcceptFileDrop(relativeX: number, relativeY: number): boolean
+  abstract onFileDrop(sourcePath: string): void
+
+  public isInFileDropZoneValue: boolean = false
+  public setIsInFileDropZoneValue(newValue: boolean) {
+    this.isInFileDropZoneValue = newValue
+    this.notifyChanged()
+  }
+
+  testIsInFileDropZone(relativeX: number, relativeY: number): boolean {
+    const newValue = this.isPositionAcceptFileDrop(relativeX, relativeY)
+    const hasChange = newValue !== this.isInFileDropZoneValue
+    if (hasChange) {
+      this.setIsInFileDropZoneValue(newValue)
+    }
+    return newValue
+  }
 
   /**
    * 绑定所属 Scene，由 Scene.addNode 调用。

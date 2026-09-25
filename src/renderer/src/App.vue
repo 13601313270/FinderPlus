@@ -134,6 +134,36 @@ function onCanvasDragOver(e: DragEvent): void {
     e.preventDefault()
     e.dataTransfer.dropEffect = 'copy'
   }
+  const canvasRect = canvasEl.value?.getBoundingClientRect()
+  if (!canvasRect) return
+  const dropSX = e.clientX - canvasRect.left
+  const dropSY = e.clientY - canvasRect.top
+  const [worldX, worldY] = screenToWorld(dropSX, dropSY)
+  // 命中测试：落点是否落在某个已有节点的内容区内，且该节点愿意劫持这个文件。
+  // 劫持成功 → 不再新建节点，直接结束这个文件。
+  let hijacked = false
+  for (const node of workspaceScene.allNodes) {
+    const [nodeWidth, nodeHeight] = node.box
+    const [nodeX, nodeY] = node.position
+    if (
+      !hijacked &&
+      nodeWidth > 0 &&
+      nodeHeight > 0 &&
+      worldX >= nodeX &&
+      worldX <= nodeX + nodeWidth &&
+      worldY >= nodeY &&
+      worldY <= nodeY + nodeHeight
+    ) {
+      if (node.testIsInFileDropZone(worldX - nodeX, worldY - nodeY)) {
+        hijacked = true
+        break
+      } else {
+        node.setIsInFileDropZoneValue(false)
+      }
+    } else {
+      node.setIsInFileDropZoneValue(false)
+    }
+  }
 }
 
 /**
@@ -158,6 +188,16 @@ function onGlobalDrop(e: DragEvent): void {
     // 只有落到画布上时画布自己的 drop handler 才会处理；
     // 这里只是兜底阻止 Electron 默认打开文件
     e.preventDefault()
+    // 兜底：文件在画布外（如 dragbar）松手时画布 drop 不会触发，
+    // 必须在这里统一清掉所有节点的拖拽悬停态，否则高亮会残留
+    clearAllFileDropZones()
+  }
+}
+
+/** 清掉所有节点的文件拖拽悬停态。drop 收尾统一调用，避免高亮残留 */
+function clearAllFileDropZones(): void {
+  for (const n of workspaceScene.allNodes) {
+    n.setIsInFileDropZoneValue(false)
   }
 }
 
@@ -186,7 +226,7 @@ async function onCanvasDrop(e: DragEvent): Promise<void> {
   if (!canvasRect) return
   const dropSX = e.clientX - canvasRect.left
   const dropSY = e.clientY - canvasRect.top
-  const [wx, wy] = screenToWorld(dropSX, dropSY)
+  const [worldX, worldY] = screenToWorld(dropSX, dropSY)
 
   try {
     // 只处理第一个能被承接的文件（简化版；后续可扩展多文件批量创建）
@@ -207,11 +247,11 @@ async function onCanvasDrop(e: DragEvent): Promise<void> {
       const ext = extractExtension(file.name)
       console.log(`[drop] 文件 ${i}: name="${file.name}" ext="${ext}" size=${file.size}`)
       const manifest = resolveByExtension(ext)
+      console.log('manifest', manifest)
       if (!manifest) {
         console.warn(`[drop] 无对应节点承接的文件类型：${file.name} (${ext})`)
         continue
       }
-      console.log('[drop] 匹配 manifest type =', manifest.type)
 
       // 通过 preload 特权 API 反查真实磁盘路径（contextIsolation 下 File.path 拿不到）
       let sourcePath: string
@@ -231,6 +271,21 @@ async function onCanvasDrop(e: DragEvent): Promise<void> {
         trackingNode.value = null
       }
 
+      // 命中测试：落点是否落在某个已有节点的内容区内，且该节点愿意劫持这个文件。
+      // 劫持成功 → 不再新建节点，清掉悬停态并结束这个文件的处理。
+      for (const node of workspaceScene.allNodes) {
+        const [nodeWidth, nodeHeight] = node.box
+        if (nodeWidth <= 0 || nodeHeight <= 0) continue // 轴不约束的节点无法确定边界，跳过
+        const [nodeX, nodeY] = node.position
+        const inside = worldX >= nodeX && worldX <= nodeX + nodeWidth && worldY >= nodeY && worldY <= nodeY + nodeHeight
+        if (inside && node.testIsInFileDropZone(worldX - nodeX, worldY - nodeY)) {
+          node.onFileDrop(sourcePath)
+          clearAllFileDropZones() // 文件已被节点接管，统一清掉所有悬停态
+          return
+        }
+      }
+
+      // —— 未被任何节点劫持：走原「拖成新节点」逻辑，复用已复制的文件 ——
       // 先让主进程把文件复制到画布目录（copyFileSync + 重名去重）
       let copied: { fileName: string; size: number }
       try {
@@ -240,28 +295,10 @@ async function onCanvasDrop(e: DragEvent): Promise<void> {
         console.warn(`[drop] 文件 ${file.name} 复制失败：`, err)
         continue
       }
-
-      // 命中测试：落点是否落在某个已有节点的内容区内，且该节点愿意劫持这个文件。
-      // 劫持成功 → 不再新建节点，直接结束这个文件。
-      let hijacked = false
-      for (const n of workspaceScene.allNodes) {
-        const [bw, bh] = n.box
-        if (bw <= 0 || bh <= 0) continue // 轴不约束的节点无法确定边界，跳过
-        const [px, py] = n.position
-        const inside = wx >= px && wx <= px + bw && wy >= py && wy <= py + bh
-        if (!inside) continue
-        if (n.acceptFileDrop(copied.fileName, copied.size)) {
-          hijacked = true
-          break
-        }
-      }
-      if (hijacked) continue
-
-      // —— 未被任何节点劫持：走原「拖成新节点」逻辑，复用已复制的文件 ——
       const node = new manifest.nodeClass(generateNodeId(manifest.type))
-      node.setPosition(wx, wy)
-      // 用复制后的 fileName（可能加了 _1 后缀）写节点
-      ;(node as FileNode).setFile(copied.fileName, copied.size)
+      node.setPosition(worldX, worldY)
+        // 用复制后的 fileName（可能加了 _1 后缀）写节点
+        ; (node as FileNode).setFile(copied.fileName, copied.size)
 
       workspaceScene.addNode(node)
       console.log('[drop] 节点已加入 Scene：', node.id)
@@ -539,14 +576,8 @@ onUnmounted(() => {
     </header>
 
     <!-- 节点用 position 绝对定位在世界层内，世界层整体 transform 承载平移 + 缩放 -->
-    <div
-      ref="canvasEl"
-      class="stage__canvas"
-      :style="gridStyle"
-      @pointerdown="onCanvasPointerDown"
-      @dragover="onCanvasDragOver"
-      @drop="onCanvasDrop"
-    >
+    <div ref="canvasEl" class="stage__canvas" :style="gridStyle" @pointerdown="onCanvasPointerDown"
+      @dragover="onCanvasDragOver" @drop="onCanvasDrop">
       <!-- 节点调色板：画布左上角的「＋」按钮，悬浮展开可选类型 -->
       <NodePalette @select-type="onSelectType" />
 
@@ -561,14 +592,8 @@ onUnmounted(() => {
         <EdgeLayer />
         <!-- 每个节点 = 外壳（定位 + 端口，通用）+ 内容（render.vue，节点自定义）
              nodes 来自 Scene，新增节点加进 Scene 后会自动出现在这里 -->
-        <NodeShell
-          v-for="node in nodes"
-          :key="node.id"
-          :node="node"
-          :render="manifestFor(node)?.render"
-          :floating="trackingNode?.id === node.id"
-          @contextmenu="onNodeContextMenu"
-        />
+        <NodeShell v-for="node in nodes" :key="node.id" :node="node" :render="manifestFor(node)?.render"
+          :floating="trackingNode?.id === node.id" @contextmenu="onNodeContextMenu" />
       </div>
 
       <!-- 连线拖拽的预览线画在屏幕层（世界层之外）：不吃缩放，线宽恒定，且压在节点之上 -->
@@ -578,14 +603,8 @@ onUnmounted(() => {
       <Minimap />
 
       <!-- 节点右键菜单：fixed 屏幕坐标，不受世界层平移缩放影响 -->
-      <ContextMenu
-        v-if="contextMenu.visible && targetNode"
-        :ref="setMenuRoot"
-        :x="contextMenu.x"
-        :y="contextMenu.y"
-        :items="buildMenuItems(targetNode)"
-        @close="closeContextMenu"
-      />
+      <ContextMenu v-if="contextMenu.visible && targetNode" :ref="setMenuRoot" :x="contextMenu.x" :y="contextMenu.y"
+        :items="buildMenuItems(targetNode)" @close="closeContextMenu" />
     </div>
   </section>
 </template>

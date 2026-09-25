@@ -17,21 +17,21 @@
 在 `src/main/engine/node/Node.ts`（`beforeDestroy`/`contextMenuItems` 附近）加：
 ```ts
 /**
- * 外部文件拖入画布、落点命中本节点内容区时被调用（渲染进程在 drop 时触达）。
- * @param fileName 已复制到画布目录后的文件名（可能带 _1 去重后缀）
- * @param size     文件字节数
+ * 外部文件拖入画布、落点是否命中本节点内容区时被调用（渲染进程在 drop 时触达）。
+ * @param relativeX 落点相对节点位置的 X 坐标
+ * @param relativeY 落点相对节点位置的 Y 坐标
  * @returns true = 本节点劫持该文件（渲染进程不再新建节点）；false = 不处理
  * 引擎层只拿结果：文件复制由渲染进程经 IPC copyPath 完成。
  */
-abstract acceptFileDrop(fileName: string, size: number): boolean
+abstract isPositionAcceptFileDrop(relativeX: number, relativeY: number): boolean
 ```
 
 ### 2. 各子类实现返回 false（机制就位、行为不变）
-- **直接 `extends Node`，必须实现**（加 `acceptFileDrop(): false` 即可）：
+- **直接 `extends Node`，必须实现**（加 `isPositionAcceptFileDrop(): false` 即可）：
   - `TextInputNode/node.ts`、`NumberInputNode/node.ts`、`TextDisplayNode/node.ts`、`ImagePreviewNode/node.ts`、`FileInfoNode/node.ts`
 - **`FileNode`（abstract 基类）给一个默认 `return false`**，其子类 `TxtFileNode` / `ImgFileNode` / `AnyFileNode` 自动继承，不必逐个写：
   ```ts
-  acceptFileDrop(fileName: string, size: number): boolean {
+  isPositionAcceptFileDrop(relativeX: number, relativeY: number): boolean {
     return false // 子类需要接收拖入文件时 override 即可
   }
   ```
@@ -52,7 +52,7 @@ for (const n of workspaceScene.allNodes) {
   const [px, py] = n.position
   const inside = wx >= px && wx <= px + bw && wy >= py && wy <= py + bh
   if (!inside) continue
-  if (n.acceptFileDrop(copied.fileName, copied.size)) { hijacked = true; break }
+  if (n.isPositionAcceptFileDrop(wx - px, wy - py)) { hijacked = true; break }
 }
 if (hijacked) continue                        // 该节点劫持了文件，结束这个文件
 
@@ -65,7 +65,7 @@ workspaceScene.addNode(node)
 
 需要把现有「先 copy 再 new」的顺序保持：当前代码是先 `new` → `copyPath` → `setFile`；改为先 `copyPath` 取到 `copied`，再命中测试，**复用 `copied`** 走新建（避免复制两次）。`break`（只处理第一个文件）保持。
 
-> 边界：`FileInfoNode` 等纯展示/非文件节点作 drop 目标时，其 `acceptFileDrop` 默认 false，不影响。未命中任何节点 → 命中原样新建，行为与现在完全一致。
+> 边界：`FileInfoNode` 等纯展示/非文件节点作 drop 目标时，其 `isPositionAcceptFileDrop` 默认 false，不影响。未命中任何节点 → 命中原样新建，行为与现在完全一致。
 
 ## 关键文件
 - `src/main/engine/node/Node.ts`（抽象方法）
@@ -78,4 +78,4 @@ workspaceScene.addNode(node)
 - `npm run dev` 手动验证：
   - 拖文件到**空白画布** → 仍按后缀新建节点（回归锚点）。
   - 拖文件到一个已有节点上 → 因全部节点返回 false，仍新建节点（当前无行为差异）。
-  - 临时把某个节点的 `acceptFileDrop` 改 `return true`，拖到它身上 → 不再新建节点、该节点接手文件（快速验证机制生效，验证后改回）。
+  - 临时把某个节点的 `isPositionAcceptFileDrop` 改 `return true`，拖到它身上 → 不再新建节点、该节点接手文件（快速验证机制生效，验证后改回）。

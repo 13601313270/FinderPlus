@@ -128,4 +128,12 @@ export class ImgFileNode extends FileNode {
       this.setBox(Math.min(MAX_PREVIEW_WIDTH, Math.max(MIN_PREVIEW_WIDTH, Math.round(box[0]))), box[1])
     }
   }
+
+  isPositionAcceptFileDrop(relativeX: number, relativeY: number): boolean {
+    return false
+  }
+  
+  onFileDrop(sourcePath: string): void {
+    // 本节点不接收文件，不处理
+  }
 }

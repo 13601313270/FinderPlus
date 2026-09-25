@@ -58,8 +58,11 @@ export abstract class FileNode extends Node {
   /**
    * 拖入文件落点命中本节点时被调用。基类默认不劫持；
    * 子类（如文件内容接收节点）想接管拖入文件时 override 为接收逻辑即可。
+   * @param fileName 拖入文件的文件名（相对于画布目录）
+   * @param size 文件字节大小
+   * @returns 是否成功接收文件（true 会触发 setFile 写回节点）
    */
-  acceptFileDrop(_fileName: string, _size: number): boolean {
+  isPositionAcceptFileDrop(relativeX: number, relativeY: number): boolean {
     return false
   }
 

@@ -6,6 +6,7 @@ import { manifest as textDisplayManifest } from './TextDisplayNode'
 import { manifest as numberInputManifest } from './NumberInputNode'
 import { manifest as txtFileManifest } from './TxtFileNode'
 import { manifest as anyFileManifest } from './AnyFileNode'
+import { manifest as fileInfoManifest } from './FileInfoNode'
 
 /**
  * 插件注册表：所有节点插件的 manifest 汇总。
@@ -20,7 +21,8 @@ import { manifest as anyFileManifest } from './AnyFileNode'
 const functionalManifests: NodePluginManifest[] = [
   textInputManifest,
   textDisplayManifest,
-  numberInputManifest
+  numberInputManifest,
+  fileInfoManifest
 ]
 
 const fileManifests: NodePluginManifest[] = [

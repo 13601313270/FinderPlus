@@ -1,12 +1,27 @@
+import { TxtFileValue } from '../../engine/data/TxtFileValue'
 import { StringValue } from '../../engine/data/StringValue'
 import { OutputPort } from '../../engine/port/OutputPort'
 import { FileNode } from '../FileNode/node'
 
 /**
- * TXT 文件节点：选中 .txt 文件后由渲染端读取内容，节点负责持有内容并从输出端口送出。
+ * djb2 字符串 hash：32 位，同步、无依赖。
+ * 只用于变更检测，不是安全 hash，碰撞概率够用。
+ */
+function djb2(str: string): string {
+  let hash = 5381
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) + hash + str.charCodeAt(i)) | 0
+  }
+  return (hash >>> 0).toString(16)
+}
+
+/**
+ * TXT 文件节点：选中 .txt 文件后由渲染端读取内容，节点负责持有内容并从两个输出端口送出。
  *
- * 输出端口叫 `content`，值的 type 是 'string'——和 TextInputNode 的 textOutput 同形状，
- * 所以下游任何接 string 的节点都能直接接上这个文件节点。
+ * - contentOutput：文本内容（string），跟 TextInputNode 的 textOutput 同形状，
+ *   下游任何接 string 的节点都能直接接上
+ * - fileOutput：TxtFileValue（FileValue 子类，kind = 'txt-file'），
+ *   下游接 'txt-file' 或 'file' 类型的节点都能连上
  */
 export class TxtFileNode extends FileNode {
   static readonly TYPE = 'txt-file'
@@ -17,8 +32,11 @@ export class TxtFileNode extends FileNode {
 
   readonly type = TxtFileNode.TYPE
 
-  /** 文本内容输出 */
+  /** 文本内容输出（string） */
   readonly contentOutput = new OutputPort('content', 'string', '文本')
+
+  /** 文件输出（TxtFileValue，kind = 'txt-file'） */
+  readonly fileOutput = new OutputPort('file', 'txt-file', '文件')
 
   /** 当前文本内容；空节点初始化为空串 */
   private contentValue = ''
@@ -26,6 +44,7 @@ export class TxtFileNode extends FileNode {
   constructor(id: string) {
     super(id)
     this.addOutput(this.contentOutput)
+    this.addOutput(this.fileOutput)
   }
 
   /** 节点对外暴露的文本内容 */
@@ -34,13 +53,21 @@ export class TxtFileNode extends FileNode {
   }
 
   /**
-   * 写入内容并 commit 输出端口。
+   * 写入内容并 commit 两个输出端口。
    * 由 render.vue 在读完文件后调用（选文件按钮点击、或持久化恢复时自动读回）。
    */
   setContent(text: string): void {
     if (text === this.contentValue) return
     this.contentValue = text
     this.contentOutput.commit(new StringValue(text))
+
+    // 构造 TxtFileValue：用文本内容 new File + djb2 算 hash
+    if (this.fileName) {
+      const file = new File([text], this.fileName, { type: 'text/plain;charset=utf-8' })
+      const hash = djb2(text)
+      this.fileOutput.commit(new TxtFileValue(file, hash))
+    }
+
     this.notifyChanged()
   }
 
@@ -51,10 +78,14 @@ export class TxtFileNode extends FileNode {
   readState(state: Record<string, unknown>): void {
     super.readState(state)
     const text = typeof state.content === 'string' ? state.content : ''
-    // 持久化的 content 直接恢复并 commit（和 readState 里恢复源头值的惯例一致）
     if (text) {
       this.contentValue = text
       this.contentOutput.commit(new StringValue(text))
+      // 持久化恢复时 fileName 已由 super.readState 恢复，构造 TxtFileValue commit
+      if (this.fileName) {
+        const file = new File([text], this.fileName, { type: 'text/plain;charset=utf-8' })
+        this.fileOutput.commit(new TxtFileValue(file, djb2(text)))
+      }
     }
   }
 }

@@ -1,4 +1,4 @@
-import { Value } from './Value'
+import { Value, type ValueKind } from './Value'
 
 /**
  * 文件传输子：直接包裹一个 File。
@@ -11,7 +11,7 @@ import { Value } from './Value'
  * （如 SHA-256 或更快的 djb2/xxhash 等）。
  */
 export class FileValue extends Value {
-  readonly kind = 'file' as const
+  override readonly kind: ValueKind = 'file'
 
   /** 内容 hash 指纹：文件内容相同则 hash 相同 */
   readonly fingerprint: string

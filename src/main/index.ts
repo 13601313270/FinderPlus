@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
+import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join, basename, extname } from 'node:path'
 import { copyFileSync, existsSync, readFileSync, unlinkSync } from 'node:fs'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
@@ -131,28 +131,6 @@ function registerIpcHandlers(): void {
   })
 
   // —— 文件操作：给文件节点用 ——
-  // 文件选择 + 复制到画布目录（合并成一步，避免渲染进程知道原始路径）
-  ipcMain.handle('file:selectAndCopy', async (_e, args: {
-    title?: string
-    extensions: string[] // 如 ['.txt']
-  }): Promise<{ fileName: string; size: number } | null> => {
-    const result = await dialog.showOpenDialog({
-      title: args.title ?? '选择文件',
-      properties: ['openFile'],
-      filters: [{ name: '文件', extensions: args.extensions.map((e) => e.replace(/^\./, '')) }]
-    })
-    if (result.canceled || result.filePaths.length === 0) return null
-
-    const sourcePath = result.filePaths[0]
-    const canvasDir = getCanvasDir()
-    ensureCanvasDir()
-    // 文件名冲突处理：已存在则追加 _1, _2, …
-    const targetName = resolveNonCollidingName(canvasDir, basename(sourcePath))
-    const targetPath = join(canvasDir, targetName)
-    copyFileSync(sourcePath, targetPath)
-    const stat = readFileSync(targetPath) // 仅用于取 size
-    return { fileName: targetName, size: stat.length }
-  })
 
   // 读画布目录下的文本文件内容（给 TxtFileNode 用）
   ipcMain.handle('file:readText', (_e, fileName: string): string => {
@@ -162,7 +140,7 @@ function registerIpcHandlers(): void {
 
   /**
    * 把一个**已经在磁盘上存在**的文件（比如拖拽进来的，源路径由 Electron File.path 提供）
-   * 复制到画布目录。和 selectAndCopy 的区别是：不弹对话框，直接按路径 copyFileSync。
+   * 复制到画布目录。
    * 返回复制后的文件名（已处理重名冲突）和大小。
    */
   ipcMain.handle('file:copyPath', (_e, args: {

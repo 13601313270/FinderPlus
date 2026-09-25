@@ -61,16 +61,6 @@ const fileApi = {
   getPathForFile: (file: File): string => webUtils.getPathForFile(file),
 
   /**
-   * 打开原生文件对话框，选中的文件会被复制到"文稿/CanvasDesk/我的画布"。
-   * 返回复制后的文件名和大小；用户取消则返回 null。
-   */
-  selectAndCopy: (args: {
-    title?: string
-    extensions: string[]
-  }): Promise<{ fileName: string; size: number } | null> =>
-    ipcRenderer.invoke('file:selectAndCopy', args),
-
-  /**
    * 把磁盘上已有的文件直接复制到画布目录（不弹窗）。
    * 配合 getPathForFile 用：renderer 拿 File → 调 getPathForFile 拿绝对路径 → 调本方法复制。
    */

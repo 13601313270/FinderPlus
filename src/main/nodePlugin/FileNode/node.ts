@@ -31,11 +31,6 @@ export abstract class FileNode extends Node {
     super(id)
   }
 
-  /** 实例方法：返回本节点类承接的后缀列表，转发到静态 EXTENSIONS */
-  getAcceptedExtensions(): string[] {
-    return [...(this.constructor as typeof FileNode).EXTENSIONS]
-  }
-
   get fileName(): string {
     return this.fileNameValue
   }

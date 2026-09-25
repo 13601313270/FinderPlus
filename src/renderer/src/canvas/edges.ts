@@ -44,7 +44,7 @@ function portAnchor(node: Node, port: OutputPort | InputPort, side: PortSide): V
   const measured = measurePortCenter(node.id, node.position, side, port)
   if (measured) return measured
 
-  const box = measureNodeBox(node.id, node.position)
+  const box = measureNodeBox(node.id, node.position, node.box)
   return side === 'out'
     ? { x: box.x + box.width, y: box.y + box.height / 2 }
     : { x: box.x, y: box.y + box.height / 2 }

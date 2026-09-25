@@ -27,7 +27,6 @@ const { openInSystem } = useFileOpenInSystem()
 // —— 文件名 / 文件大小 / 卡片宽度 的 Vue 响应式包装 ——
 const fileName = ref('')
 const fileSize = ref(0)
-const previewWidth = ref(DEFAULT_PREVIEW_WIDTH)
 
 // —— 缩略图 URL（createObjectURL）；卸载或 fileName 变时 revoke 防泄漏 ——
 const thumbnailUrl = ref<string | null>(null)
@@ -62,12 +61,10 @@ watch(
     unsubscribe = n?.onChanged(() => {
       fileName.value = n.fileName
       fileSize.value = n.fileSize
-      previewWidth.value = n.previewWidth
     })
     if (n) {
       fileName.value = n.fileName
       fileSize.value = n.fileSize
-      previewWidth.value = n.previewWidth
     } else {
       fileName.value = ''
       fileSize.value = 0
@@ -114,7 +111,7 @@ function onResizePointerDown(e: PointerEvent): void {
   e.preventDefault()
 
   const startClientX = e.clientX
-  const startWidth = previewWidth.value
+  const startWidth = fileNode.value?.box[0]
 
   function move(ev: PointerEvent): void {
     const node = fileNode.value
@@ -123,7 +120,9 @@ function onResizePointerDown(e: PointerEvent): void {
     // 屏幕像素差 → 世界尺寸增量（鼠标在屏幕上拖 delta，世界里就是 delta / scale）
     const deltaWorld = (ev.clientX - startClientX) / scale
     const newWidth = Math.min(MAX_PREVIEW_WIDTH, Math.max(MIN_PREVIEW_WIDTH, startWidth + deltaWorld))
-    node.setPreviewWidth(newWidth)
+    // 根据newWidth和图片真实尺寸比例，反向推算图片部分的高
+    const newHeight = (newWidth - 20) / aspectRatio.value
+    node.setBox(newWidth, newHeight + 30 + 6 + 18)// 24是信息栏高度，6是gap，8是padding
   }
   function end(): void {
     window.removeEventListener('pointermove', move)
@@ -142,38 +141,20 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div
-    class="file-card"
-    :style="{ width: previewWidth + 'px' }"
-    @pointerdown="startDrag"
-    @dblclick="openInSystem(fileNode?.fileName)"
-    :title="fileNode?.fileName
-      ? '拖动节点 · 拖出窗口移动文件 · 双击用系统默认应用打开'
-      : '拖动节点（未选文件）'"
-  >
+  <div class="file-card" @pointerdown="startDrag" @dblclick="openInSystem(fileNode?.fileName)" :title="fileNode?.fileName
+    ? '拖动节点 · 拖出窗口移动文件 · 双击用系统默认应用打开'
+    : '拖动节点（未选文件）'">
     <!-- 图标区：内嵌缩略图，CSS aspect-ratio 保持原图比例 -->
-    <div
-      class="file-card__icon"
-      :style="{ aspectRatio: aspectRatio }"
-    >
-      <img
-        v-if="thumbnailUrl"
-        class="file-card__img"
-        :src="thumbnailUrl"
-        alt="图片预览"
-        draggable="false"
-        @load="onImgLoad"
-      />
+    <div class="file-card__icon" :style="{ aspectRatio: aspectRatio }">
+      <img v-if="thumbnailUrl" class="file-card__img" :src="thumbnailUrl" alt="图片预览" draggable="false"
+        @load="onImgLoad" />
       <!-- 没有缩略图时显示占位图标 -->
       <svg v-else class="file-card__icon-svg" viewBox="0 0 64 72" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path
-          d="M6 6C6 3.79 7.79 2 10 2H38L58 22V66C58 68.21 56.21 70 54 70H10C7.79 70 6 68.21 6 66V6Z"
-          fill="#fff"
-          stroke="#c5cbd4"
-          stroke-width="1.5"
-        />
+        <path d="M6 6C6 3.79 7.79 2 10 2H38L58 22V66C58 68.21 56.21 70 54 70H10C7.79 70 6 68.21 6 66V6Z" fill="#fff"
+          stroke="#c5cbd4" stroke-width="1.5" />
         <path d="M38 2L58 22H44C41.79 22 40 20.21 40 18V2Z" fill="#eef3ff" stroke="#c5cbd4" stroke-width="1.5" />
-        <text x="32" y="52" text-anchor="middle" font-size="10" font-weight="600" fill="#4a7cff" font-family="Helvetica, Arial, sans-serif">
+        <text x="32" y="52" text-anchor="middle" font-size="10" font-weight="600" fill="#4a7cff"
+          font-family="Helvetica, Arial, sans-serif">
           IMG
         </text>
       </svg>
@@ -185,32 +166,30 @@ onUnmounted(() => {
         {{ fileName }}
       </span>
       <span v-else class="file-card__name file-card__name--empty">未选择文件</span>
-      <span v-if="fileSize" class="file-card__size">
-        {{ formatSize(fileSize) }}
-      </span>
-      <!-- 格式 + 原始像素：文件名下方一行，弱色 -->
-      <span
-        v-if="fileName && fileNode?.displayFormat"
-        class="file-card__meta"
-      >
-        {{ fileNode.displayFormat }}
-        <template v-if="fileNode.naturalWidth && fileNode.naturalHeight">
-          · {{ fileNode.naturalWidth }}×{{ fileNode.naturalHeight }}px
-        </template>
-      </span>
+      <div style="display: flex;flex-direction: row;align-items: center;justify-content: center;">
+        <span v-if="fileSize || true" class="file-card__size">
+          {{ formatSize(fileSize) }}
+        </span>
+        <span style="flex-grow: 1;"></span>
+        <!-- 格式 + 原始像素：文件名下方一行，弱色 -->
+        <span v-if="fileName && fileNode?.displayFormat" class="file-card__meta">
+          {{ fileNode.displayFormat }}
+          <template v-if="fileNode.naturalWidth && fileNode.naturalHeight">
+            · {{ fileNode.naturalWidth }}×{{ fileNode.naturalHeight }}px
+          </template>
+        </span>
+      </div>
     </div>
 
     <!-- resize handle：右下角，拖拽改宽度（保持原图比例） -->
-    <div
-      class="file-card__resize-handle"
-      @pointerdown.stop.prevent="onResizePointerDown"
-      title="拖拽调整预览大小（保持原图比例）"
-    />
+    <div class="file-card__resize-handle" @pointerdown.stop.prevent="onResizePointerDown" title="拖拽调整预览大小（保持原图比例）" />
   </div>
 </template>
 
 <style scoped lang="less">
 .file-card {
+  box-sizing: border-box; // 宽度走在 NodeShell 的 box 宽里，border+padding 算在内
+  width: 100%; // 填满 .node-content（由 node.box 宽硬约束，resize handle 改的就是它）
   position: relative;
   display: flex;
   flex-direction: column;
@@ -223,7 +202,10 @@ onUnmounted(() => {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   cursor: grab;
   user-select: none;
-  &:active { cursor: grabbing; }
+
+  &:active {
+    cursor: grabbing;
+  }
 
   &__icon {
     width: 100%;
@@ -309,6 +291,7 @@ onUnmounted(() => {
       border-color: #4a7cff;
       background: rgba(74, 124, 255, 0.08);
     }
+
     &:active {
       border-color: #2d5de0;
       background: rgba(74, 124, 255, 0.18);

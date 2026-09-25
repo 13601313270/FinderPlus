@@ -143,7 +143,7 @@ const layout = computed<MinimapLayout | null>(() => {
   const h = canvasH.value
   if (!w || !h) return null
 
-  const nodeBoxes = workspaceScene.allNodes.map((node) => measureNodeBox(node.id, node.position))
+  const nodeBoxes = workspaceScene.allNodes.map((node) => measureNodeBox(node.id, node.position, node.box))
   const edgeGeoms = workspaceScene.allEdges
     .map((edge) => edgeGeometry(workspaceScene, edge))
     .filter(isEdgeGeometry)

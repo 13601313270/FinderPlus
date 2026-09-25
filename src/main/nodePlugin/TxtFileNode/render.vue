@@ -132,11 +132,14 @@ onMounted(async () => {
 
 <style scoped lang="less">
 .file-card {
+  box-sizing: border-box; // box 是内容区外包壳宽，border+padding 算在 box 内
+  width: 100%; // 填满 NodeShell 的 .node-content（由 node.box 硬约束定宽高）
+  height: 100%;
+  overflow: hidden; // 内容超不出 box（文件名已 ellipsis）
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 6px;
-  width: 180px;
   padding: 10px 10px 8px;
   background: @color-surface;
   border: 1px solid #d5d9e0;

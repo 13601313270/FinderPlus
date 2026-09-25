@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Component } from 'vue'
+import { computed, type Component } from 'vue'
 import { useNodePosition, type NodeLike } from '@renderer/composables/useNodePosition'
 import { nodeElementRef, type PortsOwnerLike } from '@renderer/canvas/elements'
 import NodePorts from './NodePorts.vue'
@@ -29,10 +29,18 @@ const emit = defineEmits<{
   (e: 'contextmenu', nodeId: string, clientX: number, clientY: number): void
 }>()
 
-const { position } = useNodePosition(() => props.node)
+const { position, box } = useNodePosition(() => props.node)
 
 // 外壳根元素登记进测量注册表
 const shellEl = nodeElementRef(props.node.id)
+
+// 内容区硬约束：box 双轴里 >0 的那一维把 .node-content 定死宽/高（0 维不约束）。
+// render.vue 在框内自适应填满，超出被 .node-content 的 overflow 裁剪。
+const contentStyle = computed(() => {
+  const w = box.value[0] > 0 ? `${box.value[0]}px` : undefined
+  const h = box.value[1] > 0 ? `${box.value[1]}px` : undefined
+  return { width: w, height: h }
+})
 
 /** 右键：阻止浏览器默认菜单，通知父组件弹出节点菜单 */
 function onContextMenu(e: MouseEvent): void {
@@ -54,7 +62,7 @@ function onContextMenu(e: MouseEvent): void {
     <div class="ports-col ports-col--left">
       <NodePorts :node-id="node.id" :node="node" side="in" />
     </div>
-    <div class="node-content">
+    <div class="node-content" :style="contentStyle">
       <component :is="render" :id="node.id" />
     </div>
     <div class="ports-col ports-col--right">
@@ -95,5 +103,7 @@ function onContextMenu(e: MouseEvent): void {
 
 .node-content {
   flex: 0 0 auto; // 不让 content 被两侧挤扁
+  overflow: hidden; // 硬约束：内容超出 box 被裁，render.vue 不会溢出
+  box-sizing: border-box; // box 是内容区外包壳宽，border+padding 算在 box 内
 }
 </style>

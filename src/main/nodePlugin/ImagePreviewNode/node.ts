@@ -28,6 +28,8 @@ export class ImagePreviewNode extends Node {
     super(id)
     this.addInput(this.imageInput)
     this.addOutput(this.imageOutput)
+    // 内容区硬约束：16:10 预览区 + 可选底部信息栏。信息栏出现时若超出，在框内裁剪
+    this.setBox(240, 196)
   }
 
   /**

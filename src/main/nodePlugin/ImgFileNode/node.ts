@@ -39,9 +39,6 @@ export class ImgFileNode extends FileNode {
   /** 文件输出（ImgFileValue，kind = 'img-file'） */
   readonly fileOutput = new OutputPort('file', ImgFileValue, '文件')
 
-  /** 卡片宽度（世界像素）。高度由 render.vue 按 width × 图片比例推出来，引擎只存宽度 */
-  private previewWidthValue = DEFAULT_PREVIEW_WIDTH
-
   /** 图片天然宽度（像素）。render.vue 的 img load 时回写；0 表示尚未加载 */
   private naturalWidthValue = 0
   /** 图片天然高度（像素）。render.vue 的 img load 时回写；0 表示尚未加载 */
@@ -50,22 +47,8 @@ export class ImgFileNode extends FileNode {
   constructor(id: string) {
     super(id)
     this.addOutput(this.fileOutput)
-  }
-
-  /** 当前卡片宽度 */
-  get previewWidth(): number {
-    return this.previewWidthValue
-  }
-
-  /**
-   * 调整卡片宽度并通知 UI（resize handle 拖拽时调这个）。
-   * 内部夹紧到 [MIN_PREVIEW_WIDTH, MAX_PREVIEW_WIDTH]，调用方传多大都不会越界。
-   */
-  setPreviewWidth(width: number): void {
-    const clamped = Math.min(MAX_PREVIEW_WIDTH, Math.max(MIN_PREVIEW_WIDTH, Math.round(width)))
-    if (clamped === this.previewWidthValue) return
-    this.previewWidthValue = clamped
-    this.notifyChanged()
+    // 宽度走基类 box（用户可拖 handle 调）；高度维 0 = 不约束，随图片比例撑开
+    this.setBox(DEFAULT_PREVIEW_WIDTH, 0)
   }
 
   /**
@@ -131,14 +114,18 @@ export class ImgFileNode extends FileNode {
   }
 
   saveState(): Record<string, unknown> {
-    return { ...super.saveState(), previewWidth: this.previewWidthValue }
+    // 持久化键名保持 'previewWidth'（老存档兼容），值来自基类 box 宽
+    return {
+      ...super.saveState(),
+      box: this.box
+    }
   }
 
   readState(state: Record<string, unknown>): void {
     super.readState(state)
-    const w = typeof state.previewWidth === 'number' ? state.previewWidth : undefined
-    if (w !== undefined) {
-      this.previewWidthValue = Math.min(MAX_PREVIEW_WIDTH, Math.max(MIN_PREVIEW_WIDTH, Math.round(w)))
+    const box = state.box as [number, number]
+    if (box !== undefined) {
+      this.setBox(Math.min(MAX_PREVIEW_WIDTH, Math.max(MIN_PREVIEW_WIDTH, Math.round(box[0]))), box[1])
     }
   }
 }

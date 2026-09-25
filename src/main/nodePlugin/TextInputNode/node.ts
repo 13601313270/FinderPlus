@@ -18,6 +18,8 @@ export class TextInputNode extends Node {
   constructor(id: string) {
     super(id)
     this.addOutput(this.textOutput)
+    // 内容区硬约束：手柄 + 输入框 + padding ≈ 86px 高，宽 220px
+    this.setBox(220, 86)
   }
 
   /** 框里的内容，UI 直接读它 */

@@ -24,6 +24,8 @@ export class FileInfoNode extends Node {
   constructor(id: string) {
     super(id)
     this.addInput(this.fileInput)
+    // 内容区硬约束：手柄 + 名称/大小/类型三行信息。信息多时在框内滚动
+    this.setBox(200, 136)
   }
 
   /** 当前展示的文件名。没接输入、或上游还没算过时是空串 */

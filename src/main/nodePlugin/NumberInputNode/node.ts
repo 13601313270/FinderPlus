@@ -21,6 +21,8 @@ export class NumberInputNode extends Node {
   constructor(id: string) {
     super(id)
     this.addOutput(this.numberOutput)
+    // 内容区硬约束：手柄 + 输入框 + 输出读数 + padding ≈ 110px 高，宽 220px
+    this.setBox(220, 110)
   }
 
   /** 框里的当前数值，UI 直接读它 */

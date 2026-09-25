@@ -9,6 +9,7 @@ import { viewport } from '@renderer/canvas/viewport'
  */
 export interface NodeLike {
   readonly position: readonly [number, number]
+  readonly box: readonly [number, number]
   setPosition(x: number, y: number): void
   onChanged(fn: () => void): () => void
 }
@@ -59,6 +60,8 @@ export interface DragOutOpts {
 export interface NodePositionView {
   /** 节点的当前坐标，渲染组件把它映射成 left/top */
   readonly position: Ref<readonly [number, number]>
+  /** 节点的内容区宽高 box（0 维 = 不约束），node.onChanged 时同步刷新 */
+  readonly box: Ref<readonly [number, number]>
   /** 接到拖拽手柄的 pointerdown 上 */
   startDrag(e: PointerEvent): void
 }
@@ -79,6 +82,7 @@ export function useNodePosition(
 ): NodePositionView {
   const node = computed(() => getNode())
   const position = ref<readonly [number, number]>([0, 0])
+  const box = ref<readonly [number, number]>([0, 0])
 
   let lastNode: NodeLike | undefined
   let unsubscribe: (() => void) | undefined
@@ -96,7 +100,10 @@ export function useNodePosition(
   )
 
   function apply(): void {
-    if (lastNode) position.value = lastNode.position
+    if (lastNode) {
+      position.value = lastNode.position
+      box.value = lastNode.box
+    }
   }
 
   let dragging = false
@@ -175,5 +182,5 @@ export function useNodePosition(
     window.addEventListener('pointerup', end)
   }
 
-  return { position, startDrag }
+  return { position, box, startDrag }
 }

@@ -40,6 +40,12 @@ export abstract class Node {
   /** 节点在画布上的坐标。引擎只负责存与通知，怎么拖由渲染组件决定 */
   private positionValue: [number, number] = [0, 0]
 
+  /**
+   * 内容区宽高（世界像素，只算 NodeShell 中间内容区，不含左右端口列）。
+   * 任一维为 0 表示「该轴不约束、随内容撑开」。由子类构造时用 setBox 声明自己的框。
+   */
+  private boxValue: [number, number] = [0, 0]
+
   /** 变化订阅者。UI 靠它把引擎里的普通字段同步成 Vue 响应式状态 */
   private readonly listeners = new Set<() => void>()
 
@@ -56,6 +62,23 @@ export abstract class Node {
   /** 更新节点位置并通知观察者。拖拽的最终落点都走这里 */
   setPosition(x: number, y: number): void {
     this.positionValue = [x, y]
+    this.notifyChanged()
+  }
+
+  /** 内容区宽高（只读元组，0 表示该轴不约束）。硬约束渲染靠它 */
+  get box(): readonly [number, number] {
+    return this.boxValue
+  }
+
+  /**
+   * 设置内容区宽高并通知观察者。子类构造时声明自己的框、或尺寸变化时调用。
+   * 求整避免 sub-pixel 造成连线/小地图抖动；负值夹到 0。
+   */
+  setBox(width: number, height: number): void {
+    const w = Math.max(0, Math.round(width))
+    const h = Math.max(0, Math.round(height))
+    if (w === this.boxValue[0] && h === this.boxValue[1]) return
+    this.boxValue = [w, h]
     this.notifyChanged()
   }
 

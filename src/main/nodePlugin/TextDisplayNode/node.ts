@@ -18,6 +18,8 @@ export class TextDisplayNode extends Node {
   constructor(id: string) {
     super(id)
     this.addInput(this.textInput)
+    // 内容区硬约束：手柄 + 文本展示区。文本可长，超出的部分在框内滚动
+    this.setBox(220, 150)
   }
 
   /** 当前展示的内容。没接输入、或上游还没算过时是空串 */

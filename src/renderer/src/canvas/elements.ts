@@ -22,6 +22,9 @@ import { ref, type ComponentPublicInstance, type Ref } from 'vue'
 /** 卡片还没登记时的兜底尺寸（世界像素），只在节点挂载的那一帧可能用到 */
 export const FALLBACK_NODE_SIZE = { width: 220, height: 80 } as const
 
+/** 外壳两侧端口列总宽（左右各约 20px），与 NodeShell 的 .ports-col 对齐 */
+const PORT_COLS_WIDTH = 40
+
 /** 世界坐标里的一个点 */
 export interface Vec2 {
   readonly x: number
@@ -200,8 +203,17 @@ export function findPortNear(
   return best
 }
 
-/** 量出某个节点的世界矩形：位置取引擎值，宽高取真实布局（外壳尺寸 = 卡片尺寸） */
-export function measureNodeBox(id: string, position: readonly [number, number]): NodeBox {
+/** 量出某个节点的世界矩形：位置取引擎值，宽高取真实布局（外壳尺寸 = 卡片尺寸）。
+ *  可选传入 node.box（内容区宽高，0 = 该轴不约束）：双轴都非 0 时走确定性——
+ *  外壳 = { content box + 两侧端口列 40px, box 高 }，不依赖 DOM 测量时序。 */
+export function measureNodeBox(
+  id: string,
+  position: readonly [number, number],
+  box?: readonly [number, number]
+): NodeBox {
+  if (box && box[0] > 0 && box[1] > 0) {
+    return { x: position[0], y: position[1], width: box[0] + PORT_COLS_WIDTH, height: box[1] }
+  }
   const el = nodeElements.get(id)
   return {
     x: position[0],

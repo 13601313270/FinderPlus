@@ -53,10 +53,13 @@ onUnmounted(() => {
 
 <style scoped lang="less">
 .node {
+  box-sizing: border-box; // box 是内容区外包壳宽，border+padding 算在 box 内
+  width: 100%; // 填满 NodeShell 的 .node-content（由 node.box 硬约束定宽高）
+  height: 100%;
+  overflow: auto; // 文本可长，超出 box 时在框内滚动
   display: flex;
   flex-direction: column;
   gap: 6px;
-  width: 220px;
   padding: 8px;
   background: @color-surface;
   border: 1px solid #d5d9e0;

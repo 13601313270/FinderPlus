@@ -24,5 +24,7 @@ export class AnyFileNode extends FileNode {
   constructor(id: string) {
     super(id)
     this.addOutput(this.fileOutput)
+    // 内容区硬约束：文件图标 72px + 文件名行 + padding ≈ 122px 高，宽 180px
+    this.setBox(180, 122)
   }
 }

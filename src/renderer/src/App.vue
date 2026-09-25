@@ -328,14 +328,14 @@ function onDocumentMouseDown(e: MouseEvent): void {
 }
 
 // —— 拖拽空白处平移 ——
+// 注意：平移的位移缓存必须独立于全局 lastClientX/Y——
+// onWindowPointerMove（onMounted 注册）会先于 onPanMove 执行，
+// 如果共用变量会把 lastClientX/Y 提前改掉，导致 dx/dy 永远算成 0。
 let panning = false
-let lastClientX = 0
-let lastClientY = 0
+let panLastClientX = 0
+let panLastClientY = 0
 
 function onCanvasPointerDown(e: PointerEvent): void {
-  lastClientX = e.clientX
-  lastClientY = e.clientY
-
   // 放置模式：点击画布空白处 → 固定当前跟随节点
   if (trackingNode.value && e.target === canvasEl.value) {
     stopTracking()
@@ -355,6 +355,8 @@ function onCanvasPointerDown(e: PointerEvent): void {
 
   e.preventDefault()
   panning = true
+  panLastClientX = e.clientX
+  panLastClientY = e.clientY
   window.addEventListener('pointermove', onPanMove)
   window.addEventListener('pointerup', onPanEnd)
 }
@@ -366,10 +368,10 @@ function onPanMove(e: PointerEvent): void {
     return
   }
   if (!panning) return
-  const dx = e.clientX - lastClientX
-  const dy = e.clientY - lastClientY
-  lastClientX = e.clientX
-  lastClientY = e.clientY
+  const dx = e.clientX - panLastClientX
+  const dy = e.clientY - panLastClientY
+  panLastClientX = e.clientX
+  panLastClientY = e.clientY
   panViewport(dx, dy)
 }
 
@@ -394,9 +396,12 @@ function onWheel(e: WheelEvent): void {
   }
 }
 
-// 全局 pointermove：放置模式需要持续跟随，无论鼠标是否按下
+// —— 全局鼠标坐标缓存：供调色板选中时取"当前鼠标位置"作为新节点初始落点 ——
+let lastClientX = 0
+let lastClientY = 0
+
+// 全局 pointermove：持续更新坐标缓存 + 放置模式下让节点跟随
 function onWindowPointerMove(e: PointerEvent): void {
-  // 更新全局坐标缓存（调色板选中时需要用"当前鼠标位置"作为新节点初始落点）
   lastClientX = e.clientX
   lastClientY = e.clientY
   onTrackingMove(e)

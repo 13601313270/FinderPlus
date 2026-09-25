@@ -1,16 +1,19 @@
-import type { Value, ValueKind } from '../data/Value'
+import { Value, type ValueKind } from '../data/Value'
 import type { Edge } from '../graph/Edge'
 import type { Node } from '../node/Node'
 import { OutputPort } from './OutputPort'
+
+/** 任何带 KIND 静态属性的 Value 子类 */
+type ValueClass = { readonly KIND: ValueKind; prototype: Value }
 
 export type InputPortBindRejectReason = 'kind-not-allowed' | 'single-port-occupied'
 
 export interface InputPortOptions {
   /**
-   * 允许接入的值类型。必须显式声明，空数组就是不接受任何类型——
+   * 允许接入的 Value 子类列表。必须显式声明，空数组就是不接受任何类型——
    * 即使是透传、日志这类端口，也得给自己划出范围。
    */
-  readonly accepts: readonly ValueKind[]
+  readonly accepts: readonly ValueClass[]
   /** 必填：没有任何输入（含默认值）时，节点不应运行 */
   readonly required?: boolean
   /** 多值：允许多条连线接入，值按无序集合语义看待 */
@@ -40,8 +43,9 @@ export class InputPort {
     private readonly options: InputPortOptions
   ) { }
 
-  get accepts(): readonly ValueKind[] {
-    return this.options.accepts
+  /** 接受的类型标签列表（从 Value 子类的静态 KIND 提取，供 UI 展示） */
+  get accepts(): readonly string[] {
+    return this.options.accepts.map(cls => cls.KIND)
   }
 
   get required(): boolean {
@@ -98,13 +102,13 @@ export class InputPort {
 
   /**
    * 能不能接入某种类型。连线前的校验只跟「端口规则 + 上游类型」有关，跟边本身无关——
-   * 所以这里收的是 kind，不是整条 Edge：UI 拖拽连线时也能拿它做实时判定，
+   * 所以这里收的是 OutputPort，不是整条 Edge：UI 拖拽连线时也能拿它做实时判定，
    * 不必自己抄一遍规则，更不必先造一条边。
    */
   canBindEdge(startPort: OutputPort): { result: true } | { result: false, message: InputPortBindRejectReason } {
+    // 用 Value 子类的静态 KIND 做比较，子类匹配也能过
     const kind = startPort.kind
-    // 检查值类型是否符合要求
-    if (!this.accepts.includes(kind)) {
+    if (!this.options.accepts.some(cls => cls.KIND === kind)) {
       return { result: false, message: 'kind-not-allowed' }
     }
 

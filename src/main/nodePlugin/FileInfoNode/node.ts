@@ -1,4 +1,5 @@
 import { FileValue } from '../../engine/data/FileValue'
+import { TxtFileValue } from '../../engine/data/TxtFileValue'
 import { InputPort } from '../../engine/port/InputPort'
 import { Node } from '../../engine/node/Node'
 
@@ -11,7 +12,7 @@ export class FileInfoNode extends Node {
   readonly type = FileInfoNode.TYPE
 
   /** 输入端口：接受通用文件 + TXT 专用文件 */
-  readonly fileInput = new InputPort('file', { accepts: ['file', 'txt-file'], label: '文件' })
+  readonly fileInput = new InputPort('file', { accepts: [FileValue, TxtFileValue], label: '文件' })
 
   private fileName = ''
   private fileSize = 0

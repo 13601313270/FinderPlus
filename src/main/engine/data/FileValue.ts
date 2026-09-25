@@ -11,7 +11,9 @@ import { Value, type ValueKind } from './Value'
  * （如 SHA-256 或更快的 djb2/xxhash 等）。
  */
 export class FileValue extends Value {
-  override readonly kind: ValueKind = 'file'
+  static override readonly KIND: ValueKind = 'file'
+
+  override readonly kind = FileValue.KIND
 
   /** 内容 hash 指纹：文件内容相同则 hash 相同 */
   readonly fingerprint: string
@@ -24,5 +26,4 @@ export class FileValue extends Value {
     super()
     this.fingerprint = `file:${contentHash}`
   }
-
 }

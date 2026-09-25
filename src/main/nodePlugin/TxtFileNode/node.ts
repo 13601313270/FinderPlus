@@ -33,10 +33,10 @@ export class TxtFileNode extends FileNode {
   readonly type = TxtFileNode.TYPE
 
   /** 文本内容输出（string） */
-  readonly contentOutput = new OutputPort('content', 'string', '文本')
+  readonly contentOutput = new OutputPort('content', StringValue, '文本')
 
   /** 文件输出（TxtFileValue，kind = 'txt-file'） */
-  readonly fileOutput = new OutputPort('file', 'txt-file', '文件')
+  readonly fileOutput = new OutputPort('file', TxtFileValue, '文件')
 
   /** 当前文本内容；空节点初始化为空串 */
   private contentValue = ''

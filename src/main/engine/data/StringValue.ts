@@ -1,8 +1,10 @@
-import { Value } from './Value'
+import { Value, type ValueKind } from './Value'
 
 /** 字符串传输子 */
 export class StringValue extends Value {
-  readonly kind = 'string' as const
+  static override readonly KIND: ValueKind = 'string'
+
+  override readonly kind = StringValue.KIND
 
   readonly fingerprint: string
 
@@ -10,5 +12,4 @@ export class StringValue extends Value {
     super()
     this.fingerprint = `string:${value}`
   }
-
 }

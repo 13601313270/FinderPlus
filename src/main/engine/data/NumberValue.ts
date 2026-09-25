@@ -1,8 +1,10 @@
-import { Value } from './Value'
+import { Value, type ValueKind } from './Value'
 
 /** 数字传输子 */
 export class NumberValue extends Value {
-  readonly kind = 'number' as const
+  static override readonly KIND: ValueKind = 'number'
+
+  override readonly kind = NumberValue.KIND
 
   readonly fingerprint: string
 
@@ -10,5 +12,4 @@ export class NumberValue extends Value {
     super()
     this.fingerprint = `number:${value}`
   }
-
 }

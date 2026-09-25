@@ -28,12 +28,16 @@ import { edgeGeometry, isEdgeGeometry } from '@renderer/canvas/edges'
  * canvasLayoutVersion（卡片尺寸变化），另外 viewport 本身是 reactive、画布容器尺寸自量。
  */
 
+// 面板与画布边框的最小留白
+const PANEL_MARGIN = 8
+
 // 面板各段的固定像素尺寸
 const PANEL_W = 196
 const DRAGBAR_H = 22
 const MAP_H = 120
 const TOOLBAR_H = 32
 const PANEL_H = DRAGBAR_H + MAP_H + TOOLBAR_H
+const COLLAPSED_H = DRAGBAR_H
 
 // 地图区内部绘制区
 const MAP_PAD = 8
@@ -61,9 +65,20 @@ const panelLeft = ref(0)
 const panelTop = ref(0)
 const positioned = ref(false)
 
+const collapsed = ref(false)
+const currentH = computed(() => (collapsed.value ? COLLAPSED_H : PANEL_H))
+
 function clampPanelPosition(): void {
-  panelLeft.value = Math.min(panelLeft.value, Math.max(0, canvasW.value - PANEL_W))
-  panelTop.value = Math.min(panelTop.value, Math.max(0, canvasH.value - PANEL_H))
+  const h = currentH.value
+  const maxLeft = Math.max(PANEL_MARGIN, canvasW.value - PANEL_W - PANEL_MARGIN)
+  const maxTop = Math.max(PANEL_MARGIN, canvasH.value - h - PANEL_MARGIN)
+  panelLeft.value = Math.min(Math.max(PANEL_MARGIN, panelLeft.value), maxLeft)
+  panelTop.value = Math.min(Math.max(PANEL_MARGIN, panelTop.value), maxTop)
+}
+
+function toggleCollapse(): void {
+  collapsed.value = !collapsed.value
+  clampPanelPosition()
 }
 
 const sceneTick = ref(0)
@@ -243,14 +258,11 @@ function onDragbarDown(e: PointerEvent): void {
 
 function onPanelMove(e: PointerEvent): void {
   if (!movingPanel) return
-  panelLeft.value = Math.min(
-    Math.max(0, e.clientX - grabOffsetX),
-    Math.max(0, canvasW.value - PANEL_W)
-  )
-  panelTop.value = Math.min(
-    Math.max(0, e.clientY - grabOffsetY),
-    Math.max(0, canvasH.value - PANEL_H)
-  )
+  const h = currentH.value
+  const maxLeft = Math.max(PANEL_MARGIN, canvasW.value - PANEL_W - PANEL_MARGIN)
+  const maxTop = Math.max(PANEL_MARGIN, canvasH.value - h - PANEL_MARGIN)
+  panelLeft.value = Math.min(Math.max(PANEL_MARGIN, e.clientX - grabOffsetX), maxLeft)
+  panelTop.value = Math.min(Math.max(PANEL_MARGIN, e.clientY - grabOffsetY), maxTop)
 }
 
 function onPanelUp(): void {
@@ -272,8 +284,8 @@ onMounted(() => {
   if (canvas) {
     canvasW.value = canvas.clientWidth
     canvasH.value = canvas.clientHeight
-    panelLeft.value = canvasW.value - PANEL_W - 12
-    panelTop.value = canvasH.value - PANEL_H - 12
+    panelLeft.value = canvasW.value - PANEL_W - PANEL_MARGIN
+    panelTop.value = canvasH.value - PANEL_H - PANEL_MARGIN
     positioned.value = true
 
     resizeObserver = new ResizeObserver(() => {
@@ -305,15 +317,32 @@ onUnmounted(() => {
   <div
     ref="rootEl"
     class="minimap"
-    :class="{ 'minimap--ready': positioned }"
+    :class="{ 'minimap--ready': positioned, 'minimap--collapsed': collapsed }"
     :style="{ left: `${panelLeft}px`, top: `${panelTop}px` }"
   >
-    <!-- 拖动条：唯一用来挪动面板的热区，和地图区的导航手势隔离 -->
+    <!-- 拖动条：唯一用来挪动面板的热区，右侧放折叠按钮 -->
     <div class="minimap__dragbar" title="拖动以移动小地图" @pointerdown="onDragbarDown">
       <span class="minimap__grip">⠿</span>
+      <button
+        class="minimap__toggle"
+        type="button"
+        :title="collapsed ? '展开小地图' : '折叠小地图'"
+        @click.stop="toggleCollapse"
+      >
+        <svg
+          class="minimap__toggle-icon"
+          :class="{ 'minimap__toggle-icon--expand': collapsed }"
+          viewBox="0 0 12 12"
+          width="12"
+          height="12"
+        >
+          <path d="M2 8 L6 4 L10 8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </button>
     </div>
 
     <svg
+      v-show="!collapsed"
       ref="mapEl"
       :width="PANEL_W"
       :height="MAP_H"
@@ -348,7 +377,7 @@ onUnmounted(() => {
       />
     </svg>
 
-    <div class="minimap__toolbar">
+    <div v-show="!collapsed" class="minimap__toolbar">
       <button class="minimap__btn" type="button" title="缩小" @click="zoomOut">−</button>
       <span class="minimap__percent">{{ zoomPercent }}%</span>
       <button class="minimap__btn" type="button" title="放大" @click="zoomIn">＋</button>
@@ -374,11 +403,17 @@ onUnmounted(() => {
     opacity: 1;
   }
 
+  &--collapsed {
+    .minimap__dragbar {
+      border-bottom: none;
+    }
+  }
+
   &__dragbar {
     height: 22px;
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
     background: #f1f4f9;
     border-bottom: 1px solid #e2e6ed;
     cursor: grab;
@@ -392,6 +427,38 @@ onUnmounted(() => {
     color: @color-text-weak;
     font-size: 12px;
     line-height: 1;
+    padding-left: 8px;
+  }
+
+  &__toggle {
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: @color-text-weak;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    margin-right: 2px;
+
+    &:hover {
+      background: #e2e6ed;
+      color: @color-text;
+    }
+  }
+
+  &__toggle-icon {
+    display: block;
+    color: inherit;
+    transition: transform 0.15s ease;
+
+    &--expand {
+      transform: rotate(180deg);
+    }
   }
 
   &__svg {

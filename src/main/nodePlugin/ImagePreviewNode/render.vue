@@ -3,8 +3,9 @@ import { computed, ref, watch, onUnmounted } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { ImgFileValue } from '../../engine/data/ImgFileValue'
 import { ImagePreviewNode } from './node'
+import { ImgFileNode } from '../ImgFileNode/node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
-import { usePreviewImageDrag } from '@renderer/composables/usePreviewImageDrag'
+import { setLastDragPath } from '@renderer/composables/useFileDragOut'
 
 const props = defineProps<{ id: string }>()
 
@@ -43,15 +44,69 @@ watch(
   { immediate: true, flush: 'sync' }
 )
 
-// —— 卡片整体拖拽 ——
-const { startDrag: startNodeDrag } = useNodePosition(() => node.value)
+/** File → base64 字符串（给 writeBuffer 用） */
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      const result = reader.result as string
+      const comma = result.indexOf(',')
+      resolve(comma >= 0 ? result.slice(comma + 1) : result)
+    }
+    reader.onerror = () => reject(reader.error)
+    reader.readAsDataURL(file)
+  })
+}
 
-// —— 预览图专属拖拽：画布内松手新建 ImgFileNode / 越界 startDrag 拖出 ——
-const { startImageDrag, cleanup: cleanupImageDrag } = usePreviewImageDrag(() => previewFile.value)
+/** 预览图专属拖拽：画布内移动节点，越界超时 writeBuffer + startDrag 导出 */
+const { startDrag: startPreviewDrag } = useNodePosition(
+  () => node.value,
+  {
+    enableDragOut: true,
+    confirmDelayMs: 300,
+    onDragOut: async (startPos) => {
+      const file = previewFile.value
+      const currentNode = node.value
+      if (!file || !currentNode) return
+      // 还原节点到按下前的位置（越界前已经跟着鼠标移动过了）
+      currentNode.setPosition(startPos[0], startPos[1])
+      // writeBuffer + startDrag 交给 OS
+      const base64 = await fileToBase64(file)
+      const written = await window.fileApi.writeBuffer(file.name, base64)
+      const fullPath = await window.fileApi.startDrag(written.fileName)
+      setLastDragPath(fullPath)
+    }
+  }
+)
+
+/**
+ * 点击"新建图片文件节点"按钮：在当前节点旁边新建 ImgFileNode。
+ * - writeBuffer 把 File 落盘到画布目录
+ * - 新节点位置 = 当前节点 position + [30, 30] 偏移
+ */
+async function handleCreateImgNode(): Promise<void> {
+  const file = previewFile.value
+  const currentNode = node.value
+  if (!file || !currentNode) return
+
+  const base64 = await fileToBase64(file)
+  const written = await window.fileApi.writeBuffer(file.name, base64)
+
+  const [cx, cy] = currentNode.position
+  const newNode = new ImgFileNode(
+    `${ImgFileNode.TYPE}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+  )
+  newNode.setPosition(cx + 30, cy + 30)
+  newNode.setFile(written.fileName, written.size)
+  workspaceScene.addNode(newNode)
+}
 
 // —— 图片 objectURL；卸载或 File 变时 revoke 防泄漏 ——
 const imageUrl = ref<string | null>(null)
 let revokeUrl: (() => void) | null = null
+
+/** 图片天然宽高（像素）；没图或还没 load 时是 null */
+const naturalSize = ref<{ w: number; h: number } | null>(null)
 
 /** 释放当前 objectURL */
 function clearImage(): void {
@@ -60,6 +115,7 @@ function clearImage(): void {
     revokeUrl = null
   }
   imageUrl.value = null
+  naturalSize.value = null
 }
 
 /** 更新 objectURL：File 变时重建 */
@@ -72,24 +128,28 @@ watch(previewFile, (file) => {
   }
 }, { immediate: true })
 
+/** img load 后拿到天然宽高 */
+function onImgLoad(e: Event): void {
+  const img = e.target as HTMLImageElement
+  if (img.naturalWidth && img.naturalHeight) {
+    naturalSize.value = { w: img.naturalWidth, h: img.naturalHeight }
+  }
+}
+
 onUnmounted(() => {
   unsubscribe?.()
-  cleanupImageDrag()
   clearImage()
 })
 </script>
 
 <template>
-  <div
-    class="preview-card"
-    @pointerdown="startNodeDrag"
-  >
-    <!-- 预览图区域：有图显示图，无图显示占位 icon -->
+  <div class="preview-card">
+    <!-- 预览图区域：画布内拖拽 = 移动节点；越界 = writeBuffer + startDrag 导出 -->
     <div
       class="preview-card__image-area"
-      @pointerdown="startImageDrag"
+      @pointerdown.stop.prevent="startPreviewDrag"
       :title="previewFile
-        ? '拖拽预览图到画布空白处 → 新建图片文件节点\n拖出窗口 → 导出图片到桌面/文件夹'
+        ? '在画布内拖拽移动节点 · 拖出窗口导出图片到桌面/文件夹'
         : '请先连接图片来源'"
     >
       <img
@@ -98,6 +158,7 @@ onUnmounted(() => {
         :src="imageUrl"
         alt="图片预览"
         draggable="false"
+        @load="onImgLoad"
       />
       <!-- 无图占位 -->
       <div v-else class="preview-card__placeholder">
@@ -122,14 +183,21 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <!-- 底部提示栏：有文件名显示文件名，无文件显示提示 -->
-    <div class="preview-card__footer">
-      <span v-if="previewFile" class="preview-card__filename" :title="previewFile.name">
-        {{ previewFile.name }}
+    <!-- 底部信息栏：尺寸 + "新建图片文件节点" 按钮 -->
+    <div class="preview-card__footer" v-if="previewFile">
+      <span v-if="naturalSize" class="preview-card__dim">
+        {{ naturalSize.w }}×{{ naturalSize.h }}px
       </span>
-      <span v-else class="preview-card__filename preview-card__filename--empty">
-        未连接图片
-      </span>
+      <span v-else class="preview-card__dim preview-card__dim--empty">图片加载中…</span>
+
+      <button
+        class="preview-card__create-btn"
+        type="button"
+        @click="handleCreateImgNode"
+        title="点击在当前节点旁边新建图片文件节点"
+      >
+        新建图片文件节点
+      </button>
     </div>
   </div>
 </template>
@@ -147,9 +215,7 @@ onUnmounted(() => {
   border: 1px solid #d5d9e0;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  cursor: grab;
   user-select: none;
-  &:active { cursor: grabbing; }
 
   &__image-area {
     width: 100%;
@@ -199,24 +265,46 @@ onUnmounted(() => {
 
   &__footer {
     width: 100%;
-    text-align: center;
-    font-size: 11px;
-    line-height: 1.3;
-    min-height: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    background: #fafbfc;
   }
 
-  &__filename {
-    display: block;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    color: @color-text;
-    font-weight: 500;
+  &__dim {
+    flex: 1;
+    font-size: 11px;
+    color: #7a828f;
+    font-variant-numeric: tabular-nums;
 
     &--empty {
-      color: @color-text-weak;
+      color: #b6bcc7;
       font-style: italic;
-      font-weight: 400;
+    }
+  }
+
+  &__create-btn {
+    flex-shrink: 0;
+    padding: 4px 10px;
+    border: 1px solid #4a7cff;
+    border-radius: 4px;
+    background: #4a7cff;
+    color: #fff;
+    font-size: 11px;
+    line-height: 1.3;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, transform 0.08s ease;
+
+    &:hover {
+      background: #3d6ce0;
+      border-color: #3d6ce0;
+    }
+
+    &:active {
+      transform: translateY(1px);
     }
   }
 }

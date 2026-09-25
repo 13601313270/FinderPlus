@@ -120,6 +120,9 @@ interface MinimapLayout {
   readonly ratio: number
   readonly offsetX: number
   readonly offsetY: number
+  /** 世界范围左下角（小地图里 world 原点对应的实际世界坐标） */
+  readonly worldMinX: number
+  readonly worldMinY: number
   readonly nodeRects: readonly MapRect[]
   readonly lines: readonly MapLine[]
   readonly frameRect: MapRect
@@ -185,6 +188,8 @@ const layout = computed<MinimapLayout | null>(() => {
     ratio,
     offsetX,
     offsetY,
+    worldMinX: minX,
+    worldMinY: minY,
     nodeRects: nodeBoxes.map((box) => ({
       x: toX(box.x),
       y: toY(box.y),
@@ -216,8 +221,12 @@ function navigateAt(clientX: number, clientY: number): void {
   const rect = mapEl.value?.getBoundingClientRect()
   if (!current || !rect) return
 
-  const wx = (clientX - rect.left - current.offsetX) / current.ratio
-  const wy = (clientY - rect.top - current.offsetY) / current.ratio
+  // 正向: toX = offsetX + (worldX - worldMinX) * ratio
+  // 反推: worldX = (toX - offsetX) / ratio + worldMinX
+  const px = clientX - rect.left - current.offsetX
+  const py = clientY - rect.top - current.offsetY
+  const wx = px / current.ratio + current.worldMinX
+  const wy = py / current.ratio + current.worldMinY
   centerViewportOn(wx, wy, canvasW.value, canvasH.value)
 }
 

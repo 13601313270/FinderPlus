@@ -55,6 +55,14 @@ export abstract class FileNode extends Node {
     this.notifyChanged()
   }
 
+  /**
+   * 拖入文件落点命中本节点时被调用。基类默认不劫持；
+   * 子类（如文件内容接收节点）想接管拖入文件时 override 为接收逻辑即可。
+   */
+  acceptFileDrop(_fileName: string, _size: number): boolean {
+    return false
+  }
+
   onInputChanged(): void {}
 
   saveState(): Record<string, unknown> {

@@ -32,6 +32,11 @@ export class ImagePreviewNode extends Node {
     this.setBox(240, 196)
   }
 
+  /** 拖入文件落点命中本节点时被调用；本节点不接收文件，返回 false */
+  acceptFileDrop(_fileName: string, _size: number): boolean {
+    return false
+  }
+
   /**
    * 上游值变化：取第一个 ImgFileValue 透传到输出端口；
    * 无输入时必须调 imageOutput.clear() 沿 edges 派发清空信号——

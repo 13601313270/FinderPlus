@@ -116,6 +116,17 @@ export abstract class Node {
   }
 
   /**
+   * 外部文件拖入画布、落点命中本节点内容区时被调用（渲染进程在 drop 时触达）。
+   *
+   * @param fileName 已复制到画布目录后的文件名（可能带 _1 去重后缀）
+   * @param size     文件字节数
+   * @returns true = 本节点劫持该文件（渲染进程不再新建节点）；false = 不处理
+   *
+   * 引擎层只拿结果：文件复制由渲染进程经 IPC copyPath 完成，节点不碰 Electron。
+   */
+  abstract acceptFileDrop(fileName: string, size: number): boolean
+
+  /**
    * 绑定所属 Scene，由 Scene.addNode 调用。
    * 节点自身不应主动调它——节点跟 Scene 的关系是 Scene 主动接管的。
    */

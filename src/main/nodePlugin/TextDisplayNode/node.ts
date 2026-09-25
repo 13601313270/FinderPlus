@@ -22,6 +22,11 @@ export class TextDisplayNode extends Node {
     this.setBox(220, 150)
   }
 
+  /** 拖入文件落点命中本节点时被调用；本节点不接收文件，返回 false */
+  acceptFileDrop(_fileName: string, _size: number): boolean {
+    return false
+  }
+
   /** 当前展示的内容。没接输入、或上游还没算过时是空串 */
   get text(): string {
     return this.displayed

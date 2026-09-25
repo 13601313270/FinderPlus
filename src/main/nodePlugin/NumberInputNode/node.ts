@@ -25,6 +25,11 @@ export class NumberInputNode extends Node {
     this.setBox(220, 110)
   }
 
+  /** 拖入文件落点命中本节点时被调用；本节点不接收文件，返回 false */
+  acceptFileDrop(_fileName: string, _size: number): boolean {
+    return false
+  }
+
   /** 框里的当前数值，UI 直接读它 */
   get number(): number {
     return this.content

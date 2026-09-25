@@ -231,19 +231,37 @@ async function onCanvasDrop(e: DragEvent): Promise<void> {
         trackingNode.value = null
       }
 
-      const node = new manifest.nodeClass(generateNodeId(manifest.type))
-      node.setPosition(wx, wy)
-
+      // 先让主进程把文件复制到画布目录（copyFileSync + 重名去重）
+      let copied: { fileName: string; size: number }
       try {
-        // 让主进程把文件复制到画布目录（copyFileSync + 重名去重）
-        const copied = await window.fileApi.copyPath(sourcePath)
+        copied = await window.fileApi.copyPath(sourcePath)
         console.log('[drop] 复制成功：', copied)
-        // 用复制后的 fileName（可能加了 _1 后缀）写节点
-        ;(node as FileNode).setFile(copied.fileName, copied.size)
       } catch (err) {
         console.warn(`[drop] 文件 ${file.name} 复制失败：`, err)
         continue
       }
+
+      // 命中测试：落点是否落在某个已有节点的内容区内，且该节点愿意劫持这个文件。
+      // 劫持成功 → 不再新建节点，直接结束这个文件。
+      let hijacked = false
+      for (const n of workspaceScene.allNodes) {
+        const [bw, bh] = n.box
+        if (bw <= 0 || bh <= 0) continue // 轴不约束的节点无法确定边界，跳过
+        const [px, py] = n.position
+        const inside = wx >= px && wx <= px + bw && wy >= py && wy <= py + bh
+        if (!inside) continue
+        if (n.acceptFileDrop(copied.fileName, copied.size)) {
+          hijacked = true
+          break
+        }
+      }
+      if (hijacked) continue
+
+      // —— 未被任何节点劫持：走原「拖成新节点」逻辑，复用已复制的文件 ——
+      const node = new manifest.nodeClass(generateNodeId(manifest.type))
+      node.setPosition(wx, wy)
+      // 用复制后的 fileName（可能加了 _1 后缀）写节点
+      ;(node as FileNode).setFile(copied.fileName, copied.size)
 
       workspaceScene.addNode(node)
       console.log('[drop] 节点已加入 Scene：', node.id)

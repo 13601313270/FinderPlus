@@ -4,7 +4,7 @@ import type { Node } from '../../main/engine/node/Node'
 import { workspaceScene } from '../../main/engine/graph/SceneRegistry'
 import { manifestFor, getNodeManifest, resolveByExtension } from '../../main/nodePlugin'
 import type { FileNode } from '../../main/nodePlugin/FileNode/node'
-import { viewport, panViewport, zoomViewportAt, screenToWorld } from '@renderer/canvas/viewport'
+import { viewport, panViewport, zoomViewportAt, screenToWorld, setCanvasContainer } from '@renderer/canvas/viewport'
 import EdgeLayer from './components/EdgeLayer.vue'
 import NodeShell from './components/NodeShell.vue'
 import ConnectionPreview from './components/ConnectionPreview.vue'
@@ -479,6 +479,7 @@ watch(
 bootstrapScene()
 
 onMounted(() => {
+  setCanvasContainer(canvasEl.value)
   canvasEl.value?.addEventListener('wheel', onWheel, { passive: false })
   // 全局监听 pointermove：
   // 1. 持续缓存鼠标位置（供下次 palette 选择时用）

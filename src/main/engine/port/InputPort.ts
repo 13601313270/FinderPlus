@@ -90,6 +90,22 @@ export class InputPort {
     }
   }
 
+  /**
+   * 接收上游发来的"清空值"信号。
+   * 与 unbindEdge（断边时整条边关系一起删掉）不同——receiveClear 只清值、
+   * 保留边本身。场景：中间节点的 OutputPort.clear() 沿 edges 派发清空，
+   * 下游的边还在（连线没断），只是上游这次不再产出任何值。
+   *
+   * 只有这条边之前**确实有值**时才触发 onInputChanged——否则重复清没意义。
+   */
+  receiveClear(edge: Edge): void {
+    const hadValue = this.incoming.get(edge) !== undefined
+    this.incoming.set(edge, undefined)
+    if (hadValue) {
+      this.owner?.onInputChanged()
+    }
+  }
+
   /** 认领：由 Node 登记端口时调用 */
   setOwner(owner: Node): void {
     this.owner = owner

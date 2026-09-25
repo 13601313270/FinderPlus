@@ -1,6 +1,6 @@
 import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join, basename, extname } from 'node:path'
-import { copyFileSync, existsSync, readFileSync, unlinkSync, watch } from 'node:fs'
+import { copyFileSync, existsSync, readFileSync, unlinkSync, watch, writeFileSync } from 'node:fs'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { openDatabase, closeDatabase, getDatabase, persist } from './db/database'
 import { SqliteStorage } from './db/SqliteStorage'
@@ -207,6 +207,26 @@ function registerIpcHandlers(): void {
     copyFileSync(args.sourcePath, targetPath)
     const stat = readFileSync(targetPath)
     return { fileName: targetName, size: stat.length }
+  })
+
+  /**
+   * 把内存 buffer（base64）写入画布目录。
+   * 给 ImagePreviewNode 等"从端口拿到 File 对象（内存中）、需要落盘"的场景用——
+   * 不是所有 File 都有现成的磁盘路径可 copy，直接写 buffer 更直接。
+   *
+   * 内部走 resolveNonCollidingName 处理重名，返回实际写入的文件名和大小。
+   */
+  ipcMain.handle('file:writeBuffer', (_e, args: {
+    fileName: string
+    base64: string
+  }): { fileName: string; size: number } => {
+    const canvasDir = getCanvasDir()
+    ensureCanvasDir()
+    const targetName = resolveNonCollidingName(canvasDir, args.fileName)
+    const targetPath = join(canvasDir, targetName)
+    const buffer = Buffer.from(args.base64, 'base64')
+    writeFileSync(targetPath, buffer)
+    return { fileName: targetName, size: buffer.length }
   })
 
   // 删除画布目录下的文件。用于文件节点清空、重新选择时清理旧副本

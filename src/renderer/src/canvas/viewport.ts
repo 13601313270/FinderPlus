@@ -30,6 +30,23 @@ export const viewport = reactive<CanvasViewportState>({
   scale: 1
 })
 
+/**
+ * 画布容器 DOM 元素引用。
+ * App.vue onMounted 时通过 setCanvasContainer 注入，供节点渲染组件的拖拽落点计算使用。
+ *
+ * 用闭包 + getter 而非 export let——Vite/esbuild 的 HMR 对 export let 的 live binding
+ * 支持不完整，热更新后外部拿到的可能还是旧值。
+ */
+let _canvasContainerEl: HTMLElement | null = null
+
+export function setCanvasContainer(el: HTMLElement | null): void {
+  _canvasContainerEl = el
+}
+
+export function getCanvasContainer(): HTMLElement | null {
+  return _canvasContainerEl
+}
+
 function clampScale(value: number): number {
   return Math.min(VIEWPORT_MAX_SCALE, Math.max(VIEWPORT_MIN_SCALE, value))
 }

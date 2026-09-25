@@ -68,4 +68,17 @@ export class OutputPort {
     }
     return changed
   }
+
+  /**
+   * 清空当前值并沿 edges 向后派发"清空"信号。
+   * 给中间节点用：上游值消失时（断边/上游节点被删），中间节点不仅要
+   * 让自己的输入端变空，还要通知下游清空它缓存的那个旧值。
+   *
+   * 已空则跳过——防止重复触发下游不必要的刷新。
+   */
+  clear(): void {
+    if (this.currentValue === undefined) return
+    this.currentValue = undefined
+    this.edges.forEach(edge => edge.transferClear())
+  }
 }

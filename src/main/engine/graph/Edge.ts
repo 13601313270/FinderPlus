@@ -25,4 +25,9 @@ export class Edge {
   transferData(value: Value): void {
     this.endPort.receive(this, value)
   }
+
+  // 把"清空值"信号从startPort传到endPort
+  transferClear(): void {
+    this.endPort.receiveClear(this)
+  }
 }

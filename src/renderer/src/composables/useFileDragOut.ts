@@ -23,6 +23,16 @@ export function isSelfDragDrop(filePath: string): boolean {
 }
 
 /**
+ * 手动设置/清除 self-drag-drop 路径标记。
+ * 主要给 usePreviewImageDrag 这类"自己调 startDrag 但不属于 useFileDragOut"的场景用——
+ * 它 doStartDrag 调完 startDrag 后必须把返回的 fullPath 存进同一处，
+ * 否则 App.vue 的 isSelfDragDrop 匹配不到，OS 拖拽回来时会再创建重复节点。
+ */
+export function setLastDragPath(fullPath: string | null | undefined): void {
+  lastStartDragPath = fullPath ?? undefined
+}
+
+/**
  * drop 处理完（不管命中没命中）调一下清缓存。
  * 存在 startDrag → drop 到桌面（无 drop 事件）的场景下，这个缓存会残留到下次 Finder 拖拽——
  * 但 Finder 拖进来的文件路径和画布目录路径完全不同，碰巧相等的概率可以忽略。

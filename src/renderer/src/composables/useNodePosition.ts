@@ -20,16 +20,23 @@ export interface NodeLike {
  * pointermove 始终 setPosition，直到 pointerup 结束。
  *
  * 传了 enableDragOut = true 后，pointermove 会额外检测鼠标是否越出窗口边界
- * （clientX/Y < 0 或 > innerWidth/innerHeight）。第一次越界时：
- * - 立刻移除 window 上的 pointermove/pointerup 监听
- * - 调 opts.onDragOut() 交给调用方处理（典型场景：调主进程 startDrag 启动 OS 文件拖拽）
- * - 内部 setPosition 不再继续
+ * （clientX/Y < 0 或 > innerWidth/innerHeight）。
+ * - 越界后不是立即 startDrag，而是等 confirmDelayMs——这就是"反悔窗口"：
+ *   300ms 内用户又回到窗口内 → 取消定时器，继续内部拖拽；
+ *   超时还在窗口外 → 清理 pointer 监听、调 opts.onDragOut() 交给外部。
+ * - 这样"不小心滑出去又回来"的场景不会误触 OS 拖拽，也就不需要"取消 startDrag"
+ *   （Electron startDrag 没有 cancel API）。
+ *
+ * onDragOut 会收到 startDrag 时节点的原始位置：因为越界前节点已经被 setPosition
+ * 跟着鼠标移动过了，OS 级拖拽是文件级操作，画布上的节点应该回到按下前的位置。
  */
 export interface DragOutOpts {
   /** 是否启用"拖出窗口边界 → 交给外部"能力。非文件节点保持 false（默认） */
   enableDragOut?: boolean
-  /** 越界时回调，通常由文件类节点调 IPC 启动 OS 级文件拖拽 */
-  onDragOut?: () => void
+  /** 越界确认延迟 ms，默认 0（立即触发）。建议文件节点设 200-300ms 做反悔窗口 */
+  confirmDelayMs?: number
+  /** 越界确认后回调；参数是 startDrag 时节点的原始位置，调用方应还原它 */
+  onDragOut?: (startPos: readonly [number, number]) => void
 }
 
 /**
@@ -97,14 +104,50 @@ export function useNodePosition(
   let startClientY = 0
   let startPos: [number, number] = [0, 0]
 
+  /**
+   * 越界确认定时器：move() 检测到越界后不立即 end()，而是等一下让用户反悔。
+   * 到期才真正 end() + onDragOut(startPos)。期间 move() 又检测到回到窗口内
+   * 或 pointerup 先触发，都会 clearTimeout 让 startDrag 永不触发。
+   */
+  let dragOutTimer: ReturnType<typeof setTimeout> | undefined
+
+  function clearDragOutTimer(): void {
+    if (dragOutTimer) {
+      clearTimeout(dragOutTimer)
+      dragOutTimer = undefined
+    }
+  }
+
   function move(e: PointerEvent): void {
     if (!dragging || !lastNode) return
 
-    // 边界检测：允许外部拖出 + 鼠标越界 → 终止内部拖拽、交给调用方
-    if (dragOutOpts?.enableDragOut && isOutOfWindow(e)) {
-      end() // 先清理 window 监听，防止外部拖拽期间残留
-      dragOutOpts.onDragOut?.()
-      return
+    if (dragOutOpts?.enableDragOut) {
+      const out = isOutOfWindow(e)
+
+      if (out) {
+        // 第一次越界才开定时器；已经在等了就不重复开
+        if (!dragOutTimer) {
+          const delay = dragOutOpts.confirmDelayMs ?? 0
+          if (delay <= 0) {
+            end()
+            dragOutOpts.onDragOut?.(startPos)
+          } else {
+            dragOutTimer = setTimeout(() => {
+              dragOutTimer = undefined
+              end()
+              dragOutOpts.onDragOut?.(startPos)
+            }, delay)
+          }
+        }
+        // 越界期间既不清监听也不 setPosition——节点停在越界那一刻的位置，
+        // 让用户自己决定：是等超时触发外部拖拽，还是收回来继续内部拖拽。
+        return
+      }
+
+      // 回到窗口内：如果之前有越界定时器，清掉它——用户反悔了，继续内部拖拽
+      if (dragOutTimer) {
+        clearDragOutTimer()
+      }
     }
 
     const scale = viewport.scale || 1
@@ -116,6 +159,7 @@ export function useNodePosition(
 
   function end(): void {
     dragging = false
+    clearDragOutTimer()
     window.removeEventListener('pointermove', move)
     window.removeEventListener('pointerup', end)
   }

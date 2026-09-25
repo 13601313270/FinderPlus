@@ -1,4 +1,5 @@
 import type { DragOutOpts } from './useNodePosition'
+import { workspaceScene } from '../../../main/engine/graph/SceneRegistry'
 
 /**
  * 最近一次 startDrag 主进程返回的 fullPath（如果有的话）。
@@ -52,12 +53,13 @@ export function clearSelfDragDrop(): void {
  */
 
 /**
- * 传进来的节点最小接口——只要能拿到 fileName + id 就够了。
- * 不用具体 FileNode，保持跟 useNodePosition 的 NodeLike 风格一致。
+ * 传进来的节点最小接口——需要 fileName（判断能不能拖）、id（删节点用）、
+ * setPosition（还原按下前的位置，因为越界前节点已经被 setPosition 跟着鼠标移动过了）。
  */
 export interface FileDragLike {
   readonly fileName: string
   readonly id: string
+  setPosition(x: number, y: number): void
 }
 
 export interface FileDragOutResult {
@@ -70,16 +72,39 @@ export interface FileDragOutResult {
 export function useFileDragOut(getNode: () => FileDragLike | undefined): FileDragOutResult {
   let cleanupDragOut: (() => void) | undefined
 
-  async function handleDragOut(): Promise<void> {
+  /**
+   * 被 useNodePosition 越界超时调用。
+   * startPos 是 startDrag 时节点的原始位置（按下那一刻）——必须先还原，
+   * 因为越界前节点已经跟着鼠标移动了一段距离。OS 级拖拽是文件级操作，
+   * 画布上的节点应该回到按下前的位置。
+   */
+  async function handleDragOut(startPos: readonly [number, number]): Promise<void> {
     const node = getNode()
     if (!node || !node.fileName) return // 没选文件的节点不许拖出
+
+    // 还原节点到按下前的位置——越界前已经被 setPosition 跟着鼠标移动过了
+    node.setPosition(startPos[0], startPos[1])
+
     // await 主进程：拿到它实际 startDrag 用的 fullPath，存起来供 App.vue 路径匹配
     lastStartDragPath = (await window.fileApi.startDrag(node.fileName)) ?? undefined
 
-    // OS 拖拽期间窗口可能失焦，用 document 级 pointerup 兜底
+    // OS 拖拽期间窗口可能失焦，用 document 级 pointerup 兜底清理
     function onPointerUp(): void {
       document.removeEventListener('pointerup', onPointerUp)
       cleanupDragOut = undefined
+
+      // OS 可能还在落盘/移动文件，稍微等一下再 exists 判断
+      setTimeout(async () => {
+        const n = getNode()
+        if (!n) return
+        const stillThere = await window.fileApi.exists(n.fileName)
+        if (!stillThere) {
+          // 文件被移动出去了 → 删节点
+          const instance = workspaceScene.getNode(n.id)
+          if (instance) workspaceScene.removeNode(instance)
+        }
+        // 还在：用户取消了拖拽或做的是复制（源文件保留），节点不动
+      }, 300)
     }
 
     document.addEventListener('pointerup', onPointerUp)
@@ -93,6 +118,7 @@ export function useFileDragOut(getNode: () => FileDragLike | undefined): FileDra
 
   const dragOutOpts: DragOutOpts = {
     enableDragOut: true,
+    confirmDelayMs: 300, // 给用户 300ms 反悔窗口：滑出去又回来不会误触 OS 拖拽
     onDragOut: handleDragOut
   }
 

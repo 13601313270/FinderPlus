@@ -270,7 +270,7 @@ const setMenuRoot = (ref: unknown) => {
     menuRoot = null
     return
   }
-  // ContextMenu 通过 defineExpose 暴露 menuEl
+  // ContextMenu 通过 defineExpose 暴露 menuEl（Vue 3 会自动解包 Ref，直接拿到 HTMLElement）
   const exposed = ref as { menuEl?: HTMLElement | null }
   menuRoot = exposed.menuEl ?? null
 }
@@ -343,8 +343,15 @@ function onCanvasPointerDown(e: PointerEvent): void {
     return
   }
 
-  // 只认画布空白背景：点中节点时，交给节点自己的拖拽逻辑，别抢
+  // 只认画布空白背景：点中节点或菜单时，交给子组件自己处理，别抢
   if (e.target !== canvasEl.value) return
+
+  // 点击画布空白 → 关闭右键菜单
+  // （放在 e.preventDefault() 之前，因为 preventDefault 会抑制后续 mousedown，
+  //  document 级别的 onDocumentMouseDown 收不到这里的点击）
+  if (contextMenu.value.visible) {
+    closeContextMenu()
+  }
 
   e.preventDefault()
   panning = true

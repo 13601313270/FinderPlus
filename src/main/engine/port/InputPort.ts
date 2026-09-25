@@ -4,7 +4,7 @@ import type { Node } from '../node/Node'
 import { OutputPort } from './OutputPort'
 
 /** 任何带 KIND 静态属性的 Value 子类 */
-type ValueClass = { readonly KIND: ValueKind; prototype: Value }
+type ValueClass = { readonly KIND: ValueKind; prototype: Value; new (...args: any[]): Value }
 
 export type InputPortBindRejectReason = 'kind-not-allowed' | 'single-port-occupied'
 
@@ -104,11 +104,16 @@ export class InputPort {
    * 能不能接入某种类型。连线前的校验只跟「端口规则 + 上游类型」有关，跟边本身无关——
    * 所以这里收的是 OutputPort，不是整条 Edge：UI 拖拽连线时也能拿它做实时判定，
    * 不必自己抄一遍规则，更不必先造一条边。
+   *
+   * 用类引用 + prototype chain 比较：输出端口的 valueClass 等于或继承自 accepts 里的某个类就算通过，
+   * 例如 accepts: [FileValue] 可以接住 OutputPort(TxtFileValue) 的输出。
    */
   canBindEdge(startPort: OutputPort): { result: true } | { result: false, message: InputPortBindRejectReason } {
-    // 用 Value 子类的静态 KIND 做比较，子类匹配也能过
-    const kind = startPort.kind
-    if (!this.options.accepts.some(cls => cls.KIND === kind)) {
+    const outCls = startPort.valueClass
+    const allowed = this.options.accepts.some(
+      cls => outCls === cls || outCls.prototype instanceof cls
+    )
+    if (!allowed) {
       return { result: false, message: 'kind-not-allowed' }
     }
 

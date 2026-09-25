@@ -10,6 +10,4 @@ import type { ValueKind } from './Value'
  */
 export class TxtFileValue extends FileValue {
   static override readonly KIND: ValueKind = 'txt-file'
-
-  override readonly kind = TxtFileValue.KIND
 }

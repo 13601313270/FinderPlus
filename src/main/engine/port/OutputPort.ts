@@ -3,7 +3,7 @@ import type { Edge } from '../graph/Edge'
 import type { Node } from '../node/Node'
 
 /** 任何带 KIND 静态属性的 Value 子类 */
-type ValueClass = { readonly KIND: ValueKind; prototype: Value }
+type ValueClass = { readonly KIND: ValueKind; prototype: Value; new (...args: any[]): Value }
 
 /**
  * 输出端口：节点产出值的出口。
@@ -24,7 +24,10 @@ export class OutputPort {
   /** 所属节点，由 Node 登记端口时注入 */
   private owner: Node | undefined
 
-  /** 本端口产出的类型标签：从 valueClass.KIND 取，供连线校验与端口样式使用 */
+  /** 本端口产出的 Value 子类 */
+  readonly valueClass: ValueClass
+
+  /** 本端口产出的类型标签（valueClass.KIND 的快捷访问，供 UI 展示） */
   readonly kind: ValueKind
 
   constructor(
@@ -34,6 +37,7 @@ export class OutputPort {
     /** 端口文本标记，UI 显示用；不填则回退到 id */
     readonly label?: string
   ) {
+    this.valueClass = valueClass
     this.kind = valueClass.KIND
   }
 

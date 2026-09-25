@@ -21,9 +21,6 @@ export abstract class Value {
    */
   static readonly KIND: ValueKind = ''
 
-  /** 类型标签，端口的 accepts 判断与下游节点的分支都靠它 */
-  abstract readonly kind: ValueKind
-
   /**
    * 内容指纹：构造时算好的不可变字段，内容相同则指纹相同。
    * 上游靠它判断「我这次重算后到底有没有变」，端口靠它决定要不要往派发；
@@ -32,9 +29,4 @@ export abstract class Value {
    * 指纹在 Value 构造时一次性生成，下游只做字符串比较，不触发任何重计算。
    */
   abstract readonly fingerprint: string
-
-  /** 值相等 = 类型相同且指纹相同 */
-  equals(other: Value | null | undefined): boolean {
-    return other != null && other.kind === this.kind && other.fingerprint === this.fingerprint
-  }
 }

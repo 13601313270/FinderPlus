@@ -4,8 +4,6 @@ import { Value, type ValueKind } from './Value'
 export class StringValue extends Value {
   static override readonly KIND: ValueKind = 'string'
 
-  override readonly kind = StringValue.KIND
-
   readonly fingerprint: string
 
   constructor(readonly value: string) {

@@ -13,8 +13,6 @@ import { Value, type ValueKind } from './Value'
 export class FileValue extends Value {
   static override readonly KIND: ValueKind = 'file'
 
-  override readonly kind = FileValue.KIND
-
   /** 内容 hash 指纹：文件内容相同则 hash 相同 */
   readonly fingerprint: string
 

@@ -57,13 +57,6 @@ export abstract class FileNode extends Node {
     this.notifyChanged()
   }
 
-  clearFile(): void {
-    if (!this.fileNameValue) return
-    this.fileNameValue = ''
-    this.fileSizeValue = 0
-    this.notifyChanged()
-  }
-
   onInputChanged(): void {}
 
   saveState(): Record<string, unknown> {

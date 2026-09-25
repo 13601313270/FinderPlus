@@ -61,40 +61,6 @@ function formatSize(bytes: number): string {
   return `${(bytes / 1024 / 1024).toFixed(2)} MB`
 }
 
-/** 调原生对话框选文件，选好后写回节点；选新文件时自动删旧副本 */
-async function chooseFile(): Promise<void> {
-  const node = fileNode.value
-  if (!node) return
-  const prevName = node.fileName || ''
-
-  const result = await window.fileApi.selectAndCopy({
-    title: '选择 TXT 文件',
-    extensions: node.getAcceptedExtensions()
-  })
-  if (!result) return // 用户取消
-
-  if (prevName && prevName !== result.fileName) {
-    await window.fileApi.delete(prevName)
-  }
-  node.setFile(result.fileName, result.size)
-  try {
-    const text = await window.fileApi.readText(result.fileName)
-    node.setContent(text)
-  } catch (err) {
-    console.warn('[TxtFileNode] 读文件内容失败：', err)
-  }
-}
-
-/** 清空节点：同时删除画布目录里的文件副本 */
-async function clearFile(): Promise<void> {
-  const node = fileNode.value
-  if (!node) return
-  if (node.fileName) {
-    await window.fileApi.delete(node.fileName)
-  }
-  node.clearFile()
-}
-
 // 挂载时：如果有 fileName 但没内容，自动读一次兜底
 onMounted(async () => {
   const node = fileNode.value
@@ -147,21 +113,6 @@ onMounted(async () => {
       </span>
     </div>
 
-    <!-- 操作按钮 -->
-    <div class="file-card__actions">
-      <button class="btn btn--primary" @click="chooseFile" :disabled="!fileNode">
-        {{ fileName ? '重新选择' : '选择文件' }}
-      </button>
-      <button
-        v-if="fileName"
-        class="btn"
-        @click="clearFile"
-        :disabled="!fileNode"
-        title="删除文件"
-      >
-        清空
-      </button>
-    </div>
   </div>
 </template>
 
@@ -218,32 +169,6 @@ onMounted(async () => {
     display: block;
     color: @color-text-weak;
     font-size: 11px;
-  }
-
-  &__actions {
-    display: flex;
-    gap: 4px;
-    width: 100%;
-    justify-content: center;
-    margin-top: 2px;
-  }
-}
-
-.btn {
-  padding: 3px 8px;
-  border: 1px solid #d5d9e0;
-  border-radius: 5px;
-  background: #fff;
-  font-size: 12px;
-  cursor: pointer;
-
-  &:hover:not(:disabled) { background: #f3f4f7; }
-  &:disabled { opacity: 0.5; cursor: not-allowed; }
-
-  &--primary {
-    border-color: #4a7cff;
-    color: #4a7cff;
-    &:hover:not(:disabled) { background: #eef3ff; }
   }
 }
 </style>

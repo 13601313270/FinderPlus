@@ -41,12 +41,6 @@ export class TxtFileNode extends FileNode {
     this.notifyChanged()
   }
 
-  /** 清空文件时连内容也清，下游收到空串 */
-  clearFile(): void {
-    super.clearFile()
-    this.setContent('')
-  }
-
   saveState(): Record<string, unknown> {
     return { ...super.saveState(), content: this.contentValue }
   }

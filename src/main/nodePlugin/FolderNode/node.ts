@@ -32,6 +32,20 @@ function extOf(name: string): string {
   return dot >= 0 ? name.slice(dot).toLowerCase() : ''
 }
 
+/** File → base64 字符串（去掉 data:xxx;base64, 前缀），供 writeBuffer 用 */
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      const result = reader.result as string
+      const comma = result.indexOf(',')
+      resolve(comma >= 0 ? result.slice(comma + 1) : result)
+    }
+    reader.onerror = () => reject(reader.error)
+    reader.readAsDataURL(file)
+  })
+}
+
 /**
  * 文件夹容器节点：把若干文件/节点收纳进去，统一管理尺寸与摆放。
  *
@@ -132,11 +146,23 @@ export class FolderNode extends Node {
 
   // —— 三个收养入口 ——
 
-  /** 端口收值：收到文件 Value → 按文件后缀决定子节点类型 → 构造 → 收养（文件字节已在画布目录，不复制） */
-  inputPortReceiveValue(_ports: InputPort[]): void {
+  /** 端口收值：收到文件 Value → 落盘 → 按文件后缀决定子节点类型 → 构造 → 收养 */
+  async inputPortReceiveValue(_ports: InputPort[]): Promise<void> {
     const [first] = this.fileInput.value
     if (!(first instanceof FileValue)) return
     if (this.adoptedFingerprints.has(first.fingerprint)) return // 同一文件去重
+
+    // FileValue.file 是浏览器原生 File（内存中，无磁盘路径），必须转 base64 落盘
+    let written: { fileName: string; size: number }
+    try {
+      const base64 = await fileToBase64(first.file)
+      // @ts-ignore — tsconfig.node.json 编译本文件时不带 preload 的 Window 扩展，
+      // 运行时本文件只在 renderer 里执行，window.fileApi 一定存在
+      written = await window.fileApi.writeBuffer(first.file.name, base64)
+    } catch (err) {
+      console.warn(`[FolderNode] 收文件 ${first.file.name} 落盘失败：`, err)
+      return
+    }
 
     // 承接哪种子节点由文件夹决定：复用 App 落盘时的扩展名注册表（后缀 → 节点类），
     // 文件节点自身不承担任何「承接」职责。
@@ -144,7 +170,7 @@ export class FolderNode extends Node {
     if (!manifest) return
 
     const child = new manifest.nodeClass(this.makeId(manifest.type))
-    ;(child as FileNode).setFile(first.file.name, first.file.size)
+    ;(child as FileNode).setFile(written.fileName, written.size)
     const [sx, sy] = this.computeSlotPosition(this.children.length)
     child.setPosition(sx, sy)
     workspaceScene.addNode(child)

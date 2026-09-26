@@ -269,8 +269,10 @@ export abstract class Node {
    *
    * @param ports 触发本次通知的端口列表（通常只有一个；未来需要多个端口联动判定
    *              时可以一次传多个，比如"图片+尺寸两个端口都齐了才算就绪"）。
+   *
+   * 可以返回 Promise——需要异步 IPC（如落盘）的节点 await 即可，基类不强同步。
    */
-  abstract inputPortReceiveValue(ports: InputPort[]): void
+  abstract inputPortReceiveValue(ports: InputPort[]): Promise<void> | void
 
   /**
    * 把节点的**内部运行状态**序列化成一个 plain object。

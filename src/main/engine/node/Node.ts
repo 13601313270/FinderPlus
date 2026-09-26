@@ -266,8 +266,11 @@ export abstract class Node {
    * 基类不给默认实现——收到通知之后做什么、要不要做，各节点差别太大：
    * 展示类要刷新界面，计算类要重算，源头节点压根收不到通知。
    * 所以这里只负责「把通知接住」，具体动作交给子类。
+   *
+   * @param ports 触发本次通知的端口列表（通常只有一个；未来需要多个端口联动判定
+   *              时可以一次传多个，比如"图片+尺寸两个端口都齐了才算就绪"）。
    */
-  abstract onInputChanged(): void
+  abstract inputPortReceiveValue(ports: InputPort[]): void
 
   /**
    * 把节点的**内部运行状态**序列化成一个 plain object。

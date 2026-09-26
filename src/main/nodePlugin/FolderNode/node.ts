@@ -133,7 +133,7 @@ export class FolderNode extends Node {
   // —— 三个收养入口 ——
 
   /** 端口收值：收到文件 Value → 按文件后缀决定子节点类型 → 构造 → 收养（文件字节已在画布目录，不复制） */
-  onInputChanged(): void {
+  inputPortReceiveValue(_ports: InputPort[]): void {
     const [first] = this.fileInput.value
     if (!(first instanceof FileValue)) return
     if (this.adoptedFingerprints.has(first.fingerprint)) return // 同一文件去重

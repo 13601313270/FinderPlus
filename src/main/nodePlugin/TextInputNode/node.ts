@@ -1,6 +1,7 @@
 import { StringValue } from '../../engine/data/StringValue'
 import { OutputPort } from '../../engine/port/OutputPort'
 import { Node } from '../../engine/node/Node'
+import type { InputPort } from '../../engine/port/InputPort'
 
 /**
  * 字符串输入框节点：源头节点，框里写什么就往外送什么。
@@ -44,7 +45,7 @@ export class TextInputNode extends Node {
   }
 
   /** 没有输入端口，永远收不到通知 */
-  onInputChanged(): void {}
+  inputPortReceiveValue(_ports: InputPort[]): void {}
 
   saveState(): Record<string, unknown> {
     return { content: this.content }

@@ -118,7 +118,7 @@ export class ImageCompressNode extends Node {
   }
 
   /** 输入端口变化（尺寸值/断边）：通知视图刷新展示；不触发重压 */
-  onInputChanged(): void {
+  inputPortReceiveValue(_ports: InputPort[]): void {
     this.notifyChanged()
   }
 

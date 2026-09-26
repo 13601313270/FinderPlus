@@ -1,4 +1,5 @@
 import { Node } from '../../engine/node/Node'
+import type { InputPort } from '../../engine/port/InputPort'
 
 /**
  * 文件节点抽象基类：管理"已选中的文件"这一层共同状态。
@@ -71,7 +72,7 @@ export abstract class FileNode extends Node {
     // 默认不处理
   }
 
-  onInputChanged(): void {}
+  inputPortReceiveValue(_ports: InputPort[]): void {}
 
   saveState(): Record<string, unknown> {
     return { fileName: this.fileNameValue }

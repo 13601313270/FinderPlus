@@ -1,6 +1,7 @@
 import { NumberValue } from '../../engine/data/NumberValue'
 import { OutputPort } from '../../engine/port/OutputPort'
 import { Node } from '../../engine/node/Node'
+import type { InputPort } from '../../engine/port/InputPort'
 
 /**
  * 数字输入框节点：源头节点，框里写几就往外送几。
@@ -49,7 +50,7 @@ export class NumberInputNode extends Node {
   }
 
   /** 没有输入端口，永远收不到通知 */
-  onInputChanged(): void {}
+  inputPortReceiveValue(_ports: InputPort[]): void {}
 
   saveState(): Record<string, unknown> {
     return { content: this.content }

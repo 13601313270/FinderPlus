@@ -47,7 +47,7 @@ export class ImagePreviewNode extends Node {
    * 无输入时必须调 imageOutput.clear() 沿 edges 派发清空信号——
    * 否则下游的 incoming map 里还残留旧值，级联链路就断了。
    */
-  onInputChanged(): void {
+  inputPortReceiveValue(_ports: InputPort[]): void {
     const [first] = this.imageInput.value
     if (first instanceof ImgFileValue) {
       this.imageOutput.commit(first)

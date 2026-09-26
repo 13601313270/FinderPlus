@@ -86,7 +86,7 @@ export class InputPort {
     const changed = this.incoming.get(edge)?.fingerprint !== value.fingerprint
     this.incoming.set(edge, value)
     if (changed) {
-      this.owner?.onInputChanged()
+      this.owner?.inputPortReceiveValue([this])
     }
   }
 
@@ -96,13 +96,13 @@ export class InputPort {
    * 保留边本身。场景：中间节点的 OutputPort.clear() 沿 edges 派发清空，
    * 下游的边还在（连线没断），只是上游这次不再产出任何值。
    *
-   * 只有这条边之前**确实有值**时才触发 onInputChanged——否则重复清没意义。
+   * 只有这条边之前**确实有值**时才触发 inputPortReceiveValue——否则重复清没意义。
    */
   receiveClear(edge: Edge): void {
     const hadValue = this.incoming.get(edge) !== undefined
     this.incoming.set(edge, undefined)
     if (hadValue) {
-      this.owner?.onInputChanged()
+      this.owner?.inputPortReceiveValue([this])
     }
   }
 
@@ -142,13 +142,13 @@ export class InputPort {
   /** 绑定Edge，设置值为undefined */
   bindEdge(edge: Edge) {
     this.incoming.set(edge, undefined)
-    this.owner?.onInputChanged()
+    this.owner?.inputPortReceiveValue([this])
   }
 
   // 解绑Edge，清空值为undefined
   unbindEdge(edge: Edge): { result: true } | { result: false, message: string } {
     this.incoming.delete(edge)
-    this.owner?.onInputChanged()
+    this.owner?.inputPortReceiveValue([this])
     return { result: true };
   }
 }

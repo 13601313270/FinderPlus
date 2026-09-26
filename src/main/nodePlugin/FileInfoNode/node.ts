@@ -53,7 +53,7 @@ export class FileInfoNode extends Node {
   }
 
   /** 收到通知就刷新展示，这是它唯一要做的事 */
-  onInputChanged(): void {
+  inputPortReceiveValue(_ports: InputPort[]): void {
     const [first] = this.fileInput.value
     if (first instanceof FileValue) {
       this.fileName = first.file.name

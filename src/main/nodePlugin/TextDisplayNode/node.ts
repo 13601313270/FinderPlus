@@ -37,7 +37,7 @@ export class TextDisplayNode extends Node {
   }
 
   /** 收到通知就刷新展示，这是它唯一要做的事 */
-  onInputChanged(): void {
+  inputPortReceiveValue(_ports: InputPort[]): void {
     const [first] = this.textInput.value
     this.displayed = first instanceof StringValue ? first.value : ''
     this.notifyChanged()

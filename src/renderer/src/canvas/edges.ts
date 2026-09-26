@@ -41,10 +41,10 @@ function ownerOfPort(scene: Scene, port: OutputPort | InputPort): Node | undefin
  * 退回卡片对应侧边的中点——宁可端点粗略，也别让线凭空消失。
  */
 function portAnchor(node: Node, port: OutputPort | InputPort, side: PortSide): Vec2 {
-  const measured = measurePortCenter(node.id, node.position, side, port)
+  const measured = measurePortCenter(node.id, node.worldPosition, side, port)
   if (measured) return measured
 
-  const box = measureNodeBox(node.id, node.position, node.box)
+  const box = measureNodeBox(node.id, node.worldPosition, node.box)
   return side === 'out'
     ? { x: box.x + box.width, y: box.y + box.height / 2 }
     : { x: box.x, y: box.y + box.height / 2 }

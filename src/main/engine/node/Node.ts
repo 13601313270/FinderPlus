@@ -37,7 +37,15 @@ export abstract class Node {
   private readonly inputs: InputPort[] = []
   private readonly outputs: OutputPort[] = []
 
-  /** 节点在画布上的坐标。引擎只负责存与通知，怎么拖由渲染组件决定 */
+  /**
+   * 节点在画布上的坐标，语义是**相对直接父容器的局部坐标**：
+   * 被容器节点（FolderNode 等）收养时，存的是相对该容器的偏移；
+   * 顶级节点（无 containerNode）的父容器就是画布根部，此时局部坐标 == 世界坐标。
+   *
+   * 靠 DOM 嵌套让浏览器逐级累加渲染，几何/命中测量才需要世界坐标——
+   * 那走 `worldPosition` getter 沿容器链累加，不要在本类里做过深的 offset 拼接。
+   * 引擎只负责存与通知，怎么拖由渲染组件决定。
+   */
   private positionValue: [number, number] = [0, 0]
 
   /**
@@ -49,14 +57,42 @@ export abstract class Node {
   /** 变化订阅者。UI 靠它把引擎里的普通字段同步成 Vue 响应式状态 */
   private readonly listeners = new Set<() => void>()
 
-  /** 所属 Scene 引用，由 Scene.addNode 时注入。右键菜单里的通用操作（如删除）需要它 */
-  private sceneRef?: Scene
+  /** 所属 Scene 引用，由 Scene.addNode 时注入。右键菜单的通用操作（如删除）、
+   * 以及容器节点（FolderNode）的收养/释放都需要它 */
+  protected sceneRef?: Scene
+
+  /**
+   * 容器归属标记：被容器节点（如 FolderNode）收养时指向该容器，孤儿为 undefined。
+   * 装载/释放由容器节点（FolderNode）显式管理，不走 setter 派发——它只是归属标记，
+   * 不是核心状态，不需要通知观察者。子节点仍留在同一 Scene（扁平收养），
+   * position 也随之成为**相对本容器的局部坐标**，世界坐标靠 worldPosition 沿此链累加。
+   * 边按端口对象引用连接，收养/释放都不破坏边。
+   */
+  containerNode?: Node
 
   constructor(readonly id: string) { }
 
-  /** 节点当前位置（只读元组，防止外部直接改值绕过通知） */
+  /** 节点当前位置（只读元组，防止外部直接改值绕过通知）。相对直接父容器的局部坐标 */
   get position(): readonly [number, number] {
     return this.positionValue
+  }
+
+  /**
+   * 世界坐标 = 自身局部坐标 + 沿 containerNode 祖先链逐级累加的局部坐标。
+   * 顶级节点（无容器）时直接等于 position。几何测量（连线/命中/小地图）都用它，
+   * 不要手搓逐层 offset。
+   */
+  get worldPosition(): readonly [number, number] {
+    let x = this.positionValue[0]
+    let y = this.positionValue[1]
+    let parent = this.containerNode
+    while (parent) {
+      const [px, py] = parent.positionValue
+      x += px
+      y += py
+      parent = parent.containerNode
+    }
+    return [x, y]
   }
 
   /** 更新节点位置并通知观察者。拖拽的最终落点都走这里 */

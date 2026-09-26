@@ -13,11 +13,16 @@ import NodePorts from './NodePorts.vue'
  * │  (in)     │  render.vue   │  (out)    │
  * └──────────┴──────────────┴──────────┘
  *
- * - node-shell 本身只负责世界定位（position: absolute），
+ * - node-shell 本身只负责定位（position: absolute），
  *   视觉边框 / 阴影全部由 render.vue 里的 .node 提供。
  * - 端口列和 content 同高（align-items: stretch），
  *   端口竖向用 flex space-evenly 自然均分高度，
  *   圆点用负 margin 探出到 content 侧线（圆心正好对齐外壳边框）。
+ *
+ * 定位用的 node.position 是**相对直接父容器的局部坐标**：顶级节点直接挂在
+ * stage__world 下，它就是世界坐标；被文件夹嵌套渲染时，浏览器沿 DOM 嵌套把
+ * 父容器坐标与本局部坐标累加，子外壳自然落在正确的世界位置——无需调用方再传
+ * 任何负向偏移（那套逐层 offset 只会越加越多，文件夹套文件夹就崩了）。
  */
 const props = defineProps<{
   node: NodeLike & PortsOwnerLike

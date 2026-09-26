@@ -89,11 +89,15 @@ let unsubscribeNodes: (() => void)[] = []
 
 function resubscribeNodes(): void {
   unsubscribeNodes.forEach((off) => off())
-  unsubscribeNodes = workspaceScene.allNodes.map((node) =>
-    node.onChanged(() => {
-      nodeTick.value++
-    })
-  )
+  // 只订阅顶层节点的变更——被文件夹收养的子节点不独立出现在小地图上，
+  // 它们的位置变化只体现在文件夹自身的小方块里，不需要单独订阅。
+  unsubscribeNodes = workspaceScene.allNodes
+    .filter((n) => !n.containerNode)
+    .map((node) =>
+      node.onChanged(() => {
+        nodeTick.value++
+      })
+    )
 }
 
 function onSceneChanged(): void {
@@ -143,8 +147,22 @@ const layout = computed<MinimapLayout | null>(() => {
   const h = canvasH.value
   if (!w || !h) return null
 
-  const nodeBoxes = workspaceScene.allNodes.map((node) => measureNodeBox(node.id, node.position, node.box))
+  // 小地图只展示顶层节点：被文件夹收养的子节点不出现在小地图上，
+  // 文件夹自身已经以大块表示了内部节点的范围，再画子节点会让地图乱糟糟。
+  const topLevelNodes = workspaceScene.allNodes.filter((n) => !n.containerNode)
+  const nodeBoxes = topLevelNodes.map((node) =>
+    measureNodeBox(node.id, node.worldPosition, node.box)
+  )
+
+  // 连线也只保留两端都是顶层节点的——夹在「顶层 → 文件夹内子节点」
+  // 或「文件夹内子节点 → 顶层」的边从简化地图里省略，避免跨方块横穿
+  const topLevelIds = new Set(topLevelNodes.map((n) => n.id))
   const edgeGeoms = workspaceScene.allEdges
+    .filter((e) => {
+      const fromId = e.startPort.getOwner()?.id
+      const toId = e.endPort.getOwner()?.id
+      return !!fromId && !!toId && topLevelIds.has(fromId) && topLevelIds.has(toId)
+    })
     .map((edge) => edgeGeometry(workspaceScene, edge))
     .filter(isEdgeGeometry)
 

@@ -4,7 +4,9 @@ import type { Node } from '../../main/engine/node/Node'
 import { workspaceScene } from '../../main/engine/graph/SceneRegistry'
 import { manifestFor, getNodeManifest, resolveByExtension } from '../../main/nodePlugin'
 import type { FileNode } from '../../main/nodePlugin/FileNode/node'
+import { FolderNode } from '../../main/nodePlugin/FolderNode/node'
 import { viewport, panViewport, zoomViewportAt, screenToWorld, setCanvasContainer } from '@renderer/canvas/viewport'
+import { measureNodeBox } from '@renderer/canvas/elements'
 import EdgeLayer from './components/EdgeLayer.vue'
 import NodeShell from './components/NodeShell.vue'
 import ConnectionPreview from './components/ConnectionPreview.vue'
@@ -30,9 +32,11 @@ function onSceneChanged(): void {
 }
 
 // 所有节点的响应式快照：每次 sceneTick +1 都会重读 workspaceScene.allNodes
+// 顶层只渲染「未被收养」的节点——文件夹的子节点由文件夹 render.vue 嵌套渲染，
+// 避免同一子节点在世界层和文件夹里各渲染一遍（Minimap/EdgeLayer 仍用 allNodes 全量）。
 const nodes = computed(() => {
   sceneTick.value // 只做依赖登记，真正取值在下一行
-  return workspaceScene.allNodes
+  return workspaceScene.allNodes.filter((n) => !n.containerNode)
 })
 
 // —— 无限画布：平移 + 缩放 ——
@@ -145,7 +149,7 @@ function onCanvasDragOver(e: DragEvent): void {
   let hijacked = false
   for (const node of workspaceScene.allNodes) {
     const [nodeWidth, nodeHeight] = node.box
-    const [nodeX, nodeY] = node.position
+    const [nodeX, nodeY] = node.worldPosition
     if (
       !hijacked &&
       nodeWidth > 0 &&
@@ -277,9 +281,11 @@ async function onCanvasDrop(e: DragEvent): Promise<void> {
       for (const node of workspaceScene.allNodes) {
         const [nodeWidth, nodeHeight] = node.box
         if (nodeWidth <= 0 || nodeHeight <= 0) continue // 轴不约束的节点无法确定边界，跳过
-        const [nodeX, nodeY] = node.position
+        const [nodeX, nodeY] = node.worldPosition
         const inside = worldX >= nodeX && worldX <= nodeX + nodeWidth && worldY >= nodeY && worldY <= nodeY + nodeHeight
         if (inside && node.testIsInFileDropZone(worldX - nodeX, worldY - nodeY)) {
+          // 承接工作全部委托给节点自己的 onFileDrop（文件夹内部会复制→构造→收养子节点），
+          // App 只做无差别的广播，不再按节点类型特判。
           node.onFileDrop(sourcePath)
           clearAllFileDropZones() // 文件已被节点接管，统一清掉所有悬停态
           return
@@ -451,7 +457,7 @@ function onGlobalPointerUp(e: PointerEvent): void {
     const [wx, wy] = screenToWorld(e.clientX - canvasRect.left, e.clientY - canvasRect.top)
     for (const node of workspaceScene.allNodes) {
       if (node === draggedNode) continue
-      const [bx, by] = node.position
+      const [bx, by] = node.worldPosition
       const [bw, bh] = node.box
       if (bw <= 0 || bh <= 0) continue // 无边界（轴为 0）不参与命中
       if (wx >= bx && wx <= bx + bw && wy >= by && wy <= by + bh) {
@@ -459,6 +465,21 @@ function onGlobalPointerUp(e: PointerEvent): void {
           node.onNodeDrop(draggedNode)
         }
         break // 一次投放只结算遍历序最靠前的第一个命中节点
+      }
+    }
+
+    // —— 拖出文件夹边界 → 释放回画布 ——
+    // 被拖节点若归属于某文件夹，且松手世界坐标越出该文件夹框（外扩 12px 容错），
+    // 就从文件夹里释放（原地放回画布，边保留）。未命中任何节点时同样释放——
+    // 避免拖到空白处却被文件夹扣住。
+    const holder = draggedNode.containerNode
+    if (holder) {
+      const rect = measureNodeBox(holder.id, holder.worldPosition, holder.box)
+      const outside =
+        wx < rect.x - 12 || wx > rect.x + rect.width + 12 ||
+        wy < rect.y - 12 || wy > rect.y + rect.height + 12
+      if (outside && holder instanceof FolderNode) {
+        holder.removeChild(draggedNode)
       }
     }
   } finally {
@@ -543,6 +564,12 @@ async function bootstrapScene(): Promise<void> {
   }
 
   // —— 4. 恢复视口 + attachStorage ——
+  // （边已重建，端口已就绪）此时按各文件夹 readState 暂存的 pendingChildIds 收养子节点
+  for (const node of workspaceScene.allNodes) {
+    if (node instanceof FolderNode) {
+      node.adoptChildren(workspaceScene)
+    }
+  }
   if (data?.viewport) {
     viewport.x = data.viewport.x
     viewport.y = data.viewport.y

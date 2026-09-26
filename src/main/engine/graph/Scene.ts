@@ -137,8 +137,9 @@ export class Scene {
     this.storage?.saveViewport(x, y, scale)
   }
 
-  /** 广播「图结构变了」。只报「变了」这个事实，具体变更由订阅方自己重读集合 */
-  private notifyChanged(): void {
+  /** 广播「图结构变了」。只报「变了」这个事实，具体变更由订阅方自己重读集合
+   *  （顶层列表、订阅名单等会受影响，所以 FolderNode 的 adoptNode/removeChild 也要调它） */
+  notifyChanged(): void {
     this.listeners.forEach((fn) => fn())
   }
 

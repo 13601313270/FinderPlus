@@ -17,7 +17,7 @@ import type { NodeMenuItem } from '../../main/engine/node/Node'
 import { connectNotice } from '@renderer/canvas/connectionDrag'
 import { IpcStorage } from '@renderer/composables/IpcStorage'
 import { isSelfDragDrop, clearSelfDragDrop } from '@renderer/composables/useFileDragOut'
-import { getDraggingNode, clearDraggingNode } from '@renderer/composables/useNodePosition'
+import { getDraggingNode, getDraggingNodeStartPos, clearDraggingNode } from '@renderer/composables/useNodePosition'
 
 // 空白画布：没有预置节点。所有节点都从左上角「＋」调色板添加。
 
@@ -446,17 +446,22 @@ function onPanEnd(): void {
 // —— 节点投放结算：把节点 A 拖到节点 B 上（一次性工作）——
 // 被拖节点 A 由 useNodePosition 在 startDrag 时记录（getDraggingNode），A 自身不感知投放语义；
 // 松手时 App 用鼠标坐标命中目标 B，由 B 决定是否接受并执行 onNodeDrop 的一次性工作。
+//
+// onNodeDrop 返回 true 表示"本节点接管了"——App 不再把这当普通移动处理（包括跳过文件夹释放）。
+// 返回 false 表示"我没接管"——按普通移动走后续逻辑。
 function onGlobalPointerUp(e: PointerEvent): void {
   const dragged = getDraggingNode()
+  const startPos = getDraggingNodeStartPos()
   if (!dragged) return
   const canvasRect = canvasEl.value?.getBoundingClientRect()
   const draggedNode = workspaceScene.getNode(dragged.id)
-  if (!canvasRect || !draggedNode) {
+  if (!canvasRect || !draggedNode || !startPos) {
     clearDraggingNode()
     return
   }
   try {
     const [wx, wy] = screenToWorld(e.clientX - canvasRect.left, e.clientY - canvasRect.top)
+    let acceptedByTarget = false
     for (const node of workspaceScene.allNodes) {
       if (node === draggedNode) continue
       const [bx, by] = node.worldPosition
@@ -464,7 +469,7 @@ function onGlobalPointerUp(e: PointerEvent): void {
       if (bw <= 0 || bh <= 0) continue // 无边界（轴为 0）不参与命中
       if (wx >= bx && wx <= bx + bw && wy >= by && wy <= by + bh) {
         if (node.isPositionAcceptNodeDrop(draggedNode)) {
-          node.onNodeDrop(draggedNode)
+          acceptedByTarget = node.onNodeDrop(draggedNode, startPos)
         }
         break // 一次投放只结算遍历序最靠前的第一个命中节点
       }
@@ -474,8 +479,11 @@ function onGlobalPointerUp(e: PointerEvent): void {
     // 被拖节点若归属于某文件夹，且松手世界坐标越出该文件夹框（外扩 12px 容错），
     // 就从文件夹里释放（原地放回画布，边保留）。未命中任何节点时同样释放——
     // 避免拖到空白处却被文件夹扣住。
+    //
+    // 但如果已经被某个目标节点"接管"（onNodeDrop 返回 true，比如 ImageCompressNode
+    // 做完一次性工作后把人送回原位），就不动——目标节点自己管好了。
     const holder = draggedNode.containerNode
-    if (holder) {
+    if (holder && !acceptedByTarget) {
       const rect = measureNodeBox(holder.id, holder.worldPosition, holder.box)
       const outside =
         wx < rect.x - 12 || wx > rect.x + rect.width + 12 ||

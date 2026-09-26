@@ -195,9 +195,14 @@ export abstract class Node {
 
   /**
    * 节点 drop 结算：被拖节点（source）松手落在本节点上、且接受判定通过时被调用。
+   *
+   * @param source  被拖节点
+   * @param startPos source 在拖拽开始前的局部坐标（相对其父容器）——目标节点自行决定
+   *                 是否还原：像 ImageCompressNode 这种"一次性工作"节点应还原位置，
+   *                 FolderNode 这种"收养"节点则不还原（子节点归位到槽位就是新位置）
    * @returns true = 本节点接管该被拖节点（不再视为普通移动）；false = 不处理
    */
-  onNodeDrop(_source: Node): boolean {
+  onNodeDrop(_source: Node, _startPos: readonly [number, number]): boolean {
     return false
   }
 

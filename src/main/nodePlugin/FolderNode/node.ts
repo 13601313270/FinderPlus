@@ -189,8 +189,8 @@ export class FolderNode extends Node {
     return true
   }
 
-  /** 节点 drop 结算：直接收养源节点（边按端口引用自动保留） */
-  onNodeDrop(source: Node): boolean {
+  /** 节点 drop 结算：直接收养源节点（边按端口引用自动保留）。不还原位置——收养即归位 */
+  onNodeDrop(source: Node, _startPos: readonly [number, number]): boolean {
     if (!this.isPositionAcceptNodeDrop(source)) return false
     this.adoptNode(source)
     return true

@@ -49,21 +49,30 @@ export interface DragOutOpts {
  *
  * 用途：把「节点拖到另一个节点上」的结算交给 App 全局调度——被拖节点 A
  * 只负责移动、不感知任何投放语义；useNodePosition 在 startDrag 时把 A 记到这里，
- * App.vue 在松手事件里读它 + 鼠标坐标命中目标 B，再调 B.onNodeDrop(A)。
+ * App.vue 在松手事件里读它 + 鼠标坐标命中目标 B，再调 B.onNodeDrop(A, startPos)。
  *
  * 清除由 App 统一做（松手结算完成后置 null），useNodePosition 不负责——
  * 避免 App 的 pointerup 处理器和本组合式函数的 end() 触发顺序互相踩。
  */
 let draggingNode: NodeLike | null = null
 
+/** 被拖节点的拖拽前局部坐标：startDrag 时记录，松手结算时传给目标节点的 onNodeDrop */
+let draggingNodeStartPos: [number, number] | null = null
+
 /** 读取当前正在被拖拽的节点（App 的松手结算用） */
 export function getDraggingNode(): NodeLike | null {
   return draggingNode
 }
 
+/** 读取被拖节点拖拽前的局部坐标（App 传给 onNodeDrop 用，目标节点自行决定是否还原） */
+export function getDraggingNodeStartPos(): readonly [number, number] | null {
+  return draggingNodeStartPos
+}
+
 /** 清除拖拽记录。App 在松手结算完成后调用（含「未命中任何接收节点」的情况） */
 export function clearDraggingNode(): void {
   draggingNode = null
+  draggingNodeStartPos = null
 }
 
 /**
@@ -214,6 +223,7 @@ export function useNodePosition(
     startClientY = e.clientY
     startPos = [...lastNode.position]
     draggingNode = lastNode // 记录「当前在拖拽的节点」，App 松手结算时读取
+    draggingNodeStartPos = startPos // 拖拽前局部坐标，供 onNodeDrop 结算时传给目标节点
     window.addEventListener('pointermove', move)
     window.addEventListener('pointerup', end)
   }

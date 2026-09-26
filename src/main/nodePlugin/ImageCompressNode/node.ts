@@ -62,13 +62,15 @@ export class ImageCompressNode extends Node {
   }
 
   /**
-   * 节点 drop 结算：接收被拖节点，做一次性工作。
+   * 节点 drop 结算：接收被拖节点，做一次性工作，然后把被拖节点还原到拖拽前位置。
    * 不订阅源、不存绑定关系、不持久化——只把源节点 id 暂存为触发信号，
    * render.vue 收到信号后去压缩一次。
    */
-  onNodeDrop(source: Node): boolean {
+  onNodeDrop(source: Node, startPos: readonly [number, number]): boolean {
     this.pendingSourceId = source.id
     this.notifyChanged()
+    // 一次性工作节点：拖进来是为了"让我干个活"，干完把人家送回原位
+    source.setPosition(startPos[0], startPos[1])
     return true
   }
 

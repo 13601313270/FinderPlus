@@ -14,6 +14,8 @@ export interface NodeLike {
   readonly box: readonly [number, number]
   setPosition(x: number, y: number): void
   onChanged(fn: () => void): () => void
+  /** 被拖节点视觉态：正被某个可接收节点悬停命中时变 true */
+  readonly nodeDropAcceptedValue?: boolean
 }
 
 /**
@@ -86,6 +88,8 @@ export interface NodePositionView {
   readonly position: Ref<readonly [number, number]>
   /** 节点的内容区宽高 box（0 维 = 不约束），node.onChanged 时同步刷新 */
   readonly box: Ref<readonly [number, number]>
+  /** 被某个接收节点悬停命中时变 true（即将被收养），NodeShell 据此给透明 */
+  readonly accepted: Ref<boolean>
   /** 接到拖拽手柄的 pointerdown 上 */
   startDrag(e: PointerEvent): void
 }
@@ -107,6 +111,7 @@ export function useNodePosition(
   const node = computed(() => getNode())
   const position = ref<readonly [number, number]>([0, 0])
   const box = ref<readonly [number, number]>([0, 0])
+  const accepted = ref<boolean>(false)
 
   let lastNode: NodeLike | undefined
   let unsubscribe: (() => void) | undefined
@@ -127,6 +132,7 @@ export function useNodePosition(
     if (lastNode) {
       position.value = lastNode.position
       box.value = lastNode.box
+      accepted.value = !!lastNode.nodeDropAcceptedValue
     }
   }
 
@@ -212,5 +218,5 @@ export function useNodePosition(
     window.addEventListener('pointerup', end)
   }
 
-  return { position, box, startDrag }
+  return { position, box, accepted, startDrag }
 }

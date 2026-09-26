@@ -34,10 +34,15 @@ const emit = defineEmits<{
   (e: 'contextmenu', nodeId: string, clientX: number, clientY: number): void
 }>()
 
-const { position, box } = useNodePosition(() => props.node)
+const { position, box, accepted } = useNodePosition(() => props.node)
 
 // 外壳根元素登记进测量注册表
 const shellEl = nodeElementRef(props.node.id)
+
+// accepted 是 useNodePosition 通过 node.onChanged 桥接出来的 reactive ref，
+// Node.setNodeDropAccepted → notifyChanged → apply() 里会读到最新值写进 accepted.value，
+// Vue computed 能追踪它，DOM 才会更新
+const acceptedForDrop = computed(() => accepted.value)
 
 // 内容区硬约束：box 双轴里 >0 的那一维把 .node-content 定死宽/高（0 维不约束）。
 // render.vue 在框内自适应填满，超出被 .node-content 的 overflow 裁剪。
@@ -60,7 +65,10 @@ function onContextMenu(e: MouseEvent): void {
   <div
     :ref="shellEl"
     class="node-shell"
-    :class="{ 'node-shell--floating': floating }"
+    :class="{
+      'node-shell--floating': floating,
+      'node-shell--accepted': acceptedForDrop
+    }"
     :style="{ left: `${position[0]}px`, top: `${position[1]}px` }"
     @contextmenu="onContextMenu"
   >
@@ -85,6 +93,11 @@ function onContextMenu(e: MouseEvent): void {
   &--floating {
     pointer-events: none;
     opacity: 0.75;
+  }
+
+  &--accepted {
+    // 正被某个接收节点（如文件夹）悬停命中，即将被收养——视觉上变淡提示"松手后就没了"
+    opacity: 0.35;
   }
 }
 

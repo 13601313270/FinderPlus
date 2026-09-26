@@ -229,6 +229,23 @@ export abstract class Node {
     this.setIsInNodeDropZoneValue(false)
   }
 
+  // —— 被拖节点自身的"即将被接走"视觉态 ——
+
+  /** 我（作为被拖节点）正被某个可接收节点悬停命中 */
+  public nodeDropAcceptedValue: boolean = false
+
+  /** App 在 pointermove 扫描到有目标接受我时调 true，否则清 false；有变化才 notifyChanged */
+  setNodeDropAccepted(newValue: boolean): void {
+    if (newValue === this.nodeDropAcceptedValue) return
+    this.nodeDropAcceptedValue = newValue
+    this.notifyChanged()
+  }
+
+  /** pointerup 之后清除（无论成功被收养还是拖走） */
+  clearNodeDropAccepted(): void {
+    this.setNodeDropAccepted(false)
+  }
+
 
   /**
    * 绑定所属 Scene，由 Scene.addNode 调用。

@@ -449,11 +449,13 @@ function onPanEnd(): void {
 function onGlobalPointerUp(e: PointerEvent): void {
   const dragged = getDraggingNode()
   if (!dragged) return
+  const canvasRect = canvasEl.value?.getBoundingClientRect()
+  const draggedNode = workspaceScene.getNode(dragged.id)
+  if (!canvasRect || !draggedNode) {
+    clearDraggingNode()
+    return
+  }
   try {
-    const canvasRect = canvasEl.value?.getBoundingClientRect()
-    if (!canvasRect) return
-    const draggedNode = workspaceScene.getNode(dragged.id)
-    if (!draggedNode) return
     const [wx, wy] = screenToWorld(e.clientX - canvasRect.left, e.clientY - canvasRect.top)
     for (const node of workspaceScene.allNodes) {
       if (node === draggedNode) continue
@@ -483,7 +485,10 @@ function onGlobalPointerUp(e: PointerEvent): void {
       }
     }
   } finally {
-    clearDraggingNode() // 无论是否命中，松手即清
+    // 清双方视觉态：被拖节点的"即将被接走"变淡 + 所有目标的悬停高亮（一次清完不留残留）
+    for (const n of workspaceScene.allNodes) n.clearNodeDropActive()
+    draggedNode.clearNodeDropAccepted()
+    clearDraggingNode()
   }
 }
 
@@ -506,11 +511,39 @@ function onWheel(e: WheelEvent): void {
 let lastClientX = 0
 let lastClientY = 0
 
-// 全局 pointermove：持续更新坐标缓存 + 放置模式下让节点跟随
+// 全局 pointermove：持续更新坐标缓存 + 放置模式下让节点跟随 + 被拖节点悬停态扫描
 function onWindowPointerMove(e: PointerEvent): void {
   lastClientX = e.clientX
   lastClientY = e.clientY
   onTrackingMove(e)
+
+  // —— dragover 扫描：被拖节点悬停在某个接收目标上时，双方同步视觉态 ——
+  // 目标侧调 testAcceptNodeDrop：内部调 isPositionAcceptNodeDrop 判定 + 写 isInNodeDropZoneValue 悬停高亮
+  // 被拖节点侧：任何一个目标返回 true → 写 nodeDropAcceptedValue，让自己变淡提示"即将被收走"
+  const canvasRect = canvasEl.value?.getBoundingClientRect()
+  const dragged = getDraggingNode()
+  if (!canvasRect || !dragged) return
+  const draggedNode = workspaceScene.getNode(dragged.id)
+  if (!draggedNode) return
+  const [wx, wy] = screenToWorld(e.clientX - canvasRect.left, e.clientY - canvasRect.top)
+
+  let anyAccepted = false
+  for (const node of workspaceScene.allNodes) {
+    if (node === draggedNode) continue
+    const [bx, by] = node.worldPosition
+    const [bw, bh] = node.box
+    if (bw <= 0 || bh <= 0) continue
+    if (wx >= bx && wx <= bx + bw && wy >= by && wy <= by + bh) {
+      if (node.testAcceptNodeDrop(draggedNode)) {
+        anyAccepted = true
+        // 不要 break——后续没命中的节点如果有上一次悬停残留，testAcceptNodeDrop 会写 false 清掉
+      }
+    } else {
+      // 这次没命中：如果之前悬停过，testAcceptNodeDrop 内部的判定结果就是 false，帮它清掉
+      node.testAcceptNodeDrop(draggedNode)
+    }
+  }
+  draggedNode.setNodeDropAccepted(anyAccepted)
 }
 
 // —— 启动：从主进程 DB 读数据 → 重建 Scene → attachStorage 自动持久化后续变化 ——

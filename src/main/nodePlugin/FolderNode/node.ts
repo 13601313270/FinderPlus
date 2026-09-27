@@ -8,23 +8,13 @@ import { FileNode } from '../FileNode/node'
 import { resolveByExtension } from '../index'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 
-/**
- * 栅格常量：文件夹内容区内槽位横竖方向都占一格。
- * 内容区尺寸由槽位数推导：w = PADDING*2 + cols*(SLOT_W+GAP) - GAP，h 同理。
- * 最小 2×2：MIN_W = MIN_H = PADDING*2 + 2*(SLOT_W+GAP) - GAP ≈ 232。
- *
- * 说明：文件夹本身的宽高（node.box）就是「视觉框」的大小，槽位排布据此推算——
- * 子节点只按 index 放进格子，不在框内时（少见过大）靠拖出释放来兜底，不强行改框。
- */
-export const SLOT_W = 96
-export const SLOT_H = 96
-export const GAP = 12
-export const PADDING = 20
-/** 顶部横栏（可拖动文件夹的标题栏）高度，槽位内容区从这里下方起算 */
+/** 内容区内边距（子节点距离文件夹边框的默认偏移） */
+export const PADDING = 12
+/** 顶部横栏（可拖动文件夹的标题栏）高度，内容区从这里下方起算 */
 export const BAR_H = 22
-/** 内容区最小宽高（2×2 槽位），resize 时钳制，保证至少摆得下 2×2 图标 */
-export const MIN_W = PADDING * 2 + 2 * (SLOT_W + GAP) - GAP
-export const MIN_H = BAR_H + PADDING * 2 + 2 * (SLOT_H + GAP) - GAP
+/** 文件夹最小宽高，resize 时钳制 */
+export const MIN_W = 100
+export const MIN_H = 80
 
 /** 取文件名后缀（含点、小写）；无扩展名返回空串 */
 function extOf(name: string): string {
@@ -70,7 +60,7 @@ export class FolderNode extends Node {
     label: '文件'
   })
 
-  /** 已收养的子节点（顺序即槽位排布顺序）。子节点仍是 Scene 里的顶层节点，只是归属这里 */
+  /** 已收养的子节点列表。子节点仍是 Scene 里的顶层节点，只是归属这里 */
   readonly children: Node[] = []
 
   /** 持久化期间暂存的待收养子节点 id（readState 存、adoptChildren 在恢复收尾时收养） */
@@ -82,15 +72,20 @@ export class FolderNode extends Node {
   constructor(id: string) {
     super(id)
     this.addInput(this.fileInput)
-    // 默认 2×2 最小框；setBox override 会钳制到 MIN_W/MIN_H
+    // 默认最小框；setBox override 会钳制到 MIN_W/MIN_H
     this.setBox(MIN_W, MIN_H)
   }
 
   // —— 收养（统一入口） ——
 
   /**
-   * 把已有节点收养进文件夹：标记归属、放进 children、snap 到槽位。
-   * 子节点已在 Scene 里（或调用方保证随后 addNode），文件字节归属不变。
+   * 把已有节点收养进文件夹：标记归属、放进 children。
+   * position 由调用方保证已经是相对本文件夹的正确局部坐标——本方法不做任何转换。
+   *
+   * 三种调用场景，position 来源各不同：
+   * - 恢复场景（adoptChildren）：DB 读出来的局部坐标，已是正确值
+   * - 新建场景（inputPortReceiveValue / onFileDrop）：调用方直接设成局部坐标
+   * - 拖入场景（onNodeDrop）：调用方把世界坐标转成局部坐标再传进来
    */
   adoptNode(child: Node): void {
     if (child === this) return
@@ -100,8 +95,6 @@ export class FolderNode extends Node {
 
     child.containerNode = this
     this.children.push(child)
-    const slot = this.computeSlotPosition(this.children.length - 1)
-    child.setPosition(slot[0], slot[1])
     // 结构变更：child 从顶层集合退出，App 要重算
     this.sceneRef?.notifyChanged()
     this.notifyChanged()
@@ -180,8 +173,8 @@ export class FolderNode extends Node {
 
     const child = new manifest.nodeClass(this.makeId(manifest.type))
     ;(child as FileNode).setFile(written.fileName, written.size)
-    const [sx, sy] = this.computeSlotPosition(this.children.length)
-    child.setPosition(sx, sy)
+    // 直接设局部坐标（内容区左上角）——adoptNode 不再做转换
+    child.setPosition(PADDING, BAR_H + PADDING)
     workspaceScene.addNode(child)
     this.adoptNode(child)
     this.fingerprintToChild.set(first.fingerprint, child)
@@ -212,8 +205,10 @@ export class FolderNode extends Node {
     if (!manifest) return
     const child = new manifest.nodeClass(this.makeId(manifest.type))
     ;(child as FileNode).setFile(copied.fileName, copied.size)
+    // 直接设局部坐标（内容区左上角）——adoptNode 不再做转换
+    child.setPosition(PADDING, BAR_H + PADDING)
     workspaceScene.addNode(child)
-    this.adoptNode(child) // snap 到槽位（setPosition 覆盖初始位置）
+    this.adoptNode(child)
   }
 
   /** 节点拖入：只接受「未被收养的文件节点」，且不能是自己的祖先 */
@@ -224,37 +219,26 @@ export class FolderNode extends Node {
     return true
   }
 
-  /** 节点 drop 结算：直接收养源节点（边按端口引用自动保留）。不还原位置——收养即归位 */
+  /** 节点 drop 结算：把被拖的顶级节点世界坐标转成本文件夹局部坐标，再收养（保持落点） */
   onNodeDrop(source: Node, _startPos: readonly [number, number]): boolean {
     if (!this.isPositionAcceptNodeDrop(source)) return false
+    // source 是顶级节点，position 是世界坐标；转成相对本文件夹的局部坐标
+    const [swx, swy] = source.worldPosition
+    const [fwx, fwy] = this.worldPosition
+    source.setPosition(swx - fwx, swy - fwy)
     this.adoptNode(source)
     return true
   }
 
   // —— 尺寸 / 位置 ——
 
-  /** 钳制到最小框（2×2 槽位）。resize 拖手柄走这里 */
+  /** 钳制到最小框。resize 拖手柄走这里 */
   override setBox(width: number, height: number): void {
     super.setBox(Math.max(MIN_W, Math.round(width)), Math.max(MIN_H, Math.round(height)))
   }
 
   // 说明：没有 override setPosition。子节点的 position 是相对本文件夹的局部坐标，
   // 移动文件夹时子节点 DOM 跟着父容器一起走、无需平移，世界坐标由 worldPosition 实时累加。
-
-  /**
-   * 槽位**局部坐标**（相对本文件夹内容区左上角）。cols 由当前框内可容纳的列数推算。
-   * 不含 folder.position —— 子节点的局部位置与文件夹落在哪无关，靠 DOM 嵌套复合世界坐标。
-   */
-  private computeSlotPosition(index: number): [number, number] {
-    const innerW = Math.max(0, this.box[0] - PADDING * 2 + GAP)
-    const cols = Math.max(1, Math.floor(innerW / (SLOT_W + GAP)))
-    const col = index % cols
-    const row = Math.floor(index / cols)
-    return [
-      PADDING + col * (SLOT_W + GAP),
-      BAR_H + PADDING + row * (SLOT_H + GAP)
-    ]
-  }
 
   // —— 持久化 ——
 

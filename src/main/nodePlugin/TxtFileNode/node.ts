@@ -75,7 +75,8 @@ export class TxtFileNode extends FileNode {
       // 持久化恢复时 fileName 已由 super.readState 恢复，构造 TxtFileValue commit
       if (this.fileName) {
         const file = new File([text], this.fileName, { type: 'text/plain;charset=utf-8' })
-        this.fileOutput.commit(new TxtFileValue(file, djb2(text)))
+        const hash = djb2(text)
+        this.fileOutput.commit(new TxtFileValue(file, hash))
       }
     }
   }

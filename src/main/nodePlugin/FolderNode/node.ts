@@ -76,8 +76,8 @@ export class FolderNode extends Node {
   /** 持久化期间暂存的待收养子节点 id（readState 存、adoptChildren 在恢复收尾时收养） */
   private pendingChildIds: string[] = []
 
-  /** 已由「端口收值」收养过的文件指纹，避免同一次/同一文件被重复入箱 */
-  private readonly adoptedFingerprints = new Set<string>()
+  /** fingerprint → 子节点。端口收值时建映射，removeChild 时按子节点反查 fingerprint 删掉 */
+  private readonly fingerprintToChild = new Map<string, Node>()
 
   constructor(id: string) {
     super(id)
@@ -111,11 +111,20 @@ export class FolderNode extends Node {
    * 释放子节点回画布：清归属、移出 children。
    * 子节点目前存的是相对本文件夹的局部坐标，直接清归属会把它定死在错误的局部位置——
    * 先补上本文件夹的世界坐标，让它原地留在同一世界位置（边按端口引用保留）。
+   * 同时清理去重集：子节点的 fingerprint 从 adoptedFingerprints 里删掉，
+   * 否则这个文件以后重新通过端口进来会被误判成已收过。
    */
   removeChild(child: Node): void {
     const idx = this.children.indexOf(child)
     if (idx < 0) return
     this.children.splice(idx, 1)
+    // 清理映射：遍历找 value === child 的条目删掉，Map 不大不用反查
+    for (const [fp, c] of this.fingerprintToChild) {
+      if (c === child) {
+        this.fingerprintToChild.delete(fp)
+        break
+      }
+    }
     const [wx, wy] = this.worldPosition
     const [lx, ly] = child.position
     child.setPosition(wx + lx, wy + ly)
@@ -150,7 +159,7 @@ export class FolderNode extends Node {
   async inputPortReceiveValue(_ports: InputPort[]): Promise<void> {
     const [first] = this.fileInput.value
     if (!(first instanceof FileValue)) return
-    if (this.adoptedFingerprints.has(first.fingerprint)) return // 同一文件去重
+    if (this.fingerprintToChild.has(first.fingerprint)) return // 同一文件去重
 
     // FileValue.file 是浏览器原生 File（内存中，无磁盘路径），必须转 base64 落盘
     let written: { fileName: string; size: number }
@@ -175,7 +184,7 @@ export class FolderNode extends Node {
     child.setPosition(sx, sy)
     workspaceScene.addNode(child)
     this.adoptNode(child)
-    this.adoptedFingerprints.add(first.fingerprint)
+    this.fingerprintToChild.set(first.fingerprint, child)
   }
 
   /** 文件拖入命中本节点内容区：恒接受（App 会复制文件后构造子节点再调 adoptNode） */
@@ -250,9 +259,12 @@ export class FolderNode extends Node {
   // —— 持久化 ——
 
   saveState(): Record<string, unknown> {
+    // Map 不可直接 JSON，存成 [fingerprint, nodeId] 数组
+    const fpPairs = Array.from(this.fingerprintToChild.entries()).map(([fp, n]) => [fp, n.id])
     return {
       childIds: this.children.map((c) => c.id),
-      box: this.box as readonly [number, number]
+      box: this.box as readonly [number, number],
+      fingerprintPairs: fpPairs
     }
   }
 
@@ -264,6 +276,21 @@ export class FolderNode extends Node {
     const ids = state.childIds
     if (Array.isArray(ids)) {
       this.pendingChildIds = ids.filter((x): x is string => typeof x === 'string')
+    }
+    // 恢复 fingerprint → Node 映射（此时 scene 已注入，节点都在 Scene 里可反查）
+    const pairs = state.fingerprintPairs
+    if (Array.isArray(pairs)) {
+      const scene = this.sceneRef
+      for (const pair of pairs) {
+        if (Array.isArray(pair) && pair.length === 2) {
+          const fp = pair[0]
+          const nodeId = pair[1]
+          if (typeof fp === 'string' && typeof nodeId === 'string' && scene) {
+            const node = scene.getNode(nodeId)
+            if (node) this.fingerprintToChild.set(fp, node)
+          }
+        }
+      }
     }
   }
 

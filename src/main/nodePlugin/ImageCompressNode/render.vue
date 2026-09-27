@@ -172,7 +172,7 @@ function fileToBase64(file: File): Promise<string> {
 }
 
 /**
- * 点击「新建图片文件节点」：以压缩结果为基础新建一个 ImgFileNode。
+ * 点击「生成图片文件节点」：以压缩结果为基础新建一个 ImgFileNode。
  * - writeBuffer 把压缩结果 File 落盘到画布目录（自动去重名）
  * - 新节点位置 = 当前节点 position + [30, 30] 偏移
  * - 新节点 render.vue 挂载后 watch(fileName) 自动读回内容展示
@@ -226,7 +226,7 @@ onUnmounted(() => {
       <span v-else class="compress-card__hint">一次性：拖入即压，不跟随源节点变化</span>
       <button v-if="resultUrl" class="compress-card__create-btn" type="button" @pointerdown.stop
         @click="handleCreateImgNode" title="以压缩结果为基础新建一个图片文件节点">
-        新建图片文件节点
+        生成图片文件节点
       </button>
     </div>
   </div>

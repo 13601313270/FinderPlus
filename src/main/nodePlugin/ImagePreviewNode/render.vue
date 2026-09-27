@@ -6,6 +6,7 @@ import { ImagePreviewNode } from './node'
 import { ImgFileNode } from '../ImgFileNode/node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
 import { setLastDragPath } from '@renderer/composables/useFileDragOut'
+import { viewport } from '@renderer/canvas/viewport'
 
 const props = defineProps<{ id: string }>()
 
@@ -79,6 +80,41 @@ const { startDrag: startPreviewDrag } = useNodePosition(
   }
 )
 
+// —— resize handle 拖拽：右下角双向自由调整宽高，不锁比例 ——
+const MIN_WIDTH = 220
+const MAX_WIDTH = 800
+const MIN_HEIGHT = 120
+const MAX_HEIGHT = 600
+
+function onResizePointerDown(e: PointerEvent): void {
+  const n = node.value
+  if (!n) return
+  e.stopPropagation()
+  e.preventDefault()
+
+  const startClientX = e.clientX
+  const startClientY = e.clientY
+  const [startWidth, startHeight] = n.box
+
+  function move(ev: PointerEvent): void {
+    const cur = node.value
+    if (!cur) { end(); return }
+    const scale = viewport.scale || 1
+    const deltaW = (ev.clientX - startClientX) / scale
+    const deltaH = (ev.clientY - startClientY) / scale
+    const newWidth = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, startWidth + deltaW))
+    const newHeight = Math.min(MAX_HEIGHT, Math.max(MIN_HEIGHT, startHeight + deltaH))
+    cur.setBox(newWidth, newHeight)
+  }
+  function end(): void {
+    window.removeEventListener('pointermove', move)
+    window.removeEventListener('pointerup', end)
+  }
+
+  window.addEventListener('pointermove', move)
+  window.addEventListener('pointerup', end)
+}
+
 /**
  * 点击"新建图片文件节点"按钮：在当前节点旁边新建 ImgFileNode。
  * - writeBuffer 把 File 落盘到画布目录
@@ -145,38 +181,18 @@ onUnmounted(() => {
 <template>
   <div class="preview-card">
     <!-- 预览图区域：画布内拖拽 = 移动节点；越界 = writeBuffer + startDrag 导出 -->
-    <div
-      class="preview-card__image-area"
-      @pointerdown.stop.prevent="startPreviewDrag"
-      :title="previewFile
-        ? '在画布内拖拽移动节点 · 拖出窗口导出图片到桌面/文件夹'
-        : '请先连接图片来源'"
-    >
-      <img
-        v-if="imageUrl"
-        class="preview-card__img"
-        :src="imageUrl"
-        alt="图片预览"
-        draggable="false"
-        @load="onImgLoad"
-      />
+    <div class="preview-card__image-area" @pointerdown.stop.prevent="startPreviewDrag" :title="previewFile
+      ? '在画布内拖拽移动节点 · 拖出窗口导出图片到桌面/文件夹'
+      : '请先连接图片来源'">
+      <img v-if="imageUrl" class="preview-card__img" :src="imageUrl" alt="图片预览" draggable="false" @load="onImgLoad" />
       <!-- 无图占位 -->
       <div v-else class="preview-card__placeholder">
         <svg class="preview-card__icon-svg" viewBox="0 0 64 72" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path
-            d="M6 6C6 3.79 7.79 2 10 2H38L58 22V66C58 68.21 56.21 70 54 70H10C7.79 70 6 68.21 6 66V6Z"
-            fill="#f4f5f7"
-            stroke="#c5cbd4"
-            stroke-width="1.5"
-          />
+          <path d="M6 6C6 3.79 7.79 2 10 2H38L58 22V66C58 68.21 56.21 70 54 70H10C7.79 70 6 68.21 6 66V6Z"
+            fill="#f4f5f7" stroke="#c5cbd4" stroke-width="1.5" />
           <path d="M38 2L58 22H44C41.79 22 40 20.21 40 18V2Z" fill="#eef3ff" stroke="#c5cbd4" stroke-width="1.5" />
-          <path
-            d="M16 50L26 40L34 48L44 34L52 50H16Z"
-            fill="#c5d4ff"
-            stroke="#4a7cff"
-            stroke-width="1.5"
-            stroke-linejoin="round"
-          />
+          <path d="M16 50L26 40L34 48L44 34L52 50H16Z" fill="#c5d4ff" stroke="#4a7cff" stroke-width="1.5"
+            stroke-linejoin="round" />
           <circle cx="44" cy="28" r="4" fill="#4a7cff" />
         </svg>
         <span class="preview-card__placeholder-text">等待图片输入</span>
@@ -190,15 +206,13 @@ onUnmounted(() => {
       </span>
       <span v-else class="preview-card__dim preview-card__dim--empty">图片加载中…</span>
 
-      <button
-        class="preview-card__create-btn"
-        type="button"
-        @click="handleCreateImgNode"
-        title="点击在当前节点旁边新建图片文件节点"
-      >
+      <button class="preview-card__create-btn" type="button" @click="handleCreateImgNode" title="点击在当前节点旁边新建图片文件节点">
         新建图片文件节点
       </button>
     </div>
+
+    <!-- resize handle：右下角，拖拽改宽度（保持图片区 16:10 比例） -->
+    <div class="preview-card__resize-handle" @pointerdown.stop.prevent="onResizePointerDown" title="拖拽调整预览大小（保持图片比例）" />
   </div>
 </template>
 
@@ -212,8 +226,6 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 6px;
-  padding: 10px;
   background: @color-surface;
   border: 1px solid #d5d9e0;
   border-radius: 8px;
@@ -222,18 +234,18 @@ onUnmounted(() => {
 
   &__image-area {
     width: 100%;
-    aspect-ratio: 16 / 10;
-    border-radius: 6px;
+    flex: 1 1 auto; // 随 box 高度自由伸缩，图片按 object-fit: contain 在里面自适应
+    min-height: 40px;
     overflow: hidden;
     background: #f4f5f7;
-    border: 1px solid #e5e7eb;
     display: flex;
     align-items: center;
     justify-content: center;
-    flex-shrink: 0;
     cursor: grab;
 
-    &:active { cursor: grabbing; }
+    &:active {
+      cursor: grabbing;
+    }
   }
 
   &__img {
@@ -267,14 +279,14 @@ onUnmounted(() => {
   }
 
   &__footer {
-    width: 100%;
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 6px 8px;
+    padding: 4px 6px;
     border: 1px solid #e5e7eb;
     border-radius: 6px;
     background: #fafbfc;
+    margin: 6px;
   }
 
   &__dim {
@@ -308,6 +320,30 @@ onUnmounted(() => {
 
     &:active {
       transform: translateY(1px);
+    }
+  }
+
+  &__resize-handle {
+    position: absolute;
+    right: 2px;
+    bottom: 2px;
+    width: 12px;
+    height: 12px;
+    cursor: nwse-resize;
+    background: transparent;
+    border-right: 2px solid #b0b7c3;
+    border-bottom: 2px solid #b0b7c3;
+    border-bottom-right-radius: 4px;
+    transition: border-color 0.15s ease, background 0.15s ease;
+
+    &:hover {
+      border-color: #4a7cff;
+      background: rgba(74, 124, 255, 0.08);
+    }
+
+    &:active {
+      border-color: #2d5de0;
+      background: rgba(74, 124, 255, 0.18);
     }
   }
 }

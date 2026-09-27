@@ -28,8 +28,8 @@ export class ImagePreviewNode extends Node {
     super(id)
     this.addInput(this.imageInput)
     this.addOutput(this.imageOutput)
-    // 内容区硬约束：预览区 + 可选底部信息栏。信息栏出现时若超出，在框内裁剪
-    this.setBox(240, 192)
+    // 内容区硬约束：头部标签 + 预览区 + 可选底部信息栏。信息栏出现时若超出，在框内裁剪
+    this.setBox(240, 220)
   }
 
   /** 拖入文件落点命中本节点时被调用；本节点不接收文件，返回 false */

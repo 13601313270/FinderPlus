@@ -180,6 +180,9 @@ onUnmounted(() => {
 
 <template>
   <div class="preview-card">
+    <!-- 头部类型标签：与图片压缩节点区分；也可拖动移动节点 -->
+    <div class="preview-card__header" @pointerdown.stop.prevent="startPreviewDrag">图片预览</div>
+
     <!-- 预览图区域：画布内拖拽 = 移动节点；越界 = writeBuffer + startDrag 导出 -->
     <div class="preview-card__image-area" @pointerdown.stop.prevent="startPreviewDrag" :title="previewFile
       ? '在画布内拖拽移动节点 · 拖出窗口导出图片到桌面/文件夹'
@@ -231,6 +234,26 @@ onUnmounted(() => {
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   user-select: none;
+
+  &__header {
+    flex-shrink: 1;
+    min-height: 18px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #4a7cff;
+    letter-spacing: 0.5px;
+    margin: 6px 6px 0 6px;
+    padding-bottom: 2px;
+    border-bottom: 1px dashed #d5d9e0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    cursor: grab;
+
+    &:active {
+      cursor: grabbing;
+    }
+  }
 
   &__image-area {
     width: 100%;

@@ -205,6 +205,9 @@ onUnmounted(() => {
 <template>
   <div class="compress-card" @pointerdown="startDrag"
     :title="'拖动节点 · 把图片节点（ImgFileNode）拖进来压缩一次'">
+    <!-- 头部类型标签：与图片预览节点区分 -->
+    <div class="compress-card__header">图片压缩</div>
+
     <!-- 压缩结果预览区 -->
     <div class="compress-card__image-area">
       <img v-if="resultUrl" class="compress-card__img" :src="resultUrl" alt="压缩结果预览" draggable="false" />
@@ -249,6 +252,20 @@ onUnmounted(() => {
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   user-select: none;
+
+  &__header {
+    flex-shrink: 1;
+    min-height: 18px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #4a7cff;
+    letter-spacing: 0.5px;
+    padding-bottom: 2px;
+    border-bottom: 1px dashed #d5d9e0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
 
   &__image-area {
     width: 100%;

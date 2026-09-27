@@ -43,8 +43,8 @@ export class ImageCompressNode extends Node {
     super(id)
     this.addInput(this.sizeInput)
     this.addOutput(this.imageOutput)
-    // 内容区硬约束：预览区 + 底部提示栏
-    this.setBox(240, 200)
+    // 内容区硬约束：头部标签 + 预览区 + 底部提示栏
+    this.setBox(240, 228)
   }
 
   /** 拖入文件落点命中本节点时被调用；本节点不接收外部文件，返回 false */

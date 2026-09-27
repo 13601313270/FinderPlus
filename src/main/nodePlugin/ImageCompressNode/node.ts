@@ -25,13 +25,14 @@ import { workspaceScene } from '../../engine/graph/SceneRegistry'
 export class ImageCompressNode extends Node {
   static readonly TYPE = 'image-compress'
 
-  /** 未接尺寸端口时的默认目标尺寸（最长边像素） */
-  static readonly DEFAULT_TARGET_SIZE = 800
-
   readonly type = ImageCompressNode.TYPE
 
-  /** 输入端口：目标尺寸（最长边像素，NumberValue）。未接线用默认值 */
-  readonly sizeInput = new InputPort('size', { accepts: [NumberValue], label: '尺寸' })
+  /** 输入端口：目标尺寸（最长边像素，NumberValue）。未接线用端口 defaultValue */
+  readonly sizeInput = new InputPort('size', {
+    accepts: [NumberValue],
+    label: '尺寸',
+    defaultValue: new NumberValue(800)
+  })
 
   /** 输出端口：压缩后的图片 */
   readonly imageOutput = new OutputPort('image', ImgFileValue, '压缩图')
@@ -90,7 +91,7 @@ export class ImageCompressNode extends Node {
       const v = Math.round(first.value)
       if (Number.isFinite(v) && v > 0) return v
     }
-    return ImageCompressNode.DEFAULT_TARGET_SIZE
+    return 800 // 兜底，理论上 effectiveValue 总会命中 defaultValue
   }
 
   /** 压缩完成后由 render.vue 调用，清空触发信号 */

@@ -64,8 +64,8 @@ export class InputPort {
     return this.options.label ?? this.id
   }
 
-  /** 多值端口取值：无序集合，只含算出来有值的那些 */
-  get value(): readonly Value[] {
+  /** 多值端口取值：无序集合，只含上游算出来有值的那些。私有，外部应读 effectiveValue */
+  private get incomeValue(): readonly Value[] {
     const list: Value[] = []
     this.incoming.forEach((value) => {
       if (value !== undefined) list.push(value)
@@ -73,9 +73,19 @@ export class InputPort {
     return list
   }
 
+  /**
+   * 实际生效的值：上游有值就上游，上游空就 defaultValue，都没有返回空数组。
+   * 节点应读这个，不用关心值是连来的还是默认的。
+   */
+  get value(): readonly Value[] {
+    const upstream = this.incomeValue
+    if (upstream.length > 0) return upstream
+    return this.defaultValue ? [this.defaultValue] : []
+  }
+
   /** 必填是否已满足；引擎的禁跑校验和节点自查共用这一处判断 */
   isSatisfied(): boolean {
-    return !this.required || this.value.length > 0 || this.defaultValue !== undefined
+    return !this.required || this.incomeValue.length > 0 || this.defaultValue !== undefined
   }
 
   /**

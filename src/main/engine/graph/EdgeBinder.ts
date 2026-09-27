@@ -39,7 +39,7 @@ export class EdgeBinder {
       return { ok: false, reason: result.message }
     }
 
-    startPort.edges.add(edge)
+    startPort.addEdge(edge)
     endPort.bindEdge(edge)
 
     // 连上时上游可能已经算过值，同步补送一次，让下游的输入值立刻与图结构一致。
@@ -55,7 +55,7 @@ export class EdgeBinder {
    * 输入侧连值带关系一起丢掉——输入集合变了，下游得知道自己可以重算（通知节点待补）。
    */
   disconnect(edge: Edge): void {
-    edge.startPort.edges.delete(edge)
+    edge.startPort.removeEdge(edge)
     edge.endPort.unbindEdge(edge)
   }
 

@@ -24,4 +24,8 @@ export class FileValue extends Value {
     super()
     this.fingerprint = `file:${contentHash}`
   }
+
+  override get displayLabel(): string {
+    return this.file.name
+  }
 }

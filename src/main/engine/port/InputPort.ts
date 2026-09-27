@@ -8,6 +8,13 @@ type ValueClass = { readonly VALUE_NAME: ValueKind; prototype: Value; new (...ar
 
 export type InputPortBindRejectReason = 'kind-not-allowed' | 'single-port-occupied'
 
+export type EdgeBindingEvent =
+  | { readonly kind: 'bind'; readonly edge: Edge }
+  | { readonly kind: 'unbind'; readonly edge: Edge }
+
+/** 订阅边绑定/解绑事件的回调签名 */
+export type EdgeBindingListener = (event: EdgeBindingEvent) => void
+
 export interface InputPortOptions {
   /**
    * 允许接入的 Value 子类列表。必须显式声明，空数组就是不接受任何类型——
@@ -28,6 +35,9 @@ export interface InputPortOptions {
 export class InputPort {
   /** 所属节点，由 Node 登记端口时注入；没人认领时，通知就没人接 */
   private owner: Node | undefined
+
+  /** 边绑定/解绑事件的订阅者集合。外部通过 onEdgeBinding 订阅，返回的解绑函数成对使用 */
+  private readonly bindingListeners = new Set<EdgeBindingListener>()
 
   /**
    * 边 -> 该边最后一次送来的值。
@@ -58,6 +68,16 @@ export class InputPort {
 
   get defaultValue(): Value | undefined {
     return this.options.defaultValue
+  }
+
+  /** 默认值的渲染层可读标签，没有默认值则返回 undefined */
+  get defaultValueLabel(): string | undefined {
+    return this.options.defaultValue?.displayLabel
+  }
+
+  /** 当前接入的边数量（渲染层用来判断"有没有接 Edge"） */
+  get incomingEdgeCount(): number {
+    return this.incoming.size
   }
 
   get label(): string {
@@ -153,12 +173,35 @@ export class InputPort {
   bindEdge(edge: Edge) {
     this.incoming.set(edge, undefined)
     this.owner?.inputPortReceiveValue([this])
+    this.notifyEdgeBinding('bind', edge)
   }
 
-  // 解绑Edge，清空值为undefined
+  // 解绑Edge，清空值为undefined。edge 不在 incoming 里就直接返回，不触发通知
   unbindEdge(edge: Edge): { result: true } | { result: false, message: string } {
+    if (!this.incoming.has(edge)) {
+      return { result: false, message: 'edge not bound to this port' }
+    }
     this.incoming.delete(edge)
     this.owner?.inputPortReceiveValue([this])
+    this.notifyEdgeBinding('unbind', edge)
     return { result: true };
+  }
+
+  /**
+   * 订阅本端口的边绑定 / 解绑事件，返回取消订阅函数。
+   * 回调里带 kind 字段区分 bind / unbind，以及对应的 edge。
+   */
+  onEdgeBinding(fn: EdgeBindingListener): () => void {
+    this.bindingListeners.add(fn)
+    return () => {
+      this.bindingListeners.delete(fn)
+    }
+  }
+
+  private notifyEdgeBinding(kind: 'bind' | 'unbind', edge: Edge): void {
+    const event: EdgeBindingEvent = kind === 'bind'
+      ? { kind: 'bind', edge }
+      : { kind: 'unbind', edge }
+    this.bindingListeners.forEach((fn) => fn(event))
   }
 }

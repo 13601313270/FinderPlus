@@ -10,4 +10,8 @@ export class StringValue extends Value {
     super()
     this.fingerprint = `string:${value}`
   }
+
+  override get displayLabel(): string {
+    return this.value
+  }
 }

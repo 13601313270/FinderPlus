@@ -5,6 +5,13 @@ import type { Node } from '../node/Node'
 /** 任何带 VALUE_NAME 静态属性的 Value 子类 */
 type ValueClass = { readonly VALUE_NAME: ValueKind; prototype: Value; new (...args: any[]): Value }
 
+export type EdgeConnectionEvent =
+  | { readonly kind: 'connect'; readonly edge: Edge }
+  | { readonly kind: 'disconnect'; readonly edge: Edge }
+
+/** 订阅边接入/接出事件的回调签名 */
+export type EdgeConnectionListener = (event: EdgeConnectionEvent) => void
+
 /**
  * 输出端口：节点产出值的出口。
  * 端口不持有字节，只记住「我的值是什么、是否过期、通向哪些连线」。
@@ -13,10 +20,13 @@ export class OutputPort {
   /**
    * 挂在本端口上的下游连线。值只有一份，边可以有多条。
    *
-   * 连线的增删一律由 EdgeBinder 收口，这里只是它要写的存储。
-   * 语言层面没法限制只有它可写，靠这条约定守着——别在别处直接 add / delete。
+   * 连线的增删一律通过 addEdge / removeEdge（由 EdgeBinder 调用），
+   * 内部会派发 connect / disconnect 事件。
    */
   readonly edges = new Set<Edge>()
+
+  /** 边接入/接出事件的订阅者集合 */
+  private readonly connectionListeners = new Set<EdgeConnectionListener>()
 
   /** 当前值，undefined 表示该节点从未计算过 */
   private currentValue: Value | undefined
@@ -53,6 +63,44 @@ export class OutputPort {
   /** 取所属节点，可能为 undefined（极端情况下端口未被 Node 认领） */
   getOwner(): Node | undefined {
     return this.owner
+  }
+
+  /**
+   * 接入一条下游边，供 EdgeBinder.connect 调用。内部派发 connect 事件。
+   * 边已存在则忽略，不重复通知。
+   */
+  addEdge(edge: Edge): void {
+    if (this.edges.has(edge)) return
+    this.edges.add(edge)
+    this.notifyConnection('connect', edge)
+  }
+
+  /**
+   * 接出一条下游边，供 EdgeBinder.disconnect 调用。内部派发 disconnect 事件。
+   * 边不存在则忽略，不触发通知。
+   */
+  removeEdge(edge: Edge): void {
+    if (!this.edges.has(edge)) return
+    this.edges.delete(edge)
+    this.notifyConnection('disconnect', edge)
+  }
+
+  /**
+   * 订阅本端口的边接入 / 接出事件，返回取消订阅函数。
+   * 回调里带 kind 字段区分 connect / disconnect，以及对应的 edge。
+   */
+  onEdgeConnection(fn: EdgeConnectionListener): () => void {
+    this.connectionListeners.add(fn)
+    return () => {
+      this.connectionListeners.delete(fn)
+    }
+  }
+
+  private notifyConnection(kind: 'connect' | 'disconnect', edge: Edge): void {
+    const event: EdgeConnectionEvent = kind === 'connect'
+      ? { kind: 'connect', edge }
+      : { kind: 'disconnect', edge }
+    this.connectionListeners.forEach((fn) => fn(event))
   }
 
   /**

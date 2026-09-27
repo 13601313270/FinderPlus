@@ -29,4 +29,10 @@ export abstract class Value {
    * 指纹在 Value 构造时一次性生成，下游只做字符串比较，不触发任何重计算。
    */
   abstract readonly fingerprint: string
+
+  /**
+   * 渲染层可读的默认值标签。
+   * 每个 Value 子类必须自己实现，把内部值转成人类可读的短文本。
+   */
+  abstract get displayLabel(): string
 }

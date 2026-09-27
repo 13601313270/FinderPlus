@@ -52,6 +52,22 @@ export interface PortLike {
   readonly outputValueName?: string
   /** 端口文本标记，用于在圆点旁显示；不填则回退到 id */
   readonly label?: string
+  /**
+   * 输入端口才有：订阅本端口的边绑定/解绑事件。返回取消订阅函数。
+   * 事件载荷里的 edge 由引擎层持有，renderer 拿到后按需使用即可。
+   */
+  readonly onEdgeBinding?: (
+    fn: (event: { readonly kind: 'bind' | 'unbind'; readonly edge: unknown }) => void
+  ) => () => void
+  /**
+   * 输入端口才有：未接边时默认值的可读标签。
+   * 渲染层用它判断是否要把圆点变胶囊形状。
+   */
+  readonly defaultValueLabel?: string
+  /**
+   * 输入端口才有：当前接入的边数量。渲染层用来初始化连接状态。
+   */
+  readonly incomingEdgeCount?: number
 }
 
 /** 能提供端口的节点（Node 基类的最小结构子集），NodePorts 用它枚举两侧端口 */

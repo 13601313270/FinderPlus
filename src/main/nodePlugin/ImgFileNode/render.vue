@@ -242,6 +242,7 @@ onUnmounted(() => {
     font-size: 12px;
     line-height: 1.3;
     min-height: 14px;
+    padding: 0 4px 4px;
   }
 
   &__name {

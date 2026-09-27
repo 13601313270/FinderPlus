@@ -177,6 +177,7 @@ function removeEdge(edge: Edge): void {
     line-height: 1;
     cursor: pointer;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+    z-index: 1;
 
     &:hover {
       border-color: #e6a3a3;

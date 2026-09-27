@@ -75,14 +75,16 @@ export abstract class FileNode extends Node {
   inputPortReceiveValue(_ports: InputPort[]): void {}
 
   saveState(): Record<string, unknown> {
-    return { fileName: this.fileNameValue }
+    return { fileName: this.fileNameValue, fileSize: this.fileSizeValue }
   }
 
   readState(state: Record<string, unknown>): void {
     const name = typeof state.fileName === 'string' ? state.fileName : ''
     if (!name) return
-    // 只恢复文件名；内容由 render.vue 挂载时发现 fileName 存在后自动读回
+    // 只恢复文件名和大小；内容由 render.vue 挂载时发现 fileName 存在后自动读回
     this.fileNameValue = name
+    const size = typeof state.fileSize === 'number' ? state.fileSize : 0
+    this.fileSizeValue = size
   }
 
   /**

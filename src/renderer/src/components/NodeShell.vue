@@ -107,6 +107,11 @@ function onContextMenu(e: MouseEvent): void {
   flex-direction: column;
   justify-content: space-evenly; // 端口竖向均分，1 个端口正好居中
   flex-shrink: 0;
+  pointer-events: none; // 容器空白区域穿透，仅圆点本身可交互
+
+  :deep(.port) {
+    pointer-events: auto; // 只有端口圆点恢复捕获
+  }
 
   &--left {
     // 圆点向右探出 6px（在 NodePorts 里 .port--in { margin-right: -6px }）

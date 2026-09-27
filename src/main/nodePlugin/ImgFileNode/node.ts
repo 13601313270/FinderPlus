@@ -28,10 +28,10 @@ export const MAX_PREVIEW_WIDTH = 800
  *   高度 = 宽度 × 图片原始比例 + 文件名行高度，引擎只存宽度这一个自由度
  */
 /**
- * 卡片固定垂直开销 = flex-gap(6) + 文件名行(~14px) + 格式行(~16px) ≈ 36
+ * 卡片固定垂直开销 = flex-gap(6) + 文件名行(~14px + padding-bottom 4) + 格式行(~16px) ≈ 40
  * 图片区高度由 boxWidth / 宽高比 得出。
  */
-const CARD_VERTICAL_OVERHEAD = 36
+const CARD_VERTICAL_OVERHEAD = 40
 
 export class ImgFileNode extends FileNode {
   static readonly TYPE = 'img-file'

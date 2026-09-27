@@ -124,35 +124,54 @@ function elementRef(onAttach: (el: HTMLElement) => void, onDetach: () => void): 
 
 /** 卡片根元素交给注册表：`const nodeEl = nodeElementRef(props.id)`，模板里 `:ref="nodeEl"` */
 export function nodeElementRef(id: string): CanvasElementRef {
+  let attachedEl: HTMLElement | null = null
   return elementRef(
     (el) => {
+      attachedEl = el
       nodeElements.set(id, el)
       resizeObserver.observe(el)
       version.value++
     },
     () => {
-      const el = nodeElements.get(id)
-      if (el) resizeObserver.unobserve(el)
-      nodeElements.delete(id)
-      version.value++
+      const current = nodeElements.get(id)
+      if (current === attachedEl) {
+        current && resizeObserver.unobserve(current)
+        nodeElements.delete(id)
+        version.value++
+      }
+      attachedEl = null
     }
   )
 }
 
-/** 端口圆点交给注册表。同一个端口必须拿到同一个函数 ref（NodePorts 里做了缓存） */
+/**
+ * 端口圆点交给注册表。同一个端口必须拿到同一个函数 ref（NodePorts 里做了缓存）。
+ *
+ * cleanup 时加了"只删自己 setup 的那个 el"守卫：防止节点在 FolderNode 嵌套壳 ↔ App.vue 顶层壳
+ * 之间切换时，旧壳的 cleanup 把新壳刚 setup 的同 key 条目误删掉，导致 measurePortCenter 拿不到
+ * 真实圆点位置，连线退回 card-edge 兜底（比真实端口更靠右）。
+ */
 export function portElementRef(nodeId: string, side: PortSide, port: PortLike): CanvasElementRef {
   const key = portKey(nodeId, side, port.id)
+  let attachedEl: HTMLElement | null = null
 
   return elementRef(
     (el) => {
+      attachedEl = el
       // 顺手在 DOM 上留个记号，方便在开发者工具里认出「这个圆点是哪个节点的哪个端口」
       el.dataset.port = key
       portElements.set(key, { el, side, nodeId, portId: port.id })
       version.value++
     },
     () => {
-      portElements.delete(key)
-      version.value++
+      // 只有注册表当前存的就是我当初 setup 的那个 DOM 元素才删——
+      // 竞争条件下新壳可能已经 setup 覆盖了同 key，我不能把它一起删了
+      const current = portElements.get(key)
+      if (current && current.el === attachedEl) {
+        portElements.delete(key)
+        version.value++
+      }
+      attachedEl = null
     }
   )
 }

@@ -120,9 +120,8 @@ function onResizePointerDown(e: PointerEvent): void {
     // 屏幕像素差 → 世界尺寸增量（鼠标在屏幕上拖 delta，世界里就是 delta / scale）
     const deltaWorld = (ev.clientX - startClientX) / scale
     const newWidth = Math.min(MAX_PREVIEW_WIDTH, Math.max(MIN_PREVIEW_WIDTH, startWidth + deltaWorld))
-    // 根据newWidth和图片真实尺寸比例，反向推算图片部分的高
-    const newHeight = (newWidth - 20) / aspectRatio.value
-    node.setBox(newWidth, newHeight + 30 + 6 + 18)// 24是信息栏高度，6是gap，8是padding
+    node.setBox(newWidth, node.box[1]) // 先写宽度，recalcHeight 会按新宽度重算高度
+    node.recalcHeight()
   }
   function end(): void {
     window.removeEventListener('pointermove', move)
@@ -195,7 +194,6 @@ onUnmounted(() => {
   flex-direction: column;
   align-items: stretch;
   gap: 6px;
-  padding: 10px 10px 8px;
   background: @color-surface;
   border: 1px solid #d5d9e0;
   border-radius: 8px;

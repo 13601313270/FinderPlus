@@ -27,6 +27,12 @@ export const MAX_PREVIEW_WIDTH = 800
  * - previewWidth 是节点专属字段：图片卡片右下角有 resize handle，宽度由用户拖出来，
  *   高度 = 宽度 × 图片原始比例 + 文件名行高度，引擎只存宽度这一个自由度
  */
+/**
+ * 卡片固定垂直开销 = flex-gap(6) + 文件名行(~14px) + 格式行(~16px) ≈ 36
+ * 图片区高度由 boxWidth / 宽高比 得出。
+ */
+const CARD_VERTICAL_OVERHEAD = 36
+
 export class ImgFileNode extends FileNode {
   static readonly TYPE = 'img-file'
 
@@ -82,12 +88,33 @@ export class ImgFileNode extends FileNode {
 
   /**
    * 写入图片天然宽高，由 render.vue 的 img load 事件触发。
-   * 只存不 commit——宽高是展示层的辅助信息，不影响下游数据流转。
+   * 存下天然尺寸后，用当前 box 宽度 + 图片比例算出真实高度写回 box，
+   * 让 boxValue 始终有合法的 [width, height]，不再 height=0。
    */
   setNaturalSize(width: number, height: number): void {
     if (width === this.naturalWidthValue && height === this.naturalHeightValue) return
     this.naturalWidthValue = width
     this.naturalHeightValue = height
+    // 有了天然比例就把 box height 填上
+    this.recalcHeight()
+  }
+
+  /**
+   * 根据当前 box 宽度和图片天然比例，算出卡片需要的总高度并 setBox。
+   * 图片尚未加载（naturalWidth=0）时跳过。
+   *
+   * 这个方法在两处被调：
+   * 1. setNaturalSize（图片首次 load 后）
+   * 2. render.vue 的 resize handle 拖拽中（宽度变了，高度跟着按比例变）
+   */
+  recalcHeight(): void {
+    const nw = this.naturalWidthValue
+    const nh = this.naturalHeightValue
+    if (!nw || !nh) return
+    const w = this.box[0] || DEFAULT_PREVIEW_WIDTH
+    const aspectRatio = nw / nh
+    const iconHeight = w / aspectRatio
+    this.setBox(w, Math.round(iconHeight + CARD_VERTICAL_OVERHEAD))
   }
 
   /**

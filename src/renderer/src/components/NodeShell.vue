@@ -123,5 +123,6 @@ function onContextMenu(e: MouseEvent): void {
   flex: 0 0 auto; // 不让 content 被两侧挤扁
   overflow: hidden; // 硬约束：内容超出 box 被裁，render.vue 不会溢出
   box-sizing: border-box; // box 是内容区外包壳宽，border+padding 算在 box 内
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 </style>

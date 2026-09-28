@@ -309,9 +309,13 @@ export function measurePortCenter(
   const dotRect = dot.getBoundingClientRect()
   const shellRect = shell.getBoundingClientRect()
 
-  // 圆点中心相对 shell 左上角的**屏幕**偏移
-  const screenOffsetX = dotRect.left + dotRect.width / 2 - shellRect.left
+  // 垂直方向取圆点中心；水平方向固定取「靠近 content 那侧的边缘往里 7px」——
+  // 这样无论端口是 12px 圆还是胶囊，连线锚点都钉死在 content 侧线上，
+  // 不会随端口 DOM 宽度变化而漂移
   const screenOffsetY = dotRect.top + dotRect.height / 2 - shellRect.top
+  const screenOffsetX = side === 'in'
+    ? dotRect.right - 7 - shellRect.left   // 输入端口：端口右边缘往左 7px
+    : dotRect.left + 7 - shellRect.left    // 输出端口：端口左边缘往右 7px
 
   // 把屏幕偏移换算成**世界**偏移：
   //   shellRect.width  = shell.offsetWidth × viewport.scale

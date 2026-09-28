@@ -102,11 +102,14 @@ function onContextMenu(e: MouseEvent): void {
 }
 
 .ports-col {
-  position: relative; // 给内部端口项的 absolute 留 containing block（其实现在不用 absolute）
+  // 绝对定位钉在 shell 两侧，不占 flex 流——这样 shell 的自然宽度只由 content 决定，
+  // 胶囊再宽也推不动 content；负 margin 探出 content 边缘的逻辑完全不变
+  position: absolute;
+  top: 0;
+  bottom: 0;
   display: flex;
   flex-direction: column;
   justify-content: space-evenly; // 端口竖向均分，1 个端口正好居中
-  flex-shrink: 0;
   pointer-events: none; // 容器空白区域穿透，仅圆点本身可交互
   z-index: 1;
 
@@ -115,13 +118,15 @@ function onContextMenu(e: MouseEvent): void {
   }
 
   &--left {
-    // 圆点向右探出 6px（在 NodePorts 里 .port--in { margin-right: -6px }）
-    // 所以 ports-col--left 的右边缘 = content 左边线（圆点圆心正好在这条线上）
-    min-width: 20px; // 留 label 空间（左列 label 在圆点左边，有负 margin 补偿）
+    // 锚在 shell 左边缘的外侧：ports-col 的右边 = shell 的左边
+    right: 100%;
+    left: auto;
   }
 
   &--right {
-    min-width: 20px;
+    // 锚在 shell 右边缘的外侧：ports-col 的左边 = shell 的右边
+    left: 100%;
+    right: auto;
   }
 }
 

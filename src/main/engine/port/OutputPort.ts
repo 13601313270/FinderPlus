@@ -44,8 +44,8 @@ export class OutputPort {
     readonly id: string,
     /** 本端口产出的 Value 子类，端口自动从其静态 VALUE_NAME 取类型标签 */
     valueClass: ValueClass,
-    /** 端口文本标记，UI 显示用；不填则回退到 id */
-    readonly label?: string
+    /** 端口文本标记，UI 显示用 */
+    readonly label: string
   ) {
     this.valueClass = valueClass
     this.outputValueName = valueClass.VALUE_NAME

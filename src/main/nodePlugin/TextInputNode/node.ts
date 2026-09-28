@@ -12,7 +12,7 @@ export class TextInputNode extends Node {
   readonly type = TextInputNode.TYPE
 
   /** 输出端口：字符串 */
-  readonly textOutput = new OutputPort('text', StringValue)
+  readonly textOutput = new OutputPort('text', StringValue, '文本')
 
   private content = ''
 

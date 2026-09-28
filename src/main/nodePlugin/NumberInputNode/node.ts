@@ -15,7 +15,7 @@ export class NumberInputNode extends Node {
   readonly type = NumberInputNode.TYPE
 
   /** 输出端口：数字 */
-  readonly numberOutput = new OutputPort('number', NumberValue)
+  readonly numberOutput = new OutputPort('number', NumberValue, '数字')
 
   private content = 0
 

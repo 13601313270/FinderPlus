@@ -2,7 +2,6 @@
 import { computed, ref, watch, onUnmounted } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { ImgFileValue } from '../../engine/data/ImgFileValue'
-import type { Node } from '../../engine/node/Node'
 import { ImageCompressNode } from './node'
 import { ImgFileNode } from '../ImgFileNode/node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
@@ -21,7 +20,7 @@ const { startDrag } = useNodePosition(() => node.value)
 const JPEG_QUALITY = 0.85
 
 // —— 目标尺寸（最长边像素）展示：随 onChanged 刷新 ——
-const targetSize = ref(ImageCompressNode.DEFAULT_TARGET_SIZE)
+const targetSize = ref(800)
 
 // —— 压缩结果预览（objectURL）；卸载或结果变时 revoke 防泄漏 ——
 const resultUrl = ref<string | null>(null)
@@ -49,16 +48,6 @@ function refreshResult(n: ImageCompressNode | undefined): void {
 
 /** 压缩中标记：防止 onChanged 重入导致重复压缩 */
 let compressing = false
-
-/**
- * 读源节点当前图片（输出端口第一个 ImgFileValue）。
- * 只读 drop 那一刻的值——一次性工作，不订阅源节点变化。
- */
-function getSourceFile(source: Node): File | undefined {
-  const port = source.outputPorts.find((p) => p.valueClass === ImgFileValue)
-  const value = port?.value
-  return value instanceof ImgFileValue ? value.file : undefined
-}
 
 /** 从源文件 type 推导输出 MIME：png/webp 保留透明通道，其余压成 jpeg */
 function outputMime(sourceType: string): string {
@@ -89,14 +78,13 @@ function loadImage(url: string): Promise<HTMLImageElement> {
 }
 
 /**
- * 执行一次压缩：读源图 → canvas 按比例缩小 → toDataURL → node.setOutput。
- * 压缩完成后调 clearPending 重置触发信号。
+ * 执行一次压缩：File → canvas 按比例缩小 → toDataURL → node.setOutput。
+ * 同时支持两种触发路径：端口输入（响应式，上游值变自动重压缩）和拖入节点（一次性）。
+ *
+ * @param n    压缩节点实例
+ * @param file 待压缩的源文件（来自 compressSource.get 的 file 字段）
  */
-async function runCompress(n: ImageCompressNode): Promise<void> {
-  const source = n.pendingSource
-  const file = source ? getSourceFile(source) : undefined
-  if (!source || !file) return
-
+async function runCompress(n: ImageCompressNode, file: File): Promise<void> {
   const url = URL.createObjectURL(file)
   try {
     const img = await loadImage(url)
@@ -119,27 +107,41 @@ async function runCompress(n: ImageCompressNode): Promise<void> {
 
     n.setOutput(base64, mime, fileName)
   } catch {
-    // 源图加载失败（文件可能已被删）→ 静默跳过，等用户再拖一次
+    // 源图加载失败（文件可能已被删）→ 静默跳过，等下次触发
   } finally {
     URL.revokeObjectURL(url)
   }
 }
 
-/** 检查 pendingSource 信号：非空则压缩一次（重入保护） */
-function handlePending(n: ImageCompressNode | undefined): void {
+/**
+ * 检查是否需要压缩：读 compressSource 判断有无可用源，再用 fingerprint 去重。
+ * - 端口路径（响应式）：fingerprint 没变就跳过，变了就压缩
+ * - 拖入路径（一次性）：pendingSource 非空表示需要压一次
+ * - 两种都存在时端口优先
+ */
+function handleCompress(n: ImageCompressNode | undefined): void {
   if (!n || compressing) return
-  const source = n.pendingSource
-  if (!source) return
+  const src = n.compressSource
+  if (!src) return
+
+  const isPending = !!n.pendingSource // 拖入路径有触发信号
+  const fpChanged = src.fingerprint !== n.lastCompressedFp
+
+  // 去重：端口路径下 fingerprint 没变且不是拖入触发 → 跳过
+  if (!fpChanged && !isPending) return
+
   compressing = true
-  runCompress(n)
+  runCompress(n, src.file)
     .catch(() => {})
     .finally(() => {
       compressing = false
-      n.clearPending()
+      n.markCompressed(src.fingerprint)
+      // 拖入路径处理完清信号（端口路径不清，保持响应式）
+      if (isPending) n.clearPending()
     })
 }
 
-// —— 订阅 node.onChanged：结果刷新 + 目标尺寸刷新 + 收到 pendingSource 信号触发压缩 ——
+// —— 订阅 node.onChanged：结果刷新 + 目标尺寸刷新 + 收到触发信号（拖入或端口值变）触发压缩 ——
 let unsubscribe: (() => void) | undefined
 watch(
   node,
@@ -147,12 +149,12 @@ watch(
     unsubscribe?.()
     unsubscribe = n?.onChanged(() => {
       refreshResult(n)
-      targetSize.value = n?.targetSize ?? ImageCompressNode.DEFAULT_TARGET_SIZE
-      handlePending(n)
+      targetSize.value = n?.targetSize ?? 800
+      handleCompress(n)
     })
     refreshResult(n)
-    targetSize.value = n?.targetSize ?? ImageCompressNode.DEFAULT_TARGET_SIZE
-    handlePending(n)
+    targetSize.value = n?.targetSize ?? 800
+    handleCompress(n)
   },
   { immediate: true, flush: 'sync' }
 )
@@ -204,14 +206,14 @@ onUnmounted(() => {
 
 <template>
   <div class="compress-card" @pointerdown="startDrag"
-    :title="'拖动节点 · 把图片节点（ImgFileNode）拖进来压缩一次'">
+    :title="'拖入图片节点压缩一次 · 或左侧端口接图片响应式压缩'">
     <!-- 头部类型标签：与图片预览节点区分 -->
     <div class="compress-card__header">图片压缩</div>
 
     <!-- 压缩结果预览区 -->
     <div class="compress-card__image-area">
       <img v-if="resultUrl" class="compress-card__img" :src="resultUrl" alt="压缩结果预览" draggable="false" />
-      <!-- 无结果占位：提示把图片节点拖进来 -->
+      <!-- 无结果占位：提示两种输入方式 -->
       <div v-else class="compress-card__placeholder">
         <svg class="compress-card__icon-svg" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="8" y="10" width="48" height="44" rx="6" fill="#f4f5f7" stroke="#c5cbd4" stroke-width="1.5" />
@@ -219,14 +221,14 @@ onUnmounted(() => {
             stroke-linejoin="round" />
           <circle cx="40" cy="20" r="4" fill="#4a7cff" />
         </svg>
-        <span class="compress-card__placeholder-text">把图片节点拖进来压缩（最长边 ≤ {{ targetSize }}px）</span>
+        <span class="compress-card__placeholder-text">拖图片节点进来 · 或左侧端口接图片（≤ {{ targetSize }}px）</span>
       </div>
     </div>
 
     <!-- 底部信息栏：提示 + 以压缩结果新建 ImgFileNode -->
     <div class="compress-card__footer">
       <span v-if="resultUrl" class="compress-card__hint compress-card__hint--active">最长边 ≤ {{ targetSize }}px</span>
-      <span v-else class="compress-card__hint">一次性：拖入即压，不跟随源节点变化</span>
+      <span v-else class="compress-card__hint">端口响应式 · 拖入一次性</span>
       <button v-if="resultUrl" class="compress-card__create-btn" type="button" @pointerdown.stop
         @click="handleCreateImgNode" title="以压缩结果为基础新建一个图片文件节点">
         生成图片文件节点

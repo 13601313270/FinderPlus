@@ -1,5 +1,5 @@
 <script setup lang="ts">import { computed, ref } from 'vue';
-import { nodeManifests } from '../../../main/nodePlugin';
+import { paletteManifests } from '../../../main/nodePlugin';
 /**
  * 节点调色板：画布左上角的「＋」按钮。
  *
@@ -36,7 +36,7 @@ function onSelectType(type: string): void {
  emit('select-type', type);
 }
 // 下拉项文案：先用 type 字符串，后续可在 manifest 里加 displayName
-const items = computed(() => nodeManifests.map((m) => ({
+const items = computed(() => paletteManifests.map((m) => ({
  type: m.type,
  label: m.type
 })));

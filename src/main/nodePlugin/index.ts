@@ -47,6 +47,13 @@ export const nodeManifests: readonly NodePluginManifest[] = [
   ...fallbackManifests
 ]
 
+/**
+ * 调色板专用列表：只列出功能节点，不含文件类型节点。
+ * 文件类型节点（txt-file、img-file、any-file）通过外部拖入创建，
+ * 不在左上角「＋」菜单中展示。
+ */
+export const paletteManifests: readonly NodePluginManifest[] = functionalManifests
+
 const byType = new Map<string, NodePluginManifest>(nodeManifests.map((m) => [m.type, m]))
 
 /** 按节点 type 取 manifest；未知类型返回 undefined */

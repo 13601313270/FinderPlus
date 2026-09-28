@@ -94,10 +94,10 @@ export class LLMNode extends Node {
   readonly type = LLMNode.TYPE
 
   /** 输入端口：系统提示词 */
-  readonly systemInput = new InputPort('system', { accepts: [StringValue], label: 'System' })
+  readonly systemInput = new InputPort('system', { accepts: [StringValue], label: '系统设定system' })
 
   /** 输入端口：用户提示词（接了边就用端口值，没接边就用内部文本框） */
-  readonly promptInput = new InputPort('prompt', { accepts: [StringValue], label: 'Prompt' })
+  readonly promptInput = new InputPort('prompt', { accepts: [StringValue], label: '用户设定prompt' })
 
   /** 输出端口：模型回复 */
   readonly textOutput = new OutputPort('text', StringValue, '回复')

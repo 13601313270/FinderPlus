@@ -203,5 +203,7 @@ export class InputPort {
       ? { kind: 'bind', edge }
       : { kind: 'unbind', edge }
     this.bindingListeners.forEach((fn) => fn(event))
+    // 同时通知所属节点：节点子类的 render 可能依赖 incomingEdgeCount 等派生状态
+    this.owner?.notifyChanged()
   }
 }

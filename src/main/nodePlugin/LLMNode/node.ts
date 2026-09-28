@@ -5,8 +5,9 @@ import { Node } from '../../engine/node/Node'
 
 /**
  * 大语言模型节点：
- * 接受 system prompt 和 user prompt 两个字符串输入，
- * 输出一条 LLM 回复字符串。
+ * - system prompt 从上游 InputPort 传入
+ * - prompt 支持两种来源：上游 InputPort（接了边就用它）或节点内部文本框（没接边时用）
+ * - 输出一条 LLM 回复字符串
  *
  * API Key 从 localStorage 读取（canvasdesk.llm.api_key），
  * 所有 LLMNode 实例共享一份，不存节点自身。
@@ -28,11 +29,14 @@ export class LLMNode extends Node {
   /** 输入端口：系统提示词 */
   readonly systemInput = new InputPort('system', { accepts: [StringValue], label: 'System' })
 
-  /** 输入端口：用户提示词 */
+  /** 输入端口：用户提示词（接了边就用端口值，没接边就用内部文本框） */
   readonly promptInput = new InputPort('prompt', { accepts: [StringValue], label: 'Prompt' })
 
   /** 输出端口：模型回复 */
   readonly textOutput = new OutputPort('text', StringValue, '回复')
+
+  /** 内部 prompt 文本（仅 promptInput 未接边时使用） */
+  private localPrompt = ''
 
   private response = ''
   private status: LLMStatus = 'idle'
@@ -44,13 +48,53 @@ export class LLMNode extends Node {
   /** 防抖定时器：两个输入端口快速连续到达时合并成一次 fetch */
   private debounceTimer: ReturnType<typeof setTimeout> | null = null
 
+  /** 是否自动调用：收到上游输入时自动触发 fetch；默认 false，需用户手动点发送按钮 */
+  private autoCall = false
+
   constructor(id: string) {
     super(id)
     this.addInput(this.systemInput)
     this.addInput(this.promptInput)
     this.addOutput(this.textOutput)
-    // 内容区硬约束：手柄 + 状态行 + 输出区
-    this.setBox(260, 200)
+    // 内容区硬约束：手柄 + 控制栏 + 输出 + 底部操作栏（左输入框 + 右发送）
+    this.setBox(320, 280)
+  }
+
+  /** 当前是否自动调用 —— UI 读它决定是显示发送按钮还是静默自动 */
+  get displayAutoCall(): boolean {
+    return this.autoCall
+  }
+
+  /** 设置自动调用开关；UI 切换时调用 */
+  setAutoCall(value: boolean): void {
+    if (this.autoCall === value) return
+    this.autoCall = value
+    this.notifyChanged()
+  }
+
+  /** promptInput 是否接了边 —— UI 据此决定显示内部文本框还是隐藏 */
+  get displayPromptConnected(): boolean {
+    return this.promptInput.incomingEdgeCount > 0
+  }
+
+  /** 当前内部 prompt 内容（UI 渲染用） */
+  get displayLocalPrompt(): string {
+    return this.localPrompt
+  }
+
+  /** 设置内部 prompt；UI 文本框 change 事件调用 */
+  setPrompt(text: string): void {
+    this.localPrompt = text
+    this.notifyChanged()
+  }
+
+  /** 手动触发推理；UI 的发送按钮点击时调用 */
+  manualTrigger(): void {
+    if (this.debounceTimer) {
+      clearTimeout(this.debounceTimer)
+      this.debounceTimer = null
+    }
+    this.doFetch()
   }
 
   /** 拖入文件落点命中本节点时被调用；本节点不接收文件，返回 false */
@@ -74,11 +118,12 @@ export class LLMNode extends Node {
   }
 
   /**
-   * 上游任意一个输入端口有新值到达，合并成一次 LLM 推理。
-   * 两个输入可能异步到达（上游 commit 顺序不定），
-   * 用 300ms 防抖窗口把快速连续的两次触发合并成一次，避免白烧 token。
+   * 上游任意一个输入端口有新值到达。
+   * 仅当 autoCall 为 true 时才自动触发（300ms 防抖窗口合并快速到达的输入），
+   * 否则等用户手动点发送按钮。
    */
   inputPortReceiveValue(_ports: InputPort[]): void {
+    if (!this.autoCall) return
     if (this.debounceTimer) {
       clearTimeout(this.debounceTimer)
     }
@@ -88,13 +133,28 @@ export class LLMNode extends Node {
     }, 300)
   }
 
-  /** 真正执行取值 + 检查 + fetch；由防抖定时器触发 */
-  private doFetch(): void {
+  /**
+   * 解析 prompt：接了端口 → 用端口值；否则用内部文本框。
+   * system 始终从端口取（system 没有内部 fallback）。
+   */
+  private resolveInputs(): { system: string; prompt: string } {
     const [sysFirst] = this.systemInput.value
-    const [promptFirst] = this.promptInput.value
-
     const system = sysFirst instanceof StringValue ? sysFirst.value : ''
-    const prompt = promptFirst instanceof StringValue ? promptFirst.value : ''
+
+    let prompt = this.localPrompt
+    // promptInput 接了边时优先用端口值
+    if (this.promptInput.incomingEdgeCount > 0) {
+      const [promptFirst] = this.promptInput.value
+      if (promptFirst instanceof StringValue) {
+        prompt = promptFirst.value
+      }
+    }
+    return { system, prompt }
+  }
+
+  /** 真正执行取值 + 检查 + fetch；由防抖定时器或手动触发 */
+  private doFetch(): void {
+    const { system, prompt } = this.resolveInputs()
 
     // Key 检查
     const apiKey = this.readApiKey()
@@ -197,12 +257,19 @@ export class LLMNode extends Node {
   }
 
   saveState(): Record<string, unknown> {
-    // response / status 都是上游派生出来的，恢复时上游 commit 会自动刷回来
-    return {}
+    return { autoCall: this.autoCall, localPrompt: this.localPrompt }
   }
 
-  readState(_state: Record<string, unknown>): void {
-    // 啥也不做——派生状态等上游恢复后自然会刷新
+  readState(state: Record<string, unknown>): void {
+    // 布尔开关用 typeof === 'boolean' 判断，避免把用户显式 false 当成缺省覆盖
+    if (typeof state.autoCall === 'boolean') {
+      this.autoCall = state.autoCall
+    }
+    // localPrompt 是普通字符串，只有确实存了才恢复
+    if (typeof state.localPrompt === 'string') {
+      this.localPrompt = state.localPrompt
+    }
+    // response / status 等派生状态等上游恢复后自然会刷新
   }
 
   /** 节点销毁时清理防抖定时器，防止卸载后还触发 fetch */

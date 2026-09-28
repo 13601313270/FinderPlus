@@ -49,14 +49,15 @@ function onGearClick(e: MouseEvent): void {
 
 <template>
   <div class="node">
-    <div class="node__header">
-      <span class="node__handle" title="拖动节点" @pointerdown="startDrag">{{ llmNode?.type ?? '?' }}</span>
+    <div class="node__header" @pointerdown="startDrag">
+      <span class="node__handle" title="拖动节点（整个头部可拖）">{{ llmNode?.type ?? '?' }}</span>
       <button
         v-if="llmNode"
         class="node__gear"
         type="button"
         :title="hasKey() ? 'LLM 已配置，点击修改 Key' : '点击配置 LLM API Key'"
-        @click="onGearClick"
+        @pointerdown.stop
+        @click.stop="onGearClick"
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
           stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -110,18 +111,18 @@ function onGearClick(e: MouseEvent): void {
     justify-content: space-between;
     border-bottom: 1px dashed #d5d9e0;
     padding-bottom: 2px;
-  }
-
-  &__handle {
     cursor: grab;
     user-select: none;
-    font-size: 12px;
-    color: @color-text-weak;
-    padding: 2px 0;
 
     &:active {
       cursor: grabbing;
     }
+  }
+
+  &__handle {
+    font-size: 12px;
+    color: @color-text-weak;
+    padding: 2px 0;
   }
 
   &__gear {

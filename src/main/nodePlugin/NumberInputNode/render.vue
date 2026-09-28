@@ -73,14 +73,7 @@ const { startDrag } = useNodePosition(() => inputNode.value)
       placeholder="输入数字…"
       @input="onNumberInput"
     />
-    <!-- 输出读数：这张卡片只有一个输出端口，把**已经提交出去**的值就地显示出来，
-         不接下游也能一眼确认「节点确实在输出」。
-         注意框里被清空时（内容还不是一个完整数字）不提交新值，所以这里显示的仍是上一次
-         真正发出去的数字——「已输出」这个措辞就是为这个语义服务的。 -->
-    <span class="node__emit">
-      已输出 <b>{{ emitted }}</b>
-      <em class="node__kind">number</em>
-    </span>
+
   </div>
 </template>
 
@@ -127,25 +120,5 @@ const { startDrag } = useNodePosition(() => inputNode.value)
     }
   }
 
-  &__emit {
-    display: flex;
-    align-items: baseline;
-    gap: 6px;
-    padding: 0 2px;
-    font-size: 12px;
-    color: @color-text-weak;
-
-    b {
-      color: @color-text;
-      font-variant-numeric: tabular-nums;
-    }
-  }
-
-  &__kind {
-    margin-left: auto;
-    font-style: normal;
-    font-size: 11px;
-    color: @color-text-weak;
-  }
 }
 </style>

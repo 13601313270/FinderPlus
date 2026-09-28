@@ -22,8 +22,8 @@ export class NumberInputNode extends Node {
   constructor(id: string) {
     super(id)
     this.addOutput(this.numberOutput)
-    // 内容区硬约束：手柄 + 输入框 + 输出读数 + padding ≈ 110px 高，宽 220px
-    this.setBox(220, 110)
+    // 内容区硬约束：手柄 + 输入框 + padding ≈ 80px 高，宽 220px
+    this.setBox(220, 77)
   }
 
   /** 拖入文件落点命中本节点时被调用；本节点不接收文件，返回 false */

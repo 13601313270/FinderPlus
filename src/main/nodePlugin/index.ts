@@ -11,6 +11,7 @@ import { manifest as fileInfoManifest } from './FileInfoNode'
 import { manifest as imagePreviewManifest } from './ImagePreviewNode'
 import { manifest as imageCompressManifest } from './ImageCompressNode'
 import { manifest as folderManifest } from './FolderNode'
+import { manifest as llmManifest } from './LLMNode'
 
 /**
  * 插件注册表：所有节点插件的 manifest 汇总。
@@ -29,7 +30,8 @@ const functionalManifests: NodePluginManifest[] = [
   fileInfoManifest,
   imagePreviewManifest,
   imageCompressManifest,
-  folderManifest
+  folderManifest,
+  llmManifest
 ]
 
 const fileManifests: NodePluginManifest[] = [

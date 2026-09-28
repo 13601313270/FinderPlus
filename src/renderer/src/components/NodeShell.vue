@@ -69,6 +69,7 @@ function onContextMenu(e: MouseEvent): void {
       'node-shell--floating': floating,
       'node-shell--accepted': acceptedForDrop
     }"
+    :data-node-id="node.id"
     :style="{ left: `${position[0]}px`, top: `${position[1]}px` }"
     @contextmenu="onContextMenu"
   >

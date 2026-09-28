@@ -77,6 +77,13 @@ export class Scene {
 
   async removeNode(node: Node): Promise<void> {
     if (!this.nodesById.has(node.id)) return
+    // 如果节点被某个容器（如 FolderNode）收养，先让容器摘掉它，
+    // 触发 container.notifyChanged() 让容器视图立即刷新（children 数组同步）
+    // 注意：必须在 beforeDestroy 之前，否则 FolderNode.beforeDestroy 已经清过自己的 children 了
+    if (node.containerNode) {
+      const container = node.containerNode as unknown as { removeChild?: (n: Node) => void }
+      container.removeChild?.(node)
+    }
     // 先让节点自己做清理或阻止删除——子类 throw 会直接冒泡中断后续步骤
     await node.beforeDestroy()
     this.disconnectNodeEdges(node)

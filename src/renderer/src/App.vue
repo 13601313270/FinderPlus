@@ -370,6 +370,24 @@ function onNodeContextMenu(nodeId: string, clientX: number, clientY: number): vo
   contextMenu.value = { visible: true, x: clientX, y: clientY, nodeId }
 }
 
+/**
+ * document 级 capture 阶段监听 contextmenu：
+ * - capture 阶段先于 target/bubble，能绕过 NodeShell.stopPropagation()
+ * - 覆盖所有层级的 NodeShell（顶级 + 文件夹内嵌套）
+ */
+function onDocumentContextMenu(e: MouseEvent): void {
+  const target = e.target as HTMLElement
+  const shell = target.closest('.node-shell') as HTMLElement | null
+  if (!shell) return
+  const nodeId = shell.dataset.nodeId
+  if (!nodeId) return
+  // 跟随放置中的节点不触发
+  if (trackingNode.value?.id === nodeId) return
+  e.preventDefault()
+  e.stopPropagation()
+  contextMenu.value = { visible: true, x: e.clientX, y: e.clientY, nodeId }
+}
+
 /** 关闭右键菜单 */
 function closeContextMenu(): void {
   contextMenu.value.visible = false
@@ -647,6 +665,8 @@ onMounted(() => {
   window.addEventListener('pointerup', onGlobalPointerUp)
   // 全局 mousedown：点击菜单外部时关闭右键菜单
   document.addEventListener('mousedown', onDocumentMouseDown)
+  // 全局 contextmenu：capture 阶段捕获所有层级的节点右键（含文件夹内嵌套节点）
+  document.addEventListener('contextmenu', onDocumentContextMenu, true)
   // 全局拖拽兜底：文件拖到画布外区域（顶部 dragbar 等）时阻止 Electron 默认打开文件导致白屏
   // 画布上的业务逻辑仍由 stage__canvas 的 @dragover / @drop 处理
   document.addEventListener('dragover', onGlobalDragOver)
@@ -659,6 +679,7 @@ onUnmounted(() => {
   window.removeEventListener('pointermove', onWindowPointerMove)
   window.removeEventListener('pointerup', onGlobalPointerUp)
   document.removeEventListener('mousedown', onDocumentMouseDown)
+  document.removeEventListener('contextmenu', onDocumentContextMenu, true)
   document.removeEventListener('dragover', onGlobalDragOver)
   document.removeEventListener('drop', onGlobalDrop)
   unsubscribeScene?.()
@@ -694,7 +715,7 @@ onUnmounted(() => {
         <!-- 每个节点 = 外壳（定位 + 端口，通用）+ 内容（render.vue，节点自定义）
              nodes 来自 Scene，新增节点加进 Scene 后会自动出现在这里 -->
         <NodeShell v-for="node in nodes" :key="node.id" :node="node" :render="manifestFor(node)?.render"
-          :floating="trackingNode?.id === node.id" @contextmenu="onNodeContextMenu" />
+          :floating="trackingNode?.id === node.id" />
       </div>
 
       <!-- 连线拖拽的预览线画在屏幕层（世界层之外）：不吃缩放，线宽恒定，且压在节点之上 -->

@@ -126,16 +126,17 @@ function handleCompress(n: ImageCompressNode | undefined): void {
 
   const isPending = !!n.pendingSource // 拖入路径有触发信号
   const fpChanged = src.fingerprint !== n.lastCompressedFp
+  const sizeChanged = n.targetSize !== n.lastCompressedSz
 
-  // 去重：端口路径下 fingerprint 没变且不是拖入触发 → 跳过
-  if (!fpChanged && !isPending) return
+  // 去重：源文件没变 + 尺寸没变 + 不是拖入触发 → 跳过
+  if (!fpChanged && !sizeChanged && !isPending) return
 
   compressing = true
   runCompress(n, src.file)
-    .catch(() => {})
+    .catch(() => { })
     .finally(() => {
       compressing = false
-      n.markCompressed(src.fingerprint)
+      n.markCompressed(src.fingerprint, n.targetSize)
       // 拖入路径处理完清信号（端口路径不清，保持响应式）
       if (isPending) n.clearPending()
     })
@@ -205,8 +206,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="compress-card" @pointerdown="startDrag"
-    :title="'拖入图片节点压缩一次 · 或左侧端口接图片响应式压缩'">
+  <div class="compress-card" @pointerdown="startDrag" :title="'拖入图片节点压缩一次 · 或左侧端口接图片响应式压缩'">
     <!-- 头部类型标签：与图片预览节点区分 -->
     <div class="compress-card__header">图片压缩</div>
 

@@ -55,6 +55,9 @@ export class ImageCompressNode extends Node {
    * 端口路径响应式触发时，如果 fingerprint 没变就跳过（避免重入） */
   private lastCompressedFingerprint: string | null = null
 
+  /** 最近一次压缩时的 targetSize（最长边像素），尺寸变化也要重压 */
+  private lastCompressedSize: number | null = null
+
   constructor(id: string) {
     super(id)
     this.addInput(this.sizeInput)
@@ -127,9 +130,15 @@ export class ImageCompressNode extends Node {
     return this.lastCompressedFingerprint
   }
 
-  /** 渲染侧压缩完成后调用，记录 fingerprint 用于后续去重判断 */
-  markCompressed(fingerprint: string): void {
+  /** 最近一次压缩时的 targetSize，render.vue 用来判断尺寸变了是否要重压 */
+  get lastCompressedSz(): number | null {
+    return this.lastCompressedSize
+  }
+
+  /** 渲染侧压缩完成后调用，同时记录 fingerprint 和 size，用于后续去重判断 */
+  markCompressed(fingerprint: string, size: number): void {
     this.lastCompressedFingerprint = fingerprint
+    this.lastCompressedSize = size
   }
 
   /**

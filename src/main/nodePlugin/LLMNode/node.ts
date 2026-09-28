@@ -18,9 +18,48 @@ import { Node } from '../../engine/node/Node'
 
 type LLMStatus = 'idle' | 'loading' | 'done' | 'error'
 
-const STORAGE_KEY = 'canvasdesk.llm.api_key'
-const API_URL = 'https://api.deepseek.com/chat/completions'
-const MODEL = 'deepseek-flash'
+interface StoredLLMConfig {
+  provider: 'deepseek' | 'openai'
+  providers: Record<string, { key: string; model: string }>
+}
+
+const CONFIG_KEY = 'canvasdesk.llm.config'
+const LEGACY_KEY = 'canvasdesk.llm.api_key'
+
+/** Provider 预设（与渲染层 useLLMSettings 保持一致） */
+const PROVIDER_PRESETS: Record<string, { url: string; defaultModel: string }> = {
+  deepseek: {
+    url: 'https://api.deepseek.com/chat/completions',
+    defaultModel: 'deepseek-flash'
+  },
+  openai: {
+    url: 'https://api.openai.com/v1/chat/completions',
+    defaultModel: 'gpt-4o-mini'
+  }
+}
+
+/** 从 localStorage 读当前生效的 API 端点配置，带旧版 key 兼容 */
+function readEndpoint(): { key: string; url: string; model: string } {
+  try {
+    const raw = localStorage.getItem(CONFIG_KEY)
+    if (raw) {
+      const cfg = JSON.parse(raw) as StoredLLMConfig
+      const provider = cfg.provider
+      const preset = PROVIDER_PRESETS[provider]
+      const providerCfg = cfg.providers?.[provider]
+      if (preset && providerCfg) {
+        const model = (providerCfg.model && providerCfg.model.trim()) || preset.defaultModel
+        return { key: providerCfg.key ?? '', url: preset.url, model }
+      }
+    }
+  } catch {
+    // fall through
+  }
+  // 旧版兼容：只有 api_key，按 deepseek 处理
+  const legacyKey = localStorage.getItem(LEGACY_KEY) ?? ''
+  const preset = PROVIDER_PRESETS.deepseek
+  return { key: legacyKey, url: preset.url, model: preset.defaultModel }
+}
 
 export class LLMNode extends Node {
   static readonly TYPE = 'llm'
@@ -155,10 +194,10 @@ export class LLMNode extends Node {
   /** 真正执行取值 + 检查 + fetch；由防抖定时器或手动触发 */
   private doFetch(): void {
     const { system, prompt } = this.resolveInputs()
+    const endpoint = readEndpoint()
 
     // Key 检查
-    const apiKey = this.readApiKey()
-    if (!apiKey) {
+    if (!endpoint.key) {
       this.status = 'error'
       this.errorMessage = '请先点击右上角齿轮配置 LLM API Key'
       this.response = ''
@@ -177,21 +216,12 @@ export class LLMNode extends Node {
 
     // 递增请求 ID，标记"这是最新的一次请求"
     const myRequestId = ++this.requestId
-    void this.fetchAndCommit(apiKey, system, prompt, myRequestId)
+    void this.fetchAndCommit(endpoint, system, prompt, myRequestId)
   }
 
-  /** 读 localStorage 里的全局 API Key */
-  private readApiKey(): string {
-    try {
-      return localStorage.getItem(STORAGE_KEY) ?? ''
-    } catch {
-      return ''
-    }
-  }
-
-  /** 异步调用 DeepSeek API，完成后写 response + commit 到输出端口 */
+  /** 异步调用当前配置的 Provider API，完成后写 response + commit 到输出端口 */
   private async fetchAndCommit(
-    apiKey: string,
+    endpoint: { key: string; url: string; model: string },
     system: string,
     prompt: string,
     myRequestId: number
@@ -206,14 +236,14 @@ export class LLMNode extends Node {
     let ok = false
 
     try {
-      const res = await fetch(API_URL, {
+      const res = await fetch(endpoint.url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
+          'Authorization': `Bearer ${endpoint.key}`
         },
         body: JSON.stringify({
-          model: MODEL,
+          model: endpoint.model,
           messages: [
             { role: 'system', content: system || 'You are a helpful assistant.' },
             { role: 'user', content: prompt }

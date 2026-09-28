@@ -1,22 +1,42 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted } from 'vue'
-import { useLLMSettings } from '@renderer/composables/useLLMSettings'
+import { computed, onMounted, onUnmounted } from 'vue'
+import { LLM_PROVIDERS, useLLMSettings, type LLMProvider } from '@renderer/composables/useLLMSettings'
 
 /**
  * LLM 全局设置弹窗：
- * - Teleport 到 body，不受画布容器 overflow 限制
- * - 点击遮罩 / 按 Esc 关闭；点遮罩不保存、点保存按钮才写入 localStorage
- * - 所有 LLMNode 共享这份 Key
+ * - Provider 下拉（DeepSeek / OpenAI）
+ * - 根据当前 Provider 显示对应的 API Key 输入框
+ * - Model 输入框（datalist 候选 + 拉取按钮；失败时降级自由输入）
  */
 
-const { visible, draftKey, closeSettings, saveApiKey, clearApiKey } = useLLMSettings()
+const {
+  visible,
+  draftProvider,
+  draftKeys,
+  draftModels,
+  modelLists,
+  modelsLoading,
+  modelsError,
+  closeSettings,
+  saveSettings,
+  clearKey,
+  fetchModels
+} = useLLMSettings()
+
+const providers = Object.entries(LLM_PROVIDERS) as [LLMProvider, typeof LLM_PROVIDERS[LLMProvider]][]
+
+const currentPreset = computed(() => LLM_PROVIDERS[draftProvider.value])
+const currentModels = computed(() => modelLists.value[draftProvider.value] ?? [])
+
+async function onFetchModels(): Promise<void> {
+  await fetchModels(draftProvider.value, draftKeys.value[draftProvider.value])
+}
 
 function onMaskClick(): void {
   closeSettings()
 }
 
 function onDialogClick(e: MouseEvent): void {
-  // 点弹窗内部不关闭
   e.stopPropagation()
 }
 
@@ -25,7 +45,7 @@ function onKeyDown(e: KeyboardEvent): void {
   if (e.key === 'Escape') {
     closeSettings()
   } else if (e.key === 'Enter' && e.metaKey) {
-    saveApiKey()
+    saveSettings()
   }
 }
 
@@ -42,33 +62,78 @@ onUnmounted(() => {
   <Teleport to="body">
     <div v-if="visible" class="llm-dialog__mask" @click="onMaskClick">
       <div class="llm-dialog" @click="onDialogClick">
-        <h3 class="llm-dialog__title">LLM API Key</h3>
-        <p class="llm-dialog__desc">
-          所有 LLM 节点共享这一份 Key。Key 只存在你本机的应用存储空间，不会上传到任何服务器。
-        </p>
+        <h3 class="llm-dialog__title">LLM 配置</h3>
 
-        <label class="llm-dialog__label" for="llm-key-input">API Key</label>
+        <!-- Provider 下拉 -->
+        <label class="llm-dialog__label" for="llm-provider">服务商</label>
+        <select id="llm-provider" v-model="draftProvider" class="llm-dialog__select">
+          <option v-for="[key, preset] in providers" :key="key" :value="key">
+            {{ preset.label }}
+          </option>
+        </select>
+
+        <!-- Key 输入 -->
+        <label class="llm-dialog__label" for="llm-key-input">
+          API Key
+          <span class="llm-dialog__preset-hint">端点: {{ currentPreset.url }}</span>
+        </label>
         <input
           id="llm-key-input"
-          v-model="draftKey"
+          v-model="draftKeys[draftProvider]"
           class="llm-dialog__input"
           type="password"
-          placeholder="sk-..."
+          :placeholder="`${currentPreset.label} API Key`"
           autocomplete="off"
           spellcheck="false"
         />
 
+        <!-- Model 输入 + 拉取按钮 -->
+        <label class="llm-dialog__label" for="llm-model-input">
+          Model
+          <span class="llm-dialog__preset-hint">留空使用默认: {{ currentPreset.defaultModel }}</span>
+        </label>
+        <div class="llm-dialog__model-row">
+          <input
+            id="llm-model-input"
+            v-model="draftModels[draftProvider]"
+            class="llm-dialog__input llm-dialog__input--model"
+            type="text"
+            :placeholder="currentPreset.defaultModel"
+            :list="`llm-model-list-${draftProvider}`"
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <button
+            class="llm-dialog__btn llm-dialog__btn--ghost llm-dialog__btn--fetch"
+            type="button"
+            :disabled="modelsLoading"
+            :title="modelsLoading ? '拉取中…' : '从服务商拉取模型列表'"
+            @click="onFetchModels"
+          >{{ modelsLoading ? '拉取中…' : '拉取可用模型' }}</button>
+          <!-- datalist 候选 -->
+          <datalist :id="`llm-model-list-${draftProvider}`">
+            <option v-for="m in currentModels" :key="m" :value="m" />
+          </datalist>
+        </div>
+        <p v-if="modelsError" class="llm-dialog__error">{{ modelsError }}</p>
+        <p v-else-if="currentModels.length > 0" class="llm-dialog__hint">
+          已拉到 {{ currentModels.length }} 个可用模型，可从下拉候选中选，也可手动输入。
+        </p>
+
         <p class="llm-dialog__hint">
-          Key 保存在浏览器 localStorage 中，清除浏览器数据会一并清除。
+          配置保存在浏览器 localStorage 中，清除浏览器数据会一并清除。
         </p>
 
         <div class="llm-dialog__actions">
-          <button class="llm-dialog__btn llm-dialog__btn--ghost" type="button"
-            @click="clearApiKey">清除</button>
+          <button
+            class="llm-dialog__btn llm-dialog__btn--ghost"
+            type="button"
+            @click="clearKey(draftProvider)"
+          >清除 Key</button>
           <button class="llm-dialog__btn llm-dialog__btn--ghost" type="button"
             @click="closeSettings">取消</button>
           <button class="llm-dialog__btn llm-dialog__btn--primary" type="button"
-            @click="saveApiKey">保存</button>
+            @click="saveSettings">保存</button>
         </div>
       </div>
     </div>
@@ -89,39 +154,43 @@ onUnmounted(() => {
   }
 
   & {
-    width: 420px;
+    width: 440px;
     padding: 20px 24px;
     background: #fff;
     border-radius: 12px;
     box-shadow: 0 16px 48px rgba(0, 0, 0, 0.2);
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 10px;
     animation: popIn 0.18s ease;
   }
 
   &__title {
-    margin: 0;
+    margin: 0 0 4px;
     font-size: 16px;
     font-weight: 600;
     color: #1a1a1a;
   }
 
-  &__desc {
-    margin: 0;
-    font-size: 12px;
-    line-height: 1.5;
-    color: #6b7280;
-  }
-
   &__label {
-    margin-top: 8px;
+    margin-top: 4px;
     font-size: 12px;
     font-weight: 500;
     color: #374151;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
   }
 
-  &__input {
+  &__preset-hint {
+    font-size: 10px;
+    font-weight: 400;
+    color: #9ca3af;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+
+  &__input,
+  &__select {
     width: 100%;
     padding: 8px 10px;
     font-size: 13px;
@@ -131,6 +200,7 @@ onUnmounted(() => {
     outline: none;
     transition: border-color 0.15s, box-shadow 0.15s;
     box-sizing: border-box;
+    background: #fff;
 
     &:focus {
       border-color: #3b82f6;
@@ -138,14 +208,35 @@ onUnmounted(() => {
     }
   }
 
+  &__select {
+    font-family: inherit;
+  }
+
+  // Model 输入 + 拉取按钮 同行
+  &__model-row {
+    display: flex;
+    gap: 6px;
+    align-items: stretch;
+  }
+
+  &__input--model {
+    flex: 1;
+  }
+
   &__hint {
-    margin: -2px 0 0;
+    margin: 2px 0 0;
     font-size: 11px;
     color: #9ca3af;
   }
 
+  &__error {
+    margin: 2px 0 0;
+    font-size: 11px;
+    color: #dc2626;
+  }
+
   &__actions {
-    margin-top: 16px;
+    margin-top: 12px;
     display: flex;
     justify-content: flex-end;
     gap: 8px;
@@ -159,14 +250,25 @@ onUnmounted(() => {
     cursor: pointer;
     transition: all 0.15s;
 
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+
     &--ghost {
       background: #fff;
       border-color: #d1d5db;
       color: #374151;
 
-      &:hover {
+      &:hover:not(:disabled) {
         background: #f3f4f6;
       }
+    }
+
+    &--fetch {
+      padding: 6px 10px;
+      white-space: nowrap;
+      font-family: inherit;
     }
 
     &--primary {
@@ -174,7 +276,7 @@ onUnmounted(() => {
       color: #fff;
       border-color: #3b82f6;
 
-      &:hover {
+      &:hover:not(:disabled) {
         background: #2563eb;
         border-color: #2563eb;
       }

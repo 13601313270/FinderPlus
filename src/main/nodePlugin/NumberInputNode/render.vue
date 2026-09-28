@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { debounce } from 'lodash-es'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { NumberInputNode } from './node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
@@ -39,8 +40,14 @@ onMounted(() => {
   })
 })
 
+/** 500ms 防抖：连续敲击不立刻 commit，停半秒再发，避免 Edge 上刷大量中间值 */
+const debouncedSetNumber = debounce((value: number) => {
+  inputNode.value?.setNumber(value)
+}, 500)
+
 onUnmounted(() => {
   offChanged?.()
+  debouncedSetNumber.cancel()
 })
 
 /**
@@ -53,7 +60,7 @@ function onNumberInput(e: Event): void {
   if (el.value.trim() === '') return
   const value = el.valueAsNumber
   if (!Number.isFinite(value)) return
-  inputNode.value?.setNumber(value)
+  debouncedSetNumber(value)
 }
 
 // 只要拖拽（落点写回 node.position）；位置本身由外壳跟随 node.position 展示。

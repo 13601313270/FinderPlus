@@ -99,7 +99,6 @@ onUnmounted(() => {
             class="llm-dialog__input llm-dialog__input--model"
             type="text"
             :placeholder="currentPreset.defaultModel"
-            :list="`llm-model-list-${draftProvider}`"
             autocomplete="off"
             spellcheck="false"
           />
@@ -110,14 +109,21 @@ onUnmounted(() => {
             :title="modelsLoading ? '拉取中…' : '从服务商拉取模型列表'"
             @click="onFetchModels"
           >{{ modelsLoading ? '拉取中…' : '拉取可用模型' }}</button>
-          <!-- datalist 候选 -->
-          <datalist :id="`llm-model-list-${draftProvider}`">
-            <option v-for="m in currentModels" :key="m" :value="m" />
-          </datalist>
+        </div>
+        <!-- 已拉到的模型列表，单独展示，不跟 input 联动过滤；点一下灌进输入框 -->
+        <div v-if="currentModels.length > 0" class="llm-dialog__model-chips">
+          <button
+            v-for="m in currentModels"
+            :key="m"
+            type="button"
+            class="llm-dialog__model-chip"
+            :class="{ 'llm-dialog__model-chip--active': draftModels[draftProvider] === m }"
+            @click="draftModels[draftProvider] = m"
+          >{{ m }}</button>
         </div>
         <p v-if="modelsError" class="llm-dialog__error">{{ modelsError }}</p>
         <p v-else-if="currentModels.length > 0" class="llm-dialog__hint">
-          已拉到 {{ currentModels.length }} 个可用模型，可从下拉候选中选，也可手动输入。
+          点击上方任一模型填入输入框，或直接手动输入自定义模型名。
         </p>
 
         <p class="llm-dialog__hint">
@@ -227,6 +233,44 @@ onUnmounted(() => {
     margin: 2px 0 0;
     font-size: 11px;
     color: #9ca3af;
+  }
+
+  &__model-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 2px;
+    max-height: 160px;
+    overflow-y: auto;
+    padding: 4px;
+    border-radius: 6px;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+  }
+
+  &__model-chip {
+    padding: 3px 8px;
+    font-size: 11px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    background: #fff;
+    color: #374151;
+    cursor: pointer;
+    transition: all 0.12s;
+    white-space: nowrap;
+
+    &:hover {
+      background: #eff6ff;
+      border-color: #3b82f6;
+      color: #1d4ed8;
+    }
+
+    &--active {
+      background: #3b82f6;
+      border-color: #3b82f6;
+      color: #fff;
+    }
   }
 
   &__error {

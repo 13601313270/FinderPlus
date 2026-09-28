@@ -1,12 +1,27 @@
 import { ref } from 'vue'
 
-export type LLMProvider = 'deepseek' | 'openai'
+export type LLMProvider =
+  | 'deepseek'
+  | 'openai'
+  | 'kimi'
+  | 'qwen'
+  | 'glm'
+  | 'minimax'
+  | 'groq'
+  | 'mistral'
+  | 'siliconflow'
 
-/** Provider 预设：端点 URL + 默认 model，用户可覆盖 model */
+/**
+ * Provider 预设：端点 URL + 默认 model，用户可覆盖 model。
+ * 所有 Provider 都遵循 OpenAI-compatible Chat Completions 协议（POST {url}，messages 数组），
+ * 并且都支持 GET {modelsUrl} 返回模型列表。
+ *
+ * 新增 Provider 只需：在 LLMProvider union 加字面量、在这里加一条、在 node.ts PROVIDER_PRESETS 同步一条。
+ */
 export const LLM_PROVIDERS: Record<LLMProvider, {
   label: string
-  url: string          // chat completions endpoint
-  modelsUrl: string    // GET /models endpoint
+  url: string          // chat completions endpoint（POST）
+  modelsUrl: string    // models listing endpoint（GET）
   defaultModel: string
 }> = {
   deepseek: {
@@ -20,7 +35,73 @@ export const LLM_PROVIDERS: Record<LLMProvider, {
     url: 'https://api.openai.com/v1/chat/completions',
     modelsUrl: 'https://api.openai.com/v1/models',
     defaultModel: 'gpt-4o-mini'
+  },
+  kimi: {
+    label: 'Kimi (Moonshot)',
+    url: 'https://api.moonshot.cn/v1/chat/completions',
+    modelsUrl: 'https://api.moonshot.cn/v1/models',
+    defaultModel: 'moonshot-v1-8k'
+  },
+  qwen: {
+    label: '通义千问 (DashScope)',
+    url: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
+    modelsUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1/models',
+    defaultModel: 'qwen-plus'
+  },
+  glm: {
+    label: '智谱 (GLM)',
+    url: 'https://open.bigmodel.cn/api/paas/v4/chat/completions',
+    modelsUrl: 'https://open.bigmodel.cn/api/paas/v4/models',
+    defaultModel: 'glm-4'
+  },
+  minimax: {
+    label: 'MiniMax',
+    url: 'https://api.minimax.chat/v1/text/chatcompletion_v2',
+    modelsUrl: 'https://api.minimax.chat/v1/models',
+    defaultModel: 'abab6.5s-chat'
+  },
+  groq: {
+    label: 'Groq',
+    url: 'https://api.groq.com/openai/v1/chat/completions',
+    modelsUrl: 'https://api.groq.com/openai/v1/models',
+    defaultModel: 'llama-3.3-70b-versatile'
+  },
+  mistral: {
+    label: 'Mistral AI',
+    url: 'https://api.mistral.ai/v1/chat/completions',
+    modelsUrl: 'https://api.mistral.ai/v1/models',
+    defaultModel: 'mistral-small-latest'
+  },
+  siliconflow: {
+    label: '硅基流动 (SiliconFlow)',
+    url: 'https://api.siliconflow.cn/v1/chat/completions',
+    modelsUrl: 'https://api.siliconflow.cn/v1/models',
+    defaultModel: 'Qwen/Qwen2.5-7B-Instruct'
   }
+}
+
+function allProviders(): Record<LLMProvider, { key: string; model: string }> {
+  const o = {} as Record<LLMProvider, { key: string; model: string }>
+  for (const p of Object.keys(LLM_PROVIDERS) as LLMProvider[]) {
+    o[p] = { key: '', model: '' }
+  }
+  return o
+}
+
+function emptyStringRecord(): Record<LLMProvider, string> {
+  const o = {} as Record<LLMProvider, string>
+  for (const p of Object.keys(LLM_PROVIDERS) as LLMProvider[]) {
+    o[p] = ''
+  }
+  return o
+}
+
+function emptyArrayRecord(): Record<LLMProvider, string[]> {
+  const o = {} as Record<LLMProvider, string[]>
+  for (const p of Object.keys(LLM_PROVIDERS) as LLMProvider[]) {
+    o[p] = []
+  }
+  return o
 }
 
 interface LLMProviderConfig {
@@ -39,20 +120,32 @@ const LEGACY_KEY = 'canvasdesk.llm.api_key'
 function defaultConfig(): LLMConfig {
   return {
     provider: 'deepseek',
-    providers: {
-      deepseek: { key: '', model: '' },
-      openai: { key: '', model: '' }
-    }
+    providers: allProviders()
   }
 }
 
-/** 从 localStorage 加载配置，带旧版 api_key 迁移 */
+/** 从 localStorage 加载配置，带旧版 api_key 迁移和 providers merge 兼容 */
 function loadConfig(): LLMConfig {
+  const base = defaultConfig()
   try {
     const raw = localStorage.getItem(CONFIG_KEY)
     if (raw) {
-      const parsed = JSON.parse(raw) as LLMConfig
-      if (parsed && parsed.provider && parsed.providers) return parsed
+      const parsed = JSON.parse(raw) as Partial<LLMConfig>
+      // provider 字段：有就用，没就保留默认 deepseek
+      if (parsed?.provider && Object.keys(LLM_PROVIDERS).includes(parsed.provider)) {
+        base.provider = parsed.provider as LLMProvider
+      }
+      // providers：逐个 merge，旧 config 只有 deepseek/openai 也能补齐新 provider 的空 slot
+      if (parsed?.providers) {
+        for (const p of Object.keys(LLM_PROVIDERS) as LLMProvider[]) {
+          const pc = parsed.providers[p]
+          if (pc && typeof pc === 'object') {
+            base.providers[p].key = typeof pc.key === 'string' ? pc.key : ''
+            base.providers[p].model = typeof pc.model === 'string' ? pc.model : ''
+          }
+        }
+      }
+      return base
     }
   } catch {
     // 忽略解析错误，走默认
@@ -60,13 +153,12 @@ function loadConfig(): LLMConfig {
   // 尝试从旧版 api_key 迁移
   const legacy = localStorage.getItem(LEGACY_KEY)
   if (legacy) {
-    const cfg = defaultConfig()
-    cfg.providers.deepseek.key = legacy
+    base.providers.deepseek.key = legacy
     localStorage.removeItem(LEGACY_KEY)
-    localStorage.setItem(CONFIG_KEY, JSON.stringify(cfg))
-    return cfg
+    localStorage.setItem(CONFIG_KEY, JSON.stringify(base))
+    return base
   }
-  return defaultConfig()
+  return base
 }
 
 function saveConfig(cfg: LLMConfig): void {
@@ -74,8 +166,15 @@ function saveConfig(cfg: LLMConfig): void {
 }
 
 // —— 全局单例 ref，module 级别 ——
+// ⚠️ 必须 module 级：useLLMSettings() 被多个组件调用，只有 module 级才能共享同一份状态
 const config = ref<LLMConfig>(loadConfig())
 const visible = ref(false)
+const draftProvider = ref<LLMProvider>('deepseek')
+const draftKeys = ref<Record<LLMProvider, string>>(emptyStringRecord())
+const draftModels = ref<Record<LLMProvider, string>>(emptyStringRecord())
+const modelLists = ref<Record<LLMProvider, string[]>>(emptyArrayRecord())
+const modelsLoading = ref(false)
+const modelsError = ref<string>('')
 
 // 设置弹窗里的临时草稿（深拷贝，避免直接改全局）
 let draftClone: LLMConfig | null = null
@@ -111,26 +210,23 @@ export function getStoredLLMConfig(): { provider: LLMProvider; key: string; url:
 }
 
 export function useLLMSettings() {
-  const draftProvider = ref<LLMProvider>('deepseek')
-  const draftKeys = ref<Record<LLMProvider, string>>({ deepseek: '', openai: '' })
-  const draftModels = ref<Record<LLMProvider, string>>({ deepseek: '', openai: '' })
-
-  // 模型列表状态（按 provider 存）
-  const modelLists = ref<Record<LLMProvider, string[]>>({ deepseek: [], openai: [] })
-  const modelsLoading = ref(false)
-  const modelsError = ref<string>('')
+  // 所有状态都是 module 级单例，函数体里不再新建任何 ref
 
   function openSettings(): void {
     draftClone = cloneConfig(config.value)
     draftProvider.value = draftClone.provider
-    draftKeys.value = {
-      deepseek: draftClone.providers.deepseek.key,
-      openai: draftClone.providers.openai.key
+    // 构造完整的新对象再一次性赋值——Vue 3 ref 不追踪嵌套属性赋值，必须触发顶层 .value 变更
+    const all = Object.keys(LLM_PROVIDERS) as LLMProvider[]
+    const newKeys = emptyStringRecord()
+    const newModels = emptyStringRecord()
+    for (const p of all) {
+      const pc = draftClone.providers[p]
+      newKeys[p] = pc?.key ?? ''
+      newModels[p] = pc?.model ?? ''
     }
-    draftModels.value = {
-      deepseek: draftClone.providers.deepseek.model,
-      openai: draftClone.providers.openai.model
-    }
+    draftKeys.value = newKeys
+    draftModels.value = newModels
+    // 模型列表缓存按 provider 独立，不清空——保留已经拉好的
     visible.value = true
     // 切换 provider 时如果已有 key 且本地没缓存列表，自动拉一次
     if (draftKeys.value[draftProvider.value] && modelLists.value[draftProvider.value].length === 0) {
@@ -147,10 +243,11 @@ export function useLLMSettings() {
   function saveSettings(): void {
     if (!draftClone) return
     draftClone.provider = draftProvider.value
-    draftClone.providers.deepseek.key = draftKeys.value.deepseek.trim()
-    draftClone.providers.openai.key = draftKeys.value.openai.trim()
-    draftClone.providers.deepseek.model = draftModels.value.deepseek.trim()
-    draftClone.providers.openai.model = draftModels.value.openai.trim()
+    // 写回所有 provider 的 key / model
+    for (const p of Object.keys(LLM_PROVIDERS) as LLMProvider[]) {
+      draftClone.providers[p].key = draftKeys.value[p].trim()
+      draftClone.providers[p].model = draftModels.value[p].trim()
+    }
 
     config.value = draftClone
     saveConfig(draftClone)
@@ -160,10 +257,11 @@ export function useLLMSettings() {
 
   function clearKey(provider: LLMProvider): void {
     if (!draftClone) return
-    draftKeys.value[provider] = ''
+    // 顶层 .value 赋值才会触发 Vue 响应式
+    draftKeys.value = { ...draftKeys.value, [provider]: '' }
     draftClone.providers[provider].key = ''
     // 清掉缓存的模型列表
-    modelLists.value[provider] = []
+    modelLists.value = { ...modelLists.value, [provider]: [] }
   }
 
   function hasKey(): boolean {

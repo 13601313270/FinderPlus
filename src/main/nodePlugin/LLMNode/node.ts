@@ -19,14 +19,14 @@ import { Node } from '../../engine/node/Node'
 type LLMStatus = 'idle' | 'loading' | 'done' | 'error'
 
 interface StoredLLMConfig {
-  provider: 'deepseek' | 'openai'
+  provider: 'deepseek' | 'openai' | 'kimi' | 'qwen' | 'glm' | 'minimax' | 'groq' | 'mistral' | 'siliconflow'
   providers: Record<string, { key: string; model: string }>
 }
 
 const CONFIG_KEY = 'canvasdesk.llm.config'
 const LEGACY_KEY = 'canvasdesk.llm.api_key'
 
-/** Provider 预设（与渲染层 useLLMSettings 保持一致） */
+/** Provider 预设（与渲染层 useLLMSettings 的 LLM_PROVIDERS 保持一致） */
 const PROVIDER_PRESETS: Record<string, { url: string; defaultModel: string }> = {
   deepseek: {
     url: 'https://api.deepseek.com/chat/completions',
@@ -35,6 +35,34 @@ const PROVIDER_PRESETS: Record<string, { url: string; defaultModel: string }> = 
   openai: {
     url: 'https://api.openai.com/v1/chat/completions',
     defaultModel: 'gpt-4o-mini'
+  },
+  kimi: {
+    url: 'https://api.moonshot.cn/v1/chat/completions',
+    defaultModel: 'moonshot-v1-8k'
+  },
+  qwen: {
+    url: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
+    defaultModel: 'qwen-plus'
+  },
+  glm: {
+    url: 'https://open.bigmodel.cn/api/paas/v4/chat/completions',
+    defaultModel: 'glm-4'
+  },
+  minimax: {
+    url: 'https://api.minimax.chat/v1/text/chatcompletion_v2',
+    defaultModel: 'abab6.5s-chat'
+  },
+  groq: {
+    url: 'https://api.groq.com/openai/v1/chat/completions',
+    defaultModel: 'llama-3.3-70b-versatile'
+  },
+  mistral: {
+    url: 'https://api.mistral.ai/v1/chat/completions',
+    defaultModel: 'mistral-small-latest'
+  },
+  siliconflow: {
+    url: 'https://api.siliconflow.cn/v1/chat/completions',
+    defaultModel: 'Qwen/Qwen2.5-7B-Instruct'
   }
 }
 

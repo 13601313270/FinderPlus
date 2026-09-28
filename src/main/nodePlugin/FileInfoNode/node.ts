@@ -1,10 +1,13 @@
 import { FileValue } from '../../engine/data/FileValue'
+import { NumberValue } from '../../engine/data/NumberValue'
+import { StringValue } from '../../engine/data/StringValue'
 import { InputPort } from '../../engine/port/InputPort'
+import { OutputPort } from '../../engine/port/OutputPort'
 import { Node } from '../../engine/node/Node'
 
 /**
- * 文件信息展示节点：把上游送来的 FileValue 的元信息（name / size / type）显示出来。
- * 没有输出端口——它的产出就是「展示」这件事本身，UI 直接读字段。
+ * 文件信息展示节点：把上游送来的 FileValue 的元信息（name / size / type）显示出来，
+ * 并通过输出端口把文件大小（KB）和文件类型（MIME）派发给下游节点。
  *
  * 输入端口 accepts 只列 FileValue，因为 FileValue 本身就能接住所有子类
  * （canBindEdge 用 prototype instanceof 检查，TxtFileValue 是 FileValue 子类，
@@ -17,6 +20,12 @@ export class FileInfoNode extends Node {
   /** 输入端口：接受 FileValue 及其所有子类（如 TxtFileValue） */
   readonly fileInput = new InputPort('file', { accepts: [FileValue], label: '文件' })
 
+  /** 输出端口：文件大小（KB） */
+  readonly sizeOutput = new OutputPort('number', NumberValue, '文件大小（KB）')
+
+  /** 输出端口：文件 MIME 类型 */
+  readonly typeOutput = new OutputPort('string', StringValue, '文件 MIME 类型')
+
   private fileName = ''
   private fileSize = 0
   private fileType = ''
@@ -24,6 +33,8 @@ export class FileInfoNode extends Node {
   constructor(id: string) {
     super(id)
     this.addInput(this.fileInput)
+    this.addOutput(this.sizeOutput)
+    this.addOutput(this.typeOutput)
     // 内容区硬约束：手柄 + 名称/大小/类型三行信息。信息多时在框内滚动
     this.setBox(200, 136)
   }
@@ -52,7 +63,7 @@ export class FileInfoNode extends Node {
     return this.fileType
   }
 
-  /** 收到通知就刷新展示，这是它唯一要做的事 */
+  /** 收到通知就刷新展示，并把文件大小（KB）派发到输出端口 */
   inputPortReceiveValue(_ports: InputPort[]): void {
     const [first] = this.fileInput.value
     if (first instanceof FileValue) {
@@ -64,6 +75,8 @@ export class FileInfoNode extends Node {
       this.fileSize = 0
       this.fileType = ''
     }
+    this.sizeOutput.commit(new NumberValue(Math.round(this.fileSize / 1024 * 100) / 100))
+    this.typeOutput.commit(new StringValue(this.fileType))
     this.notifyChanged()
   }
 

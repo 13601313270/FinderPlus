@@ -40,10 +40,28 @@ onMounted(() => {
 onUnmounted(() => {
   unsubscribe?.()
 })
+
+/**
+ * 滚动接力：显示区域还能往当前方向滚时 stop 事件，
+ * 滚到顶/底了就放行让画布接管平移。
+ */
+function onNodeWheel(e: WheelEvent): void {
+  const el = e.currentTarget as HTMLElement
+  const { scrollTop, scrollHeight, clientHeight } = el
+  const atTop = scrollTop <= 0
+  const atBottom = scrollTop + clientHeight >= scrollHeight
+
+  const scrollingUp = e.deltaY < 0
+  const scrollingDown = e.deltaY > 0
+
+  if ((scrollingUp && atTop) || (scrollingDown && atBottom)) return
+
+  e.stopPropagation()
+}
 </script>
 
 <template>
-  <div class="node">
+  <div class="node" @wheel="onNodeWheel">
     <span class="node__handle" title="拖动节点" @pointerdown="startDrag">{{ displayNode?.type ?? '?' }}</span>
     <div class="render-display" :class="{ 'render-display--empty': !text }">
       {{ text || (displayNode ? '（暂无输出）' : '节点不存在') }}

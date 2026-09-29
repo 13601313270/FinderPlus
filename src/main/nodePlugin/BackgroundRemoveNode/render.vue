@@ -56,6 +56,7 @@ async function runRemoveBg(n: BackgroundRemoveNode, file: File): Promise<void> {
   try {
     const blob = await removeBackground(file, {
       model: 'isnet_fp16',
+      device: 'gpu',
       output: { format: 'image/png' },
       progress: (_key: string, current: number, total: number) => {
         const pct = Math.round((current / total) * 100)

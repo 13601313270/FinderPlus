@@ -57,6 +57,17 @@ const commandApi = {
     ipcRenderer.invoke('command:run', command)
 }
 
+/**
+ * 代码节点 API：把用户写的 JS 函数体交给主进程执行并回收结果。
+ * 渲染进程 CSP 禁止 eval，所以执行只能在主进程做（同 commandApi 的思路）。
+ */
+const codeApi = {
+  run: (
+    body: string
+  ): Promise<{ ok: true; value: number | string | boolean } | { ok: false; error: string }> =>
+    ipcRenderer.invoke('code:run', body)
+}
+
 const fileApi = {
   /**
    * 从拖拽事件的 File 对象反查文件系统绝对路径。
@@ -130,6 +141,7 @@ if (process.contextIsolated) {
     contextBridge.exposeInMainWorld('canvasDeskDb', canvasDeskDb)
     contextBridge.exposeInMainWorld('fileApi', fileApi)
     contextBridge.exposeInMainWorld('commandApi', commandApi)
+    contextBridge.exposeInMainWorld('codeApi', codeApi)
   } catch (error) {
     console.error(error)
   }
@@ -144,9 +156,12 @@ if (process.contextIsolated) {
   window.fileApi = fileApi
   // @ts-ignore (define in dts)
   window.commandApi = commandApi
+  // @ts-ignore (define in dts)
+  window.codeApi = codeApi
 }
 
 export type ExposedApi = typeof api
 export type CanvasDeskDbApi = typeof canvasDeskDb
 export type FileApi = typeof fileApi
 export type CommandApi = typeof commandApi
+export type CodeApi = typeof codeApi

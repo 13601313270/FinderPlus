@@ -16,6 +16,7 @@ import { manifest as llmManifest } from './LLMNode'
 import { manifest as humanReviewManifest } from './HumanReviewNode'
 import { manifest as stringConcatManifest } from './StringConcatNode'
 import { manifest as commandManifest } from './CommandNode'
+import { manifest as codeManifest } from './CodeNode'
 
 /**
  * 插件注册表：所有节点插件的 manifest 汇总。
@@ -39,7 +40,8 @@ const functionalManifests: NodePluginManifest[] = [
   llmManifest,
   humanReviewManifest,
   stringConcatManifest,
-  commandManifest
+  commandManifest,
+  codeManifest
 ]
 
 const fileManifests: NodePluginManifest[] = [

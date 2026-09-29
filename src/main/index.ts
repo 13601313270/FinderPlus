@@ -326,6 +326,35 @@ function registerIpcHandlers(): void {
       )
     })
   })
+
+  /**
+   * 执行用户写的 JS 函数体（给代码节点用），把返回值回传给渲染进程。
+   *
+   * 为什么放主进程：渲染进程的 CSP 是 script-src 'self'，eval / new Function 会被拦，
+   * 所以代码转到这里用 Node 侧的 new Function 跑。用户代码拿的是用户自己机器的权限
+   * （与命令行节点执行任意 shell 同一安全级别），这里不做沙箱。
+   *
+   * body 是函数体（自己用 return 返回结果），包成 async 函数后调用，因此支持 await。
+   * 只接受 number / string / boolean 三种原始返回值——输出端口就这三种类型。
+   */
+  ipcMain.handle('code:run', async (_e, body: string): Promise<
+    { ok: true; value: number | string | boolean } | { ok: false; error: string }
+  > => {
+    try {
+      const fn = new Function(`"use strict";\n${body}`) as () => unknown
+      const result = await fn()
+      const t = typeof result
+      if (t === 'number' || t === 'string' || t === 'boolean') {
+        return { ok: true, value: result as number | string | boolean }
+      }
+      if (result === undefined) {
+        return { ok: false, error: '函数没有返回值，请用 return 返回结果' }
+      }
+      return { ok: false, error: `返回值类型不支持：${t}（只支持 number / string / boolean）` }
+    } catch (err) {
+      return { ok: false, error: err instanceof Error ? err.message : String(err) }
+    }
+  })
 }
 
 /** 目标目录下已存在同名文件时，返回加数字后缀的不冲突文件名 */

@@ -2,6 +2,9 @@ import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join, basename, extname } from 'node:path'
 import { copyFileSync, existsSync, readFileSync, unlinkSync, watch, writeFileSync } from 'node:fs'
 import { exec } from 'node:child_process'
+import http from 'node:http'
+import https from 'node:https'
+import { URL } from 'node:url'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { openDatabase, closeDatabase, getDatabase, persist } from './db/database'
 import { SqliteStorage } from './db/SqliteStorage'
@@ -364,6 +367,158 @@ function registerIpcHandlers(): void {
       return { ok: false, error: err instanceof Error ? err.message : String(err) }
     }
   })
+
+  /**
+   * 发送 HTTP / HTTPS 请求（给 HTTP 节点用）。
+   *
+   * 用 Node 原生 http / https，不走渲染进程 fetch，这样：
+   * - 没有 CORS 限制（主进程不受同源策略约束）
+   * - 自签证书、内网服务都能正常访问（rejectUnauthorized 默认 true，
+   *   用户真要访问自签证书可以在 headers 里带一个标记……先不做，保持默认安全）
+   * - 统一的超时兜底（默认 15s，最大 60s）
+   *
+   * 不跟随重定向（301/302 等）——让用户自己看到 3xx 状态码后决定怎么处理，
+   * 避免自动跳转导致的静默失败。
+   *
+   * 返回值分两类：网络层/DNS/连接/超时等错误 → { ok: false, error }；
+   * 拿到响应了（哪怕是 4xx/5xx）都算成功，status / statusText / headers / body 原样回传。
+   */
+  ipcMain.handle('http:request', async (e, args: {
+    url: string
+    method?: string
+    headers?: Record<string, string>
+    body?: string
+    timeout?: number
+  }): Promise<
+    { ok: true; status: number; statusText: string; headers: Record<string, string>; body: string }
+    | { ok: false; error: string }
+  > => {
+    const { url, method, headers, body, timeout } = args
+    const ms = Math.min(60_000, Math.max(1000, timeout ?? 15_000))
+
+    const forward = (...lines: string[]): void => {
+      const text = lines.filter(Boolean).join('\n')
+      try { e.sender.send('main:log', text) } catch { /* noop */ }
+    }
+
+    let parsed: URL
+    try {
+      parsed = new URL(url)
+    } catch {
+      forward(`[http] ✗ INVALID URL  ${url}`)
+      return { ok: false, error: `URL 格式错误：${url}` }
+    }
+
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      forward(`[http] ✗ INVALID PROTOCOL  ${parsed.protocol}  url=${url}`)
+      return { ok: false, error: `只支持 http: 或 https: 协议，当前是 ${parsed.protocol}` }
+    }
+
+    // —— headers 处理 ——
+    // 只跳过 hop-by-hop / 自动管理的头（避免 Node 自己设置时冲突）。
+    // 非 ASCII / CRLF 等非法字符**不清洗**——让 Node 直接抛 ERR_INVALID_CHAR，
+    // 把具体哪个 header 坏了的错误传回 renderer，UI 显示红警告，用户自己决定要不要先 encode。
+    const HOP_BY_HOP = new Set([
+      'connection', 'host', 'content-length', 'accept-encoding',
+      'keep-alive', 'proxy-authorization', 'te', 'trailer',
+      'transfer-encoding', 'upgrade'
+    ])
+    const filteredHeaders: Record<string, string> = {}
+    const skipNotes: string[] = []
+    if (headers) {
+      for (const [rawKey, rawVal] of Object.entries(headers)) {
+        const key = String(rawKey)
+        if (HOP_BY_HOP.has(key.toLowerCase())) {
+          skipNotes.push(`跳过自动管理头 "${key}"`)
+          continue
+        }
+        filteredHeaders[key] = String(rawVal)
+      }
+    }
+
+    if (skipNotes.length) {
+      forward(`[http]   ℹ ${skipNotes.join('；')}`)
+    }
+
+    const lib = parsed.protocol === 'https:' ? https : http
+    const verb = (method ?? 'GET').toUpperCase()
+    const bodyData = verb === 'GET' || verb === 'HEAD' ? undefined : (body ?? '')
+    const t0 = Date.now()
+
+    const reqHeadersStr = Object.keys(filteredHeaders).length > 0
+      ? JSON.stringify(filteredHeaders)
+      : '(none)'
+    const reqBodyPreview = bodyData
+      ? truncate(bodyData, 500)
+      : '(none)'
+
+    forward(
+      `[http] → ${verb} ${url}  timeout=${ms}ms`,
+      `[http]   req headers: ${reqHeadersStr}`,
+      bodyData ? `[http]   req body (${bodyData.length}B): ${reqBodyPreview}` : ''
+    )
+
+    return await new Promise((resolve) => {
+      const req = lib.request(
+        {
+          method: verb,
+          hostname: parsed.hostname,
+          port: parsed.port || (parsed.protocol === 'https:' ? 443 : 80),
+          path: parsed.pathname + parsed.search,
+          headers: {
+            ...(bodyData !== undefined
+              ? { 'Content-Length': Buffer.byteLength(bodyData) }
+              : {}),
+            ...filteredHeaders
+          },
+          timeout: ms
+        },
+        (res) => {
+          const chunks: Buffer[] = []
+          res.on('data', (chunk) => chunks.push(chunk))
+          res.on('end', () => {
+            const buf = Buffer.concat(chunks)
+            // Node 的 res.headers 值可能是 string | string[]，拍平成逗号分隔
+            const flatHeaders: Record<string, string> = {}
+            for (const [k, v] of Object.entries(res.headers)) {
+              if (v === undefined) continue
+              flatHeaders[k] = Array.isArray(v) ? v.join(', ') : String(v)
+            }
+            const dt = Date.now() - t0
+            const bodyLen = buf.length
+            const resBodyStr = buf.toString('utf-8')
+            const resHeadersStr = JSON.stringify(flatHeaders)
+            const resBodyPreview = bodyLen > 0 ? truncate(resBodyStr, 500) : '(empty)'
+            forward(
+              `[http] ← ${res.statusCode} ${res.statusMessage ?? ''}  ${dt}ms  body=${bodyLen}B`,
+              `[http]   res headers: ${resHeadersStr}`,
+              bodyLen > 0 ? `[http]   res body (${bodyLen}B): ${resBodyPreview}` : ''
+            )
+            resolve({
+              ok: true,
+              status: res.statusCode ?? 0,
+              statusText: res.statusMessage ?? '',
+              headers: flatHeaders,
+              body: resBodyStr
+            })
+          })
+        }
+      )
+
+      req.on('timeout', () => {
+        req.destroy(new Error(`请求超时（${ms}ms）`))
+      })
+
+      req.on('error', (err) => {
+        const dt = Date.now() - t0
+        forward(`[http] ✗ ERROR  ${err.message}  after ${dt}ms`)
+        resolve({ ok: false, error: err.message })
+      })
+
+      if (bodyData !== undefined) req.write(bodyData)
+      req.end()
+    })
+  })
 }
 
 /** 目标目录下已存在同名文件时，返回加数字后缀的不冲突文件名 */
@@ -377,6 +532,15 @@ function resolveNonCollidingName(dir: string, fileName: string): string {
     if (!existsSync(join(dir, candidate))) return candidate
     i++
   }
+}
+
+/**
+ * 字符串截断工具：超过 max 字符时截掉尾部加 "…(+N chars)"。
+ * 只给日志用——header/body 可能几百 KB，原样打出来终端受不了。
+ */
+function truncate(str: string, max: number): string {
+  if (str.length <= max) return str
+  return `${str.slice(0, max)}…(+${str.length - max} chars)`
 }
 
 app.whenReady().then(async () => {

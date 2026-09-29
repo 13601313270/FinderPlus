@@ -21,6 +21,7 @@ import { manifest as commandManifest } from './CommandNode'
 import { manifest as codeManifest } from './CodeNode'
 import { manifest as backgroundRemoveManifest } from './BackgroundRemoveNode'
 import { manifest as imageOverlayManifest } from './ImageOverlayNode'
+import { manifest as httpRequestManifest } from './HttpRequestNode'
 
 /**
  * 插件注册表：所有节点插件的 manifest 汇总。
@@ -49,7 +50,8 @@ const functionalManifests: NodePluginManifest[] = [
   humanReviewManifest,
   stringConcatManifest,
   commandManifest,
-  codeManifest
+  codeManifest,
+  httpRequestManifest
 ]
 
 const fileManifests: NodePluginManifest[] = [

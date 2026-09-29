@@ -68,6 +68,27 @@ const codeApi = {
     ipcRenderer.invoke('code:run', body)
 }
 
+/**
+ * HTTP 节点 API：把请求参数交给主进程（Node http/https）执行并回收响应。
+ * 不走渲染进程 fetch——主进程没有 CORS，也便于统一控制超时。
+ *
+ * 返回值分两类：
+ * - 网络层错误（DNS / 连接 / 超时 / URL 格式） → { ok: false, error }
+ * - 拿到响应了（不管 2xx / 4xx / 5xx） → { ok: true, status, statusText, headers, body }
+ */
+const httpApi = {
+  request: (args: {
+    url: string
+    method?: string
+    headers?: Record<string, string>
+    body?: string
+    timeout?: number
+  }): Promise<
+    { ok: true; status: number; statusText: string; headers: Record<string, string>; body: string }
+    | { ok: false; error: string }
+  > => ipcRenderer.invoke('http:request', args)
+}
+
 const fileApi = {
   /**
    * 从拖拽事件的 File 对象反查文件系统绝对路径。
@@ -140,12 +161,22 @@ const fileApi = {
 
 if (process.contextIsolated) {
   try {
+    // 主进程推送的日志 → 转发到渲染进程 Console
+    // 这样 Chrome DevTools Console 和终端两边都能看到 HTTP 请求的 debug 日志
+    ipcRenderer.on('main:log', (_e: Electron.IpcRendererEvent, text: string) => {
+      // 用 console.info 打，避免被 Chrome Console 的 warning/error 过滤掉
+      // 加一个前缀方便区分哪些是主进程推来的
+      // eslint-disable-next-line no-console
+      console.info(text)
+    })
+
     contextBridge.exposeInMainWorld('electron', electronAPI)
     contextBridge.exposeInMainWorld('api', api)
     contextBridge.exposeInMainWorld('canvasDeskDb', canvasDeskDb)
     contextBridge.exposeInMainWorld('fileApi', fileApi)
     contextBridge.exposeInMainWorld('commandApi', commandApi)
     contextBridge.exposeInMainWorld('codeApi', codeApi)
+    contextBridge.exposeInMainWorld('httpApi', httpApi)
   } catch (error) {
     console.error(error)
   }
@@ -162,6 +193,8 @@ if (process.contextIsolated) {
   window.commandApi = commandApi
   // @ts-ignore (define in dts)
   window.codeApi = codeApi
+  // @ts-ignore (define in dts)
+  window.httpApi = httpApi
 }
 
 export type ExposedApi = typeof api
@@ -169,3 +202,4 @@ export type CanvasDeskDbApi = typeof canvasDeskDb
 export type FileApi = typeof fileApi
 export type CommandApi = typeof commandApi
 export type CodeApi = typeof codeApi
+export type HttpApi = typeof httpApi

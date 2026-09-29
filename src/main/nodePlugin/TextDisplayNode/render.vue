@@ -3,6 +3,7 @@ import { onMounted, onUnmounted, ref, shallowRef } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { TextDisplayNode } from './node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
+import { viewport } from '@renderer/canvas/viewport'
 
 /**
  * 文本展示节点的渲染组件（只画卡片内容）。
@@ -58,6 +59,41 @@ function onNodeWheel(e: WheelEvent): void {
 
   e.stopPropagation()
 }
+
+// —— resize handle 拖拽：右下角双向自由调整宽高，不锁比例 ——
+const MIN_WIDTH = 160
+const MAX_WIDTH = 800
+const MIN_HEIGHT = 80
+const MAX_HEIGHT = 600
+
+function onResizePointerDown(e: PointerEvent): void {
+  const n = displayNode.value
+  if (!n) return
+  e.stopPropagation()
+  e.preventDefault()
+
+  const startClientX = e.clientX
+  const startClientY = e.clientY
+  const [startWidth, startHeight] = n.box
+
+  function move(ev: PointerEvent): void {
+    const cur = displayNode.value
+    if (!cur) { end(); return }
+    const scale = viewport.scale || 1
+    const deltaW = (ev.clientX - startClientX) / scale
+    const deltaH = (ev.clientY - startClientY) / scale
+    const newWidth = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, Math.round(startWidth + deltaW)))
+    const newHeight = Math.min(MAX_HEIGHT, Math.max(MIN_HEIGHT, Math.round(startHeight + deltaH)))
+    cur.setBox(newWidth, newHeight)
+  }
+  function end(): void {
+    window.removeEventListener('pointermove', move)
+    window.removeEventListener('pointerup', end)
+  }
+
+  window.addEventListener('pointermove', move)
+  window.addEventListener('pointerup', end)
+}
 </script>
 
 <template>
@@ -66,6 +102,12 @@ function onNodeWheel(e: WheelEvent): void {
     <div class="render-display" :class="{ 'render-display--empty': !text }">
       {{ text || (displayNode ? '（暂无输出）' : '节点不存在') }}
     </div>
+    <div
+      v-if="displayNode"
+      class="node__resize-handle"
+      @pointerdown.stop.prevent="onResizePointerDown"
+      title="拖拽调整节点大小"
+    />
   </div>
 </template>
 
@@ -75,6 +117,7 @@ function onNodeWheel(e: WheelEvent): void {
   width: 100%; // 填满 NodeShell 的 .node-content（由 node.box 硬约束定宽高）
   height: 100%;
   overflow: auto; // 文本可长，超出 box 时在框内滚动
+  position: relative; // resize handle 绝对定位锚点
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -97,6 +140,19 @@ function onNodeWheel(e: WheelEvent): void {
       cursor: grabbing;
     }
   }
+
+  &__resize-handle {
+    position: absolute;
+    right: 2px;
+    bottom: 2px;
+    width: 12px;
+    height: 12px;
+    cursor: nwse-resize;
+    background: transparent;
+    border-right: 2px solid #b0b7c3;
+    border-bottom: 2px solid #b0b7c3;
+    border-bottom-right-radius: 4px;
+  }
 }
 
 .render-display {
@@ -106,6 +162,8 @@ function onNodeWheel(e: WheelEvent): void {
   font-size: 14px;
   white-space: pre-wrap;
   word-break: break-all;
+  flex: 1;
+  overflow: auto;
 
   &--empty {
     color: #9aa2ad;

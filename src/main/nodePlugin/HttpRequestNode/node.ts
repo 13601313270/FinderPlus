@@ -404,10 +404,11 @@ export class HttpRequestNode extends Node {
     if (typeof state.timeoutMs === 'number') {
       this.timeoutMs = Math.max(1000, Math.min(60_000, Math.round(state.timeoutMs)))
     }
-    // 按存储的端口数量重建端口（构造时已有 1 个，先清干净再重建）
+    // 按存储的端口数量重建端口。先直接 removeInput 清干净（绕过 removeLastInputPort 的底线），再重建。
     const wanted = typeof state.inputCount === 'number' ? Math.max(1, Math.floor(state.inputCount)) : this.inputPorts.length
     while (this.inputPorts.length > 0) {
-      this.removeLastInputPort()
+      const p = this.inputPorts[this.inputPorts.length - 1]!
+      this.removeInput(p)
     }
     for (let i = 0; i < wanted; i += 1) {
       this.addInputPort()

@@ -1,3 +1,5 @@
+import { StringValue } from '../../engine/data/StringValue'
+import { OutputPort } from '../../engine/port/OutputPort'
 import { Node } from '../../engine/node/Node'
 import type { InputPort } from '../../engine/port/InputPort'
 
@@ -8,13 +10,19 @@ export type CommandStatus = 'idle' | 'running' | 'done' | 'error'
  * 命令行节点：把一条常用 shell 命令**保存**在节点里，之后点「执行」按钮即可重复运行，
  * 免去每次手动敲命令。编辑命令走节点的设置面板（齿轮），主视图只展示已保存的命令。
  *
- * 没有端口——命令是节点自己的参数，执行结果直接显示在节点内。
+ * 输出端口把执行结果（成功时为 stdout，失败时为 stderr）以字符串发往下游。
  * 真正的执行在主进程（child_process.exec），渲染进程只经 preload 的 commandApi 转发，
  * 节点保持对 Electron 的透明（同 FileNode 的处理方式）。
  */
 export class CommandNode extends Node {
   static readonly TYPE = 'command'
   readonly type = CommandNode.TYPE
+
+  /** 输出端口：执行结果字符串 */
+  readonly textOutput = new OutputPort('text', StringValue, '输出')
+
+  /** 命令名称（用于辨识这条命令是干什么的，持久化） */
+  private name = ''
 
   /** 已保存的命令（持久化，下次打开还在） */
   private command = ''
@@ -26,8 +34,9 @@ export class CommandNode extends Node {
 
   constructor(id: string) {
     super(id)
-    // 内容区硬约束：手柄 + 命令预览 + 结果区 + 执行按钮
-    this.setBox(340, 220)
+    this.addOutput(this.textOutput)
+    // 内容区硬约束：手柄 + 名称行 + 命令预览 + 结果区 + 执行按钮
+    this.setBox(340, 250)
   }
 
   /** 拖入文件落点命中本节点时被调用；本节点不接收文件，返回 false */
@@ -40,6 +49,11 @@ export class CommandNode extends Node {
   }
 
   // —— 渲染层读的状态 ——
+
+  /** 命令名称（节点内联输入框展示，可能为空） */
+  get displayName(): string {
+    return this.name
+  }
 
   get displayCommand(): string {
     return this.command
@@ -58,6 +72,13 @@ export class CommandNode extends Node {
   }
 
   // —— 用户操作 ——
+
+  /** 保存命令名称；节点内联名称输入框 change 时调用 */
+  setName(text: string): void {
+    if (text === this.name) return
+    this.name = text
+    this.notifyChanged()
+  }
 
   /** 保存命令内容；设置面板点「保存」时调用 */
   setCommand(text: string): void {
@@ -89,6 +110,9 @@ export class CommandNode extends Node {
 
     this.stdout = result.stdout
     this.stderr = result.stderr
+    // 成功发 stdout，失败发 stderr，下游拿到的是这次执行的文本结果
+    const text = result.code === 0 ? result.stdout : result.stderr
+    this.textOutput.commit(new StringValue(text))
     this.status = result.code === 0 ? 'done' : 'error'
     this.notifyChanged()
   }
@@ -97,10 +121,13 @@ export class CommandNode extends Node {
   inputPortReceiveValue(_ports: InputPort[]): void {}
 
   saveState(): Record<string, unknown> {
-    return { command: this.command }
+    return { name: this.name, command: this.command }
   }
 
   readState(state: Record<string, unknown>): void {
+    if (typeof state.name === 'string') {
+      this.name = state.name
+    }
     if (typeof state.command === 'string') {
       this.command = state.command
     }

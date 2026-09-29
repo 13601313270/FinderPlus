@@ -17,6 +17,7 @@ import GearIcon from '@renderer/components/icons/GearIcon.vue'
 const props = defineProps<{ id: string }>()
 
 const commandNode = shallowRef<CommandNode | undefined>(undefined)
+const name = ref('')
 const command = ref('')
 const stdout = ref('')
 const stderr = ref('')
@@ -28,6 +29,7 @@ const { startDrag } = useNodePosition(() => commandNode.value)
 
 /** 把节点里的状态同步到本地 ref */
 function syncFromNode(node: CommandNode): void {
+  name.value = node.displayName
   command.value = node.displayCommand
   stdout.value = node.displayStdout
   stderr.value = node.displayStderr
@@ -36,6 +38,13 @@ function syncFromNode(node: CommandNode): void {
 
 const hasCommand = computed(() => command.value.trim().length > 0)
 const running = computed(() => status.value === 'running')
+
+/** 名称输入框：改了实时写回节点 */
+function onNameInput(e: Event): void {
+  const value = (e.target as HTMLInputElement).value
+  name.value = value
+  commandNode.value?.setName(value)
+}
 
 onMounted(() => {
   const found = workspaceScene.getNode(props.id)
@@ -118,6 +127,16 @@ function onSave(): void {
       </button>
     </div>
 
+    <!-- 命令名称（在命令预览上方单独一行） -->
+    <input
+      v-if="commandNode"
+      class="cmd-name"
+      type="text"
+      :value="name"
+      placeholder="命令名称，例如：构建项目"
+      @input="onNameInput"
+    />
+
     <!-- 已保存的命令（点这里也能进编辑面板） -->
     <div
       class="cmd-saved"
@@ -168,12 +187,12 @@ function onSave(): void {
       :style="{ top: popoverPos.top + 'px', left: popoverPos.left + 'px' }"
       @click.stop
     >
-      <div class="cmd-popover__title">保存的命令</div>
+      <div class="cmd-popover__title">编辑命令</div>
       <textarea
         v-model="draft"
         class="cmd-popover__input"
         rows="4"
-        placeholder="例如：npm run build"
+        placeholder="命令，例如：npm run build"
       />
       <div class="cmd-popover__actions">
         <button class="cmd-popover__btn cmd-popover__btn--ghost" type="button" @click="closeEditor">
@@ -218,6 +237,10 @@ function onSave(): void {
     font-size: 12px;
     color: @color-text-weak;
     padding: 2px 0;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   &__gear {
@@ -272,6 +295,36 @@ function onSave(): void {
       cursor: not-allowed;
       background: #93c5fd;
     }
+  }
+}
+
+// 命令名称：节点里单独一行（在命令预览上方）
+.cmd-name {
+  width: 100%;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  padding: 6px 9px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #1f2937;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: #f8fafc;
+  outline: none;
+  transition: border-color 0.15s, background 0.15s;
+
+  &:hover {
+    border-color: #d5d9e0;
+  }
+
+  &:focus {
+    border-color: #3b82f6;
+    background: @color-surface;
+  }
+
+  &::placeholder {
+    color: #9aa2ad;
+    font-weight: 400;
   }
 }
 

@@ -16,6 +16,7 @@ import ContextMenu, { type MenuItem } from './components/ContextMenu.vue'
 import type { NodeMenuItem } from '../../main/engine/node/Node'
 import { connectNotice } from '@renderer/canvas/connectionDrag'
 import LLMSettingsDialog from './components/LLMSettingsDialog.vue'
+import ImageSettingsDialog from './components/ImageSettingsDialog.vue'
 import { IpcStorage } from '@renderer/composables/IpcStorage'
 import { isSelfDragDrop, clearSelfDragDrop } from '@renderer/composables/useFileDragOut'
 import { getDraggingNode, getDraggingNodeStartPos, clearDraggingNode } from '@renderer/composables/useNodePosition'
@@ -732,6 +733,9 @@ onUnmounted(() => {
 
     <!-- LLM 全局设置弹窗：Teleport 到 body，全局唯一一份，所有 LLM 节点的齿轮按钮都共享它 -->
     <LLMSettingsDialog />
+
+    <!-- 图像生成全局设置弹窗：与 LLM 设置相互独立（独立 localStorage 键），文生图节点的齿轮按钮共享它 -->
+    <ImageSettingsDialog />
   </section>
 </template>
 

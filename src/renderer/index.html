@@ -3,9 +3,16 @@
   <head>
     <meta charset="UTF-8" />
     <title>CanvasDesk</title>
+    <!--
+      渲染进程 CSP。
+      connect-src 用 https: 放开而不是逐个列域名：LLM / 文生图节点支持多家可切换的 Provider，
+      且生成的图片是各家 CDN 的临时 URL（aliyuncs.com、blob.core.windows.net 等），
+      逐个维护既会漏（新增 Provider 就报 CSP 拦截），也没法枚举 CDN 域名。
+      脚本注入这条线仍由 script-src 'self' 守住。
+    -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob:; connect-src 'self' https://api.deepseek.com"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; connect-src 'self' https:"
     />
     <style>
       body {

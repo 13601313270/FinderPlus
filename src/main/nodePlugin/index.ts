@@ -13,6 +13,7 @@ import { manifest as imagePreviewManifest } from './ImagePreviewNode'
 import { manifest as imageCompressManifest } from './ImageCompressNode'
 import { manifest as folderManifest } from './FolderNode'
 import { manifest as llmManifest } from './LLMNode'
+import { manifest as imageGenManifest } from './ImageGenNode'
 import { manifest as humanReviewManifest } from './HumanReviewNode'
 import { manifest as stringConcatManifest } from './StringConcatNode'
 import { manifest as commandManifest } from './CommandNode'
@@ -38,6 +39,7 @@ const functionalManifests: NodePluginManifest[] = [
   imageCompressManifest,
   folderManifest,
   llmManifest,
+  imageGenManifest,
   humanReviewManifest,
   stringConcatManifest,
   commandManifest,

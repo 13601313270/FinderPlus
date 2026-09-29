@@ -227,18 +227,28 @@ export class HttpRequestNode extends Node {
     this.recompute()
   }
 
-  /** 移除末尾的输入端口；断开其上的连线 */
+  /** 移除末尾的输入端口；断开其上的连线；至少保留 1 个 */
   removeLastInputPort(): void {
+    if (this.inputPorts.length <= 1) return
     const last = this.inputPorts[this.inputPorts.length - 1]
     if (!last) return
     this.removeInput(last)
     this.recompute()
   }
 
-  /** 任一输入到达 → 重算最终 URL / headers / body 并刷新视图 */
+  /** 任一输入到达 → 检测所有端口是否占满，满了自动加一个；然后重算 URL / headers / body */
   inputPortReceiveValue(_ports: InputPort[]): void {
+    if (this.allPortsFull()) {
+      this.addInputPort()
+    }
     this.recompute()
     this.notifyChanged()
+  }
+
+  /** 是否所有输入端口都已被连边占用 */
+  private allPortsFull(): boolean {
+    if (this.inputPorts.length === 0) return false
+    return this.inputPorts.every((p) => p.incomingEdgeCount > 0)
   }
 
   /**

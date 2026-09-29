@@ -20,6 +20,7 @@ import { manifest as stringConcatManifest } from './StringConcatNode'
 import { manifest as commandManifest } from './CommandNode'
 import { manifest as codeManifest } from './CodeNode'
 import { manifest as backgroundRemoveManifest } from './BackgroundRemoveNode'
+import { manifest as imageOverlayManifest } from './ImageOverlayNode'
 
 /**
  * 插件注册表：所有节点插件的 manifest 汇总。
@@ -40,6 +41,7 @@ const functionalManifests: NodePluginManifest[] = [
   imagePreviewManifest,
   imageCompressManifest,
   backgroundRemoveManifest,
+  imageOverlayManifest,
   folderManifest,
   imgFolderManifest,
   llmManifest,

@@ -50,9 +50,32 @@ onUnmounted(() => {
 // 只要拖拽（落点写回 node.position）；位置本身由外壳跟随 node.position 展示。
 const { startDrag } = useNodePosition(() => inputNode.value)
 
+/** 输入框敲字 → 只更新草稿，不 commit 到输出端口 */
 function onInput(e: Event): void {
   const target = e.target as HTMLInputElement | HTMLTextAreaElement
   inputNode.value?.setText(target.value)
+}
+
+/** 发送按钮 / 快捷键 → 把草稿 commit 到输出端口 */
+function onSend(): void {
+  inputNode.value?.commitText()
+}
+
+/** 快捷键：单行 Enter 直接发；多行 Ctrl/Cmd+Enter 发，单独 Enter 换行 */
+function onKeydown(e: KeyboardEvent): void {
+  if (isMultiline.value) {
+    // 多行：Ctrl/Cmd+Enter 发送
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault()
+      onSend()
+    }
+  } else {
+    // 单行：Enter 直接发送
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      onSend()
+    }
+  }
 }
 
 // —— 设置面板（popover）——
@@ -135,12 +158,13 @@ function onTextareaWheel(e: WheelEvent): void {
     <textarea
       v-if="isMultiline"
       class="render-input"
-      rows="6"
+      rows="4"
       :value="textValue"
       :disabled="!inputNode"
-      :placeholder="inputNode ? '输入文本…' : '节点不存在'"
+      :placeholder="inputNode ? '输入文本…  (Ctrl+Enter 发送)' : '节点不存在'"
       @wheel="onTextareaWheel"
       @input="onInput"
+      @keydown="onKeydown"
     />
     <input
       v-else
@@ -148,9 +172,20 @@ function onTextareaWheel(e: WheelEvent): void {
       type="text"
       :value="textValue"
       :disabled="!inputNode"
-      :placeholder="inputNode ? '输入文本…' : '节点不存在'"
+      :placeholder="inputNode ? '输入文本…  (Enter 发送)' : '节点不存在'"
       @input="onInput"
+      @keydown="onKeydown"
     />
+    <div class="node__footer">
+      <button
+        class="node__send"
+        type="button"
+        :disabled="!inputNode"
+        @click="onSend"
+      >
+        发送
+      </button>
+    </div>
   </div>
 
   <!-- 设置面板：Teleport 到 body，避免被父容器 overflow clip -->
@@ -225,16 +260,52 @@ function onTextareaWheel(e: WheelEvent): void {
       background: #e5e7eb;
     }
   }
+
+  &__footer {
+    display: flex;
+    justify-content: flex-end;
+    flex-shrink: 0;
+  }
+
+  &__send {
+    all: unset;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #fff;
+    background: #3b82f6;
+    border-radius: 6px;
+    white-space: nowrap;
+    transition: background 0.15s;
+    height: 28px;
+
+    &:hover:not(:disabled) {
+      background: #2563eb;
+    }
+
+    &:active:not(:disabled) {
+      background: #1d4ed8;
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      background: #93c5fd;
+    }
+  }
 }
 
 .render-input {
   width: 100%;
-  height: 100%;
   box-sizing: border-box;
   padding: 8px 10px;
   border: 1px solid #d5d9e0;
   border-radius: 6px;
   font-size: 14px;
+  flex-shrink: 1;
 
   &:disabled {
     opacity: 0.5;

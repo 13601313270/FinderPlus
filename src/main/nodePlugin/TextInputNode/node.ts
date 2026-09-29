@@ -3,8 +3,8 @@ import { OutputPort } from '../../engine/port/OutputPort'
 import { Node } from '../../engine/node/Node'
 import type { InputPort } from '../../engine/port/InputPort'
 
-const SINGLE_LINE_HEIGHT = 86
-const MULTI_LINE_HEIGHT = 170
+const SINGLE_LINE_HEIGHT = 119
+const MULTI_LINE_HEIGHT = 169
 
 /**
  * 字符串输入框节点：源头节点，框里写什么就往外送什么。
@@ -38,7 +38,7 @@ export class TextInputNode extends Node {
     // 本节点不接收文件，不处理
   }
 
-  /** 框里的内容，UI 直接读它 */
+  /** 框里的内容（草稿），UI 直接读它 */
   get text(): string {
     return this.content
   }
@@ -52,7 +52,7 @@ export class TextInputNode extends Node {
   toggleMultiline(): void {
     this.multiline = !this.multiline
     this.setBox(220, this.multiline ? MULTI_LINE_HEIGHT : SINGLE_LINE_HEIGHT)
-    // 切回单行时，把已输入的换行符清掉（\r\n 和 \n 都要处理）
+    // 切回单行时，把草稿里的换行符清掉（\r\n 和 \n 都要处理），同时同步到输出端口
     if (!this.multiline && this.content.includes('\n')) {
       this.content = this.content.replace(/\r?\n/g, ' ')
       this.textOutput.commit(new StringValue(this.content))
@@ -60,13 +60,20 @@ export class TextInputNode extends Node {
     }
   }
 
-  /** 输入框内容变了，节点自己把新值提交出去——这就是「节点自己的节奏」 */
+  /**
+   * 设置草稿内容（仅更新输入框显示，不触发输出端口 commit）。
+   * 用户在输入框里敲字时调这个——草稿值和输出值分离。
+   */
   setText(text: string): void {
     if (text === this.content) return
     this.content = text
-    this.textOutput.commit(new StringValue(text))
-    // 通知观察者（触发持久化 + render.vue 里的 textValue 刷新）
-    this.notifyChanged()
+    this.notifyChanged() // 触发持久化 + render.vue 里的草稿刷新
+  }
+
+  /** 把当前草稿值提交到输出端口，下游节点才会收到 */
+  commitText(): void {
+    this.textOutput.commit(new StringValue(this.content))
+    // commit 内部不触发 notifyChanged——提交是瞬时事件，不需要持久化
   }
 
   /** 没有输入端口，永远收不到通知 */
@@ -82,8 +89,11 @@ export class TextInputNode extends Node {
       this.multiline = true
       this.setBox(220, MULTI_LINE_HEIGHT)
     }
-    // 恢复源头值 → 触发 commit，下游才能收到
+    // 恢复草稿值
     const text = typeof state.content === 'string' ? state.content : ''
-    this.setText(text)
+    this.content = text
+    this.notifyChanged()
+    // 恢复源头值 → 触发 commit，下游才能收到（之前 setText 自带 commit，现在要显式调）
+    this.textOutput.commit(new StringValue(text))
   }
 }

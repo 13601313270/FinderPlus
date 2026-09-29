@@ -277,7 +277,6 @@ onUnmounted(() => {
     object-fit: contain;
     display: block;
     pointer-events: none;
-    background: #fff;
   }
 
   &__placeholder {

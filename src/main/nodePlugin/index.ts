@@ -19,6 +19,7 @@ import { manifest as humanReviewManifest } from './HumanReviewNode'
 import { manifest as stringConcatManifest } from './StringConcatNode'
 import { manifest as commandManifest } from './CommandNode'
 import { manifest as codeManifest } from './CodeNode'
+import { manifest as backgroundRemoveManifest } from './BackgroundRemoveNode'
 
 /**
  * 插件注册表：所有节点插件的 manifest 汇总。
@@ -38,6 +39,7 @@ const functionalManifests: NodePluginManifest[] = [
   fileInfoManifest,
   imagePreviewManifest,
   imageCompressManifest,
+  backgroundRemoveManifest,
   folderManifest,
   imgFolderManifest,
   llmManifest,

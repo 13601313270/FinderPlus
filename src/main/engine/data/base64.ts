@@ -12,6 +12,13 @@ export function base64ToBytes(b64: string): Uint8Array {
   return bytes
 }
 
+/** Uint8Array 原始字节 → base64 字符串（落盘/经 IPC 传输用） */
+export function bytesToBase64(bytes: Uint8Array): string {
+  let binary = ''
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i])
+  return btoa(binary)
+}
+
 /** base64 + MIME → Blob（方便直接喂给 URL.createObjectURL） */
 export function base64ToBlob(b64: string, mime: string): Blob {
   const bytes = base64ToBytes(b64)

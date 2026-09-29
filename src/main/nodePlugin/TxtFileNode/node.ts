@@ -2,6 +2,7 @@ import { djb2 } from '../../engine/data/hash'
 import { TxtFileValue } from '../../engine/data/TxtFileValue'
 import { StringValue } from '../../engine/data/StringValue'
 import { OutputPort } from '../../engine/port/OutputPort'
+import { InputPort } from '../../engine/port/InputPort'
 import { FileNode } from '../FileNode/node'
 
 /**
@@ -27,6 +28,9 @@ export class TxtFileNode extends FileNode {
   /** 文件输出（TxtFileValue，kind = 'txt-file'） */
   readonly fileOutput = new OutputPort('file', TxtFileValue, '文件')
 
+  /** 文件数据输入端口：只接受同类型（txt）文件，收到值即替换本节点文件 */
+  readonly fileInput = new InputPort('file-in', { accepts: [TxtFileValue], label: '文件' })
+
   /** 当前文本内容；空节点初始化为空串 */
   private contentValue = ''
 
@@ -36,8 +40,21 @@ export class TxtFileNode extends FileNode {
     this.addOutput(this.fileOutput)
     // 基类共用的路径端口（文件绝对路径），挂在末尾
     this.addOutput(this.pathOutput)
+    this.bindFileInput(this.fileInput)
     // 内容区硬约束：文件图标 72px + 文件名行 + padding ≈ 122px 高，宽 180px
     this.setBox(180, 122)
+  }
+
+  /** 文件被输入端口替换后：重读新文件内容并 commit 端口 */
+  override async reloadFileContent(): Promise<void> {
+    if (!this.fileName) return
+    try {
+      // @ts-ignore — 只在 renderer 里执行，window.fileApi 一定存在
+      const text = await window.fileApi.readText(this.fileName)
+      this.setContent(text)
+    } catch (err) {
+      console.warn('[TxtFileNode] 读取替换后的文件失败：', this.fileName, err)
+    }
   }
 
   /** 节点对外暴露的文本内容 */

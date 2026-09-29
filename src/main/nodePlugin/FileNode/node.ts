@@ -1,4 +1,6 @@
 import { StringValue } from '../../engine/data/StringValue'
+import { FileValue } from '../../engine/data/FileValue'
+import { bytesToBase64 } from '../../engine/data/base64'
 import { OutputPort } from '../../engine/port/OutputPort'
 import { Node } from '../../engine/node/Node'
 import type { InputPort } from '../../engine/port/InputPort'
@@ -17,6 +19,11 @@ import type { InputPort } from '../../engine/port/InputPort'
  *   `this.addOutput(this.pathOutput)` 把路径端口挂上（挂在末尾，端口顺序更自然）
  * - 子类自己的值 commit 逻辑（放 render.vue 或子类自身的业务方法里，
  *   基类不依赖任何 preload API，保持对渲染端透明）
+ * - 文件数据输入端口：accepts 用子类自己的文件 Value 类型声明一个 InputPort
+ *   （如 TxtFileNode 用 TxtFileValue），再在构造时 `this.bindFileInput(port)` 注册。
+ *   基类据此统一处理"收到文件 → 删旧副本 → 新文件落盘 → 重读内容"的替换流程
+ * - reloadFileContent()：文件被替换后重读内容并 commit 业务端口；
+ *   基类空实现，需要重读的子类 override
  *
  * 文件选择动作在 render.vue 里完成（渲染端有 window.fileApi preload），
  * 选好后调基类的 setFile 把文件名写回节点，基类负责持久化 fileName、
@@ -38,12 +45,22 @@ export abstract class FileNode extends Node {
   /** 文件路径输出：画布目录下的绝对路径（string），所有文件节点共用 */
   readonly pathOutput = new OutputPort('path', StringValue, '路径')
 
+  /** 文件数据输入端口。accepts 因文件类型而异，由子类声明后经 bindFileInput 注册 */
+  protected fileInputPort: InputPort | undefined
+
+  /** 文件被输入端口替换的次数。同名文件替换时 fileName 不变，UI 靠它感知内容已换 */
+  private fileRevisionValue = 0
+
   constructor(id: string) {
     super(id)
   }
 
   get fileName(): string {
     return this.fileNameValue
+  }
+
+  get fileRevision(): number {
+    return this.fileRevisionValue
   }
 
   get fileSize(): number {
@@ -102,7 +119,64 @@ export abstract class FileNode extends Node {
     // 默认不处理
   }
 
-  inputPortReceiveValue(_ports: InputPort[]): void {}
+  inputPortReceiveValue(ports: InputPort[]): void {
+    const input = this.fileInputPort
+    if (!input || !ports.includes(input)) return
+    const [value] = input.value
+    if (value instanceof FileValue) {
+      void this.replaceFile(value.file)
+    }
+  }
+
+  /**
+   * 子类构造时把自己的文件输入端口注册进来。
+   * accepts 用子类对应的文件 Value 类型（如图片节点用 ImgFileValue），
+   * 这样只有同类型文件才能连上——类型约束由端口校验负责，节点内部不再重复判断。
+   */
+  protected bindFileInput(port: InputPort): void {
+    this.fileInputPort = port
+    this.addInput(port)
+  }
+
+  /**
+   * 用新文件替换本节点当前文件：先删掉画布目录里的旧副本，再把新 File 落盘并挂上。
+   * 落盘后交给 reloadFileContent 重读内容并 commit 业务端口。
+   */
+  async replaceFile(file: File): Promise<void> {
+    try {
+      const previousName = this.fileNameValue
+      if (previousName) {
+        try {
+          // @ts-ignore — 见 commitPath 的说明：只在 renderer 里执行，window.fileApi 一定存在
+          await window.fileApi.delete(previousName)
+        } catch (err) {
+          // 旧副本可能已被用户手动删了，不影响替换
+          console.warn('[FileNode] 删除旧文件失败：', previousName, err)
+        }
+      }
+
+      const base64 = bytesToBase64(new Uint8Array(await file.arrayBuffer()))
+      // @ts-ignore
+      const { fileName, size } = await window.fileApi.writeBuffer(file.name, base64)
+
+      // 直接写字段而不走 setFile：新旧文件同名时 setFile 会提前 return，状态刷不出来
+      this.fileNameValue = fileName
+      this.fileSizeValue = size
+      this.fileRevisionValue += 1
+      void this.commitPath()
+      this.notifyChanged()
+
+      await this.reloadFileContent()
+    } catch (err) {
+      console.warn('[FileNode] 替换文件失败：', file.name, err)
+    }
+  }
+
+  /**
+   * 新文件已落到磁盘后，子类重读内容并 commit 自己的业务端口。
+   * 基类默认什么都不做，需要重读内容的子类（txt / 图片 / 通用文件）override。
+   */
+  async reloadFileContent(): Promise<void> {}
 
   saveState(): Record<string, unknown> {
     return { fileName: this.fileNameValue, fileSize: this.fileSizeValue }

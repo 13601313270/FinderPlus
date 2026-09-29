@@ -2,6 +2,7 @@ import { base64ToBytes } from '../../engine/data/base64'
 import { djb2 } from '../../engine/data/hash'
 import { ImgFileValue } from '../../engine/data/ImgFileValue'
 import { OutputPort } from '../../engine/port/OutputPort'
+import { InputPort } from '../../engine/port/InputPort'
 import { FileNode } from '../FileNode/node'
 import { inferImageMime } from './mime'
 
@@ -45,6 +46,9 @@ export class ImgFileNode extends FileNode {
   /** 文件输出（ImgFileValue，kind = 'img-file'） */
   readonly fileOutput = new OutputPort('file', ImgFileValue, '文件')
 
+  /** 文件数据输入端口：只接受同类型（图片）文件，收到值即替换本节点文件 */
+  readonly fileInput = new InputPort('file-in', { accepts: [ImgFileValue], label: '文件' })
+
   /** 图片天然宽度（像素）。render.vue 的 img load 时回写；0 表示尚未加载 */
   private naturalWidthValue = 0
   /** 图片天然高度（像素）。render.vue 的 img load 时回写；0 表示尚未加载 */
@@ -55,8 +59,24 @@ export class ImgFileNode extends FileNode {
     this.addOutput(this.fileOutput)
     // 基类共用的路径端口（文件绝对路径），挂在末尾
     this.addOutput(this.pathOutput)
+    this.bindFileInput(this.fileInput)
     // 宽度走基类 box（用户可拖 handle 调）；高度维 0 = 不约束，随图片比例撑开
     this.setBox(DEFAULT_PREVIEW_WIDTH, 0)
+  }
+
+  /** 文件被输入端口替换后：重读新图片二进制并 commit fileOutput */
+  override async reloadFileContent(): Promise<void> {
+    if (!this.fileName) return
+    try {
+      // @ts-ignore — 只在 renderer 里执行，window.fileApi 一定存在
+      const base64 = await window.fileApi.readBinary(this.fileName)
+      this.setContent(base64)
+      // 换了图，旧像素尺寸作废；新尺寸由 render.vue 的 img load 重新回写
+      this.naturalWidthValue = 0
+      this.naturalHeightValue = 0
+    } catch (err) {
+      console.warn('[ImgFileNode] 读取替换后的文件失败：', this.fileName, err)
+    }
   }
 
   /**

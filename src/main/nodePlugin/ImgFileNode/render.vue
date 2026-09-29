@@ -27,6 +27,8 @@ const { openInSystem } = useFileOpenInSystem()
 // —— 文件名 / 文件大小 / 卡片宽度 的 Vue 响应式包装 ——
 const fileName = ref('')
 const fileSize = ref(0)
+// 文件被输入端口替换的计数：同名文件替换时 fileName 不变，靠它触发缩略图重建
+const fileRevision = ref(0)
 
 // —— 缩略图 URL（createObjectURL）；卸载或 fileName 变时 revoke 防泄漏 ——
 const thumbnailUrl = ref<string | null>(null)
@@ -61,22 +63,25 @@ watch(
     unsubscribe = n?.onChanged(() => {
       fileName.value = n.fileName
       fileSize.value = n.fileSize
+      fileRevision.value = n.fileRevision
     })
     if (n) {
       fileName.value = n.fileName
       fileSize.value = n.fileSize
+      fileRevision.value = n.fileRevision
     } else {
       fileName.value = ''
       fileSize.value = 0
+      fileRevision.value = 0
       clearThumbnail()
     }
   },
   { immediate: true, flush: 'sync' }
 )
 
-// —— fileName 变化 → 重建缩略图 ——
+// —— fileName / 替换计数 变化 → 重建缩略图 ——
 let seqCounter = 0
-watch(fileName, async (newName) => {
+watch([fileName, fileRevision], async ([newName]) => {
   clearThumbnail()
   if (!newName) return
   const mySeq = ++seqCounter

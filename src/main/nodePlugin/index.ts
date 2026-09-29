@@ -13,6 +13,7 @@ import { manifest as imageCompressManifest } from './ImageCompressNode'
 import { manifest as folderManifest } from './FolderNode'
 import { manifest as llmManifest } from './LLMNode'
 import { manifest as humanReviewManifest } from './HumanReviewNode'
+import { manifest as stringConcatManifest } from './StringConcatNode'
 
 /**
  * 插件注册表：所有节点插件的 manifest 汇总。
@@ -33,7 +34,8 @@ const functionalManifests: NodePluginManifest[] = [
   imageCompressManifest,
   folderManifest,
   llmManifest,
-  humanReviewManifest
+  humanReviewManifest,
+  stringConcatManifest
 ]
 
 const fileManifests: NodePluginManifest[] = [

@@ -2,8 +2,6 @@ import { Node } from '../../engine/node/Node'
 import { InputPort } from '../../engine/port/InputPort'
 import type { Scene } from '../../engine/graph/Scene'
 import { FileValue } from '../../engine/data/FileValue'
-import { TxtFileValue } from '../../engine/data/TxtFileValue'
-import { ImgFileValue } from '../../engine/data/ImgFileValue'
 import { FileNode } from '../FileNode/node'
 import { resolveByExtension } from '../index'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
@@ -51,8 +49,9 @@ function fileToBase64(file: File): Promise<string> {
  * 仍只在「正常创建文件节点」时走既有 copyPath 路径（App 层），节点类不碰 IPC。
  */
 export class FolderNode extends Node {
-  static readonly TYPE = 'folder'
-  readonly type = FolderNode.TYPE
+  // 显式标注为 string：允许子类（如 ImgFolderNode）覆写成自己的类型标识
+  static readonly TYPE: string = 'folder'
+  readonly type: string = FolderNode.TYPE
 
   /** 输入端口：接收文件类 Value，收到后文件夹内新建对应文件子节点（收养元素源自值） */
   readonly fileInput = new InputPort('file', {

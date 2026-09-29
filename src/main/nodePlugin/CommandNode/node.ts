@@ -48,7 +48,7 @@ export class CommandNode extends Node {
     // 默认给一个输入端口，方便直接开用
     this.addInputPort()
     // 内容区硬约束：手柄 + 名称行 + 命令预览 + 端口控制栏 + 结果区 + 执行按钮
-    this.setBox(340, 280)
+    this.setBox(340, 320)
   }
 
   /** 拖入文件落点命中本节点时被调用；本节点不接收文件，返回 false */

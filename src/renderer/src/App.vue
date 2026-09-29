@@ -282,15 +282,17 @@ async function onCanvasDrop(e: DragEvent): Promise<void> {
       // 劫持成功 → 不再新建节点，清掉悬停态并结束这个文件的处理。
       for (const node of workspaceScene.allNodes) {
         const [nodeWidth, nodeHeight] = node.box
-        if (nodeWidth <= 0 || nodeHeight <= 0) continue // 轴不约束的节点无法确定边界，跳过
         const [nodeX, nodeY] = node.worldPosition
-        const inside = worldX >= nodeX && worldX <= nodeX + nodeWidth && worldY >= nodeY && worldY <= nodeY + nodeHeight
-        if (inside && node.testIsInFileDropZone(worldX - nodeX, worldY - nodeY)) {
-          // 承接工作全部委托给节点自己的 onFileDrop（文件夹内部会复制→构造→收养子节点），
-          // App 只做无差别的广播，不再按节点类型特判。
-          node.onFileDrop(sourcePath)
-          clearAllFileDropZones() // 文件已被节点接管，统一清掉所有悬停态
-          return
+        const inside = nodeWidth > 0 && nodeHeight > 0 &&
+          worldX >= nodeX && worldX <= nodeX + nodeWidth &&
+          worldY >= nodeY && worldY <= nodeY + nodeHeight
+        if (inside) {
+          const accept = node.testIsInFileDropZone(worldX - nodeX, worldY - nodeY)
+          if (accept) {
+            node.onFileDrop(sourcePath)
+            clearAllFileDropZones()
+            return
+          }
         }
       }
 
@@ -375,11 +377,12 @@ function onNodeContextMenu(nodeId: string, clientX: number, clientY: number): vo
 /**
  * document 级 capture 阶段监听 contextmenu：
  * - capture 阶段先于 target/bubble，能绕过 NodeShell.stopPropagation()
- * - 覆盖所有层级的 NodeShell（顶级 + 文件夹内嵌套）
+ * - 按 [data-node-id] 就近命中：NodeShell 外壳、以及容器内自绘的节点视图
+ *   （如 ImgThumbCell 这种不进 NodeShell 的缩略图格子）都带这个属性，一并覆盖
  */
 function onDocumentContextMenu(e: MouseEvent): void {
   const target = e.target as HTMLElement
-  const shell = target.closest('.node-shell') as HTMLElement | null
+  const shell = target.closest('[data-node-id]') as HTMLElement | null
   if (!shell) return
   const nodeId = shell.dataset.nodeId
   if (!nodeId) return
@@ -490,8 +493,8 @@ function onGlobalPointerUp(e: PointerEvent): void {
       if (wx >= bx && wx <= bx + bw && wy >= by && wy <= by + bh) {
         if (node.isPositionAcceptNodeDrop(draggedNode)) {
           acceptedByTarget = node.onNodeDrop(draggedNode, startPos)
+          break // 一次投放只结算遍历序最靠前的第一个命中节点
         }
-        break // 一次投放只结算遍历序最靠前的第一个命中节点
       }
     }
 

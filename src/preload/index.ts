@@ -113,6 +113,10 @@ const fileApi = {
   /** 检查画布目录下文件是否还存在（外部拖拽结束后判断节点要不要删） */
   exists: (fileName: string): Promise<boolean> => ipcRenderer.invoke('file:exists', fileName),
 
+  /** 把画布目录下的文件名解析成磁盘绝对路径（文件节点的「路径」输出端口用） */
+  getFullPath: (fileName: string): Promise<string> =>
+    ipcRenderer.invoke('file:getFullPath', fileName),
+
   /**
    * 用系统默认应用打开画布目录下的文件。
    * shell.openPath 的返回值（成功空串 / 失败错误信息）被主进程包装成 { ok, error } 返回。

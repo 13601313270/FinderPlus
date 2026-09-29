@@ -273,6 +273,15 @@ function registerIpcHandlers(): void {
   })
 
   /**
+   * 把画布目录下的文件名解析成磁盘绝对路径。
+   * 给文件节点的「路径」输出端口用——渲染进程拿不到真实磁盘路径
+   * （Electron 在 contextIsolation 下会剥离 File.path），只能回主进程拼。
+   */
+  ipcMain.handle('file:getFullPath', (_e, fileName: string): string => {
+    return join(getCanvasDir(), fileName)
+  })
+
+  /**
    * 用系统默认应用打开画布目录下的文件。
    * 双击文件节点图标时调用——用户想在 Finder 关联的 App 里编辑/预览文件。
    *

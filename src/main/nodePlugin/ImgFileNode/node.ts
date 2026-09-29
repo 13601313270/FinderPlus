@@ -53,6 +53,8 @@ export class ImgFileNode extends FileNode {
   constructor(id: string) {
     super(id)
     this.addOutput(this.fileOutput)
+    // 基类共用的路径端口（文件绝对路径），挂在末尾
+    this.addOutput(this.pathOutput)
     // 宽度走基类 box（用户可拖 handle 调）；高度维 0 = 不约束，随图片比例撑开
     this.setBox(DEFAULT_PREVIEW_WIDTH, 0)
   }

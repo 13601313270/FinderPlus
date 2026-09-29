@@ -1,3 +1,5 @@
+import { StringValue } from '../../engine/data/StringValue'
+import { OutputPort } from '../../engine/port/OutputPort'
 import { Node } from '../../engine/node/Node'
 import type { InputPort } from '../../engine/port/InputPort'
 
@@ -10,7 +12,9 @@ import type { InputPort } from '../../engine/port/InputPort'
  *   后缀已经过 resolveByExtension 归一化（小写、以点开头，如 '.txt'），
  *   子类直接按自己的规则返回 true/false 即可。
  * - 输出端口形状（不同文件类型输出不同 Value：txt 输出 StringValue，
- *   图片输出 FileValue 等，基类不定义端口）
+ *   图片输出 FileValue 等）。基类统一提供 pathOutput（文件绝对路径，string），
+ *   所有文件节点共用；其余业务端口由子类自己声明，并在构造时
+ *   `this.addOutput(this.pathOutput)` 把路径端口挂上（挂在末尾，端口顺序更自然）
  * - 子类自己的值 commit 逻辑（放 render.vue 或子类自身的业务方法里，
  *   基类不依赖任何 preload API，保持对渲染端透明）
  *
@@ -30,6 +34,9 @@ export abstract class FileNode extends Node {
 
   /** 文件字节大小；未选时为 0 */
   protected fileSizeValue = 0
+
+  /** 文件路径输出：画布目录下的绝对路径（string），所有文件节点共用 */
+  readonly pathOutput = new OutputPort('path', StringValue, '路径')
 
   constructor(id: string) {
     super(id)
@@ -53,7 +60,30 @@ export abstract class FileNode extends Node {
     if (fileName === this.fileNameValue) return
     this.fileNameValue = fileName
     this.fileSizeValue = fileSize
+    void this.commitPath()
     this.notifyChanged()
+  }
+
+  /**
+   * 把文件绝对路径 commit 到 pathOutput。
+   * 文件名的相对路径要经主进程拼成绝对路径（渲染端拿不到真实磁盘路径），
+   * 所以是异步的；等待期间文件名若又被改（重新选文件），过期结果直接丢弃。
+   */
+  async commitPath(): Promise<void> {
+    const fileName = this.fileNameValue
+    if (!fileName) {
+      this.pathOutput.commit(new StringValue(''))
+      return
+    }
+    try {
+      // @ts-ignore — 同 beforeDestroy：tsconfig.node.json 编译本文件时不带 preload 的 Window 扩展，
+      // 但运行时本文件只在 renderer 里执行，window.fileApi 一定存在
+      const fullPath = await window.fileApi.getFullPath(fileName)
+      if (fileName !== this.fileNameValue) return
+      this.pathOutput.commit(new StringValue(fullPath))
+    } catch (err) {
+      console.warn('[FileNode] 解析文件路径失败：', fileName, err)
+    }
   }
 
   /**
@@ -85,6 +115,8 @@ export abstract class FileNode extends Node {
     this.fileNameValue = name
     const size = typeof state.fileSize === 'number' ? state.fileSize : 0
     this.fileSizeValue = size
+    // 恢复后补一次路径 commit：边重建时 EdgeBinder 会把端口当前值补给下游
+    void this.commitPath()
   }
 
   /**

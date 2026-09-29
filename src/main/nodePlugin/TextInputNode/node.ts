@@ -3,6 +3,9 @@ import { OutputPort } from '../../engine/port/OutputPort'
 import { Node } from '../../engine/node/Node'
 import type { InputPort } from '../../engine/port/InputPort'
 
+const SINGLE_LINE_HEIGHT = 86
+const MULTI_LINE_HEIGHT = 170
+
 /**
  * 字符串输入框节点：源头节点，框里写什么就往外送什么。
  * 没有输入端口，只有一个字符串输出。
@@ -16,11 +19,14 @@ export class TextInputNode extends Node {
 
   private content = ''
 
+  /** 是否为多行输入模式 */
+  private multiline = false
+
   constructor(id: string) {
     super(id)
     this.addOutput(this.textOutput)
     // 内容区硬约束：手柄 + 输入框 + padding ≈ 86px 高，宽 220px
-    this.setBox(220, 86)
+    this.setBox(220, SINGLE_LINE_HEIGHT)
   }
 
   /** 拖入文件落点命中本节点时被调用；本节点不接收文件，返回 false */
@@ -37,21 +43,45 @@ export class TextInputNode extends Node {
     return this.content
   }
 
+  /** 是否多行输入，UI 读它决定渲染 input 还是 textarea */
+  get isMultiline(): boolean {
+    return this.multiline
+  }
+
+  /** 切换单行/多行模式，同时调整节点 box 高度 */
+  toggleMultiline(): void {
+    this.multiline = !this.multiline
+    this.setBox(220, this.multiline ? MULTI_LINE_HEIGHT : SINGLE_LINE_HEIGHT)
+    // 切回单行时，把已输入的换行符清掉（\r\n 和 \n 都要处理）
+    if (!this.multiline && this.content.includes('\n')) {
+      this.content = this.content.replace(/\r?\n/g, ' ')
+      this.textOutput.commit(new StringValue(this.content))
+      this.notifyChanged()
+    }
+  }
+
   /** 输入框内容变了，节点自己把新值提交出去——这就是「节点自己的节奏」 */
   setText(text: string): void {
     if (text === this.content) return
     this.content = text
     this.textOutput.commit(new StringValue(text))
+    // 通知观察者（触发持久化 + render.vue 里的 textValue 刷新）
+    this.notifyChanged()
   }
 
   /** 没有输入端口，永远收不到通知 */
   inputPortReceiveValue(_ports: InputPort[]): void {}
 
   saveState(): Record<string, unknown> {
-    return { content: this.content }
+    return { content: this.content, multiline: this.multiline }
   }
 
   readState(state: Record<string, unknown>): void {
+    // 恢复多行模式 → 调整 box 高度
+    if (state.multiline === true) {
+      this.multiline = true
+      this.setBox(220, MULTI_LINE_HEIGHT)
+    }
     // 恢复源头值 → 触发 commit，下游才能收到
     const text = typeof state.content === 'string' ? state.content : ''
     this.setText(text)

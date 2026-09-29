@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { TextInputNode } from './node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
+import GearIcon from '@renderer/components/icons/GearIcon.vue'
 
 /**
  * 文本输入节点的渲染组件（只画卡片内容）。
@@ -22,27 +23,150 @@ const inputNode = computed(() => {
   return node instanceof TextInputNode ? node : undefined
 })
 
-const text = computed({
-  get: () => inputNode.value?.text ?? '',
-  set: (value: string) => inputNode.value?.setText(value)
+/**
+ * 引擎字段是普通类字段，Vue 追踪不到，所以走 Node.onChanged 这条桥刷进本地 ref。
+ */
+const isMultiline = ref(false)
+const textValue = ref('')
+
+let offChanged: (() => void) | undefined
+
+onMounted(() => {
+  const node = inputNode.value
+  if (!node) return
+  isMultiline.value = node.isMultiline
+  textValue.value = node.text
+  offChanged = node.onChanged(() => {
+    isMultiline.value = node.isMultiline
+    textValue.value = node.text
+  })
+})
+
+onUnmounted(() => {
+  offChanged?.()
+  document.removeEventListener('click', onDocClick, true)
 })
 
 // 只要拖拽（落点写回 node.position）；位置本身由外壳跟随 node.position 展示。
 const { startDrag } = useNodePosition(() => inputNode.value)
+
+function onInput(e: Event): void {
+  const target = e.target as HTMLInputElement | HTMLTextAreaElement
+  inputNode.value?.setText(target.value)
+}
+
+// —— 设置面板（popover）——
+const gearBtn = ref<HTMLButtonElement | null>(null)
+const popoverVisible = ref(false)
+const popoverPos = ref<{ top: number; left: number }>({ top: 0, left: 0 })
+
+function onGearClick(e: MouseEvent): void {
+  e.stopPropagation()
+  if (popoverVisible.value) {
+    popoverVisible.value = false
+    document.removeEventListener('click', onDocClick, true)
+    return
+  }
+  nextTick(() => {
+    const rect = gearBtn.value?.getBoundingClientRect()
+    if (rect) {
+      popoverPos.value = {
+        top: rect.bottom + 6,
+        left: rect.right - 180 // 面板右对齐齿轮，避免超出屏幕
+      }
+    }
+    popoverVisible.value = true
+    document.addEventListener('click', onDocClick, true)
+  })
+}
+
+function onDocClick(e: MouseEvent): void {
+  // 点击 popover 内部不关闭（checkbox 操作需要），点击外部关闭
+  const pop = document.querySelector('.ti-popover')
+  if (pop && pop.contains(e.target as Node)) return
+  popoverVisible.value = false
+  document.removeEventListener('click', onDocClick, true)
+}
+
+function onMultilineToggle(e: Event): void {
+  const target = e.target as HTMLInputElement
+  if (target.checked !== isMultiline.value) {
+    inputNode.value?.toggleMultiline()
+  }
+}
+
+/**
+ * 滚动接力：textarea 还能往当前方向滚时才 stop 事件，
+ * 滚到顶/底了就放行让画布接管平移。
+ */
+function onTextareaWheel(e: WheelEvent): void {
+  const el = e.currentTarget as HTMLTextAreaElement
+  const { scrollTop, scrollHeight, clientHeight } = el
+  const atTop = scrollTop <= 0
+  const atBottom = scrollTop + clientHeight >= scrollHeight
+
+  const scrollingUp = e.deltaY < 0
+  const scrollingDown = e.deltaY > 0
+
+  // 上滚但已到顶、或下滚但已到底 → 放行给画布
+  if ((scrollingUp && atTop) || (scrollingDown && atBottom)) return
+
+  // 还能滚 → 拦住，不让画布接管
+  e.stopPropagation()
+}
 </script>
 
 <template>
   <div class="node">
-    <span class="node__handle" title="拖动节点" @pointerdown="startDrag">{{ inputNode?.type ?? '?' }}</span>
-    <input
+    <div class="node__header" @pointerdown="startDrag">
+      <span class="node__handle" title="拖动节点">{{ inputNode?.type ?? '?' }}</span>
+      <button
+        v-if="inputNode"
+        ref="gearBtn"
+        class="node__gear"
+        type="button"
+        title="节点设置"
+        @pointerdown.stop
+        @click.stop="onGearClick"
+      >
+        <GearIcon />
+      </button>
+    </div>
+    <textarea
+      v-if="isMultiline"
       class="render-input"
-      type="text"
-      :value="text"
+      rows="6"
+      :value="textValue"
       :disabled="!inputNode"
       :placeholder="inputNode ? '输入文本…' : '节点不存在'"
-      @input="text = ($event.target as HTMLInputElement).value"
+      @wheel="onTextareaWheel"
+      @input="onInput"
+    />
+    <input
+      v-else
+      class="render-input"
+      type="text"
+      :value="textValue"
+      :disabled="!inputNode"
+      :placeholder="inputNode ? '输入文本…' : '节点不存在'"
+      @input="onInput"
     />
   </div>
+
+  <!-- 设置面板：Teleport 到 body，避免被父容器 overflow clip -->
+  <Teleport to="body">
+    <div
+      v-if="popoverVisible"
+      class="ti-popover"
+      :style="{ top: popoverPos.top + 'px', left: popoverPos.left + 'px' }"
+      @click.stop
+    >
+      <label class="ti-option">
+        <input type="checkbox" :checked="isMultiline" @change="onMultilineToggle" />
+        <span class="ti-option__label">多行输入</span>
+      </label>
+    </div>
+  </Teleport>
 </template>
 
 <style scoped lang="less">
@@ -60,23 +184,52 @@ const { startDrag } = useNodePosition(() => inputNode.value)
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 
-  &__handle {
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     cursor: grab;
     user-select: none;
-    font-size: 12px;
-    color: @color-text-weak;
-    text-align: center;
-    padding: 2px 0;
     border-bottom: 1px dashed #d5d9e0;
+    padding-bottom: 4px;
 
     &:active {
       cursor: grabbing;
+    }
+  }
+
+  &__handle {
+    font-size: 12px;
+    color: @color-text-weak;
+    padding: 2px 0;
+  }
+
+  &__gear {
+    all: unset;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 4px;
+    color: #6b7280;
+    transition: color 0.15s, background 0.15s;
+
+    &:hover {
+      color: #111827;
+      background: #f3f4f6;
+    }
+
+    &:active {
+      background: #e5e7eb;
     }
   }
 }
 
 .render-input {
   width: 100%;
+  height: 100%;
   box-sizing: border-box;
   padding: 8px 10px;
   border: 1px solid #d5d9e0;
@@ -85,6 +238,64 @@ const { startDrag } = useNodePosition(() => inputNode.value)
 
   &:disabled {
     opacity: 0.5;
+  }
+
+  // textarea 允许垂直拖拽调整高度
+  textarea& {
+    resize: vertical;
+    font-family: inherit;
+  }
+}
+
+// 设置面板 popover（Teleport 到 body，所以不用 scoped 的话会穿透）
+.ti-popover {
+  position: fixed;
+  z-index: 2000;
+  min-width: 180px;
+  padding: 8px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+
+  &::before {
+    // 小三角指向齿轮
+    content: '';
+    position: absolute;
+    top: -5px;
+    right: 10px;
+    width: 8px;
+    height: 8px;
+    background: #fff;
+    border-left: 1px solid #e5e7eb;
+    border-top: 1px solid #e5e7eb;
+    transform: rotate(45deg);
+  }
+}
+
+.ti-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #1f2937;
+  transition: background 0.12s;
+
+  &:hover {
+    background: #f3f4f6;
+  }
+
+  input[type='checkbox'] {
+    width: 14px;
+    height: 14px;
+    cursor: pointer;
+  }
+
+  &__label {
+    user-select: none;
   }
 }
 </style>

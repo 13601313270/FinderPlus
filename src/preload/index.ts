@@ -49,6 +49,14 @@ const canvasDeskDb = {
   }> => ipcRenderer.invoke('db:loadCanvas')
 }
 
+/**
+ * 命令行节点 API：把 shell 命令交给主进程执行并回收输出。
+ */
+const commandApi = {
+  run: (command: string): Promise<{ stdout: string; stderr: string; code: number }> =>
+    ipcRenderer.invoke('command:run', command)
+}
+
 const fileApi = {
   /**
    * 从拖拽事件的 File 对象反查文件系统绝对路径。
@@ -121,6 +129,7 @@ if (process.contextIsolated) {
     contextBridge.exposeInMainWorld('api', api)
     contextBridge.exposeInMainWorld('canvasDeskDb', canvasDeskDb)
     contextBridge.exposeInMainWorld('fileApi', fileApi)
+    contextBridge.exposeInMainWorld('commandApi', commandApi)
   } catch (error) {
     console.error(error)
   }
@@ -133,8 +142,11 @@ if (process.contextIsolated) {
   window.canvasDeskDb = canvasDeskDb
   // @ts-ignore (define in dts)
   window.fileApi = fileApi
+  // @ts-ignore (define in dts)
+  window.commandApi = commandApi
 }
 
 export type ExposedApi = typeof api
 export type CanvasDeskDbApi = typeof canvasDeskDb
 export type FileApi = typeof fileApi
+export type CommandApi = typeof commandApi

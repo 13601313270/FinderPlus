@@ -14,6 +14,7 @@ import { manifest as folderManifest } from './FolderNode'
 import { manifest as llmManifest } from './LLMNode'
 import { manifest as humanReviewManifest } from './HumanReviewNode'
 import { manifest as stringConcatManifest } from './StringConcatNode'
+import { manifest as commandManifest } from './CommandNode'
 
 /**
  * 插件注册表：所有节点插件的 manifest 汇总。
@@ -35,7 +36,8 @@ const functionalManifests: NodePluginManifest[] = [
   folderManifest,
   llmManifest,
   humanReviewManifest,
-  stringConcatManifest
+  stringConcatManifest,
+  commandManifest
 ]
 
 const fileManifests: NodePluginManifest[] = [

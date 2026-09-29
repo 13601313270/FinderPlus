@@ -1,6 +1,7 @@
 import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join, basename, extname } from 'node:path'
 import { copyFileSync, existsSync, readFileSync, unlinkSync, watch, writeFileSync } from 'node:fs'
+import { exec } from 'node:child_process'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { openDatabase, closeDatabase, getDatabase, persist } from './db/database'
 import { SqliteStorage } from './db/SqliteStorage'
@@ -292,6 +293,38 @@ function registerIpcHandlers(): void {
     } catch (err) {
       return { ok: false, error: String(err) }
     }
+  })
+
+  /**
+   * 执行一条 shell 命令，回传 stdout / stderr / 退出码（给命令行节点用）。
+   *
+   * 用 exec（走系统默认 shell）而非 spawn：命令是用户自己写的整串（含管道、重定向），
+   * 交给 shell 解析更符合「命令行」直觉。工作目录定在用户主目录。
+   * 超时 / 输出上限兜底，避免失控命令把主进程拖垮。
+   * 命令退出码非 0 时 exec 会回调 error，其 code 即退出码；spawn 级失败（如被信号杀掉）code 不是数字，统一按 1 处理。
+   */
+  ipcMain.handle('command:run', async (_e, command: string): Promise<{
+    stdout: string
+    stderr: string
+    code: number
+  }> => {
+    return await new Promise((resolve) => {
+      exec(
+        command,
+        { cwd: app.getPath('home'), timeout: 60_000, maxBuffer: 1024 * 1024, windowsHide: true },
+        (err, stdout, stderr) => {
+          let code = 0
+          let errOut = stderr ?? ''
+          if (err) {
+            const rawCode = (err as NodeJS.ErrnoException & { code?: number | string }).code
+            code = typeof rawCode === 'number' ? rawCode : 1
+            // spawn 级失败（命令不存在等）stderr 可能为空，用 error.message 兜底
+            if (!errOut && err.message) errOut = err.message
+          }
+          resolve({ stdout: stdout ?? '', stderr: errOut, code })
+        }
+      )
+    })
   })
 }
 

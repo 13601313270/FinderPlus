@@ -62,10 +62,10 @@ function displayLabel(port: PortLike): string {
   return port.label ?? port.id
 }
 
-function displayKind(port: PortLike): string {
-  if (port.acceptValueNames?.length) return port.acceptValueNames[0]
-  if (port.outputValueName) return port.outputValueName
-  return ''
+function displayKinds(port: PortLike): readonly string[] {
+  if (port.acceptValueNames?.length) return port.acceptValueNames
+  if (port.outputValueName) return [port.outputValueName]
+  return []
 }
 
 function onOutputPointerDown(port: PortLike, event: PointerEvent): void {
@@ -92,7 +92,13 @@ function highlightOf(port: PortLike): string {
     <!-- 左列：label 在圆点左边，文本右对齐（靠近圆点） -->
     <div v-if="isIn" class="port-label port-label--right-edge">
       <span class="port-label__main">{{ displayLabel(port) }}</span>
-      <span v-if="displayKind(port)" class="port-label__kind">{{ displayKind(port) }}</span>
+      <div v-if="displayKinds(port).length" class="port-label__kinds">
+        <span
+          v-for="k in displayKinds(port)"
+          :key="k"
+          class="port-label__kind"
+        >{{ k }}</span>
+      </div>
     </div>
 
     <span
@@ -112,7 +118,13 @@ function highlightOf(port: PortLike): string {
     <!-- 右列：label 在圆点右边，文本左对齐（靠近圆点） -->
     <div v-if="!isIn" class="port-label port-label--left-edge">
       <span class="port-label__main">{{ displayLabel(port) }}</span>
-      <span v-if="displayKind(port)" class="port-label__kind">{{ displayKind(port) }}</span>
+      <div v-if="displayKinds(port).length" class="port-label__kinds">
+        <span
+          v-for="k in displayKinds(port)"
+          :key="k"
+          class="port-label__kind"
+        >{{ k }}</span>
+      </div>
     </div>
   </div>
 </template>
@@ -193,7 +205,6 @@ function highlightOf(port: PortLike): string {
   display: flex;
   flex-direction: column;
   gap: 1px;
-  white-space: nowrap;
   pointer-events: none;
 
   &--right-edge {
@@ -212,6 +223,14 @@ function highlightOf(port: PortLike): string {
     font-size: 11px;
     line-height: 1.1;
     color: @color-text-weak;
+    white-space: nowrap;
+  }
+
+  // 多行类型标签容器：grid 每行最多两个
+  &__kinds {
+    display: grid;
+    grid-template-columns: repeat(2, max-content);
+    gap: 0 4px;
   }
 
   &__kind {
@@ -220,6 +239,7 @@ function highlightOf(port: PortLike): string {
     color: lighten(@color-text-weak, 25%); // 比主 label 更淡
     text-transform: lowercase;
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    white-space: nowrap;
   }
 }
 </style>

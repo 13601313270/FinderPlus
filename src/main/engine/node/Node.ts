@@ -139,16 +139,58 @@ export abstract class Node {
     return this.outputs
   }
 
-  /** 子类构造时登记自己的输入端口 */
+  /** 子类构造时登记自己的输入端口；运行时也可追加，会自动 notifyChanged 刷新 UI */
   protected addInput(port: InputPort): void {
     port.setOwner(this)
     this.inputs.push(port)
+    this.notifyChanged()
   }
 
-  /** 子类构造时登记自己的输出端口 */
+  /** 子类构造时登记自己的输出端口；运行时也可追加，会自动 notifyChanged 刷新 UI */
   protected addOutput(port: OutputPort): void {
     port.setOwner(this)
     this.outputs.push(port)
+    this.notifyChanged()
+  }
+
+  /**
+   * 运行时移除输入端口。自动断开所有 incoming 边（通过 Scene.removeEdge）。
+   * Scene 未绑定时仅从数组移除——端口无 Scene 引用，无法自行断边。
+   */
+  protected removeInput(port: InputPort): void {
+    const idx = this.inputs.indexOf(port)
+    if (idx === -1) return
+
+    // 从数组移除
+    this.inputs.splice(idx, 1)
+
+    // 断边（InputPort.incoming 是 Map，取 .keys() 拿到 Edge 迭代器）
+    this.disconnectPortEdges(port.incoming.keys())
+    this.notifyChanged()
+  }
+
+  /**
+   * 运行时移除输出端口。自动断开所有下游边（通过 Scene.removeEdge）。
+   */
+  protected removeOutput(port: OutputPort): void {
+    const idx = this.outputs.indexOf(port)
+    if (idx === -1) return
+
+    this.outputs.splice(idx, 1)
+    this.disconnectPortEdges(port.edges)
+    this.notifyChanged()
+  }
+
+  /**
+   * 批量断开一组 Edge，委托 sceneRef.removeEdge。
+   * 供 removeInput / removeOutput 共用——两端口存储的边引用类型不同但 Edge 是同一个类。
+   */
+  private disconnectPortEdges(edges: Iterable<import('../graph/Edge').Edge>): void {
+    const scene = this.sceneRef
+    if (!scene) return
+    for (const edge of edges) {
+      scene.removeEdge(edge)
+    }
   }
 
   /**

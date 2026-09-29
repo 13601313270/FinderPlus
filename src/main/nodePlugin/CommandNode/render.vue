@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, ref, shallowRef } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { CommandNode } from './node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
@@ -61,12 +61,46 @@ function onRemovePort(): void {
   commandNode.value?.removeLastInputPort()
 }
 
+// —— 动态高度：命令 / 输出 / 端口数变化时，读根容器 scrollHeight 自动撑 box ——
+const rootEl = ref<HTMLDivElement | null>(null)
+/** 节点高度上下限 */
+const MIN_HEIGHT = 240
+const MAX_HEIGHT = 600
+
+/** 下一帧测根容器 scrollHeight，在 [MIN_HEIGHT, MAX_HEIGHT] 之间双向调整 */
+function adjustBoxHeight(): void {
+  nextTick(() => {
+    const el = rootEl.value
+    const node = commandNode.value
+    if (!el || !node) return
+    const needed = Math.round(el.scrollHeight)
+    node.setBox(node.box[0], Math.min(MAX_HEIGHT, Math.max(MIN_HEIGHT, needed)))
+  })
+}
+
+// 命令文本 / 执行结果 / 端口数变了都可能改变内容高度
+watch([command, stdout, stderr, inputCount], adjustBoxHeight)
+
+/**
+ * 滚动接力（同 TextDisplayNode）：结果区还能往当前方向滚时 stop 事件，
+ * 滚到顶 / 底了就放行让画布接管平移。
+ */
+function onOutputWheel(e: WheelEvent): void {
+  const el = e.currentTarget as HTMLElement
+  const { scrollTop, scrollHeight, clientHeight } = el
+  const atTop = scrollTop <= 0
+  const atBottom = scrollTop + clientHeight >= scrollHeight
+  if ((e.deltaY < 0 && atTop) || (e.deltaY > 0 && atBottom)) return
+  e.stopPropagation()
+}
+
 onMounted(() => {
   const found = workspaceScene.getNode(props.id)
   if (found instanceof CommandNode) {
     commandNode.value = found
     syncFromNode(found)
     unsubscribe = found.onChanged(() => syncFromNode(found))
+    adjustBoxHeight()
   }
 })
 
@@ -126,7 +160,7 @@ function onSave(): void {
 </script>
 
 <template>
-  <div class="node">
+  <div ref="rootEl" class="node">
     <div class="node__header" @pointerdown="startDrag">
       <span class="node__handle" title="拖动节点（整个头部可拖）">{{ commandNode?.type ?? '?' }}</span>
       <button
@@ -187,7 +221,7 @@ function onSave(): void {
       </div>
     </div>
 
-    <!-- 结果区 -->
+    <!-- 结果区（滚到顶 / 底时接力给画布） -->
     <div
       class="cmd-output"
       :class="{
@@ -195,6 +229,7 @@ function onSave(): void {
         'cmd-output--error': status === 'error',
         'cmd-output--running': status === 'running'
       }"
+      @wheel="onOutputWheel"
     >
       <template v-if="status === 'running'">
         <span class="cmd-output__spinner" />
@@ -420,8 +455,6 @@ function onSave(): void {
 // 已保存命令的展示
 .cmd-saved {
   flex-shrink: 0;
-  max-height: 60px;
-  overflow: auto;
   padding: 7px 9px;
   border: 1px solid #d5d9e0;
   border-radius: 6px;

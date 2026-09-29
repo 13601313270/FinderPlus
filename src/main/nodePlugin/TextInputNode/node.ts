@@ -22,6 +22,9 @@ export class TextInputNode extends Node {
   /** 是否为多行输入模式 */
   private multiline = false
 
+  /** 是否自动发送：开启后停止输入即自动 commit，发送按钮随之置灰 */
+  private autoSend = false
+
   constructor(id: string) {
     super(id)
     this.addOutput(this.textOutput)
@@ -46,6 +49,17 @@ export class TextInputNode extends Node {
   /** 是否多行输入，UI 读它决定渲染 input 还是 textarea */
   get isMultiline(): boolean {
     return this.multiline
+  }
+
+  /** 是否自动发送，UI 读它决定开关状态与发送按钮是否置灰 */
+  get isAutoSend(): boolean {
+    return this.autoSend
+  }
+
+  /** 切换自动发送开关 */
+  toggleAutoSend(): void {
+    this.autoSend = !this.autoSend
+    this.notifyChanged()
   }
 
   /** 切换单行/多行模式，同时调整节点 box 高度 */
@@ -80,7 +94,7 @@ export class TextInputNode extends Node {
   inputPortReceiveValue(_ports: InputPort[]): void {}
 
   saveState(): Record<string, unknown> {
-    return { content: this.content, multiline: this.multiline }
+    return { content: this.content, multiline: this.multiline, autoSend: this.autoSend }
   }
 
   readState(state: Record<string, unknown>): void {
@@ -88,6 +102,9 @@ export class TextInputNode extends Node {
     if (state.multiline === true) {
       this.multiline = true
       this.setBox(220, MULTI_LINE_HEIGHT)
+    }
+    if (state.autoSend === true) {
+      this.autoSend = true
     }
     // 恢复草稿值
     const text = typeof state.content === 'string' ? state.content : ''

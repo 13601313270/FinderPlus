@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
+import { debounce } from 'lodash-es'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { TextInputNode } from './node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
@@ -28,37 +29,60 @@ const inputNode = computed(() => {
  */
 const isMultiline = ref(false)
 const textValue = ref('')
+/** 自动发送开关状态（同步自节点） */
+const autoSend = ref(false)
 
 let offChanged: (() => void) | undefined
+
+/**
+ * 自动发送：停止输入 500ms 后把草稿 commit 到输出端口。
+ * 只在开关打开时被 onInput 触发；组件卸载时 cancel 掉定时器。
+ */
+const debouncedSend = debounce(() => {
+  inputNode.value?.commitText()
+}, 500)
 
 onMounted(() => {
   const node = inputNode.value
   if (!node) return
   isMultiline.value = node.isMultiline
   textValue.value = node.text
+  autoSend.value = node.isAutoSend
   offChanged = node.onChanged(() => {
     isMultiline.value = node.isMultiline
     textValue.value = node.text
+    autoSend.value = node.isAutoSend
   })
 })
 
 onUnmounted(() => {
   offChanged?.()
+  debouncedSend.cancel()
   document.removeEventListener('click', onDocClick, true)
 })
 
 // 只要拖拽（落点写回 node.position）；位置本身由外壳跟随 node.position 展示。
 const { startDrag } = useNodePosition(() => inputNode.value)
 
-/** 输入框敲字 → 只更新草稿，不 commit 到输出端口 */
+/** 输入框敲字 → 更新草稿；开着自动发送时排一次防抖提交 */
 function onInput(e: Event): void {
   const target = e.target as HTMLInputElement | HTMLTextAreaElement
   inputNode.value?.setText(target.value)
+  if (autoSend.value) debouncedSend()
 }
 
-/** 发送按钮 / 快捷键 → 把草稿 commit 到输出端口 */
+/** 发送按钮 / 快捷键 → 立刻把草稿 commit 到输出端口 */
 function onSend(): void {
+  debouncedSend.cancel()
   inputNode.value?.commitText()
+}
+
+/** 自动发送开关 → 写回节点（关闭时取消可能已排队的自动提交） */
+function onAutoSendToggle(e: Event): void {
+  const target = e.target as HTMLInputElement
+  if (target.checked === autoSend.value) return
+  debouncedSend.cancel()
+  inputNode.value?.toggleAutoSend()
 }
 
 /** 快捷键：单行 Enter 直接发；多行 Ctrl/Cmd+Enter 发，单独 Enter 换行 */
@@ -177,10 +201,22 @@ function onTextareaWheel(e: WheelEvent): void {
       @keydown="onKeydown"
     />
     <div class="node__footer">
+      <label class="node__switch" :title="autoSend ? '已开启：停止输入后自动发送' : '已关闭：需手动点击发送'">
+        <span class="node__switch-label">自动发送</span>
+        <input
+          class="node__switch-input"
+          type="checkbox"
+          :checked="autoSend"
+          :disabled="!inputNode"
+          @change="onAutoSendToggle"
+        />
+        <span class="node__switch-track"><span class="node__switch-thumb" /></span>
+      </label>
       <button
         class="node__send"
         type="button"
-        :disabled="!inputNode"
+        :disabled="!inputNode || autoSend"
+        :title="autoSend ? '自动发送已开启，无需手动发送' : '发送到下游节点'"
         @click="onSend"
       >
         发送
@@ -263,8 +299,53 @@ function onTextareaWheel(e: WheelEvent): void {
 
   &__footer {
     display: flex;
-    justify-content: flex-end;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
     flex-shrink: 0;
+  }
+
+  &__switch {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    user-select: none;
+    flex-shrink: 0;
+
+    &-label {
+      font-size: 11px;
+      color: @color-text-weak;
+    }
+
+    &-input {
+      position: absolute;
+      width: 0;
+      height: 0;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    &-track {
+      position: relative;
+      width: 28px;
+      height: 16px;
+      border-radius: 8px;
+      background: #cbd5e1;
+      transition: background 0.15s;
+      flex-shrink: 0;
+    }
+
+    &-thumb {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #fff;
+      transition: transform 0.15s;
+    }
   }
 
   &__send {
@@ -296,6 +377,19 @@ function onTextareaWheel(e: WheelEvent): void {
       background: #93c5fd;
     }
   }
+}
+
+// 开关选中态：轨道变蓝、滑块右移（input 在轨道前面，用相邻兄弟选择器）
+.node__switch-input:checked + .node__switch-track {
+  background: @color-primary;
+}
+
+.node__switch-input:checked + .node__switch-track .node__switch-thumb {
+  transform: translateX(12px);
+}
+
+.node__switch-input:disabled + .node__switch-track {
+  opacity: 0.5;
 }
 
 .render-input {

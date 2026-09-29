@@ -1,14 +1,18 @@
 import { StringValue } from '../../engine/data/StringValue'
+import { InputPort } from '../../engine/port/InputPort'
 import { OutputPort } from '../../engine/port/OutputPort'
 import { Node } from '../../engine/node/Node'
-import type { InputPort } from '../../engine/port/InputPort'
 
 /** 命令执行状态：UI 据此决定按钮可点/结果区样式 */
 export type CommandStatus = 'idle' | 'running' | 'done' | 'error'
 
 /**
  * 命令行节点：把一条常用 shell 命令**保存**在节点里，之后点「执行」按钮即可重复运行，
- * 免去每次手动敲命令。编辑命令走节点的设置面板（齿轮），主视图只展示已保存的命令。
+ * 免去每次手动敲命令。编辑命令走节点的设置面板（齿轮），主视图只展示最终要跑的命令。
+ *
+ * 命令是**模板**：用 $1 $2 $3 … 引用第 N 个字符串输入端口的值，拼出最终命令再执行
+ * （仿 StringConcatNode）。端口由用户手动增删，编号始终连续：第 N 个端口就对应 $N。
+ * 模板变化、任一输入到达时即时重算，主视图展示的就是这份「生成的命令字符串」。
  *
  * 输出端口把执行结果（成功时为 stdout，失败时为 stderr）以字符串发往下游。
  * 真正的执行在主进程（child_process.exec），渲染进程只经 preload 的 commandApi 转发，
@@ -24,8 +28,14 @@ export class CommandNode extends Node {
   /** 命令名称（用于辨识这条命令是干什么的，持久化） */
   private name = ''
 
-  /** 已保存的命令（持久化，下次打开还在） */
-  private command = ''
+  /** 命令模板（含 $N 占位符，持久化） */
+  private template = ''
+
+  /** 按模板 + 当前输入值生成的最终命令（UI 展示、执行时都用它） */
+  private resolvedCommand = ''
+
+  /** 端口 id 自增序号，保证 id 唯一（与 $N 的编号无关） */
+  private portSeq = 0
 
   /** 上次执行的输出（派生状态，不持久化） */
   private stdout = ''
@@ -35,8 +45,10 @@ export class CommandNode extends Node {
   constructor(id: string) {
     super(id)
     this.addOutput(this.textOutput)
-    // 内容区硬约束：手柄 + 名称行 + 命令预览 + 结果区 + 执行按钮
-    this.setBox(340, 250)
+    // 默认给一个输入端口，方便直接开用
+    this.addInputPort()
+    // 内容区硬约束：手柄 + 名称行 + 命令预览 + 端口控制栏 + 结果区 + 执行按钮
+    this.setBox(340, 280)
   }
 
   /** 拖入文件落点命中本节点时被调用；本节点不接收文件，返回 false */
@@ -55,8 +67,19 @@ export class CommandNode extends Node {
     return this.name
   }
 
+  /** 命令模板原文（设置面板编辑用） */
+  get displayTemplate(): string {
+    return this.template
+  }
+
+  /** 生成的最终命令（主视图展示、执行时都用它） */
   get displayCommand(): string {
-    return this.command
+    return this.resolvedCommand
+  }
+
+  /** 当前输入端口数量 */
+  get inputCount(): number {
+    return this.inputPorts.length
   }
 
   get displayStdout(): string {
@@ -80,16 +103,60 @@ export class CommandNode extends Node {
     this.notifyChanged()
   }
 
-  /** 保存命令内容；设置面板点「保存」时调用 */
-  setCommand(text: string): void {
-    if (text === this.command) return
-    this.command = text
+  /** 保存命令模板；设置面板点「保存」时调用，改完立即重算 */
+  setTemplate(text: string): void {
+    if (text === this.template) return
+    this.template = text
+    this.recompute()
     this.notifyChanged()
   }
 
-  /** 执行当前命令；UI 的「执行」按钮点击时调用 */
+  /** 追加一个输入端口，编号接在当前末尾之后 */
+  addInputPort(): void {
+    this.portSeq += 1
+    const port = new InputPort(`p${this.portSeq}`, {
+      accepts: [StringValue],
+      label: `$${this.inputPorts.length + 1}`
+    })
+    // addInput 内部会 notifyChanged，端口列表据此刷新
+    this.addInput(port)
+    this.recompute()
+  }
+
+  /** 移除末尾的输入端口；断开其上的连线 */
+  removeLastInputPort(): void {
+    const last = this.inputPorts[this.inputPorts.length - 1]
+    if (!last) return
+    this.removeInput(last)
+    this.recompute()
+  }
+
+  /** 任一输入到达 → 重算最终命令并刷新视图 */
+  inputPortReceiveValue(_ports: InputPort[]): void {
+    this.recompute()
+    this.notifyChanged()
+  }
+
+  /**
+   * 按模板替换 $N 生成最终命令。
+   * 缺值 / 无对应端口时该占位符替换为空串。
+   * `$$` 为转义，替换成字面量 `$`（如 `$$1` → `$` + 第 1 个端口值）。
+   */
+  private recompute(): void {
+    this.resolvedCommand = this.template.replace(/\$\$|\$(\d+)/g, (_match, digits?: string) => {
+      // 命中 $$：输出字面量 $
+      if (digits === undefined) return '$'
+      const index = Number(digits) - 1
+      const port = this.inputPorts[index]
+      if (!port) return ''
+      const [first] = port.value
+      return first instanceof StringValue ? first.value : ''
+    })
+  }
+
+  /** 执行当前命令（用生成的最终命令）；UI 的「执行」按钮点击时调用 */
   async run(): Promise<void> {
-    const command = this.command.trim()
+    const command = this.resolvedCommand.trim()
     if (!command) return
     // 上一次还没跑完就不重复触发（按钮此时也是禁用的，双保险）
     if (this.status === 'running') return
@@ -117,20 +184,31 @@ export class CommandNode extends Node {
     this.notifyChanged()
   }
 
-  /** 没有输入端口，永远收不到通知 */
-  inputPortReceiveValue(_ports: InputPort[]): void {}
-
   saveState(): Record<string, unknown> {
-    return { name: this.name, command: this.command }
+    return {
+      name: this.name,
+      template: this.template,
+      // 端口数量：恢复时按此重建端口，边才能重新接上
+      inputCount: this.inputPorts.length
+    }
   }
 
   readState(state: Record<string, unknown>): void {
     if (typeof state.name === 'string') {
       this.name = state.name
     }
-    if (typeof state.command === 'string') {
-      this.command = state.command
+    if (typeof state.template === 'string') {
+      this.template = state.template
     }
+    // 按存储的端口数量重建端口（构造时已有 1 个，先清干净再重建）
+    const wanted = typeof state.inputCount === 'number' ? Math.max(1, Math.floor(state.inputCount)) : this.inputPorts.length
+    while (this.inputPorts.length > 0) {
+      this.removeLastInputPort()
+    }
+    for (let i = 0; i < wanted; i += 1) {
+      this.addInputPort()
+    }
+    this.recompute()
     this.notifyChanged()
   }
 }

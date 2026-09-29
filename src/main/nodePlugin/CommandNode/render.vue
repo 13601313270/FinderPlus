@@ -18,7 +18,11 @@ const props = defineProps<{ id: string }>()
 
 const commandNode = shallowRef<CommandNode | undefined>(undefined)
 const name = ref('')
+/** 命令模板原文（设置面板里编辑的那个，含 $1 $2…） */
+const template = ref('')
+/** 生成的最终命令（主视图展示的就是它） */
 const command = ref('')
+const inputCount = ref(1)
 const stdout = ref('')
 const stderr = ref('')
 const status = ref<'idle' | 'running' | 'done' | 'error'>('idle')
@@ -30,7 +34,9 @@ const { startDrag } = useNodePosition(() => commandNode.value)
 /** 把节点里的状态同步到本地 ref */
 function syncFromNode(node: CommandNode): void {
   name.value = node.displayName
+  template.value = node.displayTemplate
   command.value = node.displayCommand
+  inputCount.value = node.inputCount
   stdout.value = node.displayStdout
   stderr.value = node.displayStderr
   status.value = node.displayStatus
@@ -44,6 +50,15 @@ function onNameInput(e: Event): void {
   const value = (e.target as HTMLInputElement).value
   name.value = value
   commandNode.value?.setName(value)
+}
+
+/** 端口增删：编号始终连续，第 N 个端口对应模板里的 $N */
+function onAddPort(): void {
+  commandNode.value?.addInputPort()
+}
+
+function onRemovePort(): void {
+  commandNode.value?.removeLastInputPort()
 }
 
 onMounted(() => {
@@ -69,11 +84,11 @@ function onRun(): void {
 const gearBtn = ref<HTMLButtonElement | null>(null)
 const popoverVisible = ref(false)
 const popoverPos = ref<{ top: number; left: number }>({ top: 0, left: 0 })
-/** 面板里的草稿命令；点「保存」才写回节点 */
+/** 面板里的草稿模板；点「保存」才写回节点 */
 const draft = ref('')
 
 function openEditor(): void {
-  draft.value = command.value
+  draft.value = template.value
   nextTick(() => {
     const rect = gearBtn.value?.getBoundingClientRect()
     if (rect) {
@@ -105,7 +120,7 @@ function onDocClick(e: MouseEvent): void {
 }
 
 function onSave(): void {
-  commandNode.value?.setCommand(draft.value)
+  commandNode.value?.setTemplate(draft.value)
   closeEditor()
 }
 </script>
@@ -137,14 +152,39 @@ function onSave(): void {
       @input="onNameInput"
     />
 
-    <!-- 已保存的命令（点这里也能进编辑面板） -->
+    <!-- 生成的最终命令（模板 + 输入值；点这里也能进编辑面板） -->
     <div
       class="cmd-saved"
       :class="{ 'cmd-saved--empty': !hasCommand }"
-      title="点击编辑命令"
+      title="点击编辑命令模板"
       @click.stop="openEditor"
     >
       {{ hasCommand ? command : '（未设置命令，点击这里或齿轮设置）' }}
+    </div>
+
+    <!-- 输入端口控制：第 N 个端口对应模板里的 $N -->
+    <div class="cmd-ports">
+      <span class="cmd-ports__count">输入端口：{{ inputCount }} 个（模板里用 $1…$N 引用）</span>
+      <div class="cmd-ports__actions">
+        <button
+          class="cmd-ports__btn"
+          type="button"
+          title="移除末尾输入端口"
+          :disabled="!commandNode || inputCount <= 1"
+          @click="onRemovePort"
+        >
+          －
+        </button>
+        <button
+          class="cmd-ports__btn"
+          type="button"
+          title="新增输入端口"
+          :disabled="!commandNode"
+          @click="onAddPort"
+        >
+          ＋
+        </button>
+      </div>
     </div>
 
     <!-- 结果区 -->
@@ -187,12 +227,12 @@ function onSave(): void {
       :style="{ top: popoverPos.top + 'px', left: popoverPos.left + 'px' }"
       @click.stop
     >
-      <div class="cmd-popover__title">编辑命令</div>
+      <div class="cmd-popover__title">编辑命令模板</div>
       <textarea
         v-model="draft"
         class="cmd-popover__input"
         rows="4"
-        placeholder="命令，例如：npm run build"
+        placeholder="命令模板，例如：npm run build -- $1"
       />
       <div class="cmd-popover__actions">
         <button class="cmd-popover__btn cmd-popover__btn--ghost" type="button" @click="closeEditor">
@@ -325,6 +365,55 @@ function onSave(): void {
   &::placeholder {
     color: #9aa2ad;
     font-weight: 400;
+  }
+}
+
+// 输入端口控制栏：左侧计数、右侧增删按钮
+.cmd-ports {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-shrink: 0;
+  font-size: 11px;
+  color: @color-text-weak;
+
+  &__count {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__actions {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+
+  &__btn {
+    all: unset;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border: 1px solid #d5d9e0;
+    border-radius: 4px;
+    font-size: 13px;
+    line-height: 1;
+    color: @color-text;
+
+    &:hover:not(:disabled) {
+      border-color: @color-primary;
+      color: @color-primary;
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.4;
+    }
   }
 }
 

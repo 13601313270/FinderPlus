@@ -4,6 +4,7 @@ import { FileNode } from './FileNode/node'
 import { manifest as textInputManifest } from './TextInputNode'
 import { manifest as textDisplayManifest } from './TextDisplayNode'
 import { manifest as numberInputManifest } from './NumberInputNode'
+import { manifest as boolInputManifest } from './BoolInputNode'
 import { manifest as txtFileManifest } from './TxtFileNode'
 import { manifest as imgFileManifest } from './ImgFileNode'
 import { manifest as anyFileManifest } from './AnyFileNode'
@@ -30,6 +31,7 @@ const functionalManifests: NodePluginManifest[] = [
   textInputManifest,
   textDisplayManifest,
   numberInputManifest,
+  boolInputManifest,
   fileInfoManifest,
   imagePreviewManifest,
   imageCompressManifest,

@@ -11,7 +11,10 @@ import { useHelpCenter } from '@renderer/composables/useHelpCenter'
  *
  * 状态全部来自 useHelpCenter composable（module 级单例），任何地方都能触发。
  */
-const { visible, loading, currentComp, currentType, helpTopics, closeCenter, selectTopic } = useHelpCenter()
+const { visible, loading, currentComp, currentType, helpGroups, closeCenter, selectTopic } = useHelpCenter()
+
+/** 扁平化的所有 topic，自动选中时取第一个 */
+const allTopics = computed(() => helpGroups.flatMap((g) => g.items))
 
 function onMaskClick(): void {
   closeCenter()
@@ -35,8 +38,8 @@ onUnmounted(() => {
 
 // 如果打开时还没选过 topic，自动选第一个
 watch(visible, (v) => {
-  if (v && !currentComp.value && helpTopics.length > 0) {
-    void selectTopic(helpTopics[0].manifest)
+  if (v && !currentComp.value && allTopics.value.length > 0) {
+    void selectTopic(allTopics.value[0])
   }
 })
 
@@ -59,20 +62,22 @@ const activeType = computed(() => currentType.value)
         </div>
         <div class="hc-dialog__body">
           <aside class="hc-sidebar">
-            <div class="hc-sidebar__title">节点帮助</div>
-            <ul class="hc-sidebar__list">
-              <li
-                v-for="{ manifest } in helpTopics"
-                :key="manifest.type"
-                class="hc-sidebar__item"
-                :class="{ 'hc-sidebar__item--active': manifest.type === activeType }"
-                @click="selectTopic(manifest)"
-              >
-                {{ manifest.type }}
-              </li>
-            </ul>
-            <p v-if="helpTopics.length === 0" class="hc-sidebar__empty">
-              暂无可查看的节点帮助文档
+            <template v-for="(group, gi) in helpGroups" :key="gi">
+              <div v-if="group.title" class="hc-sidebar__group-title">{{ group.title }}</div>
+              <ul class="hc-sidebar__list">
+                <li
+                  v-for="topic in group.items"
+                  :key="topic.type"
+                  class="hc-sidebar__item"
+                  :class="{ 'hc-sidebar__item--active': topic.type === activeType }"
+                  @click="selectTopic(topic)"
+                >
+                  {{ topic.label }}
+                </li>
+              </ul>
+            </template>
+            <p v-if="allTopics.length === 0" class="hc-sidebar__empty">
+              暂无可查看的帮助文档
             </p>
           </aside>
 
@@ -169,13 +174,13 @@ const activeType = computed(() => currentType.value)
   background: #fafbfc;
   overflow-y: auto;
 
-  &__title {
-    padding: 0 14px 8px;
-    font-size: 11px;
+  &__group-title {
+    padding: 14px 14px 4px;
+    font-size: 10px;
     font-weight: 600;
     color: #9ca3af;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.8px;
   }
 
   &__list {

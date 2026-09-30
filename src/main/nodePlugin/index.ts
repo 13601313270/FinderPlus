@@ -21,6 +21,7 @@ import { manifest as commandManifest } from './CommandNode'
 import { manifest as codeManifest } from './CodeNode'
 import { manifest as backgroundRemoveManifest } from './BackgroundRemoveNode'
 import { manifest as imageOverlayManifest } from './ImageOverlayNode'
+import { manifest as switchManifest } from './SwitchNode'
 import { manifest as httpRequestManifest } from './HttpRequestNode'
 
 /**
@@ -51,6 +52,7 @@ const functionalManifests: NodePluginManifest[] = [
   stringConcatManifest,
   commandManifest,
   codeManifest,
+  switchManifest,
   httpRequestManifest
 ]
 

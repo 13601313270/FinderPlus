@@ -73,15 +73,16 @@ export class ImageOverlayNode extends Node {
   }
 
   /**
-   * 删除一个图层端口。至少保留 1 个端口（返回 false 表示拒绝删除）。
+   * 删除最后一个图层端口（只允许删尾部，避免 index 重排问题）。
+   * 至少保留 1 个端口（返回 false 表示拒绝删除）。
    * 基类 removeInput 会自动断开 incoming 边 + notifyChanged。
    */
   removeLayerPort(portId: string): boolean {
     if (this.inputPorts.length <= 1) return false
-    const port = this.inputPorts.find((p) => p.id === portId)
-    if (!port) return false
+    const last = this.inputPorts[this.inputPorts.length - 1]
+    if (!last || last.id !== portId) return false // 只允许删尾部
     this.layerStates.delete(portId)
-    this.removeInput(port)
+    this.removeInput(last)
     return true
   }
 
@@ -92,21 +93,21 @@ export class ImageOverlayNode extends Node {
   isPositionAcceptNodeDrop(_source: Node): boolean { return false }
   onNodeDrop(_source: Node, _startPos: readonly [number, number]): boolean { return false }
 
-  // —— 端口变化 → 自动扩端口 + 初始化 LayerState ——
+  /**
+   * 手动添加一个图层端口。新端口的 id 按当前数量递增，label 自动按 index 编号。
+   */
+  addLayer(): void {
+    const nextIndex = this.inputPorts.length
+    const port = this.addLayerPort(nextIndex)
+    port.setLabel(`图层 ${nextIndex + 1}`)
+  }
 
   /**
    * 输入端口事件统一入口：
-   * - 新绑定（端口刚被连上）：检测所有端口是否占满，占满则新增一个
    * - 值更新 / 断边：刷新 LayerState（新边初始化，旧边保留用户调整）
    */
   inputPortReceiveValue(_ports: InputPort[]): void {
-    // 1. 检查是否需要自动扩端口：所有端口都有 incoming edge → 加一个
-    if (this.allPortsFull()) {
-      const nextIndex = this.inputPorts.length
-      this.addLayerPort(nextIndex)
-    }
-
-    // 2. 同步 LayerState：新端口（或新绑边）初始化，已有的不动
+    // 同步 LayerState：新端口（或新绑边）初始化，已有的不动
     for (const port of this.inputPorts) {
       const edge = port.incoming.keys().next().value as Edge | undefined
       if (!edge) continue
@@ -120,12 +121,6 @@ export class ImageOverlayNode extends Node {
     }
 
     this.notifyChanged()
-  }
-
-  /** 是否所有输入端口都已被占满（incomingEdgeCount >= 1） */
-  private allPortsFull(): boolean {
-    if (this.inputPorts.length === 0) return false
-    return this.inputPorts.every((p) => p.incomingEdgeCount > 0)
   }
 
   // —— LayerState 管理 ——

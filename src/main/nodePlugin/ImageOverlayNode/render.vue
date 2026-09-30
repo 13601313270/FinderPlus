@@ -576,6 +576,12 @@ function onLayerItemClick(e: PointerEvent, portId: string): void {
   selectedPortId.value = portId
 }
 
+// —— 添加图层 ——
+function handleAddLayer(e: PointerEvent): void {
+  e.stopPropagation()
+  node.value?.addLayer() // addLayerPort 内部已 notifyChanged → refreshLayers 自动触发
+}
+
 // —— 删除图层 ——
 function onRemoveLayer(e: PointerEvent, portId: string): void {
   e.stopPropagation()
@@ -624,10 +630,10 @@ function onRemoveLayer(e: PointerEvent, portId: string): void {
           <div class="overlay-card__port-row">
             <div class="overlay-card__port-label">{{ layer.label }}</div>
             <button
-              v-if="layer.connected && layers.length > 1"
+              v-if="layer.connected && layer.portIndex === layers.length - 1 && layers.length > 1"
               class="overlay-card__port-del"
               type="button"
-              title="删除此图层"
+              title="删除此图层（仅尾部可删）"
               @pointerdown.stop
               @click="onRemoveLayer($event, layer.portId)"
             >×</button>
@@ -646,6 +652,15 @@ function onRemoveLayer(e: PointerEvent, portId: string): void {
             <div class="overlay-card__port-name overlay-card__port-name--empty">未连接</div>
           </div>
         </div>
+
+        <!-- 添加图层按钮 -->
+        <button
+          class="overlay-card__port-add"
+          type="button"
+          title="添加图层"
+          @pointerdown.stop
+          @click="handleAddLayer"
+        >＋ 添加图层</button>
       </div>
 
       <!-- 右面板：画布预览 + 层内拖拽缩放 -->
@@ -681,7 +696,7 @@ function onRemoveLayer(e: PointerEvent, portId: string): void {
             </template>
           </div>
         </div>
-        <div v-else class="overlay-card__empty-hint">左侧端口连图片<br>自动新增端口</div>
+        <div v-else class="overlay-card__empty-hint">连接端口或点击左侧 ＋ 添加图层</div>
       </div>
     </div>
 
@@ -821,6 +836,20 @@ function onRemoveLayer(e: PointerEvent, portId: string): void {
     padding: 0; flex-shrink: 0;
     transition: background 0.15s ease, color 0.15s ease;
     &:hover { background: #fee2e2; color: #ef4444; }
+  }
+
+  &__port-add {
+    margin-top: 2px;
+    flex-shrink: 0;
+    height: 26px;
+    border: 1px dashed #c5cbd4; border-radius: 4px;
+    background: transparent; color: #4a7cff;
+    font-size: 10px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    gap: 2px;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    &:hover { background: #eef2ff; border-color: #4a7cff; }
+    &:active { transform: translateY(1px); }
   }
 
   &__port-thumb {

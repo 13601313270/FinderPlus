@@ -23,6 +23,7 @@ import { manifest as backgroundRemoveManifest } from './BackgroundRemoveNode'
 import { manifest as imageOverlayManifest } from './ImageOverlayNode'
 import { manifest as switchManifest } from './SwitchNode'
 import { manifest as httpRequestManifest } from './HttpRequestNode'
+import { manifest as jsonDisplayManifest } from './JsonDisplayNode'
 
 /**
  * 插件注册表：所有节点插件的 manifest 汇总。
@@ -53,7 +54,8 @@ const functionalManifests: NodePluginManifest[] = [
   commandManifest,
   codeManifest,
   switchManifest,
-  httpRequestManifest
+  httpRequestManifest,
+  jsonDisplayManifest
 ]
 
 const fileManifests: NodePluginManifest[] = [

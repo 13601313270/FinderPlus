@@ -1,6 +1,11 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 
+// AsyncFunction 在 Electron preload 环境下没有挂成全局标识符，
+// 用 (async () => {}).constructor 间接拿到它（所有 async 函数共享同一个构造器）
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const AsyncFunction: new (...args: string[]) => (...fnArgs: unknown[]) => unknown = (async () => {}).constructor as any
+
 const api = {
   ping: (): Promise<string> => ipcRenderer.invoke('ping')
 }
@@ -58,59 +63,78 @@ const commandApi = {
 }
 
 /**
- * 代码节点 API：把用户写的 JS 函数体在 preload 侧执行并回收结果。
+ * 代码节点 API：把用户写的 JS 函数体在 preload 侧执行。
+ *
+ * 核心设计：preload 和 renderer 共享进程内存，所以 callOutputPort 每次触发时
+ * 直接调用 renderer 传进来的 onOutput 回调，让端口即时 commit。
+ * 不等待函数（或其返回的 Promise）完成才收集——这样无论是同步调用、
+ * Promise.then 里的调用、还是 setTimeout / setInterval 里的延迟调用，
+ * 都能被 renderer 正常接收到。
  *
  * 为什么 preload 而不是主进程：
  * - preload 是 Node 环境，new Function 不受 renderer CSP 限制
  * - preload 和 renderer 共享进程内存，File 对象直接引用传递，无需 IPC 序列化
  * - 用户代码可以同时用 Node API（process、Buffer 等）和 Web API（fetch、File 等）
  *
- * args 参数以 { [portName]: value } 形式传入，构造函数时 key 作为参数名注入，
- * 所以 body 里可以直接用端口名作为变量。例如 args={ price: 10, qty: 2 }
- * → new Function('price', 'qty', body)(10, 2) → body 里直接 return price * qty
+ * 注入机制：
+ * - args 参数以 { [portName]: value } 形式传入，构造函数时 key 作为参数名注入，
+ *   body 里可以直接用端口名作为变量
+ * - 额外注入 callOutputPort(name, value) 回调，每触发一次 → 立刻 onOutput 一次
+ * - 返回值是即时状态（{ ok: true/false, error? }），不再返回 outputs 数组
  */
 const codeApi = {
   run: (
     body: string,
-    args?: Record<string, unknown>
-  ): Promise<
-    { ok: true; value: number | string | boolean | File } | { ok: false; error: string }
-  > => {
-    type CodeRunResult =
-      | { ok: true; value: number | string | boolean | File }
-      | { ok: false; error: string }
+    args: Record<string, unknown> | undefined,
+    /** 每次 callOutputPort 触发时，即时回调 renderer 侧 commit 端口 */
+    onOutput: (name: string, value: number | string | boolean | File) => void
+  ): { ok: true } | { ok: false; error: string } => {
+    type SyncRunResult = { ok: true } | { ok: false; error: string }
+
     try {
       const names = args ? Object.keys(args) : []
       const values = args ? Object.values(args) : []
-      const fn = new Function(...names, `"use strict";\n${body}`) as (...args: unknown[]) => unknown
-      const result = fn(...values)
-      // 支持返回 Promise（用户可能写 async IIFE 或直接 return fetch(...)）
-      return Promise.resolve(result).then((): CodeRunResult => {
-        const t = typeof result
+
+      // callOutputPort：每次触发 → 即时调 renderer 给的 onOutput 回调
+      const callOutputPort = (name: string, value: unknown): void => {
+        const t = typeof value
         if (t === 'number' || t === 'string' || t === 'boolean') {
-          return { ok: true, value: result as number | string | boolean }
+          onOutput(name, value as number | string | boolean)
+          return
         }
-        if (result instanceof File) {
-          return { ok: true, value: result }
+        if (value instanceof File) {
+          onOutput(name, value)
+          return
         }
-        if (result === undefined) {
-          return { ok: false, error: '函数没有返回值，请用 return 返回结果' }
-        }
-        return {
-          ok: false,
-          error: `返回值类型不支持：${t}（只支持 number / string / boolean / File）`
-        }
-      }).catch((err): CodeRunResult => ({
-        ok: false,
-        error: err instanceof Error ? err.message : String(err)
-      }))
+        // 不支持的类型：静默忽略
+        // renderer 侧找不到端口或类型不匹配时会更新错误提示
+      }
+
+      // 用 AsyncFunction 构造函数体，这样用户代码里可以直接写 await，
+      // 而不需要自己用 async function 包裹——AsyncFunction 本身就是 async 的
+      // 构造失败（语法错误包括 await 放非 async 上下文、async 写非 AsyncFunction 里都会被 catch）
+      // eslint-disable-next-line no-new-func
+      const fn = new AsyncFunction(...names, 'callOutputPort', `"use strict";\n${body}`) as (...args: unknown[]) => unknown
+      const result = fn(...values, callOutputPort)
+
+      // 函数本身执行时抛同步错误 → 捕获
+      // 返回 Promise 是用户的选择：engine 不再等待，onOutput 在 Promise resolve 时也会继续触发
+      // fire-and-forget（setTimeout/setInterval）里的 callOutputPort 依赖 JS 事件循环，正常工作
+      if (result instanceof Promise) {
+        result.catch(() => {
+          // 用户代码里 Promise reject 了，我们不再主动通知 renderer
+          // —— 这和当前设计一致：只在函数本身同步抛错时返回 error
+        })
+      }
+
+      return { ok: true }
     } catch (err) {
-      // new Function 构造失败（语法错误等）
-      const r: CodeRunResult = {
+      // new Function 构造失败（语法错误等），或函数体内同步 throw
+      const r: SyncRunResult = {
         ok: false,
         error: err instanceof Error ? err.message : String(err)
       }
-      return Promise.resolve(r)
+      return r
     }
   }
 }

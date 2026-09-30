@@ -1,18 +1,18 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, shallowRef } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
-import { CodeNode, type CodeInputKind, type CodeInputMeta, type CodeReturnKind } from './node'
+import { CodeNode, type CodeInputKind, type CodeInputMeta, type CodePortKind, type CodeOutputMeta } from './node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
+import HelpDialog from '@renderer/components/HelpDialog.vue'
+import CodeHelpDialog from './CodeHelpDialog.vue'
 
 /**
  * 代码节点的渲染组件。
  *
- * 主视图直接内联编辑：输入端口管理区 + 代码编辑区 + 返回类型下拉 + 结果区 + 执行按钮。
+ * 主视图：输入端口管理区 + 输出端口管理区 + 用法提示 + 代码编辑区 + 结果区 + 执行按钮。
  *
  * 输入端口由用户自定义变量名，函数体里直接用这个变量名引用。
- * 端口值在 run() 前从 InputPort 取出、解包成原始值/File，交给 preload 的 codeApi.run(body, args)。
- *
- * 返回类型下拉决定输出端口挂哪种 Value——切一下，右侧端口类型标签就跟着变。
+ * 输出端口由用户自定义端口名，函数体里通过 callOutputPort("端口名", 值) 提交。
  *
  * 定位、两侧端口由 NodeShell 兜底；节点不在场景里时退化为只读。
  */
@@ -20,14 +20,19 @@ const props = defineProps<{ id: string }>()
 
 const codeNode = shallowRef<CodeNode | undefined>(undefined)
 const code = ref('')
-const returnKind = ref<CodeReturnKind>('number')
 const resultText = ref('')
 const errorText = ref('')
 const status = ref<'idle' | 'running' | 'done' | 'error'>('idle')
 const inputs = ref<readonly CodeInputMeta[]>([])
+const outputs = ref<readonly CodeOutputMeta[]>([])
 const autoRun = ref(false)
 // 每个端口名输入框对应的临时校验错误（key 是 port id）
-const nameErrors = ref<Record<string, string>>({})
+const inputNameErrors = ref<Record<string, string>>({})
+const outputNameErrors = ref<Record<string, string>>({})
+// 帮助浮层开关（状态保留在 render.vue，HelpDialog 组件负责弹窗壳）
+const showHelp = ref(false)
+// 复制按钮的瞬时反馈：哪个刚复制了就短暂显示"已复制"
+const copyHint = ref<string>('')
 
 let unsubscribe: (() => void) | undefined
 
@@ -36,11 +41,11 @@ const { startDrag } = useNodePosition(() => codeNode.value)
 /** 把节点里的状态同步到本地 ref */
 function syncFromNode(node: CodeNode): void {
   code.value = node.displayCode
-  returnKind.value = node.returnKind
   resultText.value = node.displayResult
   errorText.value = node.displayError
   status.value = node.displayStatus
   inputs.value = node.displayInputs
+  outputs.value = node.displayOutputs
   autoRun.value = node.displayAutoRun
 }
 
@@ -60,6 +65,7 @@ onUnmounted(() => {
 const hasCode = computed(() => code.value.trim().length > 0)
 const running = computed(() => status.value === 'running')
 const hasInputs = computed(() => inputs.value.length > 0)
+const hasOutputs = computed(() => outputs.value.length > 0)
 
 const STATUS_LABELS = {
   idle: '空闲',
@@ -77,11 +83,6 @@ function onCodeInput(e: Event): void {
   codeNode.value?.setCode(value)
 }
 
-/** 返回类型下拉 change：切输出端口类型 */
-function onKindChange(e: Event): void {
-  codeNode.value?.setReturnKind((e.target as HTMLSelectElement).value as CodeReturnKind)
-}
-
 function onRun(): void {
   codeNode.value?.run()
 }
@@ -91,6 +92,8 @@ function onAutoRunToggle(e: Event): void {
   codeNode.value?.setAutoRun((e.target as HTMLInputElement).checked)
 }
 
+// —— 输入端口操作 ——
+
 /** 添加输入端口 */
 function onAddInput(): void {
   codeNode.value?.addCodeInput()
@@ -98,22 +101,22 @@ function onAddInput(): void {
 
 /** 删除输入端口 */
 function onRemoveInput(id: string): void {
-  nameErrors.value[id] = ''
-  delete nameErrors.value[id]
+  inputNameErrors.value[id] = ''
+  delete inputNameErrors.value[id]
   codeNode.value?.removeCodeInput(id)
 }
 
-/** 编辑端口名 */
+/** 编辑输入端口变量名 */
 function onInputNameChange(id: string, e: Event): void {
   const node = codeNode.value
   if (!node) return
   const value = (e.target as HTMLInputElement).value
   const err = node.validateInputName(value, id)
   if (err) {
-    nameErrors.value[id] = err
+    inputNameErrors.value[id] = err
   } else {
-    nameErrors.value[id] = ''
-    delete nameErrors.value[id]
+    inputNameErrors.value[id] = ''
+    delete inputNameErrors.value[id]
     node.setInputName(id, value)
   }
 }
@@ -121,6 +124,40 @@ function onInputNameChange(id: string, e: Event): void {
 /** 切换输入端口类型 */
 function onInputKindChange(id: string, e: Event): void {
   codeNode.value?.setInputKind(id, (e.target as HTMLSelectElement).value as CodeInputKind)
+}
+
+// —— 输出端口操作 ——
+
+/** 添加输出端口 */
+function onAddOutput(): void {
+  codeNode.value?.addCodeOutput()
+}
+
+/** 删除输出端口 */
+function onRemoveOutput(id: string): void {
+  outputNameErrors.value[id] = ''
+  delete outputNameErrors.value[id]
+  codeNode.value?.removeCodeOutput(id)
+}
+
+/** 编辑输出端口名 */
+function onOutputNameChange(id: string, e: Event): void {
+  const node = codeNode.value
+  if (!node) return
+  const value = (e.target as HTMLInputElement).value
+  const err = node.validateOutputName(value, id)
+  if (err) {
+    outputNameErrors.value[id] = err
+  } else {
+    outputNameErrors.value[id] = ''
+    delete outputNameErrors.value[id]
+    node.setOutputName(id, value)
+  }
+}
+
+/** 切换输出端口类型 */
+function onOutputKindChange(id: string, e: Event): void {
+  codeNode.value?.setOutputKind(id, (e.target as HTMLSelectElement).value as CodePortKind)
 }
 
 /**
@@ -139,13 +176,29 @@ function onEditorWheel(e: WheelEvent): void {
   if ((scrollingUp && atTop) || (scrollingDown && atBottom)) return
   e.stopPropagation()
 }
+
+/** 复制 callOutputPort 函数签名到剪贴板 */
+function onCopyCallOutputPort(): void {
+  const text = 'callOutputPort("端口名", 值)'
+  navigator.clipboard?.writeText(text)
+  copyHint.value = 'callOutputPort'
+  setTimeout(() => { copyHint.value = '' }, 1200)
+}
 </script>
 
 <template>
   <div class="node">
     <div class="node__header" @pointerdown="startDrag">
       <span class="node__handle" title="拖动节点（整个头部可拖）">{{ codeNode?.type ?? '?' }}</span>
-      <span class="node__status" :class="`node__status--${status}`">{{ statusLabel }}</span>
+      <div class="node__header-right">
+        <span class="node__status" :class="`node__status--${status}`">{{ statusLabel }}</span>
+        <button
+          class="node__help"
+          type="button"
+          title="使用说明"
+          @click.stop="showHelp = true"
+        >?</button>
+      </div>
     </div>
 
     <!-- 输入端口管理区 -->
@@ -170,9 +223,8 @@ function onEditorWheel(e: WheelEvent): void {
           v-for="input in inputs"
           :key="input.id"
           class="inputs__row"
-          :class="{ 'inputs__row--error': nameErrors[input.id] }"
+          :class="{ 'inputs__row--error': inputNameErrors[input.id] }"
         >
-          <!-- 类型选择：和下方"返回类型"行同构 -->
           <div class="code-row inputs__subrow">
             <span class="code-row__label">类型</span>
             <select
@@ -188,7 +240,6 @@ function onEditorWheel(e: WheelEvent): void {
               <option value="file">file</option>
             </select>
           </div>
-          <!-- 变量名输入 -->
           <div class="code-row inputs__subrow">
             <span class="code-row__label">变量名</span>
             <input
@@ -200,7 +251,6 @@ function onEditorWheel(e: WheelEvent): void {
               @input="(e) => onInputNameChange(input.id, e)"
             />
           </div>
-          <!-- 删除按钮：和当前输入同行的右侧 -->
           <button
             class="inputs__remove"
             type="button"
@@ -210,41 +260,120 @@ function onEditorWheel(e: WheelEvent): void {
           >
             ×
           </button>
-          <span v-if="nameErrors[input.id]" class="inputs__errmsg">{{ nameErrors[input.id] }}</span>
+          <span v-if="inputNameErrors[input.id]" class="inputs__errmsg">{{ inputNameErrors[input.id] }}</span>
         </div>
       </div>
     </div>
 
-    <!-- 代码编辑区：只写函数体，用 return 返回结果 -->
+    <!-- 输出端口管理区 -->
+    <div class="inputs">
+      <div class="inputs__header">
+        <span class="inputs__title">输出</span>
+        <button
+          class="inputs__add"
+          type="button"
+          :disabled="!codeNode"
+          title="添加一个输出端口"
+          @click="onAddOutput"
+        >
+          +
+        </button>
+      </div>
+      <div v-if="!hasOutputs" class="inputs__empty">
+        至少保留一个输出端口
+      </div>
+      <div v-else class="inputs__list">
+        <div
+          v-for="output in outputs"
+          :key="output.id"
+          class="inputs__row"
+          :class="{ 'inputs__row--error': outputNameErrors[output.id] }"
+        >
+          <div class="code-row inputs__subrow">
+            <span class="code-row__label">类型</span>
+            <select
+              class="code-select"
+              :value="output.kind"
+              :disabled="!codeNode"
+              title="选择此输出产出的 Value 类型"
+              @change="(e) => onOutputKindChange(output.id, e)"
+            >
+              <option value="number">number</option>
+              <option value="string">string</option>
+              <option value="bool">bool</option>
+              <option value="file">file</option>
+              <option value="imgfile">img file</option>
+            </select>
+          </div>
+          <div class="code-row inputs__subrow">
+            <span class="code-row__label">端口名</span>
+            <input
+              class="code-input"
+              type="text"
+              :value="output.name"
+              :disabled="!codeNode"
+              maxlength="32"
+              @input="(e) => onOutputNameChange(output.id, e)"
+            />
+          </div>
+          <button
+            class="inputs__remove"
+            type="button"
+            :disabled="!codeNode || outputs.length <= 1"
+            title="删除此输出端口（至少保留一个）"
+            @click="onRemoveOutput(output.id)"
+          >
+            ×
+          </button>
+          <span v-if="outputNameErrors[output.id]" class="inputs__errmsg">{{ outputNameErrors[output.id] }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 用法提示：callOutputPort 语法 + 当前可用端口名 -->
+    <div class="code-hint">
+      <div class="code-hint__line">
+        <span class="code-hint__line-content">
+          <span class="code-hint__key">callOutputPort</span>
+          <span class="code-hint__paren">(</span>
+          <span class="code-hint__str">"端口名"</span>
+          <span class="code-hint__comma">,</span>
+          <span class="code-hint__ident">值</span>
+          <span class="code-hint__paren">)</span>
+        </span>
+        <button
+          class="code-hint__copy"
+          type="button"
+          title="复制函数签名"
+          @click="onCopyCallOutputPort"
+        >
+          <span class="code-hint__copy-icon">📋</span>
+          <span v-if="copyHint === 'callOutputPort'" class="code-hint__copy-tip">已复制</span>
+        </button>
+      </div>
+      <div v-if="hasOutputs" class="code-hint__ports">
+        <span class="code-hint__ports-label">可用端口：</span>
+        <span
+          v-for="o in outputs"
+          :key="o.id"
+          class="code-hint__port-tag"
+          :title="`类型: ${o.kind}`"
+        >{{ o.name }}<span class="code-hint__port-kind">:{{ o.kind }}</span></span>
+      </div>
+    </div>
+
+    <!-- 代码编辑区：只写函数体，用 callOutputPort 提交值；兼容 return -->
     <textarea
       class="code-editor"
       spellcheck="false"
       :value="code"
       :disabled="!codeNode"
       :placeholder="hasInputs
-        ? '写函数体，用 return 返回结果。\n直接用上方定义的变量名访问输入值，例如：\nreturn price * qty'
-        : '写函数体，用 return 返回结果，例如：\nconst nums = [1, 2, 3]\nreturn nums.reduce((a, b) => a + b, 0)'"
+        ? '写函数体，通过 callOutputPort(\'端口名\', 值) 提交。\n直接用上方输入的变量名访问，例如：\ncallOutputPort(\'result\', price * qty)\n\nsetTimeout / Promise.then 里的延迟调用也能正常触发'
+        : '写函数体，通过 callOutputPort(\'端口名\', 值) 提交，例如：\ncallOutputPort(\'result\', [1,2,3].reduce((a,b)=>a+b,0))\n\nsetTimeout / Promise.then 里的延迟调用也能正常触发'"
       @wheel="onEditorWheel"
       @input="onCodeInput"
     />
-
-    <!-- 返回类型：决定输出端口挂哪种 Value -->
-    <div class="code-row">
-      <span class="code-row__label">返回类型</span>
-      <select
-        class="code-select"
-        :value="returnKind"
-        :disabled="!codeNode"
-        title="选择返回值类型，输出端口会跟着变"
-        @change="onKindChange"
-      >
-        <option value="number">number</option>
-        <option value="string">string</option>
-        <option value="bool">bool</option>
-        <option value="file">file</option>
-        <option value="imgfile">img file</option>
-      </select>
-    </div>
 
     <!-- 结果区 -->
     <div
@@ -288,14 +417,18 @@ function onEditorWheel(e: WheelEvent): void {
       </button>
     </div>
   </div>
+
+  <HelpDialog :visible="showHelp" title="代码节点使用说明" @close="showHelp = false">
+    <CodeHelpDialog />
+  </HelpDialog>
 </template>
 
 <style scoped lang="less">
 .node {
-  box-sizing: border-box; // box 是内容区外包壳宽，border+padding 算在 box 内
-  width: 100%; // 填满 NodeShell 的 .node-content（由 node.box 硬约束定宽高）
+  box-sizing: border-box;
+  width: 100%;
   height: 100%;
-  overflow: auto; // 内容超出 box 时可滚
+  overflow: auto;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -353,7 +486,35 @@ function onEditorWheel(e: WheelEvent): void {
     }
   }
 
-  // 底部操作区：自动开关 + 执行按钮横向并排
+  &__header-right {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  &__help {
+    all: unset;
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #f3f4f6;
+    color: #6b7280;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+    transition: background 0.15s, color 0.15s;
+
+    &:hover {
+      background: #dbeafe;
+      color: #2563eb;
+    }
+  }
+
   &__actions {
     display: flex;
     align-items: center;
@@ -394,7 +555,6 @@ function onEditorWheel(e: WheelEvent): void {
   }
 }
 
-// —— 输入端口管理区 ——
 .inputs {
   display: flex;
   flex-direction: column;
@@ -465,13 +625,11 @@ function onEditorWheel(e: WheelEvent): void {
     }
   }
 
-  // 每行里的两个子 row（类型 + 变量名）并排
   &__subrow {
     flex: 1;
     gap: 6px;
     min-width: 0;
 
-    // 子 row 里的控件不再 flex:1（因为外层 code-row 已经给了），而是按实际宽度
     .code-select,
     .code-input {
       flex: 1;
@@ -512,7 +670,6 @@ function onEditorWheel(e: WheelEvent): void {
   }
 }
 
-// —— 跟 .code-select 同风格的文本输入框 ——
 .code-input {
   box-sizing: border-box;
   padding: 5px 8px;
@@ -603,6 +760,116 @@ function onEditorWheel(e: WheelEvent): void {
   }
 }
 
+.code-hint {
+  flex-shrink: 0;
+  padding: 6px 10px;
+  border: 1px dashed #d5d9e0;
+  border-radius: 6px;
+  background: #fafbfc;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  &__line {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    &-content {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 11px;
+      line-height: 1.4;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex: 1;
+      min-width: 0;
+    }
+  }
+
+  &__copy {
+    all: unset;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 10px;
+    color: #9aa2ad;
+    flex-shrink: 0;
+    transition: background 0.15s, color 0.15s;
+
+    &:hover {
+      background: #eef2ff;
+      color: #3b82f6;
+    }
+
+    &-icon {
+      font-size: 11px;
+      line-height: 1;
+    }
+
+    &-tip {
+      color: #16a34a;
+    }
+  }
+
+  &__key {
+    color: #b91c1c;
+    font-weight: 600;
+  }
+
+  &__paren {
+    color: #6b7280;
+  }
+
+  &__str {
+    color: #047857;
+  }
+
+  &__comma {
+    color: #6b7280;
+  }
+
+  &__ident {
+    color: #1d4ed8;
+  }
+
+  &__ports {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+  }
+
+  &__ports-label {
+    font-size: 10px;
+    color: #9aa2ad;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+
+  &__port-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 1px 6px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 10px;
+    color: #374151;
+    background: #eef2ff;
+    border: 1px solid #c7d2fe;
+    border-radius: 4px;
+    line-height: 1.4;
+
+    &-kind {
+      margin-left: 3px;
+      color: #9aa2ad;
+      font-size: 9px;
+    }
+  }
+}
+
 .code-output {
   padding: 8px 10px;
   border: 1px solid #d5d9e0;
@@ -654,7 +921,6 @@ function onEditorWheel(e: WheelEvent): void {
   }
 }
 
-// —— 自动执行 switch ——
 .auto-run {
   display: inline-flex;
   align-items: center;

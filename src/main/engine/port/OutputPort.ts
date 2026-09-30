@@ -40,15 +40,27 @@ export class OutputPort {
   /** 本端口产出的类型标签名（valueClass.VALUE_NAME 的快捷访问，供 UI 展示） */
   readonly outputValueName: ValueKind
 
+  private labelValue: string
+
   constructor(
     readonly id: string,
     /** 本端口产出的 Value 子类，端口自动从其静态 VALUE_NAME 取类型标签 */
     valueClass: ValueClass,
     /** 端口文本标记，UI 显示用 */
-    readonly label: string
+    label: string
   ) {
     this.valueClass = valueClass
     this.outputValueName = valueClass.VALUE_NAME
+    this.labelValue = label
+  }
+
+  get label(): string {
+    return this.labelValue
+  }
+
+  /** 运行时更新端口标签（CodeNode 等需要动态改名时用） */
+  setLabel(name: string): void {
+    this.labelValue = name
   }
 
   get value(): Value | undefined {

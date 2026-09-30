@@ -9,26 +9,25 @@ import { InputPort } from '../../engine/port/InputPort'
 import { OutputPort } from '../../engine/port/OutputPort'
 import { Node } from '../../engine/node/Node'
 
-/** 可选的返回类型：决定输出端口挂哪种 Value，也决定结果怎么包装 */
-export type CodeReturnKind = 'number' | 'string' | 'bool' | 'file' | 'imgfile'
+/** 可选的端口类型：输入和输出共用同一套 Value 子类集合 */
+export type CodePortKind = 'number' | 'string' | 'bool' | 'file' | 'imgfile'
 
-/** 可选的输入类型：决定 InputPort.accepts 覆盖哪些 Value 子类 */
-export type CodeInputKind = 'number' | 'string' | 'bool' | 'file'
+/** 输入端口可选类型（不含 imgfile——输入侧图片归为 file，原型链覆盖） */
+export type CodeInputKind = Exclude<CodePortKind, 'imgfile'>
 
-/** 返回类型 → Value 子类（输出端口与结果包装共用这一处真相） */
-const KIND_CLASSES = {
+/** 返回类型别名（保留给外部引用，实际用 CodePortKind） */
+export type CodeReturnKind = CodePortKind
+
+/** Value 子类注册表：kind → Value 子类（端口 accept / 结果包装共用这一处真相） */
+const KIND_CLASSES: Record<CodePortKind, { readonly VALUE_NAME: string; prototype: Value; new (...args: any[]): Value }> = {
   number: NumberValue,
   string: StringValue,
   bool: BoolValue,
   file: FileValue,
   imgfile: ImgFileValue
-} as const
+}
 
-/**
- * 输入类型 → InputPort.accepts 数组。
- * file 用 FileValue（原型链覆盖 ImgFileValue / TxtFileValue）。
- * 非抽象类，所以能进 InputPort.accepts。
- */
+/** 输入类型 → InputPort.accepts 数组。file 用 FileValue（原型链覆盖 ImgFileValue / TxtFileValue） */
 const INPUT_KIND_ACCEPTS: Record<CodeInputKind, readonly InputPortOptionsAcc[]> = {
   number: [NumberValue],
   string: [StringValue],
@@ -36,15 +35,18 @@ const INPUT_KIND_ACCEPTS: Record<CodeInputKind, readonly InputPortOptionsAcc[]> 
   file: [FileValue]
 }
 
-/** InputPort 构造器 accepts 参数所需的 Value 子类类型（供上面的 Record 签名复用） */
+/** InputPort 构造器 accepts 参数所需的 Value 子类类型 */
 type InputPortOptionsAcc = NonNullable<ConstructorParameters<typeof InputPort>[1]['accepts']>[number]
+
+/** OutputPort 构造器所需的 ValueClass 类型 */
+type OutputPortValueClass = ConstructorParameters<typeof OutputPort>[1]
 
 /** 执行状态：UI 据此决定按钮可点 / 结果区样式 */
 export type CodeStatus = 'idle' | 'running' | 'done' | 'error'
 
-const NODE_HEIGHT = 400
+const NODE_HEIGHT = 540
 
-/** 输入端口的持久化元数据：同步决定端口的 accepts 与 label */
+/** 输入端口的持久化元数据 */
 export interface CodeInputMeta {
   /** 端口唯一 id（持久化） */
   id: string
@@ -54,39 +56,44 @@ export interface CodeInputMeta {
   kind: CodeInputKind
 }
 
+/** 输出端口的持久化元数据 */
+export interface CodeOutputMeta {
+  /** 端口唯一 id（持久化）——边靠它匹配 */
+  id: string
+  /** 用户给的端口名——callOutputPort(name, value) 里用它 */
+  name: string
+  /** 类型：决定 OutputPort 挂哪种 Value 子类 */
+  kind: CodePortKind
+}
+
 /**
- * 代码节点：把一段 JS 函数体存在节点里，点「执行」跑一次，结果按选定的返回类型发往下游。
+ * 代码节点：把一段 JS 函数体存在节点里，点「执行」跑一次，结果按选定的类型发往下游。
  *
- * - 代码只写函数体，自己用 return 返回结果；执行在 preload 侧（主进程已移走），
- *   preload 是 Node 环境 + 共享 renderer 内存，File 对象直接传，new Function 不受 CSP 限制。
- * - 返回类型（number / string / bool）由用户选，切类型就重建输出端口：旧端口连同下游边
- *   一起断掉，新端口挂对应的 Value 子类。
- * - 输入端口由用户动态增删、自定义变量名 + 类型：
- *   - number → 原始数字，string → 原始字符串，bool → 原始布尔
- *   - file → 浏览器 File 对象（accepts FileValue，原型链覆盖图片/文本子类）
- *   - 切换类型会重建端口、断旧边（和 setReturnKind 行为对称）。
+ * 输入端口：用户动态增删、自定义变量名 + 类型。函数体里直接用变量名引用。
+ * 输出端口：用户动态增删、自定义端口名 + 类型。函数体里通过 callOutputPort(name, value) 提交值。
+ * 调用多少次 callOutputPort 就提交多少次，可以向不同端口各提一次（多输出）。
+ *
+ * 兼容旧写法：如果函数没有调用 callOutputPort 而是直接 return 一个值，
+ * 系统会把它提交到第一个输出端口（名为 "result" 的默认端口）。
+ *
+ * 执行在 preload 侧（Node 环境 + 共享 renderer 内存），File 对象直接传，new Function 不受 CSP 限制。
  */
 export class CodeNode extends Node {
   static readonly TYPE = 'code'
   readonly type = CodeNode.TYPE
-
-  /** 当前返回类型（持久化） */
-  private returnKindValue: CodeReturnKind = 'number'
 
   /** 函数体（持久化） */
   private code = ''
 
   /** 输入端口元数据（持久化）：同步更新 myInputPorts */
   private inputMetas: CodeInputMeta[] = []
-
-  /** 运行时输入端口列表：与 inputMetas 一一对应（不同于 Node 基类的 inputPorts getter） */
+  /** 运行时输入端口列表：与 inputMetas 一一对应 */
   private myInputPorts: InputPort[] = []
 
-  /** 输出端口：随 returnKindValue 动态重建 */
-  private resultOutput: OutputPort | undefined
-
-  /** 上次执行的原始返回值（派生，不持久化）；切类型时用它把新端口的值补上 */
-  private lastRawValue: number | string | boolean | File | undefined
+  /** 输出端口元数据（持久化）：同步更新 myOutputPorts */
+  private outputMetas: CodeOutputMeta[] = []
+  /** 运行时输出端口列表：与 outputMetas 一一对应 */
+  private myOutputPorts: OutputPort[] = []
 
   /** 上次结果的展示文本 / 错误文本（派生，不持久化） */
   private resultText = ''
@@ -98,9 +105,23 @@ export class CodeNode extends Node {
 
   constructor(id: string) {
     super(id)
-    this.rebuildOutputPort()
-    // 内容区硬约束：手柄 + 输入端口列表 + 代码编辑区 + 返回类型 + 结果区 + 执行按钮
+    // 默认给一个输出端口 "result"，方便第一次使用（也兼容旧版直接 return 的写法）
+    this.addDefaultOutputPort()
+    // 内容区硬约束：手柄 + 输入端口列表 + 输出端口列表 + 代码编辑区 + 结果区 + 执行按钮
     this.setBox(360, NODE_HEIGHT)
+  }
+
+  /** 构造时添加默认输出端口 "result"（number 类型） */
+  private addDefaultOutputPort(): void {
+    const meta: CodeOutputMeta = {
+      id: `out-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      name: 'result',
+      kind: 'number'
+    }
+    this.outputMetas.push(meta)
+    const port = this.buildOutputPort(meta)
+    this.myOutputPorts.push(port)
+    super.addOutput(port)
   }
 
   /** 拖入文件落点命中本节点时被调用；本节点不接收文件，返回 false */
@@ -118,10 +139,6 @@ export class CodeNode extends Node {
     return this.code
   }
 
-  get returnKind(): CodeReturnKind {
-    return this.returnKindValue
-  }
-
   get displayResult(): string {
     return this.resultText
   }
@@ -134,9 +151,14 @@ export class CodeNode extends Node {
     return this.status
   }
 
-  /** 渲染层读当前输入端口元数据列表（每项含 id / name / kind） */
+  /** 渲染层读当前输入端口元数据列表 */
   get displayInputs(): readonly CodeInputMeta[] {
     return this.inputMetas
+  }
+
+  /** 渲染层读当前输出端口元数据列表 */
+  get displayOutputs(): readonly CodeOutputMeta[] {
+    return this.outputMetas
   }
 
   /** 渲染层读自动执行开关状态 */
@@ -151,36 +173,57 @@ export class CodeNode extends Node {
     this.notifyChanged()
   }
 
-  // —— 输入端口管理 ——
+  // —— 静态工具：合法 JS 标识符校验（输入端口变量名和输出端口名共用） ——
 
-  /** 合法 JS 标识符：允许字母、数字、$、_，不能以数字开头，不能是保留字 */
   private static JS_IDENT_RE = /^[A-Za-z_$][A-Za-z0-9_$]*$/
   private static RESERVED = new Set([
     'break', 'case', 'catch', 'class', 'const', 'continue', 'debugger', 'default', 'delete',
     'do', 'else', 'enum', 'export', 'extends', 'false', 'finally', 'for', 'function', 'if',
     'import', 'in', 'instanceof', 'new', 'null', 'return', 'super', 'switch', 'this', 'throw',
     'true', 'try', 'typeof', 'var', 'void', 'while', 'with', 'let', 'static', 'yield',
-    'arguments', 'await'
+    'arguments', 'await', 'callOutputPort'
   ])
 
-  /** 校验变量名是否合法且未重复。返回错误信息（null 表示通过） */
-  validateInputName(name: string, excludeId?: string): string | null {
+  /** 校验端口名是否合法且未重复。返回错误信息（null 表示通过） */
+  validatePortName(name: string, _excludeId?: string): string | null {
     const trimmed = name.trim()
-    if (!trimmed) return '变量名不能为空'
+    if (!trimmed) return '名称不能为空'
     if (!CodeNode.JS_IDENT_RE.test(trimmed)) {
-      return '变量名必须是合法 JS 标识符（字母/数字/$/_，不能数字开头）'
+      return '名称必须是合法 JS 标识符（字母/数字/$/_，不能数字开头）'
     }
     if (CodeNode.RESERVED.has(trimmed)) return `不能用保留字 "${trimmed}"`
+    return null
+  }
+
+  /** 校验输入端口变量名（额外检查重复） */
+  validateInputName(name: string, excludeId?: string): string | null {
+    const trimmed = name.trim()
+    const err = this.validatePortName(trimmed, excludeId)
+    if (err) return err
     const dup = this.inputMetas.find(m => m.name === trimmed && m.id !== excludeId)
     if (dup) return `变量名 "${trimmed}" 已存在`
     return null
   }
 
+  /** 校验输出端口名（额外检查重复，且不能与输入端口变量名冲突——callOutputPort 的 name 要唯一） */
+  validateOutputName(name: string, excludeId?: string): string | null {
+    const trimmed = name.trim()
+    const err = this.validatePortName(trimmed, excludeId)
+    if (err) return err
+    const dupOut = this.outputMetas.find(m => m.name === trimmed && m.id !== excludeId)
+    if (dupOut) return `端口名 "${trimmed}" 已存在`
+    const dupIn = this.inputMetas.find(m => m.name === trimmed)
+    if (dupIn) return `端口名 "${trimmed}" 与输入变量名冲突`
+    return null
+  }
+
+  // —— 输入端口管理 ——
+
   /** 追加一个输入端口，默认类型 number、默认变量名不冲突的 v1/v2/... */
   addCodeInput(): CodeInputMeta {
     let seq = this.inputMetas.length + 1
     let name = `v${seq}`
-    while (this.inputMetas.some(m => m.name === name)) {
+    while (this.inputMetas.some(m => m.name === name) || this.outputMetas.some(m => m.name === name)) {
       seq += 1
       name = `v${seq}`
     }
@@ -190,7 +233,7 @@ export class CodeNode extends Node {
       kind: 'number'
     }
     this.inputMetas.push(meta)
-    const port = CodeNode.buildInputPort(meta)
+    const port = this.buildInputPort(meta)
     this.myInputPorts.push(port)
     super.addInput(port)
     this.notifyChanged()
@@ -216,54 +259,129 @@ export class CodeNode extends Node {
     const trimmed = newName.trim()
     if (meta.name === trimmed) return
     meta.name = trimmed
-    // 同步更新端口 label，NodeShell 画布上显示的端口名跟着变
     const port = this.myInputPorts.find(p => p.id === id)
     port?.setLabel(trimmed)
     this.notifyChanged()
   }
 
-  /**
-   * 修改某个输入端口的类型。
-   * 重建端口（accepts 变了旧端口不再合法），流程：
-   * 1. 快照当前 myInputPorts 中所有端口对象（旧引用，用来从基类移除——对象 identity 必须匹配）
-   * 2. 从基类 inputs 里全部移除（每个都走基类 removeInput 的断边逻辑）
-   * 3. 在 myInputPorts[idx] 位置替换成新端口对象
-   * 4. 把 myInputPorts 全部重新 addInput 到基类——顺序和基类 inputs 完全对齐
-   *
-   * 顺序严格：先删旧对象（基类 removeInput 靠 indexOf 匹配对象 identity），再替换引用，再 add 新对象。
-   * 如果反过来（先替换再删），新对象不在基类 inputs 里，removeInput 找不到就直接 return，
-   * 旧对象留在基类里没被删，加新对象后就会一份变两份。
-   */
+  /** 修改某个输入端口的类型——重建端口（accepts 变了旧端口不再合法） */
   setInputKind(id: string, kind: CodeInputKind): void {
     const meta = this.inputMetas.find(m => m.id === id)
     if (!meta || meta.kind === kind) return
     meta.kind = kind
-
-    const idx = this.myInputPorts.findIndex(p => p.id === id)
-    if (idx !== -1) {
-      // 快照：必须在替换之前拍，拿到 myInputPorts 里原有的对象引用
-      const oldPorts = [...this.myInputPorts]
-      // 先把所有旧端口从基类移除（对象 identity 必须匹配才能 indexOf 找到）
-      for (const p of oldPorts) {
-        super.removeInput(p)
-      }
-      // 替换 myInputPorts 中对应位置成新端口对象
-      const newPort = CodeNode.buildInputPort(meta)
-      this.myInputPorts[idx] = newPort
-      // 再按 myInputPorts 最新顺序逐个 addInput，基类 inputs 就完全对齐了
-      for (const p of this.myInputPorts) {
-        super.addInput(p)
-      }
-    }
+    this.rebuildInputPorts()
     this.notifyChanged()
   }
 
-  /** 根据 meta 构造一个新的 InputPort（accepts 由 kind 决定，label 用变量名） */
-  private static buildInputPort(meta: CodeInputMeta): InputPort {
+  /** 根据 meta 构造一个新的 InputPort */
+  private buildInputPort(meta: CodeInputMeta): InputPort {
     return new InputPort(meta.id, {
       accepts: INPUT_KIND_ACCEPTS[meta.kind] as unknown as ConstructorParameters<typeof InputPort>[1]['accepts'],
       label: meta.name
     })
+  }
+
+  /** 全量重建输入端口：删掉所有旧的、按 inputMetas 重新 build 并 addInput。顺序严格：先删后加。 */
+  private rebuildInputPorts(): void {
+    const oldPorts = [...this.myInputPorts]
+    for (const p of oldPorts) {
+      super.removeInput(p)
+    }
+    this.myInputPorts = this.inputMetas.map(m => this.buildInputPort(m))
+    for (const p of this.myInputPorts) {
+      super.addInput(p)
+    }
+  }
+
+  // —— 输出端口管理 ——
+
+  /** 追加一个输出端口，默认类型 number、默认端口名不冲突的 port1/port2/... */
+  addCodeOutput(): CodeOutputMeta {
+    let seq = this.outputMetas.length + 1
+    let name = `port${seq}`
+    while (
+      this.outputMetas.some(m => m.name === name) ||
+      this.inputMetas.some(m => m.name === name) ||
+      name === 'callOutputPort'
+    ) {
+      seq += 1
+      name = `port${seq}`
+    }
+    const meta: CodeOutputMeta = {
+      id: `out-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      name,
+      kind: 'number'
+    }
+    this.outputMetas.push(meta)
+    const port = this.buildOutputPort(meta)
+    this.myOutputPorts.push(port)
+    super.addOutput(port)
+    this.notifyChanged()
+    return meta
+  }
+
+  /** 删除一个输出端口及其连线。至少保留一个——否则 callOutputPort 无处可提交 */
+  removeCodeOutput(id: string): void {
+    if (this.outputMetas.length <= 1) return
+    const idx = this.outputMetas.findIndex(m => m.id === id)
+    if (idx === -1) return
+    this.outputMetas.splice(idx, 1)
+    const port = this.myOutputPorts.splice(idx, 1)[0]
+    if (port) super.removeOutput(port)
+    this.notifyChanged()
+  }
+
+  /** 修改某个输出端口的名称（callOutputPort 里用的名字）；校验不通过就跳过 */
+  setOutputName(id: string, newName: string): void {
+    const err = this.validateOutputName(newName, id)
+    if (err) return
+    const meta = this.outputMetas.find(m => m.id === id)
+    if (!meta) return
+    const trimmed = newName.trim()
+    if (meta.name === trimmed) return
+    meta.name = trimmed
+    const port = this.myOutputPorts.find(p => p.id === id)
+    port?.setLabel(trimmed)
+    this.notifyChanged()
+  }
+
+  /** 修改某个输出端口的类型——重建端口（valueClass 变了旧端口不再合法） */
+  setOutputKind(id: string, kind: CodePortKind): void {
+    const meta = this.outputMetas.find(m => m.id === id)
+    if (!meta || meta.kind === kind) return
+    meta.kind = kind
+    this.rebuildOutputPorts()
+    this.notifyChanged()
+  }
+
+  /** 根据 meta 构造一个新的 OutputPort */
+  private buildOutputPort(meta: CodeOutputMeta): OutputPort {
+    const valueClass = KIND_CLASSES[meta.kind] as OutputPortValueClass
+    return new OutputPort(meta.id, valueClass, meta.name)
+  }
+
+  /** 全量重建输出端口：删掉所有旧的、按 outputMetas 重新 build 并 addOutput。顺序严格：先删后加。 */
+  private rebuildOutputPorts(): void {
+    const oldPorts = [...this.myOutputPorts]
+    for (const p of oldPorts) {
+      super.removeOutput(p)
+    }
+    this.myOutputPorts = this.outputMetas.map(m => this.buildOutputPort(m))
+    for (const p of this.myOutputPorts) {
+      super.addOutput(p)
+    }
+  }
+
+  /** 根据输出端口名查找端口实例 */
+  private findOutputPortByName(name: string): { meta: CodeOutputMeta; port: OutputPort } | undefined {
+    for (let i = 0; i < this.outputMetas.length; i++) {
+      const meta = this.outputMetas[i]!
+      if (meta.name === name) {
+        const port = this.myOutputPorts[i]
+        if (port) return { meta, port }
+      }
+    }
+    return undefined
   }
 
   // —— 用户操作 ——
@@ -275,30 +393,29 @@ export class CodeNode extends Node {
     this.notifyChanged()
   }
 
-  /** 切换返回类型：重建输出端口挂上对应的 Value 子类 */
-  setReturnKind(kind: CodeReturnKind): void {
-    if (kind === this.returnKindValue) return
-    this.returnKindValue = kind
-    this.rebuildOutputPort()
-    this.notifyChanged()
-  }
-
   /**
    * 执行当前代码；UI 的「执行」按钮点击时调用。
    *
+   * 架构：preload 侧共享 renderer 内存，callOutputPort 每次触发（无论同步、
+   * Promise.then 还是 setTimeout/setInterval 里的延迟调用）都能即时调 renderer 侧回调，
+   * 立即 commit 对应端口。不再等整个执行"跑完"才一起提交。
+   *
    * 流程：
    * 1. 从所有输入端口取值、解包成原始值/File、组装成 args 对象
-   * 2. 调 window.codeApi.run(body, args)——preload 侧 new Function 执行
-   * 3. 结果按当前返回类型包装成 Value 提交到输出端口，失败则记录错误文本
+   * 2. 构造 onOutput 回调：每次触发 → 查端口 → coerce → commit → 更新结果展示
+   * 3. 同步执行 codeApi.run —— 返回值只表示"函数能不能构造、同步阶段有没有 throw"
+   *    真正的端口 commit 由 onOutput 在任意时刻异步触发
    */
-  async run(): Promise<void> {
+  run(): void {
     const body = this.code.trim()
     if (!body) return
-    // 上一次还没跑完就不重复触发（按钮此时也是禁用的，双保险）
     if (this.status === 'running') return
 
     this.status = 'running'
     this.errorText = ''
+    this.resultText = ''
+    // 执行期内所有 callOutputPort 触发的 commit 摘要暂存区
+    this._runBuffer = []
     this.notifyChanged()
 
     // 组装 args：端口变量名 → 原始值（Value 子类解包；缺值跳过）
@@ -313,11 +430,31 @@ export class CodeNode extends Node {
       }
     }
 
-    let resp: { ok: boolean; value?: number | string | boolean | File; error?: string }
+    // 每次 callOutputPort 触发 → 即时 commit + 更新结果展示
+    const onOutput = (name: string, raw: number | string | boolean | File): void => {
+      const found = this.findOutputPortByName(name)
+      if (!found) {
+        this._runBuffer.push(`⚠ ${name}（端口不存在）`)
+        this._flushRunBuffer()
+        return
+      }
+      try {
+        const v = this.coerce(raw, found.meta.kind)
+        found.port.commit(v)
+        this._runBuffer.push(`${name}=${v.displayLabel}`)
+      } catch (err) {
+        this._runBuffer.push(`⚠ ${name}: ${err instanceof Error ? err.message : String(err)}`)
+      }
+      this._flushRunBuffer()
+    }
+
+    // @ts-ignore — preload Window 扩展在 tsconfig.renderer.json，本文件走 tsconfig.node.json 编译，
+    // 但运行时本文件只在 renderer 里执行，window.codeApi 一定存在
+    const api = window.codeApi
+
+    let resp: ReturnType<typeof api.run>
     try {
-      // @ts-ignore — tsconfig.node.json 编译本文件时不把 preload 的 Window 扩展带进来，
-      // 但运行时本文件只在 renderer 里执行，window.codeApi 一定存在
-      resp = await window.codeApi.run(this.code, args)
+      resp = api.run(this.code, args, onOutput)
     } catch (err) {
       resp = { ok: false, error: err instanceof Error ? err.message : String(err) }
     }
@@ -330,20 +467,24 @@ export class CodeNode extends Node {
       return
     }
 
-    try {
-      // ok:true 时 preload 保证 value 一定存在（要么原始值要么 File）
-      // 但 TS 收窄不够精确，加非空断言；真要出 undefined 下一行会抛给外层 catch
-      const raw = resp.value as Exclude<typeof resp.value, undefined>
-      const value = this.coerce(raw)
-      this.resultOutput?.commit(value)
-      this.lastRawValue = raw
-      this.resultText = value.displayLabel
-      this.errorText = ''
+    // 同步执行正常结束
+    // 如果已经至少收到过一次 callOutputPort（同步阶段触发的），_flushRunBuffer 已经把状态改成 done
+    // 如果还要等异步 callOutputPort，状态保持 running，后续回调会继续更新 resultText
+    if (this._runBuffer.length === 0) {
+      this.resultText = '（执行中，等待 callOutputPort 提交值…）'
+      this.notifyChanged()
+    }
+  }
+
+  /** 一次 run() 执行期内，所有 onOutput 回调的 commit 摘要暂存区。 */
+  private _runBuffer: string[] = []
+
+  /** 把 _runBuffer 刷进 resultText 并刷新 UI；每有一次 callOutputPort 触发就会调一次 */
+  private _flushRunBuffer(): void {
+    if (this._runBuffer.length === 0) return
+    this.resultText = this._runBuffer.join('\n')
+    if (this.status === 'running') {
       this.status = 'done'
-    } catch (err) {
-      this.resultText = ''
-      this.errorText = err instanceof Error ? err.message : String(err)
-      this.status = 'error'
     }
     this.notifyChanged()
   }
@@ -352,20 +493,16 @@ export class CodeNode extends Node {
   inputPortReceiveValue(_ports: InputPort[]): void {
     this.notifyChanged()
     if (this.autoRunEnabled) {
-      setTimeout(()=>{
-        // 异步触发，不阻塞 Node 的端口值分发链路
+      setTimeout(() => {
         void this.run()
       }, 0)
     }
   }
 
-  // —— 内部：值解包 & 端口重建 ——
+  // —— 内部：值解包 & 包装 ——
 
   /**
    * 把 Value 子类解包成 JS 原始值 / File，供用户代码直接使用。
-   * - NumberValue / StringValue / BoolValue → .value
-   * - FileValue（及其子类 ImgFileValue / TxtFileValue）→ .file（浏览器 File 对象）
-   * - 其它未知 Value 子类 → 原封不动（保底）
    */
   private unwrapValue(v: unknown): unknown {
     if (v instanceof NumberValue) return v.value
@@ -375,32 +512,9 @@ export class CodeNode extends Node {
     return v
   }
 
-  /** 保证输出端口的 valueClass 与当前返回类型一致；不一致就拆旧建新 */
-  private rebuildOutputPort(): void {
-    const valueClass = KIND_CLASSES[this.returnKindValue]
-    if (this.resultOutput && this.resultOutput.valueClass === valueClass) return
-
-    if (this.resultOutput) {
-      // removeOutput 会连同下游边一起断掉（有 Scene 时）
-      this.removeOutput(this.resultOutput)
-    }
-    this.resultOutput = new OutputPort('result', valueClass, '结果')
-    this.addOutput(this.resultOutput)
-
-    // 把上次的原始返回值按新类型补一次，让端口持有 currentValue——
-    // 这样之后新连下游时，EdgeBinder.connect 会把已有值立刻补给对方。
-    if (this.lastRawValue !== undefined) {
-      try {
-        this.resultOutput.commit(this.coerce(this.lastRawValue))
-      } catch {
-        // 旧值不适合新类型（如 "abc" 切到 number）→ 忽略，端口留空
-      }
-    }
-  }
-
-  /** 把 preload 回传的原始返回值按当前返回类型包装成 Value */
-  private coerce(raw: number | string | boolean | File): Value {
-    switch (this.returnKindValue) {
+  /** 把 preload 回传的原始返回值按指定端口类型包装成 Value */
+  private coerce(raw: number | string | boolean | File, kind: CodePortKind): Value {
+    switch (kind) {
       case 'number': {
         const n = Number(raw)
         if (!Number.isFinite(n)) {
@@ -412,13 +526,13 @@ export class CodeNode extends Node {
         return new BoolValue(Boolean(raw))
       case 'file': {
         if (!(raw instanceof File)) {
-          throw new Error(`返回值无法转为 File：${typeof raw}（需要 return 一个 File 对象）`)
+          throw new Error(`需要 File 对象，实际收到 ${typeof raw}`)
         }
         return new FileValue(raw, djb2(raw.name))
       }
       case 'imgfile': {
         if (!(raw instanceof File)) {
-          throw new Error(`返回值无法转为图片 File：${typeof raw}（需要 return 一个 File 对象）`)
+          throw new Error(`需要 File 对象（图片），实际收到 ${typeof raw}`)
         }
         return new ImgFileValue(raw, djb2(raw.name))
       }
@@ -433,8 +547,8 @@ export class CodeNode extends Node {
   saveState(): Record<string, unknown> {
     return {
       code: this.code,
-      returnKind: this.returnKindValue,
       inputs: this.inputMetas,
+      outputs: this.outputMetas,
       autoRun: this.autoRunEnabled
     }
   }
@@ -443,23 +557,17 @@ export class CodeNode extends Node {
     if (typeof state.code === 'string') {
       this.code = state.code
     }
-    const kind = state.returnKind
-    if (kind === 'number' || kind === 'string' || kind === 'bool' || kind === 'file' || kind === 'imgfile') {
-      this.returnKindValue = kind
-    }
-    // 按恢复后的类型对齐输出端口
-    this.rebuildOutputPort()
 
-    // 恢复输入端口列表（先清干净再按持久化重建，确保端口 id / 元数据一致）
+    if (typeof state.autoRun === 'boolean') {
+      this.autoRunEnabled = state.autoRun
+    }
+
+    // —— 恢复输入端口 ——
     for (const port of this.myInputPorts) {
       super.removeInput(port)
     }
     this.myInputPorts = []
     this.inputMetas = []
-
-    if (typeof state.autoRun === 'boolean') {
-      this.autoRunEnabled = state.autoRun
-    }
 
     const savedInputs = state.inputs
     if (Array.isArray(savedInputs)) {
@@ -472,12 +580,55 @@ export class CodeNode extends Node {
         ) {
           const meta: CodeInputMeta = { id: obj.id, name: obj.name, kind: obj.kind }
           this.inputMetas.push(meta)
-          const port = CodeNode.buildInputPort(meta)
+          const port = this.buildInputPort(meta)
           this.myInputPorts.push(port)
           super.addInput(port)
         }
       }
     }
+
+    // —— 恢复输出端口 ——
+    for (const port of this.myOutputPorts) {
+      super.removeOutput(port)
+    }
+    this.myOutputPorts = []
+    this.outputMetas = []
+
+    const savedOutputs = state.outputs
+    if (Array.isArray(savedOutputs)) {
+      for (const entry of savedOutputs) {
+        const obj = entry as Record<string, unknown>
+        if (
+          typeof obj.id === 'string' &&
+          typeof obj.name === 'string' &&
+          (obj.kind === 'number' || obj.kind === 'string' || obj.kind === 'bool' || obj.kind === 'file' || obj.kind === 'imgfile')
+        ) {
+          const meta: CodeOutputMeta = { id: obj.id, name: obj.name, kind: obj.kind }
+          this.outputMetas.push(meta)
+          const port = this.buildOutputPort(meta)
+          this.myOutputPorts.push(port)
+          super.addOutput(port)
+        }
+      }
+    }
+
+    // —— 兼容旧版：有 returnKind 但没有 outputs 数组时，创建一个默认输出端口 ——
+    if (this.outputMetas.length === 0) {
+      const returnKind = state.returnKind
+      const kind: CodePortKind = (
+        returnKind === 'number' || returnKind === 'string' || returnKind === 'bool' || returnKind === 'file' || returnKind === 'imgfile'
+      ) ? returnKind : 'number'
+      const meta: CodeOutputMeta = {
+        id: `out-legacy-${Date.now()}`,
+        name: 'result',
+        kind
+      }
+      this.outputMetas.push(meta)
+      const port = this.buildOutputPort(meta)
+      this.myOutputPorts.push(port)
+      super.addOutput(port)
+    }
+
     this.notifyChanged()
   }
 }

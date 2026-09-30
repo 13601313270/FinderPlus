@@ -14,4 +14,10 @@ export interface NodePluginManifest {
   readonly nodeClass: new (id: string) => Node
   /** 该节点的渲染组件 */
   readonly render: Component
+  /**
+   * 帮助文档组件（可选）。
+   * 异步加载函数形式，如 `help: () => import('./CodeHelpDialog.vue')`。
+   * 点击节点上的帮助按钮时会 resolve 这个函数，把默认导出的组件嵌进 HelpDialog 弹窗。
+   */
+  readonly help?: () => Promise<{ default: Component }>
 }

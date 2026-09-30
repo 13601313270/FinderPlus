@@ -17,11 +17,17 @@ import type { NodeMenuItem } from '../../main/engine/node/Node'
 import { connectNotice } from '@renderer/canvas/connectionDrag'
 import LLMSettingsDialog from './components/LLMSettingsDialog.vue'
 import ImageSettingsDialog from './components/ImageSettingsDialog.vue'
+import HelpCenter from './components/HelpCenter.vue'
+import HelpIcon from './components/icons/HelpIcon.vue'
+import { useHelpCenter } from '@renderer/composables/useHelpCenter'
 import { IpcStorage } from '@renderer/composables/IpcStorage'
 import { isSelfDragDrop, clearSelfDragDrop } from '@renderer/composables/useFileDragOut'
 import { getDraggingNode, getDraggingNodeStartPos, clearDraggingNode } from '@renderer/composables/useNodePosition'
 
 // 空白画布：没有预置节点。所有节点都从左上角「＋」调色板添加。
+
+// 全局帮助中心：任何地方调用 openCenter() 都会弹出带节点帮助列表的帮助对话框
+const { openCenter: openHelpCenter } = useHelpCenter()
 
 // —— 节点列表：响应 Scene 结构变化 ——
 // Scene 是普通类容器，Vue 追踪不到它的 Map 变化。通过 sceneTick 手动触发 computed 重算，
@@ -696,10 +702,21 @@ onUnmounted(() => {
 <template>
   <section class="stage">
     <!-- 顶部拖动条：macOS 窗口标题栏已隐藏（titleBarStyle: 'hiddenInset'），
-         这条区域用 -webkit-app-region: drag 让用户能按住它拖动整个软件窗口。
-         注意：drag 区域内放不了按钮（点击会被系统吞掉），所以只用纯文本。 -->
+         左侧大部分区域可拖动窗口，右侧按钮区域故意不设 drag，保持可点击。 -->
     <header class="stage__dragbar">
-      <span class="stage__dragbar-label">CanvasDesk · 拖动此区域移动窗口</span>
+      <!-- drag 只设在这一块（不覆盖按钮），按钮自然可点 -->
+      <span class="stage__dragbar-drag-area">
+        CanvasDesk · 拖动此区域移动窗口
+      </span>
+      <button
+        class="stage__help-btn"
+        type="button"
+        title="帮助中心"
+        @click="openHelpCenter"
+      >
+        <HelpIcon :size="14" />
+        <span>帮助</span>
+      </button>
     </header>
 
     <!-- 节点用 position 绝对定位在世界层内，世界层整体 transform 承载平移 + 缩放 -->
@@ -739,6 +756,9 @@ onUnmounted(() => {
 
     <!-- 图像生成全局设置弹窗：与 LLM 设置相互独立（独立 localStorage 键），文生图节点的齿轮按钮共享它 -->
     <ImageSettingsDialog />
+
+    <!-- 全局帮助中心：列出所有注册了 help 的节点，点击左侧项动态加载帮助组件 -->
+    <HelpCenter />
   </section>
 </template>
 
@@ -749,21 +769,45 @@ onUnmounted(() => {
   height: 100vh;
 
   &__dragbar {
-    // 占住窗口最顶一行作为系统可拖动区域
     height: 30px;
     flex-shrink: 0;
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
+    padding: 0 12px;
     background: #e9edf3;
     user-select: none;
     cursor: default;
+    // drag 属性只设在 drag-area 子元素上，按钮自然不继承
+  }
+
+  &__dragbar-drag-area {
+    flex: 1;
+    text-align: center;
+    color: @color-text-weak;
+    font-size: 12px;
+    // —— 仅这块区域可拖动窗口 ——
     -webkit-app-region: drag;
   }
 
-  &__dragbar-label {
+  &__help-btn {
+    // 父级 dragbar 不再带 drag，不需要 no-drag
+    all: unset;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 9px;
+    border-radius: 5px;
     color: @color-text-weak;
     font-size: 12px;
+    font-weight: 500;
+    transition: background 0.15s ease, color 0.15s ease;
+
+    &:hover {
+      background: rgba(0, 0, 0, 0.08);
+      color: @color-primary;
+    }
   }
 
   &__notice {

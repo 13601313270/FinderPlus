@@ -158,8 +158,8 @@ const fileApi = {
    * 把内存 buffer（base64）写入画布目录。
    * 给 ImagePreviewNode 等场景用：端口拿到内存中的 File 对象，需要落盘后才能 startDrag 或生成文件节点。
    */
-  writeBuffer: (fileName: string, base64: string): Promise<{ fileName: string; size: number }> =>
-    ipcRenderer.invoke('file:writeBuffer', { fileName, base64 }),
+  writeBuffer: (fileName: string, base64: string, overwrite?: boolean): Promise<{ fileName: string; size: number }> =>
+    ipcRenderer.invoke('file:writeBuffer', { fileName, base64, overwrite }),
 
   /** 读取画布目录下指定文件的文本内容（给文本类文件节点用） */
   readText: (fileName: string): Promise<string> => ipcRenderer.invoke('file:readText', fileName),

@@ -223,10 +223,13 @@ function registerIpcHandlers(): void {
   ipcMain.handle('file:writeBuffer', (_e, args: {
     fileName: string
     base64: string
+    overwrite?: boolean
   }): { fileName: string; size: number } => {
     const canvasDir = getCanvasDir()
     ensureCanvasDir()
-    const targetName = resolveNonCollidingName(canvasDir, args.fileName)
+    const targetName = args.overwrite
+      ? args.fileName
+      : resolveNonCollidingName(canvasDir, args.fileName)
     const targetPath = join(canvasDir, targetName)
     const buffer = Buffer.from(args.base64, 'base64')
     writeFileSync(targetPath, buffer)

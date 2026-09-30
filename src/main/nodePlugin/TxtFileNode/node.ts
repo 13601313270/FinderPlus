@@ -1,3 +1,4 @@
+import { bytesToBase64 } from '../../engine/data/base64'
 import { djb2 } from '../../engine/data/hash'
 import { TxtFileValue } from '../../engine/data/TxtFileValue'
 import { StringValue } from '../../engine/data/StringValue'
@@ -31,6 +32,9 @@ export class TxtFileNode extends FileNode {
   /** 文件数据输入端口：只接受同类型（txt）文件，收到值即替换本节点文件 */
   readonly fileInput = new InputPort('file-in', { accepts: [TxtFileValue], label: '文件' })
 
+  /** 文本内容输入端口：接收字符串，写入节点内容并同步到磁盘文件 */
+  readonly contentInput = new InputPort('content-in', { accepts: [StringValue], label: '内容' })
+
   /** 当前文本内容；空节点初始化为空串 */
   private contentValue = ''
 
@@ -41,8 +45,44 @@ export class TxtFileNode extends FileNode {
     // 基类共用的路径端口（文件绝对路径），挂在末尾
     this.addOutput(this.pathOutput)
     this.bindFileInput(this.fileInput)
+    this.addInput(this.contentInput)
     // 内容区硬约束：文件图标 72px + 文件名行 + padding ≈ 122px 高，宽 180px
     this.setBox(180, 122)
+  }
+
+  /**
+   * 输入端口收到值的统一入口。
+   * FileNode 基类处理 fileInput（替换文件），这里新增 contentInput（写入文本内容）。
+   */
+  override inputPortReceiveValue(ports: InputPort[]): void {
+    // 基类逻辑：fileInput 收到文件 → 替换
+    super.inputPortReceiveValue(ports)
+
+    // 新增逻辑：contentInput 收到字符串 → 更新内容并落盘
+    if (ports.includes(this.contentInput)) {
+      const [value] = this.contentInput.value
+      if (value instanceof StringValue) {
+        void this.applyContent(value.value)
+      }
+    }
+  }
+
+  /**
+   * 把字符串写入节点内容，并在有 fileName 时同步落盘。
+   */
+  private async applyContent(text: string): Promise<void> {
+    this.setContent(text)
+    if (!this.fileName) return
+    try {
+      // @ts-ignore — 只在 renderer 里执行，window.fileApi 一定存在
+      const base64 = bytesToBase64(new TextEncoder().encode(text))
+      // @ts-ignore
+      const result = await window.fileApi.writeBuffer(this.fileName, base64, true)
+      this.fileSizeValue = result.size
+      this.notifyChanged()
+    } catch (err) {
+      console.warn('[TxtFileNode] 写入磁盘文件失败：', this.fileName, err)
+    }
   }
 
   /** 文件被输入端口替换后：重读新文件内容并 commit 端口 */

@@ -44,7 +44,19 @@ type OutputPortValueClass = ConstructorParameters<typeof OutputPort>[1]
 /** 执行状态：UI 据此决定按钮可点 / 结果区样式 */
 export type CodeStatus = 'idle' | 'running' | 'done' | 'error'
 
-const NODE_HEIGHT = 540
+/** 折叠时的最小高度：header(36) + 配置按钮(28) + 结果区 + actions + padding ≈ 140 */
+const COLLAPSED_BASE_HEIGHT = 181
+/** 折叠时每个端口约占 24px 的最小高度（端口节点 + 竖向间距） */
+const PER_PORT_HEIGHT = 24
+
+/** box 固定宽度（永远折叠） */
+const NODE_WIDTH = 360
+
+/** box 高度：max(base, 端口最小高度) —— 端口多时 box 自动撑高让 NodePorts 不挤 */
+function computeBoxHeight(inputCount: number, outputCount: number): number {
+  const portsHeight = (inputCount + outputCount) * PER_PORT_HEIGHT + 16 // +16 给 ports-col 上下一点 padding
+  return Math.max(COLLAPSED_BASE_HEIGHT, portsHeight)
+}
 
 /** 输入端口的持久化元数据 */
 export interface CodeInputMeta {
@@ -103,12 +115,15 @@ export class CodeNode extends Node {
   /** 自动执行开关（持久化）：打开后每次输入端口收到值都会自动跑一次 run() */
   private autoRunEnabled = false
 
+  /** 折叠状态（持久化）：true 时只保留 header + node__actions，其余收起 */
+  private collapsed = false
+
   constructor(id: string) {
     super(id)
     // 默认给一个输出端口 "result"，方便第一次使用（也兼容旧版直接 return 的写法）
     this.addDefaultOutputPort()
-    // 内容区硬约束：手柄 + 输入端口列表 + 输出端口列表 + 代码编辑区 + 结果区 + 执行按钮
-    this.setBox(360, NODE_HEIGHT)
+    // box 永远按折叠态高度：根据端口数量动态计算
+    this.setBox(NODE_WIDTH, computeBoxHeight(0, 1))
   }
 
   /** 构造时添加默认输出端口 "result"（number 类型） */
@@ -171,6 +186,11 @@ export class CodeNode extends Node {
     if (this.autoRunEnabled === enabled) return
     this.autoRunEnabled = enabled
     this.notifyChanged()
+  }
+
+  /** 内部：端口增删后 box 高度跟着更新（永远按折叠态算） */
+  private updateBoxHeight(): void {
+    this.setBox(NODE_WIDTH, computeBoxHeight(this.inputMetas.length, this.outputMetas.length))
   }
 
   // —— 静态工具：合法 JS 标识符校验（输入端口变量名和输出端口名共用） ——
@@ -236,6 +256,7 @@ export class CodeNode extends Node {
     const port = this.buildInputPort(meta)
     this.myInputPorts.push(port)
     super.addInput(port)
+    this.updateBoxHeight()
     this.notifyChanged()
     return meta
   }
@@ -247,6 +268,7 @@ export class CodeNode extends Node {
     this.inputMetas.splice(idx, 1)
     const port = this.myInputPorts.splice(idx, 1)[0]
     if (port) super.removeInput(port)
+    this.updateBoxHeight()
     this.notifyChanged()
   }
 
@@ -316,6 +338,7 @@ export class CodeNode extends Node {
     const port = this.buildOutputPort(meta)
     this.myOutputPorts.push(port)
     super.addOutput(port)
+    this.updateBoxHeight()
     this.notifyChanged()
     return meta
   }
@@ -328,6 +351,7 @@ export class CodeNode extends Node {
     this.outputMetas.splice(idx, 1)
     const port = this.myOutputPorts.splice(idx, 1)[0]
     if (port) super.removeOutput(port)
+    this.updateBoxHeight()
     this.notifyChanged()
   }
 
@@ -454,7 +478,15 @@ export class CodeNode extends Node {
 
     let resp: ReturnType<typeof api.run>
     try {
-      resp = api.run(this.code, args, onOutput)
+      resp = api.run(this.code, args, onOutput, (msg: string) => {
+        // async 函数里 throw / Promise reject → preload 侧 catch 到后回调这里
+        // 可能跟 _flushRunBuffer 竞争：如果已经有 callOutputPort 提交过值，status 可能是 done
+        // 覆盖 resultText 成错误信息，并确保 status = error
+        this.resultText = ''
+        this.errorText = msg
+        this.status = 'error'
+        this.notifyChanged()
+      })
     } catch (err) {
       resp = { ok: false, error: err instanceof Error ? err.message : String(err) }
     }
@@ -549,7 +581,8 @@ export class CodeNode extends Node {
       code: this.code,
       inputs: this.inputMetas,
       outputs: this.outputMetas,
-      autoRun: this.autoRunEnabled
+      autoRun: this.autoRunEnabled,
+      collapsed: this.collapsed
     }
   }
 
@@ -560,6 +593,10 @@ export class CodeNode extends Node {
 
     if (typeof state.autoRun === 'boolean') {
       this.autoRunEnabled = state.autoRun
+    }
+
+    if (typeof state.collapsed === 'boolean') {
+      this.collapsed = state.collapsed
     }
 
     // —— 恢复输入端口 ——
@@ -628,6 +665,9 @@ export class CodeNode extends Node {
       this.myOutputPorts.push(port)
       super.addOutput(port)
     }
+
+    // —— 最后：端口都恢复完了，根据端口数量设 box 高度（永远按折叠态算） ——
+    this.setBox(NODE_WIDTH, computeBoxHeight(this.inputMetas.length, this.outputMetas.length))
 
     this.notifyChanged()
   }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted } from 'vue'
+import { computed, onMounted, onUnmounted } from 'vue'
 
 /**
  * 通用帮助弹窗壳：
@@ -15,9 +15,16 @@ import { onMounted, onUnmounted } from 'vue'
 const props = defineProps<{
   visible: boolean
   title?: string
+  /** 弹窗宽度，默认 560px。传数字按 px，传字符串原样用（如 '80vw'） */
+  width?: number | string
 }>()
 
 const emit = defineEmits<{ close: [] }>()
+
+const dialogStyle = computed(() => {
+  if (props.width === undefined) return {}
+  return { width: typeof props.width === 'number' ? `${props.width}px` : props.width }
+})
 
 function onMaskClick(): void {
   emit('close')
@@ -43,7 +50,7 @@ onUnmounted(() => {
 <template>
   <Teleport to="body">
     <div v-if="visible" class="help-mask" @click="onMaskClick">
-      <div class="help-dialog" @click="onDialogClick">
+      <div class="help-dialog" :style="dialogStyle" @click="onDialogClick">
         <div class="help-dialog__header">
           <h3 class="help-dialog__title">{{ title ?? '使用说明' }}</h3>
           <button

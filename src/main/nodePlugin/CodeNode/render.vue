@@ -31,6 +31,8 @@ const inputNameErrors = ref<Record<string, string>>({})
 const outputNameErrors = ref<Record<string, string>>({})
 // 帮助浮层开关（状态保留在 render.vue，HelpDialog 组件负责弹窗壳）
 const showHelp = ref(false)
+// 配置弹窗开关（输入端口 + 输出端口 + 代码编辑）
+const showConfig = ref(false)
 // 复制按钮的瞬时反馈：哪个刚复制了就短暂显示"已复制"
 const copyHint = ref<string>('')
 
@@ -44,8 +46,10 @@ function syncFromNode(node: CodeNode): void {
   resultText.value = node.displayResult
   errorText.value = node.displayError
   status.value = node.displayStatus
-  inputs.value = node.displayInputs
-  outputs.value = node.displayOutputs
+  // 浅拷贝一份，不然 displayInputs/displayOutputs 返回的是 node 内部同一个数组引用，
+  // add/remove 时 Vue 检测不到 value 变化（引用相同不会触发更新）
+  inputs.value = [...node.displayInputs]
+  outputs.value = [...node.displayOutputs]
   autoRun.value = node.displayAutoRun
 }
 
@@ -201,181 +205,16 @@ function onCopyCallOutputPort(): void {
       </div>
     </div>
 
-    <!-- 输入端口管理区 -->
-    <div class="inputs">
-      <div class="inputs__header">
-        <span class="inputs__title">输入</span>
-        <button
-          class="inputs__add"
-          type="button"
-          :disabled="!codeNode"
-          title="添加一个输入端口"
-          @click="onAddInput"
-        >
-          +
-        </button>
-      </div>
-      <div v-if="!hasInputs" class="inputs__empty">
-        点击 + 添加输入端口
-      </div>
-      <div v-else class="inputs__list">
-        <div
-          v-for="input in inputs"
-          :key="input.id"
-          class="inputs__row"
-          :class="{ 'inputs__row--error': inputNameErrors[input.id] }"
-        >
-          <div class="code-row inputs__subrow">
-            <span class="code-row__label">类型</span>
-            <select
-              class="code-select"
-              :value="input.kind"
-              :disabled="!codeNode"
-              title="选择此输入接受的 Value 类型"
-              @change="(e) => onInputKindChange(input.id, e)"
-            >
-              <option value="number">number</option>
-              <option value="string">string</option>
-              <option value="bool">bool</option>
-              <option value="file">file</option>
-            </select>
-          </div>
-          <div class="code-row inputs__subrow">
-            <span class="code-row__label">变量名</span>
-            <input
-              class="code-input"
-              type="text"
-              :value="input.name"
-              :disabled="!codeNode"
-              maxlength="32"
-              @input="(e) => onInputNameChange(input.id, e)"
-            />
-          </div>
-          <button
-            class="inputs__remove"
-            type="button"
-            :disabled="!codeNode"
-            title="删除此输入端口"
-            @click="onRemoveInput(input.id)"
-          >
-            ×
-          </button>
-          <span v-if="inputNameErrors[input.id]" class="inputs__errmsg">{{ inputNameErrors[input.id] }}</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- 输出端口管理区 -->
-    <div class="inputs">
-      <div class="inputs__header">
-        <span class="inputs__title">输出</span>
-        <button
-          class="inputs__add"
-          type="button"
-          :disabled="!codeNode"
-          title="添加一个输出端口"
-          @click="onAddOutput"
-        >
-          +
-        </button>
-      </div>
-      <div v-if="!hasOutputs" class="inputs__empty">
-        至少保留一个输出端口
-      </div>
-      <div v-else class="inputs__list">
-        <div
-          v-for="output in outputs"
-          :key="output.id"
-          class="inputs__row"
-          :class="{ 'inputs__row--error': outputNameErrors[output.id] }"
-        >
-          <div class="code-row inputs__subrow">
-            <span class="code-row__label">类型</span>
-            <select
-              class="code-select"
-              :value="output.kind"
-              :disabled="!codeNode"
-              title="选择此输出产出的 Value 类型"
-              @change="(e) => onOutputKindChange(output.id, e)"
-            >
-              <option value="number">number</option>
-              <option value="string">string</option>
-              <option value="bool">bool</option>
-              <option value="file">file</option>
-              <option value="imgfile">img file</option>
-            </select>
-          </div>
-          <div class="code-row inputs__subrow">
-            <span class="code-row__label">端口名</span>
-            <input
-              class="code-input"
-              type="text"
-              :value="output.name"
-              :disabled="!codeNode"
-              maxlength="32"
-              @input="(e) => onOutputNameChange(output.id, e)"
-            />
-          </div>
-          <button
-            class="inputs__remove"
-            type="button"
-            :disabled="!codeNode || outputs.length <= 1"
-            title="删除此输出端口（至少保留一个）"
-            @click="onRemoveOutput(output.id)"
-          >
-            ×
-          </button>
-          <span v-if="outputNameErrors[output.id]" class="inputs__errmsg">{{ outputNameErrors[output.id] }}</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- 用法提示：callOutputPort 语法 + 当前可用端口名 -->
-    <div class="code-hint">
-      <div class="code-hint__line">
-        <span class="code-hint__line-content">
-          <span class="code-hint__key">callOutputPort</span>
-          <span class="code-hint__paren">(</span>
-          <span class="code-hint__str">"端口名"</span>
-          <span class="code-hint__comma">,</span>
-          <span class="code-hint__ident">值</span>
-          <span class="code-hint__paren">)</span>
-        </span>
-        <button
-          class="code-hint__copy"
-          type="button"
-          title="复制函数签名"
-          @click="onCopyCallOutputPort"
-        >
-          <span class="code-hint__copy-icon">📋</span>
-          <span v-if="copyHint === 'callOutputPort'" class="code-hint__copy-tip">已复制</span>
-        </button>
-      </div>
-      <div v-if="hasOutputs" class="code-hint__ports">
-        <span class="code-hint__ports-label">可用端口：</span>
-        <span
-          v-for="o in outputs"
-          :key="o.id"
-          class="code-hint__port-tag"
-          :title="`类型: ${o.kind}`"
-        >{{ o.name }}<span class="code-hint__port-kind">:{{ o.kind }}</span></span>
-      </div>
-    </div>
-
-    <!-- 代码编辑区：只写函数体，用 callOutputPort 提交值；兼容 return -->
-    <textarea
-      class="code-editor"
-      spellcheck="false"
-      :value="code"
+    <!-- 配置入口按钮：点击打开「配置函数」弹窗（含端口配置 + 代码编辑） -->
+    <button
+      class="node__config-btn"
+      type="button"
       :disabled="!codeNode"
-      :placeholder="hasInputs
-        ? '写函数体，通过 callOutputPort(\'端口名\', 值) 提交。\n直接用上方输入的变量名访问，例如：\ncallOutputPort(\'result\', price * qty)\n\nsetTimeout / Promise.then 里的延迟调用也能正常触发'
-        : '写函数体，通过 callOutputPort(\'端口名\', 值) 提交，例如：\ncallOutputPort(\'result\', [1,2,3].reduce((a,b)=>a+b,0))\n\nsetTimeout / Promise.then 里的延迟调用也能正常触发'"
-      @wheel="onEditorWheel"
-      @input="onCodeInput"
-    />
+      title="配置端口与代码"
+      @click.stop="showConfig = true"
+    >配置函数</button>
 
-    <!-- 结果区 -->
+    <!-- 结果区（常驻画布） -->
     <div
       class="code-output"
       :class="{
@@ -418,8 +257,175 @@ function onCopyCallOutputPort(): void {
     </div>
   </div>
 
+  <!-- 帮助弹窗 -->
   <HelpDialog :visible="showHelp" title="代码节点使用说明" @close="showHelp = false">
     <CodeHelpDialog />
+  </HelpDialog>
+
+  <!-- 配置弹窗：输入端口 + 输出端口 + 用法提示 + 代码编辑 -->
+  <HelpDialog :visible="showConfig" title="配置函数" width="680" @close="showConfig = false">
+
+    <!-- 输入端口管理区 -->
+    <div class="inputs">
+      <div class="inputs__header">
+        <span class="inputs__title">输入端口</span>
+        <button
+          class="inputs__add"
+          type="button"
+          :disabled="!codeNode"
+          title="添加一个输入端口"
+          @click="onAddInput"
+        >+</button>
+      </div>
+      <div v-if="!hasInputs" class="inputs__empty">点击 + 添加输入端口</div>
+      <div v-else class="inputs__list">
+        <div
+          v-for="input in inputs"
+          :key="input.id"
+          class="inputs__row"
+          :class="{ 'inputs__row--error': inputNameErrors[input.id] }"
+        >
+          <div class="code-row inputs__subrow">
+            <span class="code-row__label">类型</span>
+            <select
+              class="code-select"
+              :value="input.kind"
+              :disabled="!codeNode"
+              title="选择此输入接受的 Value 类型"
+              @change="(e) => onInputKindChange(input.id, e)"
+            >
+              <option value="number">number</option>
+              <option value="string">string</option>
+              <option value="bool">bool</option>
+              <option value="file">file</option>
+            </select>
+          </div>
+          <div class="code-row inputs__subrow">
+            <span class="code-row__label">变量名</span>
+            <input
+              class="code-input"
+              type="text"
+              :value="input.name"
+              :disabled="!codeNode"
+              maxlength="32"
+              @input="(e) => onInputNameChange(input.id, e)"
+            />
+          </div>
+          <button
+            class="inputs__remove"
+            type="button"
+            :disabled="!codeNode"
+            title="删除此输入端口"
+            @click="onRemoveInput(input.id)"
+          >×</button>
+          <span v-if="inputNameErrors[input.id]" class="inputs__errmsg">{{ inputNameErrors[input.id] }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 输出端口管理区 -->
+    <div class="inputs">
+      <div class="inputs__header">
+        <span class="inputs__title">输出端口</span>
+        <button
+          class="inputs__add"
+          type="button"
+          :disabled="!codeNode"
+          title="添加一个输出端口"
+          @click="onAddOutput"
+        >+</button>
+      </div>
+      <div v-if="!hasOutputs" class="inputs__empty">至少保留一个输出端口</div>
+      <div v-else class="inputs__list">
+        <div
+          v-for="output in outputs"
+          :key="output.id"
+          class="inputs__row"
+          :class="{ 'inputs__row--error': outputNameErrors[output.id] }"
+        >
+          <div class="code-row inputs__subrow">
+            <span class="code-row__label">类型</span>
+            <select
+              class="code-select"
+              :value="output.kind"
+              :disabled="!codeNode"
+              title="选择此输出产出的 Value 类型"
+              @change="(e) => onOutputKindChange(output.id, e)"
+            >
+              <option value="number">number</option>
+              <option value="string">string</option>
+              <option value="bool">bool</option>
+              <option value="file">file</option>
+              <option value="imgfile">img file</option>
+            </select>
+          </div>
+          <div class="code-row inputs__subrow">
+            <span class="code-row__label">端口名</span>
+            <input
+              class="code-input"
+              type="text"
+              :value="output.name"
+              :disabled="!codeNode"
+              maxlength="32"
+              @input="(e) => onOutputNameChange(output.id, e)"
+            />
+          </div>
+          <button
+            class="inputs__remove"
+            type="button"
+            :disabled="!codeNode || outputs.length <= 1"
+            title="删除此输出端口（至少保留一个）"
+            @click="onRemoveOutput(output.id)"
+          >×</button>
+          <span v-if="outputNameErrors[output.id]" class="inputs__errmsg">{{ outputNameErrors[output.id] }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 用法提示 -->
+    <div class="code-hint">
+      <div class="code-hint__line">
+        <span class="code-hint__line-content">
+          <span class="code-hint__key">callOutputPort</span>
+          <span class="code-hint__paren">(</span>
+          <span class="code-hint__str">"端口名"</span>
+          <span class="code-hint__comma">,</span>
+          <span class="code-hint__ident">值</span>
+          <span class="code-hint__paren">)</span>
+        </span>
+        <button
+          class="code-hint__copy"
+          type="button"
+          title="复制函数签名"
+          @click="onCopyCallOutputPort"
+        >
+          <span class="code-hint__copy-icon">📋</span>
+          <span v-if="copyHint === 'callOutputPort'" class="code-hint__copy-tip">已复制</span>
+        </button>
+      </div>
+      <div v-if="hasOutputs" class="code-hint__ports">
+        <span class="code-hint__ports-label">可用端口：</span>
+        <span
+          v-for="o in outputs"
+          :key="o.id"
+          class="code-hint__port-tag"
+          :title="`类型: ${o.kind}`"
+        >{{ o.name }}<span class="code-hint__port-kind">:{{ o.kind }}</span></span>
+      </div>
+    </div>
+
+    <!-- 代码编辑区 -->
+    <textarea
+      class="code-editor"
+      spellcheck="false"
+      :value="code"
+      :disabled="!codeNode"
+      :placeholder="hasInputs
+        ? '写函数体，通过 callOutputPort(\'端口名\', 值) 提交。\n直接用上方输入的变量名访问，例如：\ncallOutputPort(\'result\', price * qty)\n\nsetTimeout / Promise.then 里的延迟调用也能正常触发'
+        : '写函数体，通过 callOutputPort(\'端口名\', 值) 提交，例如：\ncallOutputPort(\'result\', [1,2,3].reduce((a,b)=>a+b,0))\n\nsetTimeout / Promise.then 里的延迟调用也能正常触发'"
+      @wheel="onEditorWheel"
+      @input="onCodeInput"
+    />
   </HelpDialog>
 </template>
 
@@ -512,6 +518,34 @@ function onCopyCallOutputPort(): void {
     &:hover {
       background: #dbeafe;
       color: #2563eb;
+    }
+  }
+
+  &__config-btn {
+    all: unset;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 28px;
+    border-radius: 5px;
+    background: #f0f4ff;
+    border: 1px dashed #93c5fd;
+    color: #3b82f6;
+    font-size: 12px;
+    font-weight: 500;
+    transition: background 0.15s, border-color 0.15s;
+    box-sizing: border-box;
+
+    &:hover:not(:disabled) {
+      background: #dbeafe;
+      border-color: #60a5fa;
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
     }
   }
 

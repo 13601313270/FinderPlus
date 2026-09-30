@@ -59,6 +59,7 @@ const ports = computed<readonly PortLike[]>(() => portList.value)
     v-for="port in ports"
     :key="port.id"
     :node-id="nodeId"
+    :label="port.label ?? port.id"
     :port="port"
     :side="side"
   />

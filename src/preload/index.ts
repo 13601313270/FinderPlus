@@ -87,7 +87,9 @@ const codeApi = {
     body: string,
     args: Record<string, unknown> | undefined,
     /** 每次 callOutputPort 触发时，即时回调 renderer 侧 commit 端口 */
-    onOutput: (name: string, value: number | string | boolean | File) => void
+    onOutput: (name: string, value: number | string | boolean | File) => void,
+    /** async 函数 reject 时回调（同步 throw 走返回值，不走这个） */
+    onError?: (error: string) => void
   ): { ok: true } | { ok: false; error: string } => {
     type SyncRunResult = { ok: true } | { ok: false; error: string }
 
@@ -117,13 +119,12 @@ const codeApi = {
       const fn = new AsyncFunction(...names, 'callOutputPort', `"use strict";\n${body}`) as (...args: unknown[]) => unknown
       const result = fn(...values, callOutputPort)
 
-      // 函数本身执行时抛同步错误 → 捕获
-      // 返回 Promise 是用户的选择：engine 不再等待，onOutput 在 Promise resolve 时也会继续触发
-      // fire-and-forget（setTimeout/setInterval）里的 callOutputPort 依赖 JS 事件循环，正常工作
+      // 函数本身执行时抛同步错误 → 被下面外层 catch 捕获
+      // 返回 Promise：fire-and-forget，但 reject 要通知 renderer
       if (result instanceof Promise) {
-        result.catch(() => {
-          // 用户代码里 Promise reject 了，我们不再主动通知 renderer
-          // —— 这和当前设计一致：只在函数本身同步抛错时返回 error
+        result.catch((err) => {
+          const msg = err instanceof Error ? err.message : String(err)
+          onError?.(msg)
         })
       }
 

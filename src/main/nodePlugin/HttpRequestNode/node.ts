@@ -75,13 +75,19 @@ export class HttpRequestNode extends Node {
   private lastBody = ''
   private lastError = ''
 
+  /** 折叠状态（持久化）：true 时 render.vue 动态缩小 box 高度 */
+  private collapsed = false
+
+  /** 正常展开时 box 尺寸（构造默认值；实际高度由 render.vue 动态测量） */
+  private static readonly EXPANDED_BOX: [number, number] = [360, 420]
+
   constructor(id: string) {
     super(id)
     this.addOutput(this.textOutput)
     // 默认给一个输入端口，方便直接开用
     this.addInputPort()
     // 内容区硬约束：手柄 + 方法/URL + headers/body + 端口控制 + 发送按钮 + 结果
-    this.setBox(360, 420)
+    this.setBox(...HttpRequestNode.EXPANDED_BOX)
   }
 
   /** 拖入文件落点命中本节点时被调用；本节点不接收文件，返回 false */
@@ -158,6 +164,18 @@ export class HttpRequestNode extends Node {
   /** 当前方法是否支持 body（GET/HEAD 不带 body） */
   get methodAllowsBody(): boolean {
     return this.method !== 'GET' && this.method !== 'HEAD'
+  }
+
+  /** 渲染层读折叠状态（true = 折叠中） */
+  get displayCollapsed(): boolean {
+    return this.collapsed
+  }
+
+  /** 切换折叠；渲染层 watch 到 expanded 变化后会自行测量 scrollHeight 调 setBox */
+  setCollapsed(collapsed: boolean): void {
+    if (this.collapsed === collapsed) return
+    this.collapsed = collapsed
+    this.notifyChanged()
   }
 
   // —— 用户操作 ——
@@ -362,6 +380,7 @@ export class HttpRequestNode extends Node {
       headers: this.headers,
       bodyText: this.bodyText,
       timeoutMs: this.timeoutMs,
+      collapsed: this.collapsed,
       // 端口数量：恢复时按此重建端口，边才能重新接上
       inputCount: this.inputPorts.length
     }
@@ -373,6 +392,14 @@ export class HttpRequestNode extends Node {
     }
     if (typeof state.urlTemplate === 'string') {
       this.urlTemplate = state.urlTemplate
+    }
+    if (typeof state.collapsed === 'boolean') {
+      this.collapsed = state.collapsed
+      // 冷启动先给一个合理的 box 高度（跟 render.vue COLLAPSED_MIN 对齐），
+      // render.vue adjustBoxHeight 上来后会再用 scrollHeight 精调
+      if (this.collapsed) {
+        this.setBox(HttpRequestNode.EXPANDED_BOX[0], 150)
+      }
     }
     // 新格式：headers 是 KV 数组
     if (Array.isArray(state.headers)) {

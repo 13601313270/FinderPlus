@@ -13,6 +13,7 @@ const props = defineProps<{
   nodeId: string
   port: PortLike
   side: PortSide
+  label: string
 }>()
 
 const isIn = props.side === 'in'

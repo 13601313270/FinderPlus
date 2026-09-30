@@ -3,6 +3,7 @@ import { computed, nextTick, onMounted, onUnmounted, ref, shallowRef, watch } fr
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { HttpRequestNode, type HttpMethod, type HeaderEntry } from './node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
+import ChevronIcon from '@renderer/components/icons/ChevronIcon.vue'
 
 /**
  * HTTP 请求节点的渲染组件。
@@ -30,7 +31,7 @@ const lastStatus = ref(0)
 const lastBody = ref('')
 const lastError = ref('')
 
-/** 展开/折叠 toggle（本地 UI 状态，不进节点持久化） */
+/** 展开/折叠：跟 node.collapsed 语义相反（node.collapsed=true = 折叠中 = UI expanded=false） */
 const expanded = ref(false)
 
 let unsubscribe: (() => void) | undefined
@@ -50,6 +51,8 @@ function syncFromNode(node: HttpRequestNode): void {
   lastStatus.value = node.displayLastStatus
   lastBody.value = node.displayLastBody
   lastError.value = node.displayLastError
+  // node.collapsed 语义：true = 折叠中 → UI expanded=false
+  expanded.value = !node.displayCollapsed
 }
 
 const running = computed(() => status.value === 'running')
@@ -92,7 +95,10 @@ function onTimeoutInput(e: Event): void {
 function onAddPort(): void { httpNode.value?.addInputPort() }
 function onRemovePort(): void { httpNode.value?.removeLastInputPort() }
 function onSend(): void { httpNode.value?.run() }
-function toggleExpand(): void { expanded.value = !expanded.value }
+function toggleExpand(): void {
+  // expanded=true → 点击后要折叠 → node.collapsed=true
+  httpNode.value?.setCollapsed(expanded.value)
+}
 
 // —— 动态高度 ——
 const rootEl = ref<HTMLDivElement | null>(null)
@@ -184,7 +190,8 @@ onUnmounted(() => { unsubscribe?.() })
         @pointerdown.stop
         @click.stop="toggleExpand"
       >
-        <span class="node__toggle-ico" :class="{ 'node__toggle-ico--open': expanded }">▾</span>
+        <!-- expanded=false(折叠)时指向下=展开按钮；expanded=true(展开)时指向上=收起按钮 -->
+        <ChevronIcon :direction="expanded ? 'up' : 'down'" :size="12" />
         <span class="node__toggle-text">{{ expanded ? '收起' : '展开' }}</span>
       </button>
     </div>
@@ -409,14 +416,6 @@ onUnmounted(() => { unsubscribe?.() })
       color: #111827;
       background: #f3f4f6;
     }
-  }
-
-  &__toggle-ico {
-    display: inline-block;
-    font-size: 10px;
-    transition: transform 0.2s;
-
-    &--open { transform: rotate(180deg); }
   }
 
   &__toggle-text { line-height: 1; }

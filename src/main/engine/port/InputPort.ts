@@ -36,7 +36,9 @@ export class InputPort {
   /** 所属节点，由 Node 登记端口时注入；没人认领时，通知就没人接 */
   private owner: Node | undefined
 
-  /** 边绑定/解绑事件的订阅者集合。外部通过 onEdgeBinding 订阅，返回的解绑函数成对使用 */
+  /**
+   * 边绑定/解绑事件的订阅者集合。外部通过 onEdgeBinding 订阅，返回的解绑函数成对使用
+   */
   private readonly bindingListeners = new Set<EdgeBindingListener>()
 
   /**
@@ -48,10 +50,20 @@ export class InputPort {
    */
   readonly incoming = new Map<Edge, Value | undefined>()
 
+  /** 端口标签（可运行时修改，NodeShell 画布上的端口名显示用它） */
+  private labelValue: string
+
   constructor(
     readonly id: string,
     private readonly options: InputPortOptions
-  ) { }
+  ) {
+    this.labelValue = options.label ?? id
+  }
+
+  /** 运行时修改端口标签；NodeShell 画布上显示的端口名会跟着变 */
+  setLabel(name: string): void {
+    this.labelValue = name
+  }
 
   /** 接受的类型标签名列表（从 Value 子类的静态 VALUE_NAME 提取，供 UI 展示） */
   get acceptValueNames(): readonly string[] {
@@ -81,7 +93,7 @@ export class InputPort {
   }
 
   get label(): string {
-    return this.options.label ?? this.id
+    return this.labelValue
   }
 
   /** 多值端口取值：无序集合，只含上游算出来有值的那些。私有，外部应读 effectiveValue */

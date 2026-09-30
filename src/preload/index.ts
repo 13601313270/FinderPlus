@@ -58,14 +58,61 @@ const commandApi = {
 }
 
 /**
- * 代码节点 API：把用户写的 JS 函数体交给主进程执行并回收结果。
- * 渲染进程 CSP 禁止 eval，所以执行只能在主进程做（同 commandApi 的思路）。
+ * 代码节点 API：把用户写的 JS 函数体在 preload 侧执行并回收结果。
+ *
+ * 为什么 preload 而不是主进程：
+ * - preload 是 Node 环境，new Function 不受 renderer CSP 限制
+ * - preload 和 renderer 共享进程内存，File 对象直接引用传递，无需 IPC 序列化
+ * - 用户代码可以同时用 Node API（process、Buffer 等）和 Web API（fetch、File 等）
+ *
+ * args 参数以 { [portName]: value } 形式传入，构造函数时 key 作为参数名注入，
+ * 所以 body 里可以直接用端口名作为变量。例如 args={ price: 10, qty: 2 }
+ * → new Function('price', 'qty', body)(10, 2) → body 里直接 return price * qty
  */
 const codeApi = {
   run: (
-    body: string
-  ): Promise<{ ok: true; value: number | string | boolean } | { ok: false; error: string }> =>
-    ipcRenderer.invoke('code:run', body)
+    body: string,
+    args?: Record<string, unknown>
+  ): Promise<
+    { ok: true; value: number | string | boolean | File } | { ok: false; error: string }
+  > => {
+    type CodeRunResult =
+      | { ok: true; value: number | string | boolean | File }
+      | { ok: false; error: string }
+    try {
+      const names = args ? Object.keys(args) : []
+      const values = args ? Object.values(args) : []
+      const fn = new Function(...names, `"use strict";\n${body}`) as (...args: unknown[]) => unknown
+      const result = fn(...values)
+      // 支持返回 Promise（用户可能写 async IIFE 或直接 return fetch(...)）
+      return Promise.resolve(result).then((): CodeRunResult => {
+        const t = typeof result
+        if (t === 'number' || t === 'string' || t === 'boolean') {
+          return { ok: true, value: result as number | string | boolean }
+        }
+        if (result instanceof File) {
+          return { ok: true, value: result }
+        }
+        if (result === undefined) {
+          return { ok: false, error: '函数没有返回值，请用 return 返回结果' }
+        }
+        return {
+          ok: false,
+          error: `返回值类型不支持：${t}（只支持 number / string / boolean / File）`
+        }
+      }).catch((err): CodeRunResult => ({
+        ok: false,
+        error: err instanceof Error ? err.message : String(err)
+      }))
+    } catch (err) {
+      // new Function 构造失败（语法错误等）
+      const r: CodeRunResult = {
+        ok: false,
+        error: err instanceof Error ? err.message : String(err)
+      }
+      return Promise.resolve(r)
+    }
+  }
 }
 
 /**

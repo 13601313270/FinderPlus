@@ -72,6 +72,19 @@ export class ImageOverlayNode extends Node {
     return port
   }
 
+  /**
+   * 删除一个图层端口。至少保留 1 个端口（返回 false 表示拒绝删除）。
+   * 基类 removeInput 会自动断开 incoming 边 + notifyChanged。
+   */
+  removeLayerPort(portId: string): boolean {
+    if (this.inputPorts.length <= 1) return false
+    const port = this.inputPorts.find((p) => p.id === portId)
+    if (!port) return false
+    this.layerStates.delete(portId)
+    this.removeInput(port)
+    return true
+  }
+
   // —— Node 基类要求 ——
 
   isPositionAcceptFileDrop(_relativeX: number, _relativeY: number): boolean { return false }

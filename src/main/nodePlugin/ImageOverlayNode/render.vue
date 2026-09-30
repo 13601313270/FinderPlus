@@ -174,6 +174,7 @@ function refreshLayers(): void {
 
   n.inputPorts.forEach((port, idx) => {
     seenPortIds.add(port.id)
+    const dynamicLabel = `图层 ${idx + 1}`
 
     const conn = getPortValue(port)
     if (!conn) {
@@ -181,7 +182,7 @@ function refreshLayers(): void {
       newLayers.push({
         portId: port.id,
         portIndex: idx,
-        label: port.label,
+        label: dynamicLabel,
         connected: false,
         fingerprint: '',
         state: null,
@@ -196,39 +197,51 @@ function refreshLayers(): void {
     const state = n.getLayerState(port.id)
     if (!state) return // state 还没初始化过（syncLayerRegistry 可能还没跑），跳过这一轮
 
-    // 缩略图
+    const newFp = value.fingerprint
+    const prevLayer = layers.value.find((l) => l.portId === port.id)
+    const fpChanged = prevLayer && prevLayer.fingerprint !== newFp
+
+    // 缩略图：fingerprint 变了 → revoke 旧 URL + 重建
     let thumbUrl: string
-    if (thumbnailRevoke.has(port.id)) {
-      const existing = layers.value.find((l) => l.portId === port.id)
-      thumbUrl = existing?.thumbnailUrl ?? ''
+    if (fpChanged) {
+      const oldRevoke = thumbnailRevoke.get(port.id)
+      if (oldRevoke) { oldRevoke(); thumbnailRevoke.delete(port.id) }
+      const newUrl = URL.createObjectURL(value.file)
+      thumbUrl = newUrl
+      thumbnailRevoke.set(port.id, () => URL.revokeObjectURL(newUrl))
+    } else if (thumbnailRevoke.has(port.id)) {
+      thumbUrl = prevLayer?.thumbnailUrl ?? ''
     } else {
-      thumbUrl = URL.createObjectURL(value.file)
-      thumbnailRevoke.set(port.id, () => URL.revokeObjectURL(thumbUrl))
+      const newUrl = URL.createObjectURL(value.file)
+      thumbUrl = newUrl
+      thumbnailRevoke.set(port.id, () => URL.revokeObjectURL(newUrl))
     }
 
     newLayers.push({
       portId: port.id,
       portIndex: idx,
-      label: port.label,
+      label: dynamicLabel,
       connected: true,
-      fingerprint: value.fingerprint,
+      fingerprint: newFp,
       state: { ...state },
       fileName: value.file.name,
       thumbnailUrl: thumbUrl
     })
 
-    // 预加载 natural 尺寸，初始化 LayerState
-    if (!loadedImages.has(port.id)) {
+    // 预加载 natural 尺寸：fingerprint 变了 或 首次
+    if (fpChanged || !loadedImages.has(port.id)) {
+      loadedImages.delete(port.id)
       loadImageFromFile(value.file).then((img) => {
         loadedImages.set(port.id, img)
         const s = n.getLayerState(port.id)
-        if (s && !s.initialized) {
-          n.updateLayerTransform(port.id, {
-            x: 0, y: 0,
-            width: img.naturalWidth,
-            height: img.naturalHeight,
-            initialized: true
-          })
+        if (s) {
+          if (!s.initialized || fpChanged) {
+            n.updateLayerTransform(port.id, {
+              width: img.naturalWidth,
+              height: img.naturalHeight,
+              initialized: true
+            })
+          }
         }
       }).catch(() => {})
     }
@@ -562,6 +575,19 @@ function onLayerItemClick(e: PointerEvent, portId: string): void {
   e.stopPropagation()
   selectedPortId.value = portId
 }
+
+// —— 删除图层 ——
+function onRemoveLayer(e: PointerEvent, portId: string): void {
+  e.stopPropagation()
+  const n = node.value
+  if (!n) return
+  // 清理本地缓存
+  const thumbFn = thumbnailRevoke.get(portId)
+  if (thumbFn) { thumbFn(); thumbnailRevoke.delete(portId) }
+  loadedImages.delete(portId)
+  if (selectedPortId.value === portId) selectedPortId.value = null
+  n.removeLayerPort(portId) // 基类 removeInput 内部已 notifyChanged → refreshLayers 自动触发
+}
 </script>
 
 <template>
@@ -595,7 +621,17 @@ function onLayerItemClick(e: PointerEvent, portId: string): void {
           }"
           @pointerdown.stop="onLayerItemClick($event, layer.portId)"
         >
-          <div class="overlay-card__port-label">{{ layer.label }}</div>
+          <div class="overlay-card__port-row">
+            <div class="overlay-card__port-label">{{ layer.label }}</div>
+            <button
+              v-if="layer.connected && layers.length > 1"
+              class="overlay-card__port-del"
+              type="button"
+              title="删除此图层"
+              @pointerdown.stop
+              @click="onRemoveLayer($event, layer.portId)"
+            >×</button>
+          </div>
           <div class="overlay-card__port-thumb">
             <img v-if="layer.connected" :src="layer.thumbnailUrl" :alt="layer.fileName" draggable="false" />
             <div v-else class="overlay-card__port-empty-svg">
@@ -771,7 +807,21 @@ function onLayerItemClick(e: PointerEvent, portId: string): void {
     &.is-empty { opacity: 0.5; font-style: italic; }
   }
 
+  &__port-row {
+    display: flex; align-items: center; justify-content: space-between;
+  }
   &__port-label { font-size: 10px; font-weight: 600; color: #4a7cff; }
+
+  &__port-del {
+    width: 16px; height: 16px;
+    border: none; border-radius: 3px;
+    background: transparent; color: #b5bac4;
+    font-size: 14px; line-height: 1; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    padding: 0; flex-shrink: 0;
+    transition: background 0.15s ease, color 0.15s ease;
+    &:hover { background: #fee2e2; color: #ef4444; }
+  }
 
   &__port-thumb {
     width: 100%; height: 36px; border-radius: 3px;

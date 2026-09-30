@@ -1,17 +1,22 @@
+import { JsonValue } from '../../engine/data/JsonValue'
 import { StringValue } from '../../engine/data/StringValue'
 import { InputPort } from '../../engine/port/InputPort'
+import { OutputPort } from '../../engine/port/OutputPort'
 import { Node } from '../../engine/node/Node'
 
 /**
- * JSON 解析展示节点：把上游送来的字符串解析成 JSON 后以折叠树形式可视化。
- * 没有输出端口——它的产出就是「可视化」这件事本身，UI 直接读 parsed / error。
+ * JSON 解析展示节点：接受字符串（JSON 文本）或结构化 JSON（JsonValue），
+ * 解析后以折叠树形式可视化，同时透传 JsonValue 到输出端口供下游继续处理。
  */
 export class JsonDisplayNode extends Node {
   static readonly TYPE = 'json-display'
   readonly type = JsonDisplayNode.TYPE
 
-  /** 输入端口：只接受字符串 */
-  readonly jsonInput = new InputPort('json', { accepts: [StringValue], label: 'JSON' })
+  /** 输入端口：接受 JSON 文本（StringValue）或结构化 JSON（JsonValue） */
+  readonly jsonInput = new InputPort('json', { accepts: [StringValue, JsonValue], label: 'JSON' })
+
+  /** 输出端口：解析成功后透传 JsonValue；解析失败或空输入时 clear() */
+  readonly jsonOutput = new OutputPort('json', JsonValue, 'JSON')
 
   private parsed: unknown = undefined
   private error: string | null = null
@@ -20,16 +25,16 @@ export class JsonDisplayNode extends Node {
   constructor(id: string) {
     super(id)
     this.addInput(this.jsonInput)
+    this.addOutput(this.jsonOutput)
     this.setBox(320, 280)
   }
 
-  /** 拖入文件落点命中本节点时被调用；本节点不接收文件，返回 false */
   isPositionAcceptFileDrop(_relativeX: number, _relativeY: number): boolean {
     return false
   }
 
   onFileDrop(_sourcePath: string): void {
-    // 本节点不接收文件，不处理
+    // 本节点不接收文件
   }
 
   /** 解析后的 JSON 值；解析失败或没接输入时为 undefined */
@@ -47,33 +52,46 @@ export class JsonDisplayNode extends Node {
     return this.hasValue
   }
 
-  /** 收到上游字符串 → 尝试 JSON.parse → 存 parsed 或 error → 刷 UI */
+  /** 收到上游值：解析/透传后 commit 给输出端口，失败则 clear */
   inputPortReceiveValue(_ports: InputPort[]): void {
     const [first] = this.jsonInput.value
-    const raw = first instanceof StringValue ? first.value : ''
     this.hasValue = true
 
-    if (!raw.trim()) {
+    if (first instanceof JsonValue) {
+      this.parsed = first.value
+      this.error = null
+      this.jsonOutput.commit(first)
+    } else if (first instanceof StringValue) {
+      const raw = first.value
+      if (!raw.trim()) {
+        this.parsed = undefined
+        this.error = null
+        this.jsonOutput.clear()
+      } else {
+        try {
+          const obj = JSON.parse(raw)
+          this.parsed = obj
+          this.error = null
+          this.jsonOutput.commit(new JsonValue(obj))
+        } catch (e) {
+          this.parsed = undefined
+          this.error = e instanceof Error ? e.message : String(e)
+          this.jsonOutput.clear()
+        }
+      }
+    } else {
       this.parsed = undefined
       this.error = null
-    } else {
-      try {
-        this.parsed = JSON.parse(raw)
-        this.error = null
-      } catch (e) {
-        this.parsed = undefined
-        this.error = e instanceof Error ? e.message : String(e)
-      }
+      this.jsonOutput.clear()
     }
     this.notifyChanged()
   }
 
   saveState(): Record<string, unknown> {
-    // parsed / error 都是上游派生出来的，恢复时上游 commit 会自动刷回来，不用存
     return {}
   }
 
   readState(_state: Record<string, unknown>): void {
-    // 啥也不做——派生状态等上游恢复后自然会刷新
+    // 派生状态等上游恢复后自然会刷新
   }
 }

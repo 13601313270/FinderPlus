@@ -188,6 +188,19 @@ function onCopyCallOutputPort(): void {
   copyHint.value = 'callOutputPort'
   setTimeout(() => { copyHint.value = '' }, 1200)
 }
+function onNodeWheel(e: WheelEvent): void {
+  const el = e.currentTarget as HTMLElement
+  const { scrollTop, scrollHeight, clientHeight } = el
+  const atTop = scrollTop <= 0
+  const atBottom = scrollTop + clientHeight >= scrollHeight
+
+  const scrollingUp = e.deltaY < 0
+  const scrollingDown = e.deltaY > 0
+
+  if ((scrollingUp && atTop) || (scrollingDown && atBottom)) return
+
+  e.stopPropagation()
+}
 </script>
 
 <template>
@@ -217,6 +230,7 @@ function onCopyCallOutputPort(): void {
     <!-- 结果区（常驻画布） -->
     <div
       class="code-output"
+      @wheel="onNodeWheel"
       :class="{
         'code-output--empty': !resultText && !errorText && status !== 'running',
         'code-output--error': status === 'error',
@@ -298,6 +312,7 @@ function onCopyCallOutputPort(): void {
               <option value="string">string</option>
               <option value="bool">bool</option>
               <option value="file">file</option>
+              <option value="json">json</option>
             </select>
           </div>
           <div class="code-row inputs__subrow">
@@ -357,6 +372,7 @@ function onCopyCallOutputPort(): void {
               <option value="bool">bool</option>
               <option value="file">file</option>
               <option value="imgfile">img file</option>
+              <option value="json">json</option>
             </select>
           </div>
           <div class="code-row inputs__subrow">
@@ -919,6 +935,7 @@ function onCopyCallOutputPort(): void {
   gap: 8px;
   color: #1f2937;
   overflow: auto;
+  height: 23px;
 
   &--empty {
     color: #9aa2ad;

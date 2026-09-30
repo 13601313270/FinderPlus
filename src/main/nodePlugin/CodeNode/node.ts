@@ -2,6 +2,7 @@ import { BoolValue } from '../../engine/data/BoolValue'
 import { djb2 } from '../../engine/data/hash'
 import { FileValue } from '../../engine/data/FileValue'
 import { ImgFileValue } from '../../engine/data/ImgFileValue'
+import { JsonValue } from '../../engine/data/JsonValue'
 import { NumberValue } from '../../engine/data/NumberValue'
 import { StringValue } from '../../engine/data/StringValue'
 import { Value } from '../../engine/data/Value'
@@ -10,7 +11,7 @@ import { OutputPort } from '../../engine/port/OutputPort'
 import { Node } from '../../engine/node/Node'
 
 /** 可选的端口类型：输入和输出共用同一套 Value 子类集合 */
-export type CodePortKind = 'number' | 'string' | 'bool' | 'file' | 'imgfile'
+export type CodePortKind = 'number' | 'string' | 'bool' | 'file' | 'imgfile' | 'json'
 
 /** 输入端口可选类型（不含 imgfile——输入侧图片归为 file，原型链覆盖） */
 export type CodeInputKind = Exclude<CodePortKind, 'imgfile'>
@@ -18,13 +19,19 @@ export type CodeInputKind = Exclude<CodePortKind, 'imgfile'>
 /** 返回类型别名（保留给外部引用，实际用 CodePortKind） */
 export type CodeReturnKind = CodePortKind
 
+/** 所有合法的输入端口 kind，readState 反序列化校验用。用 satisfies 保证不缺项 */
+const INPUT_KINDS: readonly CodeInputKind[] = ['number', 'string', 'bool', 'file', 'json'] as const
+/** 所有合法的输出端口 kind，readState 反序列化校验用 */
+const ALL_PORT_KINDS: readonly CodePortKind[] = ['number', 'string', 'bool', 'file', 'imgfile', 'json'] as const
+
 /** Value 子类注册表：kind → Value 子类（端口 accept / 结果包装共用这一处真相） */
 const KIND_CLASSES: Record<CodePortKind, { readonly VALUE_NAME: string; prototype: Value; new (...args: any[]): Value }> = {
   number: NumberValue,
   string: StringValue,
   bool: BoolValue,
   file: FileValue,
-  imgfile: ImgFileValue
+  imgfile: ImgFileValue,
+  json: JsonValue
 }
 
 /** 输入类型 → InputPort.accepts 数组。file 用 FileValue（原型链覆盖 ImgFileValue / TxtFileValue） */
@@ -32,7 +39,8 @@ const INPUT_KIND_ACCEPTS: Record<CodeInputKind, readonly InputPortOptionsAcc[]> 
   number: [NumberValue],
   string: [StringValue],
   bool: [BoolValue],
-  file: [FileValue]
+  file: [FileValue],
+  json: [JsonValue]
 }
 
 /** InputPort 构造器 accepts 参数所需的 Value 子类类型 */
@@ -455,7 +463,7 @@ export class CodeNode extends Node {
     }
 
     // 每次 callOutputPort 触发 → 即时 commit + 更新结果展示
-    const onOutput = (name: string, raw: number | string | boolean | File): void => {
+    const onOutput = (name: string, raw: unknown): void => {
       const found = this.findOutputPortByName(name)
       if (!found) {
         this._runBuffer.push(`⚠ ${name}（端口不存在）`)
@@ -540,12 +548,13 @@ export class CodeNode extends Node {
     if (v instanceof NumberValue) return v.value
     if (v instanceof StringValue) return v.value
     if (v instanceof BoolValue) return v.value
+    if (v instanceof JsonValue) return v.value
     if (v instanceof FileValue) return v.file
     return v
   }
 
   /** 把 preload 回传的原始返回值按指定端口类型包装成 Value */
-  private coerce(raw: number | string | boolean | File, kind: CodePortKind): Value {
+  private coerce(raw: unknown, kind: CodePortKind): Value {
     switch (kind) {
       case 'number': {
         const n = Number(raw)
@@ -556,6 +565,11 @@ export class CodeNode extends Node {
       }
       case 'bool':
         return new BoolValue(Boolean(raw))
+      case 'json': {
+        // 接受对象/数组/原始值直接包 JsonValue；字符串尝试 JSON.parse
+        const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw
+        return new JsonValue(parsed)
+      }
       case 'file': {
         if (!(raw instanceof File)) {
           throw new Error(`需要 File 对象，实际收到 ${typeof raw}`)
@@ -613,9 +627,9 @@ export class CodeNode extends Node {
         if (
           typeof obj.id === 'string' &&
           typeof obj.name === 'string' &&
-          (obj.kind === 'number' || obj.kind === 'string' || obj.kind === 'bool' || obj.kind === 'file')
+          typeof obj.kind === 'string' && INPUT_KINDS.includes(obj.kind as CodeInputKind)
         ) {
-          const meta: CodeInputMeta = { id: obj.id, name: obj.name, kind: obj.kind }
+          const meta: CodeInputMeta = { id: obj.id, name: obj.name, kind: obj.kind as CodeInputKind }
           this.inputMetas.push(meta)
           const port = this.buildInputPort(meta)
           this.myInputPorts.push(port)
@@ -638,9 +652,9 @@ export class CodeNode extends Node {
         if (
           typeof obj.id === 'string' &&
           typeof obj.name === 'string' &&
-          (obj.kind === 'number' || obj.kind === 'string' || obj.kind === 'bool' || obj.kind === 'file' || obj.kind === 'imgfile')
+          typeof obj.kind === 'string' && ALL_PORT_KINDS.includes(obj.kind as CodePortKind)
         ) {
-          const meta: CodeOutputMeta = { id: obj.id, name: obj.name, kind: obj.kind }
+          const meta: CodeOutputMeta = { id: obj.id, name: obj.name, kind: obj.kind as CodePortKind }
           this.outputMetas.push(meta)
           const port = this.buildOutputPort(meta)
           this.myOutputPorts.push(port)
@@ -652,9 +666,9 @@ export class CodeNode extends Node {
     // —— 兼容旧版：有 returnKind 但没有 outputs 数组时，创建一个默认输出端口 ——
     if (this.outputMetas.length === 0) {
       const returnKind = state.returnKind
-      const kind: CodePortKind = (
-        returnKind === 'number' || returnKind === 'string' || returnKind === 'bool' || returnKind === 'file' || returnKind === 'imgfile'
-      ) ? returnKind : 'number'
+      const kind: CodePortKind = (typeof returnKind === 'string' && ALL_PORT_KINDS.includes(returnKind as CodePortKind))
+        ? returnKind as CodePortKind
+        : 'number'
       const meta: CodeOutputMeta = {
         id: `out-legacy-${Date.now()}`,
         name: 'result',

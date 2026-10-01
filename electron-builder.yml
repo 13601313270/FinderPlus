@@ -14,10 +14,17 @@ asarUnpack:
   - resources/**
 mac:
   category: public.app-category.productivity
+  # 默认只出本机架构（arm64）；这里显式声明两个架构，覆盖 Intel Mac。
+  # 只面向 Apple Silicon 的话，把 x64 去掉即可。
   target:
-    - dmg
-    - zip
+    - target: dmg
+      arch: [arm64, x64]
+    - target: zip
+      arch: [arm64, x64]
   artifactName: ${productName}-${version}-${arch}.${ext}
+  # 签名/公证无需在这里额外开关，走 electron-builder 默认行为：
+  #   hardenedRuntime 默认 true；entitlements 自动使用下方 plist；
+  #   检测到 APPLE_ID / APPLE_APP_SPECIFIC_PASSWORD / APPLE_TEAM_ID 时自动公证并 staple。
   entitlementsInherit: build/entitlements.mac.plist
   extendInfo:
     NSCameraUsageDescription: Application requests access to the device's camera.

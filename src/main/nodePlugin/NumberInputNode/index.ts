@@ -5,6 +5,7 @@ import render from './render.vue'
 export const manifest: NodePluginManifest = {
   type: NumberInputNode.TYPE,
   nodeClass: NumberInputNode,
+  title: { zh: '数字输入', en: 'Number Input' },
   render
 }
 

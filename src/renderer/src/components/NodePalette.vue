@@ -1,6 +1,8 @@
 <script setup lang="ts">import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { paletteManifests } from '../../../main/nodePlugin';
+import { resolveNodeTitle } from '../../../main/nodePlugin/manifest';
+import { useLanguageSettings } from '@renderer/composables/useLanguageSettings';
 /**
  * 节点调色板：画布左上角的「＋」按钮。
  *
@@ -12,6 +14,7 @@ import { paletteManifests } from '../../../main/nodePlugin';
  * 设计成纯 UI 组件：不碰 Scene、不构造节点，只把「用户想加什么类型」告诉上层。
  */
 const { t } = useI18n();
+const { language } = useLanguageSettings();
 const emit = defineEmits<{
  (e: 'select-type', type: string): void;
 }>();
@@ -37,10 +40,12 @@ function onSelectType(type: string): void {
  expanded.value = false;
  emit('select-type', type);
 }
-// 下拉项文案：先用 type 字符串，后续可在 manifest 里加 displayName
+// 下拉项文案取自各个插件 manifest 自己声明的多语言 title；
+// 插件没配当前语言时由 resolveNodeTitle 兜底（en → zh → 已配的第一种 → type）。
+// 这样新增/第三方插件不用改 Finder+ 的中央词条表就能带上自己的显示名。
 const items = computed(() => paletteManifests.map((m) => ({
  type: m.type,
- label: m.type
+ label: resolveNodeTitle(m, language.value)
 })));
 </script>
 

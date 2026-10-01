@@ -1,4 +1,5 @@
 import { ref } from 'vue'
+import { LANGUAGE_CODES, type LanguageCode } from '../../../shared/language'
 
 /**
  * 全局语言设置（module 级单例）。
@@ -14,20 +15,27 @@ import { ref } from 'vue'
  * 目前只负责「选中 + 持久化」，真正切换界面文案等 i18n 能力后续再接。
  */
 
-/** 支持的语言（值用简短的 BCP-47 主语言标签） */
-export const LANGUAGE_OPTIONS = [
-  { code: 'zh', label: '中文' },
-  { code: 'en', label: 'English / 英文' },
-  { code: 'ja', label: '日本語 / 日语' },
-  { code: 'ko', label: '한국어 / 韩语' },
-  { code: 'es', label: 'Español / 西班牙语' },
-  { code: 'ar', label: 'العربية / 阿拉伯语' },
-  { code: 'fr', label: 'Français / 法语' },
-  { code: 'pt', label: 'Português / 葡萄牙语' },
-  { code: 'ru', label: 'Русский / 俄语' }
-] as const
+/**
+ * 各语言代码对应的下拉标签。
+ * 标注成 Record<LanguageCode, string>：新增语言时忘了配标签会在编译期报错。
+ */
+const LANGUAGE_LABELS: Record<LanguageCode, string> = {
+  zh: '中文',
+  en: 'English / 英文',
+  ja: '日本語 / 日语',
+  ko: '한국어 / 韩语',
+  es: 'Español / 西班牙语',
+  ar: 'العربية / 阿拉伯语',
+  fr: 'Français / 法语',
+  pt: 'Português / 葡萄牙语',
+  ru: 'Русский / 俄语'
+}
 
-export type LanguageCode = (typeof LANGUAGE_OPTIONS)[number]['code']
+/** 支持的语言选项（代码 + 下拉标签），顺序由 shared 的 LANGUAGE_CODES 决定 */
+export const LANGUAGE_OPTIONS = LANGUAGE_CODES.map((code) => ({ code, label: LANGUAGE_LABELS[code] }))
+
+// 语言代码类型定义在 shared/language.ts（主进程侧也要用），这里原样转出，保持既有引用路径不变
+export type { LanguageCode }
 
 /** 默认兜底语言：系统语言不受支持时使用 */
 const FALLBACK_LANGUAGE: LanguageCode = 'en'

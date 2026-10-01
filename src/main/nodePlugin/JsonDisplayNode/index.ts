@@ -5,6 +5,7 @@ import render from './render.vue'
 export const manifest: NodePluginManifest = {
   type: JsonDisplayNode.TYPE,
   nodeClass: JsonDisplayNode,
+  title: { zh: 'JSON 展示', en: 'JSON Display' },
   render
 }
 

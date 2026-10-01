@@ -5,6 +5,7 @@ import render from './render.vue'
 export const manifest: NodePluginManifest = {
   type: CodeNode.TYPE,
   nodeClass: CodeNode,
+  title: { zh: '代码', en: 'Code' },
   render,
   help: () => import('./CodeHelpDialog.vue')
 }

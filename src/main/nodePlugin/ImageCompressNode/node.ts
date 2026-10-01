@@ -22,11 +22,16 @@ import { workspaceScene } from '../../engine/graph/SceneRegistry'
  * 目标尺寸来自 size 输入端口（NumberValue，最长边像素）；未接线时用默认值。
  * 尺寸变更会通知 UI 刷新展示，但不会自动重压已有结果——等下次触发（拖入或端口值变）时生效。
  *
+ * 导出格式由卡片上的 jpg/png 下拉选择（默认 jpg），变更后与尺寸变更同理：
+ * 通知 UI 刷新，等下次触发时按新格式重压。
+ *
  * 引擎侧职责「收信号 + 提交结果」：
  * - 拖入路径：onNodeDrop(source) 暂存 pendingSourceId → notifyChanged → render.vue 读源值压缩
  * - 端口路径：imageInput.receive → inputPortReceiveValue → notifyChanged → render.vue 读端口值压缩
  * - render.vue 压缩完成调 setOutput(base64, mime, fileName) → commit 到输出端口 → 下游刷新
  */
+export type ImageExportFormat = 'jpg' | 'png'
+
 export class ImageCompressNode extends Node {
   static readonly TYPE = 'image-compress'
 
@@ -58,13 +63,19 @@ export class ImageCompressNode extends Node {
   /** 最近一次压缩时的 targetSize（最长边像素），尺寸变化也要重压 */
   private lastCompressedSize: number | null = null
 
+  /** 最近一次压缩时的导出格式，格式变化也要重压 */
+  private lastCompressedFormat: ImageExportFormat | null = null
+
+  /** 导出格式（jpg 有损体积小 / png 无损可留透明），默认 jpg */
+  private format: ImageExportFormat = 'jpg'
+
   constructor(id: string) {
     super(id)
     this.addInput(this.sizeInput)
     this.addInput(this.imageInput)
     this.addOutput(this.imageOutput)
-    // 内容区硬约束：头部标签 + 预览区 + 底部提示栏
-    this.setBox(250, 230)
+    // 内容区硬约束：头部标签（含格式下拉）+ 预览区 + 底部提示栏
+    this.setBox(250, 245)
   }
 
   /** 拖入文件落点命中本节点时被调用；本节点不接收外部文件，返回 false */
@@ -135,10 +146,28 @@ export class ImageCompressNode extends Node {
     return this.lastCompressedSize
   }
 
-  /** 渲染侧压缩完成后调用，同时记录 fingerprint 和 size，用于后续去重判断 */
-  markCompressed(fingerprint: string, size: number): void {
+  /** 导出格式（jpg/png），UI 直接读它 */
+  get exportFormat(): ImageExportFormat {
+    return this.format
+  }
+
+  /** 切换导出格式：通知视图刷新，render.vue 据此重压（与尺寸变更同理） */
+  setExportFormat(value: ImageExportFormat): void {
+    if (value === this.format) return
+    this.format = value
+    this.notifyChanged()
+  }
+
+  /** 最近一次压缩时的导出格式，render.vue 用来判断格式变了是否要重压 */
+  get lastCompressedFmt(): ImageExportFormat | null {
+    return this.lastCompressedFormat
+  }
+
+  /** 渲染侧压缩完成后调用，同时记录 fingerprint、size 和格式，用于后续去重判断 */
+  markCompressed(fingerprint: string, size: number, format: ImageExportFormat): void {
     this.lastCompressedFingerprint = fingerprint
     this.lastCompressedSize = size
+    this.lastCompressedFormat = format
   }
 
   /**
@@ -187,12 +216,13 @@ export class ImageCompressNode extends Node {
     this.notifyChanged()
   }
 
-  /** 一次性工作：无持久状态，恢复后不自动重压 */
+  /** 一次性工作：压缩结果不持久化，只记住用户的导出格式偏好 */
   saveState(): Record<string, unknown> {
-    return {}
+    return { format: this.format }
   }
 
-  readState(_state: Record<string, unknown>): void {
-    // 啥也不做——等用户再拖一次
+  readState(state: Record<string, unknown>): void {
+    // 只恢复格式偏好——压缩结果等用户再拖一次 / 上游值变化
+    if (state.format === 'jpg' || state.format === 'png') this.format = state.format
   }
 }

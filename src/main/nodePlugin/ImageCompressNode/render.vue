@@ -2,7 +2,7 @@
 import { computed, ref, watch, onUnmounted } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { ImgFileValue } from '../../engine/data/ImgFileValue'
-import { ImageCompressNode } from './node'
+import { ImageCompressNode, type ImageExportFormat } from './node'
 import { ImgFileNode } from '../ImgFileNode/node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
 
@@ -21,6 +21,9 @@ const JPEG_QUALITY = 0.85
 
 // —— 目标尺寸（最长边像素）展示：随 onChanged 刷新 ——
 const targetSize = ref(800)
+
+// —— 导出格式展示：随 onChanged 刷新 ——
+const exportFormat = ref<ImageExportFormat>('jpg')
 
 // —— 压缩结果预览（objectURL）；卸载或结果变时 revoke 防泄漏 ——
 const resultUrl = ref<string | null>(null)
@@ -49,16 +52,13 @@ function refreshResult(n: ImageCompressNode | undefined): void {
 /** 压缩中标记：防止 onChanged 重入导致重复压缩 */
 let compressing = false
 
-/** 从源文件 type 推导输出 MIME：png/webp 保留透明通道，其余压成 jpeg */
-function outputMime(sourceType: string): string {
-  if (sourceType === 'image/png' || sourceType === 'image/webp') return sourceType
-  return 'image/jpeg'
+/** 导出格式 → MIME / 扩展名 */
+function mimeForFormat(format: ImageExportFormat): string {
+  return format === 'png' ? 'image/png' : 'image/jpeg'
 }
 
-function extForMime(mime: string): string {
-  if (mime === 'image/jpeg') return '.jpg'
-  if (mime === 'image/webp') return '.webp'
-  return '.png'
+function extForFormat(format: ImageExportFormat): string {
+  return format === 'png' ? '.png' : '.jpg'
 }
 
 /** 去掉源文件名的后缀，压缩输出文件名为 原名-compressed.新后缀 */
@@ -99,11 +99,12 @@ async function runCompress(n: ImageCompressNode, file: File): Promise<void> {
     if (!ctx) return
     ctx.drawImage(img, 0, 0, width, height)
 
-    const mime = outputMime(file.type)
-    const dataUrl = mime === 'image/jpeg' ? canvas.toDataURL(mime, JPEG_QUALITY) : canvas.toDataURL(mime)
+    const format = n.exportFormat
+    const mime = mimeForFormat(format)
+    const dataUrl = format === 'jpg' ? canvas.toDataURL(mime, JPEG_QUALITY) : canvas.toDataURL(mime)
     const comma = dataUrl.indexOf(',')
     const base64 = comma >= 0 ? dataUrl.slice(comma + 1) : dataUrl
-    const fileName = `${baseName(file.name)}-compressed${extForMime(mime)}`
+    const fileName = `${baseName(file.name)}-compressed${extForFormat(format)}`
 
     n.setOutput(base64, mime, fileName)
   } catch {
@@ -127,16 +128,17 @@ function handleCompress(n: ImageCompressNode | undefined): void {
   const isPending = !!n.pendingSource // 拖入路径有触发信号
   const fpChanged = src.fingerprint !== n.lastCompressedFp
   const sizeChanged = n.targetSize !== n.lastCompressedSz
+  const formatChanged = n.exportFormat !== n.lastCompressedFmt
 
-  // 去重：源文件没变 + 尺寸没变 + 不是拖入触发 → 跳过
-  if (!fpChanged && !sizeChanged && !isPending) return
+  // 去重：源文件没变 + 尺寸没变 + 格式没变 + 不是拖入触发 → 跳过
+  if (!fpChanged && !sizeChanged && !formatChanged && !isPending) return
 
   compressing = true
   runCompress(n, src.file)
     .catch(() => { })
     .finally(() => {
       compressing = false
-      n.markCompressed(src.fingerprint, n.targetSize)
+      n.markCompressed(src.fingerprint, n.targetSize, n.exportFormat)
       // 拖入路径处理完清信号（端口路径不清，保持响应式）
       if (isPending) n.clearPending()
     })
@@ -151,14 +153,22 @@ watch(
     unsubscribe = n?.onChanged(() => {
       refreshResult(n)
       targetSize.value = n?.targetSize ?? 800
+      exportFormat.value = n?.exportFormat ?? 'jpg'
       handleCompress(n)
     })
     refreshResult(n)
     targetSize.value = n?.targetSize ?? 800
+    exportFormat.value = n?.exportFormat ?? 'jpg'
     handleCompress(n)
   },
   { immediate: true, flush: 'sync' }
 )
+
+/** 切换导出格式 → 写回节点，格式变化会触发重压 */
+function onFormatChange(e: Event): void {
+  const v = (e.target as HTMLSelectElement).value
+  if (v === 'jpg' || v === 'png') node.value?.setExportFormat(v)
+}
 
 /** File → base64 字符串（给 writeBuffer 用） */
 function fileToBase64(file: File): Promise<string> {
@@ -207,8 +217,20 @@ onUnmounted(() => {
 
 <template>
   <div class="compress-card" @pointerdown="startDrag" :title="'拖入图片节点压缩一次 · 或左侧端口接图片响应式压缩'">
-    <!-- 头部类型标签：与图片预览节点区分 -->
-    <div class="compress-card__header">图片压缩</div>
+    <!-- 头部类型标签 + 导出格式选择（与图片预览节点区分） -->
+    <div class="compress-card__header">
+      <span class="compress-card__title">图片压缩</span>
+      <select
+        class="compress-card__format"
+        :value="exportFormat"
+        title="选择导出格式（改变后按新格式重新压缩）"
+        @pointerdown.stop
+        @change="onFormatChange"
+      >
+        <option value="jpg">jpg</option>
+        <option value="png">png</option>
+      </select>
+    </div>
 
     <!-- 压缩结果预览区 -->
     <div class="compress-card__image-area">
@@ -256,17 +278,45 @@ onUnmounted(() => {
   user-select: none;
 
   &__header {
-    flex-shrink: 1;
-    min-height: 18px;
+    flex-shrink: 0; // 定高不参与压缩，保证 jpg/png 下拉完整展示
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    padding-bottom: 2px;
+    border-bottom: 1px dashed #d5d9e0;
+    overflow: hidden;
+  }
+
+  &__title {
+    flex: 1;
+    min-width: 0;
     font-size: 11px;
     font-weight: 600;
     color: #4a7cff;
     letter-spacing: 0.5px;
-    padding-bottom: 2px;
-    border-bottom: 1px dashed #d5d9e0;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
+  }
+
+  // 导出格式下拉：贴合卡片风格的小尺寸 select
+  &__format {
+    flex-shrink: 0;
+    font-size: 11px;
+    line-height: 1.2;
+    color: #4a7cff;
+    background: #f4f6ff;
+    border: 1px solid #b9c8ff;
+    border-radius: 4px;
+    padding: 2px 4px;
+    cursor: pointer;
+    outline: none;
+
+    &:hover {
+      border-color: #4a7cff;
+    }
   }
 
   &__image-area {

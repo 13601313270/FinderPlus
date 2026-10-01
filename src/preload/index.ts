@@ -242,8 +242,22 @@ const fileApi = {
 }
 
 /**
- * 应用菜单 API：接收主进程「系统应用菜单项被点击」的推送。
+ * 应用菜单里需要跟随界面语言的文案。
+ *
+ * 词条都在渲染进程（vue-i18n），而语言又存在渲染进程的 localStorage 里，
+ * 主进程两样都拿不到，所以菜单文案由渲染进程翻译好之后推给主进程。
+ */
+export interface MenuLabels {
+  /** 「设置」菜单项的文案（省略号由主进程按平台惯例拼接） */
+  settings: string
+  /** 非 macOS 平台文件菜单的标题 */
+  file: string
+}
+
+/**
+ * 应用菜单 API：接收主进程「系统应用菜单项被点击」的推送，以及把菜单文案推给主进程。
  * 例如 macOS 顶部菜单栏的「设置…」→ 主进程 send → 这里回调 → 渲染进程打开设置弹窗。
+ * 反向：渲染进程把当前语言的菜单文案推给主进程，主进程据此重建菜单。
  */
 const appMenuApi = {
   /**
@@ -254,6 +268,11 @@ const appMenuApi = {
     const handler = (): void => callback()
     ipcRenderer.on('app-menu:open-settings', handler)
     return () => ipcRenderer.removeListener('app-menu:open-settings', handler)
+  },
+
+  /** 把当前语言的菜单文案推给主进程（启动时和每次切语言都会推） */
+  setLabels: (labels: MenuLabels): void => {
+    ipcRenderer.send('app-menu:set-labels', labels)
   }
 }
 

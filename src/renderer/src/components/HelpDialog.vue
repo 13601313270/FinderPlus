@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 /**
  * 通用帮助弹窗壳：
@@ -20,6 +21,8 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{ close: [] }>()
+
+const { t } = useI18n()
 
 const dialogStyle = computed(() => {
   if (props.width === undefined) return {}
@@ -52,11 +55,11 @@ onUnmounted(() => {
     <div v-if="visible" class="help-mask" @click="onMaskClick">
       <div class="help-dialog" :style="dialogStyle" @click="onDialogClick">
         <div class="help-dialog__header">
-          <h3 class="help-dialog__title">{{ title ?? '使用说明' }}</h3>
+          <h3 class="help-dialog__title">{{ title ?? t('helpDialog.title') }}</h3>
           <button
             class="help-dialog__close"
             type="button"
-            title="关闭（Esc）"
+            :title="t('helpDialog.close')"
             @click="emit('close')"
           >×</button>
         </div>

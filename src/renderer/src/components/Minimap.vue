@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { workspaceScene } from '../../../main/engine/graph/SceneRegistry'
 import {
   viewport,
@@ -27,6 +28,8 @@ import { edgeGeometry, isEdgeGeometry } from '@renderer/canvas/edges'
  * 和 EdgeLayer 一样依赖 sceneTick（结构变化）、nodeTick（节点位置变化）、
  * canvasLayoutVersion（卡片尺寸变化），另外 viewport 本身是 reactive、画布容器尺寸自量。
  */
+
+const { t } = useI18n()
 
 // 面板与画布边框的最小留白
 const PANEL_MARGIN = 8
@@ -348,12 +351,12 @@ onUnmounted(() => {
     :style="{ left: `${panelLeft}px`, top: `${panelTop}px` }"
   >
     <!-- 拖动条：唯一用来挪动面板的热区，右侧放折叠按钮 -->
-    <div class="minimap__dragbar" title="拖动以移动小地图" @pointerdown="onDragbarDown">
+    <div class="minimap__dragbar" :title="t('minimap.dragToMove')" @pointerdown="onDragbarDown">
       <span class="minimap__grip">⠿</span>
       <button
         class="minimap__toggle"
         type="button"
-        :title="collapsed ? '展开小地图' : '折叠小地图'"
+        :title="collapsed ? t('minimap.expand') : t('minimap.collapse')"
         @click.stop="toggleCollapse"
       >
         <svg
@@ -405,10 +408,10 @@ onUnmounted(() => {
     </svg>
 
     <div v-show="!collapsed" class="minimap__toolbar">
-      <button class="minimap__btn" type="button" title="缩小" @click="zoomOut">−</button>
+      <button class="minimap__btn" type="button" :title="t('minimap.zoomOut')" @click="zoomOut">−</button>
       <span class="minimap__percent">{{ zoomPercent }}%</span>
-      <button class="minimap__btn" type="button" title="放大" @click="zoomIn">＋</button>
-      <button class="minimap__reset" type="button" @click="reset">复位</button>
+      <button class="minimap__btn" type="button" :title="t('minimap.zoomIn')" @click="zoomIn">＋</button>
+      <button class="minimap__reset" type="button" @click="reset">{{ t('minimap.reset') }}</button>
     </div>
   </div>
 </template>

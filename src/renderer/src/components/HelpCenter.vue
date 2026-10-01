@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useHelpCenter } from '@renderer/composables/useHelpCenter'
 
 /**
@@ -11,10 +12,11 @@ import { useHelpCenter } from '@renderer/composables/useHelpCenter'
  *
  * 状态全部来自 useHelpCenter composable（module 级单例），任何地方都能触发。
  */
+const { t } = useI18n()
 const { visible, loading, currentComp, currentType, helpGroups, closeCenter, selectTopic } = useHelpCenter()
 
 /** 扁平化的所有 topic，自动选中时取第一个 */
-const allTopics = computed(() => helpGroups.flatMap((g) => g.items))
+const allTopics = computed(() => helpGroups.value.flatMap((g) => g.items))
 
 function onMaskClick(): void {
   closeCenter()
@@ -52,11 +54,11 @@ const activeType = computed(() => currentType.value)
     <div v-if="visible" class="hc-mask" @click="onMaskClick">
       <div class="hc-dialog" @click="onDialogClick">
         <div class="hc-dialog__header">
-          <h3 class="hc-dialog__title">帮助中心</h3>
+          <h3 class="hc-dialog__title">{{ t('helpCenter.title') }}</h3>
           <button
             class="hc-dialog__close"
             type="button"
-            title="关闭（Esc）"
+            :title="t('helpCenter.close')"
             @click="closeCenter"
           >×</button>
         </div>
@@ -77,17 +79,17 @@ const activeType = computed(() => currentType.value)
               </ul>
             </template>
             <p v-if="allTopics.length === 0" class="hc-sidebar__empty">
-              暂无可查看的帮助文档
+              {{ t('helpCenter.empty') }}
             </p>
           </aside>
 
           <main class="hc-content">
-            <div v-if="loading" class="hc-content__loading">加载中…</div>
+            <div v-if="loading" class="hc-content__loading">{{ t('helpCenter.loading') }}</div>
             <div v-else-if="currentComp" class="hc-content__dynamic">
               <component :is="currentComp" />
             </div>
             <div v-else class="hc-content__loading hc-content__loading--empty">
-              请从左侧选择一个节点
+              {{ t('helpCenter.pickNode') }}
             </div>
           </main>
         </div>

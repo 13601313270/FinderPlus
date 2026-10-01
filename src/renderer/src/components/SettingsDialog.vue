@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useGlobalSettings } from '@renderer/composables/useGlobalSettings'
 import {
   useLanguageSettings,
@@ -12,6 +13,7 @@ import {
  * - 状态来自 useGlobalSettings（module 级单例），工具栏按钮和系统应用菜单共享
  * - 具体设置项按分区往 body 里加，当前已有「语言」
  */
+const { t } = useI18n()
 const { visible, openSettings, closeSettings } = useGlobalSettings()
 const { language, setLanguage, languageOptions } = useLanguageSettings()
 
@@ -51,11 +53,11 @@ onUnmounted(() => {
     <div v-if="visible" class="gs-mask" @click="onMaskClick">
       <div class="gs-dialog" @click="onDialogClick">
         <div class="gs-dialog__header">
-          <h3 class="gs-dialog__title">设置</h3>
+          <h3 class="gs-dialog__title">{{ t('settingsDialog.title') }}</h3>
           <button
             class="gs-dialog__close"
             type="button"
-            title="关闭（Esc）"
+            :title="t('settingsDialog.close')"
             @click="closeSettings"
           >×</button>
         </div>
@@ -63,8 +65,8 @@ onUnmounted(() => {
         <div class="gs-dialog__body">
           <!-- 设置分区：后续每类全局设置在这里加一块 -->
           <section class="gs-section">
-            <h4 class="gs-section__title">语言</h4>
-            <p class="gs-section__hint">选择界面语言，修改后自动保存。</p>
+            <h4 class="gs-section__title">{{ t('settingsDialog.language') }}</h4>
+            <p class="gs-section__hint">{{ t('settingsDialog.languageHint') }}</p>
             <select
               class="gs-select"
               :value="language"

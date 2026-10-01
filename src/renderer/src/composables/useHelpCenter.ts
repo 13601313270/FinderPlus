@@ -1,6 +1,8 @@
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import type { Component } from 'vue'
 import { nodeManifests } from '../../../main/nodePlugin'
+import { translate } from '@renderer/i18n'
+import { useLanguageSettings } from './useLanguageSettings'
 
 /**
  * 帮助中心 topic：统一「全局介绍」和「节点帮助」两种来源。
@@ -9,7 +11,7 @@ import { nodeManifests } from '../../../main/nodePlugin'
 export interface HelpTopic {
   /** 唯一标识，用于侧边栏激活态比对 */
   readonly type: string
-  /** 侧边栏显示名称 */
+  /** 侧边栏显示名称。节点帮助直接用节点类型名（技术标识，不翻译） */
   readonly label: string
   /** 异步加载帮助组件 */
   readonly load: () => Promise<{ default: Component }>
@@ -21,12 +23,10 @@ export interface HelpTopicGroup {
   readonly items: ReadonlyArray<HelpTopic>
 }
 
-/** 全局介绍 topic，固定放在第一组（单独一组，无标题） */
-const introTopic: HelpTopic = {
-  type: '__intro__',
-  label: '关于 Finder+',
-  load: () => import('@renderer/components/help/Introduction.vue')
-}
+/** 全局介绍 topic 的固定 type 与加载器 */
+const INTRO_TOPIC_TYPE = '__intro__'
+const loadIntro = (): Promise<{ default: Component }> =>
+  import('@renderer/components/help/Introduction.vue')
 
 /** 节点帮助 topics：从注册表里过滤出有 help 的节点，映射成 HelpTopic */
 const nodeTopics: HelpTopic[] = nodeManifests
@@ -37,20 +37,32 @@ const nodeTopics: HelpTopic[] = nodeManifests
     load: m.help!
   }))
 
+/** 按 type 查找用的静态表（label 只作展示、不参与查找，这里不必翻译） */
+const lookupTopics: ReadonlyArray<HelpTopic> = [
+  { type: INTRO_TOPIC_TYPE, label: '', load: loadIntro },
+  ...nodeTopics
+]
+
+const { language } = useLanguageSettings()
+
 /**
  * 分组列表，侧边栏按这个渲染：
  * - 第一组：全局介绍（无标题，单独一项）
  * - 第二组：节点类型介绍
  *
- * 编译期确定，不需要响应式。
+ * 侧栏文案要跟着界面语言走，所以做成 computed 现算：读一下 language.value 做依赖登记，
+ * 语言一变就重算（和 App.vue 里 sceneTick 的路子一致）。
  */
-export const helpGroups: ReadonlyArray<HelpTopicGroup> = [
-  { title: '', items: [introTopic] },
-  { title: '节点类型介绍', items: nodeTopics }
-]
-
-/** 扁平化的所有 topic，内部查找用（selectTopic 按 type 匹配） */
-const allTopics: ReadonlyArray<HelpTopic> = helpGroups.flatMap((g) => g.items)
+export const helpGroups = computed<ReadonlyArray<HelpTopicGroup>>(() => {
+  language.value // 只做依赖登记，真正取值在下面
+  return [
+    {
+      title: '',
+      items: [{ type: INTRO_TOPIC_TYPE, label: translate('helpCenter.about'), load: loadIntro }]
+    },
+    { title: translate('helpCenter.groupNodes'), items: nodeTopics }
+  ]
+})
 
 // —— module 级单例状态 ——
 const visible = ref(false)
@@ -61,8 +73,8 @@ const currentType = ref<string>('')
 /** 打开帮助中心（默认选中第一个 topic） */
 function openCenter(): void {
   visible.value = true
-  if (!currentComp.value && allTopics.length > 0) {
-    void selectTopic(allTopics[0])
+  if (!currentComp.value && lookupTopics.length > 0) {
+    void selectTopic(lookupTopics[0])
   }
 }
 
@@ -76,7 +88,7 @@ function closeCenter(): void {
  */
 async function selectTopic(target: HelpTopic | string): Promise<void> {
   const topic = typeof target === 'string'
-    ? allTopics.find((t) => t.type === target)
+    ? lookupTopics.find((t) => t.type === target)
     : target
   if (!topic) return
 

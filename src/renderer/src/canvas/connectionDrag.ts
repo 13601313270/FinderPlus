@@ -1,4 +1,5 @@
 import { reactive } from 'vue'
+import { translate } from '@renderer/i18n'
 import { workspaceScene } from '../../../main/engine/graph/SceneRegistry'
 import type { OutputPort } from '../../../main/engine/port/OutputPort'
 import type { InputPort } from '../../../main/engine/port/InputPort'
@@ -35,13 +36,14 @@ export const connectionDrag = reactive({
   targetOk: false
 })
 
-/** 连接失败的一次性提示。引擎只给判定（reason），文案在这里翻译成人话 */
-export const connectNotice = reactive({ text: '' })
-
-const REASON_TEXT: Record<string, string> = {
-  'already-bound': '这两个端口已经连上了',
-  'kind-not-allowed': '类型不匹配：这个输入端口不接受该类型',
-  'single-port-occupied': '这个输入端口只接一条线，先断开原来那条'
+/**
+ * 引擎给的失败判定（reason）→ 词条 key。
+ * 这里只做映射、不存文案：真正的译文在弹提示时按当前语言现取，切语言后立即生效。
+ */
+const REASON_KEY: Record<string, string> = {
+  'already-bound': 'connection.alreadyBound',
+  'kind-not-allowed': 'connection.kindNotAllowed',
+  'single-port-occupied': 'connection.singlePortOccupied'
 }
 
 /** 端口命中半径（屏幕像素）：圆点才 12px，给点容错 */
@@ -106,7 +108,7 @@ function onPointerUp(event: PointerEvent): void {
   if (!from || !fromNode || !hit) return // 松在空白处：什么都不做，等于取消
 
   if (hit.nodeId === fromNode) {
-    showCanvasNotice('同一个节点的端口之间不能连线', 'error')
+    showCanvasNotice(translate('connection.selfLoop'), 'error')
     return
   }
 
@@ -115,7 +117,13 @@ function onPointerUp(event: PointerEvent): void {
 
   // 唯一的写入入口；能不能连由引擎判（跟预览时用的是同一套规则）
   const result = workspaceScene.connect(from, target)
-  if (!result.ok) showCanvasNotice(REASON_TEXT[result.reason] ?? `连接失败：${result.reason}`, 'error')
+  if (!result.ok) {
+    const reasonKey = REASON_KEY[result.reason]
+    showCanvasNotice(
+      reasonKey ? translate(reasonKey) : translate('connection.failed', { reason: result.reason }),
+      'error'
+    )
+  }
 }
 
 /** 指针下面的候选端口 + 预览线终点（吸附到圆心）。拖拽过程中反复调用 */

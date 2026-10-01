@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { Node } from '../../main/engine/node/Node'
 import { workspaceScene } from '../../main/engine/graph/SceneRegistry'
 import { manifestFor, getNodeManifest, resolveByExtension } from '../../main/nodePlugin'
@@ -14,7 +15,7 @@ import Minimap from './components/Minimap.vue'
 import NodePalette from './components/NodePalette.vue'
 import ContextMenu, { type MenuItem } from './components/ContextMenu.vue'
 import type { NodeMenuItem } from '../../main/engine/node/Node'
-import { connectNotice } from '@renderer/canvas/connectionDrag'
+import { canvasNotice } from '@renderer/canvas/notice'
 import LLMSettingsDialog from './components/LLMSettingsDialog.vue'
 import ImageSettingsDialog from './components/ImageSettingsDialog.vue'
 import HelpCenter from './components/HelpCenter.vue'
@@ -23,9 +24,30 @@ import HelpIcon from './components/icons/HelpIcon.vue'
 import GearIcon from './components/icons/GearIcon.vue'
 import { useHelpCenter } from '@renderer/composables/useHelpCenter'
 import { useGlobalSettings } from '@renderer/composables/useGlobalSettings'
+import { useLanguageSettings } from '@renderer/composables/useLanguageSettings'
 import { IpcStorage } from '@renderer/composables/IpcStorage'
 import { isSelfDragDrop, clearSelfDragDrop } from '@renderer/composables/useFileDragOut'
 import { getDraggingNode, getDraggingNodeStartPos, clearDraggingNode } from '@renderer/composables/useNodePosition'
+
+const { t } = useI18n()
+
+/**
+ * 系统应用菜单（macOS 屏幕顶部菜单栏 / Windows 菜单栏）的文案要跟着界面语言走，
+ * 但菜单是主进程建的、语言却存在渲染进程的 localStorage 里，主进程读不到，
+ * 所以这里把翻译好的文案推过去，主进程收到后重建菜单。
+ * immediate: true 保证启动时也推一次。
+ */
+const { language } = useLanguageSettings()
+watch(
+  language,
+  () => {
+    window.appMenuApi?.setLabels({
+      settings: t('app.settings'),
+      file: t('app.fileMenu')
+    })
+  },
+  { immediate: true }
+)
 
 // 空白画布：没有预置节点。所有节点都从左上角「＋」调色板添加。
 
@@ -712,20 +734,20 @@ onUnmounted(() => {
       <button
         class="stage__settings-btn"
         type="button"
-        title="设置"
+        :title="t('app.settings')"
         @click="openSettings"
       >
         <GearIcon :size="14" />
-        <span>设置</span>
+        <span>{{ t('app.settings') }}</span>
       </button>
       <button
         class="stage__help-btn"
         type="button"
-        title="帮助中心"
+        :title="t('helpCenter.title')"
         @click="openHelpCenter"
       >
         <HelpIcon :size="14" />
-        <span>帮助</span>
+        <span>{{ t('app.help') }}</span>
       </button>
     </header>
 
@@ -737,8 +759,8 @@ onUnmounted(() => {
 
       <!-- 连线失败的一次性提示（类型不匹配 / 端口已占用 / 自环）：浮在画布顶层，
            不占布局、不挡指针，引擎只给判定，文案在 connectionDrag 里翻译。 -->
-      <p class="stage__notice" :class="{ 'stage__notice--on': !!connectNotice.text }">
-        {{ connectNotice.text }}
+      <p class="stage__notice" :class="{ 'stage__notice--on': !!canvasNotice.text }">
+        {{ canvasNotice.text }}
       </p>
 
       <div class="stage__world" :style="worldStyle">

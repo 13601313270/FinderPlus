@@ -1,90 +1,122 @@
+<script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+
+/**
+ * 「关于 Finder+」帮助文档。
+ *
+ * 正文词条统一放在 i18n 的 intro.* 下。凡是有行内加粗 / 行内代码的句子，
+ * 都用 <i18n-t> 做组件插值：完整句子留在词条里（各语言可以自由调整语序），
+ * 加粗和 <code> 这些标记留在模板里（这样 scoped 样式照常生效）。
+ */
+const { t } = useI18n()
+</script>
+
 <template>
   <div class="help-body">
     <!-- 软件介绍 -->
     <section class="help-section">
-      <h4 class="help-section__title">这是什么？</h4>
-      <p class="help-section__p">
-        Finder+ 是一个 <b>节点式 / 画板式</b> 桌面应用，基于 Electron + Vue 3 构建。
-        你可以在画布上拖入不同类型的节点，用连线把它们串起来，形成一条数据流管道——
-        数据从上游节点沿边流向下游节点，每个节点在自己的位置做变换、检查或产出。
-      </p>
+      <h4 class="help-section__title">{{ t('intro.whatIs.title') }}</h4>
+      <i18n-t keypath="intro.whatIs.body" tag="p" class="help-section__p">
+        <template #arch>
+          <b>{{ t('intro.whatIs.arch') }}</b>
+        </template>
+      </i18n-t>
     </section>
 
     <!-- 核心概念 -->
     <section class="help-section">
-      <h4 class="help-section__title">核心概念</h4>
+      <h4 class="help-section__title">{{ t('intro.concepts.title') }}</h4>
 
       <div class="help-concept">
-        <div class="help-concept__name">节点（Node）</div>
-        <div class="help-concept__desc">
-          画布上的一个功能单元。每个节点有自己的类型（如 <code>text-input</code>、<code>code</code>、<code>llm</code>），
-          左侧有输入端口、右侧有输出端口。节点不直接操作画布，只管「接收什么值、产出什么值」。
-        </div>
+        <div class="help-concept__name">{{ t('intro.concepts.node.name') }}</div>
+        <i18n-t keypath="intro.concepts.node.desc" tag="div" class="help-concept__desc">
+          <template #c1><code>text-input</code></template>
+          <template #c2><code>code</code></template>
+          <template #c3><code>llm</code></template>
+        </i18n-t>
       </div>
 
       <div class="help-concept">
-        <div class="help-concept__name">端口（Port）</div>
-        <div class="help-concept__desc">
-          节点两侧的小圆点。<b>输入端口</b>（左侧）从上游接收值，<b>输出端口</b>（右侧）向下游推送值。
-          每个端口有类型约束（<code>number</code>、<code>string</code>、<code>file</code> 等），
-          连线时会实时校验类型是否匹配。
-        </div>
+        <div class="help-concept__name">{{ t('intro.concepts.port.name') }}</div>
+        <i18n-t keypath="intro.concepts.port.desc" tag="div" class="help-concept__desc">
+          <template #input>
+            <b>{{ t('intro.concepts.port.input') }}</b>
+          </template>
+          <template #output>
+            <b>{{ t('intro.concepts.port.output') }}</b>
+          </template>
+          <template #c1><code>number</code></template>
+          <template #c2><code>string</code></template>
+          <template #c3><code>file</code></template>
+        </i18n-t>
       </div>
 
       <div class="help-concept">
-        <div class="help-concept__name">边（Edge）</div>
-        <div class="help-concept__desc">
-          连接输出端口到输入端口的一条线。值沿边从左向右流动。
-          拖拽输出端口圆点到另一个节点的输入端口圆点即可创建连接。
-        </div>
+        <div class="help-concept__name">{{ t('intro.concepts.edge.name') }}</div>
+        <div class="help-concept__desc">{{ t('intro.concepts.edge.desc') }}</div>
       </div>
 
       <div class="help-concept">
-        <div class="help-concept__name">场景（Scene）</div>
-        <div class="help-concept__desc">
-          画布上所有节点和边的容器。负责节点增删、边的绑定/解绑，以及把变更广播给 UI 层刷新。
-        </div>
+        <div class="help-concept__name">{{ t('intro.concepts.scene.name') }}</div>
+        <div class="help-concept__desc">{{ t('intro.concepts.scene.desc') }}</div>
       </div>
     </section>
 
     <!-- 快速上手 -->
     <section class="help-section">
-      <h4 class="help-section__title">快速上手</h4>
+      <h4 class="help-section__title">{{ t('intro.quickStart.title') }}</h4>
       <ol class="help-list help-list--ordered">
-        <li>点左上角 <code>＋</code> 打开节点调色板，选一个节点拖到画布上</li>
-        <li>拖入文件会自动识别类型并生成对应的 File 节点</li>
-        <li>从某个节点的输出端口（右侧圆点）拖拽连线到另一个节点的输入端口（左侧圆点）</li>
-        <li>双击节点或点节点上的齿轮图标配置参数</li>
-        <li>有节点配置好 <code>help</code> 的话，点问号图标查看该节点的详细用法</li>
+        <i18n-t keypath="intro.quickStart.step1" tag="li">
+          <template #plus><code>＋</code></template>
+        </i18n-t>
+        <li>{{ t('intro.quickStart.step2') }}</li>
+        <li>{{ t('intro.quickStart.step3') }}</li>
+        <li>{{ t('intro.quickStart.step4') }}</li>
+        <i18n-t keypath="intro.quickStart.step5" tag="li">
+          <template #help><code>help</code></template>
+        </i18n-t>
       </ol>
     </section>
 
     <!-- 节点类型 -->
     <section class="help-section">
-      <h4 class="help-section__title">节点类型概览</h4>
+      <h4 class="help-section__title">{{ t('intro.nodeTypes.title') }}</h4>
       <table class="help-table">
-        <thead><tr><th>分类</th><th>常见节点</th></tr></thead>
+        <thead>
+          <tr>
+            <th>{{ t('intro.nodeTypes.category') }}</th>
+            <th>{{ t('intro.nodeTypes.common') }}</th>
+          </tr>
+        </thead>
         <tbody>
           <tr>
-            <td>输入</td>
-            <td><code>text-input</code>、<code>number-input</code>、<code>bool-input</code>、<code>txt-file</code>、<code>img-file</code></td>
+            <td>{{ t('intro.nodeTypes.input') }}</td>
+            <td>
+              <code>text-input</code>{{ t('intro.nodeTypes.sep') }}<code>number-input</code>{{ t('intro.nodeTypes.sep') }}<code>bool-input</code>{{ t('intro.nodeTypes.sep') }}<code>txt-file</code>{{ t('intro.nodeTypes.sep') }}<code>img-file</code>
+            </td>
           </tr>
           <tr>
-            <td>处理</td>
-            <td><code>code</code>、<code>llm</code>、<code>command</code>、<code>http-request</code>、<code>image-compress</code></td>
+            <td>{{ t('intro.nodeTypes.process') }}</td>
+            <td>
+              <code>code</code>{{ t('intro.nodeTypes.sep') }}<code>llm</code>{{ t('intro.nodeTypes.sep') }}<code>command</code>{{ t('intro.nodeTypes.sep') }}<code>http-request</code>{{ t('intro.nodeTypes.sep') }}<code>image-compress</code>
+            </td>
           </tr>
           <tr>
-            <td>输出 / 展示</td>
-            <td><code>text-display</code>、<code>image-preview</code>、<code>human-review</code></td>
+            <td>{{ t('intro.nodeTypes.output') }}</td>
+            <td>
+              <code>text-display</code>{{ t('intro.nodeTypes.sep') }}<code>image-preview</code>{{ t('intro.nodeTypes.sep') }}<code>human-review</code>
+            </td>
           </tr>
           <tr>
-            <td>容器</td>
-            <td><code>folder</code>、<code>img-folder</code></td>
+            <td>{{ t('intro.nodeTypes.container') }}</td>
+            <td>
+              <code>folder</code>{{ t('intro.nodeTypes.sep') }}<code>img-folder</code>
+            </td>
           </tr>
         </tbody>
       </table>
       <p class="help-section__p" style="margin-top: 8px;">
-        左侧「节点帮助」列表里列出了当前已注册帮助文档的节点，点击可查看详细用法。
+        {{ t('intro.nodeTypes.footer') }}
       </p>
     </section>
   </div>

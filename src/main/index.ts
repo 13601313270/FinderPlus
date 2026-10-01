@@ -9,6 +9,7 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { openDatabase, closeDatabase, getDatabase, persist } from './db/database'
 import { SqliteStorage } from './db/SqliteStorage'
 import { ensureCanvasDir, getCanvasDir } from './paths'
+import type { MenuLabels } from '../preload'
 
 let storage: SqliteStorage | null = null
 let canvasWatcher: ReturnType<typeof watch> | null = null
@@ -103,18 +104,31 @@ function openSettings(): void {
 }
 
 /**
+ * 应用菜单里需要跟随界面语言的文案。
+ *
+ * 默认给英文兜底（渲染进程还没推过来、或者推送失败时用），渲染进程就绪后会把
+ * 当前语言的版本通过 'app-menu:set-labels' 推过来并触发菜单重建。
+ * 之所以不在主进程直接读词条：语言存在渲染进程的 localStorage 里，主进程拿不到。
+ */
+let menuLabels: MenuLabels = { settings: 'Settings', file: 'File' }
+
+/**
  * 构建系统应用菜单。
  *
  * macOS 的菜单栏固定显示在屏幕顶部（autoHideMenuBar 对它无效），
- * 这里把标准的 app 菜单补全，并在其中加入「设置…」入口（快捷键 Cmd+,，macOS 惯例），
+ * 这里把标准的 app 菜单补全，并在其中加入「设置」入口（快捷键 Cmd+,，macOS 惯例），
  * 点击后通过 openSettings() 打开和顶部工具栏按钮同一个弹窗。
- * 其他平台沿用标准菜单结构，同样带「设置…」项。
+ * 其他平台沿用标准菜单结构，同样带「设置」项。
+ *
+ * 注意：role 类菜单项（about / quit / editMenu / windowMenu…）的文案由系统按 OS 语言
+ * 自动本地化，这里只负责自定义 label 的翻译。
  */
 function buildApplicationMenu(): void {
   const isMac = process.platform === 'darwin'
 
   const settingsItem: Electron.MenuItemConstructorOptions = {
-    label: '设置…',
+    // 尾部的「…」是 macOS 菜单惯例：表示点击后会先弹对话框，而不是立刻执行完
+    label: `${menuLabels.settings}…`,
     accelerator: 'CmdOrCtrl+,',
     click: openSettings
   }
@@ -143,7 +157,7 @@ function buildApplicationMenu(): void {
       ]
     : [
         {
-          label: 'File',
+          label: menuLabels.file,
           submenu: [settingsItem, { type: 'separator' }, { role: 'quit' }]
         },
         { role: 'editMenu' },
@@ -155,6 +169,12 @@ function buildApplicationMenu(): void {
 }
 
 function registerIpcHandlers(): void {
+  // 渲染进程推来当前语言的菜单文案 → 重建应用菜单
+  ipcMain.on('app-menu:set-labels', (_e, labels: MenuLabels) => {
+    menuLabels = labels
+    buildApplicationMenu()
+  })
+
   // —— 持久化写操作：由渲染进程 Scene 里的 IpcStorage 通过 preload 调用 ——
   ipcMain.handle('db:saveNode', (_e, args: {
     id: string
@@ -615,7 +635,8 @@ app.whenReady().then(async () => {
 
   createWindow()
   startCanvasWatcher()
-  // 构建系统应用菜单（含「设置…」入口，macOS 显示在屏幕顶部菜单栏）
+  // 构建系统应用菜单（含「设置」入口，macOS 显示在屏幕顶部菜单栏）
+  // 此时用的是英文兜底文案，渲染进程就绪后会推来当前语言的文案并触发重建
   buildApplicationMenu()
 
   app.on('activate', () => {

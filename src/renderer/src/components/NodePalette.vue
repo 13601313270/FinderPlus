@@ -1,4 +1,5 @@
 <script setup lang="ts">import { computed, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { paletteManifests } from '../../../main/nodePlugin';
 /**
  * 节点调色板：画布左上角的「＋」按钮。
@@ -10,6 +11,7 @@ import { paletteManifests } from '../../../main/nodePlugin';
  *
  * 设计成纯 UI 组件：不碰 Scene、不构造节点，只把「用户想加什么类型」告诉上层。
  */
+const { t } = useI18n();
 const emit = defineEmits<{
  (e: 'select-type', type: string): void;
 }>();
@@ -49,7 +51,7 @@ const items = computed(() => paletteManifests.map((m) => ({
     @mouseenter="openMenu"
     @mouseleave="scheduleClose"
   >
-    <button class="palette__trigger" type="button" title="添加节点">＋</button>
+    <button class="palette__trigger" type="button" :title="t('palette.addNode')">＋</button>
 
     <transition name="palette-fade">
       <ul v-if="expanded" class="palette__menu">

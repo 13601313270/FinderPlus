@@ -18,8 +18,11 @@ import { connectNotice } from '@renderer/canvas/connectionDrag'
 import LLMSettingsDialog from './components/LLMSettingsDialog.vue'
 import ImageSettingsDialog from './components/ImageSettingsDialog.vue'
 import HelpCenter from './components/HelpCenter.vue'
+import SettingsDialog from './components/SettingsDialog.vue'
 import HelpIcon from './components/icons/HelpIcon.vue'
+import GearIcon from './components/icons/GearIcon.vue'
 import { useHelpCenter } from '@renderer/composables/useHelpCenter'
+import { useGlobalSettings } from '@renderer/composables/useGlobalSettings'
 import { IpcStorage } from '@renderer/composables/IpcStorage'
 import { isSelfDragDrop, clearSelfDragDrop } from '@renderer/composables/useFileDragOut'
 import { getDraggingNode, getDraggingNodeStartPos, clearDraggingNode } from '@renderer/composables/useNodePosition'
@@ -28,6 +31,9 @@ import { getDraggingNode, getDraggingNodeStartPos, clearDraggingNode } from '@re
 
 // 全局帮助中心：任何地方调用 openCenter() 都会弹出带节点帮助列表的帮助对话框
 const { openCenter: openHelpCenter } = useHelpCenter()
+
+// 全局设置：工具栏按钮和系统应用菜单（macOS 顶部菜单栏「设置…」）共享同一弹窗
+const { openSettings } = useGlobalSettings()
 
 // —— 节点列表：响应 Scene 结构变化 ——
 // Scene 是普通类容器，Vue 追踪不到它的 Map 变化。通过 sceneTick 手动触发 computed 重算，
@@ -709,6 +715,15 @@ onUnmounted(() => {
         CanvasDesk · 拖动此区域移动窗口
       </span>
       <button
+        class="stage__settings-btn"
+        type="button"
+        title="设置"
+        @click="openSettings"
+      >
+        <GearIcon :size="14" />
+        <span>设置</span>
+      </button>
+      <button
         class="stage__help-btn"
         type="button"
         title="帮助中心"
@@ -759,6 +774,9 @@ onUnmounted(() => {
 
     <!-- 全局帮助中心：列出所有注册了 help 的节点，点击左侧项动态加载帮助组件 -->
     <HelpCenter />
+
+    <!-- 全局设置弹窗：顶部栏「设置」按钮和系统应用菜单「设置…」共享它 -->
+    <SettingsDialog />
   </section>
 </template>
 
@@ -774,6 +792,7 @@ onUnmounted(() => {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 4px;
     padding: 0 12px;
     background: #e9edf3;
     user-select: none;
@@ -790,7 +809,8 @@ onUnmounted(() => {
     -webkit-app-region: drag;
   }
 
-  &__help-btn {
+  &__help-btn,
+  &__settings-btn {
     // 父级 dragbar 不再带 drag，不需要 no-drag
     all: unset;
     cursor: pointer;

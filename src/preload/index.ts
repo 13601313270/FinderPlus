@@ -241,6 +241,22 @@ const fileApi = {
   }
 }
 
+/**
+ * 应用菜单 API：接收主进程「系统应用菜单项被点击」的推送。
+ * 例如 macOS 顶部菜单栏的「设置…」→ 主进程 send → 这里回调 → 渲染进程打开设置弹窗。
+ */
+const appMenuApi = {
+  /**
+   * 监听「设置」菜单项被点击。
+   * 返回取消订阅函数。
+   */
+  onOpenSettings: (callback: () => void): (() => void) => {
+    const handler = (): void => callback()
+    ipcRenderer.on('app-menu:open-settings', handler)
+    return () => ipcRenderer.removeListener('app-menu:open-settings', handler)
+  }
+}
+
 if (process.contextIsolated) {
   try {
     // 主进程推送的日志 → 转发到渲染进程 Console
@@ -260,6 +276,7 @@ if (process.contextIsolated) {
     contextBridge.exposeInMainWorld('codeApi', codeApi)
     contextBridge.exposeInMainWorld('httpApi', httpApi)
     contextBridge.exposeInMainWorld('wasmApi', wasmApi)
+    contextBridge.exposeInMainWorld('appMenuApi', appMenuApi)
   } catch (error) {
     console.error(error)
   }
@@ -280,6 +297,8 @@ if (process.contextIsolated) {
   window.httpApi = httpApi
   // @ts-ignore (define in dts)
   window.wasmApi = wasmApi
+  // @ts-ignore (define in dts)
+  window.appMenuApi = appMenuApi
 }
 
 export type ExposedApi = typeof api
@@ -289,3 +308,4 @@ export type CommandApi = typeof commandApi
 export type CodeApi = typeof codeApi
 export type HttpApi = typeof httpApi
 export type WasmApi = typeof wasmApi
+export type AppMenuApi = typeof appMenuApi

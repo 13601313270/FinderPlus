@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, Menu } from 'electron'
 import { join, basename, extname } from 'node:path'
 import { copyFileSync, existsSync, readFileSync, unlinkSync, watch, writeFileSync } from 'node:fs'
 import { exec } from 'node:child_process'
@@ -90,6 +90,68 @@ function createWindow(): void {
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
+}
+
+/**
+ * 通知渲染进程打开全局设置弹窗。
+ * 菜单点击发生在主进程，真正的弹窗由渲染进程的 useGlobalSettings（单例）控制，
+ * 所以这里只负责 send 一个事件，渲染进程的 SettingsDialog 监听后打开。
+ */
+function openSettings(): void {
+  const win = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
+  win?.webContents.send('app-menu:open-settings')
+}
+
+/**
+ * 构建系统应用菜单。
+ *
+ * macOS 的菜单栏固定显示在屏幕顶部（autoHideMenuBar 对它无效），
+ * 这里把标准的 app 菜单补全，并在其中加入「设置…」入口（快捷键 Cmd+,，macOS 惯例），
+ * 点击后通过 openSettings() 打开和顶部工具栏按钮同一个弹窗。
+ * 其他平台沿用标准菜单结构，同样带「设置…」项。
+ */
+function buildApplicationMenu(): void {
+  const isMac = process.platform === 'darwin'
+
+  const settingsItem: Electron.MenuItemConstructorOptions = {
+    label: '设置…',
+    accelerator: 'CmdOrCtrl+,',
+    click: openSettings
+  }
+
+  const template: Electron.MenuItemConstructorOptions[] = isMac
+    ? [
+        {
+          label: app.name,
+          submenu: [
+            { role: 'about' },
+            { type: 'separator' },
+            settingsItem,
+            { type: 'separator' },
+            { role: 'services' },
+            { type: 'separator' },
+            { role: 'hide' },
+            { role: 'hideOthers' },
+            { role: 'unhide' },
+            { type: 'separator' },
+            { role: 'quit' }
+          ]
+        },
+        { role: 'editMenu' },
+        { role: 'viewMenu' },
+        { role: 'windowMenu' }
+      ]
+    : [
+        {
+          label: 'File',
+          submenu: [settingsItem, { type: 'separator' }, { role: 'quit' }]
+        },
+        { role: 'editMenu' },
+        { role: 'viewMenu' },
+        { role: 'windowMenu' }
+      ]
+
+  Menu.setApplicationMenu(Menu.buildFromTemplate(template))
 }
 
 function registerIpcHandlers(): void {
@@ -553,6 +615,8 @@ app.whenReady().then(async () => {
 
   createWindow()
   startCanvasWatcher()
+  // 构建系统应用菜单（含「设置…」入口，macOS 显示在屏幕顶部菜单栏）
+  buildApplicationMenu()
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()

@@ -16,19 +16,22 @@ import { LANGUAGE_CODES, type LanguageCode } from '../../../shared/language'
  */
 
 /**
- * 各语言代码对应的下拉标签。
+ * 各语言代码对应的下拉标签：只用该语言的原生写法（endonym）。
+ *
+ * 刻意不挂国旗——语言与国家/地区不是一一对应（English、Español、العربية、Русский…），
+ * 挂任何一面旗都有「被代表性」问题；原生文字本身就是最好的视觉锚点。
  * 标注成 Record<LanguageCode, string>：新增语言时忘了配标签会在编译期报错。
  */
 const LANGUAGE_LABELS: Record<LanguageCode, string> = {
   zh: '中文',
-  en: 'English / 英文',
-  ja: '日本語 / 日语',
-  ko: '한국어 / 韩语',
-  es: 'Español / 西班牙语',
-  ar: 'العربية / 阿拉伯语',
-  fr: 'Français / 法语',
-  pt: 'Português / 葡萄牙语',
-  ru: 'Русский / 俄语'
+  en: 'English',
+  ja: '日本語',
+  ko: '한국어',
+  es: 'Español',
+  ar: 'العربية',
+  fr: 'Français',
+  pt: 'Português',
+  ru: 'Русский'
 }
 
 /** 支持的语言选项（代码 + 下拉标签），顺序由 shared 的 LANGUAGE_CODES 决定 */

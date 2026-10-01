@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted } from 'vue'
+import { computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useGlobalSettings } from '@renderer/composables/useGlobalSettings'
 import {
   useLanguageSettings,
   type LanguageCode
 } from '@renderer/composables/useLanguageSettings'
+import SelectMenu from './SelectMenu.vue'
 
 /**
  * 全局设置弹窗（机制版）：
@@ -17,8 +18,13 @@ const { t } = useI18n()
 const { visible, openSettings, closeSettings } = useGlobalSettings()
 const { language, setLanguage, languageOptions } = useLanguageSettings()
 
-function onLanguageChange(e: Event): void {
-  setLanguage((e.target as HTMLSelectElement).value as LanguageCode)
+/** 语言选项 → SelectMenu 需要的 { value, label } */
+const languageSelectOptions = computed(() =>
+  languageOptions.map((opt) => ({ value: opt.code, label: opt.label }))
+)
+
+function onLanguageChange(value: string): void {
+  setLanguage(value as LanguageCode)
 }
 
 /** 系统应用菜单「设置…」触发的取消订阅句柄 */
@@ -67,15 +73,12 @@ onUnmounted(() => {
           <section class="gs-section">
             <h4 class="gs-section__title">{{ t('settingsDialog.language') }}</h4>
             <p class="gs-section__hint">{{ t('settingsDialog.languageHint') }}</p>
-            <select
-              class="gs-select"
-              :value="language"
-              @change="onLanguageChange"
-            >
-              <option v-for="opt in languageOptions" :key="opt.code" :value="opt.code">
-                {{ opt.label }}
-              </option>
-            </select>
+            <SelectMenu
+              :model-value="language"
+              :options="languageSelectOptions"
+              :aria-label="t('settingsDialog.language')"
+              @update:model-value="onLanguageChange"
+            />
           </section>
         </div>
       </div>
@@ -163,23 +166,6 @@ onUnmounted(() => {
     margin: 0 0 10px;
     font-size: 12px;
     color: #9ca3af;
-  }
-}
-
-.gs-select {
-  width: 100%;
-  height: 34px;
-  padding: 0 10px;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  background: #fff;
-  font-size: 13px;
-  color: #1f2937;
-  cursor: pointer;
-
-  &:focus {
-    outline: none;
-    border-color: #6366f1;
   }
 }
 

@@ -1,14 +1,23 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted } from 'vue'
 import { useGlobalSettings } from '@renderer/composables/useGlobalSettings'
+import {
+  useLanguageSettings,
+  type LanguageCode
+} from '@renderer/composables/useLanguageSettings'
 
 /**
  * 全局设置弹窗（机制版）：
  * - 自带弹窗壳（Teleport + mask + dialog + header + body + Esc 关闭）
  * - 状态来自 useGlobalSettings（module 级单例），工具栏按钮和系统应用菜单共享
- * - 具体设置项后续往 body 里加，现在先放占位内容
+ * - 具体设置项按分区往 body 里加，当前已有「语言」
  */
 const { visible, openSettings, closeSettings } = useGlobalSettings()
+const { language, setLanguage, languageOptions } = useLanguageSettings()
+
+function onLanguageChange(e: Event): void {
+  setLanguage((e.target as HTMLSelectElement).value as LanguageCode)
+}
 
 /** 系统应用菜单「设置…」触发的取消订阅句柄 */
 let disposeMenuListener: (() => void) | undefined
@@ -53,7 +62,19 @@ onUnmounted(() => {
 
         <div class="gs-dialog__body">
           <!-- 设置分区：后续每类全局设置在这里加一块 -->
-          <p class="gs-placeholder">暂无可配置的全局设置</p>
+          <section class="gs-section">
+            <h4 class="gs-section__title">语言</h4>
+            <p class="gs-section__hint">选择界面语言，修改后自动保存。</p>
+            <select
+              class="gs-select"
+              :value="language"
+              @change="onLanguageChange"
+            >
+              <option v-for="opt in languageOptions" :key="opt.code" :value="opt.code">
+                {{ opt.label }}
+              </option>
+            </select>
+          </section>
         </div>
       </div>
     </div>
@@ -128,12 +149,36 @@ onUnmounted(() => {
   }
 }
 
-.gs-placeholder {
-  margin: 0;
-  padding: 32px 0;
-  text-align: center;
-  font-size: 12px;
-  color: #9ca3af;
+.gs-section {
+  &__title {
+    margin: 0 0 4px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #374151;
+  }
+
+  &__hint {
+    margin: 0 0 10px;
+    font-size: 12px;
+    color: #9ca3af;
+  }
+}
+
+.gs-select {
+  width: 100%;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #fff;
+  font-size: 13px;
+  color: #1f2937;
+  cursor: pointer;
+
+  &:focus {
+    outline: none;
+    border-color: #6366f1;
+  }
 }
 
 @keyframes gsFadeIn {

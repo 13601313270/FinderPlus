@@ -47,7 +47,7 @@ export class ImgFileNode extends FileNode {
   readonly fileOutput = new OutputPort('file', ImgFileValue, '文件')
 
   /** 文件数据输入端口：只接受同类型（图片）文件，收到值即替换本节点文件 */
-  readonly fileInput = new InputPort('file-in', { accepts: [ImgFileValue], label: '文件' })
+  readonly fileInput = new InputPort('file-in', { accepts: [ImgFileValue], label: '写入数据' })
 
   /** 图片天然宽度（像素）。render.vue 的 img load 时回写；0 表示尚未加载 */
   private naturalWidthValue = 0

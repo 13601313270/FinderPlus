@@ -5,7 +5,8 @@ import render from './render.vue'
 export const manifest: NodePluginManifest = {
   type: ImageOverlayNode.TYPE,
   nodeClass: ImageOverlayNode,
-  render
+  render,
+  help: () => import('./ImageOverlayHelpDialog.vue')
 }
 
 export default manifest

@@ -5,7 +5,8 @@ import render from './render.vue'
 export const manifest: NodePluginManifest = {
   type: HttpRequestNode.TYPE,
   nodeClass: HttpRequestNode,
-  render
+  render,
+  help: () => import('./HttpRequestHelpDialog.vue')
 }
 
 export default manifest

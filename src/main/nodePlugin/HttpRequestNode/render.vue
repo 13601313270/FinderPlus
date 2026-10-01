@@ -4,6 +4,8 @@ import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { HttpRequestNode, type HttpMethod, type HeaderEntry } from './node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
 import ChevronIcon from '@renderer/components/icons/ChevronIcon.vue'
+import HelpDialog from '@renderer/components/HelpDialog.vue'
+import HttpRequestHelpDialog from './HttpRequestHelpDialog.vue'
 
 /**
  * HTTP 请求节点的渲染组件。
@@ -17,6 +19,9 @@ import ChevronIcon from '@renderer/components/icons/ChevronIcon.vue'
 const props = defineProps<{ id: string }>()
 
 const httpNode = shallowRef<HttpRequestNode | undefined>(undefined)
+
+// —— 帮助浮层开关 ——
+const showHelp = ref(false)
 
 // —— 本地镜像状态（与节点实时同步）——
 const method = ref<HttpMethod>('GET')
@@ -179,21 +184,30 @@ onUnmounted(() => { unsubscribe?.() })
     :class="{ 'node--expanded': expanded }"
     @wheel="onRootWheel"
   >
-    <!-- 头部：拖动 + type 标签 + 展平 toggle -->
+    <!-- 头部：拖动 + type 标签 + 帮助 + 展开/收起 toggle -->
     <div class="node__header" @pointerdown="startDrag">
       <span class="node__handle" title="拖动节点">{{ httpNode?.type ?? '?' }}</span>
-      <button
-        v-if="httpNode"
-        class="node__toggle"
-        type="button"
-        :title="expanded ? '收起配置' : '展开配置'"
-        @pointerdown.stop
-        @click.stop="toggleExpand"
-      >
-        <!-- expanded=false(折叠)时指向下=展开按钮；expanded=true(展开)时指向上=收起按钮 -->
-        <ChevronIcon :direction="expanded ? 'up' : 'down'" :size="12" />
-        <span class="node__toggle-text">{{ expanded ? '收起' : '展开' }}</span>
-      </button>
+      <div class="node__header-right">
+        <button
+          v-if="httpNode"
+          class="node__toggle"
+          type="button"
+          :title="expanded ? '收起配置' : '展开配置'"
+          @pointerdown.stop
+          @click.stop="toggleExpand"
+        >
+          <!-- expanded=false(折叠)时指向下=展开按钮；expanded=true(展开)时指向上=收起按钮 -->
+          <ChevronIcon :direction="expanded ? 'up' : 'down'" :size="12" />
+          <span class="node__toggle-text">{{ expanded ? '收起' : '展开' }}</span>
+        </button>
+        <button
+          class="node__help"
+          type="button"
+          title="使用说明"
+          @pointerdown.stop
+          @click.stop="showHelp = true"
+        >?</button>
+      </div>
     </div>
 
     <!-- —— 折叠态可见：方法+URL 预览行 —— -->
@@ -365,6 +379,11 @@ onUnmounted(() => { unsubscribe?.() })
       {{ running ? '发送中…' : '发送' }}
     </button>
   </div>
+
+  <!-- 帮助弹窗 -->
+  <HelpDialog :visible="showHelp" title="HTTP 请求节点使用说明" @close="showHelp = false">
+    <HttpRequestHelpDialog />
+  </HelpDialog>
 </template>
 
 <style scoped lang="less">
@@ -398,6 +417,27 @@ onUnmounted(() => { unsubscribe?.() })
     font-size: 11px;
     color: @color-text-weak;
     padding: 2px 0;
+  }
+
+  &__header-right {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+
+  // 帮助按钮沿用 code 节点的灰底圆问号外观
+  &__help {
+    all: unset;
+    cursor: pointer;
+    flex-shrink: 0;
+    width: 18px; height: 18px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 50%;
+    background: #f3f4f6; color: #6b7280;
+    font-size: 12px; font-weight: 600; line-height: 1;
+    transition: background 0.15s, color 0.15s;
+    &:hover { background: #dbeafe; color: #2563eb; }
   }
 
   &__toggle {

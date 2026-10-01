@@ -7,6 +7,8 @@ import { ImgFileNode } from '../ImgFileNode/node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
 import type { Edge } from '../../engine/graph/Edge'
 import GearIcon from '@renderer/components/icons/GearIcon.vue'
+import HelpDialog from '@renderer/components/HelpDialog.vue'
+import ImageOverlayHelpDialog from './ImageOverlayHelpDialog.vue'
 
 const props = defineProps<{ id: string }>()
 
@@ -16,6 +18,9 @@ const node = computed(() => {
 })
 
 const { startDrag } = useNodePosition(() => node.value)
+
+// —— 帮助浮层开关 ——
+const showHelp = ref(false)
 
 // —— 画布尺寸设置弹窗 ——
 const showSizeDialog = ref(false)
@@ -611,6 +616,13 @@ function onRemoveLayer(e: PointerEvent, portId: string): void {
       >
         <GearIcon :size="14" />
       </button>
+      <button
+        class="overlay-card__help"
+        type="button"
+        title="使用说明"
+        @pointerdown.stop
+        @click="showHelp = true"
+      >?</button>
     </div>
 
     <!-- 主体 -->
@@ -766,6 +778,11 @@ function onRemoveLayer(e: PointerEvent, portId: string): void {
       @pointerdown.stop="onNodeResizeStart"
     ></div>
   </div>
+
+  <!-- 帮助弹窗 -->
+  <HelpDialog :visible="showHelp" title="图片叠加节点使用说明" @close="showHelp = false">
+    <ImageOverlayHelpDialog />
+  </HelpDialog>
 </template>
 
 <style scoped lang="less">
@@ -790,6 +807,7 @@ function onRemoveLayer(e: PointerEvent, portId: string): void {
 
   &__gear {
     margin-left: auto;
+    align-self: center;
     flex-shrink: 0;
     width: 22px; height: 22px;
     display: flex; align-items: center; justify-content: center;
@@ -798,6 +816,21 @@ function onRemoveLayer(e: PointerEvent, portId: string): void {
     cursor: pointer;
     transition: background 0.15s ease, color 0.15s ease;
     &:hover { background: #eef2ff; color: #4a7cff; }
+  }
+
+  // 帮助按钮沿用 code 节点的灰底圆问号外观
+  &__help {
+    all: unset;
+    align-self: center;
+    flex-shrink: 0;
+    cursor: pointer;
+    width: 18px; height: 18px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 50%;
+    background: #f3f4f6; color: #6b7280;
+    font-size: 12px; font-weight: 600; line-height: 1;
+    transition: background 0.15s ease, color 0.15s ease;
+    &:hover { background: #dbeafe; color: #2563eb; }
   }
 
   &__body { flex: 1; min-height: 0; display: flex; gap: 8px; overflow: hidden; }

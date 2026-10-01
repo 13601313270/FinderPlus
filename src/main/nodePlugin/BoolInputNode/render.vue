@@ -3,6 +3,7 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { BoolInputNode } from './node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
+import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 
 /**
  * 布尔开关节点的渲染组件（只画卡片内容）。
@@ -20,6 +21,9 @@ const boolNode = computed(() => {
   const node = workspaceScene.getNode(props.id)
   return node instanceof BoolInputNode ? node : undefined
 })
+
+// 卡片标题走插件 manifest 的多语言 title，未配当前语言时由 resolveNodeTitle 兜底
+const nodeTitle = useNodeTitle(() => boolNode.value, '?')
 
 /** 引擎字段是普通类字段，Vue 追踪不到，所以走 Node.onChanged 这条桥刷进本地 ref */
 const checked = ref(false)
@@ -50,7 +54,7 @@ function onToggle(): void {
 
 <template>
   <div class="node">
-    <span class="node__handle" title="拖动节点" @pointerdown="startDrag">{{ boolNode?.type ?? '?' }}</span>
+    <span class="node__handle" title="拖动节点" @pointerdown="startDrag">{{ nodeTitle }}</span>
     <div class="node__row">
       <button
         class="node__switch"

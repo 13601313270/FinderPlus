@@ -3,6 +3,7 @@ import { computed, onMounted, onUnmounted, ref, shallowRef } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { CodeNode, type CodeInputKind, type CodeInputMeta, type CodePortKind, type CodeOutputMeta } from './node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
+import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import HelpDialog from '@renderer/components/HelpDialog.vue'
 import CodeHelpDialog from './CodeHelpDialog.vue'
 
@@ -19,6 +20,9 @@ import CodeHelpDialog from './CodeHelpDialog.vue'
 const props = defineProps<{ id: string }>()
 
 const codeNode = shallowRef<CodeNode | undefined>(undefined)
+
+// 卡片标题走插件 manifest 的多语言 title，未配当前语言时由 resolveNodeTitle 兜底
+const nodeTitle = useNodeTitle(() => codeNode.value, '?')
 const code = ref('')
 const resultText = ref('')
 const errorText = ref('')
@@ -206,7 +210,7 @@ function onNodeWheel(e: WheelEvent): void {
 <template>
   <div class="node">
     <div class="node__header" @pointerdown="startDrag">
-      <span class="node__handle" title="拖动节点（整个头部可拖）">{{ codeNode?.type ?? '?' }}</span>
+      <span class="node__handle" title="拖动节点（整个头部可拖）">{{ nodeTitle }}</span>
       <div class="node__header-right">
         <span class="node__status" :class="`node__status--${status}`">{{ statusLabel }}</span>
         <button

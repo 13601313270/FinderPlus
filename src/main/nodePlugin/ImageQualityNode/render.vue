@@ -6,6 +6,10 @@ import { bytesToBase64, base64ToBytes } from '../../engine/data/base64'
 import { ImageQualityNode, type ImageQualityFormat } from './node'
 import { ImgFileNode } from '../ImgFileNode/node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
+import { useNodeTitle } from '@renderer/composables/useNodeTitle'
+
+// 卡片头部标题走插件 manifest 的多语言 title，未配当前语言时由 resolveNodeTitle 兜底
+const nodeTitle = useNodeTitle(ImageQualityNode.TYPE)
 
 const props = defineProps<{ id: string }>()
 
@@ -259,7 +263,7 @@ onUnmounted(() => {
     :title="'拖入图片节点压缩一次 · 或左侧端口接图片响应式压缩'">
     <!-- 头部类型标签 + 导出格式选择 -->
     <div class="quality-card__header">
-      <span class="quality-card__title">图片质量调整</span>
+      <span class="quality-card__title">{{ nodeTitle }}</span>
       <select class="quality-card__format" :value="exportFormat" title="选择导出格式（改变后重新压缩）"
         @pointerdown.stop @change="onFormatChange">
         <option value="jpeg">jpeg</option>

@@ -4,6 +4,7 @@ import { debounce } from 'lodash-es'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { NumberInputNode } from './node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
+import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 
 /**
  * 数字输入框节点的渲染组件（只画卡片内容）。
@@ -22,6 +23,9 @@ const inputNode = computed(() => {
   const node = workspaceScene.getNode(props.id)
   return node instanceof NumberInputNode ? node : undefined
 })
+
+// 卡片标题走插件 manifest 的多语言 title，未配当前语言时由 resolveNodeTitle 兜底
+const nodeTitle = useNodeTitle(() => inputNode.value, '?')
 
 /**
  * 已经提交到输出端口上的数值：输入框显示它以它为准，卡片底部的读数也用它。
@@ -69,7 +73,7 @@ const { startDrag } = useNodePosition(() => inputNode.value)
 
 <template>
   <div class="node">
-    <span class="node__handle" title="拖动节点" @pointerdown="startDrag">{{ inputNode?.type ?? '?' }}</span>
+    <span class="node__handle" title="拖动节点" @pointerdown="startDrag">{{ nodeTitle }}</span>
     <input
       class="node__field"
       type="number"

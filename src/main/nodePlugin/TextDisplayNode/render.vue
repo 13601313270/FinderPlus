@@ -3,6 +3,7 @@ import { onMounted, onUnmounted, ref, shallowRef } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { TextDisplayNode } from './node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
+import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import { viewport } from '@renderer/canvas/viewport'
 
 /**
@@ -20,6 +21,9 @@ const props = defineProps<{ id: string }>()
 // 端口对象不再是引擎里那个端口（按身份比对的连线层会认不出来）。引擎对象有自己的一套
 // 通知机制（onChanged），本来也不需要 Vue 去代理它，这里只关心「引用换没换」。
 const displayNode = shallowRef<TextDisplayNode | undefined>(undefined)
+
+// 卡片标题走插件 manifest 的多语言 title，未配当前语言时由 resolveNodeTitle 兜底
+const nodeTitle = useNodeTitle(() => displayNode.value, '?')
 const text = ref('')
 
 let unsubscribe: (() => void) | undefined
@@ -98,7 +102,7 @@ function onResizePointerDown(e: PointerEvent): void {
 
 <template>
   <div class="node" @wheel="onNodeWheel">
-    <span class="node__handle" title="拖动节点" @pointerdown="startDrag">{{ displayNode?.type ?? '?' }}</span>
+    <span class="node__handle" title="拖动节点" @pointerdown="startDrag">{{ nodeTitle }}</span>
     <div class="render-display" :class="{ 'render-display--empty': !text }">
       {{ text || (displayNode ? '（暂无输出）' : '节点不存在') }}
     </div>

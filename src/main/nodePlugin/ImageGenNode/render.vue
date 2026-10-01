@@ -4,7 +4,11 @@ import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { ImageGenNode } from './node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
 import { useImageSettings } from '@renderer/composables/useImageSettings'
+import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import GearIcon from '@renderer/components/icons/GearIcon.vue'
+
+// 卡片头部标题走插件 manifest 的多语言 title，未配当前语言时由 resolveNodeTitle 兜底
+const nodeTitle = useNodeTitle(ImageGenNode.TYPE)
 
 /**
  * 文生图节点的渲染组件：
@@ -115,7 +119,7 @@ function onGenClick(): void {
 <template>
   <div class="node">
     <div class="node__header" @pointerdown="startDrag">
-      <span class="node__handle" title="拖动节点（整个头部可拖）">文生图</span>
+      <span class="node__handle" title="拖动节点（整个头部可拖）">{{ nodeTitle }}</span>
       <button
         v-if="node"
         class="node__gear"

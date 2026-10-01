@@ -4,6 +4,7 @@ import { onMounted, onUnmounted, ref, shallowRef } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { LLMNode } from './node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
+import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import { useLLMSettings } from '@renderer/composables/useLLMSettings'
 import GearIcon from '@renderer/components/icons/GearIcon.vue'
 
@@ -17,6 +18,9 @@ const props = defineProps<{ id: string }>()
 const { openSettings, hasKey } = useLLMSettings()
 
 const llmNode = shallowRef<LLMNode | undefined>(undefined)
+
+// 卡片标题走插件 manifest 的多语言 title，未配当前语言时由 resolveNodeTitle 兜底
+const nodeTitle = useNodeTitle(() => llmNode.value, '?')
 const response = ref('')
 const status = ref<'idle' | 'loading' | 'done' | 'error'>('idle')
 const autoCall = ref(false)
@@ -81,7 +85,7 @@ function onSendClick(): void {
 <template>
   <div class="node">
     <div class="node__header" @pointerdown="startDrag">
-      <span class="node__handle" title="拖动节点（整个头部可拖）">{{ llmNode?.type ?? '?' }}</span>
+      <span class="node__handle" title="拖动节点（整个头部可拖）">{{ nodeTitle }}</span>
       <button
         v-if="llmNode"
         class="node__gear"

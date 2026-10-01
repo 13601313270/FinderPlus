@@ -5,7 +5,11 @@ import { ImgFileValue } from '../../engine/data/ImgFileValue'
 import { BackgroundRemoveNode } from './node'
 import { ImgFileNode } from '../ImgFileNode/node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
+import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import { removeBackground } from '@imgly/background-removal'
+
+// 卡片头部标题走插件 manifest 的多语言 title，未配当前语言时由 resolveNodeTitle 兜底
+const nodeTitle = useNodeTitle(BackgroundRemoveNode.TYPE)
 
 const props = defineProps<{ id: string }>()
 
@@ -161,7 +165,7 @@ onUnmounted(() => {
   <div class="remove-bg-card" @pointerdown="startDrag"
     :title="'拖入图片节点抠图一次 · 或左侧端口接图片响应式抠图'">
     <!-- 头部类型标签 -->
-    <div class="remove-bg-card__header">图片去背景</div>
+    <div class="remove-bg-card__header">{{ nodeTitle }}</div>
 
     <!-- 抠图结果预览区 -->
     <div class="remove-bg-card__image-area">

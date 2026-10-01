@@ -7,6 +7,10 @@ import { ImgFileNode } from '../ImgFileNode/node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
 import { setLastDragPath } from '@renderer/composables/useFileDragOut'
 import { viewport } from '@renderer/canvas/viewport'
+import { useNodeTitle } from '@renderer/composables/useNodeTitle'
+
+// 卡片头部标题走插件 manifest 的多语言 title，未配当前语言时由 resolveNodeTitle 兜底
+const nodeTitle = useNodeTitle(ImagePreviewNode.TYPE)
 
 const props = defineProps<{ id: string }>()
 
@@ -202,7 +206,7 @@ onUnmounted(() => {
 <template>
   <div class="preview-card">
     <!-- 头部类型标签：与缩小图片尺寸节点区分；也可拖动移动节点 -->
-    <div class="preview-card__header" @pointerdown.stop.prevent="startPreviewDrag">图片预览</div>
+    <div class="preview-card__header" @pointerdown.stop.prevent="startPreviewDrag">{{ nodeTitle }}</div>
 
     <!-- 预览图区域：画布内拖拽 = 移动节点；越界 = writeBuffer + startDrag 导出 -->
     <div class="preview-card__image-area" @pointerdown.stop.prevent="startPreviewDrag" :title="previewFile

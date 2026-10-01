@@ -6,7 +6,11 @@ import { manifestFor } from '../index'
 import NodeShell from '@renderer/components/NodeShell.vue'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
 import { viewport } from '@renderer/canvas/viewport'
+import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import { FolderNode } from './node'
+
+// 卡片头部标题走插件 manifest 的多语言 title，未配当前语言时由 resolveNodeTitle 兜底
+const nodeTitle = useNodeTitle(FolderNode.TYPE)
 
 const props = defineProps<{ id: string }>()
 
@@ -85,7 +89,7 @@ onUnmounted(() => {
     <!-- 顶部横栏：文件夹「拖动整个文件夹」的唯一手柄。
          不再把 startDrag 绑在整个 .folder 上——那样点在子节点上会冒泡同时拖起文件夹和子节点。 -->
     <div class="folder__bar" @pointerdown="startDrag">
-      <span class="folder__bar__text">文件夹</span>
+      <span class="folder__bar__text">{{ nodeTitle }}</span>
     </div>
 
     <!-- 内容区底色：子节点渲染在此之上（嵌套 NodeShell，相对坐标 → 世界坐标正确） -->

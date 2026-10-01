@@ -5,6 +5,10 @@ import { ImgFileValue } from '../../engine/data/ImgFileValue'
 import { ImageCropNode, type CropRect } from './node'
 import { ImgFileNode } from '../ImgFileNode/node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
+import { useNodeTitle } from '@renderer/composables/useNodeTitle'
+
+// 卡片头部标题走插件 manifest 的多语言 title，未配当前语言时由 resolveNodeTitle 兜底
+const nodeTitle = useNodeTitle(ImageCropNode.TYPE)
 
 const props = defineProps<{ id: string }>()
 
@@ -461,7 +465,7 @@ onUnmounted(() => {
 <template>
   <div class="crop-card" @pointerdown="startDrag" :title="'拖入图片节点裁剪 · 或左侧端口接图片响应式'">
     <!-- 头部类型标签 -->
-    <div class="crop-card__header">图片裁剪</div>
+    <div class="crop-card__header">{{ nodeTitle }}</div>
 
     <!-- 源图 + 裁剪框 -->
     <div ref="canvasAreaRef" class="crop-card__canvas-area">

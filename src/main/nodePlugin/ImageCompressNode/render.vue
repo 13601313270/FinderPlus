@@ -5,6 +5,10 @@ import { ImgFileValue } from '../../engine/data/ImgFileValue'
 import { ImageCompressNode, type ImageExportFormat } from './node'
 import { ImgFileNode } from '../ImgFileNode/node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
+import { useNodeTitle } from '@renderer/composables/useNodeTitle'
+
+// 卡片头部标题走插件 manifest 的多语言 title，未配当前语言时由 resolveNodeTitle 兜底
+const nodeTitle = useNodeTitle(ImageCompressNode.TYPE)
 
 const props = defineProps<{ id: string }>()
 
@@ -252,7 +256,7 @@ onUnmounted(() => {
   <div class="compress-card" @pointerdown="startDrag" :title="'拖入图片节点压缩一次 · 或左侧端口接图片响应式压缩'">
     <!-- 头部类型标签 + 导出格式选择（与图片预览节点区分） -->
     <div class="compress-card__header">
-      <span class="compress-card__title">缩小图片尺寸</span>
+      <span class="compress-card__title">{{ nodeTitle }}</span>
       <select
         class="compress-card__format"
         :value="exportFormat"

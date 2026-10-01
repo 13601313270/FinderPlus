@@ -3,6 +3,7 @@ import { computed, nextTick, onMounted, onUnmounted, ref, shallowRef, watch } fr
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { HttpRequestNode, type HttpMethod, type HeaderEntry } from './node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
+import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import ChevronIcon from '@renderer/components/icons/ChevronIcon.vue'
 import HelpDialog from '@renderer/components/HelpDialog.vue'
 import HttpRequestHelpDialog from './HttpRequestHelpDialog.vue'
@@ -19,6 +20,9 @@ import HttpRequestHelpDialog from './HttpRequestHelpDialog.vue'
 const props = defineProps<{ id: string }>()
 
 const httpNode = shallowRef<HttpRequestNode | undefined>(undefined)
+
+// 卡片标题走插件 manifest 的多语言 title，未配当前语言时由 resolveNodeTitle 兜底
+const nodeTitle = useNodeTitle(() => httpNode.value, '?')
 
 // —— 帮助浮层开关 ——
 const showHelp = ref(false)
@@ -186,7 +190,7 @@ onUnmounted(() => { unsubscribe?.() })
   >
     <!-- 头部：拖动 + type 标签 + 帮助 + 展开/收起 toggle -->
     <div class="node__header" @pointerdown="startDrag">
-      <span class="node__handle" title="拖动节点">{{ httpNode?.type ?? '?' }}</span>
+      <span class="node__handle" title="拖动节点">{{ nodeTitle }}</span>
       <div class="node__header-right">
         <button
           v-if="httpNode"

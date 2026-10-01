@@ -4,6 +4,7 @@ import { debounce } from 'lodash-es'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { TextInputNode } from './node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
+import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import GearIcon from '@renderer/components/icons/GearIcon.vue'
 
 /**
@@ -23,6 +24,9 @@ const inputNode = computed(() => {
   const node = workspaceScene.getNode(props.id)
   return node instanceof TextInputNode ? node : undefined
 })
+
+// 卡片标题走插件 manifest 的多语言 title，未配当前语言时由 resolveNodeTitle 兜底
+const nodeTitle = useNodeTitle(() => inputNode.value, '?')
 
 /**
  * 引擎字段是普通类字段，Vue 追踪不到，所以走 Node.onChanged 这条桥刷进本地 ref。
@@ -166,7 +170,7 @@ function onTextareaWheel(e: WheelEvent): void {
 <template>
   <div class="node">
     <div class="node__header" @pointerdown="startDrag">
-      <span class="node__handle" title="拖动节点">{{ inputNode?.type ?? '?' }}</span>
+      <span class="node__handle" title="拖动节点">{{ nodeTitle }}</span>
       <button
         v-if="inputNode"
         ref="gearBtn"

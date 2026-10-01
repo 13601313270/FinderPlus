@@ -8,7 +8,11 @@ import { useNodePosition } from '@renderer/composables/useNodePosition'
 import type { Edge } from '../../engine/graph/Edge'
 import GearIcon from '@renderer/components/icons/GearIcon.vue'
 import HelpDialog from '@renderer/components/HelpDialog.vue'
+import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import ImageOverlayHelpDialog from './ImageOverlayHelpDialog.vue'
+
+// 卡片头部标题走插件 manifest 的多语言 title，未配当前语言时由 resolveNodeTitle 兜底
+const nodeTitle = useNodeTitle(ImageOverlayNode.TYPE)
 
 const props = defineProps<{ id: string }>()
 
@@ -605,7 +609,7 @@ function onRemoveLayer(e: PointerEvent, portId: string): void {
   <div class="overlay-card" @pointerdown="startDrag">
     <!-- 头部 -->
     <div class="overlay-card__header">
-      <span class="overlay-card__title">图片叠加</span>
+      <span class="overlay-card__title">{{ nodeTitle }}</span>
       <span class="overlay-card__sub">{{ layers.length }} 端口 · {{ layers.filter(l => l.connected).length }} 已连</span>
       <button
         class="overlay-card__gear"

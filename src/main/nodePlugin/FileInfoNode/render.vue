@@ -3,6 +3,7 @@ import { onMounted, onUnmounted, ref, shallowRef } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { FileInfoNode } from './node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
+import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 
 /**
  * 文件信息展示节点的渲染组件（只画卡片内容）。
@@ -14,6 +15,9 @@ import { useNodePosition } from '@renderer/composables/useNodePosition'
 const props = defineProps<{ id: string }>()
 
 const infoNode = shallowRef<FileInfoNode | undefined>(undefined)
+
+// 卡片标题走插件 manifest 的多语言 title，未配当前语言时由 resolveNodeTitle 兜底
+const nodeTitle = useNodeTitle(() => infoNode.value, '?')
 const fileName = ref('')
 const fileSize = ref(0)
 const fileType = ref('')
@@ -51,7 +55,7 @@ onUnmounted(() => {
 
 <template>
   <div class="node">
-    <span class="node__handle" title="拖动节点" @pointerdown="startDrag">{{ infoNode?.type ?? '?' }}</span>
+    <span class="node__handle" title="拖动节点" @pointerdown="startDrag">{{ nodeTitle }}</span>
     <div class="file-info" :class="{ 'file-info--empty': !fileName }">
       <template v-if="fileName">
         <div class="file-info__row">

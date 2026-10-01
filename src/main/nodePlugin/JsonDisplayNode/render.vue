@@ -3,11 +3,15 @@ import { onMounted, onUnmounted, ref, shallowRef, defineComponent, h } from 'vue
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { JsonDisplayNode } from './node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
+import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import { viewport } from '@renderer/canvas/viewport'
 
 const props = defineProps<{ id: string }>()
 
 const displayNode = shallowRef<JsonDisplayNode | undefined>(undefined)
+
+// 卡片标题走插件 manifest 的多语言 title，未配当前语言时由 resolveNodeTitle 兜底
+const nodeTitle = useNodeTitle(() => displayNode.value, '?')
 const parsed = ref<unknown>(undefined)
 const parseError = ref<string | null>(null)
 const hasInput = ref(false)
@@ -184,7 +188,7 @@ function formatValue(v: unknown): string {
 
 <template>
   <div class="node">
-    <span class="node__handle" title="拖动节点" @pointerdown="startDrag">{{ displayNode?.type ?? '?' }}</span>
+    <span class="node__handle" title="拖动节点" @pointerdown="startDrag">{{ nodeTitle }}</span>
 
     <div class="render-body" @wheel="onNodeWheel">
       <!-- 还没接过输入 -->

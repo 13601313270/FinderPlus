@@ -6,9 +6,13 @@ import { base64ToBlob } from '../../engine/data/base64'
 import ImgThumbCell from '@renderer/components/ImgThumbCell.vue'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
 import { viewport } from '@renderer/canvas/viewport'
+import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import { ImgFileNode } from '../ImgFileNode/node'
 import { inferImageMime } from '../ImgFileNode/mime'
 import { ImgFolderNode } from './node'
+
+// 卡片头部标题走插件 manifest 的多语言 title，未配当前语言时由 resolveNodeTitle 兜底
+const nodeTitle = useNodeTitle(ImgFolderNode.TYPE)
 
 const props = defineProps<{ id: string }>()
 
@@ -168,7 +172,7 @@ onUnmounted(() => {
   <div class="img-folder">
     <!-- 顶部横栏：拖动整个文件夹的唯一手柄 -->
     <div class="img-folder__bar" @pointerdown="startDrag">
-      <span class="img-folder__bar__text">图片文件夹</span>
+      <span class="img-folder__bar__text">{{ nodeTitle }}</span>
     </div>
 
     <!-- 内容区：统一尺寸的缩略图网格（超出滚动）。点一格即切换选中；

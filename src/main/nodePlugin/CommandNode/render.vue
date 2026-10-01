@@ -3,6 +3,7 @@ import { computed, nextTick, onMounted, onUnmounted, ref, shallowRef, watch } fr
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { CommandNode } from './node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
+import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import GearIcon from '@renderer/components/icons/GearIcon.vue'
 
 /**
@@ -17,6 +18,9 @@ import GearIcon from '@renderer/components/icons/GearIcon.vue'
 const props = defineProps<{ id: string }>()
 
 const commandNode = shallowRef<CommandNode | undefined>(undefined)
+
+// 卡片标题走插件 manifest 的多语言 title，未配当前语言时由 resolveNodeTitle 兜底
+const nodeTitle = useNodeTitle(() => commandNode.value, '?')
 const name = ref('')
 /** 命令模板原文（设置面板里编辑的那个，含 $1 $2…） */
 const template = ref('')
@@ -162,7 +166,7 @@ function onSave(): void {
 <template>
   <div ref="rootEl" class="node">
     <div class="node__header" @pointerdown="startDrag">
-      <span class="node__handle" title="拖动节点（整个头部可拖）">{{ commandNode?.type ?? '?' }}</span>
+      <span class="node__handle" title="拖动节点（整个头部可拖）">{{ nodeTitle }}</span>
       <button
         v-if="commandNode"
         ref="gearBtn"

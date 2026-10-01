@@ -3,10 +3,14 @@ import { onMounted, onUnmounted, ref, shallowRef } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { HumanReviewNode } from './node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
+import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 
 const props = defineProps<{ id: string }>()
 
 const reviewNode = shallowRef<HumanReviewNode | undefined>(undefined)
+
+// 卡片标题走插件 manifest 的多语言 title，未配当前语言时由 resolveNodeTitle 兜底
+const nodeTitle = useNodeTitle(() => reviewNode.value, '?')
 const currentLabel = ref('（等待输入）')
 const pendingCount = ref(0)
 const hasCurrent = ref(false)
@@ -44,7 +48,7 @@ function onReject(): void {
 
 <template>
   <div class="node">
-    <span class="node__handle" title="拖动节点" @pointerdown="startDrag">{{ reviewNode?.type ?? '?' }}</span>
+    <span class="node__handle" title="拖动节点" @pointerdown="startDrag">{{ nodeTitle }}</span>
 
     <div class="review">
       <div class="review__label">待审核</div>

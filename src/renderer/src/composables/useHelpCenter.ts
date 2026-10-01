@@ -1,6 +1,7 @@
 import { computed, ref } from 'vue'
 import type { Component } from 'vue'
-import { nodeManifests } from '../../../main/nodePlugin'
+import { getNodeManifest, nodeManifests } from '../../../main/nodePlugin'
+import { resolveNodeTitle } from '../../../main/nodePlugin/manifest'
 import { translate } from '@renderer/i18n'
 import { useLanguageSettings } from './useLanguageSettings'
 
@@ -11,7 +12,7 @@ import { useLanguageSettings } from './useLanguageSettings'
 export interface HelpTopic {
   /** 唯一标识，用于侧边栏激活态比对 */
   readonly type: string
-  /** 侧边栏显示名称。节点帮助直接用节点类型名（技术标识，不翻译） */
+  /** 侧边栏显示名称。节点项取插件 manifest 的多语言 title，介绍项取词条 */
   readonly label: string
   /** 异步加载帮助组件 */
   readonly load: () => Promise<{ default: Component }>
@@ -28,7 +29,10 @@ const INTRO_TOPIC_TYPE = '__intro__'
 const loadIntro = (): Promise<{ default: Component }> =>
   import('@renderer/components/help/Introduction.vue')
 
-/** 节点帮助 topics：从注册表里过滤出有 help 的节点，映射成 HelpTopic */
+/**
+ * 节点帮助 topics：从注册表里过滤出有 help 的节点，映射成 HelpTopic。
+ * label 这里填 type 只是占位（不参与查找），真正的显示名在 helpGroups 里按语言现算。
+ */
 const nodeTopics: HelpTopic[] = nodeManifests
   .filter((m) => m.help != null)
   .map((m) => ({
@@ -54,13 +58,20 @@ const { language } = useLanguageSettings()
  * 语言一变就重算（和 App.vue 里 sceneTick 的路子一致）。
  */
 export const helpGroups = computed<ReadonlyArray<HelpTopicGroup>>(() => {
-  language.value // 只做依赖登记，真正取值在下面
+  const locale = language.value // 读一下即完成依赖登记，语言一变整个列表重算
   return [
     {
       title: '',
       items: [{ type: INTRO_TOPIC_TYPE, label: translate('helpCenter.about'), load: loadIntro }]
     },
-    { title: translate('helpCenter.groupNodes'), items: nodeTopics }
+    {
+      title: translate('helpCenter.groupNodes'),
+      // 节点项的显示名按语言现算：取自插件 manifest.title，未配的语言由 resolveNodeTitle 兜底
+      items: nodeTopics.map((topic) => {
+        const manifest = getNodeManifest(topic.type)
+        return manifest ? { ...topic, label: resolveNodeTitle(manifest, locale) } : topic
+      })
+    }
   ]
 })
 

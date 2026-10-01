@@ -49,6 +49,15 @@ const zh: Language = {
     kindNotAllowed: '类型不匹配：这个输入端口不接受该类型',
     singlePortOccupied: '这个输入端口只接一条线，先断开原来那条'
   },
+  valueKind: {
+    bool: '布尔',
+    number: '数字',
+    string: '字符串',
+    json: 'JSON',
+    file: '文件',
+    'txt-file': '文本文件',
+    'img-file': '图片文件'
+  },
   intro: {
     whatIs: {
       title: '这是什么？',

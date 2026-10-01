@@ -44,6 +44,15 @@ const pt: Language = {
     kindNotAllowed: 'Tipo incompatível: esta porta de entrada não aceita este tipo',
     singlePortOccupied: 'Esta porta de entrada aceita apenas uma conexão. Desconecte primeiro a existente'
   },
+  valueKind: {
+    bool: 'Booleano',
+    number: 'Número',
+    string: 'Texto',
+    json: 'JSON',
+    file: 'Arquivo',
+    'txt-file': 'Arquivo de texto',
+    'img-file': 'Arquivo de imagem'
+  },
   intro: {
     whatIs: {
       title: 'O que é isto?',

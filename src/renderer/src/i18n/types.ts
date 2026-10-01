@@ -1,3 +1,5 @@
+import type { BuiltinValueKind } from '../../../main/engine/data/Value'
+
 /**
  * 词条契约类型：所有语言词条（locales/*.ts）都必须满足这个结构。
  *
@@ -54,6 +56,14 @@ export type Language = {
     kindNotAllowed: string
     singlePortOccupied: string
   }
+  /**
+   * 端口类型标签（port-label__kinds 上的小胶囊，如 string / txt-file）的文案。
+   *
+   * 键就是引擎内置的类型标签名，来自 main/engine/data/Value.ts 的 BUILTIN_VALUE_KINDS；
+   * 用 Record<BuiltinValueKind, string> 约束，新增内置类型时 9 种语言会被强制补齐。
+   * 插件自定义的类型不在契约内，UI 侧遇到时原样显示标识符（见 NodePort.vue 的 kindLabel）。
+   */
+  valueKind: Record<BuiltinValueKind, string>
   intro: {
     whatIs: {
       title: string

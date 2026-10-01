@@ -14,6 +14,27 @@
  */
 export type ValueKind = string
 
+/**
+ * 引擎内置的类型标签清单。
+ *
+ * UI 侧（端口上的类型胶囊）要靠它给出多语言表述，所以把内置的这几种登记成常量数组：
+ * 新增一种内置 Value 子类时，词条契约会因缺 key 在 typecheck 阶段报错，逼着 9 种语言一起补。
+ *
+ * 但 ValueKind 本身仍是开放字符串——第三方插件自定义的种类不在这里，
+ * UI 遇到清单外的种类原样显示标识符即可，不需要回头改动这份清单。
+ */
+export const BUILTIN_VALUE_KINDS = [
+  'bool',
+  'number',
+  'string',
+  'json',
+  'file',
+  'txt-file',
+  'img-file'
+] as const
+
+export type BuiltinValueKind = (typeof BUILTIN_VALUE_KINDS)[number]
+
 export abstract class Value {
   /**
    * 类级别的 Value 类型标签名：端口构造时直接从子类取 VALUE_NAME，

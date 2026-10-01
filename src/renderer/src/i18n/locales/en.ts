@@ -44,6 +44,15 @@ const en: Language = {
     kindNotAllowed: 'Type mismatch: this input port does not accept this type',
     singlePortOccupied: 'This input port accepts only one connection. Disconnect the existing one first'
   },
+  valueKind: {
+    bool: 'Boolean',
+    number: 'Number',
+    string: 'String',
+    json: 'JSON',
+    file: 'File',
+    'txt-file': 'Text File',
+    'img-file': 'Image File'
+  },
   intro: {
     whatIs: {
       title: 'What is this?',

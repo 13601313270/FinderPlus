@@ -44,6 +44,15 @@ const ja: Language = {
     kindNotAllowed: '型が一致しません：この入力ポートはこの型を受け付けません',
     singlePortOccupied: 'この入力ポートは1本しか接続できません。先に既存の接続を解除してください'
   },
+  valueKind: {
+    bool: 'ブール',
+    number: '数値',
+    string: '文字列',
+    json: 'JSON',
+    file: 'ファイル',
+    'txt-file': 'テキストファイル',
+    'img-file': '画像ファイル'
+  },
   intro: {
     whatIs: {
       title: 'これは何？',

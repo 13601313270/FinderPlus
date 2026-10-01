@@ -44,6 +44,15 @@ const ar: Language = {
     kindNotAllowed: 'عدم توافق النوع: منفذ الإدخال هذا لا يقبل هذا النوع',
     singlePortOccupied: 'منفذ الإدخال هذا يقبل اتصالًا واحدًا فقط، افصل الاتصال الحالي أولًا'
   },
+  valueKind: {
+    bool: 'منطقي',
+    number: 'رقم',
+    string: 'نص',
+    json: 'JSON',
+    file: 'ملف',
+    'txt-file': 'ملف نصي',
+    'img-file': 'ملف صورة'
+  },
   intro: {
     whatIs: {
       title: 'ما هذا؟',

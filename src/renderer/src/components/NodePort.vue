@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import {
   portElementRef,
   portKey,
@@ -17,6 +18,8 @@ const props = defineProps<{
 }>()
 
 const isIn = props.side === 'in'
+
+const { t, te } = useI18n()
 
 // 每个组件实例只管自己这一个端口的 ref，不需要 Map 缓存
 const portRef: CanvasElementRef = portElementRef(props.nodeId, props.side, props.port)
@@ -69,6 +72,18 @@ function displayKinds(port: PortLike): readonly string[] {
   return []
 }
 
+/**
+ * 端口类型胶囊的显示文案。
+ *
+ * 引擎内置的类型（number / string / file 等，见 Value.ts 的 BUILTIN_VALUE_KINDS）都有词条；
+ * 插件自定义的类型没有词条，原样显示标识符——ValueKind 是开放字符串，
+ * UI 不该硬编码一份「合法类型」清单去拦截第三方插件的种类。
+ */
+function kindLabel(kind: string): string {
+  const key = `valueKind.${kind}`
+  return te(key) ? t(key) : kind
+}
+
 function onOutputPointerDown(port: PortLike, event: PointerEvent): void {
   startConnectDrag(props.nodeId, port.id, event)
 }
@@ -98,7 +113,7 @@ function highlightOf(port: PortLike): string {
           v-for="k in displayKinds(port)"
           :key="k"
           class="port-label__kind"
-        >{{ k }}</span>
+        >{{ kindLabel(k) }}</span>
       </div>
     </div>
 
@@ -124,7 +139,7 @@ function highlightOf(port: PortLike): string {
           v-for="k in displayKinds(port)"
           :key="k"
           class="port-label__kind"
-        >{{ k }}</span>
+        >{{ kindLabel(k) }}</span>
       </div>
     </div>
   </div>

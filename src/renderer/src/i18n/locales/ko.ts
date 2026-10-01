@@ -44,6 +44,15 @@ const ko: Language = {
     kindNotAllowed: '유형이 일치하지 않습니다: 이 입력 포트는 해당 유형을 받지 않습니다',
     singlePortOccupied: '이 입력 포트는 하나만 연결할 수 있습니다. 먼저 기존 연결을 끊으세요'
   },
+  valueKind: {
+    bool: '불리언',
+    number: '숫자',
+    string: '문자열',
+    json: 'JSON',
+    file: '파일',
+    'txt-file': '텍스트 파일',
+    'img-file': '이미지 파일'
+  },
   intro: {
     whatIs: {
       title: '이것은 무엇인가요?',

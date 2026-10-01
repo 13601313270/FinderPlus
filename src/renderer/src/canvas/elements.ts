@@ -52,10 +52,10 @@ export interface PortLike {
   /** 输出端口才有：产出的 Value 类型标签名 */
   readonly outputValueName?: string
   /**
-   * 端口文本标记，用于在圆点旁显示。输入端口是多语言表（LocalizedText，按当前语言解析、
-   * 兜底英语），输出端口暂为单串 string；不填则回退到 id。
+   * 端口文本标记，用于在圆点旁显示。多语言表（LocalizedText），按当前语言解析、兜底英语；
+   * 不填则回退到 id。
    */
-  readonly label?: LocalizedText | string
+  readonly label?: LocalizedText
   /**
    * 输入端口才有：订阅本端口的边绑定/解绑事件。返回取消订阅函数。
    * 事件载荷里的 edge 由引擎层持有，renderer 拿到后按需使用即可。

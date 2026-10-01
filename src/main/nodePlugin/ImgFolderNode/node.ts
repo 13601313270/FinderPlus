@@ -31,7 +31,7 @@ export class ImgFolderNode extends FolderNode {
   readonly type: string = ImgFolderNode.TYPE
 
   /** 图片输出端口：当前选中子图片的 ImgFileValue */
-  readonly imageOutput = new OutputPort('image', ImgFileValue, '选中图片')
+  readonly imageOutput = new OutputPort('image', ImgFileValue, { zh: '选中图片', en: 'Selected Image' })
 
   /** 当前选中的子节点 id；空串表示未选中 */
   private selectedChildIdValue = ''

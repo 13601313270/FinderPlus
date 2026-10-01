@@ -23,7 +23,7 @@ export class CommandNode extends Node {
   readonly type = CommandNode.TYPE
 
   /** 输出端口：执行结果字符串 */
-  readonly textOutput = new OutputPort('text', StringValue, '输出')
+  readonly textOutput = new OutputPort('text', StringValue, { zh: '输出', en: 'Output' })
 
   /** 命令名称（用于辨识这条命令是干什么的，持久化） */
   private name = ''

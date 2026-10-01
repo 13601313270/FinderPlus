@@ -144,8 +144,8 @@ export class SwitchNode extends Node {
       this.removeOutput(this.failOutput)
       this.failOutput = undefined
     }
-    this.passOutput = new OutputPort('pass', valueClass, '通过 →')
-    this.failOutput = new OutputPort('fail', valueClass, '驳回 →')
+    this.passOutput = new OutputPort('pass', valueClass, { zh: '通过 →', en: 'Pass →' })
+    this.failOutput = new OutputPort('fail', valueClass, { zh: '驳回 →', en: 'Fail →' })
     this.addOutput(this.passOutput)
     this.addOutput(this.failOutput)
   }

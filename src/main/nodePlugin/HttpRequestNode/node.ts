@@ -36,7 +36,7 @@ export class HttpRequestNode extends Node {
   readonly type = HttpRequestNode.TYPE
 
   /** 输出端口：响应 body 文本 */
-  readonly textOutput = new OutputPort('text', StringValue, '响应体')
+  readonly textOutput = new OutputPort('text', StringValue, { zh: '响应体', en: 'Response Body' })
 
   // —— 持久化字段 ——
 

@@ -43,7 +43,7 @@ export abstract class FileNode extends Node {
   protected fileSizeValue = 0
 
   /** 文件路径输出：画布目录下的绝对路径（string），所有文件节点共用 */
-  readonly pathOutput = new OutputPort('path', StringValue, '路径')
+  readonly pathOutput = new OutputPort('path', StringValue, { zh: '路径', en: 'Path' })
 
   /** 文件数据输入端口。accepts 因文件类型而异，由子类声明后经 bindFileInput 注册 */
   protected fileInputPort: InputPort | undefined

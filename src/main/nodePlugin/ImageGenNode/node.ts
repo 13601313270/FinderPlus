@@ -53,7 +53,7 @@ export class ImageGenNode extends Node {
   readonly sizeInput = new InputPort('size', { accepts: [StringValue], label: { zh: '尺寸', en: 'Size' } })
 
   /** 输出端口：生成的图片 */
-  readonly imageOutput = new OutputPort('image', ImgFileValue, '生成图')
+  readonly imageOutput = new OutputPort('image', ImgFileValue, { zh: '生成图', en: 'Generated Image' })
 
   /** 本地选择的尺寸（sizeInput 未接线时用）。空串 = 跟随当前模型默认尺寸 */
   private localSize = ''

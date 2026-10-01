@@ -58,7 +58,7 @@ export class AnyFileNode extends FileNode {
   readonly type = AnyFileNode.TYPE
 
   /** 文件输出（FileValue，kind = 'file'） */
-  readonly fileOutput = new OutputPort('file', FileValue, '文件')
+  readonly fileOutput = new OutputPort('file', FileValue, { zh: '文件', en: 'File' })
 
   /** 文件数据输入端口：接受任何文件类型（含各类子类），收到值即替换本节点文件 */
   readonly fileInput = new InputPort('file-in', { accepts: [FileValue], label: { zh: '文件', en: 'File' } })

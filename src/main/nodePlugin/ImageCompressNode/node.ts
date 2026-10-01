@@ -53,7 +53,7 @@ export class ImageCompressNode extends Node {
   })
 
   /** 输出端口：压缩后的图片 */
-  readonly imageOutput = new OutputPort('image', ImgFileValue, '压缩图')
+  readonly imageOutput = new OutputPort('image', ImgFileValue, { zh: '压缩图', en: 'Compressed Image' })
 
   /** 本次要处理的源节点 id（拖入路径的触发信号）。一次拖入只处理一次，处理完清空 */
   private pendingSourceId: string | null = null

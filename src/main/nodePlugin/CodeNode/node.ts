@@ -373,7 +373,7 @@ export class CodeNode extends Node {
     if (meta.name === trimmed) return
     meta.name = trimmed
     const port = this.myOutputPorts.find(p => p.id === id)
-    port?.setLabel(trimmed)
+    port?.setLabel({ zh: trimmed, en: trimmed })
     this.notifyChanged()
   }
 
@@ -389,7 +389,7 @@ export class CodeNode extends Node {
   /** 根据 meta 构造一个新的 OutputPort */
   private buildOutputPort(meta: CodeOutputMeta): OutputPort {
     const valueClass = KIND_CLASSES[meta.kind] as OutputPortValueClass
-    return new OutputPort(meta.id, valueClass, meta.name)
+    return new OutputPort(meta.id, valueClass, { zh: meta.name, en: meta.name })
   }
 
   /** 全量重建输出端口：删掉所有旧的、按 outputMetas 重新 build 并 addOutput。顺序严格：先删后加。 */

@@ -100,7 +100,7 @@ export class LLMNode extends Node {
   readonly promptInput = new InputPort('prompt', { accepts: [StringValue], label: { zh: '用户设定prompt', en: 'User prompt' } })
 
   /** 输出端口：模型回复 */
-  readonly textOutput = new OutputPort('text', StringValue, '回复')
+  readonly textOutput = new OutputPort('text', StringValue, { zh: '回复', en: 'Reply' })
 
   /** 内部 prompt 文本（仅 promptInput 未接边时使用） */
   private localPrompt = ''

@@ -16,7 +16,7 @@ export class JsonDisplayNode extends Node {
   readonly jsonInput = new InputPort('json', { accepts: [StringValue, JsonValue], label: { zh: 'JSON', en: 'JSON' } })
 
   /** 输出端口：解析成功后透传 JsonValue；解析失败或空输入时 clear() */
-  readonly jsonOutput = new OutputPort('json', JsonValue, 'JSON')
+  readonly jsonOutput = new OutputPort('json', JsonValue, { zh: 'JSON', en: 'JSON' })
 
   private parsed: unknown = undefined
   private error: string | null = null

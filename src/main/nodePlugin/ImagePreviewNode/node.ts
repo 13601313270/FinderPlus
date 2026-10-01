@@ -22,7 +22,7 @@ export class ImagePreviewNode extends Node {
   readonly imageInput = new InputPort('image', { accepts: [ImgFileValue], label: { zh: '图片', en: 'Image' } })
 
   /** 输出端口：ImgFileValue 透传 */
-  readonly imageOutput = new OutputPort('image', ImgFileValue, '图片')
+  readonly imageOutput = new OutputPort('image', ImgFileValue, { zh: '图片', en: 'Image' })
 
   constructor(id: string) {
     super(id)

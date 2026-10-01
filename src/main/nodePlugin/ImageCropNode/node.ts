@@ -42,7 +42,7 @@ export class ImageCropNode extends Node {
   })
 
   /** 输出端口：裁剪后的图片 */
-  readonly imageOutput = new OutputPort('image', ImgFileValue, '裁剪图')
+  readonly imageOutput = new OutputPort('image', ImgFileValue, { zh: '裁剪图', en: 'Cropped Image' })
 
   /** 本次要处理的源节点 id（拖入路径的触发信号）。一次拖入只处理一次，处理完清空 */
   private pendingSourceId: string | null = null

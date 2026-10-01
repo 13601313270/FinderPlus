@@ -1,6 +1,7 @@
 import type { Value, ValueKind } from '../data/Value'
 import type { Edge } from '../graph/Edge'
 import type { Node } from '../node/Node'
+import type { LocalizedText } from '../../../shared/language'
 
 /** 任何带 VALUE_NAME 静态属性的 Value 子类 */
 type ValueClass = { readonly VALUE_NAME: ValueKind; prototype: Value; new (...args: any[]): Value }
@@ -40,26 +41,26 @@ export class OutputPort {
   /** 本端口产出的类型标签名（valueClass.VALUE_NAME 的快捷访问，供 UI 展示） */
   readonly outputValueName: ValueKind
 
-  private labelValue: string
+  private labelValue: LocalizedText
 
   constructor(
     readonly id: string,
     /** 本端口产出的 Value 子类，端口自动从其静态 VALUE_NAME 取类型标签 */
     valueClass: ValueClass,
-    /** 端口文本标记，UI 显示用 */
-    label: string
+    /** 端口文本标记（多语言），UI 显示用；可只配若干语言，未命中的语言兜底到英语 */
+    label: LocalizedText
   ) {
     this.valueClass = valueClass
     this.outputValueName = valueClass.VALUE_NAME
     this.labelValue = label
   }
 
-  get label(): string {
+  get label(): LocalizedText {
     return this.labelValue
   }
 
-  /** 运行时更新端口标签（CodeNode 等需要动态改名时用） */
-  setLabel(name: string): void {
+  /** 运行时更新端口标签（多语言）（CodeNode 等需要动态改名时用） */
+  setLabel(name: LocalizedText): void {
     this.labelValue = name
   }
 

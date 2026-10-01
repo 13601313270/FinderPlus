@@ -39,7 +39,7 @@ export class ImageOverlayNode extends Node {
   readonly type = ImageOverlayNode.TYPE
 
   /** 输出端口：合成后的 PNG 图片 */
-  readonly imageOutput = new OutputPort('composite', ImgFileValue, '合成图')
+  readonly imageOutput = new OutputPort('composite', ImgFileValue, { zh: '合成图', en: 'Composite' })
 
   /** 各端口 id 对应的 LayerState */
   private layerStates = new Map<string, LayerState>()

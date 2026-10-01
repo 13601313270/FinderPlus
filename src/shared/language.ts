@@ -22,7 +22,7 @@ export type LocalizedText = Partial<Record<LanguageCode, string>>
 
 /**
  * 解析多语言文案。兜底顺序：目标语言 → 英语 → 表里第一个配了的语言 → fallback。
- * 传入 string 时原样返回，用于兼容尚未迁移为多语言的旧标签（如 OutputPort 的 label）。
+ * 传入 string 时原样返回，容忍非多语言的普通字符串。
  */
 export function resolveLocalizedText(
   text: LocalizedText | string | undefined,

@@ -44,7 +44,7 @@ export class ImgFileNode extends FileNode {
   readonly type = ImgFileNode.TYPE
 
   /** 文件输出（ImgFileValue，kind = 'img-file'） */
-  readonly fileOutput = new OutputPort('file', ImgFileValue, '文件')
+  readonly fileOutput = new OutputPort('file', ImgFileValue, { zh: '文件', en: 'File' })
 
   /** 文件数据输入端口：只接受同类型（图片）文件，收到值即替换本节点文件 */
   readonly fileInput = new InputPort('file-in', { accepts: [ImgFileValue], label: { zh: '写入数据', en: 'Write Data' } })

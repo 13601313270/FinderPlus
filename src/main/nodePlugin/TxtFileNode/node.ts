@@ -24,10 +24,10 @@ export class TxtFileNode extends FileNode {
   readonly type = TxtFileNode.TYPE
 
   /** 文本内容输出（string） */
-  readonly contentOutput = new OutputPort('content', StringValue, '文本')
+  readonly contentOutput = new OutputPort('content', StringValue, { zh: '文本', en: 'Text' })
 
   /** 文件输出（TxtFileValue，kind = 'txt-file'） */
-  readonly fileOutput = new OutputPort('file', TxtFileValue, '文件')
+  readonly fileOutput = new OutputPort('file', TxtFileValue, { zh: '文件', en: 'File' })
 
   /** 文件数据输入端口：只接受同类型（txt）文件，收到值即替换本节点文件 */
   readonly fileInput = new InputPort('file-in', { accepts: [TxtFileValue], label: { zh: '文件', en: 'File' } })

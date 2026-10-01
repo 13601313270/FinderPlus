@@ -21,10 +21,10 @@ export class FileInfoNode extends Node {
   readonly fileInput = new InputPort('file', { accepts: [FileValue], label: { zh: '文件', en: 'File' } })
 
   /** 输出端口：文件大小（KB） */
-  readonly sizeOutput = new OutputPort('number', NumberValue, '文件大小（KB）')
+  readonly sizeOutput = new OutputPort('number', NumberValue, { zh: '文件大小（KB）', en: 'File Size (KB)' })
 
   /** 输出端口：文件 MIME 类型 */
-  readonly typeOutput = new OutputPort('string', StringValue, '文件 MIME 类型')
+  readonly typeOutput = new OutputPort('string', StringValue, { zh: '文件 MIME 类型', en: 'File MIME Type' })
 
   private fileName = ''
   private fileSize = 0

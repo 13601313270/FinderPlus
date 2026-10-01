@@ -123,8 +123,8 @@ export class HumanReviewNode extends Node {
 
   /** 首次有值时创建两个输出端口 */
   private createOutputPorts(valueClass: OutputPort['valueClass']): void {
-    this.approveOutput = new OutputPort('approve', valueClass, '同意')
-    this.rejectOutput = new OutputPort('reject', valueClass, '拒绝')
+    this.approveOutput = new OutputPort('approve', valueClass, { zh: '同意', en: 'Approve' })
+    this.rejectOutput = new OutputPort('reject', valueClass, { zh: '拒绝', en: 'Reject' })
     this.addOutput(this.approveOutput)
     this.addOutput(this.rejectOutput)
   }

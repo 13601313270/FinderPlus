@@ -38,7 +38,7 @@ export class ImageQualityNode extends Node {
   })
 
   /** 输出端口：调整后的图片 */
-  readonly imageOutput = new OutputPort('image', ImgFileValue, '调整后')
+  readonly imageOutput = new OutputPort('image', ImgFileValue, { zh: '调整后', en: 'Adjusted' })
 
   /** 本次要处理的源节点 id（拖入路径的触发信号）。一次拖入只处理一次，处理完清空 */
   private pendingSourceId: string | null = null

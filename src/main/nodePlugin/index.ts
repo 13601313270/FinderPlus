@@ -24,6 +24,7 @@ import { manifest as imageOverlayManifest } from './ImageOverlayNode'
 import { manifest as switchManifest } from './SwitchNode'
 import { manifest as httpRequestManifest } from './HttpRequestNode'
 import { manifest as jsonDisplayManifest } from './JsonDisplayNode'
+import { manifest as imageCropManifest } from './ImageCropNode'
 
 /**
  * 插件注册表：所有节点插件的 manifest 汇总。
@@ -55,7 +56,8 @@ const functionalManifests: NodePluginManifest[] = [
   codeManifest,
   switchManifest,
   httpRequestManifest,
-  jsonDisplayManifest
+  jsonDisplayManifest,
+  imageCropManifest
 ]
 
 const fileManifests: NodePluginManifest[] = [

@@ -29,12 +29,17 @@ const exportFormat = ref<ImageExportFormat>('jpg')
 const resultUrl = ref<string | null>(null)
 let revokeUrl: (() => void) | null = null
 
+// —— 体积信息：原始大小（压缩时记录，不被 clearResult 清）与压缩后大小（由输出值反映） ——
+const sourceSize = ref(0)
+const compressedSize = ref(0)
+
 function clearResult(): void {
   if (revokeUrl) {
     revokeUrl()
     revokeUrl = null
   }
   resultUrl.value = null
+  compressedSize.value = 0
 }
 
 /** 从 node.imageOutput 当前值刷预览图 */
@@ -46,6 +51,7 @@ function refreshResult(n: ImageCompressNode | undefined): void {
     const url = URL.createObjectURL(value.file)
     resultUrl.value = url
     revokeUrl = () => URL.revokeObjectURL(url)
+    compressedSize.value = value.file.size
   }
 }
 
@@ -67,6 +73,32 @@ function baseName(fileName: string): string {
   return dot > 0 ? fileName.slice(0, dot) : fileName
 }
 
+/** 字节数 → 可读体积（B / KB / MB） */
+function formatSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / 1024 / 1024).toFixed(2)} MB`
+}
+
+/** 原始体积文案（无数据时占位） */
+const sourceSizeText = computed(() => (sourceSize.value > 0 ? formatSize(sourceSize.value) : '--'))
+
+/** 压缩后体积文案（无数据时占位） */
+const compressedSizeText = computed(() => (compressedSize.value > 0 ? formatSize(compressedSize.value) : '--'))
+
+/** 体积减少百分比（正=变小，负=变大；无数据为 null） */
+const reducePercent = computed(() => {
+  if (sourceSize.value <= 0 || compressedSize.value <= 0) return null
+  return Math.round((1 - compressedSize.value / sourceSize.value) * 100)
+})
+
+/** 百分比文案：变小显示 -x%，变大显示 +x% */
+const reduceText = computed(() => {
+  const p = reducePercent.value
+  if (p === null) return ''
+  return `${p >= 0 ? '-' : '+'}${Math.abs(p)}%`
+})
+
 /** 加载图片（Promise 化） */
 function loadImage(url: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
@@ -85,6 +117,7 @@ function loadImage(url: string): Promise<HTMLImageElement> {
  * @param file 待压缩的源文件（来自 compressSource.get 的 file 字段）
  */
 async function runCompress(n: ImageCompressNode, file: File): Promise<void> {
+  sourceSize.value = file.size
   const url = URL.createObjectURL(file)
   try {
     const img = await loadImage(url)
@@ -219,7 +252,7 @@ onUnmounted(() => {
   <div class="compress-card" @pointerdown="startDrag" :title="'拖入图片节点压缩一次 · 或左侧端口接图片响应式压缩'">
     <!-- 头部类型标签 + 导出格式选择（与图片预览节点区分） -->
     <div class="compress-card__header">
-      <span class="compress-card__title">图片压缩</span>
+      <span class="compress-card__title">缩小图片尺寸</span>
       <select
         class="compress-card__format"
         :value="exportFormat"
@@ -247,14 +280,29 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <!-- 底部信息栏：提示 + 以压缩结果新建 ImgFileNode -->
+    <!-- 底部信息栏：原始/压缩后体积 + 减少百分比，按钮置于其下（空间有限纵向排布） -->
     <div class="compress-card__footer">
-      <span v-if="resultUrl" class="compress-card__hint compress-card__hint--active">最长边 ≤ {{ targetSize }}px</span>
+      <template v-if="resultUrl">
+        <div class="compress-card__stats">
+          <span class="compress-card__stat">
+            <span class="compress-card__stat-label">原始</span>
+            <span class="compress-card__stat-value">{{ sourceSizeText }}</span>
+          </span>
+          <span class="compress-card__stat">
+            <span class="compress-card__stat-label">压缩后</span>
+            <span class="compress-card__stat-value">{{ compressedSizeText }}</span>
+          </span>
+          <span
+            class="compress-card__reduce"
+            :class="{ 'compress-card__reduce--up': reducePercent !== null && reducePercent < 0 }"
+          >{{ reduceText }}</span>
+        </div>
+        <button class="compress-card__create-btn" type="button" @pointerdown.stop
+          @click="handleCreateImgNode" title="以压缩结果为基础新建一个图片文件节点">
+          生成图片文件节点
+        </button>
+      </template>
       <span v-else class="compress-card__hint">端口响应式 · 拖入一次性</span>
-      <button v-if="resultUrl" class="compress-card__create-btn" type="button" @pointerdown.stop
-        @click="handleCreateImgNode" title="以压缩结果为基础新建一个图片文件节点">
-        生成图片文件节点
-      </button>
     </div>
   </div>
 </template>
@@ -367,31 +415,71 @@ onUnmounted(() => {
     font-style: italic;
   }
 
+  // 纵向排布：体积信息行在上，按钮在下（节点宽度有限，横排会挤）
   &__footer {
     width: 100%;
     display: flex;
-    align-items: center;
-    gap: 8px;
+    flex-direction: column;
+    gap: 6px;
     padding: 6px 8px;
     border: 1px solid #e5e7eb;
     border-radius: 6px;
     background: #fafbfc;
   }
 
+  // 体积信息行：原始 / 压缩后 / 减少百分比
+  &__stats {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+  }
+
+  &__stat {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 3px;
+    min-width: 0;
+    font-size: 11px;
+    line-height: 1.3;
+    white-space: nowrap;
+  }
+
+  &__stat-label {
+    color: #9aa1ad;
+  }
+
+  &__stat-value {
+    font-weight: 600;
+    color: #333a45;
+  }
+
+  // 减少百分比徽标（默认绿色=变小；变大时加 --up 转橙色）
+  &__reduce {
+    flex-shrink: 0;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.3;
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: #2d6a3f;
+    background: #e7f5ec;
+
+    &--up {
+      color: #b4531f;
+      background: #fdeee2;
+    }
+  }
+
   &__hint {
-    flex: 1;
     font-size: 11px;
     color: #7a828f;
     text-align: left;
     line-height: 1.4;
-
-    &--active {
-      color: #2d6a3f;
-    }
   }
 
   &__create-btn {
-    flex-shrink: 0;
+    width: 100%;
     padding: 4px 10px;
     border: 1px solid #4a7cff;
     border-radius: 4px;

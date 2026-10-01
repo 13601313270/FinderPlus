@@ -8,7 +8,9 @@ import { Node } from '../../engine/node/Node'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 
 /**
- * 图片压缩节点：接收图片并压缩输出。
+ * 缩小图片尺寸节点：接收图片，按最长边等比缩放到目标尺寸后输出（不改质量参数）。
+ *
+ * 与 ImageQualityNode（画质调整，不改尺寸）区分：本节点管「尺寸」，它管「画质」。
  *
  * 两种触发方式：
  * 1. **节点拖入**（一次性）：把图片节点（输出 ImgFileValue 的节点）拖进来压缩一次。
@@ -74,8 +76,8 @@ export class ImageCompressNode extends Node {
     this.addInput(this.sizeInput)
     this.addInput(this.imageInput)
     this.addOutput(this.imageOutput)
-    // 内容区硬约束：头部标签（含格式下拉）+ 预览区 + 底部提示栏
-    this.setBox(250, 245)
+    // 内容区硬约束：头部标签（含格式下拉）+ 预览区 + 底部信息栏（体积信息行 + 按钮，纵向两行）
+    this.setBox(250, 265)
   }
 
   /** 拖入文件落点命中本节点时被调用；本节点不接收外部文件，返回 false */

@@ -1,7 +1,7 @@
 {
   "name": "canvas-desk",
   "version": "0.1.0",
-  "description": "CanvasDesk - Electron + Vue3 + Less + TS desktop app",
+  "description": "Finder+ - Electron + Vue3 + Less + TS desktop app",
   "main": "./out/main/index.js",
   "author": "wanghaoran",
   "private": true,
@@ -13,7 +13,7 @@
     "typecheck:node": "tsc --noEmit -p tsconfig.node.json --composite false",
     "typecheck:web": "vue-tsc --noEmit -p tsconfig.web.json --composite false",
     "typecheck": "npm run typecheck:node && npm run typecheck:web",
-    "postinstall": "electron-builder install-app-deps"
+    "postinstall": "electron-builder install-app-deps && node scripts/patch-electron-name.js"
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",

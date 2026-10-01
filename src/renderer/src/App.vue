@@ -381,11 +381,6 @@ function buildMenuItems(node: Node): MenuItem[] {
   }))
 }
 
-/** 节点外壳发来的右键事件 */
-function onNodeContextMenu(nodeId: string, clientX: number, clientY: number): void {
-  contextMenu.value = { visible: true, x: clientX, y: clientY, nodeId }
-}
-
 /**
  * document 级 capture 阶段监听 contextmenu：
  * - capture 阶段先于 target/bubble，能绕过 NodeShell.stopPropagation()
@@ -712,7 +707,7 @@ onUnmounted(() => {
     <header class="stage__dragbar">
       <!-- drag 只设在这一块（不覆盖按钮），按钮自然可点 -->
       <span class="stage__dragbar-drag-area">
-        CanvasDesk · 拖动此区域移动窗口
+        Finder+
       </span>
       <button
         class="stage__settings-btn"

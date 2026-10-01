@@ -24,7 +24,7 @@ export interface HelpTopicGroup {
 /** 全局介绍 topic，固定放在第一组（单独一组，无标题） */
 const introTopic: HelpTopic = {
   type: '__intro__',
-  label: '关于 CanvasDesk',
+  label: '关于 Finder+',
   load: () => import('@renderer/components/help/Introduction.vue')
 }
 

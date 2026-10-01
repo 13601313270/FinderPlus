@@ -4,7 +4,7 @@
     <section class="help-section">
       <h4 class="help-section__title">这是什么？</h4>
       <p class="help-section__p">
-        CanvasDesk 是一个 <b>节点式 / 画板式</b> 桌面应用，基于 Electron + Vue 3 构建。
+        Finder+ 是一个 <b>节点式 / 画板式</b> 桌面应用，基于 Electron + Vue 3 构建。
         你可以在画布上拖入不同类型的节点，用连线把它们串起来，形成一条数据流管道——
         数据从上游节点沿边流向下游节点，每个节点在自己的位置做变换、检查或产出。
       </p>

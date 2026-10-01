@@ -11,6 +11,22 @@ import { SqliteStorage } from './db/SqliteStorage'
 import { ensureCanvasDir, getCanvasDir } from './paths'
 import type { MenuLabels } from '../preload'
 
+/**
+ * 应用显示名固定为产品名 Finder+。
+ *
+ * macOS 菜单里 role 类菜单项（About / Hide / Quit）的文案由 Electron 用 app.name
+ * 拼出来，而 app.name 默认取 package.json 的 name（canvas-desk），所以不处理就会
+ * 显示成「About canvas-desk」——顶部菜单标题是 bundle 名（由 patch-electron-name
+ * 脚本改过），两处来源不同，才会出现标题是 Finder+、菜单项是 canvas-desk 的割裂。
+ *
+ * 注意：userData 目录默认跟着 app.name 走，直接改名会把数据库目录一起挪到
+ * ~/Library/Application Support/Finder+，已有画布数据就读不到了；这里先把默认
+ * 目录记下来再钉回去，做到显示名变了、数据位置不变。
+ */
+const userDataDir = app.getPath('userData')
+app.setName('Finder+')
+app.setPath('userData', userDataDir)
+
 let storage: SqliteStorage | null = null
 let canvasWatcher: ReturnType<typeof watch> | null = null
 

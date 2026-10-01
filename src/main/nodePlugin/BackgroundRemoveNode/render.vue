@@ -6,10 +6,15 @@ import { BackgroundRemoveNode } from './node'
 import { ImgFileNode } from '../ImgFileNode/node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
+import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
+import { messages } from './i18n'
 import { removeBackground } from '@imgly/background-removal'
 
 // 卡片头部标题走插件 manifest 的多语言 title，未配当前语言时由 resolveNodeTitle 兜底
 const nodeTitle = useNodeTitle(BackgroundRemoveNode.TYPE)
+
+// 卡片内文案走节点本地的 i18n.ts（放在节点文件夹里，便于插件化替换），跟随界面语言
+const t = useLocalizedMessages(messages)
 
 const props = defineProps<{ id: string }>()
 
@@ -47,7 +52,12 @@ function refreshResult(n: BackgroundRemoveNode | undefined): void {
 
 // —— 处理中状态 ——
 const processing = ref(false)
-const progressText = ref<string | null>(null) // 下载/推理进度文案
+// 下载/推理进度文案：缓存「key + 参数」而非成品字符串，
+// 这样切语言时 computed 会用当前语言重新解析，文案不会停留在旧语言
+const progressState = ref<{ key: keyof typeof messages; params?: { pct: number } } | null>(null)
+const progressText = computed(() =>
+  progressState.value ? t(progressState.value.key, progressState.value.params) : null
+)
 
 /**
  * 执行一次抠图：File → removeBackground → Blob → node.setOutput。
@@ -55,7 +65,7 @@ const progressText = ref<string | null>(null) // 下载/推理进度文案
  */
 async function runRemoveBg(n: BackgroundRemoveNode, file: File): Promise<void> {
   processing.value = true
-  progressText.value = '准备中…'
+  progressState.value = { key: 'preparing' }
 
   try {
     const blob = await removeBackground(file, {
@@ -64,7 +74,7 @@ async function runRemoveBg(n: BackgroundRemoveNode, file: File): Promise<void> {
       output: { format: 'image/png' },
       progress: (_key: string, current: number, total: number) => {
         const pct = Math.round((current / total) * 100)
-        progressText.value = `处理中 ${pct}%`
+        progressState.value = { key: 'processing', params: { pct } }
       }
     })
 
@@ -73,10 +83,10 @@ async function runRemoveBg(n: BackgroundRemoveNode, file: File): Promise<void> {
     const fileName = `${baseName}-nobg.png`
 
     n.setOutput(blob, fileName)
-    progressText.value = null
+    progressState.value = null
   } catch (err) {
     console.warn('[BackgroundRemoveNode] 抠图失败：', err)
-    progressText.value = '处理失败'
+    progressState.value = { key: 'failed' }
   } finally {
     processing.value = false
   }
@@ -163,18 +173,18 @@ onUnmounted(() => {
 
 <template>
   <div class="remove-bg-card" @pointerdown="startDrag"
-    :title="'拖入图片节点抠图一次 · 或左侧端口接图片响应式抠图'">
+    :title="t('dragHint')">
     <!-- 头部类型标签 -->
     <div class="remove-bg-card__header">{{ nodeTitle }}</div>
 
     <!-- 抠图结果预览区 -->
     <div class="remove-bg-card__image-area">
-      <img v-if="resultUrl" class="remove-bg-card__img" :src="resultUrl" alt="去背景结果预览"
+      <img v-if="resultUrl" class="remove-bg-card__img" :src="resultUrl" :alt="t('resultAlt')"
         draggable="false" />
       <!-- 处理中占位 -->
       <div v-else-if="processing" class="remove-bg-card__placeholder">
         <div class="remove-bg-card__spinner"></div>
-        <span class="remove-bg-card__placeholder-text">{{ progressText || '处理中…' }}</span>
+        <span class="remove-bg-card__placeholder-text">{{ progressText || t('processingFallback') }}</span>
       </div>
       <!-- 无结果占位 -->
       <div v-else class="remove-bg-card__placeholder">
@@ -188,7 +198,7 @@ onUnmounted(() => {
           <!-- 斜线表示抠掉背景 -->
           <line x1="14" y1="14" x2="50" y2="50" stroke="#e74c3c" stroke-width="2.5" stroke-linecap="round" />
         </svg>
-        <span class="remove-bg-card__placeholder-text">拖图片节点进来 · 或左侧端口接图片</span>
+        <span class="remove-bg-card__placeholder-text">{{ t('emptyPlaceholder') }}</span>
       </div>
     </div>
 
@@ -198,12 +208,12 @@ onUnmounted(() => {
         {{ progressText }}
       </span>
       <span v-else-if="resultUrl" class="remove-bg-card__hint remove-bg-card__hint--active">
-        背景已去除
+        {{ t('done') }}
       </span>
-      <span v-else class="remove-bg-card__hint">端口响应式 · 拖入一次性</span>
+      <span v-else class="remove-bg-card__hint">{{ t('hint') }}</span>
       <button v-if="resultUrl && !processing" class="remove-bg-card__create-btn" type="button"
-        @pointerdown.stop @click="handleCreateImgNode" title="以抠图结果为基础新建一个图片文件节点">
-        生成图片文件节点
+        @pointerdown.stop @click="handleCreateImgNode" :title="t('createNodeHint')">
+        {{ t('createNode') }}
       </button>
     </div>
   </div>

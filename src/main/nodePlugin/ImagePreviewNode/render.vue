@@ -8,9 +8,14 @@ import { useNodePosition } from '@renderer/composables/useNodePosition'
 import { setLastDragPath } from '@renderer/composables/useFileDragOut'
 import { viewport } from '@renderer/canvas/viewport'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
+import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
+import { messages } from './i18n'
 
 // 卡片头部标题走插件 manifest 的多语言 title，未配当前语言时由 resolveNodeTitle 兜底
 const nodeTitle = useNodeTitle(ImagePreviewNode.TYPE)
+
+// 卡片内文案走节点本地的 i18n.ts（放在节点文件夹里，便于插件化替换），跟随界面语言
+const t = useLocalizedMessages(messages)
 
 const props = defineProps<{ id: string }>()
 
@@ -49,7 +54,7 @@ function formatFor(file: File): string {
   const sub = file.type.startsWith('image/') ? file.type.slice(6).split('+')[0] : ''
   if (sub) return sub.toUpperCase()
   const dot = file.name.lastIndexOf('.')
-  return dot > 0 ? file.name.slice(dot + 1).toUpperCase() : '未知'
+  return dot > 0 ? file.name.slice(dot + 1).toUpperCase() : t('formatUnknown')
 }
 
 /** 文件大小文案 */
@@ -210,9 +215,9 @@ onUnmounted(() => {
 
     <!-- 预览图区域：画布内拖拽 = 移动节点；越界 = writeBuffer + startDrag 导出 -->
     <div class="preview-card__image-area" @pointerdown.stop.prevent="startPreviewDrag" :title="previewFile
-      ? '在画布内拖拽移动节点 · 拖出窗口导出图片到桌面/文件夹'
-      : '请先连接图片来源'">
-      <img v-if="imageUrl" class="preview-card__img" :src="imageUrl" alt="图片预览" draggable="false" @load="onImgLoad" />
+      ? t('dragHint')
+      : t('needSourceHint')">
+      <img v-if="imageUrl" class="preview-card__img" :src="imageUrl" :alt="t('altPreview')" draggable="false" @load="onImgLoad" />
       <!-- 无图占位 -->
       <div v-else class="preview-card__placeholder">
         <svg class="preview-card__icon-svg" viewBox="0 0 64 72" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -223,7 +228,7 @@ onUnmounted(() => {
             stroke-linejoin="round" />
           <circle cx="44" cy="28" r="4" fill="#4a7cff" />
         </svg>
-        <span class="preview-card__placeholder-text">等待图片输入</span>
+        <span class="preview-card__placeholder-text">{{ t('waitingInput') }}</span>
       </div>
     </div>
 
@@ -233,18 +238,18 @@ onUnmounted(() => {
         <span v-if="naturalSize" class="preview-card__stat">
           {{ naturalSize.w }}×{{ naturalSize.h }}px
         </span>
-        <span v-else class="preview-card__stat preview-card__stat--empty">图片加载中…</span>
+        <span v-else class="preview-card__stat preview-card__stat--empty">{{ t('loading') }}</span>
         <span class="preview-card__stat">{{ sizeText }}</span>
         <span class="preview-card__stat preview-card__stat--format">{{ formatText }}</span>
       </div>
 
-      <button class="preview-card__create-btn" type="button" @click="handleCreateImgNode" title="点击在当前节点旁边新建图片文件节点">
-        新建图片文件节点
+      <button class="preview-card__create-btn" type="button" @click="handleCreateImgNode" :title="t('createNodeHint')">
+        {{ t('createNode') }}
       </button>
     </div>
 
     <!-- resize handle：右下角，拖拽改宽度（保持图片区 16:10 比例） -->
-    <div class="preview-card__resize-handle" @pointerdown.stop.prevent="onResizePointerDown" title="拖拽调整预览大小（保持图片比例）" />
+    <div class="preview-card__resize-handle" @pointerdown.stop.prevent="onResizePointerDown" :title="t('resizeHint')" />
   </div>
 </template>
 

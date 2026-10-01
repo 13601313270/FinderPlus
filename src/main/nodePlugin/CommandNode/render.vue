@@ -4,6 +4,8 @@ import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { CommandNode } from './node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
+import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
+import { messages } from './i18n'
 import GearIcon from '@renderer/components/icons/GearIcon.vue'
 
 /**
@@ -21,6 +23,9 @@ const commandNode = shallowRef<CommandNode | undefined>(undefined)
 
 // 卡片标题走插件 manifest 的多语言 title，未配当前语言时由 resolveNodeTitle 兜底
 const nodeTitle = useNodeTitle(() => commandNode.value, '?')
+
+// 卡片内文案走节点本地的 i18n.ts（放在节点文件夹里，便于插件化替换），跟随界面语言
+const t = useLocalizedMessages(messages)
 const name = ref('')
 /** 命令模板原文（设置面板里编辑的那个，含 $1 $2…） */
 const template = ref('')
@@ -166,13 +171,13 @@ function onSave(): void {
 <template>
   <div ref="rootEl" class="node">
     <div class="node__header" @pointerdown="startDrag">
-      <span class="node__handle" title="拖动节点（整个头部可拖）">{{ nodeTitle }}</span>
+      <span class="node__handle" :title="t('dragHint')">{{ nodeTitle }}</span>
       <button
         v-if="commandNode"
         ref="gearBtn"
         class="node__gear"
         type="button"
-        title="编辑命令"
+        :title="t('editCommand')"
         @pointerdown.stop
         @click.stop="onGearClick"
       >
@@ -186,7 +191,7 @@ function onSave(): void {
       class="cmd-name"
       type="text"
       :value="name"
-      placeholder="命令名称，例如：构建项目"
+      :placeholder="t('namePlaceholder')"
       @input="onNameInput"
     />
 
@@ -194,20 +199,20 @@ function onSave(): void {
     <div
       class="cmd-saved"
       :class="{ 'cmd-saved--empty': !hasCommand }"
-      title="点击编辑命令模板"
+      :title="t('clickEditHint')"
       @click.stop="openEditor"
     >
-      {{ hasCommand ? command : '（未设置命令，点击这里或齿轮设置）' }}
+      {{ hasCommand ? command : t('noCommand') }}
     </div>
 
     <!-- 输入端口控制：第 N 个端口对应模板里的 $N -->
     <div class="cmd-ports">
-      <span class="cmd-ports__count">输入端口：{{ inputCount }} 个（模板里用 $1…$N 引用）</span>
+      <span class="cmd-ports__count">{{ t('portsCount', { n: inputCount }) }}</span>
       <div class="cmd-ports__actions">
         <button
           class="cmd-ports__btn"
           type="button"
-          title="移除末尾输入端口"
+          :title="t('removePortHint')"
           :disabled="!commandNode || inputCount <= 1"
           @click="onRemovePort"
         >
@@ -216,7 +221,7 @@ function onSave(): void {
         <button
           class="cmd-ports__btn"
           type="button"
-          title="新增输入端口"
+          :title="t('addPortHint')"
           :disabled="!commandNode"
           @click="onAddPort"
         >
@@ -237,12 +242,12 @@ function onSave(): void {
     >
       <template v-if="status === 'running'">
         <span class="cmd-output__spinner" />
-        <span>执行中…</span>
+        <span>{{ t('running') }}</span>
       </template>
       <template v-else-if="stderr">{{ stderr }}</template>
       <template v-else-if="stdout">{{ stdout }}</template>
-      <template v-else-if="status === 'done'">（无输出）</template>
-      <template v-else>{{ commandNode ? '（点击执行运行已保存的命令）' : '节点不存在' }}</template>
+      <template v-else-if="status === 'done'">{{ t('noOutput') }}</template>
+      <template v-else>{{ commandNode ? t('clickToRun') : t('nodeMissing') }}</template>
     </div>
 
     <!-- 主操作：执行 -->
@@ -251,10 +256,10 @@ function onSave(): void {
       class="node__run"
       type="button"
       :disabled="running || !hasCommand"
-      :title="hasCommand ? '执行已保存的命令' : '请先点击齿轮设置命令'"
+      :title="hasCommand ? t('runHint') : t('runHintNoCommand')"
       @click="onRun"
     >
-      {{ running ? '执行中…' : '执行' }}
+      {{ running ? t('running') : t('run') }}
     </button>
   </div>
 
@@ -266,18 +271,18 @@ function onSave(): void {
       :style="{ top: popoverPos.top + 'px', left: popoverPos.left + 'px' }"
       @click.stop
     >
-      <div class="cmd-popover__title">编辑命令模板</div>
+      <div class="cmd-popover__title">{{ t('editorTitle') }}</div>
       <textarea
         v-model="draft"
         class="cmd-popover__input"
         rows="4"
-        placeholder="命令模板，例如：npm run build -- $1"
+        :placeholder="t('templatePlaceholder')"
       />
       <div class="cmd-popover__actions">
         <button class="cmd-popover__btn cmd-popover__btn--ghost" type="button" @click="closeEditor">
-          取消
+          {{ t('cancel') }}
         </button>
-        <button class="cmd-popover__btn" type="button" @click="onSave">保存</button>
+        <button class="cmd-popover__btn" type="button" @click="onSave">{{ t('save') }}</button>
       </div>
     </div>
   </Teleport>

@@ -4,6 +4,8 @@ import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { HumanReviewNode } from './node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
+import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
+import { messages } from './i18n'
 
 const props = defineProps<{ id: string }>()
 
@@ -11,7 +13,11 @@ const reviewNode = shallowRef<HumanReviewNode | undefined>(undefined)
 
 // 卡片标题走插件 manifest 的多语言 title，未配当前语言时由 resolveNodeTitle 兜底
 const nodeTitle = useNodeTitle(() => reviewNode.value, '?')
-const currentLabel = ref('（等待输入）')
+
+// 卡片内文案走节点本地的 i18n.ts（放在节点文件夹里，便于插件化替换），跟随界面语言
+const t = useLocalizedMessages(messages)
+
+const currentLabel = ref('')
 const pendingCount = ref(0)
 const hasCurrent = ref(false)
 
@@ -48,16 +54,16 @@ function onReject(): void {
 
 <template>
   <div class="node">
-    <span class="node__handle" title="拖动节点" @pointerdown="startDrag">{{ nodeTitle }}</span>
+    <span class="node__handle" :title="t('dragHint')" @pointerdown="startDrag">{{ nodeTitle }}</span>
 
     <div class="review">
-      <div class="review__label">待审核</div>
+      <div class="review__label">{{ t('reviewLabel') }}</div>
       <div class="review__value" :title="currentLabel">{{ currentLabel }}</div>
 
       <div class="review__queue" v-if="pendingCount > 0">
-        队列中还有 <strong>{{ pendingCount }}</strong> 项
+        {{ t('queueRemaining', { n: pendingCount }) }}
       </div>
-      <div class="review__queue review__queue--empty" v-else>队列为空</div>
+      <div class="review__queue review__queue--empty" v-else>{{ t('queueEmpty') }}</div>
     </div>
 
     <div class="actions">
@@ -67,7 +73,7 @@ function onReject(): void {
         :disabled="!hasCurrent"
         @click="onApprove"
       >
-        同意
+        {{ t('approve') }}
       </button>
       <button
         class="actions__btn actions__btn--reject"
@@ -75,7 +81,7 @@ function onReject(): void {
         :disabled="!hasCurrent"
         @click="onReject"
       >
-        拒绝
+        {{ t('reject') }}
       </button>
     </div>
   </div>

@@ -9,10 +9,15 @@ import type { Edge } from '../../engine/graph/Edge'
 import GearIcon from '@renderer/components/icons/GearIcon.vue'
 import HelpDialog from '@renderer/components/HelpDialog.vue'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
+import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
 import ImageOverlayHelpDialog from './ImageOverlayHelpDialog.vue'
+import { messages } from './i18n'
 
 // 卡片头部标题走插件 manifest 的多语言 title，未配当前语言时由 resolveNodeTitle 兜底
 const nodeTitle = useNodeTitle(ImageOverlayNode.TYPE)
+
+// 卡片内文案走节点本地的 i18n.ts（放在节点文件夹里，便于插件化替换），跟随界面语言
+const t = useLocalizedMessages(messages)
 
 const props = defineProps<{ id: string }>()
 
@@ -145,7 +150,6 @@ function loadImageFromUrl(url: string): Promise<HTMLImageElement> {
 interface LayerItem {
   portId: string
   portIndex: number
-  label: string           // '图层 1', '图层 2', ...
   connected: boolean
   fingerprint: string     // 连接后才有
   state: LayerState | null  // 连接后才有
@@ -183,15 +187,12 @@ function refreshLayers(): void {
 
   n.inputPorts.forEach((port, idx) => {
     seenPortIds.add(port.id)
-    const dynamicLabel = `图层 ${idx + 1}`
-
     const conn = getPortValue(port)
     if (!conn) {
       // 空端口：只显示占位
       newLayers.push({
         portId: port.id,
         portIndex: idx,
-        label: dynamicLabel,
         connected: false,
         fingerprint: '',
         state: null,
@@ -229,7 +230,6 @@ function refreshLayers(): void {
     newLayers.push({
       portId: port.id,
       portIndex: idx,
-      label: dynamicLabel,
       connected: true,
       fingerprint: newFp,
       state: { ...state },
@@ -610,11 +610,11 @@ function onRemoveLayer(e: PointerEvent, portId: string): void {
     <!-- 头部 -->
     <div class="overlay-card__header">
       <span class="overlay-card__title">{{ nodeTitle }}</span>
-      <span class="overlay-card__sub">{{ layers.length }} 端口 · {{ layers.filter(l => l.connected).length }} 已连</span>
+      <span class="overlay-card__sub">{{ t('portSummary', { total: layers.length, connected: layers.filter(l => l.connected).length }) }}</span>
       <button
         class="overlay-card__gear"
         type="button"
-        title="画布尺寸设置"
+        :title="t('canvasSizeTitle')"
         @pointerdown.stop
         @click="showSizeDialog = true"
       >
@@ -623,7 +623,7 @@ function onRemoveLayer(e: PointerEvent, portId: string): void {
       <button
         class="overlay-card__help"
         type="button"
-        title="使用说明"
+        :title="t('helpTitle')"
         @pointerdown.stop
         @click="showHelp = true"
       >?</button>
@@ -644,12 +644,12 @@ function onRemoveLayer(e: PointerEvent, portId: string): void {
           @pointerdown.stop="onLayerItemClick($event, layer.portId)"
         >
           <div class="overlay-card__port-row">
-            <div class="overlay-card__port-label">{{ layer.label }}</div>
+            <div class="overlay-card__port-label">{{ t('layerLabel', { n: layer.portIndex + 1 }) }}</div>
             <button
               v-if="layer.connected && layer.portIndex === layers.length - 1 && layers.length > 1"
               class="overlay-card__port-del"
               type="button"
-              title="删除此图层（仅尾部可删）"
+              :title="t('removeLayerHint')"
               @pointerdown.stop
               @click="onRemoveLayer($event, layer.portId)"
             >×</button>
@@ -665,7 +665,7 @@ function onRemoveLayer(e: PointerEvent, portId: string): void {
             <div class="overlay-card__port-size">{{ layer.state?.width }}×{{ layer.state?.height }}</div>
           </div>
           <div v-else class="overlay-card__port-info">
-            <div class="overlay-card__port-name overlay-card__port-name--empty">未连接</div>
+            <div class="overlay-card__port-name overlay-card__port-name--empty">{{ t('notConnected') }}</div>
           </div>
         </div>
 
@@ -673,10 +673,10 @@ function onRemoveLayer(e: PointerEvent, portId: string): void {
         <button
           class="overlay-card__port-add"
           type="button"
-          title="添加图层"
+          :title="t('addLayerHint')"
           @pointerdown.stop
           @click="handleAddLayer"
-        >＋ 添加图层</button>
+        >{{ t('addLayer') }}</button>
       </div>
 
       <!-- 右面板：画布预览 + 层内拖拽缩放 -->
@@ -712,14 +712,14 @@ function onRemoveLayer(e: PointerEvent, portId: string): void {
             </template>
           </div>
         </div>
-        <div v-else class="overlay-card__empty-hint">连接端口或点击左侧 ＋ 添加图层</div>
+        <div v-else class="overlay-card__empty-hint">{{ t('emptyHint') }}</div>
       </div>
     </div>
 
     <!-- 底部 -->
     <div class="overlay-card__footer">
       <span class="overlay-card__hint">
-        {{ layers.filter(l => l.connected).length }}/{{ layers.length }} · {{ canvasSize.width }}×{{ canvasSize.height }} · PNG透明
+        {{ layers.filter(l => l.connected).length }}/{{ layers.length }} · {{ canvasSize.width }}×{{ canvasSize.height }} · {{ t('pngTransparent') }}
       </span>
       <button
         v-if="layers.filter(l => l.connected).length > 0"
@@ -728,7 +728,7 @@ function onRemoveLayer(e: PointerEvent, portId: string): void {
         @pointerdown.stop
         @click="handleCreateImgNode"
       >
-        生成图片文件节点
+        {{ t('createNode') }}
       </button>
     </div>
 
@@ -736,41 +736,41 @@ function onRemoveLayer(e: PointerEvent, portId: string): void {
     <div v-if="showSizeDialog" class="overlay-dialog" @pointerdown.stop>
       <div class="overlay-dialog__mask" @click="showSizeDialog = false"></div>
       <div class="overlay-dialog__panel">
-        <div class="overlay-dialog__title">画布尺寸</div>
+        <div class="overlay-dialog__title">{{ t('canvasSizeDialogTitle') }}</div>
 
         <label class="overlay-dialog__row">
-          <span class="overlay-dialog__label">模式</span>
+          <span class="overlay-dialog__label">{{ t('modeLabel') }}</span>
           <div class="overlay-dialog__radios">
             <label class="overlay-dialog__radio">
               <input type="radio" v-model="dialogAuto" :value="true">
-              <span>自动（按图层边界）</span>
+              <span>{{ t('modeAuto') }}</span>
             </label>
             <label class="overlay-dialog__radio">
               <input type="radio" v-model="dialogAuto" :value="false">
-              <span>固定尺寸</span>
+              <span>{{ t('modeFixed') }}</span>
             </label>
           </div>
         </label>
 
         <div class="overlay-dialog__inputs" :class="{ 'is-disabled': dialogAuto }">
           <label class="overlay-dialog__input-group">
-            <span>宽</span>
+            <span>{{ t('widthLabel') }}</span>
             <input type="number" min="1" v-model.number="dialogW" :disabled="dialogAuto">
           </label>
           <label class="overlay-dialog__input-group">
-            <span>高</span>
+            <span>{{ t('heightLabel') }}</span>
             <input type="number" min="1" v-model.number="dialogH" :disabled="dialogAuto">
           </label>
         </div>
 
         <div class="overlay-dialog__footer">
           <button class="overlay-dialog__btn overlay-dialog__btn--ghost" type="button"
-            @click="resetCanvasSize">恢复自动</button>
+            @click="resetCanvasSize">{{ t('resetAuto') }}</button>
           <div style="flex:1"></div>
           <button class="overlay-dialog__btn overlay-dialog__btn--ghost" type="button"
-            @click="showSizeDialog = false">取消</button>
+            @click="showSizeDialog = false">{{ t('cancel') }}</button>
           <button class="overlay-dialog__btn overlay-dialog__btn--primary" type="button"
-            @click="applyCanvasSize">确定</button>
+            @click="applyCanvasSize">{{ t('confirm') }}</button>
         </div>
       </div>
     </div>
@@ -778,13 +778,13 @@ function onRemoveLayer(e: PointerEvent, portId: string): void {
     <!-- 节点整体大小 resize 手柄（右下角三角） -->
     <div
       class="overlay-card__node-resize"
-      title="拖拽调整节点大小（最小 400×400）"
+      :title="t('resizeNodeHint')"
       @pointerdown.stop="onNodeResizeStart"
     ></div>
   </div>
 
   <!-- 帮助弹窗 -->
-  <HelpDialog :visible="showHelp" title="图片叠加节点使用说明" @close="showHelp = false">
+  <HelpDialog :visible="showHelp" :title="t('helpDialogTitle')" @close="showHelp = false">
     <ImageOverlayHelpDialog />
   </HelpDialog>
 </template>

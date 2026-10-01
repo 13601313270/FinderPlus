@@ -6,9 +6,14 @@ import { ImageCropNode, type CropRect } from './node'
 import { ImgFileNode } from '../ImgFileNode/node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
+import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
+import { messages } from './i18n'
 
 // 卡片头部标题走插件 manifest 的多语言 title，未配当前语言时由 resolveNodeTitle 兜底
 const nodeTitle = useNodeTitle(ImageCropNode.TYPE)
+
+// 卡片内文案走节点本地的 i18n.ts（放在节点文件夹里，便于插件化替换），跟随界面语言
+const t = useLocalizedMessages(messages)
 
 const props = defineProps<{ id: string }>()
 
@@ -463,7 +468,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="crop-card" @pointerdown="startDrag" :title="'拖入图片节点裁剪 · 或左侧端口接图片响应式'">
+  <div class="crop-card" @pointerdown="startDrag" :title="t('dragHint')">
     <!-- 头部类型标签 -->
     <div class="crop-card__header">{{ nodeTitle }}</div>
 
@@ -477,7 +482,7 @@ onUnmounted(() => {
           <circle cx="40" cy="20" r="4" fill="#4a7cff" />
           <rect x="20" y="18" width="24" height="20" fill="none" stroke="#ff7a45" stroke-width="2" stroke-dasharray="3,3" />
         </svg>
-        <span class="crop-card__placeholder-text">拖图片节点进来 · 或左侧端口接图片</span>
+        <span class="crop-card__placeholder-text">{{ t('placeholder') }}</span>
       </div>
 
       <!-- 有源图：img 用 object-fit: contain 保比例，crop-box 用 imgDisplay 偏移对齐 -->
@@ -487,7 +492,7 @@ onUnmounted(() => {
         <img
           class="source-img"
           :src="sourceUrl"
-          alt="源图"
+          :alt="t('sourceAlt')"
           draggable="false"
           @load="onSourceImgLoad"
         />
@@ -514,16 +519,16 @@ onUnmounted(() => {
         </div>
 
         <!-- 已裁剪结果标记 -->
-        <div v-if="resultUrl" class="crop-result-badge">已裁剪 ✓</div>
+        <div v-if="resultUrl" class="crop-result-badge">{{ t('croppedBadge') }}</div>
       </template>
     </div>
 
     <!-- 底部操作栏 -->
     <div class="crop-card__footer">
-      <label class="crop-card__switch" :title="'自动裁剪：开启后拖动裁剪框自动执行裁剪'">
+      <label class="crop-card__switch" :title="t('autoCropHint')">
         <input type="checkbox" v-model="autoCrop" @change="onAutoCropToggle" />
         <span class="crop-card__switch-slider" />
-        <span class="crop-card__switch-text">自动裁剪</span>
+        <span class="crop-card__switch-text">{{ t('autoCrop') }}</span>
       </label>
       <button
         v-if="sourceUrl"
@@ -532,7 +537,7 @@ onUnmounted(() => {
         :disabled="cropping"
         @click="handleCrop"
       >
-        确认裁剪
+        {{ t('confirmCrop') }}
       </button>
       <button
         v-if="sourceUrl"
@@ -541,7 +546,7 @@ onUnmounted(() => {
         :disabled="cropping"
         @click="handleCropAndGenerate"
       >
-        生成图片文件节点
+        {{ t('createNode') }}
       </button>
     </div>
   </div>

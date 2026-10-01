@@ -4,6 +4,8 @@ import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { StringConcatNode } from './node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
+import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
+import { messages } from './i18n'
 
 /**
  * 字符串拼接节点的渲染组件（只画卡片内容）。
@@ -20,6 +22,9 @@ const concatNode = computed(() => {
 
 // 卡片标题走插件 manifest 的多语言 title，未配当前语言时由 resolveNodeTitle 兜底
 const nodeTitle = useNodeTitle(() => concatNode.value, '?')
+
+// 卡片内文案走节点本地的 i18n.ts（放在节点文件夹里，便于插件化替换），跟随界面语言
+const t = useLocalizedMessages(messages)
 
 const templateValue = ref('')
 const resultValue = ref('')
@@ -84,7 +89,7 @@ function onTextareaWheel(e: WheelEvent): void {
 <template>
   <div class="node">
     <div class="node__header" @pointerdown="startDrag">
-      <span class="node__handle" title="拖动节点">{{ nodeTitle }}</span>
+      <span class="node__handle" :title="t('dragHint')">{{ nodeTitle }}</span>
     </div>
 
     <textarea
@@ -92,18 +97,18 @@ function onTextareaWheel(e: WheelEvent): void {
       rows="3"
       :value="templateValue"
       :disabled="!concatNode"
-      placeholder="模板，例：https://$1/$2"
+      :placeholder="t('templatePlaceholder')"
       @wheel="onTextareaWheel"
       @input="onInput"
     />
 
     <div class="node__ports">
-      <span class="node__ports-count">输入端口：{{ inputCount }} 个</span>
+      <span class="node__ports-count">{{ t('portsCount', { n: inputCount }) }}</span>
       <div class="node__ports-actions">
         <button
           class="node__btn"
           type="button"
-          title="移除末尾输入端口"
+          :title="t('removePortHint')"
           :disabled="!concatNode || inputCount <= 1"
           @click="onRemovePort"
         >
@@ -112,7 +117,7 @@ function onTextareaWheel(e: WheelEvent): void {
         <button
           class="node__btn"
           type="button"
-          title="新增输入端口"
+          :title="t('addPortHint')"
           :disabled="!concatNode"
           @click="onAddPort"
         >
@@ -121,7 +126,7 @@ function onTextareaWheel(e: WheelEvent): void {
       </div>
     </div>
 
-    <div class="node__result" :title="resultValue">{{ resultValue || '（结果）' }}</div>
+    <div class="node__result" :title="resultValue">{{ resultValue || t('resultPlaceholder') }}</div>
   </div>
 </template>
 

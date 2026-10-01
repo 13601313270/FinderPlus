@@ -7,9 +7,14 @@ import { ImageQualityNode, type ImageQualityFormat } from './node'
 import { ImgFileNode } from '../ImgFileNode/node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
+import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
+import { messages } from './i18n'
 
 // 卡片头部标题走插件 manifest 的多语言 title，未配当前语言时由 resolveNodeTitle 兜底
 const nodeTitle = useNodeTitle(ImageQualityNode.TYPE)
+
+// 卡片内文案走节点本地的 i18n.ts（放在节点文件夹里，便于插件化替换），跟随界面语言
+const t = useLocalizedMessages(messages)
 
 const props = defineProps<{ id: string }>()
 
@@ -62,8 +67,9 @@ let revokeUrl: (() => void) | null = null
 const originalSize = ref(0)
 const compressedSize = ref(0)
 
-// —— 失败提示（wasm 压缩失败返回空数组时显示） ——
-const errorText = ref<string | null>(null)
+// —— 失败提示：存文案 key（而非已解析的字符串），模板里 t() 渲染，切语言也能跟着变 ——
+const errorKey = ref<'errorUnsupported' | 'errorWasm' | null>(null)
+const errorText = computed(() => (errorKey.value ? t(errorKey.value) : ''))
 
 function clearResult(): void {
   if (revokeUrl) {
@@ -136,7 +142,7 @@ async function runCompress(n: ImageQualityNode, file: File): Promise<void> {
   const out = mod.compress_image(input, quality, format)
   // 失败统一返回空数组、不抛异常：格式不支持 / 图片损坏 / 解码失败
   if (!out || out.length === 0) {
-    errorText.value = '压缩失败：不支持的图片格式或文件已损坏'
+    errorKey.value = 'errorUnsupported'
     return
   }
 
@@ -146,7 +152,7 @@ async function runCompress(n: ImageQualityNode, file: File): Promise<void> {
 
   originalSize.value = file.size
   compressedSize.value = out.length
-  errorText.value = null
+  errorKey.value = null
 }
 
 /**
@@ -170,7 +176,7 @@ function handleCompress(n: ImageQualityNode | undefined): void {
   compressing = true
   runCompress(n, src.file)
     .catch(() => {
-      errorText.value = '压缩失败：wasm 初始化或编码出错'
+      errorKey.value = 'errorWasm'
     })
     .finally(() => {
       compressing = false
@@ -259,12 +265,11 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="quality-card" @pointerdown="startDrag"
-    :title="'拖入图片节点压缩一次 · 或左侧端口接图片响应式压缩'">
+  <div class="quality-card" @pointerdown="startDrag" :title="t('dragHint')">
     <!-- 头部类型标签 + 导出格式选择 -->
     <div class="quality-card__header">
       <span class="quality-card__title">{{ nodeTitle }}</span>
-      <select class="quality-card__format" :value="exportFormat" title="选择导出格式（改变后重新压缩）"
+      <select class="quality-card__format" :value="exportFormat" :title="t('formatHint')"
         @pointerdown.stop @change="onFormatChange">
         <option value="jpeg">jpeg</option>
         <option value="png">png</option>
@@ -273,7 +278,7 @@ onUnmounted(() => {
 
     <!-- 压缩结果预览区 -->
     <div class="quality-card__image-area">
-      <img v-if="resultUrl" class="quality-card__img" :src="resultUrl" alt="压缩结果预览" draggable="false" />
+      <img v-if="resultUrl" class="quality-card__img" :src="resultUrl" :alt="t('resultAlt')" draggable="false" />
       <!-- 无结果占位：提示两种输入方式 -->
       <div v-else class="quality-card__placeholder">
         <svg class="quality-card__icon-svg" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -282,18 +287,18 @@ onUnmounted(() => {
             stroke-linejoin="round" />
           <circle cx="40" cy="20" r="4" fill="#4a7cff" />
         </svg>
-        <span class="quality-card__placeholder-text">拖图片节点进来 · 或左侧端口接图片</span>
+        <span class="quality-card__placeholder-text">{{ t('placeholder') }}</span>
       </div>
     </div>
 
     <!-- 质量滑杆：拖动时实时显示数值，松手才重压 -->
     <div class="quality-card__quality">
       <div class="quality-card__quality-head">
-        <span class="quality-card__quality-label">质量</span>
+        <span class="quality-card__quality-label">{{ t('qualityLabel') }}</span>
         <span class="quality-card__quality-value">{{ sliderQuality }}</span>
       </div>
       <input class="quality-card__slider" type="range" min="1" max="100" step="1" :value="sliderQuality"
-        title="调整压缩质量（松手后重新压缩）" @pointerdown.stop @input="onSliderInput" @change="onSliderChange" />
+        :title="t('sliderHint')" @pointerdown.stop @input="onSliderInput" @change="onSliderChange" />
     </div>
 
     <!-- 底部信息栏：体积/压缩比 + 以压缩结果新建 ImgFileNode -->
@@ -303,10 +308,10 @@ onUnmounted(() => {
         {{ formatSize(originalSize) }} → {{ formatSize(compressedSize) }}
         <b class="quality-card__ratio">{{ ratioText }}</b>
       </span>
-      <span v-else class="quality-card__hint">端口响应式 · 拖入一次性</span>
+      <span v-else class="quality-card__hint">{{ t('hint') }}</span>
       <button v-if="resultUrl" class="quality-card__create-btn" type="button" @pointerdown.stop
-        @click="handleCreateImgNode" title="以压缩结果为基础新建一个图片文件节点">
-        生成图片文件节点
+        @click="handleCreateImgNode" :title="t('createNodeHint')">
+        {{ t('createNode') }}
       </button>
     </div>
   </div>

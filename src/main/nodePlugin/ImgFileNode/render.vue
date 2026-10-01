@@ -8,9 +8,14 @@ import { inferImageMime } from './mime'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
 import { useFileDragOut } from '@renderer/composables/useFileDragOut'
 import { useFileOpenInSystem } from '@renderer/composables/useFileOpenInSystem'
+import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
 import { viewport } from '@renderer/canvas/viewport'
+import { messages } from './i18n'
 
 const props = defineProps<{ id: string }>()
+
+// 卡片内文案走节点本地的 i18n.ts（放在节点文件夹里，便于插件化替换），跟随界面语言
+const t = useLocalizedMessages(messages)
 
 const fileNode = computed(() => {
   const node = workspaceScene.getNode(props.id)
@@ -146,11 +151,11 @@ onUnmounted(() => {
 
 <template>
   <div class="file-card" @pointerdown="startDrag" @dblclick="openInSystem(fileNode?.fileName)" :title="fileNode?.fileName
-    ? '拖动节点 · 拖出窗口移动文件 · 双击用系统默认应用打开'
-    : '拖动节点（未选文件）'">
+    ? t('dragHint')
+    : t('dragHintEmpty')">
     <!-- 图标区：内嵌缩略图，CSS aspect-ratio 保持原图比例 -->
     <div class="file-card__icon" :style="{ aspectRatio: aspectRatio }">
-      <img v-if="thumbnailUrl" class="file-card__img" :src="thumbnailUrl" alt="图片预览" draggable="false"
+      <img v-if="thumbnailUrl" class="file-card__img" :src="thumbnailUrl" :alt="t('altPreview')" draggable="false"
         @load="onImgLoad" />
       <!-- 没有缩略图时显示占位图标 -->
       <svg v-else class="file-card__icon-svg" viewBox="0 0 64 72" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -169,7 +174,7 @@ onUnmounted(() => {
       <span v-if="fileName" class="file-card__name" :title="fileName">
         {{ fileName }}
       </span>
-      <span v-else class="file-card__name file-card__name--empty">未选择文件</span>
+      <span v-else class="file-card__name file-card__name--empty">{{ t('emptyFile') }}</span>
       <div style="display: flex;flex-direction: row;align-items: center;justify-content: center;">
         <span v-if="fileSize || true" class="file-card__size">
           {{ formatSize(fileSize) }}
@@ -186,7 +191,7 @@ onUnmounted(() => {
     </div>
 
     <!-- resize handle：右下角，拖拽改宽度（保持原图比例） -->
-    <div class="file-card__resize-handle" @pointerdown.stop.prevent="onResizePointerDown" title="拖拽调整预览大小（保持原图比例）" />
+    <div class="file-card__resize-handle" @pointerdown.stop.prevent="onResizePointerDown" :title="t('resizeHint')" />
   </div>
 </template>
 

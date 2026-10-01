@@ -4,6 +4,8 @@ import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { HttpRequestNode, type HttpMethod, type HeaderEntry } from './node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
+import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
+import { messages } from './i18n'
 import ChevronIcon from '@renderer/components/icons/ChevronIcon.vue'
 import HelpDialog from '@renderer/components/HelpDialog.vue'
 import HttpRequestHelpDialog from './HttpRequestHelpDialog.vue'
@@ -23,6 +25,9 @@ const httpNode = shallowRef<HttpRequestNode | undefined>(undefined)
 
 // 卡片标题走插件 manifest 的多语言 title，未配当前语言时由 resolveNodeTitle 兜底
 const nodeTitle = useNodeTitle(() => httpNode.value, '?')
+
+// 卡片内文案走节点本地的 i18n.ts（放在节点文件夹里，便于插件化替换），跟随界面语言
+const t = useLocalizedMessages(messages)
 
 // —— 帮助浮层开关 ——
 const showHelp = ref(false)
@@ -190,24 +195,24 @@ onUnmounted(() => { unsubscribe?.() })
   >
     <!-- 头部：拖动 + type 标签 + 帮助 + 展开/收起 toggle -->
     <div class="node__header" @pointerdown="startDrag">
-      <span class="node__handle" title="拖动节点">{{ nodeTitle }}</span>
+      <span class="node__handle" :title="t('dragHint')">{{ nodeTitle }}</span>
       <div class="node__header-right">
         <button
           v-if="httpNode"
           class="node__toggle"
           type="button"
-          :title="expanded ? '收起配置' : '展开配置'"
+          :title="expanded ? t('collapseConfig') : t('expandConfig')"
           @pointerdown.stop
           @click.stop="toggleExpand"
         >
           <!-- expanded=false(折叠)时指向下=展开按钮；expanded=true(展开)时指向上=收起按钮 -->
           <ChevronIcon :direction="expanded ? 'up' : 'down'" :size="12" />
-          <span class="node__toggle-text">{{ expanded ? '收起' : '展开' }}</span>
+          <span class="node__toggle-text">{{ expanded ? t('collapse') : t('expand') }}</span>
         </button>
         <button
           class="node__help"
           type="button"
-          title="使用说明"
+          :title="t('helpHint')"
           @pointerdown.stop
           @click.stop="showHelp = true"
         >?</button>
@@ -223,15 +228,15 @@ onUnmounted(() => { unsubscribe?.() })
       <span class="http-preview__method">{{ method }}</span>
       <span class="http-preview__sep">·</span>
       <span class="http-preview__url" :title="resolvedUrl || urlTemplate">
-        {{ resolvedUrl || urlTemplate || '（展开后填写 URL）' }}
+        {{ resolvedUrl || urlTemplate || t('urlEmptyHint') }}
       </span>
     </div>
 
     <!-- —— 折叠态可见：headers/body/端口数摘要 —— -->
     <div v-if="httpNode && hasUrl" class="http-summary">
-      <span>headers: {{ headerCount }} 条</span>
-      <span>body: {{ bodyText ? (allowsBody ? '已设置' : method + ' 不带') : '无' }}</span>
-      <span>$端口: {{ inputCount }}</span>
+      <span>{{ t('headersSummary', { n: headerCount }) }}</span>
+      <span>body: {{ bodyText ? (allowsBody ? t('bodySet') : t('bodyNotSent', { method })) : t('bodyNone') }}</span>
+      <span>{{ t('portSummary', { n: inputCount }) }}</span>
     </div>
 
     <!-- —— 展开态才渲染的配置区（内嵌编辑，改了直接写回节点） —— -->
@@ -239,7 +244,7 @@ onUnmounted(() => { unsubscribe?.() })
 
       <!-- 方法 + URL 输入 -->
       <div class="http-edit-row">
-        <label class="http-edit-row__label">方法</label>
+        <label class="http-edit-row__label">{{ t('labelMethod') }}</label>
         <select
           class="http-method"
           :value="method"
@@ -261,7 +266,7 @@ onUnmounted(() => { unsubscribe?.() })
 
       <!-- Headers KV 列表（每行一个 header：key + value + 删除按钮） -->
       <div class="http-block">
-        <div class="http-block__label">Headers（KV）</div>
+        <div class="http-block__label">{{ t('headersLabel') }}</div>
         <div
           v-for="(h, idx) in headers"
           :key="idx"
@@ -285,7 +290,7 @@ onUnmounted(() => { unsubscribe?.() })
           <button
             class="http-kv__del"
             type="button"
-            title="删除这条 header"
+            :title="t('deleteHeaderHint')"
             @click="onRemoveHeader(idx)"
           >－</button>
         </div>
@@ -293,20 +298,20 @@ onUnmounted(() => { unsubscribe?.() })
           class="http-kv__add"
           type="button"
           @click="onAddHeader"
-        >+ 添加 Header</button>
+        >{{ t('addHeader') }}</button>
       </div>
 
       <!-- Body -->
       <div class="http-block">
         <div class="http-block__label">
-          Body（{{ allowsBody ? '可选' : method + ' 无 body' }}）
+          {{ allowsBody ? t('bodyLabelOptional') : t('bodyLabelDisabled', { method }) }}
         </div>
         <textarea
           class="http-textarea"
           rows="3"
           :value="bodyText"
           :disabled="!allowsBody"
-          :placeholder="allowsBody ? '请求体' : method + ' 请求不发送 body'"
+          :placeholder="allowsBody ? t('bodyPlaceholder') : t('bodyPlaceholderDisabled', { method })"
           @wheel="onWheel"
           @input="onBodyInput"
         />
@@ -314,7 +319,7 @@ onUnmounted(() => { unsubscribe?.() })
 
       <!-- 超时 -->
       <div class="http-edit-row">
-        <label class="http-edit-row__label">超时(ms)</label>
+        <label class="http-edit-row__label">{{ t('timeoutLabel') }}</label>
         <input
           class="http-timeout"
           type="number"
@@ -326,7 +331,7 @@ onUnmounted(() => { unsubscribe?.() })
 
       <!-- 端口增删 -->
       <div class="http-ports">
-        <span class="http-ports__count">输入端口：{{ inputCount }} 个（$1…$N 引用到 URL 模板）</span>
+        <span class="http-ports__count">{{ t('portsCount', { n: inputCount }) }}</span>
         <div class="http-ports__actions">
           <button
             class="http-ports__btn" type="button"
@@ -357,18 +362,18 @@ onUnmounted(() => { unsubscribe?.() })
     >
       <template v-if="status === 'running'">
         <span class="http-result__spinner" />
-        <span>请求中…</span>
+        <span>{{ t('requesting') }}</span>
       </template>
       <template v-else-if="status === 'error'">
-        <div class="http-result__meta">网络错误</div>
+        <div class="http-result__meta">{{ t('networkError') }}</div>
         <div>{{ lastError }}</div>
       </template>
       <template v-else-if="status === 'done'">
-        <div class="http-result__meta">状态码：{{ lastStatus }}</div>
+        <div class="http-result__meta">{{ t('statusCode', { code: lastStatus }) }}</div>
         <div v-if="lastBody">{{ lastBody }}</div>
-        <div v-else class="http-result__empty">（响应无 body）</div>
+        <div v-else class="http-result__empty">{{ t('noResponseBody') }}</div>
       </template>
-      <template v-else>（点击「发送」执行请求）</template>
+      <template v-else>{{ t('clickToSend') }}</template>
     </div>
 
     <!-- —— 折叠态/展开态都可见：发送按钮 —— -->
@@ -377,15 +382,15 @@ onUnmounted(() => { unsubscribe?.() })
       class="node__run"
       type="button"
       :disabled="running || !hasUrl"
-      :title="hasUrl ? '发送请求' : '请先填写 URL'"
+      :title="hasUrl ? t('sendHint') : t('sendHintNoUrl')"
       @click="onSend"
     >
-      {{ running ? '发送中…' : '发送' }}
+      {{ running ? t('sending') : t('send') }}
     </button>
   </div>
 
   <!-- 帮助弹窗 -->
-  <HelpDialog :visible="showHelp" title="HTTP 请求节点使用说明" @close="showHelp = false">
+  <HelpDialog :visible="showHelp" :title="t('helpTitle')" @close="showHelp = false">
     <HttpRequestHelpDialog />
   </HelpDialog>
 </template>

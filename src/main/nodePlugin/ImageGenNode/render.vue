@@ -5,10 +5,15 @@ import { ImageGenNode } from './node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
 import { useImageSettings } from '@renderer/composables/useImageSettings'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
+import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
+import { messages } from './i18n'
 import GearIcon from '@renderer/components/icons/GearIcon.vue'
 
 // 卡片头部标题走插件 manifest 的多语言 title，未配当前语言时由 resolveNodeTitle 兜底
 const nodeTitle = useNodeTitle(ImageGenNode.TYPE)
+
+// 卡片内文案走节点本地的 i18n.ts（放在节点文件夹里，便于插件化替换），跟随界面语言
+const t = useLocalizedMessages(messages)
 
 /**
  * 文生图节点的渲染组件：
@@ -79,10 +84,10 @@ const sizeChoices = computed<readonly string[]>(() => {
 })
 
 const placeholder = computed(() => {
-  if (!node.value) return '节点不存在'
-  if (!hasKey()) return '请先点右上角齿轮配置图像 API Key'
-  if (!promptConnected.value) return '请连接上游提示词'
-  return '点击「生成」开始文生图'
+  if (!node.value) return t('nodeMissing')
+  if (!hasKey()) return t('needApiKey')
+  if (!promptConnected.value) return t('needPrompt')
+  return t('ready')
 })
 
 onMounted(() => {
@@ -119,12 +124,12 @@ function onGenClick(): void {
 <template>
   <div class="node">
     <div class="node__header" @pointerdown="startDrag">
-      <span class="node__handle" title="拖动节点（整个头部可拖）">{{ nodeTitle }}</span>
+      <span class="node__handle" :title="t('dragHint')">{{ nodeTitle }}</span>
       <button
         v-if="node"
         class="node__gear"
         type="button"
-        :title="hasKey() ? '图像模型已配置，点击修改 Key' : '点击配置图像 API Key'"
+        :title="hasKey() ? t('gearConfigured') : t('gearConfigure')"
         @pointerdown.stop
         @click.stop="onGearClick"
       >
@@ -143,13 +148,13 @@ function onGenClick(): void {
     >
       <template v-if="status === 'loading'">
         <span class="igen-preview__spinner" />
-        <span class="igen-preview__loading-text">生成中…</span>
+        <span class="igen-preview__loading-text">{{ t('generating') }}</span>
       </template>
       <img
         v-else-if="imageUrl"
         class="igen-preview__img"
         :src="imageUrl"
-        alt="生成结果"
+        :alt="t('resultAlt')"
         draggable="false"
       />
       <template v-else-if="status === 'error'">
@@ -166,7 +171,7 @@ function onGenClick(): void {
         class="igen-size"
         :value="size"
         :disabled="sizeConnected"
-        :title="sizeConnected ? '尺寸来自上游连线（当前 ' + size + '）' : '当前模型：' + modelLabel"
+        :title="sizeConnected ? t('sizeFromUpstream', { size }) : t('currentModel', { model: modelLabel })"
         @change="onSizeChange"
       >
         <option v-for="s in sizeChoices" :key="s" :value="s">{{ s }}</option>
@@ -177,7 +182,7 @@ function onGenClick(): void {
         :disabled="status === 'loading'"
         @click="onGenClick"
       >
-        {{ status === 'loading' ? '生成中…' : '生成' }}
+        {{ status === 'loading' ? t('generating') : t('generate') }}
       </button>
     </div>
   </div>

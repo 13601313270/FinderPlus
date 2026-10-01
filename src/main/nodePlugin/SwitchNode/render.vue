@@ -3,6 +3,8 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { SwitchNode } from './node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
+import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
+import { messages } from './i18n'
 
 /**
  * Switch 条件分支节点的渲染组件（只画卡片内容）。
@@ -14,6 +16,9 @@ import { useNodePosition } from '@renderer/composables/useNodePosition'
  * - pending → 灰色占位线
  */
 const props = defineProps<{ id: string }>()
+
+// 卡片内文案走节点本地的 i18n.ts（放在节点文件夹里，便于插件化替换），跟随界面语言
+const t = useLocalizedMessages(messages)
 
 const switchNode = computed(() => {
   const node = workspaceScene.getNode(props.id)
@@ -71,7 +76,7 @@ const wireDash = computed(() => condition.value === undefined ? '4 4' : '')
 </script>
 
 <template>
-  <div class="node" @pointerdown="startDrag" title="拖动节点">
+  <div class="node" @pointerdown="startDrag" :title="t('dragHint')">
     <!-- 顶部小标签 -->
     <div class="node__label">switch</div>
 
@@ -84,11 +89,11 @@ const wireDash = computed(() => condition.value === undefined ? '4 4' : '')
     <!-- 分支标签：当前生效的高亮 -->
     <div class="node__branch-label node__branch-label--pass"
       :class="{ 'node__branch-label--active': condition === true }">
-      ✓ 通过
+      {{ t('branchPass') }}
     </div>
     <div class="node__branch-label node__branch-label--fail"
       :class="{ 'node__branch-label--active': condition === false }">
-      ✗ 驳回
+      {{ t('branchFail') }}
     </div>
   </div>
 </template>

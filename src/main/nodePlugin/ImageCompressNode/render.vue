@@ -6,9 +6,14 @@ import { ImageCompressNode, type ImageExportFormat } from './node'
 import { ImgFileNode } from '../ImgFileNode/node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
+import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
+import { messages } from './i18n'
 
 // 卡片头部标题走插件 manifest 的多语言 title，未配当前语言时由 resolveNodeTitle 兜底
 const nodeTitle = useNodeTitle(ImageCompressNode.TYPE)
+
+// 卡片内文案走节点本地的 i18n.ts（放在节点文件夹里，便于插件化替换），跟随界面语言
+const t = useLocalizedMessages(messages)
 
 const props = defineProps<{ id: string }>()
 
@@ -253,14 +258,14 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="compress-card" @pointerdown="startDrag" :title="'拖入图片节点压缩一次 · 或左侧端口接图片响应式压缩'">
+  <div class="compress-card" @pointerdown="startDrag" :title="t('dragHint')">
     <!-- 头部类型标签 + 导出格式选择（与图片预览节点区分） -->
     <div class="compress-card__header">
       <span class="compress-card__title">{{ nodeTitle }}</span>
       <select
         class="compress-card__format"
         :value="exportFormat"
-        title="选择导出格式（改变后按新格式重新压缩）"
+        :title="t('formatHint')"
         @pointerdown.stop
         @change="onFormatChange"
       >
@@ -271,7 +276,7 @@ onUnmounted(() => {
 
     <!-- 压缩结果预览区 -->
     <div class="compress-card__image-area">
-      <img v-if="resultUrl" class="compress-card__img" :src="resultUrl" alt="压缩结果预览" draggable="false" />
+      <img v-if="resultUrl" class="compress-card__img" :src="resultUrl" :alt="t('resultAlt')" draggable="false" />
       <!-- 无结果占位：提示两种输入方式 -->
       <div v-else class="compress-card__placeholder">
         <svg class="compress-card__icon-svg" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -280,7 +285,7 @@ onUnmounted(() => {
             stroke-linejoin="round" />
           <circle cx="40" cy="20" r="4" fill="#4a7cff" />
         </svg>
-        <span class="compress-card__placeholder-text">拖图片节点进来 · 或左侧端口接图片（≤ {{ targetSize }}px）</span>
+        <span class="compress-card__placeholder-text">{{ t('placeholder', { size: targetSize }) }}</span>
       </div>
     </div>
 
@@ -289,11 +294,11 @@ onUnmounted(() => {
       <template v-if="resultUrl">
         <div class="compress-card__stats">
           <span class="compress-card__stat">
-            <span class="compress-card__stat-label">原始</span>
+            <span class="compress-card__stat-label">{{ t('source') }}</span>
             <span class="compress-card__stat-value">{{ sourceSizeText }}</span>
           </span>
           <span class="compress-card__stat">
-            <span class="compress-card__stat-label">压缩后</span>
+            <span class="compress-card__stat-label">{{ t('compressed') }}</span>
             <span class="compress-card__stat-value">{{ compressedSizeText }}</span>
           </span>
           <span
@@ -302,11 +307,11 @@ onUnmounted(() => {
           >{{ reduceText }}</span>
         </div>
         <button class="compress-card__create-btn" type="button" @pointerdown.stop
-          @click="handleCreateImgNode" title="以压缩结果为基础新建一个图片文件节点">
-          生成图片文件节点
+          @click="handleCreateImgNode" :title="t('createNodeHint')">
+          {{ t('createNode') }}
         </button>
       </template>
-      <span v-else class="compress-card__hint">端口响应式 · 拖入一次性</span>
+      <span v-else class="compress-card__hint">{{ t('hint') }}</span>
     </div>
   </div>
 </template>

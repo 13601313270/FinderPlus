@@ -6,6 +6,8 @@ import { LLMNode } from './node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import { useLLMSettings } from '@renderer/composables/useLLMSettings'
+import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
+import { messages } from './i18n'
 import GearIcon from '@renderer/components/icons/GearIcon.vue'
 
 /**
@@ -16,6 +18,9 @@ import GearIcon from '@renderer/components/icons/GearIcon.vue'
 const props = defineProps<{ id: string }>()
 
 const { openSettings, hasKey } = useLLMSettings()
+
+// 卡片内文案走节点本地的 i18n.ts（放在节点文件夹里，便于插件化替换），跟随界面语言
+const t = useLocalizedMessages(messages)
 
 const llmNode = shallowRef<LLMNode | undefined>(undefined)
 
@@ -85,12 +90,12 @@ function onSendClick(): void {
 <template>
   <div class="node">
     <div class="node__header" @pointerdown="startDrag">
-      <span class="node__handle" title="拖动节点（整个头部可拖）">{{ nodeTitle }}</span>
+      <span class="node__handle" :title="t('dragHint')">{{ nodeTitle }}</span>
       <button
         v-if="llmNode"
         class="node__gear"
         type="button"
-        :title="hasKey() ? 'LLM 已配置，点击修改 Key' : '点击配置 LLM API Key'"
+        :title="hasKey() ? t('keyConfigured') : t('keyMissing')"
         @pointerdown.stop
         @click.stop="onGearClick"
       >
@@ -109,13 +114,13 @@ function onSendClick(): void {
     >
       <template v-if="status === 'loading'">
         <span class="llm-output__spinner" />
-        <span class="llm-output__loading-text">推理中…</span>
+        <span class="llm-output__loading-text">{{ t('loading') }}</span>
       </template>
       <template v-else-if="response">
         {{ response }}
       </template>
       <template v-else>
-        {{ llmNode ? (promptConnected ? '（等待上游输入触发…）' : '（输入 prompt 后点击发送…）') : '节点不存在' }}
+        {{ llmNode ? (promptConnected ? t('waitingUpstream') : t('promptHint')) : t('nodeMissing') }}
       </template>
     </div>
 
@@ -125,7 +130,7 @@ function onSendClick(): void {
         <textarea
           class="node__prompt"
           v-model="localPrompt"
-          placeholder="输入 prompt..."
+          :placeholder="t('promptPlaceholder')"
           rows="1"
           @input="(e) => onPromptInput((e.target as HTMLTextAreaElement).value)"
         />
@@ -134,7 +139,7 @@ function onSendClick(): void {
         <label class="node__switch">
           <input type="checkbox" :checked="autoCall" @change="onAutoCallChange" />
           <span class="node__switch-track"><span class="node__switch-thumb" /></span>
-          <span class="node__switch-label">自动调用</span>
+          <span class="node__switch-label">{{ t('autoCall') }}</span>
         </label>
       </template>
       <button
@@ -143,7 +148,7 @@ function onSendClick(): void {
         :disabled="status === 'loading'"
         @click="onSendClick"
       >
-        {{ status === 'loading' ? '推理中…' : '发送' }}
+        {{ status === 'loading' ? t('loading') : t('send') }}
       </button>
     </div>
   </div>

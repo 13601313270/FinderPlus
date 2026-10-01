@@ -7,12 +7,17 @@ import ImgThumbCell from '@renderer/components/ImgThumbCell.vue'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
 import { viewport } from '@renderer/canvas/viewport'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
+import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
 import { ImgFileNode } from '../ImgFileNode/node'
 import { inferImageMime } from '../ImgFileNode/mime'
 import { ImgFolderNode } from './node'
+import { messages } from './i18n'
 
 // 卡片头部标题走插件 manifest 的多语言 title，未配当前语言时由 resolveNodeTitle 兜底
 const nodeTitle = useNodeTitle(ImgFolderNode.TYPE)
+
+// 卡片内文案走节点本地的 i18n.ts（放在节点文件夹里，便于插件化替换），跟随界面语言
+const t = useLocalizedMessages(messages)
 
 const props = defineProps<{ id: string }>()
 
@@ -192,11 +197,11 @@ onUnmounted(() => {
     </div>
 
     <span class="img-folder__hint">
-      {{ children.length }} 张图片<template v-if="selectedName"> · 已选 {{ selectedName }}</template>
+      {{ t('imageCount', { n: children.length }) }}<template v-if="selectedName"> · {{ t('selected', { name: selectedName }) }}</template>
     </span>
 
     <!-- 东南角 resize 手柄 -->
-    <div class="img-folder__resize" @pointerdown.stop="startResize" title="拖动调整文件夹大小（最小 2×2）" />
+    <div class="img-folder__resize" @pointerdown.stop="startResize" :title="t('resizeHint')" />
   </div>
 </template>
 

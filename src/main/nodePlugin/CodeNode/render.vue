@@ -4,8 +4,10 @@ import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { CodeNode, type CodeInputKind, type CodeInputMeta, type CodePortKind, type CodeOutputMeta } from './node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
+import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
 import HelpDialog from '@renderer/components/HelpDialog.vue'
 import CodeHelpDialog from './CodeHelpDialog.vue'
+import { messages } from './i18n'
 
 /**
  * 代码节点的渲染组件。
@@ -23,6 +25,9 @@ const codeNode = shallowRef<CodeNode | undefined>(undefined)
 
 // 卡片标题走插件 manifest 的多语言 title，未配当前语言时由 resolveNodeTitle 兜底
 const nodeTitle = useNodeTitle(() => codeNode.value, '?')
+
+// 卡片内文案走节点本地的 i18n.ts（放在节点文件夹里，便于插件化替换），跟随界面语言
+const t = useLocalizedMessages(messages)
 const code = ref('')
 const resultText = ref('')
 const errorText = ref('')
@@ -75,14 +80,14 @@ const running = computed(() => status.value === 'running')
 const hasInputs = computed(() => inputs.value.length > 0)
 const hasOutputs = computed(() => outputs.value.length > 0)
 
-const STATUS_LABELS = {
-  idle: '空闲',
-  running: '执行中',
-  done: '完成',
-  error: '出错'
+const STATUS_KEYS = {
+  idle: 'statusIdle',
+  running: 'statusRunning',
+  done: 'statusDone',
+  error: 'statusError'
 } as const
 
-const statusLabel = computed(() => STATUS_LABELS[status.value])
+const statusLabel = computed(() => t(STATUS_KEYS[status.value]))
 
 /** 编辑区 input：实时写回节点（不执行） */
 function onCodeInput(e: Event): void {
@@ -187,7 +192,7 @@ function onEditorWheel(e: WheelEvent): void {
 
 /** 复制 callOutputPort 函数签名到剪贴板 */
 function onCopyCallOutputPort(): void {
-  const text = 'callOutputPort("端口名", 值)'
+  const text = t('snippetCall')
   navigator.clipboard?.writeText(text)
   copyHint.value = 'callOutputPort'
   setTimeout(() => { copyHint.value = '' }, 1200)
@@ -210,13 +215,13 @@ function onNodeWheel(e: WheelEvent): void {
 <template>
   <div class="node">
     <div class="node__header" @pointerdown="startDrag">
-      <span class="node__handle" title="拖动节点（整个头部可拖）">{{ nodeTitle }}</span>
+      <span class="node__handle" :title="t('dragHint')">{{ nodeTitle }}</span>
       <div class="node__header-right">
         <span class="node__status" :class="`node__status--${status}`">{{ statusLabel }}</span>
         <button
           class="node__help"
           type="button"
-          title="使用说明"
+          :title="t('helpTitle')"
           @click.stop="showHelp = true"
         >?</button>
       </div>
@@ -227,9 +232,9 @@ function onNodeWheel(e: WheelEvent): void {
       class="node__config-btn"
       type="button"
       :disabled="!codeNode"
-      title="配置端口与代码"
+      :title="t('configTitle')"
       @click.stop="showConfig = true"
-    >配置函数</button>
+    >{{ t('configBtn') }}</button>
 
     <!-- 结果区（常驻画布） -->
     <div
@@ -243,11 +248,11 @@ function onNodeWheel(e: WheelEvent): void {
     >
       <template v-if="status === 'running'">
         <span class="code-output__spinner" />
-        <span>执行中…</span>
+        <span>{{ t('running') }}</span>
       </template>
       <template v-else-if="errorText">{{ errorText }}</template>
       <template v-else-if="status === 'done'">{{ resultText }}</template>
-      <template v-else>{{ codeNode ? '（点击执行运行代码）' : '节点不存在' }}</template>
+      <template v-else>{{ codeNode ? t('clickToRun') : t('nodeMissing') }}</template>
     </div>
 
     <!-- 主操作：自动执行开关 + 执行按钮 -->
@@ -261,41 +266,41 @@ function onNodeWheel(e: WheelEvent): void {
           @change="onAutoRunToggle"
         />
         <span class="auto-run__slider" aria-hidden="true" />
-        <span class="auto-run__label">自动</span>
+        <span class="auto-run__label">{{ t('autoLabel') }}</span>
       </label>
       <button
         class="node__run"
         type="button"
         :disabled="running || !hasCode"
-        :title="hasCode ? '执行代码' : '请先在编辑区写代码'"
+        :title="hasCode ? t('runHint') : t('runHintNoCode')"
         @click="onRun"
       >
-        {{ running ? '执行中…' : '执行' }}
+        {{ running ? t('running') : t('run') }}
       </button>
     </div>
   </div>
 
   <!-- 帮助弹窗 -->
-  <HelpDialog :visible="showHelp" title="代码节点使用说明" @close="showHelp = false">
+  <HelpDialog :visible="showHelp" :title="t('helpDialogTitle')" @close="showHelp = false">
     <CodeHelpDialog />
   </HelpDialog>
 
   <!-- 配置弹窗：输入端口 + 输出端口 + 用法提示 + 代码编辑 -->
-  <HelpDialog :visible="showConfig" title="配置函数" width="680" @close="showConfig = false">
+  <HelpDialog :visible="showConfig" :title="t('configDialogTitle')" width="680" @close="showConfig = false">
 
     <!-- 输入端口管理区 -->
     <div class="inputs">
       <div class="inputs__header">
-        <span class="inputs__title">输入端口</span>
+        <span class="inputs__title">{{ t('inputsTitle') }}</span>
         <button
           class="inputs__add"
           type="button"
           :disabled="!codeNode"
-          title="添加一个输入端口"
+          :title="t('addInputHint')"
           @click="onAddInput"
         >+</button>
       </div>
-      <div v-if="!hasInputs" class="inputs__empty">点击 + 添加输入端口</div>
+      <div v-if="!hasInputs" class="inputs__empty">{{ t('inputsEmpty') }}</div>
       <div v-else class="inputs__list">
         <div
           v-for="input in inputs"
@@ -304,12 +309,12 @@ function onNodeWheel(e: WheelEvent): void {
           :class="{ 'inputs__row--error': inputNameErrors[input.id] }"
         >
           <div class="code-row inputs__subrow">
-            <span class="code-row__label">类型</span>
+            <span class="code-row__label">{{ t('typeLabel') }}</span>
             <select
               class="code-select"
               :value="input.kind"
               :disabled="!codeNode"
-              title="选择此输入接受的 Value 类型"
+              :title="t('inputKindHint')"
               @change="(e) => onInputKindChange(input.id, e)"
             >
               <option value="number">number</option>
@@ -320,7 +325,7 @@ function onNodeWheel(e: WheelEvent): void {
             </select>
           </div>
           <div class="code-row inputs__subrow">
-            <span class="code-row__label">变量名</span>
+            <span class="code-row__label">{{ t('varNameLabel') }}</span>
             <input
               class="code-input"
               type="text"
@@ -334,7 +339,7 @@ function onNodeWheel(e: WheelEvent): void {
             class="inputs__remove"
             type="button"
             :disabled="!codeNode"
-            title="删除此输入端口"
+            :title="t('removeInputHint')"
             @click="onRemoveInput(input.id)"
           >×</button>
           <span v-if="inputNameErrors[input.id]" class="inputs__errmsg">{{ inputNameErrors[input.id] }}</span>
@@ -345,16 +350,16 @@ function onNodeWheel(e: WheelEvent): void {
     <!-- 输出端口管理区 -->
     <div class="inputs">
       <div class="inputs__header">
-        <span class="inputs__title">输出端口</span>
+        <span class="inputs__title">{{ t('outputsTitle') }}</span>
         <button
           class="inputs__add"
           type="button"
           :disabled="!codeNode"
-          title="添加一个输出端口"
+          :title="t('addOutputHint')"
           @click="onAddOutput"
         >+</button>
       </div>
-      <div v-if="!hasOutputs" class="inputs__empty">至少保留一个输出端口</div>
+      <div v-if="!hasOutputs" class="inputs__empty">{{ t('outputsEmpty') }}</div>
       <div v-else class="inputs__list">
         <div
           v-for="output in outputs"
@@ -363,12 +368,12 @@ function onNodeWheel(e: WheelEvent): void {
           :class="{ 'inputs__row--error': outputNameErrors[output.id] }"
         >
           <div class="code-row inputs__subrow">
-            <span class="code-row__label">类型</span>
+            <span class="code-row__label">{{ t('typeLabel') }}</span>
             <select
               class="code-select"
               :value="output.kind"
               :disabled="!codeNode"
-              title="选择此输出产出的 Value 类型"
+              :title="t('outputKindHint')"
               @change="(e) => onOutputKindChange(output.id, e)"
             >
               <option value="number">number</option>
@@ -380,7 +385,7 @@ function onNodeWheel(e: WheelEvent): void {
             </select>
           </div>
           <div class="code-row inputs__subrow">
-            <span class="code-row__label">端口名</span>
+            <span class="code-row__label">{{ t('portNameLabel') }}</span>
             <input
               class="code-input"
               type="text"
@@ -394,7 +399,7 @@ function onNodeWheel(e: WheelEvent): void {
             class="inputs__remove"
             type="button"
             :disabled="!codeNode || outputs.length <= 1"
-            title="删除此输出端口（至少保留一个）"
+            :title="t('removeOutputHint')"
             @click="onRemoveOutput(output.id)"
           >×</button>
           <span v-if="outputNameErrors[output.id]" class="inputs__errmsg">{{ outputNameErrors[output.id] }}</span>
@@ -408,28 +413,28 @@ function onNodeWheel(e: WheelEvent): void {
         <span class="code-hint__line-content">
           <span class="code-hint__key">callOutputPort</span>
           <span class="code-hint__paren">(</span>
-          <span class="code-hint__str">"端口名"</span>
+          <span class="code-hint__str">{{ t('snippetPortName') }}</span>
           <span class="code-hint__comma">,</span>
-          <span class="code-hint__ident">值</span>
+          <span class="code-hint__ident">{{ t('snippetValue') }}</span>
           <span class="code-hint__paren">)</span>
         </span>
         <button
           class="code-hint__copy"
           type="button"
-          title="复制函数签名"
+          :title="t('copyHint')"
           @click="onCopyCallOutputPort"
         >
           <span class="code-hint__copy-icon">📋</span>
-          <span v-if="copyHint === 'callOutputPort'" class="code-hint__copy-tip">已复制</span>
+          <span v-if="copyHint === 'callOutputPort'" class="code-hint__copy-tip">{{ t('copied') }}</span>
         </button>
       </div>
       <div v-if="hasOutputs" class="code-hint__ports">
-        <span class="code-hint__ports-label">可用端口：</span>
+        <span class="code-hint__ports-label">{{ t('availablePorts') }}</span>
         <span
           v-for="o in outputs"
           :key="o.id"
           class="code-hint__port-tag"
-          :title="`类型: ${o.kind}`"
+          :title="t('portKindHint', { kind: o.kind })"
         >{{ o.name }}<span class="code-hint__port-kind">:{{ o.kind }}</span></span>
       </div>
     </div>
@@ -440,9 +445,7 @@ function onNodeWheel(e: WheelEvent): void {
       spellcheck="false"
       :value="code"
       :disabled="!codeNode"
-      :placeholder="hasInputs
-        ? '写函数体，通过 callOutputPort(\'端口名\', 值) 提交。\n直接用上方输入的变量名访问，例如：\ncallOutputPort(\'result\', price * qty)\n\nsetTimeout / Promise.then 里的延迟调用也能正常触发'
-        : '写函数体，通过 callOutputPort(\'端口名\', 值) 提交，例如：\ncallOutputPort(\'result\', [1,2,3].reduce((a,b)=>a+b,0))\n\nsetTimeout / Promise.then 里的延迟调用也能正常触发'"
+      :placeholder="hasInputs ? t('editorPlaceholderWithInputs') : t('editorPlaceholderWithoutInputs')"
       @wheel="onEditorWheel"
       @input="onCodeInput"
     />

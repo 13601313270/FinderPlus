@@ -4,6 +4,8 @@ import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { BoolInputNode } from './node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
+import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
+import { messages } from './i18n'
 
 /**
  * 布尔开关节点的渲染组件（只画卡片内容）。
@@ -24,6 +26,9 @@ const boolNode = computed(() => {
 
 // 卡片标题走插件 manifest 的多语言 title，未配当前语言时由 resolveNodeTitle 兜底
 const nodeTitle = useNodeTitle(() => boolNode.value, '?')
+
+// 卡片内文案走节点本地的 i18n.ts（放在节点文件夹里，便于插件化替换），跟随界面语言
+const t = useLocalizedMessages(messages)
 
 /** 引擎字段是普通类字段，Vue 追踪不到，所以走 Node.onChanged 这条桥刷进本地 ref */
 const checked = ref(false)
@@ -54,7 +59,7 @@ function onToggle(): void {
 
 <template>
   <div class="node">
-    <span class="node__handle" title="拖动节点" @pointerdown="startDrag">{{ nodeTitle }}</span>
+    <span class="node__handle" :title="t('dragHint')" @pointerdown="startDrag">{{ nodeTitle }}</span>
     <div class="node__row">
       <button
         class="node__switch"
@@ -63,7 +68,7 @@ function onToggle(): void {
         role="switch"
         :aria-checked="checked"
         :disabled="!boolNode"
-        :title="checked ? '点击关闭' : '点击开启'"
+        :title="checked ? t('clickToClose') : t('clickToOpen')"
         @click="onToggle"
       >
         <span class="node__knob" />

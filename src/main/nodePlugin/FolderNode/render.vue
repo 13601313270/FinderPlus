@@ -7,10 +7,15 @@ import NodeShell from '@renderer/components/NodeShell.vue'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
 import { viewport } from '@renderer/canvas/viewport'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
+import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
 import { FolderNode } from './node'
+import { messages } from './i18n'
 
 // 卡片头部标题走插件 manifest 的多语言 title，未配当前语言时由 resolveNodeTitle 兜底
 const nodeTitle = useNodeTitle(FolderNode.TYPE)
+
+// 卡片内文案走节点本地的 i18n.ts（放在节点文件夹里，便于插件化替换），跟随界面语言
+const t = useLocalizedMessages(messages)
 
 const props = defineProps<{ id: string }>()
 
@@ -103,10 +108,10 @@ onUnmounted(() => {
       :render="manifestFor(c)?.render"
     />
 
-    <span class="folder__hint">{{ children.length }} 个文件</span>
+    <span class="folder__hint">{{ t('fileCount', { n: children.length }) }}</span>
 
     <!-- 东南角 resize 手柄 -->
-    <div class="folder__resize" @pointerdown.stop="startResize" title="拖动调整文件夹大小（最小 2×2）" />
+    <div class="folder__resize" @pointerdown.stop="startResize" :title="t('resizeHint')" />
   </div>
 </template>
 

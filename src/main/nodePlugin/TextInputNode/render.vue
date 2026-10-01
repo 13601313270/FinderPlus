@@ -5,6 +5,8 @@ import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { TextInputNode } from './node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
+import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
+import { messages } from './i18n'
 import GearIcon from '@renderer/components/icons/GearIcon.vue'
 
 /**
@@ -27,6 +29,9 @@ const inputNode = computed(() => {
 
 // 卡片标题走插件 manifest 的多语言 title，未配当前语言时由 resolveNodeTitle 兜底
 const nodeTitle = useNodeTitle(() => inputNode.value, '?')
+
+// 卡片内文案走节点本地的 i18n.ts（放在节点文件夹里，便于插件化替换），跟随界面语言
+const t = useLocalizedMessages(messages)
 
 /**
  * 引擎字段是普通类字段，Vue 追踪不到，所以走 Node.onChanged 这条桥刷进本地 ref。
@@ -170,13 +175,13 @@ function onTextareaWheel(e: WheelEvent): void {
 <template>
   <div class="node">
     <div class="node__header" @pointerdown="startDrag">
-      <span class="node__handle" title="拖动节点">{{ nodeTitle }}</span>
+      <span class="node__handle" :title="t('dragHint')">{{ nodeTitle }}</span>
       <button
         v-if="inputNode"
         ref="gearBtn"
         class="node__gear"
         type="button"
-        title="节点设置"
+        :title="t('nodeSettings')"
         @pointerdown.stop
         @click.stop="onGearClick"
       >
@@ -189,7 +194,7 @@ function onTextareaWheel(e: WheelEvent): void {
       rows="4"
       :value="textValue"
       :disabled="!inputNode"
-      :placeholder="inputNode ? '输入文本…  (Ctrl+Enter 发送)' : '节点不存在'"
+      :placeholder="inputNode ? t('placeholderMultiline') : t('nodeMissing')"
       @wheel="onTextareaWheel"
       @input="onInput"
       @keydown="onKeydown"
@@ -200,13 +205,13 @@ function onTextareaWheel(e: WheelEvent): void {
       type="text"
       :value="textValue"
       :disabled="!inputNode"
-      :placeholder="inputNode ? '输入文本…  (Enter 发送)' : '节点不存在'"
+      :placeholder="inputNode ? t('placeholderSingle') : t('nodeMissing')"
       @input="onInput"
       @keydown="onKeydown"
     />
     <div class="node__footer">
-      <label class="node__switch" :title="autoSend ? '已开启：停止输入后自动发送' : '已关闭：需手动点击发送'">
-        <span class="node__switch-label">自动发送</span>
+      <label class="node__switch" :title="autoSend ? t('autoSendOn') : t('autoSendOff')">
+        <span class="node__switch-label">{{ t('autoSend') }}</span>
         <input
           class="node__switch-input"
           type="checkbox"
@@ -220,10 +225,10 @@ function onTextareaWheel(e: WheelEvent): void {
         class="node__send"
         type="button"
         :disabled="!inputNode || autoSend"
-        :title="autoSend ? '自动发送已开启，无需手动发送' : '发送到下游节点'"
+        :title="autoSend ? t('autoSendDisabled') : t('sendHint')"
         @click="onSend"
       >
-        发送
+        {{ t('send') }}
       </button>
     </div>
   </div>
@@ -238,7 +243,7 @@ function onTextareaWheel(e: WheelEvent): void {
     >
       <label class="ti-option">
         <input type="checkbox" :checked="isMultiline" @change="onMultilineToggle" />
-        <span class="ti-option__label">多行输入</span>
+        <span class="ti-option__label">{{ t('multiline') }}</span>
       </label>
     </div>
   </Teleport>

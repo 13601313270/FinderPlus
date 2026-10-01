@@ -4,6 +4,8 @@ import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { JsonDisplayNode } from './node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
+import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
+import { messages } from './i18n'
 import { viewport } from '@renderer/canvas/viewport'
 
 const props = defineProps<{ id: string }>()
@@ -12,6 +14,10 @@ const displayNode = shallowRef<JsonDisplayNode | undefined>(undefined)
 
 // 卡片标题走插件 manifest 的多语言 title，未配当前语言时由 resolveNodeTitle 兜底
 const nodeTitle = useNodeTitle(() => displayNode.value, '?')
+
+// 卡片内文案走节点本地的 i18n.ts（放在节点文件夹里，便于插件化替换），跟随界面语言
+const t = useLocalizedMessages(messages)
+
 const parsed = ref<unknown>(undefined)
 const parseError = ref<string | null>(null)
 const hasInput = ref(false)
@@ -135,7 +141,7 @@ const JsonTreeNode = defineComponent({
         head.push(h('span', {
           class: 'jt-toggle',
           onClick: toggle,
-          title: expanded.value ? '收起' : '展开'
+          title: expanded.value ? t('collapse') : t('expand')
         }, expanded.value ? '▼' : '▶'))
         head.push(h('span', { class: 'jt-bracket' }, isObj ? '{' : '['))
 
@@ -188,20 +194,20 @@ function formatValue(v: unknown): string {
 
 <template>
   <div class="node">
-    <span class="node__handle" title="拖动节点" @pointerdown="startDrag">{{ nodeTitle }}</span>
+    <span class="node__handle" :title="t('dragHint')" @pointerdown="startDrag">{{ nodeTitle }}</span>
 
     <div class="render-body" @wheel="onNodeWheel">
       <!-- 还没接过输入 -->
-      <div v-if="!hasInput" class="render-empty">（暂无输入）</div>
+      <div v-if="!hasInput" class="render-empty">{{ t('noInput') }}</div>
 
       <!-- 解析失败 -->
       <div v-else-if="parseError" class="render-error">
-        <div class="render-error__title">JSON 解析失败</div>
+        <div class="render-error__title">{{ t('parseErrorTitle') }}</div>
         <div class="render-error__msg">{{ parseError }}</div>
       </div>
 
       <!-- 空值（上游传来的是空字符串） -->
-      <div v-else-if="parsed === undefined" class="render-empty">（空输入）</div>
+      <div v-else-if="parsed === undefined" class="render-empty">{{ t('emptyInput') }}</div>
 
       <!-- 解析成功 → 折叠树 -->
       <JsonTreeNode v-else :value="parsed" :default-expanded="true" />
@@ -211,7 +217,7 @@ function formatValue(v: unknown): string {
       v-if="displayNode"
       class="node__resize-handle"
       @pointerdown.stop.prevent="onResizePointerDown"
-      title="拖拽调整节点大小"
+      :title="t('resizeHint')"
     />
   </div>
 </template>

@@ -5,6 +5,8 @@ import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { NumberInputNode } from './node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
+import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
+import { messages } from './i18n'
 
 /**
  * 数字输入框节点的渲染组件（只画卡片内容）。
@@ -26,6 +28,9 @@ const inputNode = computed(() => {
 
 // 卡片标题走插件 manifest 的多语言 title，未配当前语言时由 resolveNodeTitle 兜底
 const nodeTitle = useNodeTitle(() => inputNode.value, '?')
+
+// 卡片内文案走节点本地的 i18n.ts（放在节点文件夹里，便于插件化替换），跟随界面语言
+const t = useLocalizedMessages(messages)
 
 /**
  * 已经提交到输出端口上的数值：输入框显示它以它为准，卡片底部的读数也用它。
@@ -73,7 +78,7 @@ const { startDrag } = useNodePosition(() => inputNode.value)
 
 <template>
   <div class="node">
-    <span class="node__handle" title="拖动节点" @pointerdown="startDrag">{{ nodeTitle }}</span>
+    <span class="node__handle" :title="t('dragHint')" @pointerdown="startDrag">{{ nodeTitle }}</span>
     <input
       class="node__field"
       type="number"
@@ -81,7 +86,7 @@ const { startDrag } = useNodePosition(() => inputNode.value)
       step="any"
       :value="emitted"
       :disabled="!inputNode"
-      placeholder="输入数字…"
+      :placeholder="t('placeholder')"
       @input="onNumberInput"
     />
 

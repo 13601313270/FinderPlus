@@ -5,8 +5,13 @@ import { AnyFileNode } from './node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
 import { useFileDragOut } from '@renderer/composables/useFileDragOut'
 import { useFileOpenInSystem } from '@renderer/composables/useFileOpenInSystem'
+import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
+import { messages } from './i18n'
 
 const props = defineProps<{ id: string }>()
+
+// 卡片内文案走节点本地的 i18n.ts（放在节点文件夹里，便于插件化替换），跟随界面语言
+const t = useLocalizedMessages(messages)
 
 const fileNode = computed(() => {
   const node = workspaceScene.getNode(props.id)
@@ -81,8 +86,8 @@ const fileExt = computed(() => extLabel(fileName.value))
     @pointerdown="startDrag"
     @dblclick="openInSystem(fileNode?.fileName)"
     :title="fileNode?.fileName
-      ? '拖动节点 · 拖出窗口移动文件 · 双击用系统默认应用打开'
-      : '拖动节点（未选文件）'"
+      ? t('dragHint')
+      : t('dragHintEmpty')"
   >
     <!-- 图标区：像系统文件图标一样，上面有个折角小三角 -->
     <div class="file-card__icon">
@@ -108,7 +113,7 @@ const fileExt = computed(() => extLabel(fileName.value))
       <span v-if="fileName" class="file-card__name" :title="fileName">
         {{ fileName }}
       </span>
-      <span v-else class="file-card__name file-card__name--empty">未选择文件</span>
+      <span v-else class="file-card__name file-card__name--empty">{{ t('emptyFile') }}</span>
       <span v-if="fileSize" class="file-card__size">
         {{ formatSize(fileSize) }}
       </span>

@@ -4,6 +4,8 @@ import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { FileInfoNode } from './node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
+import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
+import { messages } from './i18n'
 
 /**
  * 文件信息展示节点的渲染组件（只画卡片内容）。
@@ -18,6 +20,9 @@ const infoNode = shallowRef<FileInfoNode | undefined>(undefined)
 
 // 卡片标题走插件 manifest 的多语言 title，未配当前语言时由 resolveNodeTitle 兜底
 const nodeTitle = useNodeTitle(() => infoNode.value, '?')
+
+// 卡片内文案走节点本地的 i18n.ts（放在节点文件夹里，便于插件化替换），跟随界面语言
+const t = useLocalizedMessages(messages)
 const fileName = ref('')
 const fileSize = ref(0)
 const fileType = ref('')
@@ -55,23 +60,23 @@ onUnmounted(() => {
 
 <template>
   <div class="node">
-    <span class="node__handle" title="拖动节点" @pointerdown="startDrag">{{ nodeTitle }}</span>
+    <span class="node__handle" :title="t('dragHint')" @pointerdown="startDrag">{{ nodeTitle }}</span>
     <div class="file-info" :class="{ 'file-info--empty': !fileName }">
       <template v-if="fileName">
         <div class="file-info__row">
-          <span class="file-info__label">名称</span>
+          <span class="file-info__label">{{ t('labelName') }}</span>
           <span class="file-info__value" :title="fileName">{{ fileName }}</span>
         </div>
         <div class="file-info__row">
-          <span class="file-info__label">大小</span>
+          <span class="file-info__label">{{ t('labelSize') }}</span>
           <span class="file-info__value">{{ formatSize(fileSize) }}</span>
         </div>
         <div v-if="fileType" class="file-info__row">
-          <span class="file-info__label">类型</span>
+          <span class="file-info__label">{{ t('labelType') }}</span>
           <span class="file-info__value">{{ fileType }}</span>
         </div>
       </template>
-      <span v-else class="file-info__empty">（暂无输入）</span>
+      <span v-else class="file-info__empty">{{ t('empty') }}</span>
     </div>
   </div>
 </template>

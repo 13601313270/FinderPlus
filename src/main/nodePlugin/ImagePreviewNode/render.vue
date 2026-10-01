@@ -33,6 +33,27 @@ function refreshPreviewFile(n: ImagePreviewNode | undefined): void {
   previewFile.value = first instanceof ImgFileValue ? first.file : undefined
 }
 
+/** 字节数 → 可读体积（B / KB / MB） */
+function formatSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / 1024 / 1024).toFixed(2)} MB`
+}
+
+/** File → 展示用格式名（优先 MIME 子类型，回退文件扩展名） */
+function formatFor(file: File): string {
+  const sub = file.type.startsWith('image/') ? file.type.slice(6).split('+')[0] : ''
+  if (sub) return sub.toUpperCase()
+  const dot = file.name.lastIndexOf('.')
+  return dot > 0 ? file.name.slice(dot + 1).toUpperCase() : '未知'
+}
+
+/** 文件大小文案 */
+const sizeText = computed(() => (previewFile.value ? formatSize(previewFile.value.size) : '--'))
+
+/** 图片格式文案 */
+const formatText = computed(() => (previewFile.value ? formatFor(previewFile.value) : '--'))
+
 // —— 订阅 node.onChanged：节点输入变化时主动刷新 previewFile ——
 let unsubscribe: (() => void) | undefined
 watch(
@@ -180,7 +201,7 @@ onUnmounted(() => {
 
 <template>
   <div class="preview-card">
-    <!-- 头部类型标签：与图片压缩节点区分；也可拖动移动节点 -->
+    <!-- 头部类型标签：与缩小图片尺寸节点区分；也可拖动移动节点 -->
     <div class="preview-card__header" @pointerdown.stop.prevent="startPreviewDrag">图片预览</div>
 
     <!-- 预览图区域：画布内拖拽 = 移动节点；越界 = writeBuffer + startDrag 导出 -->
@@ -202,12 +223,16 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <!-- 底部信息栏：尺寸 + "新建图片文件节点" 按钮 -->
+    <!-- 底部信息栏：尺寸 / 大小 / 格式（上行）+ "新建图片文件节点" 按钮（下行） -->
     <div class="preview-card__footer" v-if="previewFile">
-      <span v-if="naturalSize" class="preview-card__dim">
-        {{ naturalSize.w }}×{{ naturalSize.h }}px
-      </span>
-      <span v-else class="preview-card__dim preview-card__dim--empty">图片加载中…</span>
+      <div class="preview-card__stats">
+        <span v-if="naturalSize" class="preview-card__stat">
+          {{ naturalSize.w }}×{{ naturalSize.h }}px
+        </span>
+        <span v-else class="preview-card__stat preview-card__stat--empty">图片加载中…</span>
+        <span class="preview-card__stat">{{ sizeText }}</span>
+        <span class="preview-card__stat preview-card__stat--format">{{ formatText }}</span>
+      </div>
 
       <button class="preview-card__create-btn" type="button" @click="handleCreateImgNode" title="点击在当前节点旁边新建图片文件节点">
         新建图片文件节点
@@ -300,10 +325,11 @@ onUnmounted(() => {
     font-style: italic;
   }
 
+  // 纵向排布：尺寸/大小/格式一行在上，按钮在下（节点窄，横排会挤）
   &__footer {
     display: flex;
-    align-items: center;
-    gap: 8px;
+    flex-direction: column;
+    gap: 6px;
     padding: 4px 6px;
     border: 1px solid #e5e7eb;
     border-radius: 6px;
@@ -311,19 +337,38 @@ onUnmounted(() => {
     margin: 6px;
   }
 
-  &__dim {
-    flex: 1;
+  // 尺寸 / 大小 / 格式 一行
+  &__stats {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+  }
+
+  &__stat {
     font-size: 11px;
     color: #7a828f;
     font-variant-numeric: tabular-nums;
+    white-space: nowrap;
 
     &--empty {
       color: #b6bcc7;
       font-style: italic;
     }
+
+    // 格式做成小徽标，与尺寸/大小区分
+    &--format {
+      padding: 1px 5px;
+      border: 1px solid #b9c8ff;
+      border-radius: 3px;
+      background: #f4f6ff;
+      color: #4a7cff;
+      font-weight: 600;
+    }
   }
 
   &__create-btn {
+    width: 100%;
     flex-shrink: 0;
     padding: 4px 10px;
     border: 1px solid #4a7cff;

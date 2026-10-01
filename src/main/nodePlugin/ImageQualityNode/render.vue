@@ -54,7 +54,7 @@ const exportFormat = ref<ImageQualityFormat>('jpeg')
 const resultUrl = ref<string | null>(null)
 let revokeUrl: (() => void) | null = null
 
-// —— 体积信息：原大小 → 压缩后 + 压缩比 ——
+// —— 体积信息：原大小（压缩时记录，不随 clearResult 清）→ 压缩后大小（由输出值反映）+ 压缩比 ——
 const originalSize = ref(0)
 const compressedSize = ref(0)
 
@@ -67,7 +67,8 @@ function clearResult(): void {
     revokeUrl = null
   }
   resultUrl.value = null
-  originalSize.value = 0
+  // 只重置可再推导的压缩后大小；originalSize 由压缩时写入，
+  // 若在此清零，任意一次 notifyChanged 重跑 refreshResult 后体积信息就会变成 0 B → 0 B
   compressedSize.value = 0
 }
 
@@ -80,6 +81,8 @@ function refreshResult(n: ImageQualityNode | undefined): void {
     const url = URL.createObjectURL(value.file)
     resultUrl.value = url
     revokeUrl = () => URL.revokeObjectURL(url)
+    // 压缩后大小直接从输出值取，保证 refreshResult 幂等（不会被 clearResult 抹掉）
+    compressedSize.value = value.file.size
   }
 }
 

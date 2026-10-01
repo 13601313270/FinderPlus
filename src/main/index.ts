@@ -16,7 +16,7 @@ import type { MenuLabels } from '../preload'
  *
  * macOS 菜单里 role 类菜单项（About / Hide / Quit）的文案由 Electron 用 app.name
  * 拼出来，而 app.name 默认取 package.json 的 name（canvas-desk），所以不处理就会
- * 显示成「About canvas-desk」——顶部菜单标题是 bundle 名（由 patch-electron-name
+ * 显示成「About canvas-desk」——顶部菜单标题是 bundle 名（由 patch-electron-app
  * 脚本改过），两处来源不同，才会出现标题是 Finder+、菜单项是 canvas-desk 的割裂。
  *
  * 注意：userData 目录默认跟着 app.name 走，直接改名会把数据库目录一起挪到

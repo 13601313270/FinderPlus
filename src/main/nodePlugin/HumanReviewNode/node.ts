@@ -54,9 +54,9 @@ export class HumanReviewNode extends Node {
 
   // —— 渲染层读的状态 ——
 
-  /** 当前正在审核的值的 displayLabel，无待审核时返回提示文本 */
+  /** 当前正在审核的值的 displayLabel；无待审核时返回空串，占位文案由渲染层用 i18n 兜底 */
   get currentLabel(): string {
-    return this.current?.displayLabel ?? '（等待输入）'
+    return this.current?.displayLabel ?? ''
   }
 
   /** 队列中还有多少项（不含当前） */

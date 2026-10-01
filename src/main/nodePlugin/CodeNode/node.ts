@@ -19,6 +19,18 @@ export type CodeInputKind = Exclude<CodePortKind, 'imgfile'>
 /** 返回类型别名（保留给外部引用，实际用 CodePortKind） */
 export type CodeReturnKind = CodePortKind
 
+/**
+ * 端口名校验失败的原因。
+ * 只描述"错在哪"，不含任何展示文案——由渲染层用节点自己的 i18n 翻译。
+ */
+export type CodePortNameError =
+  | { readonly kind: 'empty' }
+  | { readonly kind: 'invalid-ident' }
+  | { readonly kind: 'reserved'; readonly name: string }
+  | { readonly kind: 'duplicate-input'; readonly name: string }
+  | { readonly kind: 'duplicate-output'; readonly name: string }
+  | { readonly kind: 'conflict-input'; readonly name: string }
+
 /** 所有合法的输入端口 kind，readState 反序列化校验用。用 satisfies 保证不缺项 */
 const INPUT_KINDS: readonly CodeInputKind[] = ['number', 'string', 'bool', 'file', 'json'] as const
 /** 所有合法的输出端口 kind，readState 反序列化校验用 */
@@ -212,36 +224,36 @@ export class CodeNode extends Node {
     'arguments', 'await', 'callOutputPort'
   ])
 
-  /** 校验端口名是否合法且未重复。返回错误信息（null 表示通过） */
-  validatePortName(name: string, _excludeId?: string): string | null {
+  /** 校验端口名是否合法且未重复。返回错误原因（null 表示通过），文案由渲染层翻译 */
+  validatePortName(name: string, _excludeId?: string): CodePortNameError | null {
     const trimmed = name.trim()
-    if (!trimmed) return '名称不能为空'
+    if (!trimmed) return { kind: 'empty' }
     if (!CodeNode.JS_IDENT_RE.test(trimmed)) {
-      return '名称必须是合法 JS 标识符（字母/数字/$/_，不能数字开头）'
+      return { kind: 'invalid-ident' }
     }
-    if (CodeNode.RESERVED.has(trimmed)) return `不能用保留字 "${trimmed}"`
+    if (CodeNode.RESERVED.has(trimmed)) return { kind: 'reserved', name: trimmed }
     return null
   }
 
   /** 校验输入端口变量名（额外检查重复） */
-  validateInputName(name: string, excludeId?: string): string | null {
+  validateInputName(name: string, excludeId?: string): CodePortNameError | null {
     const trimmed = name.trim()
     const err = this.validatePortName(trimmed, excludeId)
     if (err) return err
     const dup = this.inputMetas.find(m => m.name === trimmed && m.id !== excludeId)
-    if (dup) return `变量名 "${trimmed}" 已存在`
+    if (dup) return { kind: 'duplicate-input', name: trimmed }
     return null
   }
 
   /** 校验输出端口名（额外检查重复，且不能与输入端口变量名冲突——callOutputPort 的 name 要唯一） */
-  validateOutputName(name: string, excludeId?: string): string | null {
+  validateOutputName(name: string, excludeId?: string): CodePortNameError | null {
     const trimmed = name.trim()
     const err = this.validatePortName(trimmed, excludeId)
     if (err) return err
     const dupOut = this.outputMetas.find(m => m.name === trimmed && m.id !== excludeId)
-    if (dupOut) return `端口名 "${trimmed}" 已存在`
+    if (dupOut) return { kind: 'duplicate-output', name: trimmed }
     const dupIn = this.inputMetas.find(m => m.name === trimmed)
-    if (dupIn) return `端口名 "${trimmed}" 与输入变量名冲突`
+    if (dupIn) return { kind: 'conflict-input', name: trimmed }
     return null
   }
 

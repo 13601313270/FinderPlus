@@ -164,5 +164,29 @@ export const messages = {
   editorPlaceholderWithoutInputs: {
     zh: "写函数体，通过 callOutputPort('端口名', 值) 提交，例如：\ncallOutputPort('result', [1,2,3].reduce((a,b)=>a+b,0))\n\nsetTimeout / Promise.then 里的延迟调用也能正常触发",
     en: "Write the function body and submit via callOutputPort('portName', value), e.g.:\ncallOutputPort('result', [1,2,3].reduce((a,b)=>a+b,0))\n\nDeferred calls inside setTimeout / Promise.then also work"
+  },
+  errNameEmpty: {
+    zh: '名称不能为空',
+    en: 'Name cannot be empty'
+  },
+  errNameInvalid: {
+    zh: '名称必须是合法 JS 标识符（字母/数字/$/_，不能数字开头）',
+    en: 'Name must be a valid JS identifier (letters/digits/$/_, cannot start with a digit)'
+  },
+  errNameReserved: {
+    zh: '不能用保留字 "{name}"',
+    en: '"{name}" is a reserved word'
+  },
+  errNameDuplicateInput: {
+    zh: '变量名 "{name}" 已存在',
+    en: 'Variable name "{name}" already exists'
+  },
+  errNameDuplicateOutput: {
+    zh: '端口名 "{name}" 已存在',
+    en: 'Port name "{name}" already exists'
+  },
+  errNameConflictInput: {
+    zh: '端口名 "{name}" 与输入变量名冲突',
+    en: 'Port name "{name}" conflicts with an input variable name'
   }
 } satisfies Record<string, LocalizedText>

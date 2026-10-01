@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, shallowRef } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
-import { CodeNode, type CodeInputKind, type CodeInputMeta, type CodePortKind, type CodeOutputMeta } from './node'
+import { CodeNode, type CodeInputKind, type CodeInputMeta, type CodePortKind, type CodeOutputMeta, type CodePortNameError } from './node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
@@ -36,8 +36,8 @@ const inputs = ref<readonly CodeInputMeta[]>([])
 const outputs = ref<readonly CodeOutputMeta[]>([])
 const autoRun = ref(false)
 // 每个端口名输入框对应的临时校验错误（key 是 port id）
-const inputNameErrors = ref<Record<string, string>>({})
-const outputNameErrors = ref<Record<string, string>>({})
+const inputNameErrors = ref<Record<string, CodePortNameError>>({})
+const outputNameErrors = ref<Record<string, CodePortNameError>>({})
 // 帮助浮层开关（状态保留在 render.vue，HelpDialog 组件负责弹窗壳）
 const showHelp = ref(false)
 // 配置弹窗开关（输入端口 + 输出端口 + 代码编辑）
@@ -114,7 +114,6 @@ function onAddInput(): void {
 
 /** 删除输入端口 */
 function onRemoveInput(id: string): void {
-  inputNameErrors.value[id] = ''
   delete inputNameErrors.value[id]
   codeNode.value?.removeCodeInput(id)
 }
@@ -128,7 +127,6 @@ function onInputNameChange(id: string, e: Event): void {
   if (err) {
     inputNameErrors.value[id] = err
   } else {
-    inputNameErrors.value[id] = ''
     delete inputNameErrors.value[id]
     node.setInputName(id, value)
   }
@@ -148,7 +146,6 @@ function onAddOutput(): void {
 
 /** 删除输出端口 */
 function onRemoveOutput(id: string): void {
-  outputNameErrors.value[id] = ''
   delete outputNameErrors.value[id]
   codeNode.value?.removeCodeOutput(id)
 }
@@ -162,9 +159,21 @@ function onOutputNameChange(id: string, e: Event): void {
   if (err) {
     outputNameErrors.value[id] = err
   } else {
-    outputNameErrors.value[id] = ''
     delete outputNameErrors.value[id]
     node.setOutputName(id, value)
+  }
+}
+
+/** 把端口名校验失败的原因翻译成当前语言的文案（模板里调用，读 language 所以切语言会重渲染） */
+function errText(err: CodePortNameError | undefined): string {
+  if (!err) return ''
+  switch (err.kind) {
+    case 'empty': return t('errNameEmpty')
+    case 'invalid-ident': return t('errNameInvalid')
+    case 'reserved': return t('errNameReserved', { name: err.name })
+    case 'duplicate-input': return t('errNameDuplicateInput', { name: err.name })
+    case 'duplicate-output': return t('errNameDuplicateOutput', { name: err.name })
+    case 'conflict-input': return t('errNameConflictInput', { name: err.name })
   }
 }
 
@@ -342,7 +351,7 @@ function onNodeWheel(e: WheelEvent): void {
             :title="t('removeInputHint')"
             @click="onRemoveInput(input.id)"
           >×</button>
-          <span v-if="inputNameErrors[input.id]" class="inputs__errmsg">{{ inputNameErrors[input.id] }}</span>
+          <span v-if="inputNameErrors[input.id]" class="inputs__errmsg">{{ errText(inputNameErrors[input.id]) }}</span>
         </div>
       </div>
     </div>
@@ -402,7 +411,7 @@ function onNodeWheel(e: WheelEvent): void {
             :title="t('removeOutputHint')"
             @click="onRemoveOutput(output.id)"
           >×</button>
-          <span v-if="outputNameErrors[output.id]" class="inputs__errmsg">{{ outputNameErrors[output.id] }}</span>
+          <span v-if="outputNameErrors[output.id]" class="inputs__errmsg">{{ errText(outputNameErrors[output.id]) }}</span>
         </div>
       </div>
     </div>

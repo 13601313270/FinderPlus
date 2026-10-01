@@ -15,6 +15,10 @@ export const messages = {
     zh: '待审核',
     en: 'Pending review'
   },
+  awaitingInput: {
+    zh: '（等待输入）',
+    en: '(Waiting for input)'
+  },
   queueRemaining: {
     zh: '队列中还有 {n} 项',
     en: '{n} more in queue'

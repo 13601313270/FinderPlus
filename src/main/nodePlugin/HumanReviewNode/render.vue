@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref, shallowRef } from 'vue'
+import { computed, onMounted, onUnmounted, ref, shallowRef } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { HumanReviewNode } from './node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
@@ -20,6 +20,9 @@ const t = useLocalizedMessages(messages)
 const currentLabel = ref('')
 const pendingCount = ref(0)
 const hasCurrent = ref(false)
+
+// 无待审核项时 node 侧返回空串，这里兜底成多语言占位文案（读 language，切语言会重算）
+const labelText = computed(() => (hasCurrent.value ? currentLabel.value : t('awaitingInput')))
 
 let unsubscribe: (() => void) | undefined
 const { startDrag } = useNodePosition(() => reviewNode.value)
@@ -58,7 +61,7 @@ function onReject(): void {
 
     <div class="review">
       <div class="review__label">{{ t('reviewLabel') }}</div>
-      <div class="review__value" :title="currentLabel">{{ currentLabel }}</div>
+      <div class="review__value" :title="labelText">{{ labelText }}</div>
 
       <div class="review__queue" v-if="pendingCount > 0">
         {{ t('queueRemaining', { n: pendingCount }) }}

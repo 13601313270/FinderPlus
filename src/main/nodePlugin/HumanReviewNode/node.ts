@@ -24,7 +24,7 @@ export class HumanReviewNode extends Node {
   /** 输入端口：列出所有现有 Value 子类 */
   readonly input = new InputPort('input', {
     accepts: [NumberValue, StringValue, FileValue],
-    label: '输入'
+    label: { zh: '输入', en: 'Input' }
   })
 
   /** 输出端口引用；没有上游时为 undefined */

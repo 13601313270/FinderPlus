@@ -37,13 +37,13 @@ export class SwitchNode extends Node {
   /** 输入端口：布尔条件 */
   readonly conditionInput = new InputPort('cond', {
     accepts: [BoolValue],
-    label: '条件'
+    label: { zh: '条件', en: 'Condition' }
   })
 
   /** 输入端口：被分流的数据（接受所有具体 Value 子类） */
   readonly dataInput = new InputPort('data', {
     accepts: SwitchNode.ALL_VALUE_CLASSES,
-    label: '数据'
+    label: { zh: '数据', en: 'Data' }
   })
 
   /** 输出端口：条件为真时的数据（valueClass 跟随上游数据类型动态重建） */

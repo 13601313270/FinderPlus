@@ -1,4 +1,5 @@
 import { ref, type ComponentPublicInstance, type Ref } from 'vue'
+import type { LocalizedText } from '../../../shared/language'
 
 /**
  * 画布元素的登记与测量：节点外壳多大、端口圆点在哪。
@@ -50,8 +51,11 @@ export interface PortLike {
   readonly acceptValueNames?: readonly string[]
   /** 输出端口才有：产出的 Value 类型标签名 */
   readonly outputValueName?: string
-  /** 端口文本标记，用于在圆点旁显示；不填则回退到 id */
-  readonly label?: string
+  /**
+   * 端口文本标记，用于在圆点旁显示。输入端口是多语言表（LocalizedText，按当前语言解析、
+   * 兜底英语），输出端口暂为单串 string；不填则回退到 id。
+   */
+  readonly label?: LocalizedText | string
   /**
    * 输入端口才有：订阅本端口的边绑定/解绑事件。返回取消订阅函数。
    * 事件载荷里的 edge 由引擎层持有，renderer 拿到后按需使用即可。

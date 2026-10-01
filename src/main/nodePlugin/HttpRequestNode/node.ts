@@ -239,7 +239,7 @@ export class HttpRequestNode extends Node {
     this.portSeq += 1
     const port = new InputPort(`p${this.portSeq}`, {
       accepts: [StringValue],
-      label: `$${this.inputPorts.length + 1}`
+      label: { zh: `$${this.inputPorts.length + 1}`, en: `$${this.inputPorts.length + 1}` }
     })
     this.addInput(port)
     this.recompute()

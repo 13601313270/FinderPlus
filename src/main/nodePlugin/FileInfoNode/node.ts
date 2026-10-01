@@ -18,7 +18,7 @@ export class FileInfoNode extends Node {
   readonly type = FileInfoNode.TYPE
 
   /** 输入端口：接受 FileValue 及其所有子类（如 TxtFileValue） */
-  readonly fileInput = new InputPort('file', { accepts: [FileValue], label: '文件' })
+  readonly fileInput = new InputPort('file', { accepts: [FileValue], label: { zh: '文件', en: 'File' } })
 
   /** 输出端口：文件大小（KB） */
   readonly sizeOutput = new OutputPort('number', NumberValue, '文件大小（KB）')

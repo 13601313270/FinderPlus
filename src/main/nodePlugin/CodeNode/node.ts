@@ -290,7 +290,7 @@ export class CodeNode extends Node {
     if (meta.name === trimmed) return
     meta.name = trimmed
     const port = this.myInputPorts.find(p => p.id === id)
-    port?.setLabel(trimmed)
+    port?.setLabel({ zh: trimmed, en: trimmed })
     this.notifyChanged()
   }
 
@@ -307,7 +307,7 @@ export class CodeNode extends Node {
   private buildInputPort(meta: CodeInputMeta): InputPort {
     return new InputPort(meta.id, {
       accepts: INPUT_KIND_ACCEPTS[meta.kind] as unknown as ConstructorParameters<typeof InputPort>[1]['accepts'],
-      label: meta.name
+      label: { zh: meta.name, en: meta.name }
     })
   }
 

@@ -81,7 +81,7 @@ export class StringConcatNode extends Node {
     this.portSeq += 1
     const port = new InputPort(`p${this.portSeq}`, {
       accepts: [StringValue],
-      label: `$${this.inputPorts.length + 1}`
+      label: { zh: `$${this.inputPorts.length + 1}`, en: `$${this.inputPorts.length + 1}` }
     })
     // addInput 内部会 notifyChanged，端口列表据此刷新
     this.addInput(port)

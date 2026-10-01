@@ -1,6 +1,7 @@
 import { Value, type ValueKind } from '../data/Value'
 import type { Edge } from '../graph/Edge'
 import type { Node } from '../node/Node'
+import type { LocalizedText } from '../../../shared/language'
 import { OutputPort } from './OutputPort'
 
 /** 任何带 VALUE_NAME 静态属性的 Value 子类 */
@@ -27,8 +28,8 @@ export interface InputPortOptions {
   readonly multiple?: boolean
   /** 未接线时可采用的值，是否采用由节点自己决定 */
   readonly defaultValue?: Value
-  /** 端口文本标记，UI 显示用；不填则回退到 id */
-  readonly label?: string
+  /** 端口文本标记（多语言），UI 显示用；可只配若干语言，未命中的语言兜底到英语。不填则显示端口的 id */
+  readonly label?: LocalizedText
 }
 
 /** 输入端口：节点接收值的入口 */
@@ -50,19 +51,19 @@ export class InputPort {
    */
   readonly incoming = new Map<Edge, Value | undefined>()
 
-  /** 端口标签（可运行时修改，NodeShell 画布上的端口名显示用它） */
-  private labelValue: string
+  /** 端口多语言标签（可运行时修改，NodeShell 画布上的端口名显示用它） */
+  private labelValue: LocalizedText | undefined
 
   constructor(
     readonly id: string,
     private readonly options: InputPortOptions
   ) {
-    this.labelValue = options.label ?? id
+    this.labelValue = options.label
   }
 
-  /** 运行时修改端口标签；NodeShell 画布上显示的端口名会跟着变 */
-  setLabel(name: string): void {
-    this.labelValue = name
+  /** 运行时替换端口标签（多语言）；NodeShell 画布上显示的端口名会跟着变 */
+  setLabel(label: LocalizedText): void {
+    this.labelValue = label
   }
 
   /** 接受的类型标签名列表（从 Value 子类的静态 VALUE_NAME 提取，供 UI 展示） */
@@ -92,7 +93,8 @@ export class InputPort {
     return this.incoming.size
   }
 
-  get label(): string {
+  /** 端口多语言标签；渲染层按当前语言解析，未配置时由渲染层回退到 id */
+  get label(): LocalizedText | undefined {
     return this.labelValue
   }
 

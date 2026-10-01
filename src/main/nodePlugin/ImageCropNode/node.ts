@@ -38,7 +38,7 @@ export class ImageCropNode extends Node {
   /** 输入端口：图片值（ImgFileValue）。接线后上游值变化会自动刷新源图和裁剪框 */
   readonly imageInput = new InputPort('source', {
     accepts: [ImgFileValue],
-    label: '图片'
+    label: { zh: '图片', en: 'Image' }
   })
 
   /** 输出端口：裁剪后的图片 */

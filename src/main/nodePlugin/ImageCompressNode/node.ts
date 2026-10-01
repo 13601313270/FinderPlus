@@ -42,14 +42,14 @@ export class ImageCompressNode extends Node {
   /** 输入端口：目标尺寸（最长边像素，NumberValue）。未接线用端口 defaultValue */
   readonly sizeInput = new InputPort('size', {
     accepts: [NumberValue],
-    label: '尺寸',
+    label: { zh: '尺寸', en: 'Size' },
     defaultValue: new NumberValue(800)
   })
 
   /** 输入端口：图片值（ImgFileValue）。接线后上游值变化会自动触发重新压缩 */
   readonly imageInput = new InputPort('source', {
     accepts: [ImgFileValue],
-    label: '图片'
+    label: { zh: '图片', en: 'Image' }
   })
 
   /** 输出端口：压缩后的图片 */

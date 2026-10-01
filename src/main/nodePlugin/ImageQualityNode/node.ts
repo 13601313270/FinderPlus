@@ -34,7 +34,7 @@ export class ImageQualityNode extends Node {
   /** 输入端口：图片值（ImgFileValue）。接线后上游值变化会自动触发重新压缩 */
   readonly imageInput = new InputPort('source', {
     accepts: [ImgFileValue],
-    label: '图片'
+    label: { zh: '图片', en: 'Image' }
   })
 
   /** 输出端口：调整后的图片 */

@@ -1,6 +1,6 @@
 import type { Component } from 'vue'
 import type { Node } from '../engine/node/Node'
-import type { LanguageCode } from '../../shared/language'
+import type { LanguageCode, LocalizedText } from '../../shared/language'
 
 /**
  * 节点显示名的多语言表。
@@ -14,7 +14,7 @@ import type { LanguageCode } from '../../shared/language'
  * 之所以把显示名放在插件自己身上、而不是塞进渲染进程的 locales 词条：
  * 插件是可插拔的——第三方插件不该为了显示一个名字去改 Finder+ 的中央词条表。
  */
-export type NodeTitle = Partial<Record<LanguageCode, string>>
+export type NodeTitle = LocalizedText
 
 /**
  * 节点插件清单：把「节点类」和「渲染组件」钉死在同一份声明里。

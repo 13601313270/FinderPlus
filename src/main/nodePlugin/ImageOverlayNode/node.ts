@@ -66,7 +66,7 @@ export class ImageOverlayNode extends Node {
     const port = new InputPort(`layer-${index}`, {
       accepts: [ImgFileValue],
       multiple: false,
-      label: `图层 ${index + 1}`
+      label: { zh: `图层 ${index + 1}`, en: `Layer ${index + 1}` }
     })
     this.addInput(port)
     return port
@@ -99,7 +99,7 @@ export class ImageOverlayNode extends Node {
   addLayer(): void {
     const nextIndex = this.inputPorts.length
     const port = this.addLayerPort(nextIndex)
-    port.setLabel(`图层 ${nextIndex + 1}`)
+    port.setLabel({ zh: `图层 ${nextIndex + 1}`, en: `Layer ${nextIndex + 1}` })
   }
 
   /**

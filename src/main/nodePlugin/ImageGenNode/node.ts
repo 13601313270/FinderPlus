@@ -47,10 +47,10 @@ export class ImageGenNode extends Node {
   readonly type = ImageGenNode.TYPE
 
   /** 输入端口：提示词（唯一来源，本节点没有内部 fallback） */
-  readonly promptInput = new InputPort('prompt', { accepts: [StringValue], label: '提示词' })
+  readonly promptInput = new InputPort('prompt', { accepts: [StringValue], label: { zh: '提示词', en: 'Prompt' } })
 
   /** 输入端口：尺寸（如 1024x1024）。未接线时回落到本地选择 / 当前模型默认值 */
-  readonly sizeInput = new InputPort('size', { accepts: [StringValue], label: '尺寸' })
+  readonly sizeInput = new InputPort('size', { accepts: [StringValue], label: { zh: '尺寸', en: 'Size' } })
 
   /** 输出端口：生成的图片 */
   readonly imageOutput = new OutputPort('image', ImgFileValue, '生成图')

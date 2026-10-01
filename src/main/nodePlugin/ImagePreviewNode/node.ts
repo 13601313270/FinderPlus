@@ -19,7 +19,7 @@ export class ImagePreviewNode extends Node {
   readonly type = ImagePreviewNode.TYPE
 
   /** 输入端口：只接 ImgFileValue（精确类型，不接 FileValue 其他子类） */
-  readonly imageInput = new InputPort('image', { accepts: [ImgFileValue], label: '图片' })
+  readonly imageInput = new InputPort('image', { accepts: [ImgFileValue], label: { zh: '图片', en: 'Image' } })
 
   /** 输出端口：ImgFileValue 透传 */
   readonly imageOutput = new OutputPort('image', ImgFileValue, '图片')

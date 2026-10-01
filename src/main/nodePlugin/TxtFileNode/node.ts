@@ -30,10 +30,10 @@ export class TxtFileNode extends FileNode {
   readonly fileOutput = new OutputPort('file', TxtFileValue, '文件')
 
   /** 文件数据输入端口：只接受同类型（txt）文件，收到值即替换本节点文件 */
-  readonly fileInput = new InputPort('file-in', { accepts: [TxtFileValue], label: '文件' })
+  readonly fileInput = new InputPort('file-in', { accepts: [TxtFileValue], label: { zh: '文件', en: 'File' } })
 
   /** 文本内容输入端口：接收字符串，写入节点内容并同步到磁盘文件 */
-  readonly contentInput = new InputPort('content-in', { accepts: [StringValue], label: '内容' })
+  readonly contentInput = new InputPort('content-in', { accepts: [StringValue], label: { zh: '内容', en: 'Content' } })
 
   /** 当前文本内容；空节点初始化为空串 */
   private contentValue = ''

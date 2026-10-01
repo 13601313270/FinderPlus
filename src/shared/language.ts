@@ -13,3 +13,23 @@
 export const LANGUAGE_CODES = ['zh', 'en', 'ja', 'ko', 'es', 'ar', 'fr', 'pt', 'ru'] as const
 
 export type LanguageCode = (typeof LANGUAGE_CODES)[number]
+
+/**
+ * 多语言文案表：可只配若干语言（比如只配 zh + en），未配的语言交给 resolveLocalizedText 兜底。
+ * 节点标题（NodeTitle）、端口标签等可翻译文本都复用这一份类型，避免各处重复定义。
+ */
+export type LocalizedText = Partial<Record<LanguageCode, string>>
+
+/**
+ * 解析多语言文案。兜底顺序：目标语言 → 英语 → 表里第一个配了的语言 → fallback。
+ * 传入 string 时原样返回，用于兼容尚未迁移为多语言的旧标签（如 OutputPort 的 label）。
+ */
+export function resolveLocalizedText(
+  text: LocalizedText | string | undefined,
+  locale: LanguageCode,
+  fallback: string
+): string {
+  if (text === undefined) return fallback
+  if (typeof text === 'string') return text
+  return text[locale] ?? text.en ?? Object.values(text)[0] ?? fallback
+}

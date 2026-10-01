@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import type { PortLike, PortSide } from '@renderer/canvas/elements'
+import { useLanguageSettings } from '@renderer/composables/useLanguageSettings'
+import { resolveLocalizedText } from '../../../shared/language'
 import NodePort from './NodePort.vue'
 
 /**
@@ -52,6 +54,13 @@ onUnmounted(() => {
 })
 
 const ports = computed<readonly PortLike[]>(() => portList.value)
+
+/**
+ * 端口显示文案在这里解析成 string 再下传给 NodePort：
+ * label 现在是多语言表（引擎里的普通对象，非 Vue reactive），子组件 watch 不到它的变化，
+ * 必须由父层依赖 language + v-for 重渲染来重新求值。未命中的语言兜底英语，再兜底端口 id。
+ */
+const { language } = useLanguageSettings()
 </script>
 
 <template>
@@ -59,7 +68,7 @@ const ports = computed<readonly PortLike[]>(() => portList.value)
     v-for="port in ports"
     :key="port.id"
     :node-id="nodeId"
-    :label="port.label ?? port.id"
+    :label="resolveLocalizedText(port.label, language, port.id)"
     :port="port"
     :side="side"
   />

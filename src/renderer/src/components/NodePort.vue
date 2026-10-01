@@ -14,6 +14,7 @@ const props = defineProps<{
   nodeId: string
   port: PortLike
   side: PortSide
+  /** 端口显示文案：由父组件 NodePorts 按当前语言解析后下传（label 是引擎普通对象，子组件 watch 不到） */
   label: string
 }>()
 
@@ -58,12 +59,9 @@ onUnmounted(() => {
 
 function titleOf(port: PortLike, direction: string): string {
   const kinds = port.acceptValueNames ?? (port.outputValueName ? [port.outputValueName] : [])
-  const label = port.label ?? port.id
-  return kinds.length > 0 ? `${direction}端口 ${label}（${kinds.join(' / ')}）` : `${direction}端口 ${label}`
-}
-
-function displayLabel(port: PortLike): string {
-  return port.label ?? port.id
+  return kinds.length > 0
+    ? `${direction}端口 ${props.label}（${kinds.join(' / ')}）`
+    : `${direction}端口 ${props.label}`
 }
 
 function displayKinds(port: PortLike): readonly string[] {
@@ -107,7 +105,7 @@ function highlightOf(port: PortLike): string {
   <div class="port-item" :class="{ 'port-item--left': isIn, 'port-item--right': !isIn }">
     <!-- 左列：label 在圆点左边，文本右对齐（靠近圆点） -->
     <div v-if="isIn" class="port-label port-label--right-edge">
-      <span class="port-label__main">{{ displayLabel(port) }}</span>
+      <span class="port-label__main">{{ label }}</span>
       <div v-if="displayKinds(port).length" class="port-label__kinds">
         <span
           v-for="k in displayKinds(port)"
@@ -133,7 +131,7 @@ function highlightOf(port: PortLike): string {
 
     <!-- 右列：label 在圆点右边，文本左对齐（靠近圆点） -->
     <div v-if="!isIn" class="port-label port-label--left-edge">
-      <span class="port-label__main">{{ displayLabel(port) }}</span>
+      <span class="port-label__main">{{ label }}</span>
       <div v-if="displayKinds(port).length" class="port-label__kinds">
         <span
           v-for="k in displayKinds(port)"

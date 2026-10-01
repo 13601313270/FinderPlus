@@ -161,6 +161,16 @@ const httpApi = {
   > => ipcRenderer.invoke('http:request', args)
 }
 
+/**
+ * WASM 资源 API：给渲染进程读取 img-compressor-wasm 的 wasm 二进制。
+ *
+ * 生产环境 renderer 以 file:// 加载时，包内胶水代码的 fetch 会被 Chromium 拒绝，
+ * 渲染进程据此拿到字节后手动 init（返回 base64，由渲染进程解码）。
+ */
+const wasmApi = {
+  readCompressor: (): Promise<string> => ipcRenderer.invoke('wasm:readImageCompressor')
+}
+
 const fileApi = {
   /**
    * 从拖拽事件的 File 对象反查文件系统绝对路径。
@@ -249,6 +259,7 @@ if (process.contextIsolated) {
     contextBridge.exposeInMainWorld('commandApi', commandApi)
     contextBridge.exposeInMainWorld('codeApi', codeApi)
     contextBridge.exposeInMainWorld('httpApi', httpApi)
+    contextBridge.exposeInMainWorld('wasmApi', wasmApi)
   } catch (error) {
     console.error(error)
   }
@@ -267,6 +278,8 @@ if (process.contextIsolated) {
   window.codeApi = codeApi
   // @ts-ignore (define in dts)
   window.httpApi = httpApi
+  // @ts-ignore (define in dts)
+  window.wasmApi = wasmApi
 }
 
 export type ExposedApi = typeof api
@@ -275,3 +288,4 @@ export type FileApi = typeof fileApi
 export type CommandApi = typeof commandApi
 export type CodeApi = typeof codeApi
 export type HttpApi = typeof httpApi
+export type WasmApi = typeof wasmApi

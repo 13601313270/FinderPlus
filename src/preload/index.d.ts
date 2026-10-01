@@ -1,5 +1,5 @@
 import { ElectronAPI } from '@electron-toolkit/preload'
-import type { ExposedApi, CanvasDeskDbApi, FileApi, CommandApi, CodeApi, HttpApi } from './index'
+import type { ExposedApi, CanvasDeskDbApi, FileApi, CommandApi, CodeApi, HttpApi, WasmApi } from './index'
 
 declare global {
   interface Window {
@@ -10,5 +10,6 @@ declare global {
     commandApi: CommandApi
     codeApi: CodeApi
     httpApi: HttpApi
+    wasmApi: WasmApi
   }
 }

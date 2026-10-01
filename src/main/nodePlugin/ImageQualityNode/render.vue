@@ -1,0 +1,498 @@
+<script setup lang="ts">
+import { computed, ref, watch, onUnmounted } from 'vue'
+import { workspaceScene } from '../../engine/graph/SceneRegistry'
+import { ImgFileValue } from '../../engine/data/ImgFileValue'
+import { bytesToBase64, base64ToBytes } from '../../engine/data/base64'
+import { ImageQualityNode, type ImageQualityFormat } from './node'
+import { ImgFileNode } from '../ImgFileNode/node'
+import { useNodePosition } from '@renderer/composables/useNodePosition'
+
+const props = defineProps<{ id: string }>()
+
+const node = computed(() => {
+  const n = workspaceScene.getNode(props.id)
+  return n instanceof ImageQualityNode ? n : undefined
+})
+
+// —— 拖拽：质量节点自身也参与画布移动 ——
+const { startDrag } = useNodePosition(() => node.value)
+
+type CompressorModule = typeof import('img-compressor-wasm')
+
+/**
+ * wasm 模块加载（模块级 promise 缓存，只初始化一次）。
+ *
+ * 先尝试包自带的 `init()`（自动 fetch 同目录 wasm）；开发环境走 http 正常。
+ * 生产环境 renderer 由 loadFile 以 file:// 加载，Chromium 拒绝 file:// 的 fetch，
+ * 此时回退到主进程读取 wasm 字节再 `init(bytes)`。
+ */
+let compressorPromise: Promise<CompressorModule> | null = null
+function loadCompressor(): Promise<CompressorModule> {
+  if (!compressorPromise) {
+    compressorPromise = (async () => {
+      const mod = await import('img-compressor-wasm')
+      try {
+        await mod.default()
+      } catch {
+        const base64 = await window.wasmApi.readCompressor()
+        await mod.default({ module_or_path: base64ToBytes(base64) })
+      }
+      return mod
+    })()
+  }
+  return compressorPromise
+}
+
+// —— 质量滑杆：本地值用于拖动时的实时数值显示，松手才写回节点触发重压 ——
+// （wasm 压缩是同步阻塞计算，拖动过程中反复压缩会卡顿）
+const sliderQuality = ref(80)
+
+// —— 导出格式展示：随 onChanged 刷新 ——
+const exportFormat = ref<ImageQualityFormat>('jpeg')
+
+// —— 压缩结果预览（objectURL）；卸载或结果变时 revoke 防泄漏 ——
+const resultUrl = ref<string | null>(null)
+let revokeUrl: (() => void) | null = null
+
+// —— 体积信息：原大小 → 压缩后 + 压缩比 ——
+const originalSize = ref(0)
+const compressedSize = ref(0)
+
+// —— 失败提示（wasm 压缩失败返回空数组时显示） ——
+const errorText = ref<string | null>(null)
+
+function clearResult(): void {
+  if (revokeUrl) {
+    revokeUrl()
+    revokeUrl = null
+  }
+  resultUrl.value = null
+  originalSize.value = 0
+  compressedSize.value = 0
+}
+
+/** 从 node.imageOutput 当前值刷预览图 */
+function refreshResult(n: ImageQualityNode | undefined): void {
+  clearResult()
+  if (!n) return
+  const value = n.imageOutput.value
+  if (value instanceof ImgFileValue) {
+    const url = URL.createObjectURL(value.file)
+    resultUrl.value = url
+    revokeUrl = () => URL.revokeObjectURL(url)
+  }
+}
+
+/** 压缩中标记：防止 onChanged 重入导致重复压缩 */
+let compressing = false
+
+/** 导出格式 → MIME / 扩展名 */
+function mimeForFormat(format: ImageQualityFormat): string {
+  return format === 'png' ? 'image/png' : 'image/jpeg'
+}
+
+function extForFormat(format: ImageQualityFormat): string {
+  return format === 'png' ? '.png' : '.jpeg'
+}
+
+/** 去掉源文件名的后缀，压缩输出文件名为 原名-q质量.新后缀 */
+function baseName(fileName: string): string {
+  const dot = fileName.lastIndexOf('.')
+  return dot > 0 ? fileName.slice(0, dot) : fileName
+}
+
+/** 字节数 → 可读体积（B / KB / MB） */
+function formatSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / 1024 / 1024).toFixed(2)} MB`
+}
+
+/** 压缩比文案：变小显示 -x%，变大显示 +x%（小图高质量转 jpeg 可能变大） */
+const ratioText = computed(() => {
+  if (!originalSize.value || !compressedSize.value) return ''
+  const delta = (1 - compressedSize.value / originalSize.value) * 100
+  const sign = delta >= 0 ? '-' : '+'
+  return `${sign}${Math.abs(delta).toFixed(1)}%`
+})
+
+/**
+ * 执行一次压缩：File → img-compressor-wasm → base64 → node.setOutput。
+ * 调用方负责 markProcessed / clearPending。
+ */
+async function runCompress(n: ImageQualityNode, file: File): Promise<void> {
+  const mod = await loadCompressor()
+  const input = new Uint8Array(await file.arrayBuffer())
+  const quality = n.qualityValue
+  const format = n.exportFormat
+
+  const out = mod.compress_image(input, quality, format)
+  // 失败统一返回空数组、不抛异常：格式不支持 / 图片损坏 / 解码失败
+  if (!out || out.length === 0) {
+    errorText.value = '压缩失败：不支持的图片格式或文件已损坏'
+    return
+  }
+
+  const mime = mimeForFormat(format)
+  const fileName = `${baseName(file.name)}-q${quality}${extForFormat(format)}`
+  n.setOutput(bytesToBase64(out), mime, fileName)
+
+  originalSize.value = file.size
+  compressedSize.value = out.length
+  errorText.value = null
+}
+
+/**
+ * 检查是否需要压缩：读 compressSource 判断有无可用源，再用 fingerprint 去重。
+ * - 端口路径（响应式）：fingerprint / 质量 / 格式任一变化就压缩
+ * - 拖入路径（一次性）：pendingSource 非空表示需要压一次
+ */
+function handleCompress(n: ImageQualityNode | undefined): void {
+  if (!n || compressing) return
+  const src = n.compressSource
+  if (!src) return
+
+  const isPending = !!n.pendingSource // 拖入路径有触发信号
+  const fpChanged = src.fingerprint !== n.lastProcessedFp
+  const qualityChanged = n.qualityValue !== n.lastProcessedQ
+  const formatChanged = n.exportFormat !== n.lastProcessedFmt
+
+  // 去重：源文件没变 + 质量没变 + 格式没变 + 不是拖入触发 → 跳过
+  if (!fpChanged && !qualityChanged && !formatChanged && !isPending) return
+
+  compressing = true
+  runCompress(n, src.file)
+    .catch(() => {
+      errorText.value = '压缩失败：wasm 初始化或编码出错'
+    })
+    .finally(() => {
+      compressing = false
+      n.markProcessed(src.fingerprint, n.qualityValue, n.exportFormat)
+      // 拖入路径处理完清信号（端口路径不清，保持响应式）
+      if (isPending) n.clearPending()
+    })
+}
+
+// —— 订阅 node.onChanged：结果刷新 + 参数同步 + 触发压缩 ——
+let unsubscribe: (() => void) | undefined
+watch(
+  node,
+  (n) => {
+    unsubscribe?.()
+    unsubscribe = n?.onChanged(() => {
+      refreshResult(n)
+      sliderQuality.value = n?.qualityValue ?? 80
+      exportFormat.value = n?.exportFormat ?? 'jpeg'
+      handleCompress(n)
+    })
+    refreshResult(n)
+    sliderQuality.value = n?.qualityValue ?? 80
+    exportFormat.value = n?.exportFormat ?? 'jpeg'
+    handleCompress(n)
+  },
+  { immediate: true, flush: 'sync' }
+)
+
+/** 拖动中：只更新本地数值显示，不触发压缩 */
+function onSliderInput(e: Event): void {
+  sliderQuality.value = Number((e.target as HTMLInputElement).value)
+}
+
+/** 松手：写回节点，质量变化会触发重压 */
+function onSliderChange(e: Event): void {
+  node.value?.setQuality(Number((e.target as HTMLInputElement).value))
+}
+
+/** 切换导出格式 → 写回节点，格式变化会触发重压 */
+function onFormatChange(e: Event): void {
+  const v = (e.target as HTMLSelectElement).value
+  if (v === 'jpeg' || v === 'png') node.value?.setFormat(v)
+}
+
+/** File → base64 字符串（给 writeBuffer 用） */
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      const result = reader.result as string
+      const comma = result.indexOf(',')
+      resolve(comma >= 0 ? result.slice(comma + 1) : result)
+    }
+    reader.onerror = () => reject(reader.error)
+    reader.readAsDataURL(file)
+  })
+}
+
+/**
+ * 点击「生成图片文件节点」：以压缩结果为基础新建一个 ImgFileNode。
+ */
+async function handleCreateImgNode(): Promise<void> {
+  const currentNode = node.value
+  if (!currentNode) return
+  const value = currentNode.imageOutput.value
+  const file = value instanceof ImgFileValue ? value.file : undefined
+  if (!file) return
+
+  const base64 = await fileToBase64(file)
+  const written = await window.fileApi.writeBuffer(file.name, base64)
+
+  const [cx, cy] = currentNode.position
+  const newNode = new ImgFileNode(
+    `${ImgFileNode.TYPE}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+  )
+  newNode.setPosition(cx + 30, cy + 30)
+  newNode.setFile(written.fileName, written.size)
+  workspaceScene.addNode(newNode)
+}
+
+onUnmounted(() => {
+  unsubscribe?.()
+  clearResult()
+})
+</script>
+
+<template>
+  <div class="quality-card" @pointerdown="startDrag"
+    :title="'拖入图片节点压缩一次 · 或左侧端口接图片响应式压缩'">
+    <!-- 头部类型标签 + 导出格式选择 -->
+    <div class="quality-card__header">
+      <span class="quality-card__title">图片质量调整</span>
+      <select class="quality-card__format" :value="exportFormat" title="选择导出格式（改变后重新压缩）"
+        @pointerdown.stop @change="onFormatChange">
+        <option value="jpeg">jpeg</option>
+        <option value="png">png</option>
+      </select>
+    </div>
+
+    <!-- 压缩结果预览区 -->
+    <div class="quality-card__image-area">
+      <img v-if="resultUrl" class="quality-card__img" :src="resultUrl" alt="压缩结果预览" draggable="false" />
+      <!-- 无结果占位：提示两种输入方式 -->
+      <div v-else class="quality-card__placeholder">
+        <svg class="quality-card__icon-svg" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="8" y="10" width="48" height="44" rx="6" fill="#f4f5f7" stroke="#c5cbd4" stroke-width="1.5" />
+          <path d="M14 46L26 34L34 42L44 30L52 46H14Z" fill="#c5d4ff" stroke="#4a7cff" stroke-width="1.5"
+            stroke-linejoin="round" />
+          <circle cx="40" cy="20" r="4" fill="#4a7cff" />
+        </svg>
+        <span class="quality-card__placeholder-text">拖图片节点进来 · 或左侧端口接图片</span>
+      </div>
+    </div>
+
+    <!-- 质量滑杆：拖动时实时显示数值，松手才重压 -->
+    <div class="quality-card__quality">
+      <div class="quality-card__quality-head">
+        <span class="quality-card__quality-label">质量</span>
+        <span class="quality-card__quality-value">{{ sliderQuality }}</span>
+      </div>
+      <input class="quality-card__slider" type="range" min="1" max="100" step="1" :value="sliderQuality"
+        title="调整压缩质量（松手后重新压缩）" @pointerdown.stop @input="onSliderInput" @change="onSliderChange" />
+    </div>
+
+    <!-- 底部信息栏：体积/压缩比 + 以压缩结果新建 ImgFileNode -->
+    <div class="quality-card__footer">
+      <span v-if="errorText" class="quality-card__hint quality-card__hint--error">{{ errorText }}</span>
+      <span v-else-if="resultUrl" class="quality-card__hint quality-card__hint--active">
+        {{ formatSize(originalSize) }} → {{ formatSize(compressedSize) }}
+        <b class="quality-card__ratio">{{ ratioText }}</b>
+      </span>
+      <span v-else class="quality-card__hint">端口响应式 · 拖入一次性</span>
+      <button v-if="resultUrl" class="quality-card__create-btn" type="button" @pointerdown.stop
+        @click="handleCreateImgNode" title="以压缩结果为基础新建一个图片文件节点">
+        生成图片文件节点
+      </button>
+    </div>
+  </div>
+</template>
+
+<style scoped lang="less">
+.quality-card {
+  box-sizing: border-box; // box 是内容区外包壳宽，border+padding 算在 box 内
+  width: 100%; // 填满 NodeShell 的 .node-content（由 node.box 硬约束定宽高）
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  padding: 10px;
+  background: @color-surface;
+  border: 1px solid #d5d9e0;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  user-select: none;
+
+  &__header {
+    flex-shrink: 0; // 定高不参与压缩，保证 jpeg/png 下拉完整展示
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    padding-bottom: 2px;
+    border-bottom: 1px dashed #d5d9e0;
+    overflow: hidden;
+  }
+
+  &__title {
+    flex: 1;
+    min-width: 0;
+    font-size: 11px;
+    font-weight: 600;
+    color: #4a7cff;
+    letter-spacing: 0.5px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  // 导出格式下拉：贴合卡片风格的小尺寸 select
+  &__format {
+    flex-shrink: 0;
+    font-size: 11px;
+    line-height: 1.2;
+    color: #4a7cff;
+    background: #f4f6ff;
+    border: 1px solid #b9c8ff;
+    border-radius: 4px;
+    padding: 2px 4px;
+    cursor: pointer;
+    outline: none;
+
+    &:hover {
+      border-color: #4a7cff;
+    }
+  }
+
+  &__image-area {
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    border-radius: 6px;
+    overflow: hidden;
+    background: #f4f5f7;
+    border: 1px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    cursor: grab;
+
+    &:active {
+      cursor: grabbing;
+    }
+  }
+
+  &__img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    display: block;
+    pointer-events: none;
+    background: #fff;
+  }
+
+  &__placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    color: @color-text-weak;
+  }
+
+  &__icon-svg {
+    width: 40px;
+    height: 40px;
+    display: block;
+    flex-shrink: 0;
+  }
+
+  &__placeholder-text {
+    font-size: 11px;
+    color: #9aa1ad;
+    font-style: italic;
+  }
+
+  &__quality {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  &__quality-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 11px;
+    color: #7a828f;
+  }
+
+  &__quality-value {
+    font-size: 11px;
+    font-weight: 600;
+    color: #4a7cff;
+  }
+
+  &__slider {
+    width: 100%;
+    height: 14px;
+    margin: 0;
+    cursor: pointer;
+    accent-color: #4a7cff;
+  }
+
+  &__footer {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    background: #fafbfc;
+  }
+
+  &__hint {
+    flex: 1;
+    font-size: 11px;
+    color: #7a828f;
+    text-align: left;
+    line-height: 1.4;
+
+    &--active {
+      color: #2d6a3f;
+    }
+
+    &--error {
+      color: #d0342c;
+    }
+  }
+
+  &__ratio {
+    color: #1f7a4d;
+  }
+
+  &__create-btn {
+    flex-shrink: 0;
+    padding: 4px 10px;
+    border: 1px solid #4a7cff;
+    border-radius: 4px;
+    background: #4a7cff;
+    color: #fff;
+    font-size: 11px;
+    line-height: 1.3;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, transform 0.08s ease;
+
+    &:hover {
+      background: #3d6ce0;
+      border-color: #3d6ce0;
+    }
+
+    &:active {
+      transform: translateY(1px);
+    }
+  }
+}
+</style>

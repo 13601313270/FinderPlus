@@ -172,6 +172,21 @@ function registerIpcHandlers(): void {
     return true
   })
 
+  /**
+   * 读取 img-compressor-wasm 的 wasm 二进制，返回 base64（给质量调整节点用）。
+   *
+   * 生产环境 renderer 由 loadFile 以 file:// 加载，包内胶水代码的
+   * fetch(new URL('...wasm', import.meta.url)) 会被 Chromium 拒绝；
+   * 这里由主进程直接读文件（Electron 的 fs 可读 asar 内路径）交给 renderer 手动 init。
+   */
+  ipcMain.handle('wasm:readImageCompressor', (): string => {
+    const wasmPath = join(
+      app.getAppPath(),
+      'node_modules/img-compressor-wasm/rust-wasm/pkg/image_compressor_bg.wasm'
+    )
+    return readFileSync(wasmPath).toString('base64')
+  })
+
   // —— 读取：渲染进程启动时调一次，重建 Scene ——
   ipcMain.handle('db:loadCanvas', () => {
     if (!storage) throw new Error('[db] storage 尚未初始化')

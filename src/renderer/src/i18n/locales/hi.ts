@@ -11,7 +11,17 @@ const hi: Language = {
     title: 'सेटिंग्स',
     close: 'बंद करें (Esc)',
     language: 'भाषा',
-    languageHint: 'इंटरफ़ेस की भाषा चुनें। बदलाव स्वतः सहेजे जाते हैं।'
+    languageHint: 'इंटरफ़ेस की भाषा चुनें। बदलाव स्वतः सहेजे जाते हैं।',
+    transferTitle: 'Data Migration',
+    transferHint: 'Export your current canvas and all files as a zip, or import from a backup on a new computer.',
+    export: 'Export…',
+    import: 'Import…',
+    exportSuccess: 'Export completed successfully.',
+    importSuccess: 'Import completed successfully. Please restart the app to reload your canvas.',
+    exportKeyHint: 'API keys are not included in the export for security reasons. You will need to re-enter them on the new computer.',
+    importConfirmTitle: 'Import will replace all data',
+    importConfirmBody: 'Importing will overwrite your current canvas, files and settings with the backup. This cannot be undone. Continue?'
+
   },
   helpCenter: {
     title: 'सहायता केंद्र',

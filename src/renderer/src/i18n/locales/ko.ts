@@ -11,7 +11,17 @@ const ko: Language = {
     title: '설정',
     close: '닫기(Esc)',
     language: '언어',
-    languageHint: '인터페이스 언어를 선택하세요. 변경 사항은 자동으로 저장됩니다.'
+    languageHint: '인터페이스 언어를 선택하세요. 변경 사항은 자동으로 저장됩니다.',
+    transferTitle: 'Data Migration',
+    transferHint: 'Export your current canvas and all files as a zip, or import from a backup on a new computer.',
+    export: 'Export…',
+    import: 'Import…',
+    exportSuccess: 'Export completed successfully.',
+    importSuccess: 'Import completed successfully. Please restart the app to reload your canvas.',
+    exportKeyHint: 'API keys are not included in the export for security reasons. You will need to re-enter them on the new computer.',
+    importConfirmTitle: 'Import will replace all data',
+    importConfirmBody: 'Importing will overwrite your current canvas, files and settings with the backup. This cannot be undone. Continue?'
+
   },
   helpCenter: {
     title: '도움말 센터',

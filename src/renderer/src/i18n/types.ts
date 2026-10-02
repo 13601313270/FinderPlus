@@ -22,6 +22,20 @@ export type Language = {
     close: string
     language: string
     languageHint: string
+    /** 数据迁移 section */
+    transferTitle: string
+    transferHint: string
+    export: string
+    import: string
+    /** 导出成功后的 toast */
+    exportSuccess: string
+    /** 导入成功后的 toast（含"请重启应用"提示） */
+    importSuccess: string
+    /** 导出时因为要排除 API Key 给出的提示 */
+    exportKeyHint: string
+    /** 导入前的警告弹窗：会覆盖现有数据 */
+    importConfirmTitle: string
+    importConfirmBody: string
   }
   helpCenter: {
     title: string

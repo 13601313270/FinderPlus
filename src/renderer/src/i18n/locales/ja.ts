@@ -11,7 +11,17 @@ const ja: Language = {
     title: '設定',
     close: '閉じる（Esc）',
     language: '言語',
-    languageHint: 'インターフェースの言語を選択してください。変更は自動的に保存されます。'
+    languageHint: 'インターフェースの言語を選択してください。変更は自動的に保存されます。',
+    transferTitle: 'Data Migration',
+    transferHint: 'Export your current canvas and all files as a zip, or import from a backup on a new computer.',
+    export: 'Export…',
+    import: 'Import…',
+    exportSuccess: 'Export completed successfully.',
+    importSuccess: 'Import completed successfully. Please restart the app to reload your canvas.',
+    exportKeyHint: 'API keys are not included in the export for security reasons. You will need to re-enter them on the new computer.',
+    importConfirmTitle: 'Import will replace all data',
+    importConfirmBody: 'Importing will overwrite your current canvas, files and settings with the backup. This cannot be undone. Continue?'
+
   },
   helpCenter: {
     title: 'ヘルプセンター',

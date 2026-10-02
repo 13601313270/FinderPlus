@@ -1,12 +1,14 @@
-import { app, shell, BrowserWindow, ipcMain, Menu } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, Menu, dialog } from 'electron'
 import { join, basename, extname } from 'node:path'
-import { copyFileSync, existsSync, readFileSync, unlinkSync, watch, writeFileSync } from 'node:fs'
+import { copyFileSync, existsSync, readFileSync, readdirSync, rmSync, mkdirSync, unlinkSync, watch, writeFileSync } from 'node:fs'
 import { exec } from 'node:child_process'
 import http from 'node:http'
 import https from 'node:https'
 import { URL } from 'node:url'
+import AdmZip from 'adm-zip'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { openDatabase, closeDatabase, getDatabase, persist } from './db/database'
+import { SCHEMA_VERSION } from './db/schema'
 import { SqliteStorage } from './db/SqliteStorage'
 import { ensureCanvasDir, getCanvasDir } from './paths'
 import type { MenuLabels } from '../preload'
@@ -29,6 +31,9 @@ app.setPath('userData', userDataDir)
 
 let storage: SqliteStorage | null = null
 let canvasWatcher: ReturnType<typeof watch> | null = null
+
+/** 导入进行中时置 true，阻止渲染进程的自动保存 IPC 写入已关闭的 DB */
+let importInProgress = false
 
 /**
  * 启动画布目录文件监听。
@@ -199,6 +204,7 @@ function registerIpcHandlers(): void {
     posY: number
     paramsJson: string
   }) => {
+    if (importInProgress) return false
     // saveNode 在 SqliteStorage 里会直接 INSERT / UPDATE + persist
     // 但它收的是 Node 实例，不是 plain object。这里用 db.run 直接做 SQL
     const db = getDatabase()
@@ -218,6 +224,7 @@ function registerIpcHandlers(): void {
   })
 
   ipcMain.handle('db:deleteNode', (_e, nodeId: string) => {
+    if (importInProgress) return false
     const db = getDatabase()
     db.run('DELETE FROM nodes WHERE id = ?', [nodeId])
     persist()
@@ -231,6 +238,7 @@ function registerIpcHandlers(): void {
     endNodeId: string
     endPortId: string
   }) => {
+    if (importInProgress) return false
     const db = getDatabase()
     db.run(
       `INSERT INTO edges (id, canvas_id, start_node_id, start_port_id, end_node_id, end_port_id)
@@ -247,6 +255,7 @@ function registerIpcHandlers(): void {
   })
 
   ipcMain.handle('db:deleteEdge', (_e, edgeId: string) => {
+    if (importInProgress) return false
     const db = getDatabase()
     db.run('DELETE FROM edges WHERE id = ?', [edgeId])
     persist()
@@ -254,6 +263,7 @@ function registerIpcHandlers(): void {
   })
 
   ipcMain.handle('db:saveViewport', (_e, args: { x: number; y: number; scale: number }) => {
+    if (importInProgress) return false
     const db = getDatabase()
     const now = Date.now()
     db.run(
@@ -632,6 +642,265 @@ function truncate(str: string, max: number): string {
   if (str.length <= max) return str
   return `${str.slice(0, max)}…(+${str.length - max} chars)`
 }
+
+// —— 数据导出 / 导入 ——
+
+/** 导出 zip 内的目录结构常量 */
+const EXPORT_DB_NAME = 'canvasdesk.db'
+const EXPORT_FILES_DIR = 'files'
+const EXPORT_CONFIG_NAME = 'config.json'
+const EXPORT_META_NAME = 'meta.json'
+
+/**
+ * 把整个画布 + DB + 文件目录打包成 zip。
+ *
+ * 导出包结构：
+ *   canvasdesk.db          —— 数据库文件（完整节点/边/视口）
+ *   files/                 —— 画布目录下的所有文件（原样复制）
+ *   config.json            —— 渲染进程 localStorage 配置（已剥离 API Key）
+ *   meta.json              —— 版本号 + 导出时间戳
+ *
+ * 调用时机：用户在 SettingsDialog 点「导出」，渲染进程先弹 save dialog 选路径、
+ * 再把剥离后的 configJson 连同 savePath 一起传过来。主进程负责文件层面的打包。
+ */
+ipcMain.handle('app:exportData', (_e, args: {
+  savePath: string
+  configJson: string
+}): { ok: true } | { ok: false; error: string } => {
+  try {
+    // 1. 确保 DB 最新状态落盘
+    persist()
+
+    // 2. 收集路径
+    const userDataDir = app.getPath('userData')
+    const dbFilePath = join(userDataDir, 'canvasdesk.db')
+    const canvasDir = getCanvasDir()
+
+    // 3. 构建 zip
+    const zip = new AdmZip()
+
+    // 3a. DB 文件（必须存在）
+    if (!existsSync(dbFilePath)) {
+      return { ok: false, error: '数据库文件不存在，无法导出' }
+    }
+    zip.addLocalFile(dbFilePath, '', EXPORT_DB_NAME)
+
+    // 3b. 画布目录（可能为空——用户还没放任何文件节点）
+    if (existsSync(canvasDir)) {
+      zip.addLocalFolder(canvasDir, EXPORT_FILES_DIR)
+    }
+
+    // 3c. config.json（渲染进程已剥离 API Key）
+    zip.addFile(EXPORT_CONFIG_NAME, Buffer.from(args.configJson, 'utf-8'))
+
+    // 3d. meta.json
+    const meta = {
+      appVersion: app.getVersion(),
+      exportedAt: new Date().toISOString(),
+      schemaVersion: 1
+    }
+    zip.addFile(EXPORT_META_NAME, Buffer.from(JSON.stringify(meta, null, 2), 'utf-8'))
+
+    // 4. 写磁盘
+    zip.writeZip(args.savePath)
+    return { ok: true }
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : String(err) }
+  }
+})
+
+/**
+ * 从 zip 导入数据，覆盖 DB + 文件目录，并返回 config.json 给渲染进程写入 localStorage。
+ *
+ * 关键顺序（不能乱）：
+ *   1. 解压 zip → 校验 meta.json schemaVersion → 校验必要文件
+ *   2. 备份当前 DB + 画布目录到临时 backupDir（安全网）
+ *   3. 停 watcher → close DB
+ *   4. 覆盖 DB → 覆盖画布目录 → reopen DB → 重启 watcher
+ *   5. 任何步骤失败 → 从 backupDir 恢复旧数据
+ *   6. 成功 → 返回 configJson 给渲染进程 + 通知渲染进程 reload
+ */
+ipcMain.handle('app:importData', async (_e, args: {
+  zipPath: string
+}): Promise<{ ok: true; configJson: string } | { ok: false; error: string }> => {
+  const tmpDir = join(app.getPath('temp'), `canvasdesk-import-${Date.now()}`)
+  let backupDir: string | null = null
+  importInProgress = true
+  try {
+    // —— 阶段一：解压 + 校验 ——
+    if (!existsSync(args.zipPath)) {
+      return { ok: false, error: '导出文件不存在' }
+    }
+    const zip = new AdmZip(args.zipPath)
+    mkdirSync(tmpDir, { recursive: true })
+    zip.extractAllTo(tmpDir, true)
+
+    // 校验必要文件
+    const extractedDb = join(tmpDir, EXPORT_DB_NAME)
+    const extractedConfig = join(tmpDir, EXPORT_CONFIG_NAME)
+    if (!existsSync(extractedDb)) {
+      rmSync(tmpDir, { recursive: true, force: true })
+      return { ok: false, error: '导出文件损坏：缺少 canvasdesk.db' }
+    }
+    if (!existsSync(extractedConfig)) {
+      rmSync(tmpDir, { recursive: true, force: true })
+      return { ok: false, error: '导出文件损坏：缺少 config.json' }
+    }
+
+    // schemaVersion 校验（只警告不拒绝，兼容旧版本备份没有 meta.json 的情况）
+    const metaPath = join(tmpDir, EXPORT_META_NAME)
+    if (existsSync(metaPath)) {
+      try {
+        const meta = JSON.parse(readFileSync(metaPath, 'utf-8')) as { schemaVersion?: number }
+        if (typeof meta.schemaVersion === 'number' && meta.schemaVersion > SCHEMA_VERSION) {
+          rmSync(tmpDir, { recursive: true, force: true })
+          return {
+            ok: false,
+            error: `备份文件 schema 版本 (${meta.schemaVersion}) 高于当前应用支持的版本 (${SCHEMA_VERSION})，请先升级应用。`
+          }
+        }
+      } catch {
+        // meta.json 解析失败——忽略，继续导入
+      }
+    }
+
+    // —— 阶段二：备份旧数据 ——
+    const userDataDir = app.getPath('userData')
+    const dbFilePath = join(userDataDir, 'canvasdesk.db')
+    const canvasDir = getCanvasDir()
+
+    backupDir = join(app.getPath('temp'), `canvasdesk-backup-${Date.now()}`)
+    mkdirSync(backupDir, { recursive: true })
+    if (existsSync(dbFilePath)) {
+      copyFileSync(dbFilePath, join(backupDir, 'canvasdesk.db'))
+    }
+    if (existsSync(canvasDir)) {
+      const canvasBackup = join(backupDir, 'canvas')
+      mkdirSync(canvasBackup, { recursive: true })
+      copyDirRecursive(canvasDir, canvasBackup)
+    }
+
+    // —— 阶段三：停 watcher + close DB ——
+    stopCanvasWatcher()
+    closeDatabase()
+
+    // —— 阶段四：覆盖 + 重新打开 ——
+    try {
+      // 覆盖 DB
+      copyFileSync(extractedDb, dbFilePath)
+
+      // 覆盖画布目录
+      if (existsSync(canvasDir)) {
+        rmSync(canvasDir, { recursive: true, force: true })
+      }
+      ensureCanvasDir()
+      const extractedFilesDir = join(tmpDir, EXPORT_FILES_DIR)
+      if (existsSync(extractedFilesDir)) {
+        copyDirRecursive(extractedFilesDir, canvasDir)
+      }
+
+      // 重新 open DB（await 确保完成）
+      const db = await openDatabase()
+      storage = new SqliteStorage(db)
+
+      // 重启 watcher
+      startCanvasWatcher()
+    } catch (innerErr) {
+      // 阶段四任何步骤失败 → 恢复旧数据
+      console.error('[import] restore failed, rolling back:', innerErr)
+      try {
+        // 先确保 DB 已 close
+        closeDatabase()
+        if (backupDir) {
+          // 恢复 DB
+          const backupDb = join(backupDir, 'canvasdesk.db')
+          if (existsSync(backupDb)) {
+            copyFileSync(backupDb, dbFilePath)
+          }
+          // 恢复画布目录
+          const backupCanvas = join(backupDir, 'canvas')
+          if (existsSync(backupCanvas)) {
+            if (existsSync(canvasDir)) {
+              rmSync(canvasDir, { recursive: true, force: true })
+            }
+            copyDirRecursive(backupCanvas, canvasDir)
+          }
+        }
+        // 重新打开 DB
+        const db = await openDatabase()
+        storage = new SqliteStorage(db)
+        startCanvasWatcher()
+      } catch (rollbackErr) {
+        console.error('[import] rollback also failed:', rollbackErr)
+      }
+      rmSync(tmpDir, { recursive: true, force: true })
+      if (backupDir) rmSync(backupDir, { recursive: true, force: true })
+      return {
+        ok: false,
+        error: `导入失败：${innerErr instanceof Error ? innerErr.message : String(innerErr)}（旧数据已恢复）`
+      }
+    }
+
+    // —— 阶段五：清理临时文件 + 返回 ——
+    // 注意：必须在 rmSync(tmpDir) 之前读取 extractedConfig，否则 tmpDir 被删后 ENOENT
+    const configJson = readFileSync(extractedConfig, 'utf-8')
+    rmSync(tmpDir, { recursive: true, force: true })
+    if (backupDir) rmSync(backupDir, { recursive: true, force: true })
+
+    return { ok: true, configJson }
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : String(err) }
+  } finally {
+    importInProgress = false
+  }
+})
+
+/** 递归复制目录（用 Node fs，保持平台兼容） */
+function copyDirRecursive(src: string, dest: string): void {
+  const entries = readdirSync(src, { withFileTypes: true })
+  for (const entry of entries) {
+    const srcPath = join(src, entry.name)
+    const destPath = join(dest, entry.name)
+    if (entry.isDirectory()) {
+      mkdirSync(destPath, { recursive: true })
+      copyDirRecursive(srcPath, destPath)
+    } else {
+      copyFileSync(srcPath, destPath)
+    }
+  }
+}
+
+// —— Dialog 代理（contextIsolation 下渲染进程拿不到 dialog 模块） ——
+
+/** 渲染进程请求弹出 Save File dialog，返回用户选的路径（取消则返回 null） */
+ipcMain.handle('dialog:showSave', async (_e, args: {
+  title?: string
+  defaultPath?: string
+  filters?: Array<{ name: string; extensions: string[] }>
+}): Promise<string | null> => {
+  const win = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
+  const result = await dialog.showSaveDialog(win!, {
+    title: args.title ?? '导出数据',
+    defaultPath: args.defaultPath,
+    filters: args.filters
+  })
+  return result.canceled ? null : result.filePath
+})
+
+/** 渲染进程请求弹出 Open File dialog（选 zip），返回用户选的路径（取消则返回 null） */
+ipcMain.handle('dialog:showOpen', async (_e, args: {
+  title?: string
+  filters?: Array<{ name: string; extensions: string[] }>
+}): Promise<string | null> => {
+  const win = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
+  const result = await dialog.showOpenDialog(win!, {
+    title: args.title ?? '导入数据',
+    properties: ['openFile'],
+    filters: args.filters
+  })
+  if (result.canceled || result.filePaths.length === 0) return null
+  return result.filePaths[0]
+})
 
 app.whenReady().then(async () => {
   electronApp.setAppUserModelId('com.canvasdesk.app')

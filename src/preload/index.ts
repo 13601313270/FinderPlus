@@ -276,6 +276,53 @@ const appMenuApi = {
   }
 }
 
+/**
+ * Dialog 代理：contextIsolation 下渲染进程拿不到 Electron dialog 模块，
+ * 由主进程代理弹系统文件对话框。
+ */
+const dialogApi = {
+  /**
+   * 弹出保存文件对话框，让用户选 zip 导出路径。
+   * 返回用户选的绝对路径；取消则返回 null。
+   */
+  showSave: (args?: {
+    title?: string
+    defaultPath?: string
+    filters?: Array<{ name: string; extensions: string[] }>
+  }): Promise<string | null> =>
+    ipcRenderer.invoke('dialog:showSave', args ?? {}),
+
+  /**
+   * 弹出打开文件对话框，让用户选 zip 导入文件。
+   * 返回用户选的绝对路径；取消则返回 null。
+   */
+  showOpen: (args?: {
+    title?: string
+    filters?: Array<{ name: string; extensions: string[] }>
+  }): Promise<string | null> =>
+    ipcRenderer.invoke('dialog:showOpen', args ?? {})
+}
+
+/**
+ * 数据导出/导入 API：渲染进程负责收集 localStorage 配置、剥离 API Key，
+ * 主进程负责文件层面的 zip/unzip。
+ */
+const transferApi = {
+  /**
+   * 导出：把 DB + 画布文件目录 + 配置打包成 zip。
+   * 渲染进程需先通过 dialogApi.showSave 拿到保存路径，并传入已剥离 API Key 的 configJson。
+   */
+  exportData: (savePath: string, configJson: string): Promise<{ ok: true } | { ok: false; error: string }> =>
+    ipcRenderer.invoke('app:exportData', { savePath, configJson }),
+
+  /**
+   * 导入：从 zip 恢复 DB + 文件目录，并返回 zip 内的 config.json 给渲染进程。
+   * 调用成功后渲染进程应写入 localStorage 并提示用户重启应用。
+   */
+  importData: (zipPath: string): Promise<{ ok: true; configJson: string } | { ok: false; error: string }> =>
+    ipcRenderer.invoke('app:importData', { zipPath })
+}
+
 if (process.contextIsolated) {
   try {
     // 主进程推送的日志 → 转发到渲染进程 Console
@@ -296,6 +343,8 @@ if (process.contextIsolated) {
     contextBridge.exposeInMainWorld('httpApi', httpApi)
     contextBridge.exposeInMainWorld('wasmApi', wasmApi)
     contextBridge.exposeInMainWorld('appMenuApi', appMenuApi)
+    contextBridge.exposeInMainWorld('dialogApi', dialogApi)
+    contextBridge.exposeInMainWorld('transferApi', transferApi)
   } catch (error) {
     console.error(error)
   }
@@ -318,6 +367,10 @@ if (process.contextIsolated) {
   window.wasmApi = wasmApi
   // @ts-ignore (define in dts)
   window.appMenuApi = appMenuApi
+  // @ts-ignore (define in dts)
+  window.dialogApi = dialogApi
+  // @ts-ignore (define in dts)
+  window.transferApi = transferApi
 }
 
 export type ExposedApi = typeof api
@@ -328,3 +381,5 @@ export type CodeApi = typeof codeApi
 export type HttpApi = typeof httpApi
 export type WasmApi = typeof wasmApi
 export type AppMenuApi = typeof appMenuApi
+export type DialogApi = typeof dialogApi
+export type TransferApi = typeof transferApi

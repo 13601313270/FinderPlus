@@ -16,7 +16,16 @@ const zh: Language = {
     title: '设置',
     close: '关闭（Esc）',
     language: '语言',
-    languageHint: '选择界面语言，修改后自动保存。'
+    languageHint: '选择界面语言，修改后自动保存。',
+    transferTitle: '数据迁移',
+    transferHint: '把当前画板连同所有文件打包导出，或在新电脑上从备份恢复。',
+    export: '导出…',
+    import: '导入…',
+    exportSuccess: '导出成功。',
+    importSuccess: '导入成功，请重启应用以加载画板。',
+    exportKeyHint: '出于安全考虑，API Key 不会被导出。新电脑上需要重新填写。',
+    importConfirmTitle: '导入会覆盖现有数据',
+    importConfirmBody: '导入将用备份覆盖当前画板、文件和设置，且无法撤销。确定继续？'
   },
   helpCenter: {
     title: '帮助中心',

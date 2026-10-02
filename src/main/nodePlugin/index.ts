@@ -6,6 +6,7 @@ import { manifest as textDisplayManifest } from './TextDisplayNode'
 import { manifest as numberDisplayManifest } from './NumberDisplayNode'
 import { manifest as numberInputManifest } from './NumberInputNode'
 import { manifest as boolInputManifest } from './BoolInputNode'
+import { manifest as radioManifest } from './RadioNode'
 import { manifest as txtFileManifest } from './TxtFileNode'
 import { manifest as imgFileManifest } from './ImgFileNode'
 import { manifest as anyFileManifest } from './AnyFileNode'
@@ -46,6 +47,7 @@ const functionalManifests: NodePluginManifest[] = [
   numberDisplayManifest,
   numberInputManifest,
   boolInputManifest,
+  radioManifest,
   fileInfoManifest,
   imagePreviewManifest,
   imageCompressManifest,

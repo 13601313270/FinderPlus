@@ -107,7 +107,7 @@ const fileExt = computed(() => extLabel(fileName.value))
         <!-- 折角三角 -->
         <path d="M38 2L58 22H44C41.79 22 40 20.21 40 18V2Z" fill="#eef3ff" stroke="#c5cbd4" stroke-width="1.5" />
         <!-- 类型标签（动态显示文件后缀缩写） -->
-        <text x="32" y="52" text-anchor="middle" font-size="10" font-weight="600" fill="#8a6fff" font-family="Helvetica, Arial, sans-serif">
+        <text x="32" y="52" text-anchor="middle" font-size="10" font-weight="600" fill="#4a7cff" font-family="Helvetica, Arial, sans-serif">
           {{ fileExt }}
         </text>
       </svg>
@@ -163,14 +163,24 @@ const fileExt = computed(() => extLabel(fileName.value))
   &:active { cursor: grabbing; }
 
   &__icon {
-    width: 64px;
-    height: 72px;
+    // 图标区外观对齐图片文件节点（ImgFileNode）：灰底 + 内边框的方框，居中放图标
+    width: 100%;
+    flex: 1 1 auto;
+    min-height: 0;
+    border-radius: 6px;
+    overflow: hidden;
+    background: #f4f5f7;
+    border: 1px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   &__icon-svg {
-    width: 100%;
-    height: 100%;
+    width: 46px;
+    height: 52px;
     display: block;
+    flex-shrink: 0;
   }
 
   &__name-row {
@@ -178,6 +188,8 @@ const fileExt = computed(() => extLabel(fileName.value))
     text-align: center;
     font-size: 12px;
     line-height: 1.3;
+    min-height: 14px;
+    padding: 0 4px 4px;
   }
 
   &__name {

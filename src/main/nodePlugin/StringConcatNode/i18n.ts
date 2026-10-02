@@ -109,6 +109,23 @@ export const messages = {
     tr: '(Sonuç)',
     it: '(Risultato)'
   },
+  resizeHint: {
+    zh: '拖拽调整节点大小',
+    en: 'Drag to resize the node',
+    ja: 'ドラッグでノードのサイズを変更',
+    ko: '드래그하여 노드 크기 조절',
+    es: 'Arrastra para cambiar el tamaño del nodo',
+    ar: 'اسحب لتغيير حجم العقدة',
+    fr: 'Glisser pour redimensionner le nœud',
+    pt: 'Arraste para redimensionar o nó',
+    ru: 'Перетащите, чтобы изменить размер узла',
+    hi: 'नोड का आकार बदलने के लिए खींचें',
+    id: 'Seret untuk mengubah ukuran node',
+    de: 'Ziehen, um die Knotengröße zu ändern',
+    vi: 'Kéo để thay đổi kích thước nút',
+    tr: 'Düğüm boyutunu değiştirmek için sürükle',
+    it: 'Trascina per ridimensionare il nodo'
+  },
   helpTitle: {
     zh: '使用说明',
     en: 'Help',

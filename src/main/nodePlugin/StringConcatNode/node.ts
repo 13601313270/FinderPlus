@@ -145,13 +145,20 @@ export class StringConcatNode extends Node {
     return {
       template: this.template,
       // 端口数量：恢复时按此重建端口，边才能重新接上
-      inputCount: this.inputPorts.length
+      inputCount: this.inputPorts.length,
+      // 用户 resize 后的内容区宽高；未 resize 时即构造时的默认 box
+      box: this.box as readonly [number, number]
     }
   }
 
   readState(state: Record<string, unknown>): void {
     if (typeof state.template === 'string') {
       this.template = state.template
+    }
+    // 恢复用户调整过的尺寸（老数据缺该字段时保留默认 box）
+    const box = state.box
+    if (Array.isArray(box) && box.length === 2 && box.every((v) => typeof v === 'number')) {
+      this.setBox(box[0], box[1])
     }
     // 按存储的端口数量重建端口（构造时已有 1 个，先清干净再重建）
     const wanted = typeof state.inputCount === 'number' ? Math.max(1, Math.floor(state.inputCount)) : this.inputPorts.length

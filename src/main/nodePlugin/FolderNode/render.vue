@@ -139,8 +139,8 @@ onUnmounted(() => {
   height: 100%;
   position: relative;
   overflow: visible;
-  background: rgba(226, 235, 255, 0.35);
-  border: 1.5px dashed #7aa0ff;
+  background: #ffffff;
+  border: 1px solid #d5d9e0;
   border-radius: 10px;
 
   // 注意：不要把 grab 光标/startDrag 放这里——整体可拖会让「点子节点」也拖起文件夹
@@ -156,9 +156,9 @@ onUnmounted(() => {
     padding-left: 10px;
     padding-right: 8px;
     z-index: 2;
-    cursor: grab; // 只有这根横栏能拖着整个文件夹移动
-    background: rgba(122, 160, 255, 0.18); // 比主体背景略深，做出横条质感
-    border-bottom: 1px solid rgba(122, 160, 255, 0.45);
+    cursor: grab;
+    background: #f7f8fa;
+    border-bottom: 1px solid #e5e7eb;
     border-radius: 10px 10px 0 0;
 
     &:active {
@@ -169,7 +169,7 @@ onUnmounted(() => {
   &__bar__text {
     font-size: 12px;
     font-weight: 600;
-    color: #3d6ce0;
+    color: #1f2329;
   }
 
   // 帮助按钮沿用其余节点的灰底圆问号外观（margin-left:auto 推到横栏最右）

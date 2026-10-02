@@ -125,7 +125,7 @@ export class ImageCompressNode extends Node {
     this.addInput(this.imageInput)
     this.addOutput(this.imageOutput)
     // 内容区硬约束：头部标签（含格式下拉）+ 预览区 + 底部信息栏（体积信息行 + 按钮，纵向两行）
-    this.setBox(255, 265)
+    this.setBox(255, 260)
   }
 
   /** 拖入文件落点命中本节点时被调用；本节点不接收外部文件，返回 false */

@@ -172,6 +172,7 @@ onUnmounted(() => {
   border: 1px solid #d5d9e0;
   border-radius: 6px;
   font-size: 13px;
+  flex-grow: 1;
 
   &__row {
     display: flex;

@@ -65,7 +65,7 @@ type OutputPortValueClass = ConstructorParameters<typeof OutputPort>[1]
 export type CodeStatus = 'idle' | 'running' | 'done' | 'error'
 
 /** 折叠时的最小高度：header(36) + 配置按钮(28) + 结果区 + actions + padding ≈ 140 */
-const COLLAPSED_BASE_HEIGHT = 181
+const COLLAPSED_BASE_HEIGHT = 180
 /** 折叠时每个端口约占 24px 的最小高度（端口节点 + 竖向间距） */
 const PER_PORT_HEIGHT = 24
 

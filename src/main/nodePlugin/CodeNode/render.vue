@@ -483,7 +483,7 @@ function onNodeWheel(e: WheelEvent): void {
     align-items: center;
     justify-content: space-between;
     border-bottom: 1px dashed #d5d9e0;
-    padding: 4px 0;
+    height: 32px;
     cursor: grab;
     user-select: none;
 
@@ -562,7 +562,7 @@ function onNodeWheel(e: WheelEvent): void {
     align-items: center;
     justify-content: center;
     width: 100%;
-    height: 28px;
+    height: 30px;
     border-radius: 5px;
     background: #f0f4ff;
     border: 1px dashed #93c5fd;

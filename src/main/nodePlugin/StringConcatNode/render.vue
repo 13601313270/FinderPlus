@@ -5,6 +5,7 @@ import { StringConcatNode } from './node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
+import { viewport } from '@renderer/canvas/viewport'
 import { messages } from './i18n'
 import HelpDialog from '@renderer/components/HelpDialog.vue'
 import StringConcatHelpDialog from './StringConcatHelpDialog.vue'
@@ -89,6 +90,41 @@ function onTextareaWheel(e: WheelEvent): void {
   if ((scrollingUp && atTop) || (scrollingDown && atBottom)) return
   e.stopPropagation()
 }
+
+// —— resize handle 拖拽：右下角双向自由调整宽高，不锁比例 ——
+const MIN_WIDTH = 220
+const MAX_WIDTH = 800
+const MIN_HEIGHT = 180
+const MAX_HEIGHT = 600
+
+function onResizePointerDown(e: PointerEvent): void {
+  const n = concatNode.value
+  if (!n) return
+  e.stopPropagation()
+  e.preventDefault()
+
+  const startClientX = e.clientX
+  const startClientY = e.clientY
+  const [startWidth, startHeight] = n.box
+
+  function move(ev: PointerEvent): void {
+    const cur = concatNode.value
+    if (!cur) { end(); return }
+    const scale = viewport.scale || 1
+    const deltaW = (ev.clientX - startClientX) / scale
+    const deltaH = (ev.clientY - startClientY) / scale
+    const newWidth = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, Math.round(startWidth + deltaW)))
+    const newHeight = Math.min(MAX_HEIGHT, Math.max(MIN_HEIGHT, Math.round(startHeight + deltaH)))
+    cur.setBox(newWidth, newHeight)
+  }
+  function end(): void {
+    window.removeEventListener('pointermove', move)
+    window.removeEventListener('pointerup', end)
+  }
+
+  window.addEventListener('pointermove', move)
+  window.addEventListener('pointerup', end)
+}
 </script>
 
 <template>
@@ -139,6 +175,13 @@ function onTextareaWheel(e: WheelEvent): void {
     </div>
 
     <div class="node__result" :title="resultValue">{{ resultValue || t('resultPlaceholder') }}</div>
+
+    <div
+      v-if="concatNode"
+      class="node__resize-handle"
+      @pointerdown.stop.prevent="onResizePointerDown"
+      :title="t('resizeHint')"
+    />
   </div>
 
   <!-- 帮助弹窗 -->
@@ -161,6 +204,8 @@ function onTextareaWheel(e: WheelEvent): void {
   border: 1px solid #d5d9e0;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  position: relative; // resize handle 绝对定位锚点
+  overflow: hidden;
 
   &__header {
     display: flex;
@@ -270,7 +315,20 @@ function onTextareaWheel(e: WheelEvent): void {
     white-space: pre-wrap;
     word-break: break-all;
     overflow: hidden;
-    max-height: 56px;
+    flex-grow: 1;
+  }
+
+  &__resize-handle {
+    position: absolute;
+    right: 2px;
+    bottom: 2px;
+    width: 12px;
+    height: 12px;
+    cursor: nwse-resize;
+    background: transparent;
+    border-right: 2px solid #b0b7c3;
+    border-bottom: 2px solid #b0b7c3;
+    border-bottom-right-radius: 4px;
   }
 }
 </style>

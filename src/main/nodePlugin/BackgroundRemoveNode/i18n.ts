@@ -126,23 +126,6 @@ export const messages = {
     tr: 'Buraya görüntü düğümü bırakın · ya da sol bağlantı noktasına görüntü bağlayın',
     it: 'Trascina qui un nodo immagine · oppure collega un’immagine alla porta sinistra'
   },
-  done: {
-    zh: '背景已去除',
-    en: 'Background removed',
-    ja: '背景を除去しました',
-    ko: '배경이 제거됨',
-    es: 'Fondo eliminado',
-    ar: 'تمت إزالة الخلفية',
-    fr: 'Arrière-plan supprimé',
-    pt: 'Fundo removido',
-    ru: 'Фон удалён',
-    hi: 'पृष्ठभूमि हटा दी गई',
-    id: 'Latar belakang dihapus',
-    de: 'Hintergrund entfernt',
-    vi: 'Đã xóa nền',
-    tr: 'Arka plan kaldırıldı',
-    it: 'Sfondo rimosso'
-  },
   hint: {
     zh: '端口响应式 · 拖入一次性',
     en: 'Port: live · Drop: one-shot',

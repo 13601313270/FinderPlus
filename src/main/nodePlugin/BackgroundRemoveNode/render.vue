@@ -213,14 +213,7 @@ onUnmounted(() => {
 
     <!-- 底部信息栏 -->
     <div class="remove-bg-card__footer">
-      <span v-if="processing" class="remove-bg-card__hint remove-bg-card__hint--processing">
-        {{ progressText }}
-      </span>
-      <span v-else-if="resultUrl" class="remove-bg-card__hint remove-bg-card__hint--active">
-        {{ t('done') }}
-      </span>
-      <span v-else class="remove-bg-card__hint">{{ t('hint') }}</span>
-      <button v-if="resultUrl && !processing" class="remove-bg-card__create-btn" type="button"
+      <button :disabled="!resultUrl || processing" class="remove-bg-card__create-btn" type="button"
         @pointerdown.stop @click="handleCreateImgNode" :title="t('createNodeHint')">
         {{ t('createNode') }}
       </button>
@@ -368,10 +361,12 @@ onUnmounted(() => {
     width: 100%;
     display: flex;
     align-items: center;
+    justify-content: end;
     gap: 8px;
     padding: 6px 8px;
     border: 1px solid #e5e7eb;
     border-radius: 6px;
+    height: 39px;
     background: #fafbfc;
   }
 
@@ -394,9 +389,10 @@ onUnmounted(() => {
   &__create-btn {
     flex-shrink: 0;
     padding: 4px 10px;
-    border: 1px solid #ff8c42;
+    border: 1px solid #4a7cff;
+    width: 100%;
     border-radius: 4px;
-    background: #ff8c42;
+    background: #4a7cff;
     color: #fff;
     font-size: 11px;
     line-height: 1.3;
@@ -404,8 +400,12 @@ onUnmounted(() => {
     transition: background 0.15s ease, border-color 0.15s ease, transform 0.08s ease;
 
     &:hover {
-      background: #e67d3a;
-      border-color: #e67d3a;
+      background: #3d6ce0;
+      border-color: #3d6ce0;
+    }
+    &:disabled {
+      background: #99a0b2;
+      border-color: #a6b6de;
     }
 
     &:active {

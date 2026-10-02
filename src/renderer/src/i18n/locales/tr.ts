@@ -134,7 +134,7 @@ const tr: Language = {
       footer: 'Matching priority is top to bottom — specific types (txt, images) are matched first, anything else falls through to the any-file generic node.'
     },
     intoFolder: {
-      title: 'Dropping into a {folder} container',
+      title: 'Dropping into a folder container',
       body: 'If a {folder} or img-folder container node already exists on the canvas, drop the file inside its content area instead of the blank canvas. The file will not create a new top-level node — it will be "adopted" by the folder as a child node, with the correct file-node type determined automatically by its extension.'
     }
   }

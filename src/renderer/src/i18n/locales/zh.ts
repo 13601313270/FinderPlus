@@ -140,7 +140,7 @@ const zh: Language = {
       footer: '映射优先级从上到下：具体类型（txt、图片）先匹配，匹配不到的归入 any-file 通用节点。'
     },
     intoFolder: {
-      title: '拖入 {folder} 容器',
+      title: '拖入文件夹容器',
       body: '如果画布上已经有 {folder} 或 img-folder 容器节点，把文件拖入它的内容区域而不是空白画布——文件不会新建独立节点，而是会被文件夹"收养"为子节点，自动按后缀生成对应的文件节点类型。'
     }
   }

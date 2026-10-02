@@ -10,6 +10,7 @@ import { viewport } from '@renderer/canvas/viewport'
 export interface NodeLike {
   /** 节点唯一 id，App 结算时用它从 Scene 找回真实 Node 实例 */
   readonly id: string
+  readonly type: string
   readonly position: readonly [number, number]
   readonly box: readonly [number, number]
   setPosition(x: number, y: number): void

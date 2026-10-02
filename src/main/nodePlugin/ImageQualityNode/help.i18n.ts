@@ -338,7 +338,7 @@ export const helpMessages = {
     id: 'Klik "Buat node berkas gambar" di bawah untuk menjadikan hasil kompres sebagai node <code>img-file</code>, memudahkan melanjutkan rangkaian hilir.',
     de: 'Klicken Sie unten auf „Bilddatei-Knoten erzeugen“, um das komprimierte Ergebnis in einen <code>img-file</code>-Knoten umzuwandeln und die weitere Verkettung nachgelagert fortzusetzen.',
     vi: 'Nhấp vào "Tạo nút tệp ảnh" ở dưới cùng để biến kết quả nén thành một nút <code>img-file</code>, thuận tiện nối tiếp hạ nguồn.',
-    tr: 'Sıkıştırılmış sonucu bir <code>img-file</code> düğümüne dönüştürmek ve aşağı akışı sürdürmek için alttaki "Görüntü dosyası düğümü oluştur" seçeneğine tıklayın.',
+    tr: 'Sıkıştırılmış sonucu bir <code>img-file</code> düğümüne dönüştürmek ve aşağı akışı sürdürmek için alttaki "Görüntü düğümü oluştur" seçeneğine tıklayın.',
     it: 'Fai clic su "Genera nodo file immagine" in basso per trasformare il risultato compresso in un nodo <code>img-file</code>, utile per proseguire a valle.'
   },
 

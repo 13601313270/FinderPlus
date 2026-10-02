@@ -250,7 +250,7 @@ export const helpMessages = {
     id: 'Klik <b>Buat node berkas gambar</b> untuk menulis hasil ke berkas dan membuat node berkas gambar di dekat node ini',
     de: 'Klicken Sie auf <b>Bilddatei-Knoten erzeugen</b>, um das Ergebnis in eine Datei zu schreiben und einen Bilddatei-Knoten in der Nähe dieses Knotens zu erstellen',
     vi: 'Nhấn <b>Tạo nút tệp ảnh</b> để ghi kết quả ra tệp và tạo một nút tệp ảnh gần nút này',
-    tr: '<b>Görüntü dosyası düğümü oluştur</b> seçeneğine tıklamak sonucu bir dosyaya yazar ve bu düğümün yakınında bir görüntü dosyası düğümü oluşturur',
+    tr: '<b>Görüntü düğümü oluştur</b> seçeneğine tıklamak sonucu bir dosyaya yazar ve bu düğümün yakınında bir görüntü dosyası düğümü oluşturur',
     it: 'Fai clic su <b>Crea nodo file immagine</b> per scrivere il risultato in un file e creare un nodo file immagine vicino a questo nodo'
   },
 

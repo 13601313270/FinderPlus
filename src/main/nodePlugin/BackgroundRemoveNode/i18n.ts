@@ -174,7 +174,7 @@ export const messages = {
     id: 'Buat node berkas gambar',
     de: 'Bilddatei-Knoten erzeugen',
     vi: 'Tạo nút tệp ảnh',
-    tr: 'Görüntü dosyası düğümü oluştur',
+    tr: 'Görüntü düğümü oluştur',
     it: 'Crea nodo file immagine'
   },
   createNodeHint: {

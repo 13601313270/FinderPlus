@@ -459,7 +459,7 @@ export const helpMessages = {
     id: 'Tombol “Buat node berkas gambar” di bawah mengubah hasil gabungan saat ini menjadi node <code>img-file</code>, memudahkan melanjutkan ke hilir',
     de: 'Die Schaltfläche „Bilddatei-Knoten erstellen“ unten wandelt das aktuelle zusammengesetzte Ergebnis in einen <code>img-file</code>-Knoten um und erleichtert das Weiterverbinden nachgelagert',
     vi: 'Nút “Tạo nút tệp ảnh” ở dưới biến kết quả tổng hợp hiện tại thành một nút <code>img-file</code>, thuận tiện nối tiếp hạ nguồn',
-    tr: 'Alttaki “Görüntü dosyası düğümü oluştur” düğmesi geçerli birleşik sonucu bir <code>img-file</code> düğümüne dönüştürür ve aşağı akışa bağlanmayı kolaylaştırır',
+    tr: 'Alttaki “Görüntü düğümü oluştur” düğmesi geçerli birleşik sonucu bir <code>img-file</code> düğümüne dönüştürür ve aşağı akışa bağlanmayı kolaylaştırır',
     it: 'Il pulsante «Crea nodo file immagine» in basso trasforma il risultato composito corrente in un nodo <code>img-file</code>, facilitando il collegamento a valle'
   },
   outputsLi3: {

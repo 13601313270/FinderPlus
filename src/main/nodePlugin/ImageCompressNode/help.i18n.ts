@@ -374,7 +374,7 @@ export const helpMessages = {
     id: 'Klik “Buat node berkas gambar” untuk menulis hasil kompres ke disk dan menambahkan node berkas gambar baru di kanvas',
     de: 'Klicken Sie auf „Bilddatei-Knoten erzeugen“, um das komprimierte Ergebnis auf die Festplatte zu schreiben und einen neuen Bilddatei-Knoten auf der Leinwand hinzuzufügen',
     vi: 'Nhấn “Tạo nút tệp ảnh” để ghi kết quả nén xuống đĩa và thêm một nút tệp ảnh mới trên khung vẽ',
-    tr: 'Sıkıştırılmış sonucu diske yazmak ve tuvale yeni bir görüntü dosyası düğümü eklemek için “Görüntü dosyası düğümü oluştur”a tıklayın',
+    tr: 'Sıkıştırılmış sonucu diske yazmak ve tuvale yeni bir görüntü dosyası düğümü eklemek için “Görüntü düğümü oluştur”a tıklayın',
     it: 'Fai clic su “Crea nodo file immagine” per salvare il risultato compresso su disco e aggiungere un nuovo nodo file immagine sulla tela'
   },
   notesLi3: {

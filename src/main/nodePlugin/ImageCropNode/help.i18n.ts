@@ -267,7 +267,7 @@ export const helpMessages = {
     id: 'Klik <b>Buat node berkas gambar</b> untuk memangkas, menulis berkas, dan membuat node gambar di bawah node ini',
     de: 'Klicke auf <b>Bilddatei-Knoten erstellen</b>, um zuzuschneiden, die Datei zu schreiben und unter diesem Knoten einen Bildknoten anzulegen',
     vi: 'Nhấn <b>Tạo nút tệp ảnh</b> để cắt, ghi tệp và tạo một nút ảnh bên dưới nút này',
-    tr: 'Kırpmak, dosyayı yazmak ve bu düğümün altında bir görüntü düğümü oluşturmak için <b>Görüntü dosyası düğümü oluştur</b> seçeneğine tıkla',
+    tr: 'Kırpmak, dosyayı yazmak ve bu düğümün altında bir görüntü düğümü oluşturmak için <b>Görüntü düğümü oluştur</b> seçeneğine tıkla',
     it: 'Fai clic su <b>Crea nodo file immagine</b> per ritagliare, scrivere il file e creare un nodo immagine sotto questo'
   },
 

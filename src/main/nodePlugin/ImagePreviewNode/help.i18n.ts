@@ -286,7 +286,7 @@ export const helpMessages = {
     id: 'Mengklik <b>Buat node berkas gambar</b> menambahkan node berkas gambar di samping node ini dan menulis gambar ke folder kanvas',
     de: 'Ein Klick auf <b>Bilddatei-Knoten erstellen</b> fügt neben diesem einen Bilddatei-Knoten hinzu und schreibt das Bild in den Ordner der Zeichenfläche',
     vi: 'Nhấp vào <b>Tạo nút tệp ảnh</b> sẽ thêm một nút tệp ảnh bên cạnh nút này và ghi ảnh vào thư mục canvas',
-    tr: '<b>Görüntü dosyası düğümü oluştur</b> seçeneğine tıklamak, bunun yanına bir görüntü dosyası düğümü ekler ve görüntüyü tuval klasörüne yazar',
+    tr: '<b>Görüntü düğümü oluştur</b> seçeneğine tıklamak, bunun yanına bir görüntü dosyası düğümü ekler ve görüntüyü tuval klasörüne yazar',
     it: 'Facendo clic su <b>Crea nodo file immagine</b> si aggiunge un nodo file immagine accanto a questo e si scrive l’immagine nella cartella della tela'
   },
   notesLi2: {

@@ -3,45 +3,86 @@ import type { LocalizedText } from '../../../shared/language'
 /**
  * ImageCompress 节点卡片内的全部文案。
  *
- * 放在节点自己的文件夹里，跟随节点一起搬运；只配了 zh / en，其他语言由
- * useLocalizedMessages → resolveLocalizedText 兜底到英语。
+ * 放在节点自己的文件夹里，跟随节点一起搬运；已覆盖 LANGUAGE_CODES 的全部语言，
+ * 若将来新增语言码未补齐，仍由 useLocalizedMessages → resolveLocalizedText 兜底到英语。
  */
 export const messages = {
   dragHint: {
     zh: '拖入图片节点压缩一次 · 或左侧端口接图片响应式压缩',
-    en: 'Drop an image node to compress once · or connect an image to the left port for live compression'
+    en: 'Drop an image node to compress once · or connect an image to the left port for live compression',
+    ja: '画像ノードをドロップで1回圧縮 · または左ポートに画像を接続してリアルタイム圧縮',
+    ko: '이미지 노드를 드롭해 한 번 압축 · 또는 왼쪽 포트에 이미지를 연결해 실시간 압축',
+    es: 'Suelta un nodo de imagen para comprimir una vez · o conecta una imagen al puerto izquierdo para compresión en vivo',
+    ar: 'أفلت عقدة صورة للضغط مرة واحدة · أو صِل صورة بالمنفذ الأيسر للضغط الفوري',
+    fr: 'Déposez un nœud image pour compresser une fois · ou connectez une image au port gauche pour une compression en direct',
+    pt: 'Solte um nó de imagem para comprimir uma vez · ou conecte uma imagem à porta esquerda para compressão ao vivo',
+    ru: 'Перетащите узел изображения для однократного сжатия · или подключите изображение к левому порту для сжатия в реальном времени'
   },
   formatHint: {
     zh: '选择导出格式（改变后按新格式重新压缩）',
-    en: 'Choose export format (re-compresses with the new format)'
+    en: 'Choose export format (re-compresses with the new format)',
+    ja: '出力形式を選択（変更すると新しい形式で再圧縮）',
+    ko: '내보내기 형식 선택 (변경 시 새 형식으로 다시 압축)',
+    es: 'Elige el formato de exportación (vuelve a comprimir con el nuevo formato)',
+    ar: 'اختر صيغة التصدير (يُعاد الضغط بالصيغة الجديدة)',
+    fr: 'Choisissez le format d’export (recompresse avec le nouveau format)',
+    pt: 'Escolha o formato de exportação (recomprime com o novo formato)',
+    ru: 'Выберите формат экспорта (повторное сжатие в новом формате)'
   },
   resultAlt: {
     zh: '压缩结果预览',
-    en: 'Compressed result preview'
+    en: 'Compressed result preview',
+    ja: '圧縮結果のプレビュー',
+    ko: '압축 결과 미리보기',
+    es: 'Vista previa del resultado comprimido',
+    ar: 'معاينة النتيجة المضغوطة',
+    fr: 'Aperçu du résultat compressé',
+    pt: 'Prévia do resultado comprimido',
+    ru: 'Предпросмотр сжатого результата'
   },
   placeholder: {
     zh: '拖图片节点进来 · 或左侧端口接图片（≤ {size}px）',
-    en: 'Drop an image node here · or connect an image to the left port (≤ {size}px)'
-  },
-  source: {
-    zh: '原始',
-    en: 'Original'
-  },
-  compressed: {
-    zh: '压缩后',
-    en: 'Compressed'
+    en: 'Drop an image node here · or connect an image to the left port (≤ {size}px)',
+    ja: '画像ノードをここにドロップ · または左ポートに画像を接続（≤ {size}px）',
+    ko: '이미지 노드를 여기에 드롭 · 또는 왼쪽 포트에 이미지 연결 (≤ {size}px)',
+    es: 'Suelta un nodo de imagen aquí · o conecta una imagen al puerto izquierdo (≤ {size}px)',
+    ar: 'أفلت عقدة صورة هنا · أو صِل صورة بالمنفذ الأيسر (≤ {size}px)',
+    fr: 'Déposez un nœud image ici · ou connectez une image au port gauche (≤ {size}px)',
+    pt: 'Solte um nó de imagem aqui · ou conecte uma imagem à porta esquerda (≤ {size}px)',
+    ru: 'Перетащите узел изображения сюда · или подключите изображение к левому порту (≤ {size}px)'
   },
   createNode: {
     zh: '生成图片文件节点',
-    en: 'Create image file node'
+    en: 'Create image file node',
+    ja: '画像ファイルノードを生成',
+    ko: '이미지 파일 노드 생성',
+    es: 'Crear nodo de imagen',
+    ar: 'إنشاء عقدة ملف صورة',
+    fr: 'Créer un nœud image',
+    pt: 'Criar nó de imagem',
+    ru: 'Создать узел изображения'
   },
   createNodeHint: {
     zh: '以压缩结果为基础新建一个图片文件节点',
-    en: 'Create a new image file node from the compressed result'
+    en: 'Create a new image file node from the compressed result',
+    ja: '圧縮結果を基に新しい画像ファイルノードを作成',
+    ko: '압축 결과를 기반으로 새 이미지 파일 노드 생성',
+    es: 'Crea un nuevo nodo de archivo de imagen a partir del resultado comprimido',
+    ar: 'إنشاء عقدة ملف صورة جديدة بناءً على النتيجة المضغوطة',
+    fr: 'Créer un nouveau nœud de fichier image à partir du résultat compressé',
+    pt: 'Criar um novo nó de arquivo de imagem a partir do resultado comprimido',
+    ru: 'Создать новый узел файла изображения на основе сжатого результата'
   },
   hint: {
     zh: '端口响应式 · 拖入一次性',
-    en: 'Port: live · Drop: one-shot'
+    en: 'Port: live · Drop: one-shot',
+    ja: 'ポートはリアルタイム · ドロップは1回のみ',
+    ko: '포트는 실시간 · 드롭은 1회',
+    es: 'Puerto: en vivo · Soltar: una vez',
+    ar: 'المنفذ: فوري · الإفلات: مرة واحدة',
+    fr: 'Port : en direct · Dépôt : unique',
+    pt: 'Porta: ao vivo · Soltar: uma vez',
+    ru: 'Порт: в реальном времени · Перетаскивание: однократно'
   },
   helpTitle: {
     zh: '使用说明',

@@ -264,20 +264,10 @@ onUnmounted(() => {
 
 <template>
   <div class="compress-card" @pointerdown="startDrag" :title="t('dragHint')">
-    <!-- 头部类型标签 + 导出格式选择（与图片预览节点区分） -->
+    <!-- 头部类型标签 + 帮助入口（导出格式选择移到按钮左侧） -->
     <div class="compress-card__header">
       <span class="compress-card__title">{{ nodeTitle }}</span>
       <div class="compress-card__header-actions">
-        <select
-          class="compress-card__format"
-          :value="exportFormat"
-          :title="t('formatHint')"
-          @pointerdown.stop
-          @change="onFormatChange"
-        >
-          <option value="jpg">jpg</option>
-          <option value="png">png</option>
-        </select>
         <button
           class="compress-card__help"
           type="button"
@@ -303,16 +293,13 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <!-- 底部信息栏：原始/压缩后体积 + 减少百分比，按钮置于其下（空间有限纵向排布） -->
+    <!-- 底部信息栏：原始 → 压缩后 体积 + 减少百分比，按钮置于其下（空间有限纵向排布） -->
     <div class="compress-card__footer">
       <template v-if="resultUrl">
         <div class="compress-card__stats">
           <span class="compress-card__stat">
-            <span class="compress-card__stat-label">{{ t('source') }}</span>
             <span class="compress-card__stat-value">{{ sourceSizeText }}</span>
-          </span>
-          <span class="compress-card__stat">
-            <span class="compress-card__stat-label">{{ t('compressed') }}</span>
+            <span class="compress-card__stat-arrow">→</span>
             <span class="compress-card__stat-value">{{ compressedSizeText }}</span>
           </span>
           <span
@@ -320,10 +307,22 @@ onUnmounted(() => {
             :class="{ 'compress-card__reduce--up': reducePercent !== null && reducePercent < 0 }"
           >{{ reduceText }}</span>
         </div>
-        <button class="compress-card__create-btn" type="button" @pointerdown.stop
-          @click="handleCreateImgNode" :title="t('createNodeHint')">
-          {{ t('createNode') }}
-        </button>
+        <div class="compress-card__action-row">
+          <select
+            class="compress-card__format"
+            :value="exportFormat"
+            :title="t('formatHint')"
+            @pointerdown.stop
+            @change="onFormatChange"
+          >
+            <option value="jpg">jpg</option>
+            <option value="png">png</option>
+          </select>
+          <button class="compress-card__create-btn" type="button" @pointerdown.stop
+            @click="handleCreateImgNode" :title="t('createNodeHint')">
+            {{ t('createNode') }}
+          </button>
+        </div>
       </template>
       <span v-else class="compress-card__hint">{{ t('hint') }}</span>
     </div>
@@ -346,7 +345,8 @@ onUnmounted(() => {
   flex-direction: column;
   align-items: stretch;
   gap: 6px;
-  padding: 10px;
+  padding: 8px;
+  padding-top: 0;
   background: @color-surface;
   border: 1px solid #d5d9e0;
   border-radius: 8px;
@@ -355,17 +355,16 @@ onUnmounted(() => {
 
   &__header {
     flex-shrink: 0; // 定高不参与压缩，保证 jpg/png 下拉完整展示
-    height: 26px;
+    // height: 26px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 6px;
-    padding-bottom: 2px;
+    padding: 4px 0;
     border-bottom: 1px dashed #d5d9e0;
     overflow: hidden;
   }
 
-  // 头部右侧操作区：导出格式下拉 + 帮助按钮
+  // 头部右侧操作区：帮助按钮
   &__header-actions {
     display: flex;
     align-items: center;
@@ -401,7 +400,7 @@ onUnmounted(() => {
     min-width: 0;
     font-size: 11px;
     font-weight: 600;
-    color: #4a7cff;
+    color: #8a9099;
     letter-spacing: 0.5px;
     overflow: hidden;
     white-space: nowrap;
@@ -418,6 +417,7 @@ onUnmounted(() => {
     border: 1px solid #b9c8ff;
     border-radius: 4px;
     padding: 2px 4px;
+    height: 26px;
     cursor: pointer;
     outline: none;
 
@@ -486,7 +486,7 @@ onUnmounted(() => {
     background: #fafbfc;
   }
 
-  // 体积信息行：原始 / 压缩后 / 减少百分比
+  // 体积信息行：原始 → 压缩后 + 减少百分比
   &__stats {
     display: flex;
     align-items: center;
@@ -504,8 +504,9 @@ onUnmounted(() => {
     white-space: nowrap;
   }
 
-  &__stat-label {
-    color: #9aa1ad;
+  // 体积箭头：原始 → 压缩后 之间的连接符
+  &__stat-arrow {
+    color: #b3b9c4;
   }
 
   &__stat-value {
@@ -537,8 +538,16 @@ onUnmounted(() => {
     line-height: 1.4;
   }
 
+  // 按钮行：导出格式下拉在左，生成按钮填满剩余宽度
+  &__action-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
   &__create-btn {
-    width: 100%;
+    flex: 1;
+    min-width: 0;
     padding: 4px 10px;
     border: 1px solid #4a7cff;
     border-radius: 4px;
@@ -548,6 +557,7 @@ onUnmounted(() => {
     line-height: 1.3;
     cursor: pointer;
     transition: background 0.15s ease, border-color 0.15s ease, transform 0.08s ease;
+    height: 26px;
 
     &:hover {
       background: #3d6ce0;

@@ -472,6 +472,7 @@ function onNodeWheel(e: WheelEvent): void {
   flex-direction: column;
   gap: 8px;
   padding: 10px;
+  padding-top: 0;
   background: @color-surface;
   border: 1px solid #d5d9e0;
   border-radius: 8px;
@@ -482,7 +483,7 @@ function onNodeWheel(e: WheelEvent): void {
     align-items: center;
     justify-content: space-between;
     border-bottom: 1px dashed #d5d9e0;
-    padding-bottom: 4px;
+    padding: 4px 0;
     cursor: grab;
     user-select: none;
 

@@ -271,15 +271,10 @@ onUnmounted(() => {
 
 <template>
   <div class="quality-card" @pointerdown="startDrag" :title="t('dragHint')">
-    <!-- 头部类型标签 + 导出格式选择 + 帮助 -->
+    <!-- 头部类型标签 + 帮助入口（导出格式选择移到按钮左侧） -->
     <div class="quality-card__header">
       <span class="quality-card__title">{{ nodeTitle }}</span>
       <div class="quality-card__header-actions">
-        <select class="quality-card__format" :value="exportFormat" :title="t('formatHint')"
-          @pointerdown.stop @change="onFormatChange">
-          <option value="jpeg">jpeg</option>
-          <option value="png">png</option>
-        </select>
         <button class="quality-card__help" type="button" :title="t('helpTitle')" @pointerdown.stop @click.stop="showHelp = true">?</button>
       </div>
     </div>
@@ -309,18 +304,25 @@ onUnmounted(() => {
         :title="t('sliderHint')" @pointerdown.stop @input="onSliderInput" @change="onSliderChange" />
     </div>
 
-    <!-- 底部信息栏：体积/压缩比 + 以压缩结果新建 ImgFileNode -->
+    <!-- 底部信息栏：体积/压缩比 + 导出格式 + 以压缩结果新建 ImgFileNode -->
     <div class="quality-card__footer">
-      <span v-if="errorText" class="quality-card__hint quality-card__hint--error">{{ errorText }}</span>
-      <span v-else-if="resultUrl" class="quality-card__hint quality-card__hint--active">
+      <div v-if="errorText" class="quality-card__hint quality-card__hint--error">{{ errorText }}</div>
+      <div v-else-if="resultUrl" class="quality-card__hint quality-card__hint--active">
         {{ formatSize(originalSize) }} → {{ formatSize(compressedSize) }}
         <b class="quality-card__ratio">{{ ratioText }}</b>
-      </span>
+      </div>
       <span v-else class="quality-card__hint">{{ t('hint') }}</span>
-      <button v-if="resultUrl" class="quality-card__create-btn" type="button" @pointerdown.stop
-        @click="handleCreateImgNode" :title="t('createNodeHint')">
-        {{ t('createNode') }}
-      </button>
+      <div v-if="resultUrl" class="quality-card__action-row">
+        <select class="quality-card__format" :value="exportFormat" :title="t('formatHint')"
+          @pointerdown.stop @change="onFormatChange">
+          <option value="jpeg">jpeg</option>
+          <option value="png">png</option>
+        </select>
+        <button class="quality-card__create-btn" type="button" @pointerdown.stop
+          @click="handleCreateImgNode" :title="t('createNodeHint')">
+          {{ t('createNode') }}
+        </button>
+      </div>
     </div>
   </div>
 
@@ -341,7 +343,8 @@ onUnmounted(() => {
   flex-direction: column;
   align-items: stretch;
   gap: 6px;
-  padding: 10px;
+  padding: 8px;
+  padding-top: 0;
   background: @color-surface;
   border: 1px solid #d5d9e0;
   border-radius: 8px;
@@ -350,12 +353,10 @@ onUnmounted(() => {
 
   &__header {
     flex-shrink: 0; // 定高不参与压缩，保证 jpeg/png 下拉完整展示
-    height: 26px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 6px;
-    padding-bottom: 2px;
+    padding: 4px 0;
     border-bottom: 1px dashed #d5d9e0;
     overflow: hidden;
   }
@@ -365,14 +366,14 @@ onUnmounted(() => {
     min-width: 0;
     font-size: 11px;
     font-weight: 600;
-    color: #4a7cff;
+    color: #8a9099;
     letter-spacing: 0.5px;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
   }
 
-  // 头部右侧：导出格式下拉 + 帮助按钮
+  // 头部右侧：帮助按钮
   &__header-actions {
     display: flex;
     align-items: center;
@@ -407,6 +408,7 @@ onUnmounted(() => {
   // 导出格式下拉：贴合卡片风格的小尺寸 select
   &__format {
     flex-shrink: 0;
+    height: 26px;
     font-size: 11px;
     line-height: 1.2;
     color: #4a7cff;
@@ -499,11 +501,12 @@ onUnmounted(() => {
     accent-color: #4a7cff;
   }
 
+  // 纵向排布：体积信息行在上，格式下拉 + 生成按钮在下（节点宽度有限，横排会挤）
   &__footer {
     width: 100%;
     display: flex;
-    align-items: center;
-    gap: 8px;
+    flex-direction: column;
+    gap: 6px;
     padding: 6px 8px;
     border: 1px solid #e5e7eb;
     border-radius: 6px;
@@ -511,7 +514,7 @@ onUnmounted(() => {
   }
 
   &__hint {
-    flex: 1;
+    width: 100%;
     font-size: 11px;
     color: #7a828f;
     text-align: left;
@@ -519,6 +522,10 @@ onUnmounted(() => {
 
     &--active {
       color: #2d6a3f;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
     }
 
     &--error {
@@ -526,12 +533,29 @@ onUnmounted(() => {
     }
   }
 
+  // 按钮行：导出格式下拉在左，生成按钮填满剩余宽度
+  &__action-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
   &__ratio {
     color: #1f7a4d;
+    flex-shrink: 0;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.3;
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: #2d6a3f;
+    background: #e7f5ec;
   }
 
   &__create-btn {
-    flex-shrink: 0;
+    flex: 1;
+    height: 26px;
+    min-width: 0;
     padding: 4px 10px;
     border: 1px solid #4a7cff;
     border-radius: 4px;

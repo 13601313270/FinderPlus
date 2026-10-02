@@ -83,12 +83,13 @@ const { startDrag } = useNodePosition(() => inputNode.value)
 
 <template>
   <div class="node">
-    <div class="node__header">
-      <span class="node__handle" :title="t('dragHint')" @pointerdown="startDrag">{{ nodeTitle }}</span>
+    <div class="node__header" @pointerdown="startDrag">
+      <span class="node__handle" :title="t('dragHint')">{{ nodeTitle }}</span>
       <button
         class="node__help"
         type="button"
         :title="t('helpTitle')"
+        @pointerdown.stop
         @click.stop="showHelp = true"
       >?</button>
     </div>
@@ -121,6 +122,7 @@ const { startDrag } = useNodePosition(() => inputNode.value)
   flex-direction: column;
   gap: 6px;
   padding: 8px;
+  padding-top: 0;
   background: @color-surface;
   border: 1px solid #d5d9e0;
   border-radius: 8px;
@@ -130,8 +132,8 @@ const { startDrag } = useNodePosition(() => inputNode.value)
     position: relative;
     display: flex;
     align-items: center;
-    justify-content: center;
-    padding: 2px 22px;
+    justify-content: space-between;
+    padding: 4px 0;
     border-bottom: 1px dashed #d5d9e0;
     flex-shrink: 0;
   }
@@ -150,10 +152,6 @@ const { startDrag } = useNodePosition(() => inputNode.value)
 
   &__help {
     all: unset;
-    position: absolute;
-    right: 2px;
-    top: 50%;
-    transform: translateY(-50%);
     cursor: pointer;
     width: 18px;
     height: 18px;

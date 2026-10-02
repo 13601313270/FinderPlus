@@ -290,15 +290,11 @@ onUnmounted(() => {
 
   &__header {
     flex-shrink: 1;
-    min-height: 18px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 6px;
-    margin: 6px 6px 0 6px;
-    padding-bottom: 2px;
+    padding: 4px;
     border-bottom: 1px dashed #d5d9e0;
-    cursor: grab;
 
     &:active {
       cursor: grabbing;
@@ -308,7 +304,7 @@ onUnmounted(() => {
   &__header-title {
     font-size: 11px;
     font-weight: 600;
-    color: #4a7cff;
+    color: #8a9099;
     letter-spacing: 0.5px;
     overflow: hidden;
     white-space: nowrap;

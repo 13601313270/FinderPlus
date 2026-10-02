@@ -582,7 +582,8 @@ onUnmounted(() => {
   flex-direction: column;
   align-items: stretch;
   gap: 6px;
-  padding: 10px;
+  padding: 8px;
+  padding-top: 0;
   background: @color-surface;
   border: 1px solid #d5d9e0;
   border-radius: 8px;
@@ -596,7 +597,7 @@ onUnmounted(() => {
     align-items: center;
     justify-content: space-between;
     gap: 6px;
-    padding-bottom: 2px;
+    padding: 4px 0;
     border-bottom: 1px dashed #d5d9e0;
   }
 
@@ -606,7 +607,7 @@ onUnmounted(() => {
     text-overflow: ellipsis;
     font-size: 11px;
     font-weight: 600;
-    color: #4a7cff;
+    color: #8a9099;
     letter-spacing: 0.5px;
   }
 

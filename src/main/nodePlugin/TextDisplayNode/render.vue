@@ -111,9 +111,9 @@ function onResizePointerDown(e: PointerEvent): void {
 </script>
 
 <template>
-  <div class="node" @wheel="onNodeWheel">
+  <div class="node" @pointerdown="startDrag">
     <div class="node__header">
-      <span class="node__handle" :title="t('dragHint')" @pointerdown="startDrag">{{ nodeTitle }}</span>
+      <span class="node__handle" :title="t('dragHint')">{{ nodeTitle }}</span>
       <button
         class="node__help"
         type="button"
@@ -121,7 +121,7 @@ function onResizePointerDown(e: PointerEvent): void {
         @click.stop="showHelp = true"
       >?</button>
     </div>
-    <div class="render-display" :class="{ 'render-display--empty': !text }">
+    <div class="render-display" @wheel="onNodeWheel" :class="{ 'render-display--empty': !text }">
       {{ text || (displayNode ? t('empty') : t('nodeMissing')) }}
     </div>
     <div
@@ -149,6 +149,7 @@ function onResizePointerDown(e: PointerEvent): void {
   flex-direction: column;
   gap: 6px;
   padding: 8px;
+  padding-top: 0;
   background: @color-surface;
   border: 1px solid #d5d9e0;
   border-radius: 8px;
@@ -158,8 +159,8 @@ function onResizePointerDown(e: PointerEvent): void {
     position: relative;
     display: flex;
     align-items: center;
-    justify-content: center;
-    padding: 2px 22px;
+    justify-content: space-between;
+    padding: 6px 0;
     border-bottom: 1px dashed #d5d9e0;
     flex-shrink: 0;
   }
@@ -178,10 +179,6 @@ function onResizePointerDown(e: PointerEvent): void {
 
   &__help {
     all: unset;
-    position: absolute;
-    right: 2px;
-    top: 50%;
-    transform: translateY(-50%);
     cursor: pointer;
     width: 18px;
     height: 18px;

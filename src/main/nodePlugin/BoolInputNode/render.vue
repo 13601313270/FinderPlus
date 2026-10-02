@@ -106,6 +106,7 @@ function onToggle(): void {
   flex-direction: column;
   gap: 6px;
   padding: 8px;
+  padding-top: 0;
   background: @color-surface;
   border: 1px solid #d5d9e0;
   border-radius: 8px;
@@ -115,8 +116,8 @@ function onToggle(): void {
     position: relative;
     display: flex;
     align-items: center;
-    justify-content: center;
-    padding-bottom: 4px;
+    justify-content: space-between;
+    padding: 4px 0;
     border-bottom: 1px dashed #d5d9e0;
     flex-shrink: 0;
   }
@@ -135,10 +136,6 @@ function onToggle(): void {
 
   &__help {
     all: unset;
-    position: absolute;
-    right: 0;
-    top: 8px;
-    transform: translateY(-50%);
     cursor: pointer;
     width: 18px;
     height: 18px;

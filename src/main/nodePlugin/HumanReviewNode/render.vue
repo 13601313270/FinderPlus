@@ -116,6 +116,7 @@ function onReject(): void {
   display: flex;
   flex-direction: column;
   padding: 8px;
+  padding-top: 0;
   background: @color-surface;
   border: 1px solid #d5d9e0;
   border-radius: 8px;
@@ -127,7 +128,7 @@ function onReject(): void {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 2px 22px;
+    padding: 6px 22px;
     border-bottom: 1px dashed #d5d9e0;
     flex-shrink: 0;
   }
@@ -177,6 +178,7 @@ function onReject(): void {
   flex-direction: column;
   gap: 2px;
   padding: 6px 8px;
+  margin-top: 4px;
   border: 1px solid #e5e8ee;
   border-radius: 6px;
   margin-bottom: 8px;

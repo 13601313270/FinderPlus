@@ -314,8 +314,8 @@ function onSave(): void {
   overflow: auto;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 10px;
+  padding: 8px;
+  padding-top: 0;
   background: @color-surface;
   border: 1px solid #d5d9e0;
   border-radius: 8px;
@@ -326,9 +326,10 @@ function onSave(): void {
     align-items: center;
     justify-content: space-between;
     border-bottom: 1px dashed #d5d9e0;
-    padding-bottom: 4px;
+    padding: 4px 0;
     cursor: grab;
     user-select: none;
+    margin-bottom: 4px;
 
     &:active {
       cursor: grabbing;
@@ -374,8 +375,8 @@ function onSave(): void {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 22px;
-    height: 22px;
+    width: 20px;
+    height: 20px;
     border-radius: 4px;
     color: #6b7280;
     transition: color 0.15s, background 0.15s;
@@ -401,6 +402,7 @@ function onSave(): void {
     height: 34px;
     font-size: 13px;
     font-weight: 500;
+    margin-top: 4px;
     color: #fff;
     background: #3b82f6;
     border-radius: 6px;
@@ -434,7 +436,7 @@ function onSave(): void {
   color: #1f2937;
   border: 1px solid transparent;
   border-radius: 6px;
-  background: #f8fafc;
+  background: #f5f7f9;
   outline: none;
   transition: border-color 0.15s, background 0.15s;
 
@@ -461,6 +463,7 @@ function onSave(): void {
   gap: 8px;
   flex-shrink: 0;
   font-size: 11px;
+  margin-top: 4px;
   color: @color-text-weak;
 
   &__count {
@@ -510,6 +513,7 @@ function onSave(): void {
   border-radius: 6px;
   background: #f8fafc;
   font-size: 12px;
+  margin-top: 4px;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   line-height: 1.5;
   white-space: pre-wrap;
@@ -533,6 +537,7 @@ function onSave(): void {
   border: 1px solid #d5d9e0;
   border-radius: 6px;
   font-size: 12px;
+  margin-top: 4px;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   white-space: pre-wrap;
   word-break: break-all;

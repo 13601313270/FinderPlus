@@ -20,7 +20,10 @@ const fr: Language = {
     importSuccess: 'Import completed successfully. Please restart the app to reload your canvas.',
     exportKeyHint: 'API keys are not included in the export for security reasons. You will need to re-enter them on the new computer.',
     importConfirmTitle: 'Import will replace all data',
-    importConfirmBody: 'Importing will overwrite your current canvas, files and settings with the backup. This cannot be undone. Continue?'
+    importConfirmBody: 'Importing will overwrite your current canvas, files and settings with the backup. This cannot be undone. Continue?',
+    onboardingSection: 'Onboarding tutorial',
+    onboardingHint: 'Watch the Finder+ quick start again: drag in a file and connect nodes.',
+    onboardingRestart: 'Show tutorial again'
   },
   helpCenter: {
     title: 'Centre d\'aide',

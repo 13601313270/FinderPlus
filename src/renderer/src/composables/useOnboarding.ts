@@ -58,6 +58,16 @@ function skip(): void {
   markSeen()
 }
 
+/**
+ * 复位并立刻重新弹出引导。
+ * 用于设置面板的「重新观看新手引导」按钮——清除 seen 标记，重置 step，立即激活。
+ */
+function restart(): void {
+  localStorage.removeItem(STORAGE_KEY)
+  step.value = 0
+  active.value = true
+}
+
 export function useOnboarding() {
-  return { active, step, start, nextStep, complete, skip }
+  return { active, step, start, nextStep, complete, skip, restart }
 }

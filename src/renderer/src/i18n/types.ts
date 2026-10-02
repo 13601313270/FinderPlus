@@ -36,6 +36,10 @@ export type Language = {
     /** 导入前的警告弹窗：会覆盖现有数据 */
     importConfirmTitle: string
     importConfirmBody: string
+    /** 新手引导 section */
+    onboardingSection: string
+    onboardingHint: string
+    onboardingRestart: string
   }
   helpCenter: {
     title: string

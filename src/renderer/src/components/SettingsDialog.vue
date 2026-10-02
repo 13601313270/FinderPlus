@@ -6,6 +6,7 @@ import {
   useLanguageSettings,
   type LanguageCode
 } from '@renderer/composables/useLanguageSettings'
+import { useOnboarding } from '@renderer/composables/useOnboarding'
 import SelectMenu from './SelectMenu.vue'
 
 /**
@@ -17,6 +18,13 @@ import SelectMenu from './SelectMenu.vue'
 const { t } = useI18n()
 const { visible, openSettings, closeSettings } = useGlobalSettings()
 const { language, setLanguage, languageOptions } = useLanguageSettings()
+const { restart: restartOnboarding } = useOnboarding()
+
+/** 重置新手引导：清除 seen 标记并立即弹出 */
+function onRestartOnboarding(): void {
+  closeSettings()
+  restartOnboarding()
+}
 
 /** 语言选项 → SelectMenu 需要的 { value, label } */
 const languageSelectOptions = computed(() =>
@@ -232,6 +240,19 @@ onUnmounted(() => {
                 :disabled="transferBusy"
                 @click="handleImport"
               >{{ t('settingsDialog.import') }}</button>
+            </div>
+          </section>
+
+          <!-- 新手引导 -->
+          <section class="gs-section">
+            <h4 class="gs-section__title">{{ t('settingsDialog.onboardingSection') }}</h4>
+            <p class="gs-section__hint">{{ t('settingsDialog.onboardingHint') }}</p>
+            <div class="gs-transfer__actions">
+              <button
+                class="gs-btn"
+                type="button"
+                @click="onRestartOnboarding"
+              >{{ t('settingsDialog.onboardingRestart') }}</button>
             </div>
           </section>
         </div>

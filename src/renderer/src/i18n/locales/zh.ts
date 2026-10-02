@@ -25,7 +25,10 @@ const zh: Language = {
     importSuccess: '导入成功，请重启应用以加载画板。',
     exportKeyHint: '出于安全考虑，API Key 不会被导出。新电脑上需要重新填写。',
     importConfirmTitle: '导入会覆盖现有数据',
-    importConfirmBody: '导入将用备份覆盖当前画板、文件和设置，且无法撤销。确定继续？'
+    importConfirmBody: '导入将用备份覆盖当前画板、文件和设置，且无法撤销。确定继续？',
+    onboardingSection: '新手引导',
+    onboardingHint: '再看一遍 Finder+ 的基本操作流程：拖入文件、连接节点。',
+    onboardingRestart: '重新观看新手引导'
   },
   helpCenter: {
     title: '帮助中心',

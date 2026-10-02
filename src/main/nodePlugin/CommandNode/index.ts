@@ -5,7 +5,17 @@ import render from './render.vue'
 export const manifest: NodePluginManifest = {
   type: CommandNode.TYPE,
   nodeClass: CommandNode,
-  title: { zh: '命令行', en: 'Command' },
+  title: {
+    zh: '命令行',
+    en: 'Command',
+    ja: 'コマンド',
+    ko: '명령',
+    es: 'Comando',
+    ar: 'أمر',
+    fr: 'Commande',
+    pt: 'Comando',
+    ru: 'Команда'
+  },
   render,
   help: () => import('./CommandHelpDialog.vue')
 }

@@ -13,10 +13,33 @@ export class JsonDisplayNode extends Node {
   readonly type = JsonDisplayNode.TYPE
 
   /** 输入端口：接受 JSON 文本（StringValue）或结构化 JSON（JsonValue） */
-  readonly jsonInput = new InputPort('json', { accepts: [StringValue, JsonValue], label: { zh: 'JSON', en: 'JSON' } })
+  readonly jsonInput = new InputPort('json', {
+    accepts: [StringValue, JsonValue],
+    label: {
+      zh: 'JSON',
+      en: 'JSON',
+      ja: 'JSON',
+      ko: 'JSON',
+      es: 'JSON',
+      ar: 'JSON',
+      fr: 'JSON',
+      pt: 'JSON',
+      ru: 'JSON'
+    }
+  })
 
   /** 输出端口：解析成功后透传 JsonValue；解析失败或空输入时 clear() */
-  readonly jsonOutput = new OutputPort('json', JsonValue, { zh: 'JSON', en: 'JSON' })
+  readonly jsonOutput = new OutputPort('json', JsonValue, {
+    zh: 'JSON',
+    en: 'JSON',
+    ja: 'JSON',
+    ko: 'JSON',
+    es: 'JSON',
+    ar: 'JSON',
+    fr: 'JSON',
+    pt: 'JSON',
+    ru: 'JSON'
+  })
 
   private parsed: unknown = undefined
   private error: string | null = null

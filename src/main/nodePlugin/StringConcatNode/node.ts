@@ -20,7 +20,17 @@ export class StringConcatNode extends Node {
   readonly type = StringConcatNode.TYPE
 
   /** 输出端口：拼接结果 */
-  readonly textOutput = new OutputPort('text', StringValue, { zh: '结果', en: 'Result' })
+  readonly textOutput = new OutputPort('text', StringValue, {
+    zh: '结果',
+    en: 'Result',
+    ja: '結果',
+    ko: '결과',
+    es: 'Resultado',
+    ar: 'النتيجة',
+    fr: 'Résultat',
+    pt: 'Resultado',
+    ru: 'Результат'
+  })
 
   /** 模板字符串 */
   private template = ''

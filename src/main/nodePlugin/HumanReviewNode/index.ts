@@ -5,7 +5,17 @@ import render from './render.vue'
 export const manifest: NodePluginManifest = {
   type: HumanReviewNode.TYPE,
   nodeClass: HumanReviewNode,
-  title: { zh: '人工审阅', en: 'Human Review' },
+  title: {
+    zh: '人工审阅',
+    en: 'Human Review',
+    ja: '人によるレビュー',
+    ko: '인간 검토',
+    es: 'Revisión humana',
+    ar: 'مراجعة بشرية',
+    fr: 'Révision humaine',
+    pt: 'Revisão humana',
+    ru: 'Ручная проверка'
+  },
   render,
   help: () => import('./HumanReviewHelpDialog.vue')
 }

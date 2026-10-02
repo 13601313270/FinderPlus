@@ -5,7 +5,17 @@ import render from './render.vue'
 export const manifest: NodePluginManifest = {
   type: SwitchNode.TYPE,
   nodeClass: SwitchNode,
-  title: { zh: '条件分支', en: 'Switch' },
+  title: {
+    zh: '条件分支',
+    en: 'Switch',
+    ja: '条件分岐',
+    ko: '조건 분기',
+    es: 'Rama condicional',
+    ar: 'تفريع شرطي',
+    fr: 'Branche conditionnelle',
+    pt: 'Ramo condicional',
+    ru: 'Условное ветвление'
+  },
   render,
   help: () => import('./SwitchHelpDialog.vue')
 }

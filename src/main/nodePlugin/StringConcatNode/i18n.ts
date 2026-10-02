@@ -3,40 +3,96 @@ import type { LocalizedText } from '../../../shared/language'
 /**
  * StringConcat 节点卡片内的全部文案。
  *
- * 放在节点自己的文件夹里，跟随节点一起搬运；只配了 zh / en，其他语言由
- * useLocalizedMessages → resolveLocalizedText 兜底到英语。
+ * 放在节点自己的文件夹里，跟随节点一起搬运；已覆盖 LANGUAGE_CODES 的全部语言，
+ * 若将来新增语言码未补齐，仍由 useLocalizedMessages → resolveLocalizedText 兜底到英语。
  */
 export const messages = {
   dragHint: {
     zh: '拖动节点',
-    en: 'Drag node'
+    en: 'Drag node',
+    ja: 'ノードをドラッグ',
+    ko: '노드 드래그',
+    es: 'Arrastrar nodo',
+    ar: 'اسحب العقدة',
+    fr: 'Glisser le nœud',
+    pt: 'Arrastar nó',
+    ru: 'Перетащить узел'
   },
   templatePlaceholder: {
     zh: '模板，例：https://$1/$2',
-    en: 'Template, e.g. https://$1/$2'
+    en: 'Template, e.g. https://$1/$2',
+    ja: 'テンプレート、例：https://$1/$2',
+    ko: '템플릿, 예: https://$1/$2',
+    es: 'Plantilla, ej.: https://$1/$2',
+    ar: 'القالب، مثال: https://$1/$2',
+    fr: 'Modèle, ex. : https://$1/$2',
+    pt: 'Modelo, ex.: https://$1/$2',
+    ru: 'Шаблон, напр.: https://$1/$2'
   },
   portsCount: {
     zh: '输入端口：{n} 个',
-    en: 'Input ports: {n}'
+    en: 'Input ports: {n}',
+    ja: '入力ポート：{n} 個',
+    ko: '입력 포트: {n}개',
+    es: 'Puertos de entrada: {n}',
+    ar: 'منافذ الإدخال: {n}',
+    fr: 'Ports d’entrée : {n}',
+    pt: 'Portas de entrada: {n}',
+    ru: 'Входных портов: {n}'
   },
   removePortHint: {
     zh: '移除末尾输入端口',
-    en: 'Remove the last input port'
+    en: 'Remove the last input port',
+    ja: '末尾の入力ポートを削除',
+    ko: '마지막 입력 포트 제거',
+    es: 'Quitar el último puerto de entrada',
+    ar: 'إزالة منفذ الإدخال الأخير',
+    fr: 'Supprimer le dernier port d’entrée',
+    pt: 'Remover o último porto de entrada',
+    ru: 'Удалить последний входной порт'
   },
   addPortHint: {
     zh: '新增输入端口',
-    en: 'Add an input port'
+    en: 'Add an input port',
+    ja: '入力ポートを追加',
+    ko: '입력 포트 추가',
+    es: 'Añadir un puerto de entrada',
+    ar: 'إضافة منفذ إدخال',
+    fr: 'Ajouter un port d’entrée',
+    pt: 'Adicionar um porto de entrada',
+    ru: 'Добавить входной порт'
   },
   resultPlaceholder: {
     zh: '（结果）',
-    en: '(Result)'
+    en: '(Result)',
+    ja: '（結果）',
+    ko: '(결과)',
+    es: '(Resultado)',
+    ar: '(النتيجة)',
+    fr: '(Résultat)',
+    pt: '(Resultado)',
+    ru: '(Результат)'
   },
   helpTitle: {
     zh: '使用说明',
-    en: 'Help'
+    en: 'Help',
+    ja: '使い方',
+    ko: '사용 안내',
+    es: 'Ayuda',
+    ar: 'مساعدة',
+    fr: 'Aide',
+    pt: 'Ajuda',
+    ru: 'Справка'
   },
   helpDialogTitle: {
     zh: '字符串拼接节点使用说明',
-    en: 'String Concat node help'
+    en: 'String Concat node help',
+    ja: '文字列連結ノードの使い方',
+    ko: '문자열 연결 노드 도움말',
+    es: 'Ayuda del nodo Concatenar cadenas',
+    ar: 'مساعدة عقدة دمج النصوص',
+    fr: 'Aide du nœud Concaténation de chaînes',
+    pt: 'Ajuda do nó Concatenar strings',
+    ru: 'Справка по узлу «Конкатенация строк»'
   }
 } satisfies Record<string, LocalizedText>

@@ -11,7 +11,20 @@ export class TextDisplayNode extends Node {
   readonly type = TextDisplayNode.TYPE
 
   /** 输入端口：只接受字符串 */
-  readonly textInput = new InputPort('text', { accepts: [StringValue], label: { zh: '文本', en: 'Text' } })
+  readonly textInput = new InputPort('text', {
+    accepts: [StringValue],
+    label: {
+      zh: '文本',
+      en: 'Text',
+      ja: 'テキスト',
+      ko: '텍스트',
+      es: 'Texto',
+      ar: 'نص',
+      fr: 'Texte',
+      pt: 'Texto',
+      ru: 'Текст'
+    }
+  })
 
   private displayed = ''
 

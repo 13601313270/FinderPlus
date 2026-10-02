@@ -47,13 +47,49 @@ export class ImageGenNode extends Node {
   readonly type = ImageGenNode.TYPE
 
   /** 输入端口：提示词（唯一来源，本节点没有内部 fallback） */
-  readonly promptInput = new InputPort('prompt', { accepts: [StringValue], label: { zh: '提示词', en: 'Prompt' } })
+  readonly promptInput = new InputPort('prompt', {
+    accepts: [StringValue],
+    label: {
+      zh: '提示词',
+      en: 'Prompt',
+      ja: 'プロンプト',
+      ko: '프롬프트',
+      es: 'Prompt',
+      ar: 'موجّه',
+      fr: 'Prompt',
+      pt: 'Prompt',
+      ru: 'Промпт'
+    }
+  })
 
   /** 输入端口：尺寸（如 1024x1024）。未接线时回落到本地选择 / 当前模型默认值 */
-  readonly sizeInput = new InputPort('size', { accepts: [StringValue], label: { zh: '尺寸', en: 'Size' } })
+  readonly sizeInput = new InputPort('size', {
+    accepts: [StringValue],
+    label: {
+      zh: '尺寸',
+      en: 'Size',
+      ja: 'サイズ',
+      ko: '크기',
+      es: 'Tamaño',
+      ar: 'الحجم',
+      fr: 'Taille',
+      pt: 'Tamanho',
+      ru: 'Размер'
+    }
+  })
 
   /** 输出端口：生成的图片 */
-  readonly imageOutput = new OutputPort('image', ImgFileValue, { zh: '生成图', en: 'Generated Image' })
+  readonly imageOutput = new OutputPort('image', ImgFileValue, {
+    zh: '生成图',
+    en: 'Generated Image',
+    ja: '生成画像',
+    ko: '생성된 이미지',
+    es: 'Imagen generada',
+    ar: 'صورة مُنشأة',
+    fr: 'Image générée',
+    pt: 'Imagem gerada',
+    ru: 'Созданное изображение'
+  })
 
   /** 本地选择的尺寸（sizeInput 未接线时用）。空串 = 跟随当前模型默认尺寸 */
   private localSize = ''

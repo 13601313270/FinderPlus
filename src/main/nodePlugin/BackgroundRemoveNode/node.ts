@@ -28,11 +28,31 @@ export class BackgroundRemoveNode extends Node {
   /** 输入端口：图片值（ImgFileValue）。接线后上游值变化会自动触发重新抠图 */
   readonly imageInput = new InputPort('source', {
     accepts: [ImgFileValue],
-    label: { zh: '图片', en: 'Image' }
+    label: {
+      zh: '图片',
+      en: 'Image',
+      ja: '画像',
+      ko: '이미지',
+      es: 'Imagen',
+      ar: 'صورة',
+      fr: 'Image',
+      pt: 'Imagem',
+      ru: 'Изображение'
+    }
   })
 
   /** 输出端口：去背景后的 PNG 图片 */
-  readonly imageOutput = new OutputPort('image', ImgFileValue, { zh: '去背景图', en: 'Background Removed' })
+  readonly imageOutput = new OutputPort('image', ImgFileValue, {
+    zh: '去背景图',
+    en: 'Background Removed',
+    ja: '背景除去画像',
+    ko: '배경 제거 이미지',
+    es: 'Imagen sin fondo',
+    ar: 'صورة بدون خلفية',
+    fr: 'Image sans arrière-plan',
+    pt: 'Imagem sem fundo',
+    ru: 'Изображение без фона'
+  })
 
   /** 本次要处理的源节点 id（拖入路径的触发信号）。一次拖入只处理一次，处理完清空 */
   private pendingSourceId: string | null = null

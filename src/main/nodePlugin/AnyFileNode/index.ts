@@ -5,7 +5,17 @@ import render from './render.vue'
 export const manifest: NodePluginManifest = {
   type: AnyFileNode.TYPE,
   nodeClass: AnyFileNode,
-  title: { zh: '任意文件', en: 'Any file' },
+  title: {
+    zh: '任意文件',
+    en: 'Any file',
+    ja: '任意のファイル',
+    ko: '임의 파일',
+    es: 'Cualquier archivo',
+    ar: 'أي ملف',
+    fr: 'N’importe quel fichier',
+    pt: 'Qualquer ficheiro',
+    ru: 'Любой файл'
+  },
   render,
   help: () => import('./AnyFileHelpDialog.vue')
 }

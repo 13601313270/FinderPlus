@@ -15,7 +15,17 @@ export class BoolInputNode extends Node {
   readonly type = BoolInputNode.TYPE
 
   /** 输出端口：布尔 */
-  readonly boolOutput = new OutputPort('bool', BoolValue, { zh: '布尔', en: 'Boolean' })
+  readonly boolOutput = new OutputPort('bool', BoolValue, {
+    zh: '布尔',
+    en: 'Boolean',
+    ja: 'ブール',
+    ko: '불리언',
+    es: 'Booleano',
+    ar: 'منطقي',
+    fr: 'Booléen',
+    pt: 'Booleano',
+    ru: 'Логическое'
+  })
 
   private content = false
 

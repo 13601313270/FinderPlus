@@ -24,16 +24,62 @@ export class TxtFileNode extends FileNode {
   readonly type = TxtFileNode.TYPE
 
   /** 文本内容输出（string） */
-  readonly contentOutput = new OutputPort('content', StringValue, { zh: '文本', en: 'Text' })
+  readonly contentOutput = new OutputPort('content', StringValue, {
+    zh: '文本',
+    en: 'Text',
+    ja: 'テキスト',
+    ko: '텍스트',
+    es: 'Texto',
+    ar: 'نص',
+    fr: 'Texte',
+    pt: 'Texto',
+    ru: 'Текст'
+  })
 
   /** 文件输出（TxtFileValue，kind = 'txt-file'） */
-  readonly fileOutput = new OutputPort('file', TxtFileValue, { zh: '文件', en: 'File' })
+  readonly fileOutput = new OutputPort('file', TxtFileValue, {
+    zh: '文件',
+    en: 'File',
+    ja: 'ファイル',
+    ko: '파일',
+    es: 'Archivo',
+    ar: 'ملف',
+    fr: 'Fichier',
+    pt: 'Ficheiro',
+    ru: 'Файл'
+  })
 
   /** 文件数据输入端口：只接受同类型（txt）文件，收到值即替换本节点文件 */
-  readonly fileInput = new InputPort('file-in', { accepts: [TxtFileValue], label: { zh: '文件', en: 'File' } })
+  readonly fileInput = new InputPort('file-in', {
+    accepts: [TxtFileValue],
+    label: {
+      zh: '文件',
+      en: 'File',
+      ja: 'ファイル',
+      ko: '파일',
+      es: 'Archivo',
+      ar: 'ملف',
+      fr: 'Fichier',
+      pt: 'Ficheiro',
+      ru: 'Файл'
+    }
+  })
 
   /** 文本内容输入端口：接收字符串，写入节点内容并同步到磁盘文件 */
-  readonly contentInput = new InputPort('content-in', { accepts: [StringValue], label: { zh: '内容', en: 'Content' } })
+  readonly contentInput = new InputPort('content-in', {
+    accepts: [StringValue],
+    label: {
+      zh: '内容',
+      en: 'Content',
+      ja: '内容',
+      ko: '내용',
+      es: 'Contenido',
+      ar: 'المحتوى',
+      fr: 'Contenu',
+      pt: 'Conteúdo',
+      ru: 'Содержимое'
+    }
+  })
 
   /** 当前文本内容；空节点初始化为空串 */
   private contentValue = ''

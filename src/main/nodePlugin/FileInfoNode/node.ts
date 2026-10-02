@@ -18,13 +18,46 @@ export class FileInfoNode extends Node {
   readonly type = FileInfoNode.TYPE
 
   /** 输入端口：接受 FileValue 及其所有子类（如 TxtFileValue） */
-  readonly fileInput = new InputPort('file', { accepts: [FileValue], label: { zh: '文件', en: 'File' } })
+  readonly fileInput = new InputPort('file', {
+    accepts: [FileValue],
+    label: {
+      zh: '文件',
+      en: 'File',
+      ja: 'ファイル',
+      ko: '파일',
+      es: 'Archivo',
+      ar: 'ملف',
+      fr: 'Fichier',
+      pt: 'Arquivo',
+      ru: 'Файл'
+    }
+  })
 
   /** 输出端口：文件大小（KB） */
-  readonly sizeOutput = new OutputPort('number', NumberValue, { zh: '文件大小（KB）', en: 'File Size (KB)' })
+  readonly sizeOutput = new OutputPort('number', NumberValue, {
+    zh: '文件大小（KB）',
+    en: 'File Size (KB)',
+    ja: 'ファイルサイズ（KB）',
+    ko: '파일 크기(KB)',
+    es: 'Tamaño del archivo (KB)',
+    ar: 'حجم الملف (KB)',
+    fr: 'Taille du fichier (KB)',
+    pt: 'Tamanho do arquivo (KB)',
+    ru: 'Размер файла (KB)'
+  })
 
   /** 输出端口：文件 MIME 类型 */
-  readonly typeOutput = new OutputPort('string', StringValue, { zh: '文件 MIME 类型', en: 'File MIME Type' })
+  readonly typeOutput = new OutputPort('string', StringValue, {
+    zh: '文件 MIME 类型',
+    en: 'File MIME Type',
+    ja: 'ファイルの MIME タイプ',
+    ko: '파일 MIME 유형',
+    es: 'Tipo MIME del archivo',
+    ar: 'نوع MIME للملف',
+    fr: 'Type MIME du fichier',
+    pt: 'Tipo MIME do arquivo',
+    ru: 'Тип MIME файла'
+  })
 
   private fileName = ''
   private fileSize = 0

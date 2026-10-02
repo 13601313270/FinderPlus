@@ -44,10 +44,33 @@ export class ImgFileNode extends FileNode {
   readonly type = ImgFileNode.TYPE
 
   /** 文件输出（ImgFileValue，kind = 'img-file'） */
-  readonly fileOutput = new OutputPort('file', ImgFileValue, { zh: '文件', en: 'File' })
+  readonly fileOutput = new OutputPort('file', ImgFileValue, {
+    zh: '文件',
+    en: 'File',
+    ja: 'ファイル',
+    ko: '파일',
+    es: 'Archivo',
+    ar: 'ملف',
+    fr: 'Fichier',
+    pt: 'Ficheiro',
+    ru: 'Файл'
+  })
 
   /** 文件数据输入端口：只接受同类型（图片）文件，收到值即替换本节点文件 */
-  readonly fileInput = new InputPort('file-in', { accepts: [ImgFileValue], label: { zh: '写入数据', en: 'Write Data' } })
+  readonly fileInput = new InputPort('file-in', {
+    accepts: [ImgFileValue],
+    label: {
+      zh: '写入数据',
+      en: 'Write Data',
+      ja: 'データを書き込む',
+      ko: '데이터 쓰기',
+      es: 'Escribir datos',
+      ar: 'كتابة البيانات',
+      fr: 'Écrire des données',
+      pt: 'Gravar dados',
+      ru: 'Запись данных'
+    }
+  })
 
   /** 图片天然宽度（像素）。render.vue 的 img load 时回写；0 表示尚未加载 */
   private naturalWidthValue = 0

@@ -24,7 +24,17 @@ export class HumanReviewNode extends Node {
   /** 输入端口：列出所有现有 Value 子类 */
   readonly input = new InputPort('input', {
     accepts: [NumberValue, StringValue, FileValue],
-    label: { zh: '输入', en: 'Input' }
+    label: {
+      zh: '输入',
+      en: 'Input',
+      ja: '入力',
+      ko: '입력',
+      es: 'Entrada',
+      ar: 'إدخال',
+      fr: 'Entrée',
+      pt: 'Entrada',
+      ru: 'Ввод'
+    }
   })
 
   /** 输出端口引用；没有上游时为 undefined */
@@ -123,8 +133,28 @@ export class HumanReviewNode extends Node {
 
   /** 首次有值时创建两个输出端口 */
   private createOutputPorts(valueClass: OutputPort['valueClass']): void {
-    this.approveOutput = new OutputPort('approve', valueClass, { zh: '同意', en: 'Approve' })
-    this.rejectOutput = new OutputPort('reject', valueClass, { zh: '拒绝', en: 'Reject' })
+    this.approveOutput = new OutputPort('approve', valueClass, {
+      zh: '同意',
+      en: 'Approve',
+      ja: '承認',
+      ko: '승인',
+      es: 'Aprobar',
+      ar: 'موافقة',
+      fr: 'Approuver',
+      pt: 'Aprovar',
+      ru: 'Одобрить'
+    })
+    this.rejectOutput = new OutputPort('reject', valueClass, {
+      zh: '拒绝',
+      en: 'Reject',
+      ja: '却下',
+      ko: '거부',
+      es: 'Rechazar',
+      ar: 'رفض',
+      fr: 'Rejeter',
+      pt: 'Rejeitar',
+      ru: 'Отклонить'
+    })
     this.addOutput(this.approveOutput)
     this.addOutput(this.rejectOutput)
   }

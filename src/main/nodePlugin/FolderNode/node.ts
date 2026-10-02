@@ -56,7 +56,17 @@ export class FolderNode extends Node {
   /** 输入端口：接收文件类 Value，收到后文件夹内新建对应文件子节点（收养元素源自值） */
   readonly fileInput = new InputPort('file', {
     accepts: [FileValue],
-    label: { zh: '文件', en: 'File' }
+    label: {
+      zh: '文件',
+      en: 'File',
+      ja: 'ファイル',
+      ko: '파일',
+      es: 'Archivo',
+      ar: 'ملف',
+      fr: 'Fichier',
+      pt: 'Arquivo',
+      ru: 'Файл'
+    }
   })
 
   /** 已收养的子节点列表。子节点仍是 Scene 里的顶层节点，只是归属这里 */

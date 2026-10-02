@@ -15,7 +15,17 @@ export class TextInputNode extends Node {
   readonly type = TextInputNode.TYPE
 
   /** 输出端口：字符串 */
-  readonly textOutput = new OutputPort('text', StringValue, { zh: '文本', en: 'Text' })
+  readonly textOutput = new OutputPort('text', StringValue, {
+    zh: '文本',
+    en: 'Text',
+    ja: 'テキスト',
+    ko: '텍스트',
+    es: 'Texto',
+    ar: 'نص',
+    fr: 'Texte',
+    pt: 'Texto',
+    ru: 'Текст'
+  })
 
   private content = ''
 

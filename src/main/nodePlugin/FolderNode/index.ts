@@ -5,7 +5,17 @@ import render from './render.vue'
 export const manifest: NodePluginManifest = {
   type: FolderNode.TYPE,
   nodeClass: FolderNode,
-  title: { zh: '文件夹', en: 'Folder' },
+  title: {
+    zh: '文件夹',
+    en: 'Folder',
+    ja: 'フォルダ',
+    ko: '폴더',
+    es: 'Carpeta',
+    ar: 'مجلد',
+    fr: 'Dossier',
+    pt: 'Pasta',
+    ru: 'Папка'
+  },
   render,
   help: () => import('./FolderHelpDialog.vue')
 }

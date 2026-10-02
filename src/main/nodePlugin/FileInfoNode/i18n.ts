@@ -3,29 +3,64 @@ import type { LocalizedText } from '../../../shared/language'
 /**
  * FileInfo 节点卡片内的全部文案。
  *
- * 放在节点自己的文件夹里，跟随节点一起搬运；只配了 zh / en，其他语言由
- * useLocalizedMessages → resolveLocalizedText 兜底到英语。
+ * 放在节点自己的文件夹里，跟随节点一起搬运；已覆盖 LANGUAGE_CODES 的全部语言，
+ * 若将来新增语言码未补齐，仍由 useLocalizedMessages → resolveLocalizedText 兜底到英语。
  */
 export const messages = {
   dragHint: {
     zh: '拖动节点',
-    en: 'Drag node'
+    en: 'Drag node',
+    ja: 'ノードをドラッグ',
+    ko: '노드 드래그',
+    es: 'Arrastrar nodo',
+    ar: 'اسحب العقدة',
+    fr: 'Glisser le nœud',
+    pt: 'Arrastar nó',
+    ru: 'Перетащить узел'
   },
   labelName: {
     zh: '名称',
-    en: 'Name'
+    en: 'Name',
+    ja: '名前',
+    ko: '이름',
+    es: 'Nombre',
+    ar: 'الاسم',
+    fr: 'Nom',
+    pt: 'Nome',
+    ru: 'Имя'
   },
   labelSize: {
     zh: '大小',
-    en: 'Size'
+    en: 'Size',
+    ja: 'サイズ',
+    ko: '크기',
+    es: 'Tamaño',
+    ar: 'الحجم',
+    fr: 'Taille',
+    pt: 'Tamanho',
+    ru: 'Размер'
   },
   labelType: {
     zh: '类型',
-    en: 'Type'
+    en: 'Type',
+    ja: 'タイプ',
+    ko: '유형',
+    es: 'Tipo',
+    ar: 'النوع',
+    fr: 'Type',
+    pt: 'Tipo',
+    ru: 'Тип'
   },
   empty: {
     zh: '（暂无输入）',
-    en: '(No input)'
+    en: '(No input)',
+    ja: '（入力なし）',
+    ko: '(입력 없음)',
+    es: '(Sin entrada)',
+    ar: '(لا يوجد إدخال)',
+    fr: '(Aucune entrée)',
+    pt: '(Sem entrada)',
+    ru: '(Нет входа)'
   },
   helpTitle: {
     zh: '使用说明',

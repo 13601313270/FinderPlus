@@ -42,18 +42,48 @@ export class ImageCompressNode extends Node {
   /** 输入端口：目标尺寸（最长边像素，NumberValue）。未接线用端口 defaultValue */
   readonly sizeInput = new InputPort('size', {
     accepts: [NumberValue],
-    label: { zh: '尺寸', en: 'Size' },
+    label: {
+      zh: '尺寸',
+      en: 'Size',
+      ja: 'サイズ',
+      ko: '크기',
+      es: 'Tamaño',
+      ar: 'الحجم',
+      fr: 'Taille',
+      pt: 'Tamanho',
+      ru: 'Размер'
+    },
     defaultValue: new NumberValue(800)
   })
 
   /** 输入端口：图片值（ImgFileValue）。接线后上游值变化会自动触发重新压缩 */
   readonly imageInput = new InputPort('source', {
     accepts: [ImgFileValue],
-    label: { zh: '图片', en: 'Image' }
+    label: {
+      zh: '图片',
+      en: 'Image',
+      ja: '画像',
+      ko: '이미지',
+      es: 'Imagen',
+      ar: 'صورة',
+      fr: 'Image',
+      pt: 'Imagem',
+      ru: 'Изображение'
+    }
   })
 
   /** 输出端口：压缩后的图片 */
-  readonly imageOutput = new OutputPort('image', ImgFileValue, { zh: '压缩图', en: 'Compressed Image' })
+  readonly imageOutput = new OutputPort('image', ImgFileValue, {
+    zh: '压缩图',
+    en: 'Compressed Image',
+    ja: '圧縮画像',
+    ko: '압축된 이미지',
+    es: 'Imagen comprimida',
+    ar: 'صورة مضغوطة',
+    fr: 'Image compressée',
+    pt: 'Imagem comprimida',
+    ru: 'Сжатое изображение'
+  })
 
   /** 本次要处理的源节点 id（拖入路径的触发信号）。一次拖入只处理一次，处理完清空 */
   private pendingSourceId: string | null = null

@@ -37,13 +37,33 @@ export class SwitchNode extends Node {
   /** 输入端口：布尔条件 */
   readonly conditionInput = new InputPort('cond', {
     accepts: [BoolValue],
-    label: { zh: '条件', en: 'Condition' }
+    label: {
+      zh: '条件',
+      en: 'Condition',
+      ja: '条件',
+      ko: '조건',
+      es: 'Condición',
+      ar: 'الشرط',
+      fr: 'Condition',
+      pt: 'Condição',
+      ru: 'Условие'
+    }
   })
 
   /** 输入端口：被分流的数据（接受所有具体 Value 子类） */
   readonly dataInput = new InputPort('data', {
     accepts: SwitchNode.ALL_VALUE_CLASSES,
-    label: { zh: '数据', en: 'Data' }
+    label: {
+      zh: '数据',
+      en: 'Data',
+      ja: 'データ',
+      ko: '데이터',
+      es: 'Datos',
+      ar: 'البيانات',
+      fr: 'Données',
+      pt: 'Dados',
+      ru: 'Данные'
+    }
   })
 
   /** 输出端口：条件为真时的数据（valueClass 跟随上游数据类型动态重建） */
@@ -144,8 +164,28 @@ export class SwitchNode extends Node {
       this.removeOutput(this.failOutput)
       this.failOutput = undefined
     }
-    this.passOutput = new OutputPort('pass', valueClass, { zh: '通过 →', en: 'Pass →' })
-    this.failOutput = new OutputPort('fail', valueClass, { zh: '驳回 →', en: 'Fail →' })
+    this.passOutput = new OutputPort('pass', valueClass, {
+      zh: '通过 →',
+      en: 'Pass →',
+      ja: '通過 →',
+      ko: '통과 →',
+      es: 'Pasa →',
+      ar: 'يمر →',
+      fr: 'Pass →',
+      pt: 'Passa →',
+      ru: 'Пропустить →'
+    })
+    this.failOutput = new OutputPort('fail', valueClass, {
+      zh: '驳回 →',
+      en: 'Fail →',
+      ja: '却下 →',
+      ko: '반려 →',
+      es: 'Rechaza →',
+      ar: 'يُرفض →',
+      fr: 'Rejet →',
+      pt: 'Rejeita →',
+      ru: 'Отклонить →'
+    })
     this.addOutput(this.passOutput)
     this.addOutput(this.failOutput)
   }

@@ -5,7 +5,17 @@ import render from './render.vue'
 export const manifest: NodePluginManifest = {
   type: LLMNode.TYPE,
   nodeClass: LLMNode,
-  title: { zh: '大模型', en: 'LLM' },
+  title: {
+    zh: '大模型',
+    en: 'LLM',
+    ja: '大規模言語モデル',
+    ko: '대규모 언어 모델',
+    es: 'Modelo de lenguaje',
+    ar: 'نموذج لغوي',
+    fr: 'Modèle de langage',
+    pt: 'Modelo de linguagem',
+    ru: 'Языковая модель'
+  },
   render,
   help: () => import('./LLMHelpDialog.vue')
 }

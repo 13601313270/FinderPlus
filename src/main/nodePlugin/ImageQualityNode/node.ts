@@ -34,11 +34,31 @@ export class ImageQualityNode extends Node {
   /** 输入端口：图片值（ImgFileValue）。接线后上游值变化会自动触发重新压缩 */
   readonly imageInput = new InputPort('source', {
     accepts: [ImgFileValue],
-    label: { zh: '图片', en: 'Image' }
+    label: {
+      zh: '图片',
+      en: 'Image',
+      ja: '画像',
+      ko: '이미지',
+      es: 'Imagen',
+      ar: 'صورة',
+      fr: 'Image',
+      pt: 'Imagem',
+      ru: 'Изображение'
+    }
   })
 
   /** 输出端口：调整后的图片 */
-  readonly imageOutput = new OutputPort('image', ImgFileValue, { zh: '调整后', en: 'Adjusted' })
+  readonly imageOutput = new OutputPort('image', ImgFileValue, {
+    zh: '调整后',
+    en: 'Adjusted',
+    ja: '調整後',
+    ko: '조정됨',
+    es: 'Ajustado',
+    ar: 'بعد الضبط',
+    fr: 'Ajusté',
+    pt: 'Ajustado',
+    ru: 'Скорректировано'
+  })
 
   /** 本次要处理的源节点 id（拖入路径的触发信号）。一次拖入只处理一次，处理完清空 */
   private pendingSourceId: string | null = null

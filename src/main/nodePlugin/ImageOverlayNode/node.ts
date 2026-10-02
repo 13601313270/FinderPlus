@@ -39,7 +39,17 @@ export class ImageOverlayNode extends Node {
   readonly type = ImageOverlayNode.TYPE
 
   /** 输出端口：合成后的 PNG 图片 */
-  readonly imageOutput = new OutputPort('composite', ImgFileValue, { zh: '合成图', en: 'Composite' })
+  readonly imageOutput = new OutputPort('composite', ImgFileValue, {
+    zh: '合成图',
+    en: 'Composite',
+    ja: '合成画像',
+    ko: '합성 이미지',
+    es: 'Compuesto',
+    ar: 'صورة مركّبة',
+    fr: 'Composite',
+    pt: 'Composto',
+    ru: 'Составное изображение'
+  })
 
   /** 各端口 id 对应的 LayerState */
   private layerStates = new Map<string, LayerState>()
@@ -66,7 +76,17 @@ export class ImageOverlayNode extends Node {
     const port = new InputPort(`layer-${index}`, {
       accepts: [ImgFileValue],
       multiple: false,
-      label: { zh: `图层 ${index + 1}`, en: `Layer ${index + 1}` }
+      label: {
+        zh: `图层 ${index + 1}`,
+        en: `Layer ${index + 1}`,
+        ja: `レイヤー ${index + 1}`,
+        ko: `레이어 ${index + 1}`,
+        es: `Capa ${index + 1}`,
+        ar: `الطبقة ${index + 1}`,
+        fr: `Calque ${index + 1}`,
+        pt: `Camada ${index + 1}`,
+        ru: `Слой ${index + 1}`
+      }
     })
     this.addInput(port)
     return port
@@ -99,7 +119,17 @@ export class ImageOverlayNode extends Node {
   addLayer(): void {
     const nextIndex = this.inputPorts.length
     const port = this.addLayerPort(nextIndex)
-    port.setLabel({ zh: `图层 ${nextIndex + 1}`, en: `Layer ${nextIndex + 1}` })
+    port.setLabel({
+      zh: `图层 ${nextIndex + 1}`,
+      en: `Layer ${nextIndex + 1}`,
+      ja: `レイヤー ${nextIndex + 1}`,
+      ko: `레이어 ${nextIndex + 1}`,
+      es: `Capa ${nextIndex + 1}`,
+      ar: `الطبقة ${nextIndex + 1}`,
+      fr: `Calque ${nextIndex + 1}`,
+      pt: `Camada ${nextIndex + 1}`,
+      ru: `Слой ${nextIndex + 1}`
+    })
   }
 
   /**

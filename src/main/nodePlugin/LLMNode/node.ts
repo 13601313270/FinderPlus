@@ -94,13 +94,49 @@ export class LLMNode extends Node {
   readonly type = LLMNode.TYPE
 
   /** 输入端口：系统提示词 */
-  readonly systemInput = new InputPort('system', { accepts: [StringValue], label: { zh: '系统设定system', en: 'System' } })
+  readonly systemInput = new InputPort('system', {
+    accepts: [StringValue],
+    label: {
+      zh: '系统设定system',
+      en: 'System',
+      ja: 'システム設定',
+      ko: '시스템 설정',
+      es: 'Sistema',
+      ar: 'النظام',
+      fr: 'Système',
+      pt: 'Sistema',
+      ru: 'Система'
+    }
+  })
 
   /** 输入端口：用户提示词（接了边就用端口值，没接边就用内部文本框） */
-  readonly promptInput = new InputPort('prompt', { accepts: [StringValue], label: { zh: '用户设定prompt', en: 'User prompt' } })
+  readonly promptInput = new InputPort('prompt', {
+    accepts: [StringValue],
+    label: {
+      zh: '用户设定prompt',
+      en: 'User prompt',
+      ja: 'ユーザープロンプト',
+      ko: '사용자 프롬프트',
+      es: 'Prompt de usuario',
+      ar: 'موجه المستخدم',
+      fr: 'Prompt utilisateur',
+      pt: 'Prompt de usuário',
+      ru: 'Пользовательский промпт'
+    }
+  })
 
   /** 输出端口：模型回复 */
-  readonly textOutput = new OutputPort('text', StringValue, { zh: '回复', en: 'Reply' })
+  readonly textOutput = new OutputPort('text', StringValue, {
+    zh: '回复',
+    en: 'Reply',
+    ja: '返信',
+    ko: '응답',
+    es: 'Respuesta',
+    ar: 'رد',
+    fr: 'Réponse',
+    pt: 'Resposta',
+    ru: 'Ответ'
+  })
 
   /** 内部 prompt 文本（仅 promptInput 未接边时使用） */
   private localPrompt = ''

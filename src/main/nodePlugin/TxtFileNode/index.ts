@@ -5,7 +5,17 @@ import render from './render.vue'
 export const manifest: NodePluginManifest = {
   type: TxtFileNode.TYPE,
   nodeClass: TxtFileNode,
-  title: { zh: '文本文件', en: 'Text file' },
+  title: {
+    zh: '文本文件',
+    en: 'Text file',
+    ja: 'テキストファイル',
+    ko: '텍스트 파일',
+    es: 'Archivo de texto',
+    ar: 'ملف نصي',
+    fr: 'Fichier texte',
+    pt: 'Ficheiro de texto',
+    ru: 'Текстовый файл'
+  },
   render,
   help: () => import('./TxtFileHelpDialog.vue')
 }

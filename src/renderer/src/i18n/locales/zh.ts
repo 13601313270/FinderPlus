@@ -163,12 +163,27 @@ const zh: Language = {
       hint: '打开 Finder（访达），选中任意文件，按住鼠标左键拖到画布上松开。Finder+ 会根据后缀自动生成对应的文件节点。',
       canvasLabel: '把文件拖到这里'
     },
-    step2: {
-      title: '第二步：添加 File Info 节点并连线',
-      hint: '点左上角 ＋ 打开调色板，搜索"File Info"或"文件信息"，把它加到画布上。然后从文件节点右侧的圆点（输出端口）拖一条线连到 File Info 节点左侧的圆点（输入端口）。',
-      paletteLabel: '打开调色板，搜索 File Info'
+    step2a: {
+      title: '第二步：选择文件信息',
+      hint: '点左上角 ＋ 打开调色板，选择高亮的「文件信息」节点。',
+      paletteLabel: '打开调色板，选择文件信息'
     },
-    skip: '跳过引导'
+    step2b: {
+      title: '第三步：放置节点',
+      hint: '把鼠标移到画布空白处，点击一下——File Info 节点就固定在这里了。',
+      placeLabel: '在画布上点一下，把节点放下'
+    },
+    step3: {
+      title: '第四步：连接两个节点',
+      hint: '从文件节点右侧的圆点（输出端口）按住鼠标左键，拖一条线到 File Info 节点左侧的圆点（输入端口），松开即可完成连接。',
+      connectLabel: '从文件节点右侧圆点拖线到 File Info 左侧圆点'
+    },
+    skip: '跳过引导',
+    celebration: {
+      title: '引导完成！',
+      desc: '通过组合不同节点、连接它们，你可以构建各种各样的自动化工作流。尽情探索吧！',
+      start: '开始使用'
+    }
   }
 }
 

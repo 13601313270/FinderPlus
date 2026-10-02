@@ -192,14 +192,34 @@ export type Language = {
       /** 画布虚线框旁边的短提示文案（如"把文件拖到这里"） */
       canvasLabel: string
     }
-    step2: {
-      /** 步骤标题：添加 File Info 节点并连线 */
+    step2a: {
+      /** 步骤标题：选择 File Info 节点（调色板高亮） */
       title: string
       hint: string
-      /** 调色板虚线框旁边的短提示文案（如"打开调色板搜索 File Info"） */
+      /** 调色板按钮虚线框旁边的短提示文案（如"打开调色板选择文件信息"） */
       paletteLabel: string
+    }
+    step2b: {
+      /** 步骤标题：放置节点（节点跟随鼠标，提示点击放下） */
+      title: string
+      hint: string
+      /** 画布上的放置提示文案（如"在画布上点一下把节点放下"） */
+      placeLabel: string
+    }
+    step3: {
+      /** 步骤标题：连线 */
+      title: string
+      hint: string
+      /** 画布上端口位置的短提示文案（如"从文件节点右侧圆点拖线"） */
+      connectLabel: string
     }
     /** 跳过按钮 */
     skip: string
+    /** 引导完成后的庆祝提示 */
+    celebration: {
+      title: string
+      desc: string
+      start: string
+    }
   }
 }

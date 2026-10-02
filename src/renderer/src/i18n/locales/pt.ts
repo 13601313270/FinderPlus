@@ -157,12 +157,27 @@ const pt: Language = {
       hint: 'Open Finder, pick any file, and drag it onto the canvas. Finder+ will automatically create a file node matching its type.',
       canvasLabel: 'Drop your file here'
     },
-    step2: {
-      title: 'Step 2: Add a File Info node and connect',
-      hint: 'Click ＋ in the top-left, search for "File Info", and place it on the canvas. Then drag from the dot on the right side of the file node (output port) to the dot on the left side of File Info (input port).',
+    step2a: {
+      title: 'Step 2: Add a File Info node',
+      hint: 'Click ＋ in the top-left to open the palette, then pick the highlighted File Info tile.',
       paletteLabel: 'Open the palette and search File Info'
     },
-    skip: 'Skip tutorial'
+    step2b: {
+      title: 'Step 3: Place the node',
+      hint: 'Move the mouse to an empty spot on the canvas and click — File Info will snap into place.',
+      placeLabel: 'Click anywhere on the canvas to place it'
+    },
+    step3: {
+      title: 'Step 4: Connect the nodes',
+      hint: 'Press and hold on the dot on the right side of the file node (output port), drag a line to the dot on the left side of File Info (input port), and release.',
+      connectLabel: 'Drag from the right dot of the file node to the left dot of File Info'
+    },
+    skip: 'Skip tutorial',
+    celebration: {
+      title: 'Tutorial complete!',
+      desc: 'By combining different nodes and connecting them, you can build all kinds of automated workflows. Happy exploring!',
+      start: 'Start exploring'
+    }
   }
 
 }

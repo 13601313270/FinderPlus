@@ -123,6 +123,7 @@ function highlightOf(port: PortLike): string {
         highlightOf(port),
         showDefaultCapsule ? 'port--default' : ''
       ]"
+      :data-port-id="port.id"
       :title="titleOf(port, isIn ? '输入' : '输出')"
       @pointerdown="!isIn && onOutputPointerDown(port, $event)"
     >

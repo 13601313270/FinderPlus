@@ -73,12 +73,13 @@ function onSceneChanged(): void {
   sceneTick.value++
 }
 
-// —— 新手引导：连线检测订阅 ——
+// —— 新手引导：Scene 变更订阅 ——
 let unsubscribeOnboardingCheck: (() => void) | undefined
 
+/** 画布上是否已经有 FileInfoNode（用户从调色板加到画布） */
 /**
  * 检查 Scene 中是否已有 FileNode → FileInfoNode 的连线。
- * 新手引导 Step 2 完成条件：任一条边的源端口属于 FileNode（或其子类），
+ * 新手引导最终完成条件：任一条边的源端口属于 FileNode（或其子类），
  * 目标端口属于 FileInfoNode。
  */
 function hasFileNodeToFileInfoEdge(): boolean {
@@ -92,10 +93,15 @@ function hasFileNodeToFileInfoEdge(): boolean {
   return false
 }
 
+/**
+ * Scene 结构变更时同步新手引导子状态：
+ * - step===1（等加 FileInfo）且画布上出现 FileInfoNode → step=2（等连线）
+ * - step===2（等连线）且存在 FileNode→FileInfoNode 边 → 完成
+ */
 function onSceneChangedForOnboarding(): void {
   if (!onboarding.active.value) return
-  if (onboarding.step.value !== 1) return
-  if (hasFileNodeToFileInfoEdge()) {
+  const s = onboarding.step.value
+  if (s === 3 && hasFileNodeToFileInfoEdge()) {
     onboarding.complete()
   }
 }
@@ -159,6 +165,11 @@ function onSelectType(type: string): void {
   workspaceScene.addNode(node)
   trackingNode.value = node
 
+  // 新手引导 Step 2a：选了 File Info → 切到 step=2 提示"把节点放下"
+  if (onboarding.active.value && onboarding.step.value === 1 && type === 'file-info') {
+    onboarding.setStep(2)
+  }
+
   // 放置模式下，画布光标提示可以点击固定
   document.body.style.cursor = 'crosshair'
 }
@@ -179,6 +190,11 @@ function stopTracking(): void {
   if (!trackingNode.value) return
   trackingNode.value = null
   document.body.style.cursor = ''
+
+  // 新手引导 Step 2b：节点放下了 → 切到 step=3 提示"连线"
+  if (onboarding.active.value && onboarding.step.value === 2) {
+    onboarding.setStep(3)
+  }
 }
 
 // —— 拖文件进来自动创建 FileNode ——

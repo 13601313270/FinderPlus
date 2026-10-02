@@ -358,6 +358,7 @@ onBeforeUnmount(() => {
                 :key="item.type"
                 class="palette__item"
                 :class="{ 'palette__item--active': indexOf(item.type) === activeIndex }"
+                :data-item-type="item.type"
                 role="option"
                 :aria-selected="indexOf(item.type) === activeIndex"
                 :title="item.label"

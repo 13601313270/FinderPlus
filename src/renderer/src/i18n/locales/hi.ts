@@ -137,6 +137,20 @@ const hi: Language = {
       title: 'Dropping into a folder container',
       body: 'If a {folder} or img-folder container node already exists on the canvas, drop the file inside its content area instead of the blank canvas. The file will not create a new top-level node — it will be "adopted" by the folder as a child node, with the correct file-node type determined automatically by its extension.'
     }
+  },
+  onboarding: {
+    title: 'Welcome to Finder+',
+    step1: {
+      title: 'Step 1: Drag in a file',
+      hint: 'Open Finder, pick any file, and drag it onto the canvas. Finder+ will automatically create a file node matching its type.',
+      canvasLabel: 'Drop your file here'
+    },
+    step2: {
+      title: 'Step 2: Add a File Info node and connect',
+      hint: 'Click ＋ in the top-left, search for "File Info", and place it on the canvas. Then drag from the dot on the right side of the file node (output port) to the dot on the left side of File Info (input port).',
+      paletteLabel: 'Open the palette and search File Info'
+    },
+    skip: 'Skip tutorial'
   }
 
 }

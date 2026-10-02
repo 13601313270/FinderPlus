@@ -163,4 +163,25 @@ export type Language = {
       body: string
     }
   }
+  /** 首次启动的新手引导 */
+  onboarding: {
+    /** 卡片顶部的整体标题 */
+    title: string
+    step1: {
+      /** 步骤标题：拖拽文件 */
+      title: string
+      hint: string
+      /** 画布虚线框旁边的短提示文案（如"把文件拖到这里"） */
+      canvasLabel: string
+    }
+    step2: {
+      /** 步骤标题：添加 File Info 节点并连线 */
+      title: string
+      hint: string
+      /** 调色板虚线框旁边的短提示文案（如"打开调色板搜索 File Info"） */
+      paletteLabel: string
+    }
+    /** 跳过按钮 */
+    skip: string
+  }
 }

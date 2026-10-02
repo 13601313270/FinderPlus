@@ -4,7 +4,8 @@ import { useI18n } from 'vue-i18n'
 import type { Node } from '../../main/engine/node/Node'
 import { workspaceScene } from '../../main/engine/graph/SceneRegistry'
 import { manifestFor, getNodeManifest, resolveByExtension } from '../../main/nodePlugin'
-import type { FileNode } from '../../main/nodePlugin/FileNode/node'
+import { FileNode } from '../../main/nodePlugin/FileNode/node'
+import { FileInfoNode } from '../../main/nodePlugin/FileInfoNode/node'
 import { FolderNode } from '../../main/nodePlugin/FolderNode/node'
 import { viewport, panViewport, zoomViewportAt, screenToWorld, setCanvasContainer } from '@renderer/canvas/viewport'
 import { measureNodeBox } from '@renderer/canvas/elements'
@@ -19,12 +20,14 @@ import { canvasNotice } from '@renderer/canvas/notice'
 import LLMSettingsDialog from './components/LLMSettingsDialog.vue'
 import ImageSettingsDialog from './components/ImageSettingsDialog.vue'
 import HelpCenter from './components/HelpCenter.vue'
+import OnboardingGuide from './components/OnboardingGuide.vue'
 import SettingsDialog from './components/SettingsDialog.vue'
 import HelpIcon from './components/icons/HelpIcon.vue'
 import GearIcon from './components/icons/GearIcon.vue'
 import { useHelpCenter } from '@renderer/composables/useHelpCenter'
 import { useGlobalSettings } from '@renderer/composables/useGlobalSettings'
 import { useLanguageSettings } from '@renderer/composables/useLanguageSettings'
+import { useOnboarding } from '@renderer/composables/useOnboarding'
 import { IpcStorage } from '@renderer/composables/IpcStorage'
 import { isSelfDragDrop, clearSelfDragDrop } from '@renderer/composables/useFileDragOut'
 import { getDraggingNode, getDraggingNodeStartPos, clearDraggingNode } from '@renderer/composables/useNodePosition'
@@ -57,6 +60,9 @@ const { openCenter: openHelpCenter } = useHelpCenter()
 // 全局设置：工具栏按钮和系统应用菜单（macOS 顶部菜单栏「设置…」）共享同一弹窗
 const { openSettings } = useGlobalSettings()
 
+// 新手引导：首次启动时自动弹出，完成或跳过后不再触发
+const onboarding = useOnboarding()
+
 // —— 节点列表：响应 Scene 结构变化 ——
 // Scene 是普通类容器，Vue 追踪不到它的 Map 变化。通过 sceneTick 手动触发 computed 重算，
 // 每次 addNode / removeNode 都会调用 scene.onChanged → tick++。
@@ -65,6 +71,33 @@ let unsubscribeScene: (() => void) | undefined
 
 function onSceneChanged(): void {
   sceneTick.value++
+}
+
+// —— 新手引导：连线检测订阅 ——
+let unsubscribeOnboardingCheck: (() => void) | undefined
+
+/**
+ * 检查 Scene 中是否已有 FileNode → FileInfoNode 的连线。
+ * 新手引导 Step 2 完成条件：任一条边的源端口属于 FileNode（或其子类），
+ * 目标端口属于 FileInfoNode。
+ */
+function hasFileNodeToFileInfoEdge(): boolean {
+  for (const edge of workspaceScene.allEdges) {
+    const startOwner = edge.startPort.getOwner()
+    const endOwner = edge.endPort.getOwner()
+    if (startOwner instanceof FileNode && endOwner instanceof FileInfoNode) {
+      return true
+    }
+  }
+  return false
+}
+
+function onSceneChangedForOnboarding(): void {
+  if (!onboarding.active.value) return
+  if (onboarding.step.value !== 1) return
+  if (hasFileNodeToFileInfoEdge()) {
+    onboarding.complete()
+  }
 }
 
 // 所有节点的响应式快照：每次 sceneTick +1 都会重读 workspaceScene.allNodes
@@ -347,6 +380,11 @@ async function onCanvasDrop(e: DragEvent): Promise<void> {
 
       workspaceScene.addNode(node)
       console.log('[drop] 节点已加入 Scene：', node.id)
+
+      // 新手引导：Step 1 完成（拖文件进画布），推进到 Step 2
+      if (onboarding.active.value && onboarding.step.value === 0) {
+        onboarding.nextStep()
+      }
 
       // 文件 drop 已经让用户选好了落点——**不进入跟随放置模式**。
       // 跟随放置只用于「调色板 → 选中类型 → 画布空白处点击固定」那条路径：
@@ -686,7 +724,10 @@ watch(
 )
 
 // 立即启动 bootstrap（不在 onMounted 里——要早于子组件挂载）
-bootstrapScene()
+// 完成后再启动新手引导：避免 bootstrap 恢复历史边时误触发连线完成检测
+void bootstrapScene().then(() => {
+  onboarding.start()
+})
 
 onMounted(() => {
   setCanvasContainer(canvasEl.value)
@@ -706,6 +747,7 @@ onMounted(() => {
   document.addEventListener('dragover', onGlobalDragOver)
   document.addEventListener('drop', onGlobalDrop)
   unsubscribeScene = workspaceScene.onChanged(onSceneChanged)
+  unsubscribeOnboardingCheck = workspaceScene.onChanged(onSceneChangedForOnboarding)
 })
 
 onUnmounted(() => {
@@ -717,6 +759,7 @@ onUnmounted(() => {
   document.removeEventListener('dragover', onGlobalDragOver)
   document.removeEventListener('drop', onGlobalDrop)
   unsubscribeScene?.()
+  unsubscribeOnboardingCheck?.()
   document.body.style.cursor = ''
   clearTimeout(viewportPersistTimer)
 })
@@ -794,6 +837,9 @@ onUnmounted(() => {
 
     <!-- 全局设置弹窗：顶部栏「设置」按钮和系统应用菜单「设置…」共享它 -->
     <SettingsDialog />
+
+    <!-- 首次启动新手引导：全屏覆盖层 + 步骤卡片，pointer-events: none 不阻断画布交互 -->
+    <OnboardingGuide />
   </section>
 </template>
 

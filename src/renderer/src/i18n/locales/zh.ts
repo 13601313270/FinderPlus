@@ -143,6 +143,20 @@ const zh: Language = {
       title: '拖入文件夹容器',
       body: '如果画布上已经有 {folder} 或 img-folder 容器节点，把文件拖入它的内容区域而不是空白画布——文件不会新建独立节点，而是会被文件夹"收养"为子节点，自动按后缀生成对应的文件节点类型。'
     }
+  },
+  onboarding: {
+    title: '欢迎使用 Finder+',
+    step1: {
+      title: '第一步：拖入一个文件',
+      hint: '打开 Finder（访达），选中任意文件，按住鼠标左键拖到画布上松开。Finder+ 会根据后缀自动生成对应的文件节点。',
+      canvasLabel: '把文件拖到这里'
+    },
+    step2: {
+      title: '第二步：添加 File Info 节点并连线',
+      hint: '点左上角 ＋ 打开调色板，搜索"File Info"或"文件信息"，把它加到画布上。然后从文件节点右侧的圆点（输出端口）拖一条线连到 File Info 节点左侧的圆点（输入端口）。',
+      paletteLabel: '打开调色板，搜索 File Info'
+    },
+    skip: '跳过引导'
   }
 }
 

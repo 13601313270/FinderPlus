@@ -14,13 +14,12 @@ asarUnpack:
   - resources/**
 mac:
   category: public.app-category.productivity
-  # 默认只出本机架构（arm64）；这里显式声明两个架构，覆盖 Intel Mac。
-  # 只面向 Apple Silicon 的话，把 x64 去掉即可。
+  # 仅构建 arm64（Apple Silicon）。如需覆盖 Intel Mac，再把 x64 加回来。
   target:
     - target: dmg
-      arch: [arm64, x64]
+      arch: [arm64]
     - target: zip
-      arch: [arm64, x64]
+      arch: [arm64]
   artifactName: ${productName}-${version}-${arch}.${ext}
   # 签名/公证无需在这里额外开关，走 electron-builder 默认行为：
   #   hardenedRuntime 默认 true；entitlements 自动使用下方 plist；

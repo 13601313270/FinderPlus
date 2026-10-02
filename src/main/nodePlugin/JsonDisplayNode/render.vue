@@ -199,8 +199,8 @@ function formatValue(v: unknown): string {
 
 <template>
   <div class="node">
-    <div class="node__header">
-      <span class="node__handle" :title="t('dragHint')" @pointerdown="startDrag">{{ nodeTitle }}</span>
+    <div class="node__header" @pointerdown="startDrag">
+      <span class="node__handle" :title="t('dragHint')">{{ nodeTitle }}</span>
       <button
         class="node__help"
         type="button"

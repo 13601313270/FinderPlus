@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { debounce } from 'lodash-es'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { TextInputNode } from './node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
+import { viewport } from '@renderer/canvas/viewport'
 import { messages } from './i18n'
-import GearIcon from '@renderer/components/icons/GearIcon.vue'
 import HelpDialog from '@renderer/components/HelpDialog.vue'
 import TextInputHelpDialog from './TextInputHelpDialog.vue'
 
@@ -21,6 +21,8 @@ import TextInputHelpDialog from './TextInputHelpDialog.vue'
  * id 指明它控制场景里的哪个节点；引擎是纯逻辑，渲染进程能直接握住同一份
  * Scene 单例，所以这里用 workspaceScene.getNode(id) 取活引用，不用走 IPC。
  * 节点不在场景里（id 对不上或已被删）时退化为禁用输入框。
+ *
+ * 永远是多行 textarea；尺寸由右下角 handle 拖拽调整。
  */
 const props = defineProps<{ id: string }>()
 
@@ -38,7 +40,6 @@ const t = useLocalizedMessages(messages)
 /**
  * 引擎字段是普通类字段，Vue 追踪不到，所以走 Node.onChanged 这条桥刷进本地 ref。
  */
-const isMultiline = ref(false)
 const textValue = ref('')
 /** 自动发送开关状态（同步自节点） */
 const autoSend = ref(false)
@@ -59,11 +60,9 @@ const debouncedSend = debounce(() => {
 onMounted(() => {
   const node = inputNode.value
   if (!node) return
-  isMultiline.value = node.isMultiline
   textValue.value = node.text
   autoSend.value = node.isAutoSend
   offChanged = node.onChanged(() => {
-    isMultiline.value = node.isMultiline
     textValue.value = node.text
     autoSend.value = node.isAutoSend
   })
@@ -72,7 +71,6 @@ onMounted(() => {
 onUnmounted(() => {
   offChanged?.()
   debouncedSend.cancel()
-  document.removeEventListener('click', onDocClick, true)
 })
 
 // 只要拖拽（落点写回 node.position）；位置本身由外壳跟随 node.position 展示。
@@ -80,7 +78,7 @@ const { startDrag } = useNodePosition(() => inputNode.value)
 
 /** 输入框敲字 → 更新草稿；开着自动发送时排一次防抖提交 */
 function onInput(e: Event): void {
-  const target = e.target as HTMLInputElement | HTMLTextAreaElement
+  const target = e.target as HTMLTextAreaElement
   inputNode.value?.setText(target.value)
   if (autoSend.value) debouncedSend()
 }
@@ -99,60 +97,11 @@ function onAutoSendToggle(e: Event): void {
   inputNode.value?.toggleAutoSend()
 }
 
-/** 快捷键：单行 Enter 直接发；多行 Ctrl/Cmd+Enter 发，单独 Enter 换行 */
+/** 快捷键：Ctrl/Cmd+Enter 发送，单独 Enter 换行 */
 function onKeydown(e: KeyboardEvent): void {
-  if (isMultiline.value) {
-    // 多行：Ctrl/Cmd+Enter 发送
-    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-      e.preventDefault()
-      onSend()
-    }
-  } else {
-    // 单行：Enter 直接发送
-    if (e.key === 'Enter') {
-      e.preventDefault()
-      onSend()
-    }
-  }
-}
-
-// —— 设置面板（popover）——
-const gearBtn = ref<HTMLButtonElement | null>(null)
-const popoverVisible = ref(false)
-const popoverPos = ref<{ top: number; left: number }>({ top: 0, left: 0 })
-
-function onGearClick(e: MouseEvent): void {
-  e.stopPropagation()
-  if (popoverVisible.value) {
-    popoverVisible.value = false
-    document.removeEventListener('click', onDocClick, true)
-    return
-  }
-  nextTick(() => {
-    const rect = gearBtn.value?.getBoundingClientRect()
-    if (rect) {
-      popoverPos.value = {
-        top: rect.bottom + 6,
-        left: rect.right - 180 // 面板右对齐齿轮，避免超出屏幕
-      }
-    }
-    popoverVisible.value = true
-    document.addEventListener('click', onDocClick, true)
-  })
-}
-
-function onDocClick(e: MouseEvent): void {
-  // 点击 popover 内部不关闭（checkbox 操作需要），点击外部关闭
-  const pop = document.querySelector('.ti-popover')
-  if (pop && pop.contains(e.target as Node)) return
-  popoverVisible.value = false
-  document.removeEventListener('click', onDocClick, true)
-}
-
-function onMultilineToggle(e: Event): void {
-  const target = e.target as HTMLInputElement
-  if (target.checked !== isMultiline.value) {
-    inputNode.value?.toggleMultiline()
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+    e.preventDefault()
+    onSend()
   }
 }
 
@@ -169,11 +118,45 @@ function onTextareaWheel(e: WheelEvent): void {
   const scrollingUp = e.deltaY < 0
   const scrollingDown = e.deltaY > 0
 
-  // 上滚但已到顶、或下滚但已到底 → 放行给画布
   if ((scrollingUp && atTop) || (scrollingDown && atBottom)) return
 
-  // 还能滚 → 拦住，不让画布接管
   e.stopPropagation()
+}
+
+// —— 右下角拖拽调整尺寸 ——
+let resizing = false
+let resizeStartX = 0
+let resizeStartY = 0
+let resizeStartW = 0
+let resizeStartH = 0
+
+function onResizeStart(e: PointerEvent): void {
+  if (!inputNode.value) return
+  e.stopPropagation()
+  e.preventDefault()
+  resizing = true
+  resizeStartX = e.clientX
+  resizeStartY = e.clientY
+  const [w, h] = inputNode.value.displayBox
+  resizeStartW = w
+  resizeStartH = h
+  ;(e.target as HTMLElement).setPointerCapture(e.pointerId)
+  window.addEventListener('pointermove', onResizeMove)
+  window.addEventListener('pointerup', onResizeEnd)
+}
+
+function onResizeMove(e: PointerEvent): void {
+  if (!resizing || !inputNode.value) return
+  const scale = viewport.scale || 1
+  const dw = (e.clientX - resizeStartX) / scale
+  const dh = (e.clientY - resizeStartY) / scale
+  inputNode.value.resizeBox(resizeStartW + dw, resizeStartH + dh)
+}
+
+function onResizeEnd(): void {
+  resizing = false
+  window.removeEventListener('pointermove', onResizeMove)
+  window.removeEventListener('pointerup', onResizeEnd)
 }
 </script>
 
@@ -182,17 +165,6 @@ function onTextareaWheel(e: WheelEvent): void {
     <div class="node__header" @pointerdown="startDrag">
       <span class="node__handle" :title="t('dragHint')">{{ nodeTitle }}</span>
       <div class="node__header-actions">
-        <button
-          v-if="inputNode"
-          ref="gearBtn"
-          class="node__gear"
-          type="button"
-          :title="t('nodeSettings')"
-          @pointerdown.stop
-          @click.stop="onGearClick"
-        >
-          <GearIcon />
-        </button>
         <button
           class="node__help"
           type="button"
@@ -203,23 +175,11 @@ function onTextareaWheel(e: WheelEvent): void {
       </div>
     </div>
     <textarea
-      v-if="isMultiline"
       class="render-input"
-      rows="4"
       :value="textValue"
       :disabled="!inputNode"
       :placeholder="inputNode ? t('placeholderMultiline') : t('nodeMissing')"
       @wheel="onTextareaWheel"
-      @input="onInput"
-      @keydown="onKeydown"
-    />
-    <input
-      v-else
-      class="render-input"
-      type="text"
-      :value="textValue"
-      :disabled="!inputNode"
-      :placeholder="inputNode ? t('placeholderSingle') : t('nodeMissing')"
       @input="onInput"
       @keydown="onKeydown"
     />
@@ -245,27 +205,19 @@ function onTextareaWheel(e: WheelEvent): void {
         {{ t('send') }}
       </button>
     </div>
+
+    <!-- 右下角拖拽调整尺寸 handle -->
+    <div
+      class="node__resize-handle"
+      title="拖拽调整尺寸"
+      @pointerdown="onResizeStart"
+    />
   </div>
 
   <!-- 帮助弹窗 -->
   <HelpDialog :visible="showHelp" :title="t('helpDialogTitle')" @close="showHelp = false">
     <TextInputHelpDialog />
   </HelpDialog>
-
-  <!-- 设置面板：Teleport 到 body，避免被父容器 overflow clip -->
-  <Teleport to="body">
-    <div
-      v-if="popoverVisible"
-      class="ti-popover"
-      :style="{ top: popoverPos.top + 'px', left: popoverPos.left + 'px' }"
-      @click.stop
-    >
-      <label class="ti-option">
-        <input type="checkbox" :checked="isMultiline" @change="onMultilineToggle" />
-        <span class="ti-option__label">{{ t('multiline') }}</span>
-      </label>
-    </div>
-  </Teleport>
 </template>
 
 <style scoped lang="less">
@@ -274,6 +226,7 @@ function onTextareaWheel(e: WheelEvent): void {
   width: 100%; // 填满 NodeShell 的 .node-content（由 node.box 硬约束定宽高）
   height: 100%;
   overflow: auto; // 内容超出 box 时可滚
+  position: relative; // 给 resize handle 当定位锚点
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -303,7 +256,6 @@ function onTextareaWheel(e: WheelEvent): void {
     padding: 2px 0;
   }
 
-  // 右侧按钮组：齿轮 + 帮助，靠右对齐（head 已 space-between，auto 双保险）
   &__header-actions {
     display: flex;
     align-items: center;
@@ -332,28 +284,6 @@ function onTextareaWheel(e: WheelEvent): void {
     &:hover {
       background: #dbeafe;
       color: #2563eb;
-    }
-  }
-
-  &__gear {
-    all: unset;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 22px;
-    height: 22px;
-    border-radius: 4px;
-    color: #6b7280;
-    transition: color 0.15s, background 0.15s;
-
-    &:hover {
-      color: #111827;
-      background: #f3f4f6;
-    }
-
-    &:active {
-      background: #e5e7eb;
     }
   }
 
@@ -439,7 +369,7 @@ function onTextareaWheel(e: WheelEvent): void {
   }
 }
 
-// 开关选中态：轨道变蓝、滑块右移（input 在轨道前面，用相邻兄弟选择器）
+// 开关选中态：轨道变蓝、滑块右移
 .node__switch-input:checked + .node__switch-track {
   background: @color-primary;
 }
@@ -460,67 +390,52 @@ function onTextareaWheel(e: WheelEvent): void {
   border-radius: 6px;
   font-size: 14px;
   flex-shrink: 1;
+  flex-grow: 1;
+  resize: none; // 原生 resize 关掉，由右下角 handle 统一管理
+  font-family: inherit;
 
   &:disabled {
     opacity: 0.5;
   }
-
-  // textarea 允许垂直拖拽调整高度
-  textarea& {
-    resize: vertical;
-    font-family: inherit;
-  }
 }
 
-// 设置面板 popover（Teleport 到 body，所以不用 scoped 的话会穿透）
-.ti-popover {
-  position: fixed;
-  z-index: 2000;
-  min-width: 180px;
-  padding: 8px;
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-
-  &::before {
-    // 小三角指向齿轮
-    content: '';
-    position: absolute;
-    top: -5px;
-    right: 10px;
-    width: 8px;
-    height: 8px;
-    background: #fff;
-    border-left: 1px solid #e5e7eb;
-    border-top: 1px solid #e5e7eb;
-    transform: rotate(45deg);
-  }
-}
-
-.ti-option {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 8px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 13px;
-  color: #1f2937;
-  transition: background 0.12s;
+// —— 右下角 resize handle ——
+.node__resize-handle {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 14px;
+  height: 14px;
+  cursor: nwse-resize;
+  pointer-events: auto;
+  z-index: 10;
+  background: linear-gradient(
+    135deg,
+    transparent 0%,
+    transparent 40%,
+    #b4bcc7 40%,
+    #b4bcc7 50%,
+    transparent 50%,
+    transparent 60%,
+    #b4bcc7 60%,
+    #b4bcc7 70%,
+    transparent 70%
+  );
+  border-bottom-right-radius: 8px;
 
   &:hover {
-    background: #f3f4f6;
-  }
-
-  input[type='checkbox'] {
-    width: 14px;
-    height: 14px;
-    cursor: pointer;
-  }
-
-  &__label {
-    user-select: none;
+    background: linear-gradient(
+      135deg,
+      transparent 0%,
+      transparent 35%,
+      #6b7280 35%,
+      #6b7280 45%,
+      transparent 45%,
+      transparent 55%,
+      #6b7280 55%,
+      #6b7280 65%,
+      transparent 65%
+    );
   }
 }
 </style>

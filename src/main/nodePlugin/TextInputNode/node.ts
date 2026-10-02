@@ -3,12 +3,17 @@ import { OutputPort } from '../../engine/port/OutputPort'
 import { Node } from '../../engine/node/Node'
 import type { InputPort } from '../../engine/port/InputPort'
 
-const SINGLE_LINE_HEIGHT = 119
-const MULTI_LINE_HEIGHT = 169
+/** 构造默认 box（多行输入）；用户拖拽调整后以 setBox 为准 */
+const DEFAULT_BOX: [number, number] = [300, 180]
+
+/** 内容区最小尺寸：再小就没地方放输入框了 */
+const MIN_WIDTH = 180
+const MIN_HEIGHT = 80
 
 /**
  * 字符串输入框节点：源头节点，框里写什么就往外送什么。
  * 没有输入端口，只有一个字符串输出。
+ * 永远是多行 textarea，支持右下角拖拽调整宽高，尺寸持久化到 saveState。
  */
 export class TextInputNode extends Node {
   static readonly TYPE = 'text-input'
@@ -35,17 +40,14 @@ export class TextInputNode extends Node {
 
   private content = ''
 
-  /** 是否为多行输入模式 */
-  private multiline = false
-
   /** 是否自动发送：开启后停止输入即自动 commit，发送按钮随之置灰 */
   private autoSend = false
 
   constructor(id: string) {
     super(id)
     this.addOutput(this.textOutput)
-    // 内容区硬约束：手柄 + 输入框 + padding ≈ 86px 高，宽 220px
-    this.setBox(220, SINGLE_LINE_HEIGHT)
+    const [w, h] = DEFAULT_BOX
+    this.setBox(w, h)
   }
 
   /** 拖入文件落点命中本节点时被调用；本节点不接收文件，返回 false */
@@ -62,32 +64,20 @@ export class TextInputNode extends Node {
     return this.content
   }
 
-  /** 是否多行输入，UI 读它决定渲染 input 还是 textarea */
-  get isMultiline(): boolean {
-    return this.multiline
-  }
-
   /** 是否自动发送，UI 读它决定开关状态与发送按钮是否置灰 */
   get isAutoSend(): boolean {
     return this.autoSend
+  }
+
+  /** 当前内容区 box，UI 读它决定节点尺寸（render.vue 内部拖拽调整后会自动同步回来） */
+  get displayBox(): readonly [number, number] {
+    return this.box
   }
 
   /** 切换自动发送开关 */
   toggleAutoSend(): void {
     this.autoSend = !this.autoSend
     this.notifyChanged()
-  }
-
-  /** 切换单行/多行模式，同时调整节点 box 高度 */
-  toggleMultiline(): void {
-    this.multiline = !this.multiline
-    this.setBox(220, this.multiline ? MULTI_LINE_HEIGHT : SINGLE_LINE_HEIGHT)
-    // 切回单行时，把草稿里的换行符清掉（\r\n 和 \n 都要处理），同时同步到输出端口
-    if (!this.multiline && this.content.includes('\n')) {
-      this.content = this.content.replace(/\r?\n/g, ' ')
-      this.textOutput.commit(new StringValue(this.content))
-      this.notifyChanged()
-    }
   }
 
   /**
@@ -106,27 +96,42 @@ export class TextInputNode extends Node {
     // commit 内部不触发 notifyChanged——提交是瞬时事件，不需要持久化
   }
 
+  /**
+   * UI 拖拽 handle 时调这个——把 box 夹到最小尺寸之上。
+   * Node.setBox 内部有 Math.max(0) 但没有 MIN 的语义，这里做一层守护。
+   */
+  resizeBox(width: number, height: number): void {
+    this.setBox(Math.max(MIN_WIDTH, Math.round(width)), Math.max(MIN_HEIGHT, Math.round(height)))
+  }
+
   /** 没有输入端口，永远收不到通知 */
   inputPortReceiveValue(_ports: InputPort[]): void {}
 
   saveState(): Record<string, unknown> {
-    return { content: this.content, multiline: this.multiline, autoSend: this.autoSend }
+    const [w, h] = this.box
+    return {
+      content: this.content,
+      autoSend: this.autoSend,
+      width: w,
+      height: h
+    }
   }
 
   readState(state: Record<string, unknown>): void {
-    // 恢复多行模式 → 调整 box 高度
-    if (state.multiline === true) {
-      this.multiline = true
-      this.setBox(220, MULTI_LINE_HEIGHT)
-    }
     if (state.autoSend === true) {
       this.autoSend = true
     }
-    // 恢复草稿值
+    // 恢复 box 尺寸（优先用存的值；老数据没有就用默认）
+    if (typeof state.width === 'number' && typeof state.height === 'number') {
+      this.setBox(state.width, state.height)
+    } else {
+      const [dw, dh] = DEFAULT_BOX
+      this.setBox(dw, dh)
+    }
+    // 老数据存了 multiline + 单行换行符清理，这里已经永远是 textarea 了，不处理它
     const text = typeof state.content === 'string' ? state.content : ''
     this.content = text
     this.notifyChanged()
-    // 恢复源头值 → 触发 commit，下游才能收到（之前 setText 自带 commit，现在要显式调）
     this.textOutput.commit(new StringValue(text))
   }
 }

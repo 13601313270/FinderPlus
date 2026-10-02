@@ -16,7 +16,13 @@ export const messages = {
     ar: 'اسحب العقدة',
     fr: 'Glisser le nœud',
     pt: 'Arrastar nó',
-    ru: 'Перетащить узел'
+    ru: 'Перетащить узел',
+    hi: "नोड खींचें",
+    id: "Seret node",
+    de: "Knoten ziehen",
+    vi: "Kéo nút",
+    tr: "Düğümü sürükle",
+    it: "Trascina il nodo",
   },
   reviewLabel: {
     zh: '待审核',
@@ -27,7 +33,13 @@ export const messages = {
     ar: 'بانتظار المراجعة',
     fr: 'En attente de révision',
     pt: 'Aguardando revisão',
-    ru: 'Ожидает проверки'
+    ru: 'Ожидает проверки',
+    hi: "समीक्षा हेतु लंबित",
+    id: "Menunggu peninjauan",
+    de: "Ausstehende Prüfung",
+    vi: "Chờ xem xét",
+    tr: "İnceleme bekliyor",
+    it: "In attesa di revisione",
   },
   awaitingInput: {
     zh: '（等待输入）',
@@ -38,7 +50,13 @@ export const messages = {
     ar: '(في انتظار الإدخال)',
     fr: '(En attente d’entrée)',
     pt: '(Aguardando entrada)',
-    ru: '(Ожидание ввода)'
+    ru: '(Ожидание ввода)',
+    hi: "(इनपुट की प्रतीक्षा में)",
+    id: "(Menunggu masukan)",
+    de: "(Warten auf Eingabe)",
+    vi: "(Đang chờ đầu vào)",
+    tr: "(Giriş bekleniyor)",
+    it: "(In attesa di input)",
   },
   queueRemaining: {
     zh: '队列中还有 {n} 项',
@@ -49,7 +67,13 @@ export const messages = {
     ar: '{n} أخرى في الطابور',
     fr: '{n} de plus dans la file',
     pt: '{n} mais na fila',
-    ru: 'Ещё {n} в очереди'
+    ru: 'Ещё {n} в очереди',
+    hi: "कतार में {n} और",
+    id: "{n} lagi dalam antrean",
+    de: "Noch {n} in der Warteschlange",
+    vi: "Còn {n} trong hàng đợi",
+    tr: "Kuyrukta {n} tane daha",
+    it: "Altri {n} in coda",
   },
   queueEmpty: {
     zh: '队列为空',
@@ -60,7 +84,13 @@ export const messages = {
     ar: 'الطابور فارغ',
     fr: 'La file est vide',
     pt: 'A fila está vazia',
-    ru: 'Очередь пуста'
+    ru: 'Очередь пуста',
+    hi: "कतार खाली है",
+    id: "Antrean kosong",
+    de: "Warteschlange ist leer",
+    vi: "Hàng đợi trống",
+    tr: "Kuyruk boş",
+    it: "La coda è vuota",
   },
   approve: {
     zh: '同意',
@@ -71,7 +101,13 @@ export const messages = {
     ar: 'موافقة',
     fr: 'Approuver',
     pt: 'Aprovar',
-    ru: 'Одобрить'
+    ru: 'Одобрить',
+    hi: "स्वीकारें",
+    id: "Setujui",
+    de: "Genehmigen",
+    vi: "Chấp thuận",
+    tr: "Onayla",
+    it: "Approva",
   },
   reject: {
     zh: '拒绝',
@@ -82,7 +118,13 @@ export const messages = {
     ar: 'رفض',
     fr: 'Rejeter',
     pt: 'Rejeitar',
-    ru: 'Отклонить'
+    ru: 'Отклонить',
+    hi: "अस्वीकारें",
+    id: "Tolak",
+    de: "Ablehnen",
+    vi: "Từ chối",
+    tr: "Reddet",
+    it: "Rifiuta",
   },
   helpTitle: {
     zh: '使用说明',
@@ -93,7 +135,13 @@ export const messages = {
     ar: 'مساعدة',
     fr: 'Aide',
     pt: 'Ajuda',
-    ru: 'Справка'
+    ru: 'Справка',
+    hi: "सहायता",
+    id: "Bantuan",
+    de: "Hilfe",
+    vi: "Trợ giúp",
+    tr: "Yardım",
+    it: "Guida",
   },
   helpDialogTitle: {
     zh: '人工审核节点使用说明',
@@ -104,6 +152,12 @@ export const messages = {
     ar: 'مساعدة عقدة المراجعة البشرية',
     fr: 'Aide du nœud Révision humaine',
     pt: 'Ajuda do nó Revisão humana',
-    ru: 'Справка по узлу «Ручная проверка»'
+    ru: 'Справка по узлу «Ручная проверка»',
+    hi: "मानव समीक्षा नोड सहायता",
+    id: "Bantuan node Tinjauan Manusia",
+    de: "Hilfe zum Knoten „Menschliche Prüfung“",
+    vi: "Trợ giúp nút Xem xét thủ công",
+    tr: "İnsan İncelemesi düğümü yardımı",
+    it: "Guida del nodo Revisione umana",
   }
 } satisfies Record<string, LocalizedText>

@@ -11,6 +11,12 @@ import ar from './locales/ar'
 import fr from './locales/fr'
 import pt from './locales/pt'
 import ru from './locales/ru'
+import hi from './locales/hi'
+import id from './locales/id'
+import de from './locales/de'
+import vi from './locales/vi'
+import tr from './locales/tr'
+import it from './locales/it'
 
 /**
  * 全局 i18n 实例。
@@ -29,8 +35,8 @@ const { language } = useLanguageSettings()
  *
  * 标注成 Record<LanguageCode, Language> 有两个编译期强制作用：
  * 1. 键必须覆盖 LANGUAGE_OPTIONS 里登记过的**全部**语言——新增语言（比如 LANGUAGE_OPTIONS
- *    里加了 'de'）却忘了在这里挂词条，typecheck 直接报错；
- * 2. 每份词条都必须满足 Language 契约，9 种语言结构强制一致。
+ *    里加了 'nl'）却忘了在这里挂词条，typecheck 直接报错；
+ * 2. 每份词条都必须满足 Language 契约，全部语言结构强制一致。
  */
 const messages: Record<LanguageCode, Language> = {
   zh,
@@ -41,7 +47,13 @@ const messages: Record<LanguageCode, Language> = {
   ar,
   fr,
   pt,
-  ru
+  ru,
+  hi,
+  id,
+  de,
+  vi,
+  tr,
+  it
 }
 
 export const i18n = createI18n({

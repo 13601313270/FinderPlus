@@ -14,7 +14,13 @@ export const manifest: NodePluginManifest = {
     ar: 'ملف نصي',
     fr: 'Fichier texte',
     pt: 'Ficheiro de texto',
-    ru: 'Текстовый файл'
+    ru: 'Текстовый файл',
+    hi: 'टेक्स्ट फ़ाइल',
+    id: 'Berkas teks',
+    de: 'Textdatei',
+    vi: 'Tệp văn bản',
+    tr: 'Metin dosyası',
+    it: 'File di testo'
   },
   render,
   help: () => import('./TxtFileHelpDialog.vue')

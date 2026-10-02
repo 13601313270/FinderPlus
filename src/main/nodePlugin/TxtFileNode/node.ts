@@ -33,7 +33,13 @@ export class TxtFileNode extends FileNode {
     ar: 'نص',
     fr: 'Texte',
     pt: 'Texto',
-    ru: 'Текст'
+    ru: 'Текст',
+    hi: 'टेक्स्ट',
+    id: 'Teks',
+    de: 'Text',
+    vi: 'Văn bản',
+    tr: 'Metin',
+    it: 'Testo'
   })
 
   /** 文件输出（TxtFileValue，kind = 'txt-file'） */
@@ -46,7 +52,13 @@ export class TxtFileNode extends FileNode {
     ar: 'ملف',
     fr: 'Fichier',
     pt: 'Ficheiro',
-    ru: 'Файл'
+    ru: 'Файл',
+    hi: 'फ़ाइल',
+    id: 'Berkas',
+    de: 'Datei',
+    vi: 'Tệp',
+    tr: 'Dosya',
+    it: 'File'
   })
 
   /** 文件数据输入端口：只接受同类型（txt）文件，收到值即替换本节点文件 */
@@ -61,7 +73,13 @@ export class TxtFileNode extends FileNode {
       ar: 'ملف',
       fr: 'Fichier',
       pt: 'Ficheiro',
-      ru: 'Файл'
+      ru: 'Файл',
+      hi: 'फ़ाइल',
+      id: 'Berkas',
+      de: 'Datei',
+      vi: 'Tệp',
+      tr: 'Dosya',
+      it: 'File'
     }
   })
 
@@ -77,7 +95,13 @@ export class TxtFileNode extends FileNode {
       ar: 'المحتوى',
       fr: 'Contenu',
       pt: 'Conteúdo',
-      ru: 'Содержимое'
+      ru: 'Содержимое',
+      hi: 'सामग्री',
+      id: 'Konten',
+      de: 'Inhalt',
+      vi: 'Nội dung',
+      tr: 'İçerik',
+      it: 'Contenuto'
     }
   })
 

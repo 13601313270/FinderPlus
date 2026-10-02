@@ -51,7 +51,13 @@ export class ImageCompressNode extends Node {
       ar: 'الحجم',
       fr: 'Taille',
       pt: 'Tamanho',
-      ru: 'Размер'
+      ru: 'Размер',
+      hi: 'आकार',
+      id: 'Ukuran',
+      de: 'Größe',
+      vi: 'Kích thước',
+      tr: 'Boyut',
+      it: 'Dimensione'
     },
     defaultValue: new NumberValue(800)
   })
@@ -68,7 +74,13 @@ export class ImageCompressNode extends Node {
       ar: 'صورة',
       fr: 'Image',
       pt: 'Imagem',
-      ru: 'Изображение'
+      ru: 'Изображение',
+      hi: 'छवि',
+      id: 'Gambar',
+      de: 'Bild',
+      vi: 'Ảnh',
+      tr: 'Görüntü',
+      it: 'Immagine'
     }
   })
 
@@ -82,7 +94,13 @@ export class ImageCompressNode extends Node {
     ar: 'صورة مضغوطة',
     fr: 'Image compressée',
     pt: 'Imagem comprimida',
-    ru: 'Сжатое изображение'
+    ru: 'Сжатое изображение',
+    hi: 'संपीड़ित छवि',
+    id: 'Gambar terkompresi',
+    de: 'Komprimiertes Bild',
+    vi: 'Ảnh đã nén',
+    tr: 'Sıkıştırılmış görüntü',
+    it: 'Immagine compressa'
   })
 
   /** 本次要处理的源节点 id（拖入路径的触发信号）。一次拖入只处理一次，处理完清空 */

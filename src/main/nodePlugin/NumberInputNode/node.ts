@@ -24,7 +24,13 @@ export class NumberInputNode extends Node {
     ar: 'رقم',
     fr: 'Nombre',
     pt: 'Número',
-    ru: 'Число'
+    ru: 'Число',
+    hi: 'संख्या',
+    id: 'Angka',
+    de: 'Zahl',
+    vi: 'Số',
+    tr: 'Sayı',
+    it: 'Numero'
   })
 
   private content = 0

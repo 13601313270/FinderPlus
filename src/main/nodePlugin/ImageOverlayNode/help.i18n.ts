@@ -1,7 +1,7 @@
 import type { LocalizedText } from '../../../shared/language'
 
 /**
- * 图片叠加节点帮助文档（ImageOverlayHelpDialog）的全部文案，9 种语言全配。
+ * 图片叠加节点帮助文档（ImageOverlayHelpDialog）的全部文案，全部 15 种语言全配。
  *
  * 与节点自身的 i18n.ts 分开：卡片/配置弹窗的短文案变化频繁，帮助文档整篇
  * 体量大且改动少，拆开后两边互不干扰。跟随节点文件夹一起搬运，保持插件自包含。
@@ -21,7 +21,13 @@ export const helpMessages = {
     ar: 'ما هذا؟',
     fr: 'Qu’est-ce que c’est ?',
     pt: 'O que é isto?',
-    ru: 'Что это?'
+    ru: 'Что это?',
+    hi: 'यह क्या है?',
+    id: 'Apa ini?',
+    de: 'Was ist das?',
+    vi: 'Đây là gì?',
+    tr: 'Bu nedir?',
+    it: 'Cos’è questo?'
   },
   whatBody: {
     zh: '图片叠加节点把多张图片按<b>图层顺序</b>叠在一起，合成一张 PNG（保留透明通道），从右侧 <code>composite</code> 端口输出给下游节点。每个输入端口接一张图，接到端口上的图可以在节点右侧的预览区里自由拖拽定位、拉伸缩放。',
@@ -32,7 +38,13 @@ export const helpMessages = {
     ar: 'تعمل عقدة تراكب الصور على تكديس عدة صور وفق <b>ترتيب الطبقات</b> في صورة PNG واحدة (مع الحفاظ على قناة الشفافية)، وتُخرجها إلى العقد اللاحقة عبر منفذ <code>composite</code> على اليمين. يستقبل كل منفذ إدخال صورة واحدة؛ ويمكن سحب الصور المتصلة بالمنفذ وتحريكها وتغيير حجمها بحرية في منطقة المعاينة على يمين العقدة.',
     fr: 'Le nœud Superposition d’images empile plusieurs images selon l’<b>ordre des calques</b> en un seul PNG (canal alpha conservé) et l’envoie aux nœuds en aval via le port <code>composite</code> à droite. Chaque port d’entrée reçoit une image ; les images connectées à un port peuvent être déplacées, positionnées et redimensionnées librement dans la zone d’aperçu à droite du nœud.',
     pt: 'O nó Sobreposição de imagens empilha várias imagens segundo a <b>ordem das camadas</b> num único PNG (mantendo o canal alfa) e envia-o aos nós seguintes através do porto <code>composite</code> à direita. Cada porto de entrada recebe uma imagem; as imagens ligadas a um porto podem ser arrastadas, posicionadas e redimensionadas livremente na área de pré-visualização à direita do nó.',
-    ru: 'Узел «Наложение изображений» накладывает несколько изображений в порядке <b>слоёв</b>, объединяя их в один PNG (с сохранением альфа-канала), и выводит его последующим узлам через порт <code>composite</code> справа. Каждый входной порт принимает одно изображение; подключённые к порту изображения можно свободно перетаскивать, позиционировать и масштабировать в области предпросмотра справа от узла.'
+    ru: 'Узел «Наложение изображений» накладывает несколько изображений в порядке <b>слоёв</b>, объединяя их в один PNG (с сохранением альфа-канала), и выводит его последующим узлам через порт <code>composite</code> справа. Каждый входной порт принимает одно изображение; подключённые к порту изображения можно свободно перетаскивать, позиционировать и масштабировать в области предпросмотра справа от узла.',
+    hi: 'छवि ओवरले नोड कई छवियों को <b>परत क्रम</b> के अनुसार एक साथ रखकर एक PNG (पारदर्शी चैनल सुरक्षित) में संयोजित करता है और उसे दाईं ओर के <code>composite</code> पोर्ट से नीचे के नोड्स को भेजता है। प्रत्येक इनपुट पोर्ट पर एक छवि जुड़ती है; पोर्ट से जुड़ी छवि को नोड के दाईं ओर के पूर्वावलोकन क्षेत्र में स्वतंत्र रूप से खींचकर रखा और स्केल किया जा सकता है।',
+    id: 'Node Hamparan gambar menumpuk beberapa gambar sesuai <b>urutan lapisan</b> menjadi satu PNG (mempertahankan kanal transparan), lalu mengeluarkannya ke node hilir melalui port <code>composite</code> di sebelah kanan. Setiap port masukan menerima satu gambar; gambar yang tersambung ke port dapat diseret, ditempatkan, dan diubah ukurannya dengan bebas di area pratinjau di sebelah kanan node.',
+    de: 'Der Knoten „Bildüberlagerung“ stapelt mehrere Bilder gemäß der <b>Ebenenreihenfolge</b> zu einem einzigen PNG (mit erhaltenem Alphakanal) und gibt es über den Port <code>composite</code> rechts an nachgelagerte Knoten aus. Jeder Eingabeport nimmt ein Bild auf; ein an einen Port angeschlossenes Bild kann im Vorschaubereich rechts am Knoten frei gezogen, positioniert und skaliert werden.',
+    vi: 'Nút Lớp phủ ảnh xếp nhiều ảnh theo <b>thứ tự lớp</b> thành một PNG duy nhất (giữ nguyên kênh trong suốt), rồi xuất ra cho các nút hạ nguồn qua cổng <code>composite</code> bên phải. Mỗi cổng đầu vào nhận một ảnh; ảnh nối vào cổng có thể được kéo, định vị và thu phóng tự do trong vùng xem trước bên phải nút.',
+    tr: 'Görüntü katmanı düğümü, birkaç görüntüyü <b>katman sırasına</b> göre üst üste koyarak tek bir PNG halinde birleştirir (saydamlık kanalını korur) ve sağdaki <code>composite</code> bağlantı noktasından aşağı akış düğümlerine verir. Her giriş bağlantı noktası bir görüntü alır; bir bağlantı noktasına bağlanan görüntü, düğümün sağındaki önizleme alanında serbestçe sürüklenebilir, konumlandırılabilir ve yeniden boyutlandırılabilir.',
+    it: 'Il nodo Sovrapposizione immagini impila più immagini secondo l’<b>ordine dei livelli</b> in un unico PNG (mantenendo il canale alfa) e lo invia ai nodi a valle tramite la porta <code>composite</code> a destra. Ogni porta di input riceve una sola immagine; un’immagine collegata a una porta può essere trascinata, posizionata e ridimensionata liberamente nell’area di anteprima a destra del nodo.'
   },
 
   // —— 输入端口（图层） ——
@@ -45,7 +57,13 @@ export const helpMessages = {
     ar: 'منافذ الإدخال (الطبقات)',
     fr: 'Ports d’entrée (calques)',
     pt: 'Portas de entrada (camadas)',
-    ru: 'Входные порты (слои)'
+    ru: 'Входные порты (слои)',
+    hi: 'इनपुट पोर्ट (परतें)',
+    id: 'Port masukan (lapisan)',
+    de: 'Eingabeports (Ebenen)',
+    vi: 'Cổng đầu vào (lớp)',
+    tr: 'Giriş bağlantı noktaları (katmanlar)',
+    it: 'Porte di input (livelli)'
   },
   inputsLi1: {
     zh: '初始有 <b>2 个</b>输入端口，每个端口接一张图',
@@ -56,7 +74,13 @@ export const helpMessages = {
     ar: 'يوجد في البداية <b>2</b> من منافذ الإدخال، ويستقبل كل منفذ صورة واحدة',
     fr: 'Il y a <b>2</b> ports d’entrée au départ, chacun recevant une image',
     pt: 'Existem <b>2</b> portos de entrada inicialmente, cada um recebe uma imagem',
-    ru: 'Изначально есть <b>2</b> входных порта, каждый принимает одно изображение'
+    ru: 'Изначально есть <b>2</b> входных порта, каждый принимает одно изображение',
+    hi: 'शुरू में <b>2</b> इनपुट पोर्ट होते हैं, प्रत्येक पोर्ट पर एक छवि',
+    id: 'Awalnya ada <b>2</b> port masukan, masing-masing untuk satu gambar',
+    de: 'Anfangs gibt es <b>2</b> Eingabeports, jeder für ein Bild',
+    vi: 'Ban đầu có <b>2</b> cổng đầu vào, mỗi cổng nhận một ảnh',
+    tr: 'Başlangıçta <b>2</b> giriş bağlantı noktası vardır; her biri bir görüntü alır',
+    it: 'All’inizio ci sono <b>2</b> porte di input, ognuna per un’immagine'
   },
   inputsLi2: {
     zh: '所有端口都被占满时，会<b>自动新增</b>一个端口；也可以点左侧的「＋ 添加图层」手动加',
@@ -67,7 +91,13 @@ export const helpMessages = {
     ar: 'عند امتلاء جميع المنافذ، يُضاف منفذ <b>تلقائيًا</b>؛ ويمكنك أيضًا إضافته يدويًا بالنقر على «＋ إضافة طبقة» على اليسار',
     fr: 'Lorsque tous les ports sont occupés, un port est <b>ajouté automatiquement</b> ; vous pouvez aussi en ajouter un manuellement en cliquant sur « ＋ Ajouter un calque » à gauche',
     pt: 'Quando todos os portos estão preenchidos, um porto é <b>adicionado automaticamente</b>; também pode adicionar um manualmente clicando em “＋ Adicionar camada” à esquerda',
-    ru: 'Когда все порты заняты, порт <b>добавляется автоматически</b>; можно также добавить его вручную, нажав «＋ Добавить слой» слева'
+    ru: 'Когда все порты заняты, порт <b>добавляется автоматически</b>; можно также добавить его вручную, нажав «＋ Добавить слой» слева',
+    hi: 'जब सभी पोर्ट भर जाते हैं, तो एक पोर्ट <b>स्वतः जुड़</b> जाता है; बाईं ओर «＋ परत जोड़ें» पर क्लिक करके मैन्युअल रूप से भी जोड़ सकते हैं',
+    id: 'Saat semua port penuh, sebuah port <b>ditambahkan otomatis</b>; Anda juga dapat menambahkannya secara manual dengan mengklik “＋ Tambah lapisan” di sebelah kiri',
+    de: 'Sind alle Ports belegt, wird ein Port <b>automatisch hinzugefügt</b>; du kannst auch links auf „＋ Ebene hinzufügen“ klicken, um manuell einen hinzuzufügen',
+    vi: 'Khi tất cả cổng đều đã đầy, một cổng sẽ được <b>tự động thêm</b>; bạn cũng có thể thêm thủ công bằng cách nhấn “＋ Thêm lớp” bên trái',
+    tr: 'Tüm bağlantı noktaları dolduğunda bir bağlantı noktası <b>otomatik eklenir</b>; soldaki “＋ Katman ekle” ile elle de ekleyebilirsin',
+    it: 'Quando tutte le porte sono piene, ne viene <b>aggiunta una automaticamente</b>; puoi anche aggiungerla manualmente facendo clic su «＋ Aggiungi livello» a sinistra'
   },
   inputsLi3: {
     zh: '端口顺序 = 图层顺序：<code>图层 1</code> 在最底层，序号越大越靠上（后画的盖住先画的）',
@@ -78,7 +108,13 @@ export const helpMessages = {
     ar: 'ترتيب المنافذ = ترتيب الطبقات: <code>الطبقة 1</code> في الأسفل، وكلما زاد الرقم ارتفعت الطبقة (اللاحقة تغطي السابقة)',
     fr: 'Ordre des ports = ordre des calques : <code>Calque 1</code> est tout en bas ; plus le numéro est élevé, plus le calque est au-dessus (les suivants recouvrent les précédents)',
     pt: 'Ordem dos portos = ordem das camadas: <code>Camada 1</code> está na base; quanto maior o número, mais acima fica (as posteriores tapam as anteriores)',
-    ru: 'Порядок портов = порядок слоёв: <code>Слой 1</code> находится в самом низу; чем больше номер, тем выше слой (нарисованные позже перекрывают нарисованные раньше)'
+    ru: 'Порядок портов = порядок слоёв: <code>Слой 1</code> находится в самом низу; чем больше номер, тем выше слой (нарисованные позже перекрывают нарисованные раньше)',
+    hi: 'पोर्ट क्रम = परत क्रम: <code>परत 1</code> सबसे नीचे होती है, संख्या जितनी बड़ी उतनी ऊपर (बाद में बनी पहले वाली को ढकती है)',
+    id: 'Urutan port = urutan lapisan: <code>Lapisan 1</code> berada di paling bawah; makin besar angkanya makin ke atas (yang digambar belakangan menutupi yang lebih dulu)',
+    de: 'Portreihenfolge = Ebenenreihenfolge: <code>Ebene 1</code> liegt ganz unten; je größer die Nummer, desto weiter oben (später gezeichnete überdecken frühere)',
+    vi: 'Thứ tự cổng = thứ tự lớp: <code>Lớp 1</code> ở dưới cùng; số càng lớn càng ở trên (vẽ sau che lấp vẽ trước)',
+    tr: 'Bağlantı noktası sırası = katman sırası: <code>Katman 1</code> en alttadır; numara büyüdükçe yukarı çıkar (sonra çizilen öncekini örter)',
+    it: 'Ordine delle porte = ordine dei livelli: <code>Livello 1</code> è in fondo; più alto è il numero, più sta sopra (i successivi coprono i precedenti)'
   },
   inputsLi4: {
     zh: '每个端口只能接一张图，接入类型为图片值（<code>img-file</code> 节点或上游图片输出）',
@@ -89,7 +125,13 @@ export const helpMessages = {
     ar: 'يستقبل كل منفذ صورة واحدة فقط، ونوع الاتصال قيمة صورة (عقدة <code>img-file</code> أو إخراج صورة من المنبع)',
     fr: 'Chaque port n’accepte qu’une seule image ; le type de connexion est une valeur d’image (un nœud <code>img-file</code> ou une sortie d’image en amont)',
     pt: 'Cada porto aceita apenas uma imagem; o tipo de ligação é um valor de imagem (um nó <code>img-file</code> ou uma saída de imagem de montante)',
-    ru: 'Каждый порт принимает только одно изображение; тип подключения — значение изображения (узел <code>img-file</code> или вывод изображения сверху)'
+    ru: 'Каждый порт принимает только одно изображение; тип подключения — значение изображения (узел <code>img-file</code> или вывод изображения сверху)',
+    hi: 'प्रत्येक पोर्ट पर केवल एक छवि जुड़ सकती है, कनेक्शन प्रकार छवि मान है (<code>img-file</code> नोड या ऊपरी छवि आउटपुट)',
+    id: 'Setiap port hanya menerima satu gambar; jenis koneksinya adalah nilai gambar (node <code>img-file</code> atau keluaran gambar hulu)',
+    de: 'Jeder Port nimmt nur ein Bild an; der Verbindungstyp ist ein Bildwert (ein <code>img-file</code>-Knoten oder eine vorgelagerte Bildausgabe)',
+    vi: 'Mỗi cổng chỉ nhận một ảnh; kiểu kết nối là giá trị ảnh (nút <code>img-file</code> hoặc đầu ra ảnh thượng nguồn)',
+    tr: 'Her bağlantı noktası yalnızca bir görüntü alır; bağlantı türü bir görüntü değeridir (<code>img-file</code> düğümü veya yukarı akış görüntü çıkışı)',
+    it: 'Ogni porta accetta una sola immagine; il tipo di connessione è un valore immagine (un nodo <code>img-file</code> o un output immagine a monte)'
   },
   inputsLi5: {
     zh: '只有<b>最后一个</b>已连接的端口能删除（列表里的 <code>×</code>），且至少保留 1 个图层',
@@ -100,7 +142,13 @@ export const helpMessages = {
     ar: 'يمكن حذف <b>المنفذ الأخير</b> المتصل فقط (رمز <code>×</code> في القائمة)، مع الإبقاء على طبقة واحدة على الأقل',
     fr: 'Seul le <b>dernier</b> port connecté peut être supprimé (le <code>×</code> dans la liste), et au moins 1 calque doit toujours rester',
     pt: 'Apenas o <b>último</b> porto ligado pode ser eliminado (o <code>×</code> na lista), e deve permanecer sempre pelo menos 1 camada',
-    ru: 'Удалить можно только <b>последний</b> подключённый порт (значок <code>×</code> в списке), при этом должен остаться хотя бы 1 слой'
+    ru: 'Удалить можно только <b>последний</b> подключённый порт (значок <code>×</code> в списке), при этом должен остаться хотя бы 1 слой',
+    hi: 'केवल <b>अंतिम</b> जुड़ा पोर्ट ही हटाया जा सकता है (सूची में <code>×</code>), और कम से कम 1 परत बनी रहनी चाहिए',
+    id: 'Hanya port terhubung <b>terakhir</b> yang dapat dihapus (<code>×</code> di daftar), dan minimal harus tersisa 1 lapisan',
+    de: 'Nur der <b>letzte</b> verbundene Port kann gelöscht werden (das <code>×</code> in der Liste), und mindestens 1 Ebene muss erhalten bleiben',
+    vi: 'Chỉ cổng đã kết nối <b>cuối cùng</b> mới xóa được (<code>×</code> trong danh sách), và phải giữ lại ít nhất 1 lớp',
+    tr: 'Yalnızca <b>son</b> bağlı bağlantı noktası silinebilir (listeydeki <code>×</code>) ve en az 1 katman kalmalıdır',
+    it: 'Solo l’<b>ultima</b> porta collegata può essere eliminata (la <code>×</code> nell’elenco), e deve rimanere almeno 1 livello'
   },
   inputsWarn: {
     zh: '图层顺序由端口顺序决定，<b>不能直接拖动调整</b>。想换层序需要重新接线，或删掉尾部端口后重连。',
@@ -111,7 +159,13 @@ export const helpMessages = {
     ar: 'يُحدَّد ترتيب الطبقات بترتيب المنافذ و<b>لا يمكن تغييره بالسحب</b>. لتغيير الترتيب، أعد توصيل الأسلاك، أو احذف المنافذ الطرفية ثم أعد توصيلها.',
     fr: 'L’ordre des calques est déterminé par l’ordre des ports et <b>ne peut pas être modifié par glisser-déposer</b>. Pour changer l’ordre, reconnectez les liaisons, ou supprimez les ports de fin puis reconnectez-les.',
     pt: 'A ordem das camadas é determinada pela ordem dos portos e <b>não pode ser alterada arrastando</b>. Para mudar a ordem, volte a ligar os cabos, ou elimine os portos finais e volte a ligá-los.',
-    ru: 'Порядок слоёв определяется порядком портов, и его <b>нельзя изменить перетаскиванием</b>. Чтобы изменить порядок, переподключите связи или удалите конечные порты и подключите их заново.'
+    ru: 'Порядок слоёв определяется порядком портов, и его <b>нельзя изменить перетаскиванием</b>. Чтобы изменить порядок, переподключите связи или удалите конечные порты и подключите их заново.',
+    hi: 'परत क्रम पोर्ट क्रम से तय होता है और <b>सीधे खींचकर बदला नहीं जा सकता</b>। क्रम बदलने के लिए तार दोबारा जोड़ें, या अंतिम पोर्ट हटाकर फिर से जोड़ें।',
+    id: 'Urutan lapisan ditentukan oleh urutan port dan <b>tidak dapat diubah dengan menyeret</b>. Untuk mengubah urutannya, sambungkan ulang kabel, atau hapus port di ujung lalu sambungkan kembali.',
+    de: 'Die Ebenenreihenfolge wird durch die Portreihenfolge bestimmt und <b>kann nicht durch Ziehen geändert werden</b>. Um die Reihenfolge zu ändern, verbinde die Leitungen neu oder lösche die letzten Ports und verbinde sie erneut.',
+    vi: 'Thứ tự lớp do thứ tự cổng quyết định và <b>không thể thay đổi bằng cách kéo</b>. Muốn đổi thứ tự, hãy nối lại dây, hoặc xóa các cổng ở cuối rồi nối lại.',
+    tr: 'Katman sırası bağlantı noktası sırasına göre belirlenir ve <b>sürükleyerek değiştirilemez</b>. Sırayı değiştirmek için kabloları yeniden bağla ya da sondaki bağlantı noktalarını silip yeniden bağla.',
+    it: 'L’ordine dei livelli è determinato dall’ordine delle porte e <b>non può essere modificato trascinando</b>. Per cambiare l’ordine, ricollega i fili oppure elimina le porte finali e ricollegale.'
   },
 
   // —— 定位与缩放 ——
@@ -124,7 +178,13 @@ export const helpMessages = {
     ar: 'التموضع والتحجيم',
     fr: 'Positionnement et mise à l’échelle',
     pt: 'Posicionamento e escala',
-    ru: 'Позиционирование и масштабирование'
+    ru: 'Позиционирование и масштабирование',
+    hi: 'स्थिति और स्केलिंग',
+    id: 'Penempatan & penskalaan',
+    de: 'Positionierung & Skalierung',
+    vi: 'Định vị & thu phóng',
+    tr: 'Konumlandırma ve ölçekleme',
+    it: 'Posizionamento e ridimensionamento'
   },
   positionLi1: {
     zh: '点左侧图层条目、或点预览区里的图片，即可<b>选中</b>该图层（出现蓝色边框）',
@@ -135,7 +195,13 @@ export const helpMessages = {
     ar: 'انقر على عنصر طبقة على اليسار، أو على صورة في منطقة المعاينة، <b>لتحديد</b> تلك الطبقة (يظهر إطار أزرق)',
     fr: 'Cliquez sur un élément de calque à gauche, ou sur une image dans la zone d’aperçu, pour <b>sélectionner</b> ce calque (une bordure bleue apparaît)',
     pt: 'Clique num elemento de camada à esquerda, ou numa imagem da área de pré-visualização, para <b>selecionar</b> essa camada (aparece uma borda azul)',
-    ru: 'Нажмите элемент слоя слева или изображение в области предпросмотра, чтобы <b>выделить</b> этот слой (появится синяя рамка)'
+    ru: 'Нажмите элемент слоя слева или изображение в области предпросмотра, чтобы <b>выделить</b> этот слой (появится синяя рамка)',
+    hi: 'बाईं ओर की परत प्रविष्टि या पूर्वावलोकन क्षेत्र की छवि पर क्लिक करके उस परत को <b>चुनें</b> (नीली रूपरेखा दिखेगी)',
+    id: 'Klik item lapisan di sebelah kiri, atau gambar di area pratinjau, untuk <b>memilih</b> lapisan itu (muncul bingkai biru)',
+    de: 'Klicke links auf einen Ebeneneintrag oder im Vorschaubereich auf ein Bild, um diese Ebene <b>auszuwählen</b> (ein blauer Rahmen erscheint)',
+    vi: 'Nhấn vào mục lớp bên trái, hoặc ảnh trong vùng xem trước, để <b>chọn</b> lớp đó (xuất hiện viền xanh)',
+    tr: 'Soldaki katman öğesine ya da önizleme alanındaki görüntüye tıklayarak o katmanı <b>seç</b> (mavi çerçeve belirir)',
+    it: 'Fai clic su una voce di livello a sinistra, o su un’immagine nell’area di anteprima, per <b>selezionare</b> quel livello (appare un bordo blu)'
   },
   positionLi2: {
     zh: '选中后<b>拖动图片</b>即可移动位置，坐标以合成画布左上角为原点',
@@ -146,7 +212,13 @@ export const helpMessages = {
     ar: 'بعد التحديد، <b>اسحب الصورة</b> لتحريك موضعها؛ ونقطة الأصل للإحداثيات هي الزاوية العلوية اليسرى للوحة التركيب',
     fr: 'Une fois sélectionnée, <b>faites glisser l’image</b> pour la déplacer ; les coordonnées ont pour origine le coin supérieur gauche du canevas composite',
     pt: 'Depois de selecionada, <b>arraste a imagem</b> para mover a posição; as coordenadas têm origem no canto superior esquerdo do canvas composto',
-    ru: 'После выделения <b>перетащите изображение</b>, чтобы изменить положение; начало координат — левый верхний угол составного холста'
+    ru: 'После выделения <b>перетащите изображение</b>, чтобы изменить положение; начало координат — левый верхний угол составного холста',
+    hi: 'चुनने के बाद <b>छवि खींचकर</b> स्थिति बदलें; निर्देशांक का मूल संयुक्त कैनवास का ऊपरी-बायाँ कोना है',
+    id: 'Setelah dipilih, <b>seret gambar</b> untuk memindahkannya; koordinat berpusat di sudut kiri atas kanvas gabungan',
+    de: 'Nach der Auswahl <b>ziehe das Bild</b>, um es zu verschieben; der Ursprung der Koordinaten ist die linke obere Ecke der zusammengesetzten Leinwand',
+    vi: 'Sau khi chọn, <b>kéo ảnh</b> để di chuyển; tọa độ lấy góc trên bên trái của khung vẽ tổng hợp làm gốc',
+    tr: 'Seçtikten sonra <b>görüntüyü sürükle</b> ve konumunu değiştir; koordinatların başlangıcı birleşik tuvalin sol üst köşesidir',
+    it: 'Dopo la selezione, <b>trascina l’immagine</b> per spostarla; le coordinate hanno origine nell’angolo in alto a sinistra della tela composita'
   },
   positionLi3: {
     zh: '选中后四角出现蓝色手柄，<b>拖动手柄</b>拉伸缩放；按住 <code>Shift</code> 可等比缩放',
@@ -157,7 +229,13 @@ export const helpMessages = {
     ar: 'عند التحديد تظهر مقابض زرقاء في الزوايا الأربع؛ <b>اسحب المقبض</b> لتغيير الحجم. اضغط مع الاستمرار على <code>Shift</code> للتحجيم بنفس النسبة',
     fr: 'Une fois sélectionné, des poignées bleues apparaissent aux quatre coins ; <b>faites glisser une poignée</b> pour redimensionner. Maintenez <code>Shift</code> pour une mise à l’échelle proportionnelle',
     pt: 'Depois de selecionada, aparecem alças azuis nos quatro cantos; <b>arraste uma alça</b> para redimensionar. Mantenha <code>Shift</code> para escalar proporcionalmente',
-    ru: 'После выделения по четырём углам появятся синие маркеры; <b>перетащите маркер</b>, чтобы изменить размер. Удерживайте <code>Shift</code> для пропорционального масштабирования'
+    ru: 'После выделения по четырём углам появятся синие маркеры; <b>перетащите маркер</b>, чтобы изменить размер. Удерживайте <code>Shift</code> для пропорционального масштабирования',
+    hi: 'चुनने पर चारों कोनों पर नीले हैंडल दिखते हैं, <b>हैंडल खींचकर</b> आकार बदलें; <code>Shift</code> दबाकर समानुपाती स्केल करें',
+    id: 'Setelah dipilih, muncul pegangan biru di keempat sudut; <b>seret pegangan</b> untuk mengubah ukuran. Tahan <code>Shift</code> untuk skala proporsional',
+    de: 'Nach der Auswahl erscheinen blaue Griffe an den vier Ecken; <b>ziehe einen Griff</b>, um die Größe zu ändern. Halte <code>Shift</code> für proportionales Skalieren',
+    vi: 'Sau khi chọn, xuất hiện tay cầm màu xanh ở bốn góc; <b>kéo tay cầm</b> để thay đổi kích thước. Giữ <code>Shift</code> để thu phóng theo tỉ lệ',
+    tr: 'Seçince dört köşede mavi tutamaçlar çıkar; boyutlandırmak için <b>tutamağı sürükle</b>. Orantılı ölçeklemek için <code>Shift</code> tuşunu basılı tut',
+    it: 'Dopo la selezione, appaiono maniglie blu ai quattro angoli; <b>trascina una maniglia</b> per ridimensionare. Tieni premuto <code>Shift</code> per scalare in proporzione'
   },
   positionLi4: {
     zh: '新接入的图会按<b>原始像素尺寸</b>初始化位置和大小；手动调整过之后不会再被自动覆盖',
@@ -168,7 +246,13 @@ export const helpMessages = {
     ar: 'تُهيَّأ الصور المتصلة حديثًا في الموضع والحجم وفق <b>أبعاد البكسل الأصلية</b>؛ وبعد التعديل اليدوي لن تُستبدل تلقائيًا',
     fr: 'Les images nouvellement connectées sont initialisées en position et en taille selon leurs <b>dimensions en pixels d’origine</b> ; après un ajustement manuel, elles ne sont plus écrasées automatiquement',
     pt: 'As imagens recém-ligadas são inicializadas em posição e tamanho segundo as suas <b>dimensões originais em píxeis</b>; após um ajuste manual já não são sobrescritas automaticamente',
-    ru: 'Новые подключённые изображения инициализируются по положению и размеру согласно <b>исходным размерам в пикселях</b>; после ручной настройки они больше не перезаписываются автоматически'
+    ru: 'Новые подключённые изображения инициализируются по положению и размеру согласно <b>исходным размерам в пикселях</b>; после ручной настройки они больше не перезаписываются автоматически',
+    hi: 'नई जुड़ी छवि <b>मूल पिक्सेल आकार</b> के अनुसार स्थिति और आकार से आरंभ होती है; मैन्युअल समायोजन के बाद उसे दोबारा स्वतः अधिलेखित नहीं किया जाएगा',
+    id: 'Gambar yang baru tersambung diinisialisasi posisi dan ukurannya sesuai <b>dimensi piksel asli</b>; setelah disesuaikan manual tidak akan ditimpa otomatis lagi',
+    de: 'Neu verbundene Bilder werden in Position und Größe nach ihren <b>ursprünglichen Pixelmaßen</b> initialisiert; nach einer manuellen Anpassung werden sie nicht mehr automatisch überschrieben',
+    vi: 'Ảnh mới kết nối được khởi tạo vị trí và kích thước theo <b>kích thước pixel gốc</b>; sau khi chỉnh thủ công sẽ không bị ghi đè tự động nữa',
+    tr: 'Yeni bağlanan görüntüler konum ve boyut olarak <b>özgün piksel boyutlarına</b> göre başlatılır; elle ayarlandıktan sonra artık otomatik olarak üzerine yazılmaz',
+    it: 'Le immagini appena collegate vengono inizializzate in posizione e dimensione secondo le <b>dimensioni originali in pixel</b>; dopo una regolazione manuale non vengono più sovrascritte automaticamente'
   },
   positionLi5: {
     zh: '点预览区空白处可取消选中',
@@ -179,7 +263,13 @@ export const helpMessages = {
     ar: 'انقر على مساحة فارغة في منطقة المعاينة لإلغاء التحديد',
     fr: 'Cliquez sur une zone vide de l’aperçu pour désélectionner',
     pt: 'Clique num espaço vazio da área de pré-visualização para desmarcar',
-    ru: 'Нажмите на пустое место в области предпросмотра, чтобы снять выделение'
+    ru: 'Нажмите на пустое место в области предпросмотра, чтобы снять выделение',
+    hi: 'चयन हटाने के लिए पूर्वावलोकन क्षेत्र के खाली हिस्से पर क्लिक करें',
+    id: 'Klik area kosong di pratinjau untuk membatalkan pilihan',
+    de: 'Klicke auf eine leere Stelle im Vorschaubereich, um die Auswahl aufzuheben',
+    vi: 'Nhấn vào chỗ trống trong vùng xem trước để bỏ chọn',
+    tr: 'Seçimi kaldırmak için önizleme alanındaki boş bir yere tıkla',
+    it: 'Fai clic su un punto vuoto dell’area di anteprima per deselezionare'
   },
 
   // —— 画布尺寸（右上角齿轮） ——
@@ -192,7 +282,13 @@ export const helpMessages = {
     ar: 'حجم اللوحة (الترس في أعلى اليمين)',
     fr: 'Taille du canevas (engrenage en haut à droite)',
     pt: 'Tamanho do canvas (engrenagem no canto superior direito)',
-    ru: 'Размер холста (шестерёнка в правом верхнем углу)'
+    ru: 'Размер холста (шестерёнка в правом верхнем углу)',
+    hi: 'कैनवास आकार (ऊपरी-दाएँ गियर)',
+    id: 'Ukuran kanvas (gir di kanan atas)',
+    de: 'Leinwandgröße (Zahnrad oben rechts)',
+    vi: 'Kích thước khung vẽ (bánh răng góc trên bên phải)',
+    tr: 'Tuval boyutu (sağ üstteki dişli)',
+    it: 'Dimensione tela (ingranaggio in alto a destra)'
   },
   tblHeaderMode: {
     zh: '模式',
@@ -203,7 +299,13 @@ export const helpMessages = {
     ar: 'الوضع',
     fr: 'Mode',
     pt: 'Modo',
-    ru: 'Режим'
+    ru: 'Режим',
+    hi: 'मोड',
+    id: 'Mode',
+    de: 'Modus',
+    vi: 'Chế độ',
+    tr: 'Mod',
+    it: 'Modalità'
   },
   tblHeaderMeaning: {
     zh: '含义',
@@ -214,7 +316,13 @@ export const helpMessages = {
     ar: 'المعنى',
     fr: 'Signification',
     pt: 'Significado',
-    ru: 'Значение'
+    ru: 'Значение',
+    hi: 'अर्थ',
+    id: 'Arti',
+    de: 'Bedeutung',
+    vi: 'Ý nghĩa',
+    tr: 'Anlam',
+    it: 'Significato'
   },
   tblAuto: {
     zh: '<b>自动</b>',
@@ -225,7 +333,13 @@ export const helpMessages = {
     ar: '<b>تلقائي</b>',
     fr: '<b>Automatique</b>',
     pt: '<b>Automático</b>',
-    ru: '<b>Автоматически</b>'
+    ru: '<b>Автоматически</b>',
+    hi: '<b>स्वचालित</b>',
+    id: '<b>Otomatis</b>',
+    de: '<b>Automatisch</b>',
+    vi: '<b>Tự động</b>',
+    tr: '<b>Otomatik</b>',
+    it: '<b>Automatico</b>'
   },
   tblAutoMeaning: {
     zh: '按所有图层的右边界 / 下边界自动算出画布大小',
@@ -236,7 +350,13 @@ export const helpMessages = {
     ar: 'يحسب حجم اللوحة تلقائيًا من الحدّ الأيمن / السفلي لجميع الطبقات',
     fr: 'Calcule automatiquement la taille du canevas d’après les bords droit / inférieur de tous les calques',
     pt: 'Calcula automaticamente o tamanho do canvas a partir dos limites direito / inferior de todas as camadas',
-    ru: 'Автоматически вычисляет размер холста по правой / нижней границе всех слоёв'
+    ru: 'Автоматически вычисляет размер холста по правой / нижней границе всех слоёв',
+    hi: 'सभी परतों की दाएँ / नीचे की सीमा से कैनवास आकार स्वतः निकालें',
+    id: 'Menghitung ukuran kanvas otomatis dari batas kanan / bawah semua lapisan',
+    de: 'Berechnet die Leinwandgröße automatisch aus der rechten / unteren Grenze aller Ebenen',
+    vi: 'Tự động tính kích thước khung vẽ từ ranh giới phải / dưới của tất cả các lớp',
+    tr: 'Tüm katmanların sağ / alt sınırından tuval boyutunu otomatik hesaplar',
+    it: 'Calcola automaticamente la dimensione della tela dal limite destro / inferiore di tutti i livelli'
   },
   tblFixed: {
     zh: '<b>固定尺寸</b>',
@@ -247,7 +367,13 @@ export const helpMessages = {
     ar: '<b>حجم ثابت</b>',
     fr: '<b>Taille fixe</b>',
     pt: '<b>Tamanho fixo</b>',
-    ru: '<b>Фиксированный размер</b>'
+    ru: '<b>Фиксированный размер</b>',
+    hi: '<b>निश्चित आकार</b>',
+    id: '<b>Ukuran tetap</b>',
+    de: '<b>Feste Größe</b>',
+    vi: '<b>Kích thước cố định</b>',
+    tr: '<b>Sabit boyut</b>',
+    it: '<b>Dimensione fissa</b>'
   },
   tblFixedMeaning: {
     zh: '手动指定宽高，超出画布范围的内容会被裁掉',
@@ -258,7 +384,13 @@ export const helpMessages = {
     ar: 'حدّد العرض والارتفاع يدويًا؛ ويُقتطع المحتوى الذي يتجاوز حدود اللوحة',
     fr: 'Spécifiez manuellement la largeur et la hauteur ; le contenu hors du canevas est rogné',
     pt: 'Define manualmente a largura e a altura; o conteúdo que ultrapassa os limites do canvas é cortado',
-    ru: 'Задайте ширину и высоту вручную; содержимое за пределами холста обрезается'
+    ru: 'Задайте ширину и высоту вручную; содержимое за пределами холста обрезается',
+    hi: 'चौड़ाई और ऊँचाई मैन्युअल रूप से दें; कैनवास सीमा से बाहर का हिस्सा काट दिया जाएगा',
+    id: 'Tentukan lebar dan tinggi secara manual; konten di luar batas kanvas akan dipangkas',
+    de: 'Breite und Höhe manuell festlegen; Inhalte außerhalb der Leinwand werden abgeschnitten',
+    vi: 'Chỉ định chiều rộng và chiều cao thủ công; nội dung vượt ngoài khung vẽ sẽ bị cắt',
+    tr: 'Genişlik ve yüksekliği elle belirt; tuval sınırının dışındaki içerik kırpılır',
+    it: 'Specifica manualmente larghezza e altezza; il contenuto oltre i limiti della tela viene ritagliato'
   },
   canvasNote: {
     zh: '弹窗里的「恢复自动」按钮可随时切回自动模式。',
@@ -269,7 +401,13 @@ export const helpMessages = {
     ar: 'يسمح زر «استعادة التلقائي» في النافذة المنبثقة بالعودة إلى الوضع التلقائي في أي وقت.',
     fr: 'Le bouton « Rétablir auto » de la fenêtre permet de revenir au mode automatique à tout moment.',
     pt: 'O botão “Restaurar automático” na janela permite voltar ao modo automático a qualquer momento.',
-    ru: 'Кнопка «Вернуть автоматически» в окне позволяет в любой момент вернуться к автоматическому режиму.'
+    ru: 'Кнопка «Вернуть автоматически» в окне позволяет в любой момент вернуться к автоматическому режиму.',
+    hi: 'पॉपअप में «स्वचालित पर लौटें» बटन से कभी भी स्वचालित मोड पर लौट सकते हैं।',
+    id: 'Tombol “Kembalikan ke otomatis” di popup dapat beralih kembali ke mode otomatis kapan saja.',
+    de: 'Mit der Schaltfläche „Auf automatisch zurücksetzen“ im Dialog kannst du jederzeit zum automatischen Modus zurückkehren.',
+    vi: 'Nút “Khôi phục tự động” trong hộp thoại cho phép quay lại chế độ tự động bất cứ lúc nào.',
+    tr: 'Açılır penceredeki “Otomatiğe sıfırla” düğmesiyle istediğin zaman otomatik moda dönebilirsin.',
+    it: 'Il pulsante «Ripristina automatico» nella finestra permette di tornare alla modalità automatica in qualsiasi momento.'
   },
 
   // —— 输出 ——
@@ -282,7 +420,13 @@ export const helpMessages = {
     ar: 'الإخراج',
     fr: 'Sortie',
     pt: 'Saída',
-    ru: 'Выход'
+    ru: 'Выход',
+    hi: 'आउटपुट',
+    id: 'Keluaran',
+    de: 'Ausgabe',
+    vi: 'Đầu ra',
+    tr: 'Çıkış',
+    it: 'Output'
   },
   outputsLi1: {
     zh: '右侧 <code>composite</code> 端口输出合成后的 PNG，保留透明通道',
@@ -293,7 +437,13 @@ export const helpMessages = {
     ar: 'يُخرج منفذ <code>composite</code> على اليمين صورة PNG المدمجة، مع الحفاظ على قناة الشفافية',
     fr: 'Le port <code>composite</code> à droite émet le PNG composite, en conservant le canal alpha',
     pt: 'O porto <code>composite</code> à direita emite o PNG composto, mantendo o canal alfa',
-    ru: 'Порт <code>composite</code> справа выводит составленный PNG с сохранением альфа-канала'
+    ru: 'Порт <code>composite</code> справа выводит составленный PNG с сохранением альфа-канала',
+    hi: 'दाईं ओर का <code>composite</code> पोर्ट संयुक्त PNG आउटपुट करता है, पारदर्शी चैनल सुरक्षित रहता है',
+    id: 'Port <code>composite</code> di sebelah kanan mengeluarkan PNG gabungan, mempertahankan kanal transparan',
+    de: 'Der Port <code>composite</code> rechts gibt das zusammengesetzte PNG aus und behält den Alphakanal bei',
+    vi: 'Cổng <code>composite</code> bên phải xuất PNG tổng hợp, giữ nguyên kênh trong suốt',
+    tr: 'Sağdaki <code>composite</code> bağlantı noktası birleştirilmiş PNG’yi çıkarır ve saydamlık kanalını korur',
+    it: 'La porta <code>composite</code> a destra restituisce il PNG composito, mantenendo il canale alfa'
   },
   outputsLi2: {
     zh: '底部「生成图片文件节点」会把当前合成结果落成一个 <code>img-file</code> 节点，方便继续串下游',
@@ -304,7 +454,13 @@ export const helpMessages = {
     ar: 'يُحوِّل زر «إنشاء عقدة ملف صورة» في الأسفل نتيجة التركيب الحالية إلى عقدة <code>img-file</code>، ليسهل مواصلة الربط بالعقد اللاحقة',
     fr: 'Le bouton « Générer un nœud de fichier image » en bas transforme le résultat composite actuel en un nœud <code>img-file</code>, ce qui facilite l’enchaînement en aval',
     pt: 'O botão “Gerar nó de ficheiro de imagem” na parte inferior transforma o resultado composto atual num nó <code>img-file</code>, facilitando a ligação a jusante',
-    ru: 'Кнопка «Создать узел файла изображения» внизу превращает текущий составной результат в узел <code>img-file</code>, что упрощает дальнейшее соединение'
+    ru: 'Кнопка «Создать узел файла изображения» внизу превращает текущий составной результат в узел <code>img-file</code>, что упрощает дальнейшее соединение',
+    hi: 'नीचे «छवि फ़ाइल नोड बनाएँ» वर्तमान संयुक्त परिणाम को एक <code>img-file</code> नोड में बदल देता है, जिससे नीचे जोड़ना आसान होता है',
+    id: 'Tombol “Buat node berkas gambar” di bawah mengubah hasil gabungan saat ini menjadi node <code>img-file</code>, memudahkan melanjutkan ke hilir',
+    de: 'Die Schaltfläche „Bilddatei-Knoten erstellen“ unten wandelt das aktuelle zusammengesetzte Ergebnis in einen <code>img-file</code>-Knoten um und erleichtert das Weiterverbinden nachgelagert',
+    vi: 'Nút “Tạo nút tệp ảnh” ở dưới biến kết quả tổng hợp hiện tại thành một nút <code>img-file</code>, thuận tiện nối tiếp hạ nguồn',
+    tr: 'Alttaki “Görüntü dosyası düğümü oluştur” düğmesi geçerli birleşik sonucu bir <code>img-file</code> düğümüne dönüştürür ve aşağı akışa bağlanmayı kolaylaştırır',
+    it: 'Il pulsante «Crea nodo file immagine» in basso trasforma il risultato composito corrente in un nodo <code>img-file</code>, facilitando il collegamento a valle'
   },
   outputsLi3: {
     zh: '图层或变换改动后会有约 150ms 的防抖，稳定后才重新合成',
@@ -315,6 +471,12 @@ export const helpMessages = {
     ar: 'تخضع تغييرات الطبقات أو التحويلات لتأجيل (debounce) بنحو 150ms، ولا يُعاد التركيب إلا بعد استقرارها',
     fr: 'Les modifications de calques ou de transformations sont temporisées (debounce) d’environ 150ms, et la recomposition n’a lieu qu’une fois stabilisées',
     pt: 'As alterações de camadas ou transformações têm um debounce de cerca de 150ms, e a recomposição só ocorre depois de estabilizarem',
-    ru: 'Изменения слоёв или трансформаций имеют задержку (debounce) около 150ms, и пересборка происходит только после стабилизации'
+    ru: 'Изменения слоёв или трансформаций имеют задержку (debounce) около 150ms, и пересборка происходит только после стабилизации',
+    hi: 'परत या रूपांतरण बदलने पर लगभग 150ms का डिबाउंस होता है, स्थिर होने पर ही फिर से संयोजन होता है',
+    id: 'Perubahan lapisan atau transformasi memiliki debounce sekitar 150ms, dan penggabungan ulang baru terjadi setelah stabil',
+    de: 'Änderungen an Ebenen oder Transformationen werden um etwa 150ms entprellt; erst nach der Stabilisierung wird neu zusammengesetzt',
+    vi: 'Thay đổi lớp hoặc biến đổi có độ trễ (debounce) khoảng 150ms, chỉ tổng hợp lại sau khi ổn định',
+    tr: 'Katman veya dönüşüm değişikliklerinde yaklaşık 150ms gecikme (debounce) uygulanır; ancak sabitlendikten sonra yeniden birleştirilir',
+    it: 'Le modifiche a livelli o trasformazioni hanno un debounce di circa 150ms; la ricomposizione avviene solo dopo la stabilizzazione'
   }
 } satisfies Record<string, LocalizedText>

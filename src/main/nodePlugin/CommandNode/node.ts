@@ -32,7 +32,13 @@ export class CommandNode extends Node {
     ar: 'إخراج',
     fr: 'Sortie',
     pt: 'Saída',
-    ru: 'Вывод'
+    ru: 'Вывод',
+    hi: 'आउटपुट',
+    id: 'Keluaran',
+    de: 'Ausgabe',
+    vi: 'Đầu ra',
+    tr: 'Çıkış',
+    it: 'Output'
   })
 
   /** 命令名称（用于辨识这条命令是干什么的，持久化） */

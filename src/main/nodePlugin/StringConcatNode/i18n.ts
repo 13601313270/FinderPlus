@@ -16,7 +16,13 @@ export const messages = {
     ar: 'اسحب العقدة',
     fr: 'Glisser le nœud',
     pt: 'Arrastar nó',
-    ru: 'Перетащить узел'
+    ru: 'Перетащить узел',
+    hi: 'नोड खींचें',
+    id: 'Seret node',
+    de: 'Knoten ziehen',
+    vi: 'Kéo nút',
+    tr: 'Düğümü sürükle',
+    it: 'Trascina nodo'
   },
   templatePlaceholder: {
     zh: '模板，例：https://$1/$2',
@@ -27,7 +33,13 @@ export const messages = {
     ar: 'القالب، مثال: https://$1/$2',
     fr: 'Modèle, ex. : https://$1/$2',
     pt: 'Modelo, ex.: https://$1/$2',
-    ru: 'Шаблон, напр.: https://$1/$2'
+    ru: 'Шаблон, напр.: https://$1/$2',
+    hi: 'टेम्पलेट, उदा.: https://$1/$2',
+    id: 'Templat, mis.: https://$1/$2',
+    de: 'Vorlage, z. B.: https://$1/$2',
+    vi: 'Mẫu, ví dụ: https://$1/$2',
+    tr: 'Şablon, örn.: https://$1/$2',
+    it: 'Modello, es.: https://$1/$2'
   },
   portsCount: {
     zh: '输入端口：{n} 个',
@@ -38,7 +50,13 @@ export const messages = {
     ar: 'منافذ الإدخال: {n}',
     fr: 'Ports d’entrée : {n}',
     pt: 'Portas de entrada: {n}',
-    ru: 'Входных портов: {n}'
+    ru: 'Входных портов: {n}',
+    hi: 'इनपुट पोर्ट: {n}',
+    id: 'Port masukan: {n}',
+    de: 'Eingabeports: {n}',
+    vi: 'Cổng đầu vào: {n}',
+    tr: 'Giriş bağlantı noktası: {n}',
+    it: 'Porte di input: {n}'
   },
   removePortHint: {
     zh: '移除末尾输入端口',
@@ -49,7 +67,13 @@ export const messages = {
     ar: 'إزالة منفذ الإدخال الأخير',
     fr: 'Supprimer le dernier port d’entrée',
     pt: 'Remover o último porto de entrada',
-    ru: 'Удалить последний входной порт'
+    ru: 'Удалить последний входной порт',
+    hi: 'अंतिम इनपुट पोर्ट हटाएँ',
+    id: 'Hapus port masukan terakhir',
+    de: 'Letzten Eingabeport entfernen',
+    vi: 'Xóa cổng đầu vào cuối cùng',
+    tr: 'Son giriş bağlantı noktasını kaldır',
+    it: 'Rimuovi l’ultima porta di input'
   },
   addPortHint: {
     zh: '新增输入端口',
@@ -60,7 +84,13 @@ export const messages = {
     ar: 'إضافة منفذ إدخال',
     fr: 'Ajouter un port d’entrée',
     pt: 'Adicionar um porto de entrada',
-    ru: 'Добавить входной порт'
+    ru: 'Добавить входной порт',
+    hi: 'इनपुट पोर्ट जोड़ें',
+    id: 'Tambah port masukan',
+    de: 'Eingabeport hinzufügen',
+    vi: 'Thêm cổng đầu vào',
+    tr: 'Giriş bağlantı noktası ekle',
+    it: 'Aggiungi una porta di input'
   },
   resultPlaceholder: {
     zh: '（结果）',
@@ -71,7 +101,13 @@ export const messages = {
     ar: '(النتيجة)',
     fr: '(Résultat)',
     pt: '(Resultado)',
-    ru: '(Результат)'
+    ru: '(Результат)',
+    hi: '（परिणाम）',
+    id: '(Hasil)',
+    de: '(Ergebnis)',
+    vi: '(Kết quả)',
+    tr: '(Sonuç)',
+    it: '(Risultato)'
   },
   helpTitle: {
     zh: '使用说明',
@@ -82,7 +118,13 @@ export const messages = {
     ar: 'مساعدة',
     fr: 'Aide',
     pt: 'Ajuda',
-    ru: 'Справка'
+    ru: 'Справка',
+    hi: 'सहायता',
+    id: 'Bantuan',
+    de: 'Hilfe',
+    vi: 'Trợ giúp',
+    tr: 'Yardım',
+    it: 'Guida'
   },
   helpDialogTitle: {
     zh: '字符串拼接节点使用说明',
@@ -93,6 +135,12 @@ export const messages = {
     ar: 'مساعدة عقدة دمج النصوص',
     fr: 'Aide du nœud Concaténation de chaînes',
     pt: 'Ajuda do nó Concatenar strings',
-    ru: 'Справка по узлу «Конкатенация строк»'
+    ru: 'Справка по узлу «Конкатенация строк»',
+    hi: 'स्ट्रिंग संयोजन नोड सहायता',
+    id: 'Bantuan node Gabung String',
+    de: 'Hilfe zum Knoten „Zeichenketten verketten“',
+    vi: 'Trợ giúp nút Ghép chuỗi',
+    tr: 'Dize Birleştirme düğümü yardımı',
+    it: 'Guida al nodo Concatenazione stringhe'
   }
 } satisfies Record<string, LocalizedText>

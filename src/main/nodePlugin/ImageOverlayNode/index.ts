@@ -14,7 +14,13 @@ export const manifest: NodePluginManifest = {
     ar: 'تراكب الصور',
     fr: 'Superposition d’images',
     pt: 'Sobreposição de imagens',
-    ru: 'Наложение изображений'
+    ru: 'Наложение изображений',
+    hi: 'छवि ओवरले',
+    id: 'Hamparan gambar',
+    de: 'Bildüberlagerung',
+    vi: 'Lớp phủ ảnh',
+    tr: 'Görüntü katmanı',
+    it: 'Sovrapposizione immagini'
   },
   render,
   help: () => import('./ImageOverlayHelpDialog.vue')

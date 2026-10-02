@@ -16,7 +16,13 @@ export const messages = {
     ar: 'اسحب العقدة',
     fr: 'Glisser le nœud',
     pt: 'Arrastar nó',
-    ru: 'Перетащить узел'
+    ru: 'Перетащить узел',
+    hi: 'नोड खींचें',
+    id: 'Seret node',
+    de: 'Knoten ziehen',
+    vi: 'Kéo nút',
+    tr: 'Düğümü sürükle',
+    it: 'Trascina nodo'
   },
   placeholder: {
     zh: '输入数字…',
@@ -27,7 +33,13 @@ export const messages = {
     ar: 'أدخل رقمًا…',
     fr: 'Saisir un nombre…',
     pt: 'Digite um número…',
-    ru: 'Введите число…'
+    ru: 'Введите число…',
+    hi: 'कोई संख्या दर्ज करें…',
+    id: 'Masukkan angka…',
+    de: 'Zahl eingeben…',
+    vi: 'Nhập số…',
+    tr: 'Sayı girin…',
+    it: 'Inserisci un numero…'
   },
   helpTitle: {
     zh: '使用说明',
@@ -38,7 +50,13 @@ export const messages = {
     ar: 'مساعدة',
     fr: 'Aide',
     pt: 'Ajuda',
-    ru: 'Справка'
+    ru: 'Справка',
+    hi: 'सहायता',
+    id: 'Bantuan',
+    de: 'Hilfe',
+    vi: 'Trợ giúp',
+    tr: 'Yardım',
+    it: 'Guida'
   },
   helpDialogTitle: {
     zh: '数字输入节点使用说明',
@@ -49,6 +67,12 @@ export const messages = {
     ar: 'مساعدة عقدة إدخال الأرقام',
     fr: 'Aide du nœud Entrée numérique',
     pt: 'Ajuda do nó Entrada numérica',
-    ru: 'Справка по узлу «Числовой ввод»'
+    ru: 'Справка по узлу «Числовой ввод»',
+    hi: 'संख्या इनपुट नोड सहायता',
+    id: 'Bantuan node Masukan angka',
+    de: 'Hilfe zum Knoten „Zahleneingabe“',
+    vi: 'Trợ giúp nút Đầu vào số',
+    tr: 'Sayı Girişi düğümü yardımı',
+    it: 'Guida del nodo Input numerico'
   }
 } satisfies Record<string, LocalizedText>

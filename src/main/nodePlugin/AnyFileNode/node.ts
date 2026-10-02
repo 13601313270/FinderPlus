@@ -67,7 +67,13 @@ export class AnyFileNode extends FileNode {
     ar: 'ملف',
     fr: 'Fichier',
     pt: 'Ficheiro',
-    ru: 'Файл'
+    ru: 'Файл',
+    hi: 'फ़ाइल',
+    id: 'Berkas',
+    de: 'Datei',
+    vi: 'Tệp',
+    tr: 'Dosya',
+    it: 'File'
   })
 
   /** 文件数据输入端口：接受任何文件类型（含各类子类），收到值即替换本节点文件 */
@@ -82,7 +88,13 @@ export class AnyFileNode extends FileNode {
       ar: 'ملف',
       fr: 'Fichier',
       pt: 'Ficheiro',
-      ru: 'Файл'
+      ru: 'Файл',
+      hi: 'फ़ाइल',
+      id: 'Berkas',
+      de: 'Datei',
+      vi: 'Tệp',
+      tr: 'Dosya',
+      it: 'File'
     }
   })
 

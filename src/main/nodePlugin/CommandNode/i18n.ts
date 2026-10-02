@@ -16,7 +16,13 @@ export const messages = {
     ar: 'اسحب العقدة (الترويسة بأكملها قابلة للسحب)',
     fr: 'Glisser le nœud (tout l’en-tête est déplaçable)',
     pt: 'Arrastar nó (o cabeçalho inteiro é arrastável)',
-    ru: 'Перетащить узел (перетаскивается весь заголовок)'
+    ru: 'Перетащить узел (перетаскивается весь заголовок)',
+    hi: 'नोड खींचें (पूरा हेडर खींचा जा सकता है)',
+    id: 'Seret node (seluruh header dapat diseret)',
+    de: 'Knoten ziehen (der gesamte Kopfbereich ist ziehbar)',
+    vi: 'Kéo nút (toàn bộ phần đầu có thể kéo được)',
+    tr: 'Düğümü sürükle (başlığın tamamı sürüklenebilir)',
+    it: 'Trascina il nodo (l’intera intestazione è trascinabile)'
   },
   editCommand: {
     zh: '编辑命令',
@@ -27,7 +33,13 @@ export const messages = {
     ar: 'تحرير الأمر',
     fr: 'Modifier la commande',
     pt: 'Editar comando',
-    ru: 'Изменить команду'
+    ru: 'Изменить команду',
+    hi: 'कमांड संपादित करें',
+    id: 'Edit perintah',
+    de: 'Befehl bearbeiten',
+    vi: 'Chỉnh sửa lệnh',
+    tr: 'Komutu düzenle',
+    it: 'Modifica comando'
   },
   namePlaceholder: {
     zh: '命令名称，例如：构建项目',
@@ -38,7 +50,13 @@ export const messages = {
     ar: 'اسم الأمر، مثل: بناء المشروع',
     fr: 'Nom de la commande, ex. Compiler le projet',
     pt: 'Nome do comando, ex. Compilar projeto',
-    ru: 'Имя команды, например: Собрать проект'
+    ru: 'Имя команды, например: Собрать проект',
+    hi: 'कमांड का नाम, जैसे: प्रोजेक्ट बनाएँ',
+    id: 'Nama perintah, mis. Bangun proyek',
+    de: 'Befehlsname, z. B. Projekt erstellen',
+    vi: 'Tên lệnh, ví dụ: Tạo dự án',
+    tr: 'Komut adı, örn. Projeyi derle',
+    it: 'Nome del comando, ad es. Compila progetto'
   },
   clickEditHint: {
     zh: '点击编辑命令模板',
@@ -49,7 +67,13 @@ export const messages = {
     ar: 'انقر لتحرير قالب الأمر',
     fr: 'Cliquez pour modifier le modèle de commande',
     pt: 'Clique para editar o modelo do comando',
-    ru: 'Нажмите, чтобы изменить шаблон команды'
+    ru: 'Нажмите, чтобы изменить шаблон команды',
+    hi: 'कमांड टेम्पलेट संपादित करने के लिए क्लिक करें',
+    id: 'Klik untuk mengedit templat perintah',
+    de: 'Klicken, um die Befehlsvorlage zu bearbeiten',
+    vi: 'Nhấp để chỉnh sửa mẫu lệnh',
+    tr: 'Komut şablonunu düzenlemek için tıklayın',
+    it: 'Fai clic per modificare il modello del comando'
   },
   noCommand: {
     zh: '（未设置命令，点击这里或齿轮设置）',
@@ -60,7 +84,13 @@ export const messages = {
     ar: '(لا يوجد أمر — انقر هنا أو على الترس لتعيينه)',
     fr: '(Aucune commande — cliquez ici ou sur l’engrenage pour en définir une)',
     pt: '(Nenhum comando — clique aqui ou na engrenagem para definir)',
-    ru: '(Команда не задана — нажмите здесь или на шестерёнку, чтобы задать)'
+    ru: '(Команда не задана — нажмите здесь или на шестерёнку, чтобы задать)',
+    hi: '(कोई कमांड सेट नहीं — यहाँ या गियर पर क्लिक करके सेट करें)',
+    id: '(Belum ada perintah — klik di sini atau ikon gerigi untuk mengatur)',
+    de: '(Kein Befehl festgelegt — hier oder auf das Zahnrad klicken, um einen festzulegen)',
+    vi: '(Chưa đặt lệnh — nhấp vào đây hoặc biểu tượng bánh răng để đặt)',
+    tr: '(Komut ayarlanmadı — ayarlamak için buraya veya dişli simgesine tıklayın)',
+    it: '(Nessun comando impostato — fai clic qui o sull’ingranaggio per impostarlo)'
   },
   portsCount: {
     zh: '输入端口：{n} 个（模板里用 $1…$N 引用）',
@@ -71,7 +101,13 @@ export const messages = {
     ar: 'منافذ الإدخال: {n} (أشِر إليها بـ $1…$N في القالب)',
     fr: 'Ports d’entrée : {n} (référencez-les par $1…$N dans le modèle)',
     pt: 'Portas de entrada: {n} (referencie como $1…$N no modelo)',
-    ru: 'Входные порты: {n} (ссылайтесь как $1…$N в шаблоне)'
+    ru: 'Входные порты: {n} (ссылайтесь как $1…$N в шаблоне)',
+    hi: 'इनपुट पोर्ट: {n} (टेम्पलेट में $1…$N से संदर्भित करें)',
+    id: 'Port masukan: {n} (referensikan sebagai $1…$N di templat)',
+    de: 'Eingabeports: {n} (im Template als $1…$N referenzieren)',
+    vi: 'Cổng vào: {n} (tham chiếu bằng $1…$N trong mẫu)',
+    tr: 'Giriş bağlantı noktaları: {n} (şablonda $1…$N olarak başvurun)',
+    it: 'Porte di input: {n} (fare riferimento come $1…$N nel modello)'
   },
   removePortHint: {
     zh: '移除末尾输入端口',
@@ -82,7 +118,13 @@ export const messages = {
     ar: 'إزالة منفذ الإدخال الأخير',
     fr: 'Supprimer le dernier port d’entrée',
     pt: 'Remover a última porta de entrada',
-    ru: 'Удалить последний входной порт'
+    ru: 'Удалить последний входной порт',
+    hi: 'अंतिम इनपुट पोर्ट हटाएँ',
+    id: 'Hapus port masukan terakhir',
+    de: 'Letzten Eingabeport entfernen',
+    vi: 'Xóa cổng vào cuối cùng',
+    tr: 'Son giriş bağlantı noktasını kaldır',
+    it: 'Rimuovi l’ultima porta di input'
   },
   addPortHint: {
     zh: '新增输入端口',
@@ -93,7 +135,13 @@ export const messages = {
     ar: 'إضافة منفذ إدخال',
     fr: 'Ajouter un port d’entrée',
     pt: 'Adicionar uma porta de entrada',
-    ru: 'Добавить входной порт'
+    ru: 'Добавить входной порт',
+    hi: 'इनपुट पोर्ट जोड़ें',
+    id: 'Tambah port masukan',
+    de: 'Eingabeport hinzufügen',
+    vi: 'Thêm cổng vào',
+    tr: 'Giriş bağlantı noktası ekle',
+    it: 'Aggiungi una porta di input'
   },
   running: {
     zh: '执行中…',
@@ -104,7 +152,13 @@ export const messages = {
     ar: 'جارٍ التنفيذ…',
     fr: 'Exécution…',
     pt: 'Executando…',
-    ru: 'Выполняется…'
+    ru: 'Выполняется…',
+    hi: 'चल रहा है…',
+    id: 'Menjalankan…',
+    de: 'Wird ausgeführt…',
+    vi: 'Đang chạy…',
+    tr: 'Çalışıyor…',
+    it: 'In esecuzione…'
   },
   run: {
     zh: '执行',
@@ -115,7 +169,13 @@ export const messages = {
     ar: 'تشغيل',
     fr: 'Exécuter',
     pt: 'Executar',
-    ru: 'Выполнить'
+    ru: 'Выполнить',
+    hi: 'चलाएँ',
+    id: 'Jalankan',
+    de: 'Ausführen',
+    vi: 'Chạy',
+    tr: 'Çalıştır',
+    it: 'Esegui'
   },
   noOutput: {
     zh: '（无输出）',
@@ -126,7 +186,13 @@ export const messages = {
     ar: '(لا إخراج)',
     fr: '(Aucune sortie)',
     pt: '(Sem saída)',
-    ru: '(Нет вывода)'
+    ru: '(Нет вывода)',
+    hi: '(कोई आउटपुट नहीं)',
+    id: '(Tidak ada keluaran)',
+    de: '(Keine Ausgabe)',
+    vi: '(Không có đầu ra)',
+    tr: '(Çıktı yok)',
+    it: '(Nessun output)'
   },
   clickToRun: {
     zh: '（点击执行运行已保存的命令）',
@@ -137,7 +203,13 @@ export const messages = {
     ar: '(انقر على تشغيل لتنفيذ الأمر المحفوظ)',
     fr: '(Cliquez sur Exécuter pour lancer la commande enregistrée)',
     pt: '(Clique em Executar para rodar o comando salvo)',
-    ru: '(Нажмите «Выполнить», чтобы запустить сохранённую команду)'
+    ru: '(Нажмите «Выполнить», чтобы запустить сохранённую команду)',
+    hi: '(सहेजी गई कमांड चलाने के लिए चलाएँ पर क्लिक करें)',
+    id: '(Klik Jalankan untuk menjalankan perintah yang tersimpan)',
+    de: '(Auf Ausführen klicken, um den gespeicherten Befehl auszuführen)',
+    vi: '(Nhấp Chạy để thực thi lệnh đã lưu)',
+    tr: '(Kaydedilen komutu çalıştırmak için Çalıştır’a tıklayın)',
+    it: '(Fai clic su Esegui per eseguire il comando salvato)'
   },
   nodeMissing: {
     zh: '节点不存在',
@@ -148,7 +220,13 @@ export const messages = {
     ar: 'العقدة غير موجودة',
     fr: 'Nœud introuvable',
     pt: 'Nó não encontrado',
-    ru: 'Узел не найден'
+    ru: 'Узел не найден',
+    hi: 'नोड मौजूद नहीं है',
+    id: 'Node tidak ditemukan',
+    de: 'Knoten nicht gefunden',
+    vi: 'Không tìm thấy nút',
+    tr: 'Düğüm bulunamadı',
+    it: 'Nodo non trovato'
   },
   runHint: {
     zh: '执行已保存的命令',
@@ -159,7 +237,13 @@ export const messages = {
     ar: 'تشغيل الأمر المحفوظ',
     fr: 'Exécuter la commande enregistrée',
     pt: 'Executar o comando salvo',
-    ru: 'Выполнить сохранённую команду'
+    ru: 'Выполнить сохранённую команду',
+    hi: 'सहेजी गई कमांड चलाएँ',
+    id: 'Jalankan perintah yang tersimpan',
+    de: 'Den gespeicherten Befehl ausführen',
+    vi: 'Chạy lệnh đã lưu',
+    tr: 'Kaydedilen komutu çalıştır',
+    it: 'Esegui il comando salvato'
   },
   runHintNoCommand: {
     zh: '请先点击齿轮设置命令',
@@ -170,7 +254,13 @@ export const messages = {
     ar: 'انقر على الترس لتعيين أمر أولًا',
     fr: 'Cliquez d’abord sur l’engrenage pour définir une commande',
     pt: 'Clique primeiro na engrenagem para definir um comando',
-    ru: 'Сначала нажмите на шестерёнку, чтобы задать команду'
+    ru: 'Сначала нажмите на шестерёнку, чтобы задать команду',
+    hi: 'कृपया पहले गियर पर क्लिक करके कमांड सेट करें',
+    id: 'Klik ikon gerigi untuk mengatur perintah terlebih dahulu',
+    de: 'Zuerst auf das Zahnrad klicken, um einen Befehl festzulegen',
+    vi: 'Hãy nhấp vào biểu tượng bánh răng để đặt lệnh trước',
+    tr: 'Önce bir komut ayarlamak için dişli simgesine tıklayın',
+    it: 'Fai clic sull’ingranaggio per impostare prima un comando'
   },
   editorTitle: {
     zh: '编辑命令模板',
@@ -181,7 +271,13 @@ export const messages = {
     ar: 'تحرير قالب الأمر',
     fr: 'Modifier le modèle de commande',
     pt: 'Editar modelo do comando',
-    ru: 'Изменить шаблон команды'
+    ru: 'Изменить шаблон команды',
+    hi: 'कमांड टेम्पलेट संपादित करें',
+    id: 'Edit templat perintah',
+    de: 'Befehlsvorlage bearbeiten',
+    vi: 'Chỉnh sửa mẫu lệnh',
+    tr: 'Komut şablonunu düzenle',
+    it: 'Modifica modello del comando'
   },
   templatePlaceholder: {
     zh: '命令模板，例如：npm run build -- $1',
@@ -192,7 +288,13 @@ export const messages = {
     ar: 'قالب الأمر، مثل: npm run build -- $1',
     fr: 'Modèle de commande, ex. npm run build -- $1',
     pt: 'Modelo de comando, ex. npm run build -- $1',
-    ru: 'Шаблон команды, например: npm run build -- $1'
+    ru: 'Шаблон команды, например: npm run build -- $1',
+    hi: 'कमांड टेम्पलेट, जैसे: npm run build -- $1',
+    id: 'Templat perintah, mis. npm run build -- $1',
+    de: 'Befehlsvorlage, z. B. npm run build -- $1',
+    vi: 'Mẫu lệnh, ví dụ: npm run build -- $1',
+    tr: 'Komut şablonu, örn. npm run build -- $1',
+    it: 'Modello del comando, ad es. npm run build -- $1'
   },
   cancel: {
     zh: '取消',
@@ -203,7 +305,13 @@ export const messages = {
     ar: 'إلغاء',
     fr: 'Annuler',
     pt: 'Cancelar',
-    ru: 'Отмена'
+    ru: 'Отмена',
+    hi: 'रद्द करें',
+    id: 'Batal',
+    de: 'Abbrechen',
+    vi: 'Hủy',
+    tr: 'İptal',
+    it: 'Annulla'
   },
   save: {
     zh: '保存',
@@ -214,7 +322,13 @@ export const messages = {
     ar: 'حفظ',
     fr: 'Enregistrer',
     pt: 'Salvar',
-    ru: 'Сохранить'
+    ru: 'Сохранить',
+    hi: 'सहेजें',
+    id: 'Simpan',
+    de: 'Speichern',
+    vi: 'Lưu',
+    tr: 'Kaydet',
+    it: 'Salva'
   },
   helpTitle: {
     zh: '使用说明',
@@ -225,7 +339,13 @@ export const messages = {
     ar: 'تعليمات',
     fr: 'Aide',
     pt: 'Ajuda',
-    ru: 'Справка'
+    ru: 'Справка',
+    hi: 'सहायता',
+    id: 'Bantuan',
+    de: 'Hilfe',
+    vi: 'Trợ giúp',
+    tr: 'Yardım',
+    it: 'Guida'
   },
   helpDialogTitle: {
     zh: '命令节点使用说明',
@@ -236,6 +356,12 @@ export const messages = {
     ar: 'تعليمات عقدة الأوامر',
     fr: 'Aide du nœud Commande',
     pt: 'Ajuda do nó Comando',
-    ru: 'Справка по узлу «Команда»'
+    ru: 'Справка по узлу «Команда»',
+    hi: 'कमांड नोड सहायता',
+    id: 'Bantuan node Perintah',
+    de: 'Hilfe zum Befehls-Knoten',
+    vi: 'Trợ giúp nút Lệnh',
+    tr: 'Komut düğümü yardımı',
+    it: 'Guida del nodo Comando'
   }
 } satisfies Record<string, LocalizedText>

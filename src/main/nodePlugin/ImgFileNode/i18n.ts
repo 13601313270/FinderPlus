@@ -15,7 +15,13 @@ export const messages = {
     ar: 'اسحب العقدة · اسحبها خارج النافذة لنقل الملف · انقر مرتين لفتحه بالتطبيق الافتراضي للنظام',
     fr: 'Glisser le nœud · faites-le glisser hors de la fenêtre pour déplacer le fichier · double-cliquez pour l’ouvrir avec l’application par défaut du système',
     pt: 'Arrastar o nó · arraste para fora da janela para mover o ficheiro · duplo clique para abrir com a aplicação predefinida do sistema',
-    ru: 'Перетащить узел · перетащите за пределы окна, чтобы переместить файл · двойной щелчок открывает приложением по умолчанию'
+    ru: 'Перетащить узел · перетащите за пределы окна, чтобы переместить файл · двойной щелчок открывает приложением по умолчанию',
+    hi: 'नोड खींचें · फ़ाइल ले जाने के लिए विंडो से बाहर खींचें · सिस्टम डिफ़ॉल्ट ऐप से खोलने के लिए डबल-क्लिक करें',
+    id: 'Seret node · seret keluar jendela untuk memindahkan berkas · klik ganda untuk membuka dengan aplikasi bawaan sistem',
+    de: 'Knoten ziehen · zum Verschieben der Datei aus dem Fenster ziehen · doppelklicken, um sie mit der System-Standard-App zu öffnen',
+    vi: 'Kéo nút · kéo ra ngoài cửa sổ để di chuyển tệp · nhấp đúp để mở bằng ứng dụng mặc định của hệ thống',
+    tr: 'Düğümü sürükle · dosyayı taşımak için pencerenin dışına sürükle · sistem varsayılan uygulamasıyla açmak için çift tıkla',
+    it: 'Trascina il nodo · trascina fuori dalla finestra per spostare il file · doppio clic per aprirlo con l’app predefinita di sistema'
   },
   dragHintEmpty: {
     zh: '拖动节点（未选文件）',
@@ -26,7 +32,13 @@ export const messages = {
     ar: 'اسحب العقدة (لم يتم اختيار ملف)',
     fr: 'Glisser le nœud (aucun fichier sélectionné)',
     pt: 'Arrastar o nó (nenhum ficheiro selecionado)',
-    ru: 'Перетащить узел (файл не выбран)'
+    ru: 'Перетащить узел (файл не выбран)',
+    hi: 'नोड खींचें (कोई फ़ाइल चयनित नहीं)',
+    id: 'Seret node (tidak ada berkas dipilih)',
+    de: 'Knoten ziehen (keine Datei ausgewählt)',
+    vi: 'Kéo nút (chưa chọn tệp)',
+    tr: 'Düğümü sürükle (dosya seçilmedi)',
+    it: 'Trascina il nodo (nessun file selezionato)'
   },
   altPreview: {
     zh: '图片预览',
@@ -37,7 +49,13 @@ export const messages = {
     ar: 'معاينة الصورة',
     fr: 'Aperçu de l’image',
     pt: 'Prévia da imagem',
-    ru: 'Предпросмотр изображения'
+    ru: 'Предпросмотр изображения',
+    hi: 'छवि पूर्वावलोकन',
+    id: 'Pratinjau gambar',
+    de: 'Bildvorschau',
+    vi: 'Xem trước ảnh',
+    tr: 'Görüntü önizlemesi',
+    it: 'Anteprima immagine'
   },
   emptyFile: {
     zh: '未选择文件',
@@ -48,7 +66,13 @@ export const messages = {
     ar: 'لم يتم اختيار ملف',
     fr: 'Aucun fichier sélectionné',
     pt: 'Nenhum ficheiro selecionado',
-    ru: 'Файл не выбран'
+    ru: 'Файл не выбран',
+    hi: 'कोई फ़ाइल चयनित नहीं',
+    id: 'Tidak ada berkas dipilih',
+    de: 'Keine Datei ausgewählt',
+    vi: 'Chưa chọn tệp',
+    tr: 'Dosya seçilmedi',
+    it: 'Nessun file selezionato'
   },
   resizeHint: {
     zh: '拖拽调整预览大小（保持原图比例）',
@@ -59,7 +83,13 @@ export const messages = {
     ar: 'اسحب لتغيير حجم المعاينة (مع الحفاظ على نسبة الصورة الأصلية)',
     fr: 'Glissez pour redimensionner l’aperçu (conserve les proportions d’origine)',
     pt: 'Arraste para redimensionar a prévia (mantém a proporção original)',
-    ru: 'Перетащите, чтобы изменить размер предпросмотра (сохраняя пропорции оригинала)'
+    ru: 'Перетащите, чтобы изменить размер предпросмотра (сохраняя пропорции оригинала)',
+    hi: 'पूर्वावलोकन का आकार बदलने के लिए खींचें (मूल छवि अनुपात बनाए रखें)',
+    id: 'Seret untuk mengubah ukuran pratinjau (mempertahankan rasio gambar asli)',
+    de: 'Ziehen, um die Vorschaugröße zu ändern (behält das Originalverhältnis bei)',
+    vi: 'Kéo để thay đổi kích thước xem trước (giữ nguyên tỷ lệ ảnh gốc)',
+    tr: 'Önizleme boyutunu değiştirmek için sürükleyin (orijinal görüntü oranını korur)',
+    it: 'Trascina per ridimensionare l’anteprima (mantiene le proporzioni originali)'
   },
   helpTitle: {
     zh: '使用说明',
@@ -70,7 +100,13 @@ export const messages = {
     ar: 'تعليمات الاستخدام',
     fr: 'Aide',
     pt: 'Ajuda',
-    ru: 'Справка'
+    ru: 'Справка',
+    hi: 'सहायता',
+    id: 'Bantuan',
+    de: 'Hilfe',
+    vi: 'Trợ giúp',
+    tr: 'Yardım',
+    it: 'Guida'
   },
   helpDialogTitle: {
     zh: '图片文件节点使用说明',
@@ -81,6 +117,12 @@ export const messages = {
     ar: 'تعليمات عقدة ملف الصورة',
     fr: 'Aide du nœud Fichier image',
     pt: 'Ajuda do nó Ficheiro de imagem',
-    ru: 'Справка по узлу «Файл изображения»'
+    ru: 'Справка по узлу «Файл изображения»',
+    hi: 'छवि फ़ाइल नोड सहायता',
+    id: 'Bantuan node Berkas Gambar',
+    de: 'Hilfe zum Knoten „Bilddatei“',
+    vi: 'Trợ giúp nút Tệp ảnh',
+    tr: 'Görüntü Dosyası düğümü yardımı',
+    it: 'Guida al nodo File immagine'
   }
 } satisfies Record<string, LocalizedText>

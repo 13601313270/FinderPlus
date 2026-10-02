@@ -10,7 +10,10 @@
  */
 
 /** 支持的语言代码（BCP-47 主语言标签），数组顺序即设置页下拉的展示顺序 */
-export const LANGUAGE_CODES = ['zh', 'en', 'ja', 'ko', 'es', 'ar', 'fr', 'pt', 'ru'] as const
+export const LANGUAGE_CODES = [
+  'zh', 'en', 'ja', 'ko', 'es', 'ar', 'fr', 'pt', 'ru',
+  'hi', 'id', 'de', 'vi', 'tr', 'it'
+] as const
 
 export type LanguageCode = (typeof LANGUAGE_CODES)[number]
 

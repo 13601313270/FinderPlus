@@ -47,7 +47,13 @@ export class ImageCropNode extends Node {
       ar: 'صورة',
       fr: 'Image',
       pt: 'Imagem',
-      ru: 'Изображение'
+      ru: 'Изображение',
+      hi: 'छवि',
+      id: 'Gambar',
+      de: 'Bild',
+      vi: 'Ảnh',
+      tr: 'Görüntü',
+      it: 'Immagine'
     }
   })
 
@@ -61,7 +67,13 @@ export class ImageCropNode extends Node {
     ar: 'صورة مقصوصة',
     fr: 'Image recadrée',
     pt: 'Imagem recortada',
-    ru: 'Обрезанное изображение'
+    ru: 'Обрезанное изображение',
+    hi: 'क्रॉप की गई छवि',
+    id: 'Gambar yang dipangkas',
+    de: 'Zugeschnittenes Bild',
+    vi: 'Ảnh đã cắt',
+    tr: 'Kırpılmış görüntü',
+    it: 'Immagine ritagliata'
   })
 
   /** 本次要处理的源节点 id（拖入路径的触发信号）。一次拖入只处理一次，处理完清空 */

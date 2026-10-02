@@ -1,7 +1,7 @@
 import type { LocalizedText } from '../../../shared/language'
 
 /**
- * StringConcat 节点帮助文档（StringConcatHelpDialog）的全部文案，9 种语言全配。
+ * StringConcat 节点帮助文档（StringConcatHelpDialog）的全部文案，全部 15 种语言全配。
  *
  * 与节点自身的 i18n.ts 分开：卡片短文案变化频繁，帮助文档整篇体量大、改动少。
  * 约定：带行内 <code> / <b> 的句子，值里直接写 HTML，模板用 v-html 渲染；
@@ -18,7 +18,13 @@ export const helpMessages = {
     ar: 'ما هذا؟',
     fr: 'Qu’est-ce que c’est ?',
     pt: 'O que é isto?',
-    ru: 'Что это?'
+    ru: 'Что это?',
+    hi: 'यह क्या है?',
+    id: 'Apa ini?',
+    de: 'Was ist das?',
+    vi: 'Đây là gì?',
+    tr: 'Bu nedir?',
+    it: 'Che cos’è?'
   },
   whatBody: {
     zh: '字符串拼接节点把若干字符串输入按<b>模板</b>拼成一条新字符串，结果从右侧 <code>text</code> 端口输出给下游节点。模板里用 <code>$1</code> <code>$2</code> … 引用第 N 个输入端口的值。',
@@ -29,7 +35,13 @@ export const helpMessages = {
     ar: 'تعمل عقدة دمج النصوص على دمج عدة مدخلات نصية في نص جديد وفق <b>قالب</b>، وتُخرج النتيجة إلى العقد اللاحقة من منفذ <code>text</code> على اليمين. في القالب، استخدم <code>$1</code> <code>$2</code> … للإشارة إلى قيمة المنفذ رقم N.',
     fr: 'Le nœud Concaténation de chaînes assemble plusieurs entrées de chaîne en une nouvelle chaîne selon un <b>modèle</b>, et envoie le résultat aux nœuds en aval depuis le port <code>text</code> à droite. Dans le modèle, utilisez <code>$1</code> <code>$2</code> … pour référencer la valeur du Nième port d’entrée.',
     pt: 'O nó Concatenar strings une várias entradas de string em uma nova string segundo um <b>modelo</b>, e envia o resultado aos nós seguintes pelo porto <code>text</code> à direita. No modelo, use <code>$1</code> <code>$2</code> … para referenciar o valor do enésimo porto de entrada.',
-    ru: 'Узел «Конкатенация строк» объединяет несколько строковых входов в новую строку по <b>шаблону</b> и выводит результат последующим узлам из порта <code>text</code> справа. В шаблоне используйте <code>$1</code> <code>$2</code> … для ссылки на значение N-го входного порта.'
+    ru: 'Узел «Конкатенация строк» объединяет несколько строковых входов в новую строку по <b>шаблону</b> и выводит результат последующим узлам из порта <code>text</code> справа. В шаблоне используйте <code>$1</code> <code>$2</code> … для ссылки на значение N-го входного порта.',
+    hi: 'स्ट्रिंग संयोजन नोड कई स्ट्रिंग इनपुट को <b>टेम्पलेट</b> के अनुसार एक नई स्ट्रिंग में जोड़ता है, और परिणाम को दाईं ओर <code>text</code> पोर्ट से डाउनस्ट्रीम नोड्स को भेजता है। टेम्पलेट में <code>$1</code> <code>$2</code> … से Nवें इनपुट पोर्ट का मान संदर्भित करें।',
+    id: 'Node Gabung String menggabungkan beberapa masukan string menjadi satu string baru sesuai <b>templat</b>, dan mengeluarkan hasilnya ke node hilir dari port <code>text</code> di sebelah kanan. Di templat, gunakan <code>$1</code> <code>$2</code> … untuk merujuk nilai port masukan ke-N.',
+    de: 'Der Knoten „Zeichenketten verketten“ fügt mehrere Zeichenketten-Eingaben nach einer <b>Vorlage</b> zu einer neuen Zeichenkette zusammen und gibt das Ergebnis vom <code>text</code>-Port rechts an nachgelagerte Knoten aus. In der Vorlage verweisen <code>$1</code> <code>$2</code> … auf den Wert des N-ten Eingabeports.',
+    vi: 'Nút Ghép chuỗi nối nhiều đầu vào chuỗi thành một chuỗi mới theo <b>mẫu</b>, rồi xuất kết quả cho các nút hạ nguồn từ cổng <code>text</code> bên phải. Trong mẫu, dùng <code>$1</code> <code>$2</code> … để tham chiếu giá trị của cổng đầu vào thứ N.',
+    tr: 'Dize Birleştirme düğümü, birkaç dize girişini bir <b>şablona</b> göre yeni bir dizede birleştirir ve sonucu sağdaki <code>text</code> bağlantı noktasından aşağı akış düğümlerine verir. Şablonda N. giriş bağlantı noktasının değerine başvurmak için <code>$1</code> <code>$2</code> … kullanın.',
+    it: 'Il nodo Concatenazione stringhe unisce più input di stringhe in una nuova stringa secondo un <b>modello</b> e invia il risultato ai nodi a valle dalla porta <code>text</code> a destra. Nel modello, usa <code>$1</code> <code>$2</code> … per fare riferimento al valore dell’ennesima porta di input.'
   },
 
   // —— 输入端口 & $N ——
@@ -42,7 +54,13 @@ export const helpMessages = {
     ar: 'منافذ الإدخال وقالب $N',
     fr: 'Ports d’entrée et modèle $N',
     pt: 'Portas de entrada e o modelo $N',
-    ru: 'Входные порты и шаблон $N'
+    ru: 'Входные порты и шаблон $N',
+    hi: 'इनपुट पोर्ट और $N टेम्पलेट',
+    id: 'Port masukan & templat $N',
+    de: 'Eingabeports & die $N-Vorlage',
+    vi: 'Cổng đầu vào & mẫu $N',
+    tr: 'Giriş bağlantı noktaları ve $N şablonu',
+    it: 'Porte di input e modello $N'
   },
   portsLi1: {
     zh: '每个输入端口只接受<b>字符串</b>，端口标签依次是 <code>$1</code>、<code>$2</code>…',
@@ -53,7 +71,13 @@ export const helpMessages = {
     ar: 'يقبل كل منفذ إدخال <b>النصوص</b> فقط، وتكون تسميات المنافذ <code>$1</code> و<code>$2</code>… بالترتيب',
     fr: 'Chaque port d’entrée n’accepte que des <b>chaînes</b> ; les libellés des ports sont <code>$1</code>, <code>$2</code>, … dans l’ordre',
     pt: 'Cada porto de entrada aceita apenas <b>strings</b>; os rótulos dos portos são <code>$1</code>, <code>$2</code>, … em ordem',
-    ru: 'Каждый входной порт принимает только <b>строки</b>; метки портов по порядку — <code>$1</code>, <code>$2</code>, …'
+    ru: 'Каждый входной порт принимает только <b>строки</b>; метки портов по порядку — <code>$1</code>, <code>$2</code>, …',
+    hi: 'प्रत्येक इनपुट पोर्ट केवल <b>स्ट्रिंग</b> स्वीकार करता है; पोर्ट लेबल क्रम से <code>$1</code>, <code>$2</code>… हैं',
+    id: 'Setiap port masukan hanya menerima <b>string</b>; label port secara berurutan adalah <code>$1</code>, <code>$2</code>…',
+    de: 'Jeder Eingabeport akzeptiert nur <b>Zeichenketten</b>; die Port-Beschriftungen lauten der Reihe nach <code>$1</code>, <code>$2</code>, …',
+    vi: 'Mỗi cổng đầu vào chỉ nhận <b>chuỗi</b>; nhãn cổng lần lượt là <code>$1</code>, <code>$2</code>…',
+    tr: 'Her giriş bağlantı noktası yalnızca <b>dize</b> kabul eder; bağlantı noktası etiketleri sırayla <code>$1</code>, <code>$2</code>… şeklindedir',
+    it: 'Ogni porta di input accetta solo <b>stringhe</b>; le etichette delle porte sono, in ordine, <code>$1</code>, <code>$2</code>…'
   },
   portsLi2: {
     zh: '点「<code>＋</code>」追加一个端口，点「<code>－</code>」移除<b>末尾</b>端口（至少保留 1 个）',
@@ -64,7 +88,13 @@ export const helpMessages = {
     ar: 'انقر على «<code>＋</code>» لإضافة منفذ، وعلى «<code>－</code>» لإزالة المنفذ <b>الأخير</b> (احتفظ بمنفذ واحد على الأقل)',
     fr: 'Cliquez sur « <code>＋</code> » pour ajouter un port, et sur « <code>－</code> » pour supprimer le <b>dernier</b> (gardez-en au moins un)',
     pt: 'Clique em “<code>＋</code>” para adicionar um porto e em “<code>－</code>” para remover o <b>último</b> (mantenha pelo menos um)',
-    ru: 'Нажмите «<code>＋</code>», чтобы добавить порт, и «<code>－</code>», чтобы удалить <b>последний</b> (оставьте хотя бы один)'
+    ru: 'Нажмите «<code>＋</code>», чтобы добавить порт, и «<code>－</code>», чтобы удалить <b>последний</b> (оставьте хотя бы один)',
+    hi: 'एक पोर्ट जोड़ने के लिए «<code>＋</code>» पर क्लिक करें, और <b>अंतिम</b> पोर्ट हटाने के लिए «<code>－</code>» पर क्लिक करें (कम से कम एक रखें)',
+    id: 'Klik “<code>＋</code>” untuk menambah port, dan “<code>－</code>” untuk menghapus port <b>terakhir</b> (sisakan minimal satu)',
+    de: 'Klicken Sie auf „<code>＋</code>“, um einen Port hinzuzufügen, und auf „<code>－</code>“, um den <b>letzten</b> zu entfernen (mindestens einen behalten)',
+    vi: 'Nhấp “<code>＋</code>” để thêm một cổng và “<code>－</code>” để xóa cổng <b>cuối cùng</b> (giữ ít nhất một cổng)',
+    tr: 'Bir bağlantı noktası eklemek için “<code>＋</code>” ve <b>son</b> bağlantı noktasını kaldırmak için “<code>－</code>” öğesine tıklayın (en az bir tane kalsın)',
+    it: 'Fai clic su “<code>＋</code>” per aggiungere una porta e su “<code>－</code>” per rimuovere l’<b>ultima</b> (mantienine almeno una)'
   },
   portsLi3: {
     zh: '模板里写 <code>$N</code> 就取第 N 个端口的值；该端口没值或不存在时替换为<b>空串</b>',
@@ -75,7 +105,13 @@ export const helpMessages = {
     ar: 'كتابة <code>$N</code> في القالب تأخذ قيمة المنفذ رقم N؛ وإذا لم يكن لهذا المنفذ قيمة أو لم يكن موجودًا، فيُستبدل بـ<b>نص فارغ</b>',
     fr: 'Écrire <code>$N</code> dans le modèle prend la valeur du Nième port ; si ce port n’a pas de valeur ou n’existe pas, il est remplacé par une <b>chaîne vide</b>',
     pt: 'Escrever <code>$N</code> no modelo usa o valor do enésimo porto; se esse porto não tiver valor ou não existir, é substituído por uma <b>string vazia</b>',
-    ru: 'Запись <code>$N</code> в шаблоне берёт значение N-го порта; если у порта нет значения или он не существует, подставляется <b>пустая строка</b>'
+    ru: 'Запись <code>$N</code> в шаблоне берёт значение N-го порта; если у порта нет значения или он не существует, подставляется <b>пустая строка</b>',
+    hi: 'टेम्पलेट में <code>$N</code> लिखने पर Nवें पोर्ट का मान मिलता है; यदि उस पोर्ट का कोई मान न हो या वह मौजूद न हो, तो उसे <b>खाली स्ट्रिंग</b> से बदल दिया जाता है',
+    id: 'Menulis <code>$N</code> di templat akan mengambil nilai port ke-N; jika port itu tidak punya nilai atau tidak ada, diganti dengan <b>string kosong</b>',
+    de: 'Wenn Sie <code>$N</code> in die Vorlage schreiben, wird der Wert des N-ten Ports übernommen; hat dieser Port keinen Wert oder existiert nicht, wird er durch eine <b>leere Zeichenkette</b> ersetzt',
+    vi: 'Viết <code>$N</code> trong mẫu sẽ lấy giá trị của cổng thứ N; nếu cổng đó không có giá trị hoặc không tồn tại, nó được thay bằng <b>chuỗi rỗng</b>',
+    tr: 'Şablona <code>$N</code> yazmak N. bağlantı noktasının değerini alır; bu bağlantı noktasının değeri yoksa veya mevcut değilse <b>boş dize</b> ile değiştirilir',
+    it: 'Scrivere <code>$N</code> nel modello prende il valore dell’ennesima porta; se quella porta non ha valore o non esiste, viene sostituita con una <b>stringa vuota</b>'
   },
   portsLi4: {
     zh: '想输出字面量的 <code>$</code>，写成 <code>$$</code>',
@@ -86,7 +122,13 @@ export const helpMessages = {
     ar: 'لإخراج <code>$</code> حرفيًا، اكتب <code>$$</code>',
     fr: 'Pour afficher un <code>$</code> littéral, écrivez <code>$$</code>',
     pt: 'Para exibir um <code>$</code> literal, escreva <code>$$</code>',
-    ru: 'Чтобы вывести литерал <code>$</code>, напишите <code>$$</code>'
+    ru: 'Чтобы вывести литерал <code>$</code>, напишите <code>$$</code>',
+    hi: 'शाब्दिक <code>$</code> आउटपुट करने के लिए <code>$$</code> लिखें',
+    id: 'Untuk menampilkan <code>$</code> literal, tulis <code>$$</code>',
+    de: 'Um ein literales <code>$</code> auszugeben, schreiben Sie <code>$$</code>',
+    vi: 'Để xuất một <code>$</code> theo nghĩa đen, hãy viết <code>$$</code>',
+    tr: 'Sabit bir <code>$</code> yazdırmak için <code>$$</code> yazın',
+    it: 'Per visualizzare un <code>$</code> letterale, scrivi <code>$$</code>'
   },
 
   // —— 实时联动 ——
@@ -99,7 +141,13 @@ export const helpMessages = {
     ar: 'تحديث فوري',
     fr: 'Mise à jour en direct',
     pt: 'Atualização em tempo real',
-    ru: 'Обновление в реальном времени'
+    ru: 'Обновление в реальном времени',
+    hi: 'रीयल-टाइम लिंकेज',
+    id: 'Tautan waktu nyata',
+    de: 'Live-Aktualisierung',
+    vi: 'Cập nhật trực tiếp',
+    tr: 'Canlı güncelleme',
+    it: 'Aggiornamento in tempo reale'
   },
   liveLi1: {
     zh: '模板或任一输入变化都会<b>立即重新拼接</b>，并把结果提交到输出端口，下游节点跟着刷新',
@@ -110,7 +158,13 @@ export const helpMessages = {
     ar: 'يؤدي تغيير القالب أو أي مدخل إلى <b>إعادة الدمج فورًا</b> وإرسال النتيجة إلى منفذ الإخراج، فتتحدّث العقد اللاحقة',
     fr: 'Modifier le modèle ou une entrée <b>reconcatène immédiatement</b> et valide le résultat sur le port de sortie, rafraîchissant les nœuds en aval',
     pt: 'Alterar o modelo ou qualquer entrada <b>reconcatena imediatamente</b> e confirma o resultado no porto de saída, atualizando os nós seguintes',
-    ru: 'Изменение шаблона или любого входа <b>сразу пересобирает</b> результат и отправляет его в выходной порт, обновляя последующие узлы'
+    ru: 'Изменение шаблона или любого входа <b>сразу пересобирает</b> результат и отправляет его в выходной порт, обновляя последующие узлы',
+    hi: 'टेम्पलेट या किसी भी इनपुट में बदलाव से <b>तुरंत फिर से संयोजन</b> होता है और परिणाम आउटपुट पोर्ट पर भेज दिया जाता है, जिससे डाउनस्ट्रीम नोड्स भी अपडेट हो जाते हैं',
+    id: 'Mengubah templat atau masukan mana pun akan <b>langsung menggabungkan ulang</b> dan mengirimkan hasilnya ke port keluaran, sehingga node hilir ikut diperbarui',
+    de: 'Eine Änderung der Vorlage oder einer beliebigen Eingabe <b>verkettet sofort neu</b> und übergibt das Ergebnis an den Ausgabeport, wodurch nachgelagerte Knoten aktualisiert werden',
+    vi: 'Thay đổi mẫu hoặc bất kỳ đầu vào nào sẽ <b>ghép lại ngay lập tức</b> và gửi kết quả tới cổng đầu ra, khiến các nút hạ nguồn làm mới theo',
+    tr: 'Şablonun veya herhangi bir girişin değişmesi <b>anında yeniden birleştirir</b> ve sonucu çıkış bağlantı noktasına gönderir; aşağı akış düğümleri de güncellenir',
+    it: 'Modificare il modello o qualsiasi input <b>riconcatena immediatamente</b> e invia il risultato alla porta di output, aggiornando i nodi a valle'
   },
   liveLi2: {
     zh: '卡片底部的结果区实时预览当前拼接结果',
@@ -121,7 +175,13 @@ export const helpMessages = {
     ar: 'تعرض منطقة النتيجة أسفل البطاقة النتيجة المدمجة الحالية في الوقت الفعلي',
     fr: 'La zone de résultat en bas de la carte affiche en temps réel le résultat concaténé actuel',
     pt: 'A área de resultado na parte inferior do cartão pré-visualiza o resultado concatenado atual em tempo real',
-    ru: 'Область результата внизу карточки показывает текущий результат в реальном времени'
+    ru: 'Область результата внизу карточки показывает текущий результат в реальном времени',
+    hi: 'कार्ड के नीचे का परिणाम क्षेत्र वर्तमान संयोजन परिणाम का रीयल-टाइम पूर्वावलोकन दिखाता है',
+    id: 'Area hasil di bagian bawah kartu menampilkan pratinjau hasil gabungan saat ini secara waktu nyata',
+    de: 'Der Ergebnisbereich unten auf der Karte zeigt das aktuelle Verkettungsergebnis in Echtzeit an',
+    vi: 'Vùng kết quả ở cuối thẻ xem trước kết quả ghép hiện tại theo thời gian thực',
+    tr: 'Kartın altındaki sonuç alanı, geçerli birleştirme sonucunu gerçek zamanlı olarak önizler',
+    it: 'L’area del risultato in fondo alla scheda mostra in tempo reale l’anteprima del risultato concatenato corrente'
   },
 
   // —— 示例 ——
@@ -134,7 +194,13 @@ export const helpMessages = {
     ar: 'أمثلة',
     fr: 'Exemples',
     pt: 'Exemplos',
-    ru: 'Примеры'
+    ru: 'Примеры',
+    hi: 'उदाहरण',
+    id: 'Contoh',
+    de: 'Beispiele',
+    vi: 'Ví dụ',
+    tr: 'Örnekler',
+    it: 'Esempi'
   },
   exampleLabel: {
     zh: '例：模板 <code>https://$1/$2</code>，$1 是域名、$2 是路径',
@@ -145,7 +211,13 @@ export const helpMessages = {
     ar: 'مثال: القالب <code>https://$1/$2</code>، حيث $1 هو النطاق و$2 هو المسار',
     fr: 'Exemple : modèle <code>https://$1/$2</code>, où $1 est le domaine et $2 le chemin',
     pt: 'Exemplo: modelo <code>https://$1/$2</code>, onde $1 é o domínio e $2 o caminho',
-    ru: 'Пример: шаблон <code>https://$1/$2</code>, где $1 — домен, $2 — путь'
+    ru: 'Пример: шаблон <code>https://$1/$2</code>, где $1 — домен, $2 — путь',
+    hi: 'उदाहरण: टेम्पलेट <code>https://$1/$2</code>, जहाँ $1 डोमेन है और $2 पथ है',
+    id: 'Contoh: templat <code>https://$1/$2</code>, dengan $1 adalah domain dan $2 adalah jalur',
+    de: 'Beispiel: Vorlage <code>https://$1/$2</code>, wobei $1 die Domain und $2 der Pfad ist',
+    vi: 'Ví dụ: mẫu <code>https://$1/$2</code>, trong đó $1 là tên miền và $2 là đường dẫn',
+    tr: 'Örnek: şablon <code>https://$1/$2</code>, burada $1 alan adı, $2 yoldur',
+    it: 'Esempio: modello <code>https://$1/$2</code>, dove $1 è il dominio e $2 è il percorso'
   },
   exampleComment1: {
     zh: '// 模板',
@@ -156,7 +228,13 @@ export const helpMessages = {
     ar: '// القالب',
     fr: '// Modèle',
     pt: '// Modelo',
-    ru: '// Шаблон'
+    ru: '// Шаблон',
+    hi: '// टेम्पलेट',
+    id: '// Templat',
+    de: '// Vorlage',
+    vi: '// Mẫu',
+    tr: '// Şablon',
+    it: '// Modello'
   },
   exampleComment2: {
     zh: '// 结果',
@@ -167,6 +245,12 @@ export const helpMessages = {
     ar: '// النتيجة',
     fr: '// Résultat',
     pt: '// Resultado',
-    ru: '// Результат'
+    ru: '// Результат',
+    hi: '// परिणाम',
+    id: '// Hasil',
+    de: '// Ergebnis',
+    vi: '// Kết quả',
+    tr: '// Sonuç',
+    it: '// Risultato'
   }
 } satisfies Record<string, LocalizedText>

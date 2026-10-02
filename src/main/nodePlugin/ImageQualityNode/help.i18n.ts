@@ -1,7 +1,7 @@
 import type { LocalizedText } from '../../../shared/language'
 
 /**
- * ImageQuality 节点帮助文档（ImageQualityHelpDialog）的全部文案，9 种语言全配。
+ * ImageQuality 节点帮助文档（ImageQualityHelpDialog）的全部文案，全部 15 种语言全配。
  *
  * 与节点自身的 i18n.ts 分开：卡片短文案变化频繁，帮助文档整篇体量大、改动少。
  * 约定：带行内 <code> / <b> 的句子，值里直接写 HTML，模板用 v-html 渲染；
@@ -19,7 +19,13 @@ export const helpMessages = {
     ar: 'ما هذا؟',
     fr: 'Qu’est-ce que c’est ?',
     pt: 'O que é isto?',
-    ru: 'Что это?'
+    ru: 'Что это?',
+    hi: 'यह क्या है?',
+    id: 'Apa ini?',
+    de: 'Was ist das?',
+    vi: 'Đây là gì?',
+    tr: 'Bu nedir?',
+    it: 'Che cos’è?'
   },
   whatBody: {
     zh: '图片质量节点接收一张图片，按<b>质量</b>与<b>导出格式</b>重新编码后输出，<b>不改变图片尺寸</b>。结果从右侧 <code>image</code> 端口（标签「调整后」）输出给下游节点，底层编码由 Rust → WASM 完成。',
@@ -30,7 +36,13 @@ export const helpMessages = {
     ar: 'تستقبل عقدة جودة الصورة صورة واحدة وتعيد ترميزها وفق <b>الجودة</b> و<b>صيغة التصدير</b>، <b>دون تغيير أبعاد الصورة</b>. تُخرج النتيجة إلى العقد اللاحقة من منفذ <code>image</code> على اليمين (المسمّى «معدّلة»)، ويتم الترميز الداخلي عبر Rust → WASM.',
     fr: 'Le nœud Qualité d’image reçoit une image et la réencode selon la <b>qualité</b> et le <b>format d’export</b>, <b>sans modifier ses dimensions</b>. Le résultat est envoyé aux nœuds en aval depuis le port <code>image</code> à droite (libellé « Ajustée ») ; l’encodage interne est assuré par Rust → WASM.',
     pt: 'O nó Qualidade de imagem recebe uma imagem e recodifica-a segundo a <b>qualidade</b> e o <b>formato de exportação</b>, <b>sem alterar as suas dimensões</b>. O resultado é enviado aos nós seguintes pelo porto <code>image</code> à direita (rotulado “Ajustada”); a codificação interna é feita por Rust → WASM.',
-    ru: 'Узел «Качество изображения» принимает изображение и перекодирует его согласно <b>качеству</b> и <b>формату экспорта</b>, <b>не изменяя его размеры</b>. Результат выводится последующим узлам из порта <code>image</code> справа (метка «Скорректировано»); внутреннее кодирование выполняет Rust → WASM.'
+    ru: 'Узел «Качество изображения» принимает изображение и перекодирует его согласно <b>качеству</b> и <b>формату экспорта</b>, <b>не изменяя его размеры</b>. Результат выводится последующим узлам из порта <code>image</code> справа (метка «Скорректировано»); внутреннее кодирование выполняет Rust → WASM.',
+    hi: 'छवि गुणवत्ता नोड एक छवि प्राप्त करता है और उसे <b>गुणवत्ता</b> तथा <b>निर्यात प्रारूप</b> के अनुसार फिर से एन्कोड करके आउटपुट देता है, <b>छवि का आकार नहीं बदलता</b>। परिणाम दाईं ओर के <code>image</code> पोर्ट (लेबल "समायोजित") से डाउनस्ट्रीम नोड्स को भेजा जाता है; आंतरिक एन्कोडिंग Rust → WASM द्वारा की जाती है।',
+    id: 'Node Kualitas Gambar menerima satu gambar dan mengodekan ulang sesuai <b>kualitas</b> dan <b>format ekspor</b>, <b>tanpa mengubah ukurannya</b>. Hasilnya dikeluarkan ke node hilir dari port <code>image</code> di kanan (berlabel "Disesuaikan"); pengodean internal dilakukan oleh Rust → WASM.',
+    de: 'Der Knoten „Bildqualität“ empfängt ein Bild und kodiert es gemäß der <b>Qualität</b> und dem <b>Exportformat</b> neu, <b>ohne seine Abmessungen zu ändern</b>. Das Ergebnis wird von dem Port <code>image</code> rechts (Bezeichnung „Angepasst“) an nachgelagerte Knoten ausgegeben; die interne Kodierung erfolgt durch Rust → WASM.',
+    vi: 'Nút Chất lượng ảnh nhận một ảnh và mã hóa lại theo <b>chất lượng</b> và <b>định dạng xuất</b>, <b>không thay đổi kích thước ảnh</b>. Kết quả được xuất đến các nút hạ nguồn từ cổng <code>image</code> bên phải (nhãn "Đã điều chỉnh"); việc mã hóa bên trong do Rust → WASM thực hiện.',
+    tr: 'Görüntü Kalitesi düğümü bir görüntü alır ve <b>kalite</b> ile <b>dışa aktarma biçimine</b> göre <b>boyutlarını değiştirmeden</b> yeniden kodlayarak çıktı verir. Sonuç, sağdaki <code>image</code> bağlantı noktasından (etiket "Ayarlanmış") aşağı akış düğümlerine gönderilir; iç kodlama Rust → WASM tarafından yapılır.',
+    it: 'Il nodo Qualità immagine riceve un’immagine e la ricodifica secondo la <b>qualità</b> e il <b>formato di esportazione</b>, <b>senza modificarne le dimensioni</b>. Il risultato viene inviato ai nodi a valle dalla porta <code>image</code> a destra (etichetta "Regolata"); la codifica interna è eseguita da Rust → WASM.'
   },
 
   // —— 参数设置（质量滑杆 & 导出格式） ——
@@ -43,7 +55,13 @@ export const helpMessages = {
     ar: 'الإعدادات (شريط الجودة وصيغة التصدير)',
     fr: 'Réglages (curseur de qualité et format d’export)',
     pt: 'Definições (controlo de qualidade e formato de exportação)',
-    ru: 'Настройки (ползунок качества и формат экспорта)'
+    ru: 'Настройки (ползунок качества и формат экспорта)',
+    hi: 'सेटिंग्स (गुणवत्ता स्लाइडर और निर्यात प्रारूप)',
+    id: 'Pengaturan (slider kualitas & format ekspor)',
+    de: 'Einstellungen (Qualitätsregler & Exportformat)',
+    vi: 'Cài đặt (thanh trượt chất lượng & định dạng xuất)',
+    tr: 'Ayarlar (kalite kaydırıcısı ve dışa aktarma biçimi)',
+    it: 'Impostazioni (cursore qualità e formato di esportazione)'
   },
   configLi1: {
     zh: '质量滑杆范围 <code>1–100</code>，默认 <code>80</code>。数值越小，压缩后体积越小、画质越低；越大越清晰、体积越大。',
@@ -54,7 +72,13 @@ export const helpMessages = {
     ar: 'يتراوح شريط الجودة بين <code>1–100</code> والقيمة الافتراضية <code>80</code>. كلما صغرت القيمة صغُر الحجم بعد الضغط وانخفضت الجودة، وكلما كبرت زاد الوضوح والحجم.',
     fr: 'Le curseur de qualité va de <code>1–100</code>, avec <code>80</code> par défaut. Plus la valeur est faible, plus le fichier est petit et la qualité basse ; plus elle est élevée, plus l’image est nette et lourde.',
     pt: 'O controlo de qualidade vai de <code>1–100</code>, com <code>80</code> por omissão. Quanto menor o valor, menor o tamanho e a qualidade; quanto maior, mais nítida e mais pesada fica a imagem.',
-    ru: 'Ползунок качества имеет диапазон <code>1–100</code>, по умолчанию <code>80</code>. Чем меньше значение, тем меньше размер и ниже качество; чем больше — тем чётче изображение и больше файл.'
+    ru: 'Ползунок качества имеет диапазон <code>1–100</code>, по умолчанию <code>80</code>. Чем меньше значение, тем меньше размер и ниже качество; чем больше — тем чётче изображение и больше файл.',
+    hi: 'गुणवत्ता स्लाइडर की सीमा <code>1–100</code> है और डिफ़ॉल्ट <code>80</code> है। मान जितना छोटा, संपीड़न के बाद आकार उतना छोटा और गुणवत्ता उतनी कम; जितना बड़ा, उतनी स्पष्ट और आकार उतना बड़ा।',
+    id: 'Rentang slider kualitas adalah <code>1–100</code>, dengan bawaan <code>80</code>. Semakin kecil nilainya, semakin kecil ukuran dan semakin rendah kualitas; semakin besar, semakin tajam dan semakin besar ukurannya.',
+    de: 'Der Qualitätsregler reicht von <code>1–100</code>, Standard ist <code>80</code>. Je kleiner der Wert, desto kleiner die Datei und desto geringer die Qualität; je größer, desto schärfer und größer die Datei.',
+    vi: 'Thanh trượt chất lượng có phạm vi <code>1–100</code>, mặc định là <code>80</code>. Giá trị càng nhỏ thì kích thước sau khi nén càng nhỏ và chất lượng càng thấp; càng lớn thì càng nét và kích thước càng lớn.',
+    tr: 'Kalite kaydırıcısı <code>1–100</code> aralığındadır ve varsayılanı <code>80</code>’dir. Değer küçüldükçe sıkıştırma sonrası boyut küçülür ve kalite düşer; büyüdükçe daha net ve daha büyük olur.',
+    it: 'Il cursore della qualità va da <code>1–100</code>, con valore predefinito <code>80</code>. Più basso è il valore, minori sono dimensione e qualità; più alto è, più l’immagine è nitida e pesante.'
   },
   configLi2: {
     zh: '拖动滑杆时只实时显示数值，<b>松手</b>后才重新压缩，避免拖动过程中反复编码卡顿。',
@@ -65,7 +89,13 @@ export const helpMessages = {
     ar: 'أثناء سحب الشريط يُحدَّث الرقم فوريًا فقط، ولا يُعاد الضغط إلا بعد <b>إفلاته</b>، لتفادي التقطّع الناتج عن إعادة الترميز المتكرر أثناء السحب.',
     fr: 'Pendant le glissement du curseur, seule la valeur s’actualise en direct ; la recompression n’a lieu qu’au <b>relâchement</b>, évitant les saccades dues aux encodages répétés.',
     pt: 'Ao arrastar o controlo apenas o valor é atualizado em tempo real; a recompressão só acontece ao <b>largar</b>, evitando engasgos por recodificação repetida durante o arrasto.',
-    ru: 'При перетаскивании ползунка в реальном времени обновляется только значение; перекодирование выполняется после <b>отпускания</b>, чтобы избежать рывков из-за повторного кодирования.'
+    ru: 'При перетаскивании ползунка в реальном времени обновляется только значение; перекодирование выполняется после <b>отпускания</b>, чтобы избежать рывков из-за повторного кодирования.',
+    hi: 'स्लाइडर खींचते समय केवल मान रीयल-टाइम में दिखता है; <b>छोड़ने</b> के बाद ही फिर से संपीड़न होता है, जिससे खींचने के दौरान बार-बार एन्कोडिंग से रुकावट नहीं होती।',
+    id: 'Saat menyeret slider hanya nilai yang diperbarui langsung; kompres ulang baru terjadi setelah <b>dilepas</b>, menghindari tersendat akibat pengodean berulang selama penyeretan.',
+    de: 'Beim Ziehen des Reglers wird nur der Wert live angezeigt; neu komprimiert wird erst nach dem <b>Loslassen</b>, um Ruckler durch wiederholtes Kodieren beim Ziehen zu vermeiden.',
+    vi: 'Khi kéo thanh trượt, chỉ giá trị được cập nhật trực tiếp; việc nén lại chỉ diễn ra sau khi <b>thả</b>, tránh giật lag do mã hóa lặp lại trong lúc kéo.',
+    tr: 'Kaydırıcıyı sürüklerken yalnızca değer canlı güncellenir; yeniden sıkıştırma ancak <b>bıraktıktan</b> sonra yapılır ve sürükleme sırasında tekrarlanan kodlamadan kaynaklanan takılmalar önlenir.',
+    it: 'Durante il trascinamento del cursore viene aggiornato solo il valore in tempo reale; la ricompressione avviene solo dopo il <b>rilascio</b>, evitando scatti dovuti a codifiche ripetute durante il trascinamento.'
   },
   configLi3: {
     zh: '导出格式可选 <code>jpeg</code> 或 <code>png</code>：<code>jpeg</code> 有损、体积小；<code>png</code> 无损、可保留透明通道。默认 <code>jpeg</code>。',
@@ -76,7 +106,13 @@ export const helpMessages = {
     ar: 'يمكن اختيار صيغة التصدير <code>jpeg</code> أو <code>png</code>: فـ<code>jpeg</code> بفقدان وحجم أصغر، و<code>png</code> بدون فقدان ويحافظ على قناة الشفافية. الافتراضي <code>jpeg</code>.',
     fr: 'Le format d’export peut être <code>jpeg</code> ou <code>png</code> : <code>jpeg</code> est avec perte et plus léger ; <code>png</code> est sans perte et peut conserver le canal alpha. Par défaut : <code>jpeg</code>.',
     pt: 'O formato de exportação pode ser <code>jpeg</code> ou <code>png</code>: <code>jpeg</code> é com perdas e mais leve; <code>png</code> é sem perdas e pode manter o canal alfa. Por omissão, <code>jpeg</code>.',
-    ru: 'Формат экспорта — <code>jpeg</code> или <code>png</code>: <code>jpeg</code> с потерями и меньше размером; <code>png</code> без потерь и может сохранять альфа-канал. По умолчанию — <code>jpeg</code>.'
+    ru: 'Формат экспорта — <code>jpeg</code> или <code>png</code>: <code>jpeg</code> с потерями и меньше размером; <code>png</code> без потерь и может сохранять альфа-канал. По умолчанию — <code>jpeg</code>.',
+    hi: 'निर्यात प्रारूप <code>jpeg</code> या <code>png</code> चुन सकते हैं: <code>jpeg</code> लॉसी और छोटा; <code>png</code> लॉसलेस और पारदर्शिता चैनल सुरक्षित रखता है। डिफ़ॉल्ट <code>jpeg</code>।',
+    id: 'Format ekspor dapat berupa <code>jpeg</code> atau <code>png</code>: <code>jpeg</code> bersifat lossy dan berukuran kecil; <code>png</code> lossless dan dapat mempertahankan saluran alfa. Bawaan <code>jpeg</code>.',
+    de: 'Das Exportformat kann <code>jpeg</code> oder <code>png</code> sein: <code>jpeg</code> ist verlustbehaftet und kleiner; <code>png</code> ist verlustfrei und kann den Alphakanal behalten. Standard ist <code>jpeg</code>.',
+    vi: 'Định dạng xuất có thể là <code>jpeg</code> hoặc <code>png</code>: <code>jpeg</code> nén mất dữ liệu, kích thước nhỏ; <code>png</code> không mất dữ liệu và giữ được kênh trong suốt. Mặc định là <code>jpeg</code>.',
+    tr: 'Dışa aktarma biçimi <code>jpeg</code> veya <code>png</code> olabilir: <code>jpeg</code> kayıplı ve küçüktür; <code>png</code> kayıpsızdır ve alfa kanalını koruyabilir. Varsayılan <code>jpeg</code>’tir.',
+    it: 'Il formato di esportazione può essere <code>jpeg</code> o <code>png</code>: <code>jpeg</code> è con perdita e più leggero; <code>png</code> è senza perdita e può conservare il canale alfa. Predefinito: <code>jpeg</code>.'
   },
   configLi4: {
     zh: '切换格式后<b>立即重新压缩</b>，结果预览随之更新。',
@@ -87,7 +123,13 @@ export const helpMessages = {
     ar: 'يؤدي تغيير الصيغة إلى <b>إعادة الضغط فورًا</b>، وتتحدّث معاينة النتيجة تبعًا لذلك.',
     fr: 'Changer de format <b>recompresse immédiatement</b>, et l’aperçu du résultat est mis à jour.',
     pt: 'Mudar o formato <b>recomprime imediatamente</b> e a pré-visualização do resultado é atualizada.',
-    ru: 'Смена формата <b>сразу перекодирует</b> изображение, и предпросмотр результата обновляется.'
+    ru: 'Смена формата <b>сразу перекодирует</b> изображение, и предпросмотр результата обновляется.',
+    hi: 'प्रारूप बदलने पर <b>तुरंत फिर से संपीड़न</b> होता है और परिणाम का पूर्वावलोकन अपडेट हो जाता है।',
+    id: 'Mengganti format akan <b>langsung mengompres ulang</b>, dan pratinjau hasil ikut diperbarui.',
+    de: 'Ein Formatwechsel <b>komprimiert sofort neu</b>, und die Ergebnisvorschau wird entsprechend aktualisiert.',
+    vi: 'Đổi định dạng sẽ <b>nén lại ngay lập tức</b>, và bản xem trước kết quả cũng cập nhật theo.',
+    tr: 'Biçimi değiştirmek <b>anında yeniden sıkıştırır</b> ve sonuç önizlemesi de güncellenir.',
+    it: 'Cambiando formato si <b>ricomprime immediatamente</b> e anche l’anteprima del risultato si aggiorna.'
   },
 
   // —— 输入 / 输出端口 ——
@@ -100,7 +142,13 @@ export const helpMessages = {
     ar: 'منافذ الإدخال / الإخراج',
     fr: 'Ports d’entrée / sortie',
     pt: 'Portas de entrada / saída',
-    ru: 'Входные / выходные порты'
+    ru: 'Входные / выходные порты',
+    hi: 'इनपुट / आउटपुट पोर्ट',
+    id: 'Port masukan / keluaran',
+    de: 'Eingabe- / Ausgabeports',
+    vi: 'Cổng vào / cổng ra',
+    tr: 'Giriş / çıkış bağlantı noktaları',
+    it: 'Porte di input / output'
   },
   portsLi1: {
     zh: '左侧 <code>source</code> 端口（标签「图片」）接收一个图片值（<code>img-file</code> 节点或上游图片输出）。',
@@ -111,7 +159,13 @@ export const helpMessages = {
     ar: 'يستقبل منفذ <code>source</code> على اليسار (المسمّى «صورة») قيمة صورة واحدة (عقدة <code>img-file</code> أو إخراج صورة من المنبع).',
     fr: 'Le port <code>source</code> à gauche (libellé « Image ») reçoit une valeur d’image (un nœud <code>img-file</code> ou une sortie d’image en amont).',
     pt: 'O porto <code>source</code> à esquerda (rotulado “Imagem”) recebe um valor de imagem (um nó <code>img-file</code> ou uma saída de imagem de montante).',
-    ru: 'Порт <code>source</code> слева (метка «Изображение») принимает значение изображения (узел <code>img-file</code> или вывод изображения сверху).'
+    ru: 'Порт <code>source</code> слева (метка «Изображение») принимает значение изображения (узел <code>img-file</code> или вывод изображения сверху).',
+    hi: 'बाईं ओर का <code>source</code> पोर्ट (लेबल "छवि") एक छवि मान प्राप्त करता है (<code>img-file</code> नोड या अपस्ट्रीम छवि आउटपुट)।',
+    id: 'Port <code>source</code> di kiri (berlabel "Gambar") menerima satu nilai gambar (node <code>img-file</code> atau keluaran gambar hulu).',
+    de: 'Der Port <code>source</code> links (Bezeichnung „Bild“) empfängt einen Bildwert (einen <code>img-file</code>-Knoten oder eine vorgelagerte Bildausgabe).',
+    vi: 'Cổng <code>source</code> bên trái (nhãn "Ảnh") nhận một giá trị ảnh (nút <code>img-file</code> hoặc đầu ra ảnh thượng nguồn).',
+    tr: 'Soldaki <code>source</code> bağlantı noktası (etiket "Görüntü") bir görüntü değeri alır (<code>img-file</code> düğümü veya yukarı akış görüntü çıkışı).',
+    it: 'La porta <code>source</code> a sinistra (etichetta "Immagine") riceve un valore immagine (un nodo <code>img-file</code> o un output immagine a monte).'
   },
   portsLi2: {
     zh: '右侧 <code>image</code> 端口（标签「调整后」）输出重新编码后的图片，可继续接下游节点。',
@@ -122,7 +176,13 @@ export const helpMessages = {
     ar: 'يُخرج منفذ <code>image</code> على اليمين (المسمّى «معدّلة») الصورة المعاد ترميزها لمواصلة الربط بالعقد اللاحقة.',
     fr: 'Le port <code>image</code> à droite (libellé « Ajustée ») émet l’image réencodée pour continuer vers l’aval.',
     pt: 'O porto <code>image</code> à direita (rotulado “Ajustada”) emite a imagem recodificada para continuar a jusante.',
-    ru: 'Порт <code>image</code> справа (метка «Скорректировано») выводит перекодированное изображение для дальнейшего соединения.'
+    ru: 'Порт <code>image</code> справа (метка «Скорректировано») выводит перекодированное изображение для дальнейшего соединения.',
+    hi: 'दाईं ओर का <code>image</code> पोर्ट (लेबल "समायोजित") फिर से एन्कोड की गई छवि आउटपुट करता है, जिसे आगे डाउनस्ट्रीम नोड्स से जोड़ा जा सकता है।',
+    id: 'Port <code>image</code> di kanan (berlabel "Disesuaikan") mengeluarkan gambar yang telah dikodekan ulang untuk dilanjutkan ke node hilir.',
+    de: 'Der Port <code>image</code> rechts (Bezeichnung „Angepasst“) gibt das neu kodierte Bild aus, das an nachgelagerte Knoten weitergegeben werden kann.',
+    vi: 'Cổng <code>image</code> bên phải (nhãn "Đã điều chỉnh") xuất ảnh đã mã hóa lại để tiếp tục nối đến các nút hạ nguồn.',
+    tr: 'Sağdaki <code>image</code> bağlantı noktası (etiket "Ayarlanmış") yeniden kodlanmış görüntüyü çıkarır ve aşağı akış düğümlerine bağlanabilir.',
+    it: 'La porta <code>image</code> a destra (etichetta "Regolata") emette l’immagine ricodificata, proseguibile verso i nodi a valle.'
   },
   portsLi3: {
     zh: '也可以直接把图片节点<b>拖到本节点上</b>做一次性压缩，不建立连线、不持久化关系。',
@@ -133,7 +193,13 @@ export const helpMessages = {
     ar: 'يمكنك أيضًا <b>سحب عقدة صورة وإفلاتها على هذه العقدة</b> للضغط مرة واحدة، دون إنشاء وصلة أو حفظ أي علاقة.',
     fr: 'Vous pouvez aussi <b>déposer un nœud d’image sur ce nœud</b> pour compresser une seule fois, sans créer de liaison ni enregistrer de relation.',
     pt: 'Também pode <b>arrastar um nó de imagem para cima deste nó</b> para comprimir uma só vez, sem criar ligações nem guardar a relação.',
-    ru: 'Можно также <b>перетащить узел изображения на этот узел</b> для однократного сжатия — без создания связи и без сохранения отношения.'
+    ru: 'Можно также <b>перетащить узел изображения на этот узел</b> для однократного сжатия — без создания связи и без сохранения отношения.',
+    hi: 'आप छवि नोड को सीधे <b>इस नोड पर खींचकर</b> एक बार संपीड़ित कर सकते हैं, बिना कनेक्शन बनाए और बिना संबंध सहेजे।',
+    id: 'Anda juga dapat <b>menyeret node gambar ke node ini</b> untuk mengompres sekali saja, tanpa membuat koneksi atau menyimpan hubungan.',
+    de: 'Sie können einen Bildknoten auch <b>auf diesen Knoten ziehen</b>, um einmalig zu komprimieren, ohne eine Verbindung zu erstellen oder eine Beziehung zu speichern.',
+    vi: 'Bạn cũng có thể <b>kéo nút ảnh lên chính nút này</b> để nén một lần, không tạo kết nối và không lưu quan hệ.',
+    tr: 'Bir görüntü düğümünü <b>bu düğümün üzerine sürükleyerek</b> bir kez sıkıştırabilirsiniz; bağlantı oluşturmaz ve ilişki kaydetmez.',
+    it: 'Puoi anche <b>trascinare un nodo immagine su questo nodo</b> per comprimere una sola volta, senza creare collegamenti né salvare relazioni.'
   },
 
   // —— 压缩时机（两种触发方式） ——
@@ -146,7 +212,13 @@ export const helpMessages = {
     ar: 'وقت الضغط (طريقتان للتشغيل)',
     fr: 'Quand la compression s’exécute (deux déclencheurs)',
     pt: 'Quando a compressão ocorre (dois acionadores)',
-    ru: 'Когда выполняется сжатие (два триггера)'
+    ru: 'Когда выполняется сжатие (два триггера)',
+    hi: 'संपीड़न का समय (दो ट्रिगर तरीके)',
+    id: 'Waktu kompres (dua cara pemicu)',
+    de: 'Wann komprimiert wird (zwei Auslöser)',
+    vi: 'Thời điểm nén (hai cách kích hoạt)',
+    tr: 'Sıkıştırma zamanı (iki tetikleme yolu)',
+    it: 'Quando avviene la compressione (due attivatori)'
   },
   runLi1: {
     zh: '端口路径（响应式）：上游图片、<b>质量</b>或<b>格式</b>任一变化都会自动重新压缩，并提交结果刷新下游。',
@@ -157,7 +229,13 @@ export const helpMessages = {
     ar: 'مسار المنفذ (تفاعلي): أي تغيير في صورة المنبع أو <b>الجودة</b> أو <b>الصيغة</b> يعيد الضغط تلقائيًا ويُرسل النتيجة لتحديث العقد اللاحقة.',
     fr: 'Chemin par port (réactif) : toute modification de l’image en amont, de la <b>qualité</b> ou du <b>format</b> relance automatiquement la compression et valide le résultat, rafraîchissant l’aval.',
     pt: 'Via de porto (reativa): qualquer alteração na imagem de montante, na <b>qualidade</b> ou no <b>formato</b> recompõe automaticamente e confirma o resultado, atualizando a jusante.',
-    ru: 'Путь через порт (реактивный): изменение входного изображения, <b>качества</b> или <b>формата</b> автоматически запускает повторное сжатие и отправляет результат, обновляя последующие узлы.'
+    ru: 'Путь через порт (реактивный): изменение входного изображения, <b>качества</b> или <b>формата</b> автоматически запускает повторное сжатие и отправляет результат, обновляя последующие узлы.',
+    hi: 'पोर्ट पथ (प्रतिक्रियाशील): अपस्ट्रीम छवि, <b>गुणवत्ता</b> या <b>प्रारूप</b> में कोई भी बदलाव स्वतः फिर से संपीड़न करता है और परिणाम भेजकर डाउनस्ट्रीम को रीफ़्रेश करता है।',
+    id: 'Jalur port (reaktif): perubahan pada gambar hulu, <b>kualitas</b>, atau <b>format</b> akan otomatis mengompres ulang dan mengirim hasilnya untuk menyegarkan hilir.',
+    de: 'Port-Pfad (reaktiv): Jede Änderung am vorgelagerten Bild, an der <b>Qualität</b> oder am <b>Format</b> komprimiert automatisch neu und übermittelt das Ergebnis, um den nachgelagerten Bereich zu aktualisieren.',
+    vi: 'Đường cổng (phản ứng): bất kỳ thay đổi nào ở ảnh thượng nguồn, <b>chất lượng</b> hoặc <b>định dạng</b> đều tự động nén lại và gửi kết quả để làm mới hạ nguồn.',
+    tr: 'Bağlantı noktası yolu (reaktif): yukarı akış görüntüsünde, <b>kalitede</b> veya <b>biçimde</b> herhangi bir değişiklik otomatik olarak yeniden sıkıştırır ve sonucu göndererek aşağı akışı yeniler.',
+    it: 'Percorso porta (reattivo): qualsiasi modifica all’immagine a monte, alla <b>qualità</b> o al <b>formato</b> ricomprime automaticamente e invia il risultato, aggiornando i nodi a valle.'
   },
   runLi2: {
     zh: '拖入路径（一次性）：把图片节点拖进来压缩一次，处理完即结束，之后不会再跟踪该节点。',
@@ -168,7 +246,13 @@ export const helpMessages = {
     ar: 'مسار الإفلات (مرة واحدة): إفلات عقدة صورة يضغط مرة واحدة ثم ينتهي، ولا تتابع العقدة بعد ذلك.',
     fr: 'Chemin par dépôt (unique) : déposer un nœud d’image compresse une seule fois puis s’arrête ; le nœud n’est plus suivi ensuite.',
     pt: 'Via de largar (única): arrastar um nó de imagem comprime uma só vez e termina; o nó não é mais seguido depois.',
-    ru: 'Путь через перетаскивание (однократный): перетаскивание узла изображения сжимает один раз и завершается; дальше узел не отслеживается.'
+    ru: 'Путь через перетаскивание (однократный): перетаскивание узла изображения сжимает один раз и завершается; дальше узел не отслеживается.',
+    hi: 'ड्रैग पथ (एक बार): छवि नोड को खींचकर अंदर लाने पर एक बार संपीड़न होता है और प्रक्रिया समाप्त हो जाती है; उसके बाद उस नोड को ट्रैक नहीं किया जाएगा।',
+    id: 'Jalur seret (sekali): menyeret node gambar masuk akan mengompres sekali lalu selesai; setelah itu node tersebut tidak dilacak lagi.',
+    de: 'Zieh-Pfad (einmalig): Das Hineinziehen eines Bildknotens komprimiert einmal und endet danach; der Knoten wird anschließend nicht weiter verfolgt.',
+    vi: 'Đường kéo (một lần): kéo nút ảnh vào sẽ nén một lần rồi kết thúc; sau đó không theo dõi nút này nữa.',
+    tr: 'Sürükleme yolu (tek seferlik): görüntü düğümünü içeri sürüklemek bir kez sıkıştırır ve biter; sonrasında o düğüm artık izlenmez.',
+    it: 'Percorso di trascinamento (una tantum): trascinando un nodo immagine si comprime una sola volta e poi termina; il nodo non viene più tracciato.'
   },
   runLi3: {
     zh: '源文件、质量、格式都没变时，<b>不会重复压缩</b>。',
@@ -179,7 +263,13 @@ export const helpMessages = {
     ar: 'إذا لم يتغير الملف المصدر ولا الجودة ولا الصيغة، <b>لا يُعاد الضغط</b>.',
     fr: 'Si le fichier source, la qualité et le format restent inchangés, <b>aucune recompression n’a lieu</b>.',
     pt: 'Se o ficheiro de origem, a qualidade e o formato não mudarem, <b>não há recompressão</b>.',
-    ru: 'Если исходный файл, качество и формат не изменились, <b>повторное сжатие не выполняется</b>.'
+    ru: 'Если исходный файл, качество и формат не изменились, <b>повторное сжатие не выполняется</b>.',
+    hi: 'जब स्रोत फ़ाइल, गुणवत्ता और प्रारूप नहीं बदलते, तो <b>दोबारा संपीड़न नहीं होता</b>।',
+    id: 'Jika berkas sumber, kualitas, dan format tidak berubah, <b>tidak ada kompres ulang</b>.',
+    de: 'Wenn Quelldatei, Qualität und Format unverändert bleiben, <b>erfolgt keine erneute Komprimierung</b>.',
+    vi: 'Khi tệp gốc, chất lượng và định dạng đều không đổi, <b>sẽ không nén lại</b>.',
+    tr: 'Kaynak dosya, kalite ve biçim değişmediğinde <b>yeniden sıkıştırma yapılmaz</b>.',
+    it: 'Se il file di origine, la qualità e il formato non cambiano, <b>non avviene alcuna ricompressione</b>.'
   },
 
   // —— 结果与体积信息 ——
@@ -192,7 +282,13 @@ export const helpMessages = {
     ar: 'النتيجة ومعلومات الحجم',
     fr: 'Résultat et informations de taille',
     pt: 'Resultado e informações de tamanho',
-    ru: 'Результат и сведения о размере'
+    ru: 'Результат и сведения о размере',
+    hi: 'परिणाम और आकार की जानकारी',
+    id: 'Informasi hasil & ukuran',
+    de: 'Ergebnis- und Größeninformationen',
+    vi: 'Thông tin kết quả & kích thước',
+    tr: 'Sonuç ve boyut bilgileri',
+    it: 'Risultato e informazioni sulla dimensione'
   },
   outputLi1: {
     zh: '底部信息栏显示 <b>原始体积 → 压缩后体积</b>，例如 <code>1.2 MB → 340.5 KB</code>。',
@@ -203,7 +299,13 @@ export const helpMessages = {
     ar: 'يعرض الشريط السفلي <b>الحجم الأصلي → الحجم بعد الضغط</b>، مثل <code>1.2 MB → 340.5 KB</code>.',
     fr: 'La barre inférieure affiche la <b>taille d’origine → taille compressée</b>, par exemple <code>1.2 MB → 340.5 KB</code>.',
     pt: 'A barra inferior mostra o <b>tamanho original → tamanho comprimido</b>, por exemplo <code>1.2 MB → 340.5 KB</code>.',
-    ru: 'Нижняя строка показывает <b>исходный размер → размер после сжатия</b>, например <code>1.2 MB → 340.5 KB</code>.'
+    ru: 'Нижняя строка показывает <b>исходный размер → размер после сжатия</b>, например <code>1.2 MB → 340.5 KB</code>.',
+    hi: 'नीचे की सूचना पट्टी <b>मूल आकार → संपीड़न के बाद आकार</b> दिखाती है, जैसे <code>1.2 MB → 340.5 KB</code>।',
+    id: 'Bilah informasi di bawah menampilkan <b>ukuran asli → ukuran setelah kompres</b>, misalnya <code>1.2 MB → 340.5 KB</code>.',
+    de: 'Die untere Informationsleiste zeigt die <b>ursprüngliche Größe → Größe nach der Komprimierung</b>, zum Beispiel <code>1.2 MB → 340.5 KB</code>.',
+    vi: 'Thanh thông tin dưới cùng hiển thị <b>kích thước gốc → kích thước sau khi nén</b>, ví dụ <code>1.2 MB → 340.5 KB</code>.',
+    tr: 'Alt bilgi çubuğu <b>özgün boyut → sıkıştırma sonrası boyut</b> değerini gösterir, örneğin <code>1.2 MB → 340.5 KB</code>.',
+    it: 'La barra informativa in basso mostra <b>dimensione originale → dimensione compressa</b>, ad esempio <code>1.2 MB → 340.5 KB</code>.'
   },
   outputLi2: {
     zh: '旁边的压缩比表示体积变化：变小显示 <code>-x%</code>，变大显示 <code>+x%</code>（小图高质量转 jpeg 可能反而变大）。',
@@ -214,7 +316,13 @@ export const helpMessages = {
     ar: 'تشير النسبة المجاورة إلى تغيّر الحجم: عند التصغير تظهر <code>-x%</code>، وعند التكبير <code>+x%</code> (قد تكبر الصورة الصغيرة عند تحويلها إلى jpeg عالي الجودة).',
     fr: 'Le ratio à côté indique la variation de taille : en baisse il affiche <code>-x%</code>, en hausse <code>+x%</code> (une petite image convertie en jpeg de haute qualité peut au contraire grossir).',
     pt: 'A proporção ao lado indica a variação de tamanho: ao diminuir mostra <code>-x%</code>, ao aumentar mostra <code>+x%</code> (uma imagem pequena convertida para jpeg de alta qualidade pode até crescer).',
-    ru: 'Рядом коэффициент сжатия показывает изменение размера: при уменьшении — <code>-x%</code>, при увеличении — <code>+x%</code> (маленькое изображение при переводе в качественный jpeg может даже увеличиться).'
+    ru: 'Рядом коэффициент сжатия показывает изменение размера: при уменьшении — <code>-x%</code>, при увеличении — <code>+x%</code> (маленькое изображение при переводе в качественный jpeg может даже увеличиться).',
+    hi: 'पास का संपीड़न अनुपात आकार के बदलाव को दर्शाता है: घटने पर <code>-x%</code> और बढ़ने पर <code>+x%</code> दिखता है (छोटी छवि को उच्च गुणवत्ता वाले jpeg में बदलने पर आकार बढ़ भी सकता है)।',
+    id: 'Rasio kompres di sampingnya menunjukkan perubahan ukuran: menyusut menampilkan <code>-x%</code>, membesar menampilkan <code>+x%</code> (gambar kecil yang dikonversi ke jpeg berkualitas tinggi bisa justru membesar).',
+    de: 'Das danebenstehende Komprimierungsverhältnis zeigt die Größenänderung: kleiner wird als <code>-x%</code>, größer als <code>+x%</code> angezeigt (ein kleines Bild kann bei Umwandlung in hochwertiges jpeg sogar größer werden).',
+    vi: 'Tỷ lệ nén bên cạnh biểu thị mức thay đổi kích thước: nhỏ hơn hiển thị <code>-x%</code>, lớn hơn hiển thị <code>+x%</code> (ảnh nhỏ chuyển sang jpeg chất lượng cao có thể lại lớn hơn).',
+    tr: 'Yandaki sıkıştırma oranı boyut değişimini gösterir: küçülünce <code>-x%</code>, büyüyünce <code>+x%</code> görünür (küçük bir görüntü yüksek kaliteli jpeg’e dönüştürülünce tersine büyüyebilir).',
+    it: 'Il rapporto di compressione accanto indica la variazione di dimensione: se diminuisce mostra <code>-x%</code>, se aumenta mostra <code>+x%</code> (una piccola immagine convertita in jpeg di alta qualità può invece ingrandirsi).'
   },
   outputLi3: {
     zh: '点底部「生成图片文件节点」可把压缩结果落成一个 <code>img-file</code> 节点，便于继续串下游。',
@@ -225,7 +333,13 @@ export const helpMessages = {
     ar: 'انقر على «إنشاء عقدة ملف صورة» في الأسفل لتحويل النتيجة المضغوطة إلى عقدة <code>img-file</code> لتسهيل مواصلة الربط بالعقد اللاحقة.',
     fr: 'Cliquez sur « Générer un nœud de fichier image » en bas pour transformer le résultat compressé en un nœud <code>img-file</code>, facilitant la suite en aval.',
     pt: 'Clique em “Gerar nó de ficheiro de imagem” na parte inferior para transformar o resultado comprimido num nó <code>img-file</code>, facilitando a ligação a jusante.',
-    ru: 'Нажмите «Создать узел файла изображения» внизу, чтобы превратить результат сжатия в узел <code>img-file</code> для дальнейшего соединения.'
+    ru: 'Нажмите «Создать узел файла изображения» внизу, чтобы превратить результат сжатия в узел <code>img-file</code> для дальнейшего соединения.',
+    hi: 'नीचे "छवि फ़ाइल नोड बनाएँ" पर क्लिक करके संपीड़ित परिणाम को एक <code>img-file</code> नोड में बदल सकते हैं, जिससे आगे डाउनस्ट्रीम श्रृंखला जारी रखना आसान होता है।',
+    id: 'Klik "Buat node berkas gambar" di bawah untuk menjadikan hasil kompres sebagai node <code>img-file</code>, memudahkan melanjutkan rangkaian hilir.',
+    de: 'Klicken Sie unten auf „Bilddatei-Knoten erzeugen“, um das komprimierte Ergebnis in einen <code>img-file</code>-Knoten umzuwandeln und die weitere Verkettung nachgelagert fortzusetzen.',
+    vi: 'Nhấp vào "Tạo nút tệp ảnh" ở dưới cùng để biến kết quả nén thành một nút <code>img-file</code>, thuận tiện nối tiếp hạ nguồn.',
+    tr: 'Sıkıştırılmış sonucu bir <code>img-file</code> düğümüne dönüştürmek ve aşağı akışı sürdürmek için alttaki "Görüntü dosyası düğümü oluştur" seçeneğine tıklayın.',
+    it: 'Fai clic su "Genera nodo file immagine" in basso per trasformare il risultato compresso in un nodo <code>img-file</code>, utile per proseguire a valle.'
   },
 
   // —— 注意事项 ——
@@ -238,7 +352,13 @@ export const helpMessages = {
     ar: 'ملاحظات',
     fr: 'Remarques',
     pt: 'Observações',
-    ru: 'Примечания'
+    ru: 'Примечания',
+    hi: 'ध्यान देने योग्य बातें',
+    id: 'Catatan',
+    de: 'Hinweise',
+    vi: 'Lưu ý',
+    tr: 'Notlar',
+    it: 'Note'
   },
   notesLi1: {
     zh: '本节点<b>不改尺寸</b>。若需要按最长边缩放，请改用「图片压缩」节点。',
@@ -249,7 +369,13 @@ export const helpMessages = {
     ar: 'هذه العقدة <b>لا تغيّر الأبعاد</b>. إذا أردت التحجيم وفق الضلع الأطول، فاستخدم عقدة «ضغط الصورة».',
     fr: 'Ce nœud <b>ne modifie pas les dimensions</b>. Pour mettre à l’échelle selon le côté le plus long, utilisez le nœud « Compression d’image ».',
     pt: 'Este nó <b>não altera as dimensões</b>. Para escalar segundo o lado mais longo, use o nó “Compressão de imagem”.',
-    ru: 'Этот узел <b>не меняет размеры</b>. Для масштабирования по длинной стороне используйте узел «Сжатие изображения».'
+    ru: 'Этот узел <b>не меняет размеры</b>. Для масштабирования по длинной стороне используйте узел «Сжатие изображения».',
+    hi: 'यह नोड <b>आकार नहीं बदलता</b>। यदि सबसे लंबी भुजा के अनुसार स्केल करना हो, तो "छवि संपीड़न" नोड का उपयोग करें।',
+    id: 'Node ini <b>tidak mengubah ukuran</b>. Jika perlu menskalakan berdasarkan sisi terpanjang, gunakan node "Kompres Gambar".',
+    de: 'Dieser Knoten <b>ändert die Abmessungen nicht</b>. Wenn Sie nach der längsten Seite skalieren möchten, verwenden Sie den Knoten „Bildkomprimierung“.',
+    vi: 'Nút này <b>không thay đổi kích thước</b>. Nếu cần thu phóng theo cạnh dài nhất, hãy dùng nút "Nén ảnh".',
+    tr: 'Bu düğüm <b>boyutu değiştirmez</b>. En uzun kenara göre ölçeklemek isterseniz "Görüntü Sıkıştırma" düğümünü kullanın.',
+    it: 'Questo nodo <b>non modifica le dimensioni</b>. Se devi ridimensionare in base al lato più lungo, usa il nodo "Compressione immagine".'
   },
   notesLi2: {
     zh: '压缩结果保留在内存中（不自动落盘），输出文件名为 <code>{原名}-q{质量}.{后缀}</code>，例如 <code>photo-q80.jpeg</code>。',
@@ -260,7 +386,13 @@ export const helpMessages = {
     ar: 'تبقى النتيجة المضغوطة في الذاكرة (لا تُحفظ على القرص تلقائيًا)، ويكون اسم ملف الإخراج <code>{الاسم}-q{الجودة}.{الامتداد}</code>، مثل <code>photo-q80.jpeg</code>.',
     fr: 'Le résultat compressé reste en mémoire (pas d’enregistrement automatique sur disque) ; le nom du fichier de sortie est <code>{nom}-q{qualité}.{ext}</code>, par exemple <code>photo-q80.jpeg</code>.',
     pt: 'O resultado comprimido permanece em memória (não é guardado automaticamente em disco); o nome do ficheiro de saída é <code>{nome}-q{qualidade}.{ext}</code>, por exemplo <code>photo-q80.jpeg</code>.',
-    ru: 'Результат сжатия хранится в памяти (автоматически на диск не сохраняется); имя выходного файла — <code>{имя}-q{качество}.{расш}</code>, например <code>photo-q80.jpeg</code>.'
+    ru: 'Результат сжатия хранится в памяти (автоматически на диск не сохраняется); имя выходного файла — <code>{имя}-q{качество}.{расш}</code>, например <code>photo-q80.jpeg</code>.',
+    hi: 'संपीड़ित परिणाम मेमोरी में रहता है (स्वतः डिस्क पर नहीं सहेजा जाता); आउटपुट फ़ाइल नाम <code>{मूल नाम}-q{गुणवत्ता}.{एक्सटेंशन}</code> होता है, जैसे <code>photo-q80.jpeg</code>।',
+    id: 'Hasil kompres disimpan di memori (tidak otomatis ditulis ke disk); nama berkas keluaran adalah <code>{nama asli}-q{kualitas}.{ekstensi}</code>, misalnya <code>photo-q80.jpeg</code>.',
+    de: 'Das komprimierte Ergebnis bleibt im Speicher (wird nicht automatisch auf die Festplatte geschrieben); der Ausgabedateiname lautet <code>{Originalname}-q{Qualität}.{Endung}</code>, zum Beispiel <code>photo-q80.jpeg</code>.',
+    vi: 'Kết quả nén được giữ trong bộ nhớ (không tự động ghi ra đĩa); tên tệp đầu ra là <code>{tên gốc}-q{chất lượng}.{phần mở rộng}</code>, ví dụ <code>photo-q80.jpeg</code>.',
+    tr: 'Sıkıştırılmış sonuç bellekte tutulur (otomatik olarak diske yazılmaz); çıktı dosya adı <code>{asıl ad}-q{kalite}.{uzantı}</code> biçimindedir, örneğin <code>photo-q80.jpeg</code>.',
+    it: 'Il risultato compresso resta in memoria (non viene salvato automaticamente su disco); il nome del file di output è <code>{nome originale}-q{qualità}.{estensione}</code>, ad esempio <code>photo-q80.jpeg</code>.'
   },
   notesLi3: {
     zh: '质量与格式会<b>随节点保存</b>，下次打开仍沿用；压缩结果本身不持久化。',
@@ -271,7 +403,13 @@ export const helpMessages = {
     ar: 'تُحفظ الجودة والصيغة <b>مع العقدة</b> وتُستخدمان مجددًا في المرة القادمة؛ أما النتيجة المضغوطة نفسها فلا تُحفظ.',
     fr: 'La qualité et le format sont <b>enregistrés avec le nœud</b> et réutilisés la prochaine fois ; le résultat compressé lui-même n’est pas conservé.',
     pt: 'A qualidade e o formato são <b>guardados com o nó</b> e reutilizados da próxima vez; o resultado comprimido em si não é persistido.',
-    ru: 'Качество и формат <b>сохраняются вместе с узлом</b> и используются в следующий раз; сам результат сжатия не сохраняется.'
+    ru: 'Качество и формат <b>сохраняются вместе с узлом</b> и используются в следующий раз; сам результат сжатия не сохраняется.',
+    hi: 'गुणवत्ता और प्रारूप <b>नोड के साथ सहेजे जाते हैं</b> और अगली बार भी लागू रहते हैं; संपीड़ित परिणाम स्वयं सहेजा नहीं जाता।',
+    id: 'Kualitas dan format <b>disimpan bersama node</b> dan tetap dipakai lain kali; hasil kompres itu sendiri tidak disimpan.',
+    de: 'Qualität und Format werden <b>mit dem Knoten gespeichert</b> und beim nächsten Öffnen weiterverwendet; das komprimierte Ergebnis selbst wird nicht gespeichert.',
+    vi: 'Chất lượng và định dạng <b>được lưu cùng nút</b> và vẫn dùng ở lần sau; bản thân kết quả nén không được lưu trữ.',
+    tr: 'Kalite ve biçim <b>düğümle birlikte kaydedilir</b> ve bir sonraki açılışta da geçerli olur; sıkıştırılmış sonucun kendisi kalıcı değildir.',
+    it: 'Qualità e formato <b>vengono salvati con il nodo</b> e riutilizzati alla prossima apertura; il risultato compresso in sé non è persistente.'
   },
   notesLi4: {
     zh: '压缩失败会在底部提示：格式不支持 / 文件损坏，或 WASM 初始化、编码出错。',
@@ -282,6 +420,12 @@ export const helpMessages = {
     ar: 'تُعرض حالات فشل الضغط في الأسفل: صيغة غير مدعومة / ملف تالف، أو خطأ في تهيئة WASM أو الترميز.',
     fr: 'Les échecs de compression s’affichent en bas : format non pris en charge / fichier corrompu, ou erreur d’initialisation ou d’encodage WASM.',
     pt: 'Falhas de compressão são mostradas na parte inferior: formato não suportado / ficheiro corrompido, ou erro de inicialização ou codificação do WASM.',
-    ru: 'Сбои сжатия показываются внизу: неподдерживаемый формат / повреждённый файл либо ошибка инициализации или кодирования WASM.'
+    ru: 'Сбои сжатия показываются внизу: неподдерживаемый формат / повреждённый файл либо ошибка инициализации или кодирования WASM.',
+    hi: 'संपीड़न विफल होने पर नीचे सूचना दिखती है: प्रारूप असमर्थित / फ़ाइल खराब, या WASM आरंभीकरण या एन्कोडिंग त्रुटि।',
+    id: 'Kegagalan kompres ditampilkan di bawah: format tidak didukung / berkas rusak, atau kesalahan inisialisasi atau pengodean WASM.',
+    de: 'Komprimierungsfehler werden unten angezeigt: nicht unterstütztes Format / beschädigte Datei oder ein WASM-Initialisierungs- bzw. Kodierungsfehler.',
+    vi: 'Lỗi nén sẽ hiển thị ở dưới: định dạng không hỗ trợ / tệp hỏng, hoặc lỗi khởi tạo hay mã hóa WASM.',
+    tr: 'Sıkıştırma hataları altta gösterilir: desteklenmeyen biçim / bozuk dosya veya WASM başlatma ya da kodlama hatası.',
+    it: 'Gli errori di compressione vengono mostrati in basso: formato non supportato / file danneggiato, oppure errore di inizializzazione o codifica WASM.'
   }
 } satisfies Record<string, LocalizedText>

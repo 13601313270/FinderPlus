@@ -1,7 +1,7 @@
 import type { LocalizedText } from '../../../shared/language'
 
 /**
- * LLM 节点帮助文档（LLMHelpDialog）的全部文案，9 种语言全配。
+ * LLM 节点帮助文档（LLMHelpDialog）的全部文案，全部 15 种语言全配。
  *
  * 与节点自身的 i18n.ts 分开：卡片短文案变化频繁，帮助文档整篇体量大、改动少。
  * 约定：带行内 <code> / <b> 的句子，值里直接写 HTML，模板用 v-html 渲染；
@@ -18,7 +18,13 @@ export const helpMessages = {
     ar: 'ما هذا؟',
     fr: 'Qu’est-ce que c’est ?',
     pt: 'O que é isto?',
-    ru: 'Что это?'
+    ru: 'Что это?',
+    hi: "यह क्या है?",
+    id: "Apa ini?",
+    de: "Was ist das?",
+    vi: "Đây là gì?",
+    tr: "Bu nedir?",
+    it: "Che cos’è?",
   },
   whatBody: {
     zh: '大模型节点把「系统设定」与「用户提示词」发送给已配置的大模型服务，再把模型返回的文本从右侧 <code>text</code> 端口输出给下游节点。',
@@ -29,7 +35,13 @@ export const helpMessages = {
     ar: 'ترسل عقدة النموذج اللغوي «إعداد النظام» و«مطالبة المستخدم» إلى خدمة النموذج المُهيّأة، ثم تُخرج النص الذي أعاده النموذج إلى العقد اللاحقة من منفذ <code>text</code> على اليمين.',
     fr: 'Le nœud de modèle de langage envoie le prompt système et le prompt utilisateur au service de modèle configuré, puis transmet le texte renvoyé par le modèle aux nœuds en aval depuis le port <code>text</code> à droite.',
     pt: 'O nó de modelo de linguagem envia o prompt de sistema e o prompt de usuário ao serviço de modelo configurado e, em seguida, envia o texto retornado pelo modelo aos nós seguintes pelo porto <code>text</code> à direita.',
-    ru: 'Узел языковой модели отправляет системную подсказку и пользовательскую подсказку настроенному сервису модели, а затем выводит полученный от модели текст последующим узлам из порта <code>text</code> справа.'
+    ru: 'Узел языковой модели отправляет системную подсказку и пользовательскую подсказку настроенному сервису модели, а затем выводит полученный от модели текст последующим узлам из порта <code>text</code> справа.',
+    hi: "LLM नोड “सिस्टम सेटिंग” और “उपयोगकर्ता prompt” को कॉन्फ़िगर की गई मॉडल सेवा को भेजता है, फिर मॉडल द्वारा लौटाए गए टेक्स्ट को दाईं ओर <code>text</code> पोर्ट से डाउनस्ट्रीम नोड को आउटपुट करता है।",
+    id: "Node LLM mengirim “pengaturan sistem” dan “prompt pengguna” ke layanan model yang dikonfigurasi, lalu mengeluarkan teks yang dikembalikan model dari port <code>text</code> di sebelah kanan ke node hilir.",
+    de: "Der LLM-Knoten sendet die „Systemeinstellung“ und den „Benutzer-prompt“ an den konfigurierten Modelldienst und gibt den vom Modell zurückgegebenen Text vom <code>text</code>-Port rechts an nachgelagerte Knoten aus.",
+    vi: "Nút LLM gửi “thiết lập hệ thống” và “prompt người dùng” đến dịch vụ mô hình đã cấu hình, rồi xuất văn bản do mô hình trả về từ cổng <code>text</code> bên phải đến các nút hạ nguồn.",
+    tr: "LLM düğümü “sistem ayarını” ve “kullanıcı prompt’unu” yapılandırılmış model hizmetine gönderir, ardından modelin döndürdüğü metni sağdaki <code>text</code> bağlantı noktasından aşağı akış düğümlerine çıkarır.",
+    it: "Il nodo LLM invia la “impostazione di sistema” e il “prompt utente” al servizio del modello configurato, quindi restituisce il testo restituito dal modello dalla porta <code>text</code> a destra ai nodi a valle.",
   },
 
   // —— 模型与 Provider 配置 ——
@@ -42,7 +54,13 @@ export const helpMessages = {
     ar: 'إعدادات النموذج والمزوّد',
     fr: 'Réglages du modèle et du fournisseur',
     pt: 'Configurações de modelo e provedor',
-    ru: 'Настройки модели и провайдера'
+    ru: 'Настройки модели и провайдера',
+    hi: "मॉडल और Provider कॉन्फ़िगरेशन",
+    id: "Konfigurasi model & Provider",
+    de: "Modell- und Provider-Konfiguration",
+    vi: "Cấu hình mô hình & Provider",
+    tr: "Model ve Provider yapılandırması",
+    it: "Configurazione di modello e Provider",
   },
   configLi1: {
     zh: '点标题栏右上角的<b>齿轮</b>图标打开 LLM 设置，选择 Provider、填入 API Key，并按需覆盖模型名',
@@ -53,7 +71,13 @@ export const helpMessages = {
     ar: 'انقر على أيقونة <b>الترس</b> في أعلى يمين الترويسة لفتح إعدادات LLM؛ اختر المزوّد، وأدخل مفتاح API، ويمكنك تجاوز اسم النموذج',
     fr: 'Cliquez sur l’icône <b>engrenage</b> en haut à droite de l’en-tête pour ouvrir les réglages LLM ; choisissez un fournisseur, saisissez la clé API et remplacez éventuellement le nom du modèle',
     pt: 'Clique no ícone de <b>engrenagem</b> no canto superior direito do cabeçalho para abrir as configurações de LLM; escolha um provedor, insira a chave de API e, se quiser, substitua o nome do modelo',
-    ru: 'Нажмите значок <b>шестерёнки</b> в правом верхнем углу заголовка, чтобы открыть настройки LLM: выберите провайдера, введите ключ API и при необходимости переопределите имя модели'
+    ru: 'Нажмите значок <b>шестерёнки</b> в правом верхнем углу заголовка, чтобы открыть настройки LLM: выберите провайдера, введите ключ API и при необходимости переопределите имя модели',
+    hi: "हेडर के ऊपरी दाएँ कोने में <b>गियर</b> आइकन पर क्लिक करके LLM सेटिंग खोलें, Provider चुनें, API Key भरें, और ज़रूरत के अनुसार मॉडल नाम को ओवरराइड करें",
+    id: "Klik ikon <b>gir</b> di pojok kanan atas header untuk membuka pengaturan LLM; pilih Provider, masukkan API Key, dan timpa nama model sesuai kebutuhan",
+    de: "Klicken Sie auf das <b>Zahnrad</b>-Symbol oben rechts im Kopfbereich, um die LLM-Einstellungen zu öffnen; wählen Sie einen Provider, geben Sie den API-Key ein und überschreiben Sie bei Bedarf den Modellnamen",
+    vi: "Nhấp vào biểu tượng <b>bánh răng</b> ở góc trên bên phải phần đầu để mở cài đặt LLM; chọn Provider, nhập API Key và ghi đè tên mô hình nếu cần",
+    tr: "LLM ayarlarını açmak için başlığın sağ üst köşesindeki <b>dişli</b> simgesine tıklayın; bir Provider seçin, API Key’i girin ve gerektiğinde model adını geçersiz kılın",
+    it: "Fai clic sull’icona <b>ingranaggio</b> in alto a destra dell’intestazione per aprire le impostazioni LLM; scegli un Provider, inserisci la API Key e, se necessario, sovrascrivi il nome del modello",
   },
   configLi2: {
     zh: '内置 9 个 Provider：<code>DeepSeek</code>、<code>OpenAI</code>、<code>Kimi</code>、<code>通义千问</code>、<code>智谱 GLM</code>、<code>MiniMax</code>、<code>Groq</code>、<code>Mistral</code>、<code>硅基流动</code>',
@@ -64,7 +88,13 @@ export const helpMessages = {
     ar: 'يتضمّن تسعة مزوّدين: <code>DeepSeek</code> و<code>OpenAI</code> و<code>Kimi</code> و<code>Qwen</code> و<code>Zhipu GLM</code> و<code>MiniMax</code> و<code>Groq</code> و<code>Mistral</code> و<code>SiliconFlow</code>',
     fr: 'Neuf fournisseurs intégrés : <code>DeepSeek</code>, <code>OpenAI</code>, <code>Kimi</code>, <code>Qwen</code>, <code>Zhipu GLM</code>, <code>MiniMax</code>, <code>Groq</code>, <code>Mistral</code>, <code>SiliconFlow</code>',
     pt: 'Nove provedores integrados: <code>DeepSeek</code>, <code>OpenAI</code>, <code>Kimi</code>, <code>Qwen</code>, <code>Zhipu GLM</code>, <code>MiniMax</code>, <code>Groq</code>, <code>Mistral</code>, <code>SiliconFlow</code>',
-    ru: 'Встроено девять провайдеров: <code>DeepSeek</code>, <code>OpenAI</code>, <code>Kimi</code>, <code>Qwen</code>, <code>Zhipu GLM</code>, <code>MiniMax</code>, <code>Groq</code>, <code>Mistral</code>, <code>SiliconFlow</code>'
+    ru: 'Встроено девять провайдеров: <code>DeepSeek</code>, <code>OpenAI</code>, <code>Kimi</code>, <code>Qwen</code>, <code>Zhipu GLM</code>, <code>MiniMax</code>, <code>Groq</code>, <code>Mistral</code>, <code>SiliconFlow</code>',
+    hi: "9 Provider अंतर्निहित हैं: <code>DeepSeek</code>, <code>OpenAI</code>, <code>Kimi</code>, <code>Qwen</code>, <code>Zhipu GLM</code>, <code>MiniMax</code>, <code>Groq</code>, <code>Mistral</code>, <code>SiliconFlow</code>",
+    id: "9 Provider tersedia bawaan: <code>DeepSeek</code>, <code>OpenAI</code>, <code>Kimi</code>, <code>Qwen</code>, <code>Zhipu GLM</code>, <code>MiniMax</code>, <code>Groq</code>, <code>Mistral</code>, <code>SiliconFlow</code>",
+    de: "9 Provider sind integriert: <code>DeepSeek</code>, <code>OpenAI</code>, <code>Kimi</code>, <code>Qwen</code>, <code>Zhipu GLM</code>, <code>MiniMax</code>, <code>Groq</code>, <code>Mistral</code>, <code>SiliconFlow</code>",
+    vi: "Có sẵn 9 Provider: <code>DeepSeek</code>, <code>OpenAI</code>, <code>Kimi</code>, <code>Qwen</code>, <code>Zhipu GLM</code>, <code>MiniMax</code>, <code>Groq</code>, <code>Mistral</code>, <code>SiliconFlow</code>",
+    tr: "9 Provider yerleşik olarak gelir: <code>DeepSeek</code>, <code>OpenAI</code>, <code>Kimi</code>, <code>Qwen</code>, <code>Zhipu GLM</code>, <code>MiniMax</code>, <code>Groq</code>, <code>Mistral</code>, <code>SiliconFlow</code>",
+    it: "Sono inclusi 9 Provider: <code>DeepSeek</code>, <code>OpenAI</code>, <code>Kimi</code>, <code>Qwen</code>, <code>Zhipu GLM</code>, <code>MiniMax</code>, <code>Groq</code>, <code>Mistral</code>, <code>SiliconFlow</code>",
   },
   configLi3: {
     zh: '默认 Provider 为 <code>DeepSeek</code>，默认模型 <code>deepseek-flash</code>；模型名留空即使用该 Provider 的默认模型',
@@ -75,7 +105,13 @@ export const helpMessages = {
     ar: 'المزوّد الافتراضي هو <code>DeepSeek</code> والنموذج الافتراضي <code>deepseek-flash</code>؛ وترك اسم النموذج فارغًا يستخدم النموذج الافتراضي لذلك المزوّد',
     fr: 'Le fournisseur par défaut est <code>DeepSeek</code> avec le modèle <code>deepseek-flash</code> ; laisser le nom du modèle vide utilise le modèle par défaut du fournisseur',
     pt: 'O provedor padrão é <code>DeepSeek</code> com o modelo <code>deepseek-flash</code>; deixar o nome do modelo vazio usa o padrão do provedor',
-    ru: 'Провайдер по умолчанию — <code>DeepSeek</code> с моделью <code>deepseek-flash</code>; если оставить имя модели пустым, используется модель по умолчанию для провайдера'
+    ru: 'Провайдер по умолчанию — <code>DeepSeek</code> с моделью <code>deepseek-flash</code>; если оставить имя модели пустым, используется модель по умолчанию для провайдера',
+    hi: "डिफ़ॉल्ट Provider <code>DeepSeek</code> है और डिफ़ॉल्ट मॉडल <code>deepseek-flash</code> है; मॉडल नाम खाली छोड़ने पर उस Provider का डिफ़ॉल्ट मॉडल उपयोग होता है",
+    id: "Provider default adalah <code>DeepSeek</code> dengan model <code>deepseek-flash</code>; membiarkan nama model kosong akan memakai model default Provider tersebut",
+    de: "Der Standard-Provider ist <code>DeepSeek</code> mit dem Modell <code>deepseek-flash</code>; bleibt der Modellname leer, wird das Standardmodell dieses Providers verwendet",
+    vi: "Provider mặc định là <code>DeepSeek</code> với mô hình <code>deepseek-flash</code>; để trống tên mô hình sẽ dùng mô hình mặc định của Provider đó",
+    tr: "Varsayılan Provider <code>DeepSeek</code>, varsayılan model <code>deepseek-flash</code>’tır; model adı boş bırakılırsa o Provider’ın varsayılan modeli kullanılır",
+    it: "Il Provider predefinito è <code>DeepSeek</code> con il modello <code>deepseek-flash</code>; lasciare vuoto il nome del modello usa il modello predefinito di quel Provider",
   },
   configLi4: {
     zh: 'API Key 保存在本机 localStorage（键名 <code>canvasdesk.llm.config</code>），所有大模型节点<b>共用同一份</b>，不随节点保存',
@@ -86,7 +122,13 @@ export const helpMessages = {
     ar: 'يُحفظ مفتاح API في localStorage المحلي (المفتاح <code>canvasdesk.llm.config</code>) و<b>تتشاركه جميع</b> عقد النموذج؛ ولا يُحفظ مع العقدة',
     fr: 'La clé API est stockée dans le localStorage local (clé <code>canvasdesk.llm.config</code>) et est <b>partagée par tous</b> les nœuds de modèle ; elle n’est pas enregistrée avec le nœud',
     pt: 'A chave de API é armazenada no localStorage local (chave <code>canvasdesk.llm.config</code>) e é <b>compartilhada por todos</b> os nós de modelo; não é salva com o nó',
-    ru: 'Ключ API хранится в локальном localStorage (ключ <code>canvasdesk.llm.config</code>) и <b>общий для всех</b> узлов модели; он не сохраняется вместе с узлом'
+    ru: 'Ключ API хранится в локальном localStorage (ключ <code>canvasdesk.llm.config</code>) и <b>общий для всех</b> узлов модели; он не сохраняется вместе с узлом',
+    hi: "API Key स्थानीय localStorage में सहेजा जाता है (कुंजी नाम <code>canvasdesk.llm.config</code>), और सभी LLM नोड इसे <b>साझा करते हैं</b>; यह नोड के साथ सहेजा नहीं जाता",
+    id: "API Key disimpan di localStorage lokal (nama kunci <code>canvasdesk.llm.config</code>) dan <b>digunakan bersama</b> oleh semua node LLM; tidak disimpan bersama node",
+    de: "Der API-Key wird im lokalen localStorage gespeichert (Schlüsselname <code>canvasdesk.llm.config</code>) und wird von allen LLM-Knoten <b>gemeinsam genutzt</b>; er wird nicht mit dem Knoten gespeichert",
+    vi: "API Key được lưu trong localStorage cục bộ (tên khóa <code>canvasdesk.llm.config</code>) và được <b>tất cả</b> nút LLM <b>dùng chung</b>; không lưu cùng nút",
+    tr: "API Key yerel localStorage’da saklanır (anahtar adı <code>canvasdesk.llm.config</code>) ve tüm LLM düğümleri tarafından <b>ortak kullanılır</b>; düğümle birlikte kaydedilmez",
+    it: "La API Key è salvata nel localStorage locale (nome chiave <code>canvasdesk.llm.config</code>) ed è <b>condivisa da tutti</b> i nodi LLM; non viene salvata con il nodo",
   },
 
   // —— 端口一览 ——
@@ -99,7 +141,13 @@ export const helpMessages = {
     ar: 'نظرة على المنافذ',
     fr: 'Ports',
     pt: 'Portas',
-    ru: 'Порты'
+    ru: 'Порты',
+    hi: "पोर्ट अवलोकन",
+    id: "Ikhtisar port",
+    de: "Port-Übersicht",
+    vi: "Tổng quan cổng",
+    tr: "Bağlantı noktalarına genel bakış",
+    it: "Panoramica delle porte",
   },
   portsLead: {
     zh: '节点左侧为输入端口、右侧为输出端口，端口之间只传递字符串。',
@@ -110,7 +158,13 @@ export const helpMessages = {
     ar: 'تقع منافذ الإدخال على اليسار ومنافذ الإخراج على اليمين، ولا تنتقل بين المنافذ سوى النصوص.',
     fr: 'Les entrées sont à gauche et les sorties à droite ; seules des chaînes circulent entre les ports.',
     pt: 'As entradas ficam à esquerda e as saídas à direita; apenas strings trafegam entre os portos.',
-    ru: 'Входы слева, выходы справа; между портами передаются только строки.'
+    ru: 'Входы слева, выходы справа; между портами передаются только строки.',
+    hi: "नोड के बाईं ओर इनपुट पोर्ट और दाईं ओर आउटपुट पोर्ट होते हैं; पोर्ट के बीच केवल स्ट्रिंग्स पार होती हैं।",
+    id: "Port masukan ada di sebelah kiri dan port keluaran di sebelah kanan; hanya string yang berpindah antar port.",
+    de: "Eingabeports sind links und Ausgabeports rechts; zwischen Ports werden nur Zeichenketten übertragen.",
+    vi: "Cổng đầu vào nằm bên trái, cổng đầu ra nằm bên phải; giữa các cổng chỉ truyền chuỗi.",
+    tr: "Giriş bağlantı noktaları solda, çıkış bağlantı noktaları sağdadır; bağlantı noktaları arasında yalnızca dizeler geçer.",
+    it: "Le porte di input sono a sinistra e quelle di output a destra; tra le porte passano solo stringhe.",
   },
   tblHeaderPort: {
     zh: '端口',
@@ -121,7 +175,13 @@ export const helpMessages = {
     ar: 'المنفذ',
     fr: 'Port',
     pt: 'Porta',
-    ru: 'Порт'
+    ru: 'Порт',
+    hi: "पोर्ट",
+    id: "Port",
+    de: "Port",
+    vi: "Cổng",
+    tr: "Bağlantı noktası",
+    it: "Porta",
   },
   tblHeaderDir: {
     zh: '方向',
@@ -132,7 +192,13 @@ export const helpMessages = {
     ar: 'الاتجاه',
     fr: 'Sens',
     pt: 'Direção',
-    ru: 'Направление'
+    ru: 'Направление',
+    hi: "दिशा",
+    id: "Arah",
+    de: "Richtung",
+    vi: "Hướng",
+    tr: "Yön",
+    it: "Direzione",
   },
   tblHeaderDesc: {
     zh: '说明',
@@ -143,7 +209,13 @@ export const helpMessages = {
     ar: 'الوصف',
     fr: 'Description',
     pt: 'Descrição',
-    ru: 'Описание'
+    ru: 'Описание',
+    hi: "विवरण",
+    id: "Deskripsi",
+    de: "Beschreibung",
+    vi: "Mô tả",
+    tr: "Açıklama",
+    it: "Descrizione",
   },
   dirIn: {
     zh: '输入',
@@ -154,7 +226,13 @@ export const helpMessages = {
     ar: 'إدخال',
     fr: 'Entrée',
     pt: 'Entrada',
-    ru: 'Вход'
+    ru: 'Вход',
+    hi: "इनपुट",
+    id: "Masukan",
+    de: "Eingabe",
+    vi: "Đầu vào",
+    tr: "Giriş",
+    it: "Input",
   },
   dirOut: {
     zh: '输出',
@@ -165,7 +243,13 @@ export const helpMessages = {
     ar: 'إخراج',
     fr: 'Sortie',
     pt: 'Saída',
-    ru: 'Выход'
+    ru: 'Выход',
+    hi: "आउटपुट",
+    id: "Keluaran",
+    de: "Ausgabe",
+    vi: "Đầu ra",
+    tr: "Çıkış",
+    it: "Output",
   },
   tblSystemDesc: {
     zh: '系统设定。始终取端口值；端口为空时使用默认 system “You are a helpful assistant.”',
@@ -176,7 +260,13 @@ export const helpMessages = {
     ar: 'إعداد النظام. يُؤخذ دائمًا من المنفذ، وعند الفراغ يُستخدم الافتراضي “You are a helpful assistant.”',
     fr: 'Prompt système. Toujours pris depuis le port ; s’il est vide, la valeur par défaut « You are a helpful assistant. » est utilisée',
     pt: 'Prompt de sistema. Sempre obtido do porto; quando vazio, usa o padrão “You are a helpful assistant.”',
-    ru: 'Системная подсказка. Всегда берётся из порта; если пусто, используется значение по умолчанию “You are a helpful assistant.”'
+    ru: 'Системная подсказка. Всегда берётся из порта; если пусто, используется значение по умолчанию “You are a helpful assistant.”',
+    hi: "सिस्टम सेटिंग। हमेशा पोर्ट का मान लेता है; पोर्ट खाली होने पर डिफ़ॉल्ट system “You are a helpful assistant.” उपयोग होता है",
+    id: "Pengaturan sistem. Selalu mengambil nilai port; saat port kosong, system default “You are a helpful assistant.” digunakan",
+    de: "Systemeinstellung. Es wird immer der Portwert verwendet; ist der Port leer, wird der Standard-system „You are a helpful assistant.“ verwendet",
+    vi: "Thiết lập hệ thống. Luôn lấy giá trị từ cổng; khi cổng trống, system mặc định “You are a helpful assistant.” được dùng",
+    tr: "Sistem ayarı. Her zaman bağlantı noktası değerini alır; bağlantı noktası boşken varsayılan system “You are a helpful assistant.” kullanılır",
+    it: "Impostazione di sistema. Prende sempre il valore della porta; quando la porta è vuota, viene usato il system predefinito “You are a helpful assistant.”",
   },
   tblPromptDesc: {
     zh: '用户提示词。接了连线就用端口值（此时节点内输入框隐藏）；没接连线时用节点底部的输入框',
@@ -187,7 +277,13 @@ export const helpMessages = {
     ar: 'مطالبة المستخدم. عند وجود اتصال تُستخدم قيمة المنفذ (ويُخفى مربع الإدخال في العقدة)، وإلا يُستخدم المربع أسفل العقدة',
     fr: 'Prompt utilisateur. Si une liaison est connectée, la valeur du port est utilisée (la zone de saisie du nœud est masquée) ; sinon, la zone en bas du nœud est utilisée',
     pt: 'Prompt de usuário. Se houver conexão, usa o valor do porto (a caixa de texto do nó fica oculta); caso contrário, usa a caixa na parte inferior do nó',
-    ru: 'Пользовательская подсказка. Если есть связь, берётся значение порта (поле ввода в узле скрывается); иначе используется поле внизу узла'
+    ru: 'Пользовательская подсказка. Если есть связь, берётся значение порта (поле ввода в узле скрывается); иначе используется поле внизу узла',
+    hi: "उपयोगकर्ता prompt। यदि कनेक्शन जुड़ा है तो पोर्ट का मान उपयोग होता है (तब नोड का इनपुट बॉक्स छिपा रहता है); कनेक्शन न होने पर नोड के निचले हिस्से का इनपुट बॉक्स उपयोग होता है",
+    id: "Prompt pengguna. Jika ada koneksi, nilai port digunakan (kotak input di node disembunyikan); jika tidak, kotak input di bagian bawah node digunakan",
+    de: "Benutzer-prompt. Ist eine Verbindung vorhanden, wird der Portwert verwendet (das Eingabefeld im Knoten wird ausgeblendet); andernfalls wird das Feld unten im Knoten verwendet",
+    vi: "Prompt người dùng. Nếu có kết nối, giá trị cổng được dùng (ô nhập trong nút bị ẩn); nếu không, ô nhập ở dưới cùng nút được dùng",
+    tr: "Kullanıcı prompt’u. Bir bağlantı varsa bağlantı noktası değeri kullanılır (düğüm içindeki giriş kutusu gizlenir); yoksa düğümün altındaki giriş kutusu kullanılır",
+    it: "Prompt utente. Se è presente un collegamento, viene usato il valore della porta (la casella nel nodo è nascosta); altrimenti si usa la casella in fondo al nodo",
   },
   tblTextDesc: {
     zh: '模型回复。推理成功后提交到这里，下游节点可取用',
@@ -198,7 +294,13 @@ export const helpMessages = {
     ar: 'رد النموذج. يُثبَّت هنا بعد نجاح الاستدعاء ويكون متاحًا للعقد اللاحقة',
     fr: 'Réponse du modèle. Validée ici après un appel réussi, disponible pour les nœuds en aval',
     pt: 'Resposta do modelo. Confirmada aqui após uma chamada bem-sucedida, disponível aos nós seguintes',
-    ru: 'Ответ модели. Записывается сюда после успешного вызова и доступен последующим узлам'
+    ru: 'Ответ модели. Записывается сюда после успешного вызова и доступен последующим узлам',
+    hi: "मॉडल का उत्तर। सफल अनुमान के बाद यहाँ सबमिट होता है और डाउनस्ट्रीम नोड उपयोग कर सकते हैं",
+    id: "Balasan model. Dikirim ke sini setelah inferensi berhasil, dapat digunakan node hilir",
+    de: "Modellantwort. Wird nach erfolgreicher Inferenz hier übermittelt und steht nachgelagerten Knoten zur Verfügung",
+    vi: "Trả lời của mô hình. Được gửi đến đây sau khi suy luận thành công, các nút hạ nguồn có thể dùng",
+    tr: "Model yanıtı. Çıkarım başarılı olduktan sonra buraya gönderilir ve aşağı akış düğümleri kullanabilir",
+    it: "Risposta del modello. Viene inviata qui dopo un’inferenza riuscita ed è disponibile ai nodi a valle",
   },
 
   // —— 执行与状态 ——
@@ -211,7 +313,13 @@ export const helpMessages = {
     ar: 'التنفيذ والحالة',
     fr: 'Exécution et état',
     pt: 'Execução e estado',
-    ru: 'Запуск и состояние'
+    ru: 'Запуск и состояние',
+    hi: "निष्पादन और स्थिति",
+    id: "Eksekusi dan status",
+    de: "Ausführung und Status",
+    vi: "Thực thi và trạng thái",
+    tr: "Yürütme ve durum",
+    it: "Esecuzione e stato",
   },
   runLi1: {
     zh: '点底部<b>发送</b>按钮手动触发一次推理；推理中按钮禁用并显示「推理中…」',
@@ -222,7 +330,13 @@ export const helpMessages = {
     ar: 'انقر على زر <b>إرسال</b> أسفل النافذة لتشغيل الاستدلال يدويًا مرة واحدة؛ وأثناء التنفيذ يُعطَّل الزر وتظهر عبارة «جارٍ التفكير…»',
     fr: 'Cliquez sur le bouton <b>Envoyer</b> en bas pour lancer une inférence manuelle ; pendant l’exécution le bouton est désactivé et affiche « Réflexion… »',
     pt: 'Clique no botão <b>Enviar</b> na parte inferior para executar uma inferência manualmente; durante a execução o botão fica desativado e mostra “Pensando…”',
-    ru: 'Нажмите кнопку <b>Отправить</b> внизу, чтобы вручную запустить вывод; во время выполнения кнопка отключена и показывает «Думает…»'
+    ru: 'Нажмите кнопку <b>Отправить</b> внизу, чтобы вручную запустить вывод; во время выполнения кнопка отключена и показывает «Думает…»',
+    hi: "मैन्युअल रूप से एक बार अनुमान चलाने के लिए नीचे <b>भेजें</b> बटन पर क्लिक करें; अनुमान के दौरान बटन अक्षम रहता है और “सोच रहा है…” दिखाता है",
+    id: "Klik tombol <b>Kirim</b> di bawah untuk memicu inferensi sekali secara manual; selama inferensi tombol dinonaktifkan dan menampilkan “Berpikir…”",
+    de: "Klicken Sie unten auf die Schaltfläche <b>Senden</b>, um einmal manuell eine Inferenz auszulösen; während der Inferenz ist die Schaltfläche deaktiviert und zeigt „Denkt nach…“",
+    vi: "Nhấp nút <b>Gửi</b> ở dưới để kích hoạt thủ công một lần suy luận; trong khi suy luận, nút bị vô hiệu hóa và hiển thị “Đang suy nghĩ…”",
+    tr: "Elle bir kez çıkarım tetiklemek için alttaki <b>Gönder</b> düğmesine tıklayın; çıkarım sırasında düğme devre dışı kalır ve “Düşünüyor…” gösterir",
+    it: "Fai clic sul pulsante <b>Invia</b> in basso per avviare manualmente un’inferenza; durante l’inferenza il pulsante è disattivato e mostra “Sto pensando…”",
   },
   runLi2: {
     zh: '当 <code>prompt</code> 端口接了连线，底部会出现<b>自动调用</b>开关；打开后上游有值到达会自动触发（关闭时需手动点发送）',
@@ -233,7 +347,13 @@ export const helpMessages = {
     ar: 'عند توصيل منفذ <code>prompt</code> يظهر أسفل النافذة مفتاح <b>الاستدعاء التلقائي</b>؛ وعند تشغيله تُنفَّذ القيم الواردة تلقائيًا (وعند إيقافه يجب النقر على إرسال يدويًا)',
     fr: 'Lorsque le port <code>prompt</code> est connecté, un interrupteur <b>Appel automatique</b> apparaît en bas ; activé, les valeurs entrantes déclenchent l’exécution, désactivé, cliquez sur Envoyer',
     pt: 'Quando o porto <code>prompt</code> está conectado, aparece um interruptor de <b>chamada automática</b> na parte inferior; ligado, os valores recebidos disparam sozinhos (desligado, clique em Enviar)',
-    ru: 'Когда порт <code>prompt</code> подключён, внизу появляется переключатель <b>Автовызов</b>; включённый — входящие значения запускают вывод автоматически, выключенный — нажимайте «Отправить» вручную'
+    ru: 'Когда порт <code>prompt</code> подключён, внизу появляется переключатель <b>Автовызов</b>; включённый — входящие значения запускают вывод автоматически, выключенный — нажимайте «Отправить» вручную',
+    hi: "जब <code>prompt</code> पोर्ट से कनेक्शन जुड़ा होता है, तो नीचे <b>स्वतः कॉल</b> स्विच दिखता है; चालू होने पर अपस्ट्रीम से मान आने पर स्वतः ट्रिगर होता है (बंद होने पर मैन्युअल रूप से भेजें पर क्लिक करें)",
+    id: "Saat port <code>prompt</code> terhubung, sakelar <b>panggil otomatis</b> muncul di bawah; jika aktif, nilai hulu yang masuk memicu otomatis (jika nonaktif, klik Kirim secara manual)",
+    de: "Wenn der Port <code>prompt</code> verbunden ist, erscheint unten ein <b>automatischer Aufruf</b>-Schalter; ist er an, lösen eingehende Werte automatisch aus (ist er aus, manuell auf Senden klicken)",
+    vi: "Khi cổng <code>prompt</code> được kết nối, công tắc <b>tự động gọi</b> xuất hiện ở dưới; khi bật, giá trị từ thượng nguồn đến sẽ tự động kích hoạt (khi tắt, nhấp Gửi thủ công)",
+    tr: "<code>prompt</code> bağlantı noktası bağlıyken altta <b>otomatik çağrı</b> anahtarı görünür; açıkken yukarı akıştan değer geldiğinde otomatik tetiklenir (kapalıyken elle Gönder’e tıklayın)",
+    it: "Quando la porta <code>prompt</code> è collegata, in basso compare un interruttore <b>chiamata automatica</b>; se attivo, i valori in arrivo a monte attivano automaticamente (se disattivato, fai clic manualmente su Invia)",
   },
   runLi3: {
     zh: '上游输入有 <code>300ms</code> 防抖，短时间内连续到达的输入会合并成一次请求',
@@ -244,7 +364,13 @@ export const helpMessages = {
     ar: 'يوجد تأخير <code>300ms</code> على المدخلات الواردة، فتُدمَج المدخلات المتتابعة في طلب واحد',
     fr: 'L’entrée amont est temporisée de <code>300ms</code> ; les entrées arrivant coup sur coup sont fusionnées en une seule requête',
     pt: 'A entrada de montante tem debounce de <code>300ms</code>, então entradas que chegam em sequência são combinadas em uma única requisição',
-    ru: 'Входящие данные имеют задержку <code>300ms</code>, поэтому быстро следующие входы объединяются в один запрос'
+    ru: 'Входящие данные имеют задержку <code>300ms</code>, поэтому быстро следующие входы объединяются в один запрос',
+    hi: "अपस्ट्रीम इनपुट पर <code>300ms</code> का डिबाउंस है, इसलिए कम समय में लगातार आने वाले इनपुट एक ही अनुरोध में मिला दिए जाते हैं",
+    id: "Masukan hulu memiliki debounce <code>300ms</code>, sehingga masukan yang datang beruntun digabung menjadi satu permintaan",
+    de: "Vorgelagerte Eingaben haben ein Debouncing von <code>300ms</code>, sodass schnell aufeinanderfolgende Eingaben zu einer Anfrage zusammengefasst werden",
+    vi: "Đầu vào thượng nguồn có debounce <code>300ms</code>, nên các đầu vào đến liên tiếp trong thời gian ngắn được gộp thành một yêu cầu",
+    tr: "Yukarı akış girişinde <code>300ms</code> debounce vardır, bu nedenle kısa sürede art arda gelen girişler tek bir istekte birleştirilir",
+    it: "L’input a monte ha un debounce di <code>300ms</code>, quindi gli input che arrivano in rapida successione vengono uniti in un’unica richiesta",
   },
   runLi4: {
     zh: '并发请求时只保留<b>最新一次</b>的结果，旧请求的响应返回后会被丢弃，不会覆盖新结果',
@@ -255,7 +381,13 @@ export const helpMessages = {
     ar: 'عند وجود طلبات متزامنة يُحتفظ بـ<b>أحدث</b> نتيجة فقط، وتُهمَل استجابات الطلبات القديمة ولا تكتب فوق النتيجة الجديدة',
     fr: 'En cas de requêtes simultanées, seul le résultat <b>le plus récent</b> est conservé ; les réponses des anciennes requêtes sont ignorées',
     pt: 'Em requisições simultâneas, apenas o resultado <b>mais recente</b> é mantido; respostas de requisições antigas são descartadas',
-    ru: 'При параллельных запросах сохраняется только <b>последний</b> результат; ответы старых запросов отбрасываются'
+    ru: 'При параллельных запросах сохраняется только <b>последний</b> результат; ответы старых запросов отбрасываются',
+    hi: "समवर्ती अनुरोधों में केवल <b>नवीनतम</b> परिणाम रखा जाता है; पुराने अनुरोध की प्रतिक्रिया लौटने पर छोड़ दी जाती है और नए परिणाम को ओवरराइट नहीं करती",
+    id: "Pada permintaan bersamaan, hanya hasil <b>terbaru</b> yang disimpan; respons dari permintaan lama dibuang dan tidak menimpa hasil baru",
+    de: "Bei gleichzeitigen Anfragen wird nur das <b>neueste</b> Ergebnis behalten; die Antwort älterer Anfragen wird verworfen und überschreibt das neue Ergebnis nicht",
+    vi: "Khi có yêu cầu đồng thời, chỉ giữ kết quả <b>mới nhất</b>; phản hồi của yêu cầu cũ bị loại bỏ và không ghi đè kết quả mới",
+    tr: "Eşzamanlı isteklerde yalnızca <b>en son</b> sonuç saklanır; eski isteklerin yanıtları atılır ve yeni sonucun üzerine yazmaz",
+    it: "Con richieste simultanee viene mantenuto solo il risultato <b>più recente</b>; le risposte delle richieste precedenti vengono scartate e non sovrascrivono il nuovo risultato",
   },
   runLi5: {
     zh: '输出区随状态切换：等待输入、推理中显示转圈、显示结果，出错时显示红色错误信息',
@@ -266,7 +398,13 @@ export const helpMessages = {
     ar: 'تتغيّر منطقة الإخراج حسب الحالة: انتظار الإدخال، أو مؤشر أثناء التنفيذ، أو النتيجة، أو رسالة خطأ بالأحمر',
     fr: 'La zone de sortie change selon l’état : attente d’entrée, indicateur pendant l’exécution, résultat ou message d’erreur en rouge',
     pt: 'A área de saída muda conforme o estado: aguardando entrada, indicador durante a execução, resultado ou mensagem de erro em vermelho',
-    ru: 'Область вывода меняется по состоянию: ожидание ввода, индикатор во время выполнения, результат или сообщение об ошибке красным'
+    ru: 'Область вывода меняется по состоянию: ожидание ввода, индикатор во время выполнения, результат или сообщение об ошибке красным',
+    hi: "आउटपुट क्षेत्र स्थिति के साथ बदलता है: इनपुट की प्रतीक्षा, अनुमान के दौरान स्पिनर, परिणाम, या त्रुटि होने पर लाल त्रुटि संदेश",
+    id: "Area keluaran berubah sesuai status: menunggu masukan, spinner saat inferensi, hasil, atau pesan kesalahan merah saat terjadi kesalahan",
+    de: "Der Ausgabebereich wechselt je nach Status: Warten auf Eingabe, Spinner während der Inferenz, das Ergebnis oder eine rote Fehlermeldung",
+    vi: "Vùng đầu ra thay đổi theo trạng thái: chờ đầu vào, hiển thị vòng xoay khi suy luận, kết quả, hoặc thông báo lỗi màu đỏ khi xảy ra lỗi",
+    tr: "Çıkış alanı duruma göre değişir: giriş bekleniyor, çıkarım sırasında spinner, sonuç veya hata olduğunda kırmızı hata mesajı",
+    it: "L’area di output cambia in base allo stato: in attesa di input, spinner durante l’inferenza, il risultato o un messaggio di errore in rosso",
   },
 
   // —— 注意事项 ——
@@ -279,7 +417,13 @@ export const helpMessages = {
     ar: 'ملاحظات',
     fr: 'Remarques',
     pt: 'Observações',
-    ru: 'Примечания'
+    ru: 'Примечания',
+    hi: "ध्यान देने योग्य बातें",
+    id: "Catatan",
+    de: "Hinweise",
+    vi: "Lưu ý",
+    tr: "Notlar",
+    it: "Note",
   },
   notesLi1: {
     zh: '未配置 Key 或 Key 无效时会直接报错并提示先配置，不会产生输出',
@@ -290,7 +434,13 @@ export const helpMessages = {
     ar: 'إذا لم يُضبط المفتاح أو كان غير صالح فسيظهر خطأ يطلب ضبطه أولًا، ولن ينتج أي إخراج',
     fr: 'Si aucune clé n’est configurée ou si elle est invalide, une erreur demande de la configurer ; aucune sortie n’est produite',
     pt: 'Se não houver chave ou ela for inválida, ocorre um erro pedindo para configurá-la; nenhuma saída é gerada',
-    ru: 'Если ключ не настроен или недействителен, возникает ошибка с просьбой настроить его; вывода не будет'
+    ru: 'Если ключ не настроен или недействителен, возникает ошибка с просьбой настроить его; вывода не будет',
+    hi: "Key कॉन्फ़िगर न हो या अमान्य हो तो सीधे त्रुटि होती है और पहले कॉन्फ़िगर करने का संकेत मिलता है; कोई आउटपुट नहीं बनता",
+    id: "Jika Key tidak dikonfigurasi atau tidak valid, akan langsung terjadi kesalahan dan diminta mengonfigurasi terlebih dahulu; tidak ada keluaran yang dihasilkan",
+    de: "Ist kein Key konfiguriert oder ist der Key ungültig, tritt direkt ein Fehler auf und es wird zum Konfigurieren aufgefordert; es wird keine Ausgabe erzeugt",
+    vi: "Nếu chưa cấu hình Key hoặc Key không hợp lệ, sẽ báo lỗi ngay và nhắc cấu hình trước; không có đầu ra nào được tạo",
+    tr: "Key yapılandırılmamışsa veya geçersizse doğrudan hata verir ve önce yapılandırmanızı ister; çıkış üretilmez",
+    it: "Se la Key non è configurata o non è valida, viene generato subito un errore che invita a configurarla; non viene prodotto alcun output",
   },
   notesLi2: {
     zh: '提示词为空（仅含空白字符）时不会发起请求，也不会消耗 token',
@@ -301,7 +451,13 @@ export const helpMessages = {
     ar: 'عندما تكون المطالبة فارغة (مسافات فقط) لا يُرسَل أي طلب ولا تُستهلك أي رموز',
     fr: 'Si le prompt est vide (uniquement des espaces), aucune requête n’est envoyée et aucun token n’est consommé',
     pt: 'Se o prompt estiver vazio (apenas espaços), nenhuma requisição é enviada e nenhum token é consumido',
-    ru: 'Если подсказка пуста (только пробелы), запрос не отправляется и токены не расходуются'
+    ru: 'Если подсказка пуста (только пробелы), запрос не отправляется и токены не расходуются',
+    hi: "prompt खाली होने पर (केवल व्हाइटस्पेस) कोई अनुरोध नहीं भेजा जाता और token भी खर्च नहीं होते",
+    id: "Jika prompt kosong (hanya berisi spasi), tidak ada permintaan yang dikirim dan token tidak terpakai",
+    de: "Ist der prompt leer (nur Leerzeichen), wird keine Anfrage gesendet und es werden keine token verbraucht",
+    vi: "Khi prompt trống (chỉ chứa khoảng trắng), không có yêu cầu nào được gửi và không tiêu tốn token",
+    tr: "prompt boşsa (yalnızca boşluk içeriyorsa) istek gönderilmez ve token harcanmaz",
+    it: "Quando il prompt è vuoto (solo spazi bianchi), non viene inviata alcuna richiesta e non vengono consumati token",
   },
   notesLi3: {
     zh: '请求为<b>非流式</b>（<code>stream: false</code>），回复会一次性返回，而不是逐字输出',
@@ -312,7 +468,13 @@ export const helpMessages = {
     ar: 'الطلبات <b>غير متدفقة</b> (<code>stream: false</code>)، فتُعاد الاستجابة دفعة واحدة وليس حرفًا بحرف',
     fr: 'Les requêtes sont <b>non-streaming</b> (<code>stream: false</code>) ; la réponse arrive d’un coup, pas mot à mot',
     pt: 'As requisições são <b>sem streaming</b> (<code>stream: false</code>); a resposta volta de uma vez, não palavra por palavra',
-    ru: 'Запросы <b>без потоковой передачи</b> (<code>stream: false</code>); ответ приходит целиком, а не по словам'
+    ru: 'Запросы <b>без потоковой передачи</b> (<code>stream: false</code>); ответ приходит целиком, а не по словам',
+    hi: "अनुरोध <b>गैर-स्ट्रीमिंग</b> है (<code>stream: false</code>), और उत्तर एक बार में लौटता है, अक्षर-दर-अक्षर नहीं",
+    id: "Permintaan bersifat <b>non-streaming</b> (<code>stream: false</code>), dan balasan dikembalikan sekaligus, bukan kata per kata",
+    de: "Anfragen sind <b>nicht streamend</b> (<code>stream: false</code>), und die Antwort wird auf einmal zurückgegeben, nicht Wort für Wort",
+    vi: "Yêu cầu ở dạng <b>không truyền phát</b> (<code>stream: false</code>), và phản hồi được trả về một lần, không theo từng từ",
+    tr: "İstekler <b>akışsızdır</b> (<code>stream: false</code>) ve yanıt kelime kelime değil, tek seferde döner",
+    it: "Le richieste sono <b>non in streaming</b> (<code>stream: false</code>) e la risposta viene restituita in una volta sola, non parola per parola",
   },
   notesLi4: {
     zh: '本节点不接收文件拖入，拖放文件到节点上不会生效',
@@ -323,6 +485,12 @@ export const helpMessages = {
     ar: 'لا تقبل هذه العقدة إفلات الملفات؛ وإفلات ملف عليها لا يؤثر',
     fr: 'Ce nœud n’accepte pas le dépôt de fichiers ; déposer un fichier dessus n’a aucun effet',
     pt: 'Este nó não aceita arquivos arrastados; soltar um arquivo sobre ele não faz nada',
-    ru: 'Этот узел не принимает перетаскивание файлов; перетаскивание файла на него ничего не делает'
+    ru: 'Этот узел не принимает перетаскивание файлов; перетаскивание файла на него ничего не делает',
+    hi: "यह नोड फ़ाइल ड्रॉप स्वीकार नहीं करता; नोड पर फ़ाइल ड्रॉप करने का कोई प्रभाव नहीं पड़ेगा",
+    id: "Node ini tidak menerima file yang diseret; menjatuhkan file ke node tidak akan berpengaruh",
+    de: "Dieser Knoten akzeptiert keine Datei-Drops; das Ablegen einer Datei auf dem Knoten hat keine Wirkung",
+    vi: "Nút này không nhận tệp kéo thả; thả tệp lên nút sẽ không có tác dụng",
+    tr: "Bu düğüm dosya bırakmayı kabul etmez; düğüme dosya bırakmanın etkisi olmaz",
+    it: "Questo nodo non accetta il trascinamento di file; trascinare un file su di esso non ha alcun effetto",
   }
 } satisfies Record<string, LocalizedText>

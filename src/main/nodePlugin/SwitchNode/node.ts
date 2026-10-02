@@ -46,7 +46,13 @@ export class SwitchNode extends Node {
       ar: 'الشرط',
       fr: 'Condition',
       pt: 'Condição',
-      ru: 'Условие'
+      ru: 'Условие',
+      hi: 'शर्त',
+      id: 'Kondisi',
+      de: 'Bedingung',
+      vi: 'Điều kiện',
+      tr: 'Koşul',
+      it: 'Condizione'
     }
   })
 
@@ -62,7 +68,13 @@ export class SwitchNode extends Node {
       ar: 'البيانات',
       fr: 'Données',
       pt: 'Dados',
-      ru: 'Данные'
+      ru: 'Данные',
+      hi: 'डेटा',
+      id: 'Data',
+      de: 'Daten',
+      vi: 'Dữ liệu',
+      tr: 'Veri',
+      it: 'Dati'
     }
   })
 
@@ -173,7 +185,13 @@ export class SwitchNode extends Node {
       ar: 'يمر →',
       fr: 'Pass →',
       pt: 'Passa →',
-      ru: 'Пропустить →'
+      ru: 'Пропустить →',
+      hi: 'पास →',
+      id: 'Lolos →',
+      de: 'Bestanden →',
+      vi: 'Đạt →',
+      tr: 'Geçti →',
+      it: 'Supera →'
     })
     this.failOutput = new OutputPort('fail', valueClass, {
       zh: '驳回 →',
@@ -184,7 +202,13 @@ export class SwitchNode extends Node {
       ar: 'يُرفض →',
       fr: 'Rejet →',
       pt: 'Rejeita →',
-      ru: 'Отклонить →'
+      ru: 'Отклонить →',
+      hi: 'अस्वीकार →',
+      id: 'Tolak →',
+      de: 'Abgelehnt →',
+      vi: 'Từ chối →',
+      tr: 'Reddet →',
+      it: 'Rifiuta →'
     })
     this.addOutput(this.passOutput)
     this.addOutput(this.failOutput)

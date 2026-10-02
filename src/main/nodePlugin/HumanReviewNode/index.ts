@@ -14,7 +14,13 @@ export const manifest: NodePluginManifest = {
     ar: 'مراجعة بشرية',
     fr: 'Révision humaine',
     pt: 'Revisão humana',
-    ru: 'Ручная проверка'
+    ru: 'Ручная проверка',
+    hi: 'मानव समीक्षा',
+    id: 'Tinjauan Manusia',
+    de: 'Menschliche Prüfung',
+    vi: 'Xem xét thủ công',
+    tr: 'İnsan İncelemesi',
+    it: 'Revisione umana'
   },
   render,
   help: () => import('./HumanReviewHelpDialog.vue')

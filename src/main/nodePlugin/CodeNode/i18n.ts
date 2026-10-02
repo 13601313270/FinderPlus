@@ -18,7 +18,13 @@ export const messages = {
     ar: 'اسحب العقدة (الترويسة بأكملها قابلة للسحب)',
     fr: 'Glisser le nœud (tout l’en-tête est déplaçable)',
     pt: 'Arrastar nó (o cabeçalho inteiro é arrastável)',
-    ru: 'Перетащить узел (перетаскивается весь заголовок)'
+    ru: 'Перетащить узел (перетаскивается весь заголовок)',
+    hi: "नोड खींचें (पूरा हेडर खींचा जा सकता है)",
+    id: "Seret node (seluruh header dapat diseret)",
+    de: "Knoten ziehen (der gesamte Kopfbereich ist ziehbar)",
+    vi: "Kéo nút (toàn bộ phần đầu có thể kéo được)",
+    tr: "Düğümü sürükle (başlığın tamamı sürüklenebilir)",
+    it: "Trascina il nodo (l’intera intestazione è trascinabile)",
   },
   helpTitle: {
     zh: '使用说明',
@@ -29,7 +35,13 @@ export const messages = {
     ar: 'تعليمات',
     fr: 'Aide',
     pt: 'Ajuda',
-    ru: 'Справка'
+    ru: 'Справка',
+    hi: "सहायता",
+    id: "Bantuan",
+    de: "Hilfe",
+    vi: "Trợ giúp",
+    tr: "Yardım",
+    it: "Guida",
   },
   configTitle: {
     zh: '配置端口与代码',
@@ -40,7 +52,13 @@ export const messages = {
     ar: 'ضبط المنافذ والكود',
     fr: 'Configurer les ports et le code',
     pt: 'Configurar portas e código',
-    ru: 'Настроить порты и код'
+    ru: 'Настроить порты и код',
+    hi: "पोर्ट और कोड कॉन्फ़िगर करें",
+    id: "Konfigurasikan port dan kode",
+    de: "Ports und Code konfigurieren",
+    vi: "Cấu hình cổng và mã",
+    tr: "Bağlantı noktalarını ve kodu yapılandır",
+    it: "Configura porte e codice",
   },
   configBtn: {
     zh: '配置函数',
@@ -51,7 +69,13 @@ export const messages = {
     ar: 'ضبط الدالة',
     fr: 'Configurer la fonction',
     pt: 'Configurar função',
-    ru: 'Настроить функцию'
+    ru: 'Настроить функцию',
+    hi: "फ़ंक्शन कॉन्फ़िगर करें",
+    id: "Konfigurasikan fungsi",
+    de: "Funktion konfigurieren",
+    vi: "Cấu hình hàm",
+    tr: "İşlevi yapılandır",
+    it: "Configura funzione",
   },
   running: {
     zh: '执行中…',
@@ -62,7 +86,13 @@ export const messages = {
     ar: 'جارٍ التنفيذ…',
     fr: 'Exécution…',
     pt: 'Executando…',
-    ru: 'Выполняется…'
+    ru: 'Выполняется…',
+    hi: "चल रहा है…",
+    id: "Berjalan…",
+    de: "Wird ausgeführt…",
+    vi: "Đang chạy…",
+    tr: "Çalışıyor…",
+    it: "In esecuzione…",
   },
   run: {
     zh: '执行',
@@ -73,7 +103,13 @@ export const messages = {
     ar: 'تشغيل',
     fr: 'Exécuter',
     pt: 'Executar',
-    ru: 'Выполнить'
+    ru: 'Выполнить',
+    hi: "चलाएँ",
+    id: "Jalankan",
+    de: "Ausführen",
+    vi: "Chạy",
+    tr: "Çalıştır",
+    it: "Esegui",
   },
   clickToRun: {
     zh: '（点击执行运行代码）',
@@ -84,7 +120,13 @@ export const messages = {
     ar: '(انقر على تشغيل لتنفيذ الكود)',
     fr: '(Cliquez sur Exécuter pour lancer le code)',
     pt: '(Clique em Executar para rodar o código)',
-    ru: '(Нажмите «Выполнить», чтобы запустить код)'
+    ru: '(Нажмите «Выполнить», чтобы запустить код)',
+    hi: "(कोड चलाने के लिए चलाएँ पर क्लिक करें)",
+    id: "(Klik Jalankan untuk menjalankan kode)",
+    de: "(Zum Ausführen des Codes auf „Ausführen“ klicken)",
+    vi: "(Nhấp vào Chạy để thực thi mã)",
+    tr: "(Kodu çalıştırmak için Çalıştır’a tıklayın)",
+    it: "(Fai clic su Esegui per eseguire il codice)",
   },
   nodeMissing: {
     zh: '节点不存在',
@@ -95,7 +137,13 @@ export const messages = {
     ar: 'العقدة غير موجودة',
     fr: 'Nœud introuvable',
     pt: 'Nó não encontrado',
-    ru: 'Узел не найден'
+    ru: 'Узел не найден',
+    hi: "नोड नहीं मिला",
+    id: "Node tidak ditemukan",
+    de: "Knoten nicht gefunden",
+    vi: "Không tìm thấy nút",
+    tr: "Düğüm bulunamadı",
+    it: "Nodo non trovato",
   },
   statusIdle: {
     zh: '空闲',
@@ -106,7 +154,13 @@ export const messages = {
     ar: 'خامل',
     fr: 'Inactif',
     pt: 'Inativo',
-    ru: 'Ожидание'
+    ru: 'Ожидание',
+    hi: "निष्क्रिय",
+    id: "Siaga",
+    de: "Inaktiv",
+    vi: "Rảnh",
+    tr: "Boşta",
+    it: "Inattivo",
   },
   statusRunning: {
     zh: '执行中',
@@ -117,7 +171,13 @@ export const messages = {
     ar: 'قيد التنفيذ',
     fr: 'En cours',
     pt: 'Em execução',
-    ru: 'Выполняется'
+    ru: 'Выполняется',
+    hi: "चल रहा है",
+    id: "Berjalan",
+    de: "Wird ausgeführt",
+    vi: "Đang chạy",
+    tr: "Çalışıyor",
+    it: "In esecuzione",
   },
   statusDone: {
     zh: '完成',
@@ -128,7 +188,13 @@ export const messages = {
     ar: 'مكتمل',
     fr: 'Terminé',
     pt: 'Concluído',
-    ru: 'Готово'
+    ru: 'Готово',
+    hi: "पूर्ण",
+    id: "Selesai",
+    de: "Fertig",
+    vi: "Hoàn tất",
+    tr: "Tamamlandı",
+    it: "Completato",
   },
   statusError: {
     zh: '出错',
@@ -139,7 +205,13 @@ export const messages = {
     ar: 'خطأ',
     fr: 'Erreur',
     pt: 'Erro',
-    ru: 'Ошибка'
+    ru: 'Ошибка',
+    hi: "त्रुटि",
+    id: "Kesalahan",
+    de: "Fehler",
+    vi: "Lỗi",
+    tr: "Hata",
+    it: "Errore",
   },
   autoLabel: {
     zh: '自动',
@@ -150,7 +222,13 @@ export const messages = {
     ar: 'تلقائي',
     fr: 'Auto',
     pt: 'Auto',
-    ru: 'Авто'
+    ru: 'Авто',
+    hi: "स्वतः",
+    id: "Otomatis",
+    de: "Auto",
+    vi: "Tự động",
+    tr: "Otomatik",
+    it: "Auto",
   },
   runHint: {
     zh: '执行代码',
@@ -161,7 +239,13 @@ export const messages = {
     ar: 'تشغيل الكود',
     fr: 'Exécuter le code',
     pt: 'Executar o código',
-    ru: 'Запустить код'
+    ru: 'Запустить код',
+    hi: "कोड चलाएँ",
+    id: "Jalankan kode",
+    de: "Code ausführen",
+    vi: "Chạy mã",
+    tr: "Kodu çalıştır",
+    it: "Esegui il codice",
   },
   runHintNoCode: {
     zh: '请先在编辑区写代码',
@@ -172,7 +256,13 @@ export const messages = {
     ar: 'اكتب بعض الكود في المحرر أولًا',
     fr: 'Écrivez d’abord du code dans l’éditeur',
     pt: 'Escreva primeiro algum código no editor',
-    ru: 'Сначала напишите код в редакторе'
+    ru: 'Сначала напишите код в редакторе',
+    hi: "पहले संपादक में कुछ कोड लिखें",
+    id: "Tulis kode di editor terlebih dahulu",
+    de: "Schreiben Sie zuerst etwas Code im Editor",
+    vi: "Hãy viết một số mã trong trình soạn thảo trước",
+    tr: "Önce düzenleyiciye biraz kod yazın",
+    it: "Scrivi prima del codice nell’editor",
   },
   helpDialogTitle: {
     zh: '代码节点使用说明',
@@ -183,7 +273,13 @@ export const messages = {
     ar: 'تعليمات عقدة الكود',
     fr: 'Aide du nœud Code',
     pt: 'Ajuda do nó Código',
-    ru: 'Справка по узлу «Код»'
+    ru: 'Справка по узлу «Код»',
+    hi: "कोड नोड सहायता",
+    id: "Bantuan node Kode",
+    de: "Hilfe zum Knoten „Code“",
+    vi: "Trợ giúp nút Mã",
+    tr: "Kod düğümü yardımı",
+    it: "Guida del nodo Codice",
   },
   configDialogTitle: {
     zh: '配置函数',
@@ -194,7 +290,13 @@ export const messages = {
     ar: 'ضبط الدالة',
     fr: 'Configurer la fonction',
     pt: 'Configurar função',
-    ru: 'Настроить функцию'
+    ru: 'Настроить функцию',
+    hi: "फ़ंक्शन कॉन्फ़िगर करें",
+    id: "Konfigurasikan fungsi",
+    de: "Funktion konfigurieren",
+    vi: "Cấu hình hàm",
+    tr: "İşlevi yapılandır",
+    it: "Configura funzione",
   },
   inputsTitle: {
     zh: '输入端口',
@@ -205,7 +307,13 @@ export const messages = {
     ar: 'منافذ الإدخال',
     fr: 'Ports d’entrée',
     pt: 'Portas de entrada',
-    ru: 'Входные порты'
+    ru: 'Входные порты',
+    hi: "इनपुट पोर्ट",
+    id: "Port masukan",
+    de: "Eingabeports",
+    vi: "Cổng đầu vào",
+    tr: "Giriş bağlantı noktaları",
+    it: "Porte di input",
   },
   outputsTitle: {
     zh: '输出端口',
@@ -216,7 +324,13 @@ export const messages = {
     ar: 'منافذ الإخراج',
     fr: 'Ports de sortie',
     pt: 'Portas de saída',
-    ru: 'Выходные порты'
+    ru: 'Выходные порты',
+    hi: "आउटपुट पोर्ट",
+    id: "Port keluaran",
+    de: "Ausgabeports",
+    vi: "Cổng đầu ra",
+    tr: "Çıkış bağlantı noktaları",
+    it: "Porte di output",
   },
   addInputHint: {
     zh: '添加一个输入端口',
@@ -227,7 +341,13 @@ export const messages = {
     ar: 'إضافة منفذ إدخال',
     fr: 'Ajouter un port d’entrée',
     pt: 'Adicionar uma porta de entrada',
-    ru: 'Добавить входной порт'
+    ru: 'Добавить входной порт',
+    hi: "एक इनपुट पोर्ट जोड़ें",
+    id: "Tambahkan port masukan",
+    de: "Einen Eingabeport hinzufügen",
+    vi: "Thêm một cổng đầu vào",
+    tr: "Bir giriş bağlantı noktası ekle",
+    it: "Aggiungi una porta di input",
   },
   addOutputHint: {
     zh: '添加一个输出端口',
@@ -238,7 +358,13 @@ export const messages = {
     ar: 'إضافة منفذ إخراج',
     fr: 'Ajouter un port de sortie',
     pt: 'Adicionar uma porta de saída',
-    ru: 'Добавить выходной порт'
+    ru: 'Добавить выходной порт',
+    hi: "एक आउटपुट पोर्ट जोड़ें",
+    id: "Tambahkan port keluaran",
+    de: "Einen Ausgabeport hinzufügen",
+    vi: "Thêm một cổng đầu ra",
+    tr: "Bir çıkış bağlantı noktası ekle",
+    it: "Aggiungi una porta di output",
   },
   inputsEmpty: {
     zh: '点击 + 添加输入端口',
@@ -249,7 +375,13 @@ export const messages = {
     ar: 'انقر على + لإضافة منفذ إدخال',
     fr: 'Cliquez sur + pour ajouter un port d’entrée',
     pt: 'Clique em + para adicionar uma porta de entrada',
-    ru: 'Нажмите +, чтобы добавить входной порт'
+    ru: 'Нажмите +, чтобы добавить входной порт',
+    hi: "इनपुट पोर्ट जोड़ने के लिए + पर क्लिक करें",
+    id: "Klik + untuk menambahkan port masukan",
+    de: "Auf + klicken, um einen Eingabeport hinzuzufügen",
+    vi: "Nhấp + để thêm cổng đầu vào",
+    tr: "Giriş bağlantı noktası eklemek için + simgesine tıklayın",
+    it: "Fai clic su + per aggiungere una porta di input",
   },
   outputsEmpty: {
     zh: '至少保留一个输出端口',
@@ -260,7 +392,13 @@ export const messages = {
     ar: 'احتفظ بمنفذ إخراج واحد على الأقل',
     fr: 'Gardez au moins un port de sortie',
     pt: 'Mantenha pelo menos uma porta de saída',
-    ru: 'Оставьте хотя бы один выходной порт'
+    ru: 'Оставьте хотя бы один выходной порт',
+    hi: "कम से कम एक आउटपुट पोर्ट रखें",
+    id: "Pertahankan setidaknya satu port keluaran",
+    de: "Mindestens einen Ausgabeport behalten",
+    vi: "Giữ ít nhất một cổng đầu ra",
+    tr: "En az bir çıkış bağlantı noktası bırakın",
+    it: "Mantieni almeno una porta di output",
   },
   typeLabel: {
     zh: '类型',
@@ -271,7 +409,13 @@ export const messages = {
     ar: 'النوع',
     fr: 'Type',
     pt: 'Tipo',
-    ru: 'Тип'
+    ru: 'Тип',
+    hi: "प्रकार",
+    id: "Jenis",
+    de: "Typ",
+    vi: "Loại",
+    tr: "Tür",
+    it: "Tipo",
   },
   varNameLabel: {
     zh: '变量名',
@@ -282,7 +426,13 @@ export const messages = {
     ar: 'اسم المتغير',
     fr: 'Nom de variable',
     pt: 'Nome da variável',
-    ru: 'Имя переменной'
+    ru: 'Имя переменной',
+    hi: "चर नाम",
+    id: "Nama variabel",
+    de: "Variablenname",
+    vi: "Tên biến",
+    tr: "Değişken adı",
+    it: "Nome variabile",
   },
   portNameLabel: {
     zh: '端口名',
@@ -293,7 +443,13 @@ export const messages = {
     ar: 'اسم المنفذ',
     fr: 'Nom du port',
     pt: 'Nome da porta',
-    ru: 'Имя порта'
+    ru: 'Имя порта',
+    hi: "पोर्ट नाम",
+    id: "Nama port",
+    de: "Portname",
+    vi: "Tên cổng",
+    tr: "Bağlantı noktası adı",
+    it: "Nome porta",
   },
   inputKindHint: {
     zh: '选择此输入接受的 Value 类型',
@@ -304,7 +460,13 @@ export const messages = {
     ar: 'اختر نوع Value الذي يقبله هذا الإدخال',
     fr: 'Choisissez le type Value accepté par cette entrée',
     pt: 'Escolha o tipo de Value que esta entrada aceita',
-    ru: 'Выберите тип Value, принимаемый этим входом'
+    ru: 'Выберите тип Value, принимаемый этим входом',
+    hi: "इस इनपुट द्वारा स्वीकार किया जाने वाला Value प्रकार चुनें",
+    id: "Pilih jenis Value yang diterima masukan ini",
+    de: "Wählen Sie den Value-Typ, den dieser Eingang akzeptiert",
+    vi: "Chọn loại Value mà đầu vào này chấp nhận",
+    tr: "Bu girişin kabul ettiği Value türünü seçin",
+    it: "Scegli il tipo Value accettato da questo input",
   },
   outputKindHint: {
     zh: '选择此输出产出的 Value 类型',
@@ -315,7 +477,13 @@ export const messages = {
     ar: 'اختر نوع Value الذي ينتجه هذا الإخراج',
     fr: 'Choisissez le type Value produit par cette sortie',
     pt: 'Escolha o tipo de Value que esta saída produz',
-    ru: 'Выберите тип Value, создаваемый этим выходом'
+    ru: 'Выберите тип Value, создаваемый этим выходом',
+    hi: "इस आउटपुट द्वारा उत्पादित Value प्रकार चुनें",
+    id: "Pilih jenis Value yang dihasilkan keluaran ini",
+    de: "Wählen Sie den Value-Typ, den dieser Ausgang erzeugt",
+    vi: "Chọn loại Value mà đầu ra này tạo ra",
+    tr: "Bu çıkışın ürettiği Value türünü seçin",
+    it: "Scegli il tipo Value prodotto da questo output",
   },
   removeInputHint: {
     zh: '删除此输入端口',
@@ -326,7 +494,13 @@ export const messages = {
     ar: 'إزالة منفذ الإدخال هذا',
     fr: 'Supprimer ce port d’entrée',
     pt: 'Remover esta porta de entrada',
-    ru: 'Удалить этот входной порт'
+    ru: 'Удалить этот входной порт',
+    hi: "इस इनपुट पोर्ट को हटाएँ",
+    id: "Hapus port masukan ini",
+    de: "Diesen Eingabeport entfernen",
+    vi: "Xóa cổng đầu vào này",
+    tr: "Bu giriş bağlantı noktasını kaldır",
+    it: "Rimuovi questa porta di input",
   },
   removeOutputHint: {
     zh: '删除此输出端口（至少保留一个）',
@@ -337,7 +511,13 @@ export const messages = {
     ar: 'إزالة منفذ الإخراج هذا (احتفظ بواحد على الأقل)',
     fr: 'Supprimer ce port de sortie (gardez-en au moins un)',
     pt: 'Remover esta porta de saída (mantenha pelo menos uma)',
-    ru: 'Удалить этот выходной порт (оставьте хотя бы один)'
+    ru: 'Удалить этот выходной порт (оставьте хотя бы один)',
+    hi: "इस आउटपुट पोर्ट को हटाएँ (कम से कम एक रखें)",
+    id: "Hapus port keluaran ini (pertahankan setidaknya satu)",
+    de: "Diesen Ausgabeport entfernen (mindestens einen behalten)",
+    vi: "Xóa cổng đầu ra này (giữ ít nhất một)",
+    tr: "Bu çıkış bağlantı noktasını kaldır (en az bir tane bırak)",
+    it: "Rimuovi questa porta di output (mantienine almeno una)",
   },
   snippetPortName: {
     zh: '"端口名"',
@@ -348,7 +528,13 @@ export const messages = {
     ar: '"اسم المنفذ"',
     fr: '"nomPort"',
     pt: '"nomePorto"',
-    ru: '"имяПорта"'
+    ru: '"имяПорта"',
+    hi: "\"पोर्टनाम\"",
+    id: "\"namaPort\"",
+    de: "\"portName\"",
+    vi: "\"tenCong\"",
+    tr: "\"portAdi\"",
+    it: "\"nomePorta\"",
   },
   snippetValue: {
     zh: '值',
@@ -359,7 +545,13 @@ export const messages = {
     ar: 'قيمة',
     fr: 'valeur',
     pt: 'valor',
-    ru: 'значение'
+    ru: 'значение',
+    hi: "मान",
+    id: "nilai",
+    de: "Wert",
+    vi: "giá trị",
+    tr: "değer",
+    it: "valore",
   },
   snippetCall: {
     zh: 'callOutputPort("端口名", 值)',
@@ -370,7 +562,13 @@ export const messages = {
     ar: 'callOutputPort("اسم المنفذ", قيمة)',
     fr: 'callOutputPort("nomPort", valeur)',
     pt: 'callOutputPort("nomePorto", valor)',
-    ru: 'callOutputPort("имяПорта", значение)'
+    ru: 'callOutputPort("имяПорта", значение)',
+    hi: "callOutputPort(\"पोर्टनाम\", मान)",
+    id: "callOutputPort(\"namaPort\", nilai)",
+    de: "callOutputPort(\"portName\", Wert)",
+    vi: "callOutputPort(\"tenCong\", giá trị)",
+    tr: "callOutputPort(\"portAdi\", değer)",
+    it: "callOutputPort(\"nomePorta\", valore)",
   },
   copyHint: {
     zh: '复制函数签名',
@@ -381,7 +579,13 @@ export const messages = {
     ar: 'نسخ توقيع الدالة',
     fr: 'Copier la signature de la fonction',
     pt: 'Copiar a assinatura da função',
-    ru: 'Скопировать сигнатуру функции'
+    ru: 'Скопировать сигнатуру функции',
+    hi: "फ़ंक्शन हस्ताक्षर कॉपी करें",
+    id: "Salin tanda tangan fungsi",
+    de: "Funktionssignatur kopieren",
+    vi: "Sao chép chữ ký hàm",
+    tr: "İşlev imzasını kopyala",
+    it: "Copia la firma della funzione",
   },
   copied: {
     zh: '已复制',
@@ -392,7 +596,13 @@ export const messages = {
     ar: 'تم النسخ',
     fr: 'Copié',
     pt: 'Copiado',
-    ru: 'Скопировано'
+    ru: 'Скопировано',
+    hi: "कॉपी किया गया",
+    id: "Disalin",
+    de: "Kopiert",
+    vi: "Đã sao chép",
+    tr: "Kopyalandı",
+    it: "Copiato",
   },
   availablePorts: {
     zh: '可用端口：',
@@ -403,7 +613,13 @@ export const messages = {
     ar: 'المنافذ المتاحة: ',
     fr: 'Ports disponibles : ',
     pt: 'Portas disponíveis: ',
-    ru: 'Доступные порты: '
+    ru: 'Доступные порты: ',
+    hi: "उपलब्ध पोर्ट: ",
+    id: "Port tersedia: ",
+    de: "Verfügbare Ports: ",
+    vi: "Cổng khả dụng: ",
+    tr: "Kullanılabilir bağlantı noktaları: ",
+    it: "Porte disponibili: ",
   },
   portKindHint: {
     zh: '类型: {kind}',
@@ -414,7 +630,13 @@ export const messages = {
     ar: 'النوع: {kind}',
     fr: 'Type : {kind}',
     pt: 'Tipo: {kind}',
-    ru: 'Тип: {kind}'
+    ru: 'Тип: {kind}',
+    hi: "प्रकार: {kind}",
+    id: "Jenis: {kind}",
+    de: "Typ: {kind}",
+    vi: "Loại: {kind}",
+    tr: "Tür: {kind}",
+    it: "Tipo: {kind}",
   },
   editorPlaceholderWithInputs: {
     zh: "写函数体，通过 callOutputPort('端口名', 值) 提交。\n直接用上方输入的变量名访问，例如：\ncallOutputPort('result', price * qty)\n\nsetTimeout / Promise.then 里的延迟调用也能正常触发",
@@ -425,7 +647,13 @@ export const messages = {
     ar: "اكتب جسم الدالة وأرسِله عبر callOutputPort('اسم المنفذ', قيمة).\nيمكنك الوصول إلى المدخلات مباشرةً بأسماء متغيراتها، مثل:\ncallOutputPort('result', price * qty)\n\nالاستدعاءات المؤجّلة داخل setTimeout / Promise.then تعمل أيضًا",
     fr: "Écrivez le corps de la fonction et soumettez via callOutputPort('nomPort', valeur).\nAccédez aux entrées directement par leurs noms de variable, par ex. :\ncallOutputPort('result', price * qty)\n\nLes appels différés dans setTimeout / Promise.then fonctionnent aussi",
     pt: "Escreva o corpo da função e envie via callOutputPort('nomePorto', valor).\nAcesse as entradas diretamente pelos nomes das variáveis, por exemplo:\ncallOutputPort('result', price * qty)\n\nChamadas atrasadas dentro de setTimeout / Promise.then também funcionam",
-    ru: "Напишите тело функции и отправьте через callOutputPort('имяПорта', значение).\nОбращайтесь к входам напрямую по именам переменных, например:\ncallOutputPort('result', price * qty)\n\nОтложенные вызовы внутри setTimeout / Promise.then тоже срабатывают"
+    ru: "Напишите тело функции и отправьте через callOutputPort('имяПорта', значение).\nОбращайтесь к входам напрямую по именам переменных, например:\ncallOutputPort('result', price * qty)\n\nОтложенные вызовы внутри setTimeout / Promise.then тоже срабатывают",
+    hi: "फ़ंक्शन बॉडी लिखें और callOutputPort('पोर्टनाम', मान) से सबमिट करें।\nऊपर के इनपुट के चर नाम सीधे उपयोग करें, जैसे:\ncallOutputPort('result', price * qty)\n\nsetTimeout / Promise.then में विलंबित कॉल भी सामान्य रूप से ट्रिगर होती हैं",
+    id: "Tulis isi fungsi dan kirim melalui callOutputPort('namaPort', nilai).\nAkses masukan langsung dengan nama variabelnya, misalnya:\ncallOutputPort('result', price * qty)\n\nPanggilan tertunda di dalam setTimeout / Promise.then juga berfungsi normal",
+    de: "Schreiben Sie den Funktionskörper und senden Sie ihn über callOutputPort('portName', Wert).\nGreifen Sie die Eingaben direkt über ihre Variablennamen zu, z. B.:\ncallOutputPort('result', price * qty)\n\nVerzögerte Aufrufe in setTimeout / Promise.then funktionieren ebenfalls",
+    vi: "Viết thân hàm và gửi qua callOutputPort('tenCong', giá trị).\nTruy cập các đầu vào trực tiếp bằng tên biến, ví dụ:\ncallOutputPort('result', price * qty)\n\nCác lệnh gọi trì hoãn trong setTimeout / Promise.then cũng hoạt động bình thường",
+    tr: "İşlev gövdesini yazın ve callOutputPort('portAdi', değer) ile gönderin.\nGirişlere doğrudan değişken adlarıyla erişin, örn.:\ncallOutputPort('result', price * qty)\n\nsetTimeout / Promise.then içindeki gecikmeli çağrılar da sorunsuz çalışır",
+    it: "Scrivi il corpo della funzione e invialo tramite callOutputPort('nomePorta', valore).\nAccedi agli input direttamente con i loro nomi di variabile, ad es.:\ncallOutputPort('result', price * qty)\n\nAnche le chiamate differite dentro setTimeout / Promise.then funzionano",
   },
   editorPlaceholderWithoutInputs: {
     zh: "写函数体，通过 callOutputPort('端口名', 值) 提交，例如：\ncallOutputPort('result', [1,2,3].reduce((a,b)=>a+b,0))\n\nsetTimeout / Promise.then 里的延迟调用也能正常触发",
@@ -436,7 +664,13 @@ export const messages = {
     ar: "اكتب جسم الدالة وأرسِله عبر callOutputPort('اسم المنفذ', قيمة)، مثل:\ncallOutputPort('result', [1,2,3].reduce((a,b)=>a+b,0))\n\nالاستدعاءات المؤجّلة داخل setTimeout / Promise.then تعمل أيضًا",
     fr: "Écrivez le corps de la fonction et soumettez via callOutputPort('nomPort', valeur), par ex. :\ncallOutputPort('result', [1,2,3].reduce((a,b)=>a+b,0))\n\nLes appels différés dans setTimeout / Promise.then fonctionnent aussi",
     pt: "Escreva o corpo da função e envie via callOutputPort('nomePorto', valor), por exemplo:\ncallOutputPort('result', [1,2,3].reduce((a,b)=>a+b,0))\n\nChamadas atrasadas dentro de setTimeout / Promise.then também funcionam",
-    ru: "Напишите тело функции и отправьте через callOutputPort('имяПорта', значение), например:\ncallOutputPort('result', [1,2,3].reduce((a,b)=>a+b,0))\n\nОтложенные вызовы внутри setTimeout / Promise.then тоже срабатывают"
+    ru: "Напишите тело функции и отправьте через callOutputPort('имяПорта', значение), например:\ncallOutputPort('result', [1,2,3].reduce((a,b)=>a+b,0))\n\nОтложенные вызовы внутри setTimeout / Promise.then тоже срабатывают",
+    hi: "फ़ंक्शन बॉडी लिखें और callOutputPort('पोर्टनाम', मान) से सबमिट करें, जैसे:\ncallOutputPort('result', [1,2,3].reduce((a,b)=>a+b,0))\n\nsetTimeout / Promise.then में विलंबित कॉल भी सामान्य रूप से ट्रिगर होती हैं",
+    id: "Tulis isi fungsi dan kirim melalui callOutputPort('namaPort', nilai), misalnya:\ncallOutputPort('result', [1,2,3].reduce((a,b)=>a+b,0))\n\nPanggilan tertunda di dalam setTimeout / Promise.then juga berfungsi normal",
+    de: "Schreiben Sie den Funktionskörper und senden Sie ihn über callOutputPort('portName', Wert), z. B.:\ncallOutputPort('result', [1,2,3].reduce((a,b)=>a+b,0))\n\nVerzögerte Aufrufe in setTimeout / Promise.then funktionieren ebenfalls",
+    vi: "Viết thân hàm và gửi qua callOutputPort('tenCong', giá trị), ví dụ:\ncallOutputPort('result', [1,2,3].reduce((a,b)=>a+b,0))\n\nCác lệnh gọi trì hoãn trong setTimeout / Promise.then cũng hoạt động bình thường",
+    tr: "İşlev gövdesini yazın ve callOutputPort('portAdi', değer) ile gönderin, örn.:\ncallOutputPort('result', [1,2,3].reduce((a,b)=>a+b,0))\n\nsetTimeout / Promise.then içindeki gecikmeli çağrılar da sorunsuz çalışır",
+    it: "Scrivi il corpo della funzione e invialo tramite callOutputPort('nomePorta', valore), ad es.:\ncallOutputPort('result', [1,2,3].reduce((a,b)=>a+b,0))\n\nAnche le chiamate differite dentro setTimeout / Promise.then funzionano",
   },
   errNameEmpty: {
     zh: '名称不能为空',
@@ -447,7 +681,13 @@ export const messages = {
     ar: 'لا يمكن أن يكون الاسم فارغًا',
     fr: 'Le nom ne peut pas être vide',
     pt: 'O nome não pode ficar vazio',
-    ru: 'Имя не может быть пустым'
+    ru: 'Имя не может быть пустым',
+    hi: "नाम खाली नहीं हो सकता",
+    id: "Nama tidak boleh kosong",
+    de: "Der Name darf nicht leer sein",
+    vi: "Tên không được để trống",
+    tr: "Ad boş olamaz",
+    it: "Il nome non può essere vuoto",
   },
   errNameInvalid: {
     zh: '名称必须是合法 JS 标识符（字母/数字/$/_，不能数字开头）',
@@ -458,7 +698,13 @@ export const messages = {
     ar: 'يجب أن يكون الاسم معرّف JS صالحًا (حروف/أرقام/$/_، ولا يبدأ برقم)',
     fr: 'Le nom doit être un identifiant JS valide (lettres/chiffres/$/_, ne peut pas commencer par un chiffre)',
     pt: 'O nome deve ser um identificador JS válido (letras/dígitos/$/_, não pode começar com dígito)',
-    ru: 'Имя должно быть допустимым идентификатором JS (буквы/цифры/$/_, не может начинаться с цифры)'
+    ru: 'Имя должно быть допустимым идентификатором JS (буквы/цифры/$/_, не может начинаться с цифры)',
+    hi: "नाम मान्य JS पहचानकर्ता होना चाहिए (अक्षर/अंक/$/_, अंक से शुरू नहीं)",
+    id: "Nama harus berupa pengenal JS yang valid (huruf/angka/$/_, tidak boleh diawali angka)",
+    de: "Der Name muss ein gültiger JS-Bezeichner sein (Buchstaben/Ziffern/$/_, darf nicht mit einer Ziffer beginnen)",
+    vi: "Tên phải là định danh JS hợp lệ (chữ/số/$/_, không được bắt đầu bằng số)",
+    tr: "Ad geçerli bir JS tanımlayıcısı olmalıdır (harf/rakam/$/_, rakamla başlayamaz)",
+    it: "Il nome deve essere un identificatore JS valido (lettere/cifre/$/_, non può iniziare con una cifra)",
   },
   errNameReserved: {
     zh: '不能用保留字 "{name}"',
@@ -469,7 +715,13 @@ export const messages = {
     ar: 'لا يمكن استخدام الكلمة المحجوزة "{name}"',
     fr: 'Impossible d’utiliser le mot réservé "{name}"',
     pt: 'Não é possível usar a palavra reservada "{name}"',
-    ru: 'Нельзя использовать зарезервированное слово "{name}"'
+    ru: 'Нельзя использовать зарезервированное слово "{name}"',
+    hi: "आरक्षित शब्द \"{name}\" का उपयोग नहीं कर सकते",
+    id: "Tidak dapat menggunakan kata kunci \"{name}\"",
+    de: "Das reservierte Wort \"{name}\" kann nicht verwendet werden",
+    vi: "Không thể dùng từ khóa dành riêng \"{name}\"",
+    tr: "\"{name}\" ayrılmış sözcüğü kullanılamaz",
+    it: "Impossibile usare la parola riservata \"{name}\"",
   },
   errNameDuplicateInput: {
     zh: '变量名 "{name}" 已存在',
@@ -480,7 +732,13 @@ export const messages = {
     ar: 'اسم المتغير "{name}" موجود بالفعل',
     fr: 'Le nom de variable "{name}" existe déjà',
     pt: 'O nome da variável "{name}" já existe',
-    ru: 'Имя переменной "{name}" уже существует'
+    ru: 'Имя переменной "{name}" уже существует',
+    hi: "चर नाम \"{name}\" पहले से मौजूद है",
+    id: "Nama variabel \"{name}\" sudah ada",
+    de: "Der Variablenname \"{name}\" existiert bereits",
+    vi: "Tên biến \"{name}\" đã tồn tại",
+    tr: "\"{name}\" değişken adı zaten var",
+    it: "Il nome variabile \"{name}\" esiste già",
   },
   errNameDuplicateOutput: {
     zh: '端口名 "{name}" 已存在',
@@ -491,7 +749,13 @@ export const messages = {
     ar: 'اسم المنفذ "{name}" موجود بالفعل',
     fr: 'Le nom de port "{name}" existe déjà',
     pt: 'O nome da porta "{name}" já existe',
-    ru: 'Имя порта "{name}" уже существует'
+    ru: 'Имя порта "{name}" уже существует',
+    hi: "पोर्ट नाम \"{name}\" पहले से मौजूद है",
+    id: "Nama port \"{name}\" sudah ada",
+    de: "Der Portname \"{name}\" existiert bereits",
+    vi: "Tên cổng \"{name}\" đã tồn tại",
+    tr: "\"{name}\" bağlantı noktası adı zaten var",
+    it: "Il nome porta \"{name}\" esiste già",
   },
   errNameConflictInput: {
     zh: '端口名 "{name}" 与输入变量名冲突',
@@ -502,6 +766,12 @@ export const messages = {
     ar: 'اسم المنفذ "{name}" يتعارض مع اسم متغير إدخال',
     fr: 'Le nom de port "{name}" entre en conflit avec un nom de variable d’entrée',
     pt: 'O nome da porta "{name}" entra em conflito com um nome de variável de entrada',
-    ru: 'Имя порта "{name}" конфликтует с именем входной переменной'
+    ru: 'Имя порта "{name}" конфликтует с именем входной переменной',
+    hi: "पोर्ट नाम \"{name}\" इनपुट चर नाम से टकराता है",
+    id: "Nama port \"{name}\" bertentangan dengan nama variabel masukan",
+    de: "Der Portname \"{name}\" steht in Konflikt mit einem Eingabevariablennamen",
+    vi: "Tên cổng \"{name}\" xung đột với tên biến đầu vào",
+    tr: "\"{name}\" bağlantı noktası adı bir giriş değişken adıyla çakışıyor",
+    it: "Il nome porta \"{name}\" è in conflitto con un nome di variabile di input",
   }
 } satisfies Record<string, LocalizedText>

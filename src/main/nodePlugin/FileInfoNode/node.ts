@@ -29,7 +29,13 @@ export class FileInfoNode extends Node {
       ar: 'ملف',
       fr: 'Fichier',
       pt: 'Arquivo',
-      ru: 'Файл'
+      ru: 'Файл',
+      hi: 'फ़ाइल',
+      id: 'Berkas',
+      de: 'Datei',
+      vi: 'Tệp',
+      tr: 'Dosya',
+      it: 'File'
     }
   })
 
@@ -43,7 +49,13 @@ export class FileInfoNode extends Node {
     ar: 'حجم الملف (KB)',
     fr: 'Taille du fichier (KB)',
     pt: 'Tamanho do arquivo (KB)',
-    ru: 'Размер файла (KB)'
+    ru: 'Размер файла (KB)',
+    hi: 'फ़ाइल का आकार (KB)',
+    id: 'Ukuran berkas (KB)',
+    de: 'Dateigröße (KB)',
+    vi: 'Kích thước tệp (KB)',
+    tr: 'Dosya boyutu (KB)',
+    it: 'Dimensione file (KB)'
   })
 
   /** 输出端口：文件 MIME 类型 */
@@ -56,7 +68,13 @@ export class FileInfoNode extends Node {
     ar: 'نوع MIME للملف',
     fr: 'Type MIME du fichier',
     pt: 'Tipo MIME do arquivo',
-    ru: 'Тип MIME файла'
+    ru: 'Тип MIME файла',
+    hi: 'फ़ाइल MIME प्रकार',
+    id: 'Jenis MIME berkas',
+    de: 'MIME-Typ der Datei',
+    vi: 'Loại MIME của tệp',
+    tr: 'Dosya MIME türü',
+    it: 'Tipo MIME del file'
   })
 
   private fileName = ''

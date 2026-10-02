@@ -16,7 +16,13 @@ export const messages = {
     ar: 'اسحب العقدة (الترويسة بأكملها قابلة للسحب)',
     fr: 'Glisser le nœud (tout l’en-tête est déplaçable)',
     pt: 'Arrastar nó (toda a cabeçalho é arrastável)',
-    ru: 'Перетащить узел (вся шапка доступна для перетаскивания)'
+    ru: 'Перетащить узел (вся шапка доступна для перетаскивания)',
+    hi: 'नोड खींचें (पूरा हेडर खींचा जा सकता है)',
+    id: 'Seret node (seluruh header dapat diseret)',
+    de: 'Knoten ziehen (der gesamte Kopfbereich ist ziehbar)',
+    vi: 'Kéo nút (toàn bộ phần đầu có thể kéo được)',
+    tr: 'Düğümü sürükle (başlığın tamamı sürüklenebilir)',
+    it: 'Trascina il nodo (l’intera intestazione è trascinabile)'
   },
   gearConfigured: {
     zh: '图像模型已配置，点击修改 Key',
@@ -27,7 +33,13 @@ export const messages = {
     ar: 'تم تهيئة نموذج الصور، انقر لتغيير Key',
     fr: 'Modèle d’image configuré, cliquez pour changer la Key',
     pt: 'Modelo de imagem configurado, clique para alterar a Key',
-    ru: 'Модель изображений настроена, нажмите, чтобы изменить Key'
+    ru: 'Модель изображений настроена, нажмите, чтобы изменить Key',
+    hi: 'छवि मॉडल कॉन्फ़िगर हो चुका है, Key बदलने के लिए क्लिक करें',
+    id: 'Model gambar sudah dikonfigurasi, klik untuk mengubah Key',
+    de: 'Bildmodell konfiguriert, zum Ändern des Keys klicken',
+    vi: 'Mô hình ảnh đã được cấu hình, nhấn để đổi Key',
+    tr: 'Görüntü modeli yapılandırıldı, Key’i değiştirmek için tıklayın',
+    it: 'Modello immagine configurato, fai clic per cambiare la Key'
   },
   gearConfigure: {
     zh: '点击配置图像 API Key',
@@ -38,7 +50,13 @@ export const messages = {
     ar: 'انقر لتهيئة API Key للصور',
     fr: 'Cliquez pour configurer la API Key d’image',
     pt: 'Clique para configurar a API Key de imagem',
-    ru: 'Нажмите, чтобы настроить API Key для изображений'
+    ru: 'Нажмите, чтобы настроить API Key для изображений',
+    hi: 'छवि API Key कॉन्फ़िगर करने के लिए क्लिक करें',
+    id: 'Klik untuk mengonfigurasi API Key gambar',
+    de: 'Klicken, um den Bild-API-Key zu konfigurieren',
+    vi: 'Nhấn để cấu hình API Key hình ảnh',
+    tr: 'Görüntü API Key’ini yapılandırmak için tıklayın',
+    it: 'Fai clic per configurare la API Key delle immagini'
   },
   generating: {
     zh: '生成中…',
@@ -49,7 +67,13 @@ export const messages = {
     ar: 'جارٍ الإنشاء…',
     fr: 'Génération…',
     pt: 'A gerar…',
-    ru: 'Создание…'
+    ru: 'Создание…',
+    hi: 'बना रहा है…',
+    id: 'Membuat…',
+    de: 'Erzeugung…',
+    vi: 'Đang tạo…',
+    tr: 'Oluşturuluyor…',
+    it: 'Generazione…'
   },
   generate: {
     zh: '生成',
@@ -60,7 +84,13 @@ export const messages = {
     ar: 'إنشاء',
     fr: 'Générer',
     pt: 'Gerar',
-    ru: 'Создать'
+    ru: 'Создать',
+    hi: 'बनाएँ',
+    id: 'Buat',
+    de: 'Erzeugen',
+    vi: 'Tạo',
+    tr: 'Oluştur',
+    it: 'Genera'
   },
   resultAlt: {
     zh: '生成结果',
@@ -71,7 +101,13 @@ export const messages = {
     ar: 'النتيجة المُنشأة',
     fr: 'Résultat généré',
     pt: 'Resultado gerado',
-    ru: 'Созданный результат'
+    ru: 'Созданный результат',
+    hi: 'बनाया गया परिणाम',
+    id: 'Hasil yang dibuat',
+    de: 'Erzeugtes Ergebnis',
+    vi: 'Kết quả đã tạo',
+    tr: 'Oluşturulan sonuç',
+    it: 'Risultato generato'
   },
   nodeMissing: {
     zh: '节点不存在',
@@ -82,7 +118,13 @@ export const messages = {
     ar: 'العقدة غير موجودة',
     fr: 'Nœud introuvable',
     pt: 'Nó não encontrado',
-    ru: 'Узел не найден'
+    ru: 'Узел не найден',
+    hi: 'नोड मौजूद नहीं है',
+    id: 'Node tidak ditemukan',
+    de: 'Knoten nicht gefunden',
+    vi: 'Không tìm thấy nút',
+    tr: 'Düğüm bulunamadı',
+    it: 'Nodo non trovato'
   },
   needApiKey: {
     zh: '请先点右上角齿轮配置图像 API Key',
@@ -93,7 +135,13 @@ export const messages = {
     ar: 'انقر على الترس في أعلى اليمين لتهيئة API Key للصور',
     fr: 'Cliquez sur l’engrenage en haut à droite pour configurer la API Key d’image',
     pt: 'Clique na engrenagem no canto superior direito para configurar a API Key de imagem',
-    ru: 'Нажмите шестерёнку в правом верхнем углу, чтобы настроить API Key для изображений'
+    ru: 'Нажмите шестерёнку в правом верхнем углу, чтобы настроить API Key для изображений',
+    hi: 'कृपया पहले ऊपर दाईं ओर के गियर पर क्लिक करके छवि API Key कॉन्फ़िगर करें',
+    id: 'Klik ikon roda gigi di kanan atas untuk mengonfigurasi API Key gambar',
+    de: 'Klicken Sie oben rechts auf das Zahnrad, um den Bild-API-Key zu konfigurieren',
+    vi: 'Hãy nhấn bánh răng ở góc trên bên phải để cấu hình API Key hình ảnh',
+    tr: 'Görüntü API Key’ini yapılandırmak için sağ üstteki dişliye tıklayın',
+    it: 'Fai clic sull’ingranaggio in alto a destra per configurare la API Key delle immagini'
   },
   needPrompt: {
     zh: '请连接上游提示词',
@@ -104,7 +152,13 @@ export const messages = {
     ar: 'صِل موجّهًا من المنبع',
     fr: 'Connectez un prompt en amont',
     pt: 'Ligue um prompt de montante',
-    ru: 'Подключите вышестоящий промпт'
+    ru: 'Подключите вышестоящий промпт',
+    hi: 'कृपया अपस्ट्रीम प्रॉम्प्ट कनेक्ट करें',
+    id: 'Sambungkan prompt hulu',
+    de: 'Bitte einen vorgelagerten Prompt verbinden',
+    vi: 'Hãy kết nối prompt thượng nguồn',
+    tr: 'Bir yukarı akış istemi bağlayın',
+    it: 'Collega un prompt a monte'
   },
   ready: {
     zh: '点击「生成」开始文生图',
@@ -115,7 +169,13 @@ export const messages = {
     ar: 'انقر على «إنشاء» لبدء توليد الصور من النص',
     fr: 'Cliquez sur « Générer » pour lancer la génération d’image à partir de texte',
     pt: 'Clique em “Gerar” para iniciar a geração de imagem a partir de texto',
-    ru: 'Нажмите «Создать», чтобы начать генерацию изображения из текста'
+    ru: 'Нажмите «Создать», чтобы начать генерацию изображения из текста',
+    hi: 'टेक्स्ट-से-इमेज शुरू करने के लिए «बनाएँ» पर क्लिक करें',
+    id: 'Klik “Buat” untuk memulai teks-ke-gambar',
+    de: 'Klicken Sie auf „Erzeugen“, um die Text-zu-Bild-Generierung zu starten',
+    vi: 'Nhấn “Tạo” để bắt đầu tạo ảnh từ văn bản',
+    tr: 'Metinden görüntü üretimini başlatmak için “Oluştur”a tıklayın',
+    it: 'Fai clic su “Genera” per avviare la generazione da testo a immagine'
   },
   sizeFromUpstream: {
     zh: '尺寸来自上游连线（当前 {size}）',
@@ -126,7 +186,13 @@ export const messages = {
     ar: 'يأتي الحجم من اتصال المنبع (الحالي {size})',
     fr: 'La taille provient de la connexion en amont (actuelle : {size})',
     pt: 'O tamanho vem da ligação de montante (atual: {size})',
-    ru: 'Размер берётся из вышестоящего соединения (текущий: {size})'
+    ru: 'Размер берётся из вышестоящего соединения (текущий: {size})',
+    hi: 'आकार अपस्ट्रीम कनेक्शन से आता है (वर्तमान {size})',
+    id: 'Ukuran berasal dari koneksi hulu (saat ini {size})',
+    de: 'Die Größe stammt aus der vorgelagerten Verbindung (aktuell {size})',
+    vi: 'Kích thước đến từ kết nối thượng nguồn (hiện tại {size})',
+    tr: 'Boyut yukarı akış bağlantısından gelir (şu an {size})',
+    it: 'La dimensione proviene dalla connessione a monte (attuale {size})'
   },
   currentModel: {
     zh: '当前模型：{model}',
@@ -137,7 +203,13 @@ export const messages = {
     ar: 'النموذج الحالي: {model}',
     fr: 'Modèle actuel : {model}',
     pt: 'Modelo atual: {model}',
-    ru: 'Текущая модель: {model}'
+    ru: 'Текущая модель: {model}',
+    hi: 'वर्तमान मॉडल: {model}',
+    id: 'Model saat ini: {model}',
+    de: 'Aktuelles Modell: {model}',
+    vi: 'Mô hình hiện tại: {model}',
+    tr: 'Geçerli model: {model}',
+    it: 'Modello attuale: {model}'
   },
   helpTitle: {
     zh: '使用说明',
@@ -148,7 +220,13 @@ export const messages = {
     ar: 'مساعدة',
     fr: 'Aide',
     pt: 'Ajuda',
-    ru: 'Справка'
+    ru: 'Справка',
+    hi: 'सहायता',
+    id: 'Bantuan',
+    de: 'Hilfe',
+    vi: 'Trợ giúp',
+    tr: 'Yardım',
+    it: 'Guida'
   },
   helpDialogTitle: {
     zh: '图片生成节点使用说明',
@@ -159,6 +237,12 @@ export const messages = {
     ar: 'مساعدة عقدة توليد الصور',
     fr: 'Aide du nœud de génération d’images',
     pt: 'Ajuda do nó de geração de imagens',
-    ru: 'Справка по узлу генерации изображений'
+    ru: 'Справка по узлу генерации изображений',
+    hi: 'छवि निर्माण नोड की सहायता',
+    id: 'Bantuan node Pembuatan Gambar',
+    de: 'Hilfe zum Knoten „Bildgenerierung“',
+    vi: 'Trợ giúp nút Tạo ảnh',
+    tr: 'Görüntü Oluşturma düğümü yardımı',
+    it: 'Guida del nodo Generazione immagine'
   }
 } satisfies Record<string, LocalizedText>

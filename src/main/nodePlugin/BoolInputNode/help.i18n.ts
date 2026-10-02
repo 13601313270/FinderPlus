@@ -1,7 +1,7 @@
 import type { LocalizedText } from '../../../shared/language'
 
 /**
- * BoolInput 节点帮助文档（BoolInputHelpDialog）的全部文案，9 种语言全配。
+ * BoolInput 节点帮助文档（BoolInputHelpDialog）的全部文案，全部 15 种语言全配。
  *
  * 与节点自身的 i18n.ts 分开：卡片短文案变化频繁，帮助文档整篇体量大、改动少。
  * 约定：带行内 <code> / <b> 的句子，值里直接写 HTML，模板用 v-html 渲染；
@@ -18,7 +18,13 @@ export const helpMessages = {
     ar: 'ما هذا؟',
     fr: 'Qu’est-ce que c’est ?',
     pt: 'O que é isto?',
-    ru: 'Что это?'
+    ru: 'Что это?',
+    hi: 'यह क्या है?',
+    id: 'Apa ini?',
+    de: 'Was ist das?',
+    vi: 'Đây là gì?',
+    tr: 'Bu nedir?',
+    it: 'Che cos’è?'
   },
   whatBody: {
     zh: '布尔输入节点是一个<b>源头节点</b>：卡片上的开关拨到哪边，就通过右侧 <code>bool</code> 端口向下游送出对应的布尔值（<code>true</code> 或 <code>false</code>）。它没有输入端口，取值完全由你手动切换。',
@@ -29,7 +35,13 @@ export const helpMessages = {
     ar: 'عقدة الإدخال المنطقي هي <b>عقدة مصدر</b>: فبغضّ النظر عن موضع المفتاح في البطاقة، ترسل القيمة المنطقية المقابلة (<code>true</code> أو <code>false</code>) إلى العقد اللاحقة من منفذ <code>bool</code> على اليمين. ليس لها منافذ إدخال، وتتحكم أنت بالقيمة كليًا.',
     fr: 'Le nœud Entrée booléenne est un <b>nœud source</b> : selon la position de l’interrupteur sur la carte, il envoie le booléen correspondant (<code>true</code> ou <code>false</code>) aux nœuds en aval depuis le port <code>bool</code> à droite. Il n’a pas de port d’entrée : la valeur est entièrement contrôlée par vos clics.',
     pt: 'O nó Entrada booleana é um <b>nó de origem</b>: conforme a posição do interruptor no cartão, envia o booleano correspondente (<code>true</code> ou <code>false</code>) aos nós seguintes pelo porto <code>bool</code> à direita. Ele não tem portas de entrada, então o valor é totalmente controlado por você.',
-    ru: 'Узел «Логический ввод» — это <b>узел-источник</b>: в зависимости от положения переключателя на карточке он отправляет соответствующее логическое значение (<code>true</code> или <code>false</code>) последующим узлам из порта <code>bool</code> справа. Входных портов у него нет, и значение полностью задаётся вручную.'
+    ru: 'Узел «Логический ввод» — это <b>узел-источник</b>: в зависимости от положения переключателя на карточке он отправляет соответствующее логическое значение (<code>true</code> или <code>false</code>) последующим узлам из порта <code>bool</code> справа. Входных портов у него нет, и значение полностью задаётся вручную.',
+    hi: 'बूलियन इनपुट नोड एक <b>स्रोत नोड</b> है: कार्ड पर स्विच जिस तरफ़ हो, उसी के अनुसार यह दाईं ओर के <code>bool</code> पोर्ट से डाउनस्ट्रीम को संबंधित बूलियन मान (<code>true</code> या <code>false</code>) भेजता है। इसमें कोई इनपुट पोर्ट नहीं है, मान पूरी तरह आपके मैन्युअल टॉगल से तय होता है।',
+    id: 'Node Masukan boolean adalah sebuah <b>node sumber</b>: ke arah mana sakelar di kartu diposisikan, nilai boolean yang sesuai (<code>true</code> atau <code>false</code>) dikirim ke hilir melalui port <code>bool</code> di kanan. Node ini tidak punya port masukan, nilainya sepenuhnya Anda ubah secara manual.',
+    de: 'Der Knoten „Boolesche Eingabe“ ist ein <b>Quellknoten</b>: Je nach Stellung des Schalters auf der Karte sendet er den entsprechenden booleschen Wert (<code>true</code> oder <code>false</code>) über den <code>bool</code>-Port rechts an nachgelagerte Knoten. Er hat keinen Eingangsport; der Wert wird vollständig von Ihnen manuell umgeschaltet.',
+    vi: 'Nút Đầu vào boolean là một <b>nút nguồn</b>: công tắc trên thẻ gạt về phía nào thì nó gửi giá trị boolean tương ứng (<code>true</code> hoặc <code>false</code>) đến hạ nguồn qua cổng <code>bool</code> ở bên phải. Nút không có cổng đầu vào, giá trị hoàn toàn do bạn chuyển thủ công.',
+    tr: 'Mantıksal Giriş düğümü bir <b>kaynak düğümdür</b>: karttaki anahtar hangi tarafa çevrilirse, karşılık gelen mantıksal değeri (<code>true</code> veya <code>false</code>) sağdaki <code>bool</code> bağlantı noktasından aşağı akışa gönderir. Giriş bağlantı noktası yoktur; değer tamamen sizin elle değiştirmenize bağlıdır.',
+    it: 'Il nodo Input booleano è un <b>nodo sorgente</b>: a seconda di come è posizionato l’interruttore sulla scheda, invia il valore booleano corrispondente (<code>true</code> o <code>false</code>) ai nodi a valle dalla porta <code>bool</code> a destra. Non ha porte di input; il valore è controllato interamente da te.'
   },
 
   // —— 怎么用 ——
@@ -42,7 +54,13 @@ export const helpMessages = {
     ar: 'كيفية الاستخدام',
     fr: 'Utilisation',
     pt: 'Como usar',
-    ru: 'Как использовать'
+    ru: 'Как использовать',
+    hi: 'इस्तेमाल कैसे करें',
+    id: 'Cara menggunakan',
+    de: 'Verwendung',
+    vi: 'Cách sử dụng',
+    tr: 'Nasıl kullanılır',
+    it: 'Come si usa'
   },
   useLi1: {
     zh: '点击卡片上的开关即可切换：开启（开关靠右）提交 <code>true</code>，关闭（开关靠左）提交 <code>false</code>，旁边的文字会同步显示当前值',
@@ -53,7 +71,13 @@ export const helpMessages = {
     ar: 'انقر على المفتاح في البطاقة للتبديل: التشغيل (المقبض إلى اليمين) يرسل <code>true</code>، والإيقاف (المقبض إلى اليسار) يرسل <code>false</code>، ويعرض النص المجاور القيمة الحالية',
     fr: 'Cliquez sur l’interrupteur de la carte pour basculer : activé (bouton à droite) valide <code>true</code>, désactivé (bouton à gauche) valide <code>false</code>, et le texte à côté affiche la valeur actuelle',
     pt: 'Clique no interruptor do cartão para alternar: ligado (botão à direita) confirma <code>true</code>, desligado (botão à esquerda) confirma <code>false</code>, e o texto ao lado mostra o valor atual',
-    ru: 'Нажмите переключатель на карточке, чтобы изменить состояние: включено (бегунок справа) отправляет <code>true</code>, выключено (бегунок слева) — <code>false</code>, а текст рядом показывает текущее значение'
+    ru: 'Нажмите переключатель на карточке, чтобы изменить состояние: включено (бегунок справа) отправляет <code>true</code>, выключено (бегунок слева) — <code>false</code>, а текст рядом показывает текущее значение',
+    hi: 'कार्ड पर स्विच पर क्लिक करके टॉगल करें: चालू (स्विच दाईं ओर) <code>true</code> भेजता है, बंद (स्विच बाईं ओर) <code>false</code> भेजता है, और पास का टेक्स्ट वर्तमान मान दिखाता है',
+    id: 'Klik sakelar di kartu untuk mengubahnya: menyala (tombol ke kanan) mengirim <code>true</code>, mati (tombol ke kiri) mengirim <code>false</code>, dan teks di sampingnya menampilkan nilai saat ini',
+    de: 'Klicken Sie auf den Schalter auf der Karte, um umzuschalten: ein (Schalter rechts) sendet <code>true</code>, aus (Schalter links) sendet <code>false</code>, und der Text daneben zeigt den aktuellen Wert an',
+    vi: 'Nhấp vào công tắc trên thẻ để chuyển: bật (núm gạt sang phải) gửi <code>true</code>, tắt (núm gạt sang trái) gửi <code>false</code>, và dòng chữ bên cạnh hiển thị giá trị hiện tại',
+    tr: 'Değiştirmek için karttaki anahtara tıklayın: açık (topuz sağda) <code>true</code> gönderir, kapalı (topuz solda) <code>false</code> gönderir ve yanındaki metin geçerli değeri gösterir',
+    it: 'Clicca sull’interruttore sulla scheda per cambiare: attivo (cursore a destra) invia <code>true</code>, spento (cursore a sinistra) invia <code>false</code>, e il testo accanto mostra il valore corrente'
   },
   useLi2: {
     zh: '每次切换都会<b>立即</b>把新值提交到输出端口，下游节点随之刷新',
@@ -64,7 +88,13 @@ export const helpMessages = {
     ar: 'كل تبديل يقوم <b>فورًا</b> بإرسال القيمة الجديدة إلى منفذ الإخراج، فتتحدّث العقد اللاحقة',
     fr: 'Chaque basculement valide <b>immédiatement</b> la nouvelle valeur sur le port de sortie, rafraîchissant les nœuds en aval',
     pt: 'Cada alternância confirma <b>imediatamente</b> o novo valor no porto de saída, atualizando os nós seguintes',
-    ru: 'Каждое переключение <b>сразу</b> отправляет новое значение в выходной порт, обновляя последующие узлы'
+    ru: 'Каждое переключение <b>сразу</b> отправляет новое значение в выходной порт, обновляя последующие узлы',
+    hi: 'हर टॉगल <b>तुरंत</b> नया मान आउटपुट पोर्ट पर भेजता है, और डाउनस्ट्रीम नोड अपडेट हो जाते हैं',
+    id: 'Setiap perubahan <b>langsung</b> mengirim nilai baru ke port keluaran, dan node hilir ikut menyegarkan',
+    de: 'Jedes Umschalten sendet den neuen Wert <b>sofort</b> an den Ausgangsport, und die nachgelagerten Knoten werden aktualisiert',
+    vi: 'Mỗi lần chuyển đều <b>ngay lập tức</b> gửi giá trị mới đến cổng đầu ra, các nút hạ nguồn theo đó cập nhật',
+    tr: 'Her değiştirme yeni değeri <b>anında</b> çıkış bağlantı noktasına gönderir ve aşağı akış düğümleri güncellenir',
+    it: 'Ogni cambio invia <b>immediatamente</b> il nuovo valore alla porta di output e i nodi a valle si aggiornano'
   },
 
   // —— 输出端口 ——
@@ -77,7 +107,13 @@ export const helpMessages = {
     ar: 'منفذ الإخراج',
     fr: 'Port de sortie',
     pt: 'Porta de saída',
-    ru: 'Выходной порт'
+    ru: 'Выходной порт',
+    hi: 'आउटपुट पोर्ट',
+    id: 'Port keluaran',
+    de: 'Ausgangsport',
+    vi: 'Cổng đầu ra',
+    tr: 'Çıkış bağlantı noktası',
+    it: 'Porta di output'
   },
   portsLi1: {
     zh: '右侧只有一个 <code>bool</code> 输出端口，送出的是布尔值（<code>true</code> 或 <code>false</code>）',
@@ -88,7 +124,13 @@ export const helpMessages = {
     ar: 'يوجد منفذ إخراج واحد <code>bool</code> على اليمين، ويحمل قيمة منطقية (<code>true</code> أو <code>false</code>)',
     fr: 'Il n’y a qu’un seul port de sortie <code>bool</code> à droite, transportant une valeur booléenne (<code>true</code> ou <code>false</code>)',
     pt: 'Há apenas uma porta de saída <code>bool</code> à direita, transportando um valor booleano (<code>true</code> ou <code>false</code>)',
-    ru: 'Справа есть единственный выходной порт <code>bool</code>, передающий логическое значение (<code>true</code> или <code>false</code>)'
+    ru: 'Справа есть единственный выходной порт <code>bool</code>, передающий логическое значение (<code>true</code> или <code>false</code>)',
+    hi: 'दाईं ओर केवल एक <code>bool</code> आउटपुट पोर्ट है, जो बूलियन मान (<code>true</code> या <code>false</code>) भेजता है',
+    id: 'Di kanan hanya ada satu port keluaran <code>bool</code>, yang mengirim nilai boolean (<code>true</code> atau <code>false</code>)',
+    de: 'Rechts gibt es nur einen <code>bool</code>-Ausgangsport, der einen booleschen Wert (<code>true</code> oder <code>false</code>) ausgibt',
+    vi: 'Bên phải chỉ có một cổng đầu ra <code>bool</code>, gửi giá trị boolean (<code>true</code> hoặc <code>false</code>)',
+    tr: 'Sağda yalnızca bir <code>bool</code> çıkış bağlantı noktası vardır ve mantıksal bir değer (<code>true</code> veya <code>false</code>) gönderir',
+    it: 'A destra c’è una sola porta di output <code>bool</code>, che invia un valore booleano (<code>true</code> o <code>false</code>)'
   },
   portsLi2: {
     zh: '本节点<b>没有输入端口</b>，值只由卡片上的开关决定；下游节点能否接入由引擎按类型判定',
@@ -99,7 +141,13 @@ export const helpMessages = {
     ar: 'لا تحتوي هذه العقدة على <b>منافذ إدخال</b>؛ تُحدَّد القيمة فقط بالمفتاح في البطاقة، ويقرّر المحرك إمكانية اتصال العقدة اللاحقة بناءً على النوع',
     fr: 'Ce nœud n’a <b>aucun port d’entrée</b> ; la valeur dépend uniquement de l’interrupteur sur la carte, et la possibilité de connexion d’un nœud en aval est décidée par le moteur selon le type',
     pt: 'Este nó <b>não tem portas de entrada</b>; o valor é determinado apenas pelo interruptor no cartão, e se um nó seguinte pode conectar é decidido pelo motor com base no tipo',
-    ru: 'У этого узла <b>нет входных портов</b>; значение определяется только переключателем на карточке, а возможность подключения последующего узла движок решает по типу'
+    ru: 'У этого узла <b>нет входных портов</b>; значение определяется только переключателем на карточке, а возможность подключения последующего узла движок решает по типу',
+    hi: 'इस नोड में <b>कोई इनपुट पोर्ट नहीं</b> है, मान केवल कार्ड पर स्विच से तय होता है; डाउनस्ट्रीम नोड जुड़ सकता है या नहीं, यह इंजन प्रकार के आधार पर तय करता है',
+    id: 'Node ini <b>tidak punya port masukan</b>; nilainya hanya ditentukan oleh sakelar di kartu, dan apakah node hilir dapat tersambung ditentukan mesin berdasarkan tipe',
+    de: 'Dieser Knoten hat <b>keinen Eingangsport</b>; der Wert wird allein durch den Schalter auf der Karte bestimmt, und ob ein nachgelagerter Knoten anschließen kann, entscheidet die Engine anhand des Typs',
+    vi: 'Nút này <b>không có cổng đầu vào</b>; giá trị chỉ do công tắc trên thẻ quyết định, và việc nút hạ nguồn có kết nối được hay không do engine xét theo kiểu',
+    tr: 'Bu düğümün <b>giriş bağlantı noktası yoktur</b>; değer yalnızca karttaki anahtarla belirlenir ve bir aşağı akış düğümünün bağlanıp bağlanamayacağına motor tipe göre karar verir',
+    it: 'Questo nodo <b>non ha porte di input</b>; il valore è determinato solo dall’interruttore sulla scheda, e se un nodo a valle può connettersi lo decide il motore in base al tipo'
   },
 
   // —— 注意事项 ——
@@ -112,7 +160,13 @@ export const helpMessages = {
     ar: 'ملاحظات',
     fr: 'Remarques',
     pt: 'Observações',
-    ru: 'Примечания'
+    ru: 'Примечания',
+    hi: 'ध्यान देने योग्य बातें',
+    id: 'Catatan',
+    de: 'Hinweise',
+    vi: 'Lưu ý',
+    tr: 'Notlar',
+    it: 'Note'
   },
   notesLi1: {
     zh: '开关状态会随工作区<b>一同保存</b>；重新打开工作区时自动恢复，并把恢复后的值重新提交给下游节点',
@@ -123,7 +177,13 @@ export const helpMessages = {
     ar: 'تُحفَظ حالة المفتاح <b>مع مساحة العمل</b>؛ وعند إعادة فتحها تُستعاد تلقائيًا وتُرسَل القيمة المُستعادة مرة أخرى إلى العقد اللاحقة',
     fr: 'L’état de l’interrupteur est <b>enregistré avec l’espace de travail</b> ; à sa réouverture, il est restauré automatiquement et la valeur restaurée est de nouveau validée sur les nœuds en aval',
     pt: 'O estado do interruptor é <b>salvo junto com o workspace</b>; ao reabri-lo, ele é restaurado automaticamente e o valor restaurado é novamente confirmado nos nós seguintes',
-    ru: 'Состояние переключателя <b>сохраняется вместе с рабочим пространством</b>; при повторном открытии оно восстанавливается автоматически, а восстановленное значение заново отправляется последующим узлам'
+    ru: 'Состояние переключателя <b>сохраняется вместе с рабочим пространством</b>; при повторном открытии оно восстанавливается автоматически, а восстановленное значение заново отправляется последующим узлам',
+    hi: 'स्विच की स्थिति कार्यस्थान के साथ <b>सहेजी जाती है</b>; कार्यस्थान दोबारा खोलने पर यह स्वतः पुनर्स्थापित हो जाती है और पुनर्स्थापित मान डाउनस्ट्रीम नोड को फिर से भेजा जाता है',
+    id: 'Status sakelar <b>disimpan bersama ruang kerja</b>; saat ruang kerja dibuka kembali, status dipulihkan otomatis dan nilai yang dipulihkan dikirim ulang ke node hilir',
+    de: 'Der Schalterzustand wird <b>zusammen mit dem Arbeitsbereich gespeichert</b>; beim erneuten Öffnen wird er automatisch wiederhergestellt und der wiederhergestellte Wert erneut an nachgelagerte Knoten gesendet',
+    vi: 'Trạng thái công tắc <b>được lưu cùng không gian làm việc</b>; khi mở lại không gian làm việc, nó tự động được khôi phục và giá trị đã khôi phục được gửi lại cho các nút hạ nguồn',
+    tr: 'Anahtar durumu <b>çalışma alanıyla birlikte kaydedilir</b>; çalışma alanı yeniden açıldığında otomatik olarak geri yüklenir ve geri yüklenen değer aşağı akış düğümlerine yeniden gönderilir',
+    it: 'Lo stato dell’interruttore viene <b>salvato insieme all’area di lavoro</b>; quando l’area di lavoro viene riaperta viene ripristinato automaticamente e il valore ripristinato viene reinviato ai nodi a valle'
   },
   notesLi2: {
     zh: '只有值真正变化时才会提交新值；但从保存状态恢复时，即使与默认值相同也会提交一次，确保下游拿到正确结果',
@@ -134,6 +194,12 @@ export const helpMessages = {
     ar: 'لا تُرسَل قيمة جديدة إلا عند تغيّرها فعليًا؛ لكن عند الاستعادة من حالة محفوظة تُرسَل مرة واحدة حتى لو طابقت القيمة الافتراضية، لضمان حصول العقد اللاحقة على النتيجة الصحيحة',
     fr: 'Une nouvelle valeur n’est validée que lorsqu’elle change réellement ; toutefois, lors d’une restauration depuis un état enregistré, elle est validée une fois même si elle égale la valeur par défaut, afin que les nœuds en aval reçoivent le bon résultat',
     pt: 'Um novo valor só é confirmado quando muda de fato; porém, ao restaurar de um estado salvo ele é confirmado uma vez mesmo que seja igual ao valor padrão, para que os nós seguintes recebam o resultado correto',
-    ru: 'Новое значение отправляется только при его фактическом изменении; однако при восстановлении из сохранённого состояния оно отправляется один раз, даже если совпадает со значением по умолчанию, чтобы последующие узлы получили верный результат'
+    ru: 'Новое значение отправляется только при его фактическом изменении; однако при восстановлении из сохранённого состояния оно отправляется один раз, даже если совпадает со значением по умолчанию, чтобы последующие узлы получили верный результат',
+    hi: 'नया मान तभी भेजा जाता है जब वह वास्तव में बदलता है; परंतु सहेजी गई स्थिति से पुनर्स्थापित करते समय डिफ़ॉल्ट मान के समान होने पर भी एक बार भेजा जाता है, ताकि डाउनस्ट्रीम को सही परिणाम मिले',
+    id: 'Nilai baru dikirim hanya saat benar-benar berubah; namun saat memulihkan dari status tersimpan, nilai dikirim sekali meskipun sama dengan nilai bawaan, agar hilir menerima hasil yang benar',
+    de: 'Ein neuer Wert wird nur gesendet, wenn er sich tatsächlich ändert; beim Wiederherstellen aus einem gespeicherten Zustand wird er jedoch einmal gesendet, selbst wenn er dem Standardwert entspricht, damit die nachgelagerten Knoten das richtige Ergebnis erhalten',
+    vi: 'Giá trị mới chỉ được gửi khi nó thực sự thay đổi; tuy nhiên khi khôi phục từ trạng thái đã lưu, nó vẫn được gửi một lần dù giống với giá trị mặc định, để hạ nguồn nhận được kết quả đúng',
+    tr: 'Yeni değer yalnızca gerçekten değiştiğinde gönderilir; ancak kayıtlı durumdan geri yüklenirken varsayılan değerle aynı olsa bile bir kez gönderilir, böylece aşağı akış doğru sonucu alır',
+    it: 'Un nuovo valore viene inviato solo quando cambia davvero; tuttavia, quando si ripristina da uno stato salvato, viene inviato una volta anche se uguale al valore predefinito, così la parte a valle riceve il risultato corretto'
   }
 } satisfies Record<string, LocalizedText>

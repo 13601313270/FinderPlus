@@ -30,7 +30,13 @@ export class ImagePreviewNode extends Node {
       ar: 'صورة',
       fr: 'Image',
       pt: 'Imagem',
-      ru: 'Изображение'
+      ru: 'Изображение',
+      hi: 'छवि',
+      id: 'Gambar',
+      de: 'Bild',
+      vi: 'Ảnh',
+      tr: 'Görüntü',
+      it: 'Immagine'
     }
   })
 
@@ -44,7 +50,13 @@ export class ImagePreviewNode extends Node {
     ar: 'صورة',
     fr: 'Image',
     pt: 'Imagem',
-    ru: 'Изображение'
+    ru: 'Изображение',
+    hi: 'छवि',
+    id: 'Gambar',
+    de: 'Bild',
+    vi: 'Ảnh',
+    tr: 'Görüntü',
+    it: 'Immagine'
   })
 
   constructor(id: string) {

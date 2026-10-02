@@ -14,7 +14,13 @@ export const manifest: NodePluginManifest = {
     ar: 'إدخال نص',
     fr: 'Saisie de texte',
     pt: 'Entrada de texto',
-    ru: 'Ввод текста'
+    ru: 'Ввод текста',
+    hi: 'पाठ इनपुट',
+    id: 'Masukan Teks',
+    de: 'Texteingabe',
+    vi: 'Nhập văn bản',
+    tr: 'Metin girişi',
+    it: 'Input di testo'
   },
   render,
   help: () => import('./TextInputHelpDialog.vue')

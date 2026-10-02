@@ -1,7 +1,7 @@
 import type { LocalizedText } from '../../../shared/language'
 
 /**
- * ImageGen 节点帮助文档（ImageGenHelpDialog）的全部文案，9 种语言全配。
+ * ImageGen 节点帮助文档（ImageGenHelpDialog）的全部文案，全部 15 种语言全配。
  *
  * 与节点自身的 i18n.ts 分开：卡片短文案变化频繁，帮助文档整篇体量大、改动少。
  * 约定：带行内 <code> / <b> 的句子，值里直接写 HTML，模板用 v-html 渲染；
@@ -18,7 +18,13 @@ export const helpMessages = {
     ar: 'ما هذا؟',
     fr: 'Qu’est-ce que c’est ?',
     pt: 'O que é isto?',
-    ru: 'Что это?'
+    ru: 'Что это?',
+    hi: 'यह क्या है?',
+    id: 'Apa ini?',
+    de: 'Was ist das?',
+    vi: 'Đây là gì?',
+    tr: 'Bu nedir?',
+    it: 'Che cos’è?'
   },
   whatBody: {
     zh: '图片生成节点把上游 <code>prompt</code> 端口传入的提示词发送给已配置的图像模型，按选定尺寸生成一张图片，并从右侧 <code>image</code> 端口输出成图片文件，供下游的图片预览、压缩、文件夹等节点使用。',
@@ -29,7 +35,13 @@ export const helpMessages = {
     ar: 'ترسل عقدة توليد الصور المطالبة الواردة من منفذ <code>prompt</code> العلوي إلى نموذج الصور المُهيّأ، وتولّد صورة بالحجم المختار، ثم تُخرجها كملف صورة من منفذ <code>image</code> على اليمين، لتستخدمها العقد اللاحقة كمعاينة الصور أو الضغط أو المجلد.',
     fr: 'Le nœud de génération d’images envoie le prompt reçu du port <code>prompt</code> en amont au modèle d’images configuré, génère une image à la taille choisie et la fournit sous forme de fichier image depuis le port <code>image</code> à droite, pour les nœuds en aval tels que aperçu d’image, compression ou dossier.',
     pt: 'O nó de geração de imagens envia o prompt recebido do porto <code>prompt</code> de montante ao modelo de imagens configurado, gera uma imagem no tamanho escolhido e a entrega como arquivo de imagem pelo porto <code>image</code> à direita, pronta para nós seguintes como pré-visualização, compressão ou pasta.',
-    ru: 'Узел генерации изображений отправляет подсказку, полученную из входного порта <code>prompt</code>, настроенной модели изображений, генерирует изображение выбранного размера и выводит его как файл изображения из порта <code>image</code> справа — для последующих узлов вроде предпросмотра, сжатия или папки.'
+    ru: 'Узел генерации изображений отправляет подсказку, полученную из входного порта <code>prompt</code>, настроенной модели изображений, генерирует изображение выбранного размера и выводит его как файл изображения из порта <code>image</code> справа — для последующих узлов вроде предпросмотра, сжатия или папки.',
+    hi: 'छवि निर्माण नोड अपस्ट्रीम <code>prompt</code> पोर्ट से मिले प्रॉम्प्ट को कॉन्फ़िगर किए गए छवि मॉडल को भेजता है, चुने गए आकार में एक छवि बनाता है, और उसे दाईं ओर के <code>image</code> पोर्ट से छवि फ़ाइल के रूप में आउटपुट करता है, जो डाउनस्ट्रीम छवि पूर्वावलोकन, संपीड़न, फ़ोल्डर आदि नोड्स के लिए तैयार रहती है।',
+    id: 'Node Pembuatan Gambar mengirim prompt yang diterima dari port <code>prompt</code> hulu ke model gambar yang dikonfigurasi, membuat gambar pada ukuran terpilih, dan mengeluarkannya sebagai berkas gambar dari port <code>image</code> di sebelah kanan, siap untuk node hilir seperti pratinjau gambar, kompres, atau folder.',
+    de: 'Der Knoten „Bildgenerierung“ sendet den vom vorgelagerten <code>prompt</code>-Port empfangenen Prompt an das konfigurierte Bildmodell, erzeugt ein Bild in der gewählten Größe und gibt es als Bilddatei über den rechten <code>image</code>-Port aus – bereit für nachgelagerte Knoten wie Bildvorschau, Komprimierung oder Ordner.',
+    vi: 'Nút Tạo ảnh gửi prompt nhận từ cổng <code>prompt</code> thượng nguồn tới mô hình ảnh đã cấu hình, tạo một ảnh theo kích thước đã chọn và xuất thành tệp ảnh từ cổng <code>image</code> bên phải, sẵn sàng cho các nút hạ nguồn như xem trước ảnh, nén hoặc thư mục.',
+    tr: 'Görüntü Oluşturma düğümü, yukarı akış <code>prompt</code> bağlantı noktasından gelen istemi yapılandırılmış görüntü modeline gönderir, seçilen boyutta bir görüntü oluşturur ve sağdaki <code>image</code> bağlantı noktasından görüntü dosyası olarak verir; aşağı akıştaki görüntü önizleme, sıkıştırma veya klasör gibi düğümler için hazırdır.',
+    it: 'Il nodo Generazione immagine invia il prompt ricevuto dalla porta <code>prompt</code> a monte al modello di immagini configurato, genera un’immagine alla dimensione scelta e la restituisce come file immagine dalla porta <code>image</code> a destra, pronta per i nodi a valle come anteprima immagine, compressione o cartella.'
   },
 
   // —— 配置 API Key 与模型 ——
@@ -42,7 +54,13 @@ export const helpMessages = {
     ar: 'ضبط مفتاح API والنموذج',
     fr: 'Configurer la clé API et le modèle',
     pt: 'Configurar a chave de API e o modelo',
-    ru: 'Настройка ключа API и модели'
+    ru: 'Настройка ключа API и модели',
+    hi: 'API Key और मॉडल कॉन्फ़िगर करें',
+    id: 'Konfigurasikan API Key & model',
+    de: 'API-Key und Modell konfigurieren',
+    vi: 'Cấu hình API Key và mô hình',
+    tr: 'API Key’i ve modeli yapılandır',
+    it: 'Configura la chiave API e il modello'
   },
   configLi1: {
     zh: '点标题栏右上角的<b>齿轮</b>图标打开图像设置，选择 Provider、填入 API Key，并按需覆盖模型名',
@@ -53,7 +71,13 @@ export const helpMessages = {
     ar: 'انقر على أيقونة <b>الترس</b> في أعلى يمين الترويسة لفتح إعدادات الصور؛ اختر المزوّد، وأدخل مفتاح API، ويمكنك تجاوز اسم النموذج',
     fr: 'Cliquez sur l’icône <b>engrenage</b> en haut à droite de l’en-tête pour ouvrir les réglages d’image ; choisissez un fournisseur, saisissez la clé API et remplacez éventuellement le nom du modèle',
     pt: 'Clique no ícone de <b>engrenagem</b> no canto superior direito do cabeçalho para abrir as configurações de imagem; escolha um provedor, insira a chave de API e, se quiser, substitua o nome do modelo',
-    ru: 'Нажмите значок <b>шестерёнки</b> в правом верхнем углу заголовка, чтобы открыть настройки изображений: выберите провайдера, введите ключ API и при необходимости переопределите имя модели'
+    ru: 'Нажмите значок <b>шестерёнки</b> в правом верхнем углу заголовка, чтобы открыть настройки изображений: выберите провайдера, введите ключ API и при необходимости переопределите имя модели',
+    hi: 'इमेज सेटिंग खोलने के लिए हेडर के ऊपर दाईं ओर <b>गियर</b> आइकन पर क्लिक करें; Provider चुनें, API Key भरें और ज़रूरत हो तो मॉडल नाम बदलें',
+    id: 'Klik ikon <b>roda gigi</b> di kanan atas header untuk membuka pengaturan gambar; pilih penyedia, masukkan API Key, dan ganti nama model bila perlu',
+    de: 'Klicken Sie auf das <b>Zahnrad</b>-Symbol oben rechts in der Kopfzeile, um die Bild-Einstellungen zu öffnen; wählen Sie einen Anbieter, geben Sie den API-Key ein und überschreiben Sie bei Bedarf den Modellnamen',
+    vi: 'Nhấn biểu tượng <b>bánh răng</b> ở góc trên bên phải tiêu đề để mở cài đặt ảnh; chọn nhà cung cấp, nhập API Key và ghi đè tên mô hình nếu cần',
+    tr: 'Görüntü ayarlarını açmak için başlığın sağ üst köşesindeki <b>dişli</b> simgesine tıklayın; bir sağlayıcı seçin, API Key’i girin ve gerekirse model adını değiştirin',
+    it: 'Fai clic sull’icona a forma di <b>ingranaggio</b> in alto a destra dell’intestazione per aprire le impostazioni immagine; scegli un provider, inserisci la chiave API e, se necessario, sovrascrivi il nome del modello'
   },
   configLi2: {
     zh: '内置 4 个 Provider：<code>硅基流动 (SiliconFlow)</code>、<code>OpenAI (DALL·E / GPT-Image)</code>、<code>智谱 (CogView)</code>、<code>阿里云百炼 (通义千问 / 万相)</code>',
@@ -64,7 +88,13 @@ export const helpMessages = {
     ar: 'يتضمّن أربعة مزوّدين: <code>SiliconFlow</code> و<code>OpenAI (DALL·E / GPT-Image)</code> و<code>Zhipu (CogView)</code> و<code>Alibaba Cloud Model Studio (Qwen / Wan)</code>',
     fr: 'Quatre fournisseurs intégrés : <code>SiliconFlow</code>, <code>OpenAI (DALL·E / GPT-Image)</code>, <code>Zhipu (CogView)</code>, <code>Alibaba Cloud Model Studio (Qwen / Wan)</code>',
     pt: 'Quatro provedores integrados: <code>SiliconFlow</code>, <code>OpenAI (DALL·E / GPT-Image)</code>, <code>Zhipu (CogView)</code>, <code>Alibaba Cloud Model Studio (Qwen / Wan)</code>',
-    ru: 'Встроено четыре провайдера: <code>SiliconFlow</code>, <code>OpenAI (DALL·E / GPT-Image)</code>, <code>Zhipu (CogView)</code>, <code>Alibaba Cloud Model Studio (Qwen / Wan)</code>'
+    ru: 'Встроено четыре провайдера: <code>SiliconFlow</code>, <code>OpenAI (DALL·E / GPT-Image)</code>, <code>Zhipu (CogView)</code>, <code>Alibaba Cloud Model Studio (Qwen / Wan)</code>',
+    hi: '4 Provider अंतर्निहित हैं: <code>SiliconFlow</code>, <code>OpenAI (DALL·E / GPT-Image)</code>, <code>Zhipu (CogView)</code>, <code>Alibaba Cloud Model Studio (Qwen / Wan)</code>',
+    id: 'Empat penyedia bawaan: <code>SiliconFlow</code>, <code>OpenAI (DALL·E / GPT-Image)</code>, <code>Zhipu (CogView)</code>, <code>Alibaba Cloud Model Studio (Qwen / Wan)</code>',
+    de: 'Vier integrierte Anbieter: <code>SiliconFlow</code>, <code>OpenAI (DALL·E / GPT-Image)</code>, <code>Zhipu (CogView)</code>, <code>Alibaba Cloud Model Studio (Qwen / Wan)</code>',
+    vi: 'Bốn nhà cung cấp tích hợp sẵn: <code>SiliconFlow</code>, <code>OpenAI (DALL·E / GPT-Image)</code>, <code>Zhipu (CogView)</code>, <code>Alibaba Cloud Model Studio (Qwen / Wan)</code>',
+    tr: 'Dört yerleşik sağlayıcı: <code>SiliconFlow</code>, <code>OpenAI (DALL·E / GPT-Image)</code>, <code>Zhipu (CogView)</code>, <code>Alibaba Cloud Model Studio (Qwen / Wan)</code>',
+    it: 'Quattro provider integrati: <code>SiliconFlow</code>, <code>OpenAI (DALL·E / GPT-Image)</code>, <code>Zhipu (CogView)</code>, <code>Alibaba Cloud Model Studio (Qwen / Wan)</code>'
   },
   configLi3: {
     zh: 'API Key 保存在本机 localStorage（键名 <code>canvasdesk.image.config</code>），与 LLM 节点的 Key <b>分开存放</b>，不随节点保存',
@@ -75,7 +105,13 @@ export const helpMessages = {
     ar: 'يُحفظ مفتاح API في localStorage المحلي (المفتاح <code>canvasdesk.image.config</code>) <b>بشكل منفصل</b> عن مفتاح عقدة LLM، ولا يُحفظ مع العقدة',
     fr: 'La clé API est stockée dans le localStorage local (clé <code>canvasdesk.image.config</code>), <b>séparément</b> de celle du nœud LLM, et n’est pas enregistrée avec le nœud',
     pt: 'A chave de API é armazenada no localStorage local (chave <code>canvasdesk.image.config</code>), <b>separada</b> da chave do nó LLM, e não é salva com o nó',
-    ru: 'Ключ API хранится в локальном localStorage (ключ <code>canvasdesk.image.config</code>), <b>отдельно</b> от ключа узла LLM, и не сохраняется вместе с узлом'
+    ru: 'Ключ API хранится в локальном localStorage (ключ <code>canvasdesk.image.config</code>), <b>отдельно</b> от ключа узла LLM, и не сохраняется вместе с узлом',
+    hi: 'API Key स्थानीय localStorage में सहेजी जाती है (कुंजी नाम <code>canvasdesk.image.config</code>), LLM नोड की Key से <b>अलग</b> रखी जाती है, और नोड के साथ सहेजी नहीं जाती',
+    id: 'API Key disimpan di localStorage lokal (nama kunci <code>canvasdesk.image.config</code>), <b>terpisah</b> dari Key node LLM, dan tidak disimpan bersama node',
+    de: 'Der API-Key wird im lokalen localStorage gespeichert (Schlüsselname <code>canvasdesk.image.config</code>), <b>getrennt</b> vom Key des LLM-Knotens, und nicht mit dem Knoten gespeichert',
+    vi: 'API Key được lưu trong localStorage cục bộ (tên khóa <code>canvasdesk.image.config</code>), <b>tách biệt</b> với Key của nút LLM và không lưu cùng nút',
+    tr: 'API Key yerel localStorage’da saklanır (anahtar adı <code>canvasdesk.image.config</code>), LLM düğümünün Key’inden <b>ayrı</b> tutulur ve düğümle birlikte kaydedilmez',
+    it: 'La chiave API è salvata nel localStorage locale (nome chiave <code>canvasdesk.image.config</code>), <b>separata</b> da quella del nodo LLM e non salvata con il nodo'
   },
   configLi4: {
     zh: '不同 Provider / 模型支持的尺寸不同；每个模型列表里的<b>第一个尺寸</b>即默认尺寸，切换模型后尺寸选项与默认值随之变化',
@@ -86,7 +122,13 @@ export const helpMessages = {
     ar: 'يختلف دعم الأحجام بين المزوّدين والنماذج؛ و<b>أول حجم</b> في قائمة النموذج هو الحجم الافتراضي، لذا تتغيّر خيارات الحجم والقيمة الافتراضية عند تبديل النموذج',
     fr: 'Le support des tailles varie selon le fournisseur et le modèle ; la <b>première taille</b> de la liste d’un modèle est sa valeur par défaut, donc les options et la valeur par défaut changent quand vous changez de modèle',
     pt: 'Cada provedor e modelo aceita tamanhos diferentes; o <b>primeiro tamanho</b> da lista do modelo é o padrão, então as opções e o valor padrão mudam ao trocar de modelo',
-    ru: 'Разные провайдеры и модели поддерживают разные размеры; <b>первый размер</b> в списке модели — значение по умолчанию, поэтому при смене модели меняются и варианты, и значение по умолчанию'
+    ru: 'Разные провайдеры и модели поддерживают разные размеры; <b>первый размер</b> в списке модели — значение по умолчанию, поэтому при смене модели меняются и варианты, и значение по умолчанию',
+    hi: 'अलग-अलग Provider/मॉडल अलग-अलग आकार समर्थित करते हैं; हर मॉडल सूची का <b>पहला आकार</b> डिफ़ॉल्ट होता है, इसलिए मॉडल बदलने पर आकार विकल्प और डिफ़ॉल्ट भी बदल जाते हैं',
+    id: 'Berbagai penyedia/model mendukung ukuran berbeda; <b>ukuran pertama</b> dalam daftar model adalah default, jadi opsi ukuran dan nilai default ikut berubah saat mengganti model',
+    de: 'Verschiedene Anbieter/Modelle unterstützen unterschiedliche Größen; die <b>erste Größe</b> in der Liste eines Modells ist der Standard, daher ändern sich Options- und Standardwert beim Modellwechsel',
+    vi: 'Các nhà cung cấp/mô hình khác nhau hỗ trợ kích thước khác nhau; <b>kích thước đầu tiên</b> trong danh sách mô hình là mặc định, nên tùy chọn và giá trị mặc định thay đổi khi đổi mô hình',
+    tr: 'Farklı sağlayıcılar/modeller farklı boyutları destekler; bir modelin listesindeki <b>ilk boyut</b> varsayılandır, bu yüzden model değiştirildiğinde boyut seçenekleri ve varsayılan değer de değişir',
+    it: 'Provider e modelli diversi supportano dimensioni diverse; la <b>prima dimensione</b> nell’elenco di un modello è il valore predefinito, quindi le opzioni e il valore predefinito cambiano cambiando modello'
   },
 
   // —— 端口一览 ——
@@ -99,7 +141,13 @@ export const helpMessages = {
     ar: 'نظرة على المنافذ',
     fr: 'Ports',
     pt: 'Portas',
-    ru: 'Порты'
+    ru: 'Порты',
+    hi: 'पोर्ट',
+    id: 'Port',
+    de: 'Ports',
+    vi: 'Cổng',
+    tr: 'Bağlantı noktaları',
+    it: 'Porte'
   },
   portsLi1: {
     zh: '<code>prompt</code>（输入，字符串）：提示词。本节点<b>没有内部输入框</b>，必须从上游节点连接提供，例如把提示词节点的 <code>text</code> 接过来',
@@ -110,7 +158,13 @@ export const helpMessages = {
     ar: '<code>prompt</code> (إدخال، نص): المطالبة. لا يوجد في هذه العقدة <b>مربع إدخال داخلي</b>، لذا يجب توفيرها عبر اتصال من عقدة سابقة، مثل توصيل <code>text</code> من عقدة المطالبة',
     fr: '<code>prompt</code> (entrée, chaîne) : le prompt. Ce nœud <b>n’a pas de zone de saisie</b>, il doit donc être fourni par une connexion amont — par exemple en reliant le <code>text</code> d’un nœud de prompt',
     pt: '<code>prompt</code> (entrada, string): o prompt. Este nó <b>não tem caixa de texto</b>, então precisa vir de uma conexão de montante — por exemplo, ligue o <code>text</code> de um nó de prompt',
-    ru: '<code>prompt</code> (вход, строка): подсказка. У этого узла <b>нет поля ввода</b>, поэтому её нужно подавать соединением от предыдущего узла — например, подключите <code>text</code> узла подсказки'
+    ru: '<code>prompt</code> (вход, строка): подсказка. У этого узла <b>нет поля ввода</b>, поэтому её нужно подавать соединением от предыдущего узла — например, подключите <code>text</code> узла подсказки',
+    hi: '<code>prompt</code> (इनपुट, स्ट्रिंग): प्रॉम्प्ट। इस नोड में <b>कोई आंतरिक टेक्स्ट बॉक्स नहीं</b> है, इसलिए इसे अपस्ट्रीम नोड से कनेक्शन द्वारा देना होगा — जैसे किसी प्रॉम्प्ट नोड का <code>text</code> जोड़ें',
+    id: '<code>prompt</code> (masukan, string): prompt. Node ini <b>tidak memiliki kotak teks bawaan</b>, jadi harus diberikan melalui koneksi dari node hulu — misalnya sambungkan <code>text</code> dari node prompt',
+    de: '<code>prompt</code> (Eingabe, String): der Prompt. Dieser Knoten hat <b>kein internes Textfeld</b>, daher muss er über eine Verbindung von einem vorgelagerten Knoten geliefert werden – verbinden Sie z. B. das <code>text</code> eines Prompt-Knotens',
+    vi: '<code>prompt</code> (đầu vào, chuỗi): prompt. Nút này <b>không có ô nhập liệu nội bộ</b>, nên phải được cung cấp qua kết nối từ nút thượng nguồn — ví dụ nối <code>text</code> của một nút prompt',
+    tr: '<code>prompt</code> (giriş, dize): istem. Bu düğümde <b>dahili metin kutusu yoktur</b>, bu yüzden yukarı akış düğümünden bağlantıyla sağlanmalıdır — örneğin bir istem düğümünün <code>text</code> çıkışını bağlayın',
+    it: '<code>prompt</code> (input, stringa): il prompt. Questo nodo <b>non ha una casella di testo</b>, quindi deve arrivare da una connessione a monte — ad esempio collega il <code>text</code> di un nodo prompt'
   },
   portsLi2: {
     zh: '<code>size</code>（输入，字符串）：尺寸，如 <code>1024x1024</code>。接了连线时以端口值为准（节点内下拉置灰），未接线时用节点内下拉，仍为空则用当前模型的默认尺寸',
@@ -121,7 +175,13 @@ export const helpMessages = {
     ar: '<code>size</code> (إدخال، نص): الحجم، مثل <code>1024x1024</code>. عند وجود اتصال تكون الأولوية لقيمة المنفذ (وتُعطَّل القائمة المنسدلة داخل العقدة)، وإلا تُستخدم القائمة، وإن بقيت فارغة يُطبَّق الحجم الافتراضي للنموذج الحالي',
     fr: '<code>size</code> (entrée, chaîne) : la taille, p. ex. <code>1024x1024</code>. Si une liaison est connectée, la valeur du port prime (la liste du nœud est grisée) ; sinon la liste du nœud est utilisée et, si elle reste vide, la taille par défaut du modèle actuel s’applique',
     pt: '<code>size</code> (entrada, string): o tamanho, p. ex. <code>1024x1024</code>. Com conexão, o valor do porto prevalece (a lista do nó fica esmaecida); sem conexão, usa-se a lista do nó e, se ainda estiver vazia, o tamanho padrão do modelo atual',
-    ru: '<code>size</code> (вход, строка): размер, например <code>1024x1024</code>. При наличии соединения приоритет у значения порта (список в узле блокируется); иначе используется список в узле, а если он пуст — размер по умолчанию текущей модели'
+    ru: '<code>size</code> (вход, строка): размер, например <code>1024x1024</code>. При наличии соединения приоритет у значения порта (список в узле блокируется); иначе используется список в узле, а если он пуст — размер по умолчанию текущей модели',
+    hi: '<code>size</code> (इनपुट, स्ट्रिंग): आकार, जैसे <code>1024x1024</code>। कनेक्शन होने पर पोर्ट का मान प्राथमिकता लेता है (नोड के भीतर ड्रॉपडाउन ग्रे हो जाता है); कनेक्शन न होने पर नोड का ड्रॉपडाउन उपयोग होता है, और वह भी खाली हो तो वर्तमान मॉडल का डिफ़ॉल्ट आकार',
+    id: '<code>size</code> (masukan, string): ukuran, mis. <code>1024x1024</code>. Jika tersambung, nilai port yang berlaku (dropdown di dalam node menjadi abu-abu); jika tidak, dropdown di dalam node digunakan, dan jika masih kosong, ukuran default model saat ini',
+    de: '<code>size</code> (Eingabe, String): die Größe, z. B. <code>1024x1024</code>. Bei bestehender Verbindung gilt der Portwert (das Dropdown im Knoten wird ausgegraut); andernfalls wird das Dropdown im Knoten verwendet, und wenn es leer bleibt, die Standardgröße des aktuellen Modells',
+    vi: '<code>size</code> (đầu vào, chuỗi): kích thước, ví dụ <code>1024x1024</code>. Khi có kết nối, giá trị cổng được ưu tiên (danh sách trong nút bị làm mờ); nếu không, dùng danh sách trong nút và nếu vẫn trống thì dùng kích thước mặc định của mô hình hiện tại',
+    tr: '<code>size</code> (giriş, dize): boyut, örn. <code>1024x1024</code>. Bağlantı varsa bağlantı noktası değeri geçerlidir (düğüm içi açılır liste grileşir); yoksa düğüm içi açılır liste kullanılır ve hâlâ boşsa geçerli modelin varsayılan boyutu uygulanır',
+    it: '<code>size</code> (input, stringa): la dimensione, ad es. <code>1024x1024</code>. Se collegato vince il valore della porta (l’elenco nel nodo è disattivato); altrimenti si usa l’elenco nel nodo e, se ancora vuoto, la dimensione predefinita del modello corrente'
   },
   portsLi3: {
     zh: '<code>image</code>（输出，图片文件）：生成成功后提交到这里，下游可接图片预览、压缩、文件夹等节点',
@@ -132,7 +192,13 @@ export const helpMessages = {
     ar: '<code>image</code> (إخراج، ملف صورة): يُثبَّت هنا بعد نجاح التوليد، ويمكن توصيل العقد اللاحقة كمعاينة الصور أو الضغط أو المجلد',
     fr: '<code>image</code> (sortie, fichier image) : validé ici après une génération réussie ; les nœuds en aval comme aperçu d’image, compression ou dossier peuvent s’y connecter',
     pt: '<code>image</code> (saída, arquivo de imagem): confirmado aqui após uma geração bem-sucedida; nós seguintes como pré-visualização, compressão ou pasta podem conectar-se',
-    ru: '<code>image</code> (выход, файл изображения): записывается сюда после успешной генерации; к нему можно подключать последующие узлы вроде предпросмотра, сжатия или папки'
+    ru: '<code>image</code> (выход, файл изображения): записывается сюда после успешной генерации; к нему можно подключать последующие узлы вроде предпросмотра, сжатия или папки',
+    hi: '<code>image</code> (आउटपुट, छवि फ़ाइल): सफल निर्माण के बाद यहाँ जमा होती है; डाउनस्ट्रीम छवि पूर्वावलोकन, संपीड़न, फ़ोल्डर आदि नोड्स इसमें जुड़ सकते हैं',
+    id: '<code>image</code> (keluaran, berkas gambar): dikomit ke sini setelah pembuatan berhasil; node hilir seperti pratinjau gambar, kompres, atau folder dapat tersambung ke sini',
+    de: '<code>image</code> (Ausgabe, Bilddatei): wird nach erfolgreicher Generierung hier bereitgestellt; nachgelagerte Knoten wie Bildvorschau, Komprimierung oder Ordner können sich damit verbinden',
+    vi: '<code>image</code> (đầu ra, tệp ảnh): được ghi vào đây sau khi tạo thành công; các nút hạ nguồn như xem trước ảnh, nén hoặc thư mục có thể kết nối tới',
+    tr: '<code>image</code> (çıkış, görüntü dosyası): başarılı oluşturmadan sonra buraya işlenir; görüntü önizleme, sıkıştırma veya klasör gibi aşağı akış düğümleri buna bağlanabilir',
+    it: '<code>image</code> (output, file immagine): viene confermato qui dopo una generazione riuscita; i nodi a valle come anteprima immagine, compressione o cartella possono collegarsi'
   },
 
   // —— 执行与状态 ——
@@ -145,7 +211,13 @@ export const helpMessages = {
     ar: 'التنفيذ والحالة',
     fr: 'Exécution et état',
     pt: 'Execução e estado',
-    ru: 'Запуск и состояние'
+    ru: 'Запуск и состояние',
+    hi: 'चलाना और स्थिति',
+    id: 'Menjalankan & status',
+    de: 'Ausführung und Status',
+    vi: 'Chạy và trạng thái',
+    tr: 'Çalıştırma ve durum',
+    it: 'Esecuzione e stato'
   },
   runLi1: {
     zh: '点底部<b>生成</b>按钮手动触发一次生成；生成中按钮禁用并显示「生成中…」',
@@ -156,7 +228,13 @@ export const helpMessages = {
     ar: 'انقر على زر <b>توليد</b> أسفل النافذة لتشغيل عملية توليد واحدة يدويًا؛ وأثناء التوليد يُعطَّل الزر وتظهر عبارة «جارٍ التوليد…»',
     fr: 'Cliquez sur le bouton <b>Générer</b> en bas pour lancer une génération manuelle ; pendant la génération le bouton est désactivé et affiche « Génération… »',
     pt: 'Clique no botão <b>Gerar</b> na parte inferior para gerar uma vez manualmente; durante a geração o botão fica desativado e mostra “Gerando…”',
-    ru: 'Нажмите кнопку <b>Создать</b> внизу, чтобы вручную запустить генерацию; во время генерации кнопка отключена и показывает «Создание…»'
+    ru: 'Нажмите кнопку <b>Создать</b> внизу, чтобы вручную запустить генерацию; во время генерации кнопка отключена и показывает «Создание…»',
+    hi: 'नीचे <b>बनाएँ</b> बटन पर क्लिक करके मैन्युअल रूप से एक बार निर्माण करें; निर्माण के दौरान बटन अक्षम रहता है और “बनाया जा रहा है…” दिखाता है',
+    id: 'Klik tombol <b>Buat</b> di bagian bawah untuk membuat sekali secara manual; selama pembuatan tombol dinonaktifkan dan menampilkan “Membuat…”',
+    de: 'Klicken Sie unten auf die Schaltfläche <b>Erzeugen</b>, um einmal manuell zu generieren; während der Generierung ist die Schaltfläche deaktiviert und zeigt „Wird erzeugt…“',
+    vi: 'Nhấn nút <b>Tạo</b> ở dưới để tạo một lần theo cách thủ công; trong lúc tạo, nút bị vô hiệu hóa và hiển thị “Đang tạo…”',
+    tr: 'Alttaki <b>Oluştur</b> düğmesine tıklayarak bir kez elle oluşturun; oluşturma sırasında düğme devre dışıdır ve “Oluşturuluyor…” gösterir',
+    it: 'Fai clic sul pulsante <b>Genera</b> in basso per generare una volta manualmente; durante la generazione il pulsante è disattivato e mostra “Generazione…”'
   },
   runLi2: {
     zh: '图像按张计费，本节点<b>不会自动重算</b>——上游提示词变化只刷新界面，需手动点生成',
@@ -167,7 +245,13 @@ export const helpMessages = {
     ar: 'تُحتسب الصور لكل صورة، لذا <b>لا تُعيد هذه العقدة التوليد تلقائيًا</b> — فتغيير المطالبة الواردة يحدّث الواجهة فقط، وعليك النقر على توليد يدويًا',
     fr: 'Les images sont facturées à l’unité, donc ce nœud <b>ne relance jamais automatiquement</b> — modifier le prompt amont ne fait que rafraîchir l’interface ; cliquez sur Générer',
     pt: 'As imagens são cobradas por unidade, então este nó <b>não reexecuta automaticamente</b> — alterar o prompt de montante apenas atualiza a interface; clique em Gerar',
-    ru: 'Изображения тарифицируются поштучно, поэтому узел <b>не перезапускается автоматически</b> — изменение подсказки сверху лишь обновляет интерфейс; нажмите «Создать» вручную'
+    ru: 'Изображения тарифицируются поштучно, поэтому узел <b>не перезапускается автоматически</b> — изменение подсказки сверху лишь обновляет интерфейс; нажмите «Создать» вручную',
+    hi: 'छवियों का शुल्क प्रति छवि लगता है, इसलिए यह नोड <b>स्वचालित रूप से दोबारा नहीं चलता</b> — अपस्ट्रीम प्रॉम्प्ट बदलने पर सिर्फ़ इंटरफ़ेस रीफ़्रेश होता है; मैन्युअल रूप से बनाएँ पर क्लिक करें',
+    id: 'Gambar ditagih per gambar, jadi node ini <b>tidak menjalankan ulang secara otomatis</b> — mengubah prompt hulu hanya menyegarkan antarmuka; klik Buat secara manual',
+    de: 'Bilder werden pro Bild abgerechnet, daher wird dieser Knoten <b>nicht automatisch erneut ausgeführt</b> — eine Änderung des vorgelagerten Prompts aktualisiert nur die Oberfläche; klicken Sie manuell auf Erzeugen',
+    vi: 'Ảnh được tính phí theo từng ảnh, nên nút này <b>không tự động chạy lại</b> — thay đổi prompt thượng nguồn chỉ làm mới giao diện; hãy nhấn Tạo theo cách thủ công',
+    tr: 'Görüntüler adet başına ücretlendirilir, bu yüzden bu düğüm <b>otomatik olarak yeniden çalışmaz</b> — yukarı akış istemini değiştirmek yalnızca arayüzü yeniler; elle Oluştur’a tıklayın',
+    it: 'Le immagini sono fatturate a unità, quindi questo nodo <b>non si riavvia automaticamente</b> — modificare il prompt a monte aggiorna solo l’interfaccia; fai clic su Genera manualmente'
   },
   runLi3: {
     zh: '提示词为空（仅空白字符）时不发起请求、不消耗额度，界面回到「请连接上游提示词」的等待状态',
@@ -178,7 +262,13 @@ export const helpMessages = {
     ar: 'عندما تكون المطالبة فارغة (مسافات فقط) لا يُرسَل أي طلب ولا تُستهلك أي حصة، وتعود الواجهة إلى حالة الانتظار «صِل مطالبة من عقدة سابقة»',
     fr: 'Si le prompt est vide (uniquement des espaces), aucune requête n’est envoyée et aucun quota n’est consommé ; l’interface revient à l’état d’attente « Connectez un prompt amont »',
     pt: 'Se o prompt estiver vazio (apenas espaços), nenhuma requisição é enviada e nenhuma cota é consumida; a interface volta ao estado de espera “Conecte um prompt de montante”',
-    ru: 'Если подсказка пуста (только пробелы), запрос не отправляется и квота не расходуется; интерфейс возвращается в состояние ожидания «Подключите подсказку сверху»'
+    ru: 'Если подсказка пуста (только пробелы), запрос не отправляется и квота не расходуется; интерфейс возвращается в состояние ожидания «Подключите подсказку сверху»',
+    hi: 'यदि प्रॉम्प्ट खाली हो (केवल खाली स्थान), तो कोई अनुरोध नहीं भेजा जाता और कोई कोटा खर्च नहीं होता; इंटरफ़ेस “अपस्ट्रीम प्रॉम्प्ट जोड़ें” प्रतीक्षा स्थिति में लौट आता है',
+    id: 'Jika prompt kosong (hanya spasi), tidak ada permintaan yang dikirim dan tidak ada kuota yang terpakai; antarmuka kembali ke status menunggu “Sambungkan prompt hulu”',
+    de: 'Wenn der Prompt leer ist (nur Leerzeichen), wird keine Anfrage gesendet und kein Kontingent verbraucht; die Oberfläche kehrt in den Wartezustand „Vorgelagerten Prompt verbinden“ zurück',
+    vi: 'Nếu prompt trống (chỉ khoảng trắng), không có yêu cầu nào được gửi và không tiêu tốn hạn mức; giao diện trở về trạng thái chờ “Kết nối prompt thượng nguồn”',
+    tr: 'İstem boşsa (yalnızca boşluk), istek gönderilmez ve kota tüketilmez; arayüz “Yukarı akış istemini bağlayın” bekleme durumuna döner',
+    it: 'Se il prompt è vuoto (solo spazi), nessuna richiesta viene inviata e nessuna quota viene consumata; l’interfaccia torna allo stato di attesa “Collega un prompt a monte”'
   },
   runLi4: {
     zh: '百炼的异步模型（如万相部分版本）先提交任务再轮询：每 <code>2.5s</code> 查一次，总超时 <code>120s</code>；超时后任务仍在后台执行，可稍后在控制台查看',
@@ -189,7 +279,13 @@ export const helpMessages = {
     ar: 'تُرسل النماذج غير المتزامنة من Alibaba Cloud (بعض إصدارات Wan) مهمة ثم تستعلم دوريًا كل <code>2.5s</code>، بمهلة إجمالية <code>120s</code>؛ وبعد انتهاء المهلة تستمر المهمة في الخلفية ويمكن مراجعتها لاحقًا في لوحة التحكم',
     fr: 'Les modèles asynchrones d’Alibaba Cloud (certaines versions de Wan) soumettent une tâche puis interrogent toutes les <code>2.5s</code>, avec un délai global de <code>120s</code> ; après expiration, la tâche continue en arrière-plan et reste consultable dans la console',
     pt: 'Os modelos assíncronos da Alibaba Cloud (algumas versões do Wan) enviam uma tarefa e depois consultam a cada <code>2.5s</code>, com tempo limite total de <code>120s</code>; após o limite, a tarefa continua em segundo plano e pode ser vista depois no console',
-    ru: 'Асинхронные модели Alibaba Cloud (некоторые версии Wan) сначала отправляют задачу, затем опрашивают её каждые <code>2.5s</code> с общим лимитом <code>120s</code>; после тайм-аута задача продолжает выполняться в фоне и доступна в консоли позже'
+    ru: 'Асинхронные модели Alibaba Cloud (некоторые версии Wan) сначала отправляют задачу, затем опрашивают её каждые <code>2.5s</code> с общим лимитом <code>120s</code>; после тайм-аута задача продолжает выполняться в фоне и доступна в консоли позже',
+    hi: 'Alibaba Cloud के अतुल्यकालिक मॉडल (कुछ Wan संस्करण) पहले कार्य सबमिट करते हैं फिर हर <code>2.5s</code> पर पोल करते हैं, कुल टाइमआउट <code>120s</code>; टाइमआउट के बाद कार्य पृष्ठभूमि में चलता रहता है और बाद में कंसोल में देखा जा सकता है',
+    id: 'Model asinkron Alibaba Cloud (beberapa versi Wan) mengirimkan tugas lalu melakukan polling setiap <code>2.5s</code>, dengan batas waktu total <code>120s</code>; setelah batas waktu, tugas tetap berjalan di latar belakang dan dapat dilihat nanti di konsol',
+    de: 'Asynchrone Modelle von Alibaba Cloud (einige Wan-Versionen) übermitteln eine Aufgabe und fragen dann alle <code>2.5s</code> ab, mit einem Gesamt-Timeout von <code>120s</code>; nach dem Timeout läuft die Aufgabe im Hintergrund weiter und kann später in der Konsole eingesehen werden',
+    vi: 'Các mô hình bất đồng bộ của Alibaba Cloud (một số phiên bản Wan) gửi tác vụ rồi thăm dò mỗi <code>2.5s</code>, với tổng thời gian chờ <code>120s</code>; sau khi hết thời gian, tác vụ vẫn chạy nền và có thể xem sau trong bảng điều khiển',
+    tr: 'Alibaba Cloud’un asenkron modelleri (bazı Wan sürümleri) bir görev gönderip her <code>2.5s</code>’de bir yoklar; toplam zaman aşımı <code>120s</code>’dir; zaman aşımından sonra görev arka planda çalışmaya devam eder ve daha sonra konsoldan görülebilir',
+    it: 'I modelli asincroni di Alibaba Cloud (alcune versioni di Wan) inviano un’attività e poi eseguono il polling ogni <code>2.5s</code>, con un timeout totale di <code>120s</code>; dopo il timeout l’attività continua in background e può essere consultata in seguito nella console'
   },
   runLi5: {
     zh: '并发生成时只保留<b>最新一次</b>的结果，旧请求返回后会被丢弃，不会覆盖新结果',
@@ -200,7 +296,13 @@ export const helpMessages = {
     ar: 'عند التوليد المتزامن يُحتفظ بـ<b>أحدث</b> نتيجة فقط، وتُهمَل استجابات الطلبات القديمة ولا تكتب فوق النتيجة الجديدة',
     fr: 'En cas de générations simultanées, seul le résultat <b>le plus récent</b> est conservé ; les anciennes réponses sont ignorées et n’écrasent pas la nouvelle',
     pt: 'Em gerações simultâneas, apenas o resultado <b>mais recente</b> é mantido; respostas antigas são descartadas e não sobrescrevem o novo',
-    ru: 'При параллельных генерациях сохраняется только <b>последний</b> результат; ответы старых запросов отбрасываются и не перезаписывают новый'
+    ru: 'При параллельных генерациях сохраняется только <b>последний</b> результат; ответы старых запросов отбрасываются и не перезаписывают новый',
+    hi: 'समवर्ती निर्माण में केवल <b>नवीनतम</b> परिणाम रखा जाता है; पुराने अनुरोधों के उत्तर हटा दिए जाते हैं और नए को अधिलेखित नहीं करते',
+    id: 'Pada pembuatan bersamaan, hanya hasil <b>terbaru</b> yang disimpan; respons lama dibuang dan tidak menimpa yang baru',
+    de: 'Bei gleichzeitiger Generierung wird nur das <b>jüngste</b> Ergebnis behalten; ältere Antworten werden verworfen und überschreiben das neue nicht',
+    vi: 'Khi tạo đồng thời, chỉ giữ lại kết quả <b>mới nhất</b>; các phản hồi cũ bị loại bỏ và không ghi đè kết quả mới',
+    tr: 'Eşzamanlı oluşturmada yalnızca <b>en son</b> sonuç saklanır; eski yanıtlar atılır ve yenisinin üzerine yazmaz',
+    it: 'Nelle generazioni simultanee viene conservato solo il risultato <b>più recente</b>; le risposte precedenti vengono scartate e non sovrascrivono quello nuovo'
   },
 
   // —— 输出与预览 ——
@@ -213,7 +315,13 @@ export const helpMessages = {
     ar: 'الإخراج والمعاينة',
     fr: 'Sortie et aperçu',
     pt: 'Saída e pré-visualização',
-    ru: 'Вывод и предпросмотр'
+    ru: 'Вывод и предпросмотр',
+    hi: 'आउटपुट और पूर्वावलोकन',
+    id: 'Keluaran & pratinjau',
+    de: 'Ausgabe und Vorschau',
+    vi: 'Đầu ra và xem trước',
+    tr: 'Çıkış ve önizleme',
+    it: 'Output e anteprima'
   },
   outputLi1: {
     zh: '生成成功后，预览区直接内联显示缩略图，同时从 <code>image</code> 端口把文件提交给下游',
@@ -224,7 +332,13 @@ export const helpMessages = {
     ar: 'بعد نجاح التوليد تعرض منطقة المعاينة الصورة المصغّرة مباشرة، ويُثبَّت الملف للعقد اللاحقة من منفذ <code>image</code>',
     fr: 'Après une génération réussie, l’aperçu affiche la miniature en ligne et le fichier est validé vers les nœuds en aval depuis le port <code>image</code>',
     pt: 'Após uma geração bem-sucedida, a pré-visualização mostra a miniatura embutida e o arquivo é confirmado aos nós seguintes pelo porto <code>image</code>',
-    ru: 'После успешной генерации область предпросмотра показывает миниатюру, а файл передаётся последующим узлам из порта <code>image</code>'
+    ru: 'После успешной генерации область предпросмотра показывает миниатюру, а файл передаётся последующим узлам из порта <code>image</code>',
+    hi: 'सफल निर्माण के बाद पूर्वावलोकन क्षेत्र थंबनेल को इनलाइन दिखाता है और फ़ाइल <code>image</code> पोर्ट से डाउनस्ट्रीम नोड्स को जमा कर दी जाती है',
+    id: 'Setelah pembuatan berhasil, area pratinjau menampilkan thumbnail secara inline dan berkas dikomit ke node hilir dari port <code>image</code>',
+    de: 'Nach einer erfolgreichen Generierung zeigt der Vorschaubereich das Vorschaubild inline an und die Datei wird über den <code>image</code>-Port an nachgelagerte Knoten übergeben',
+    vi: 'Sau khi tạo thành công, vùng xem trước hiển thị ảnh thu nhỏ ngay trong dòng và tệp được gửi tới các nút hạ nguồn từ cổng <code>image</code>',
+    tr: 'Başarılı bir oluşturmadan sonra önizleme alanı küçük resmi satır içi gösterir ve dosya <code>image</code> bağlantı noktasından aşağı akış düğümlerine iletilir',
+    it: 'Dopo una generazione riuscita l’area di anteprima mostra la miniatura in linea e il file viene confermato ai nodi a valle dalla porta <code>image</code>'
   },
   outputLi2: {
     zh: '各家接口可能返回 base64 或临时 URL；URL 有效期有限，节点会<b>立即下载</b>成文件再提交，不依赖外链',
@@ -235,7 +349,13 @@ export const helpMessages = {
     ar: 'قد تُعيد واجهات المزوّدين base64 أو رابطًا مؤقتًا؛ ولأن صلاحية الروابط محدودة، <b>تُنزّل العقدة الملف فورًا</b> ثم تثبّته، دون الاعتماد على رابط خارجي',
     fr: 'Les API peuvent renvoyer du base64 ou une URL temporaire ; les URL expirant, le nœud <b>télécharge immédiatement</b> pour créer un fichier local au lieu de dépendre du lien externe',
     pt: 'As APIs podem retornar base64 ou uma URL temporária; como as URLs expiram, o nó <b>baixa imediatamente</b> e confirma um arquivo local em vez de depender do link externo',
-    ru: 'API могут вернуть base64 или временную ссылку; поскольку ссылки истекают, узел <b>сразу скачивает</b> данные в локальный файл, не полагаясь на внешний URL'
+    ru: 'API могут вернуть base64 или временную ссылку; поскольку ссылки истекают, узел <b>сразу скачивает</b> данные в локальный файл, не полагаясь на внешний URL',
+    hi: 'API base64 या अस्थायी URL लौटा सकती हैं; URL की अवधि सीमित होने के कारण नोड <b>तुरंत डाउनलोड</b> करके स्थानीय फ़ाइल में बदल देता है, बाहरी लिंक पर निर्भर नहीं रहता',
+    id: 'API dapat mengembalikan base64 atau URL sementara; karena URL kedaluwarsa, node <b>langsung mengunduh</b> dan mengomit berkas lokal alih-alih bergantung pada tautan eksternal',
+    de: 'APIs können base64 oder eine temporäre URL zurückgeben; da URLs ablaufen, <b>lädt der Knoten sofort herunter</b> und übergibt eine lokale Datei, statt sich auf den externen Link zu verlassen',
+    vi: 'API có thể trả về base64 hoặc URL tạm thời; vì URL hết hạn, nút <b>tải xuống ngay</b> và ghi thành tệp cục bộ thay vì phụ thuộc vào liên kết ngoài',
+    tr: 'API’ler base64 veya geçici bir URL döndürebilir; URL’ler süresi dolduğu için düğüm <b>hemen indirir</b> ve harici bağlantıya güvenmek yerine yerel bir dosya iletir',
+    it: 'Le API possono restituire base64 o un URL temporaneo; poiché gli URL scadono, il nodo <b>scarica subito</b> e conferma un file locale invece di affidarsi al link esterno'
   },
   outputLi3: {
     zh: '失败时预览区转为红色并显示错误信息（如未配置 Key、请求失败、生成超时）',
@@ -246,7 +366,13 @@ export const helpMessages = {
     ar: 'عند الفشل تتحوّل منطقة المعاينة إلى الأحمر وتعرض رسالة الخطأ (مثل عدم ضبط المفتاح، أو فشل الطلب، أو انتهاء مهلة التوليد)',
     fr: 'En cas d’échec, l’aperçu passe au rouge et affiche l’erreur (clé non configurée, échec de la requête, délai de génération dépassé, etc.)',
     pt: 'Em caso de falha, a pré-visualização fica vermelha e mostra o erro (ex.: chave não configurada, falha na requisição, tempo de geração esgotado)',
-    ru: 'При ошибке область предпросмотра становится красной и показывает сообщение (например, ключ не настроен, запрос не удался, превышено время генерации)'
+    ru: 'При ошибке область предпросмотра становится красной и показывает сообщение (например, ключ не настроен, запрос не удался, превышено время генерации)',
+    hi: 'विफलता पर पूर्वावलोकन क्षेत्र लाल हो जाता है और त्रुटि दिखाता है (जैसे Key कॉन्फ़िगर नहीं है, अनुरोध विफल, निर्माण का समय समाप्त)',
+    id: 'Saat gagal, area pratinjau menjadi merah dan menampilkan kesalahan (mis. key belum dikonfigurasi, permintaan gagal, waktu pembuatan habis)',
+    de: 'Bei einem Fehler wird der Vorschaubereich rot und zeigt die Fehlermeldung an (z. B. Key nicht konfiguriert, Anfrage fehlgeschlagen, Zeitüberschreitung bei der Generierung)',
+    vi: 'Khi thất bại, vùng xem trước chuyển sang màu đỏ và hiển thị lỗi (ví dụ chưa cấu hình Key, yêu cầu thất bại, hết thời gian tạo)',
+    tr: 'Hata durumunda önizleme alanı kırmızıya döner ve hatayı gösterir (örn. anahtar yapılandırılmamış, istek başarısız, oluşturma zaman aşımı)',
+    it: 'In caso di errore l’area di anteprima diventa rossa e mostra l’errore (ad es. chiave non configurata, richiesta non riuscita, timeout della generazione)'
   },
 
   // —— 注意事项 ——
@@ -259,7 +385,13 @@ export const helpMessages = {
     ar: 'ملاحظات',
     fr: 'Remarques',
     pt: 'Observações',
-    ru: 'Примечания'
+    ru: 'Примечания',
+    hi: 'ध्यान देने योग्य बातें',
+    id: 'Catatan',
+    de: 'Hinweise',
+    vi: 'Lưu ý',
+    tr: 'Notlar',
+    it: 'Note'
   },
   notesLi1: {
     zh: '未配置 Key 或 Key 无效时会直接报错并提示先配置，不会产生输出',
@@ -270,7 +402,13 @@ export const helpMessages = {
     ar: 'إذا لم يُضبط المفتاح أو كان غير صالح فسيظهر خطأ يطلب ضبطه أولًا، ولن ينتج أي إخراج',
     fr: 'Si aucune clé n’est configurée ou si elle est invalide, une erreur demande de la configurer ; aucune sortie n’est produite',
     pt: 'Se não houver chave ou ela for inválida, ocorre um erro pedindo para configurá-la; nenhuma saída é gerada',
-    ru: 'Если ключ не настроен или недействителен, возникает ошибка с просьбой настроить его; вывода не будет'
+    ru: 'Если ключ не настроен или недействителен, возникает ошибка с просьбой настроить его; вывода не будет',
+    hi: 'यदि Key कॉन्फ़िगर नहीं है या अमान्य है, तो त्रुटि होती है और पहले इसे कॉन्फ़िगर करने को कहा जाता है; कोई आउटपुट नहीं बनता',
+    id: 'Jika key tidak dikonfigurasi atau tidak valid, terjadi kesalahan yang meminta mengonfigurasinya lebih dulu; tidak ada keluaran yang dihasilkan',
+    de: 'Wenn kein Key konfiguriert oder der Key ungültig ist, tritt ein Fehler auf und es wird gebeten, einen zu konfigurieren; es wird keine Ausgabe erzeugt',
+    vi: 'Nếu chưa cấu hình Key hoặc Key không hợp lệ, sẽ báo lỗi và yêu cầu cấu hình trước; không tạo ra đầu ra nào',
+    tr: 'Key yapılandırılmamışsa veya geçersizse hata verir ve önce yapılandırmanızı ister; hiçbir çıkış üretilmez',
+    it: 'Se nessuna chiave è configurata o la chiave non è valida, viene generato un errore che invita a configurarla; non viene prodotto alcun output'
   },
   notesLi2: {
     zh: '本节点不接收文件拖入，拖放文件到节点上不会生效',
@@ -281,7 +419,13 @@ export const helpMessages = {
     ar: 'لا تقبل هذه العقدة إفلات الملفات؛ وإفلات ملف عليها لا يؤثر',
     fr: 'Ce nœud n’accepte pas le dépôt de fichiers ; déposer un fichier dessus n’a aucun effet',
     pt: 'Este nó não aceita arquivos arrastados; soltar um arquivo sobre ele não faz nada',
-    ru: 'Этот узел не принимает перетаскивание файлов; перетаскивание файла на него ничего не делает'
+    ru: 'Этот узел не принимает перетаскивание файлов; перетаскивание файла на него ничего не делает',
+    hi: 'यह नोड फ़ाइल ड्रॉप स्वीकार नहीं करता; इस पर फ़ाइल छोड़ने से कुछ नहीं होगा',
+    id: 'Node ini tidak menerima berkas yang diseret; menyeret berkas ke atasnya tidak berpengaruh',
+    de: 'Dieser Knoten akzeptiert keine abgelegten Dateien; das Ablegen einer Datei darauf hat keine Wirkung',
+    vi: 'Nút này không nhận tệp kéo thả; kéo thả tệp lên nó không có tác dụng',
+    tr: 'Bu düğüm dosya bırakmayı kabul etmez; üzerine dosya bırakmanın etkisi yoktur',
+    it: 'Questo nodo non accetta il trascinamento di file; trascinare un file su di esso non ha effetto'
   },
   notesLi3: {
     zh: '生成结果是<b>本地文件对象</b>，不会随节点状态保存；重新打开工程后需再次点击生成',
@@ -292,7 +436,13 @@ export const helpMessages = {
     ar: 'النتيجة <b>كائن ملف محلي</b> ولا تُحفظ مع حالة العقدة؛ وعليك التوليد من جديد بعد إعادة فتح المشروع',
     fr: 'Le résultat est un <b>objet fichier local</b> qui n’est pas enregistré avec l’état du nœud ; il faut régénérer après avoir rouvert le projet',
     pt: 'O resultado é um <b>objeto de arquivo local</b> e não é salvo com o estado do nó; é preciso gerar de novo ao reabrir o projeto',
-    ru: 'Результат — это <b>локальный файловый объект</b>, он не сохраняется вместе с состоянием узла; после повторного открытия проекта нужно сгенерировать снова'
+    ru: 'Результат — это <b>локальный файловый объект</b>, он не сохраняется вместе с состоянием узла; после повторного открытия проекта нужно сгенерировать снова',
+    hi: 'परिणाम एक <b>स्थानीय फ़ाइल ऑब्जेक्ट</b> है और नोड की स्थिति के साथ सहेजा नहीं जाता; प्रोजेक्ट दोबारा खोलने पर फिर से बनाना होगा',
+    id: 'Hasilnya adalah <b>objek berkas lokal</b> dan tidak disimpan bersama status node; Anda harus membuat lagi setelah membuka ulang proyek',
+    de: 'Das Ergebnis ist ein <b>lokales Dateiobjekt</b> und wird nicht mit dem Knotenzustand gespeichert; nach dem erneuten Öffnen des Projekts muss erneut generiert werden',
+    vi: 'Kết quả là một <b>đối tượng tệp cục bộ</b> và không được lưu cùng trạng thái nút; phải tạo lại sau khi mở lại dự án',
+    tr: 'Sonuç bir <b>yerel dosya nesnesidir</b> ve düğüm durumuyla birlikte kaydedilmez; projeyi yeniden açtıktan sonra yeniden oluşturmanız gerekir',
+    it: 'Il risultato è un <b>oggetto file locale</b> e non viene salvato con lo stato del nodo; è necessario generare di nuovo dopo aver riaperto il progetto'
   },
   notesLi4: {
     zh: '输出的是图片文件类型，可直接连接到图片预览、压缩、文件夹等下游节点',
@@ -303,6 +453,12 @@ export const helpMessages = {
     ar: 'الإخراج من نوع ملف صورة، ويمكن توصيله مباشرة بالعقد اللاحقة كمعاينة الصور أو الضغط أو المجلد',
     fr: 'La sortie est une valeur de type fichier image, connectable directement aux nœuds en aval comme aperçu d’image, compression ou dossier',
     pt: 'A saída é um valor do tipo arquivo de imagem e pode ser conectada diretamente a nós seguintes como pré-visualização, compressão ou pasta',
-    ru: 'Выход — значение типа «файл изображения», его можно напрямую подключать к последующим узлам вроде предпросмотра, сжатия или папки'
+    ru: 'Выход — значение типа «файл изображения», его можно напрямую подключать к последующим узлам вроде предпросмотра, сжатия или папки',
+    hi: 'आउटपुट छवि फ़ाइल प्रकार का मान है और इसे सीधे डाउनस्ट्रीम छवि पूर्वावलोकन, संपीड़न, फ़ोल्डर आदि नोड्स से जोड़ा जा सकता है',
+    id: 'Keluarannya adalah nilai bertipe berkas gambar dan dapat langsung tersambung ke node hilir seperti pratinjau gambar, kompres, atau folder',
+    de: 'Die Ausgabe ist ein Wert vom Typ Bilddatei und kann direkt mit nachgelagerten Knoten wie Bildvorschau, Komprimierung oder Ordner verbunden werden',
+    vi: 'Đầu ra là giá trị kiểu tệp ảnh và có thể kết nối trực tiếp tới các nút hạ nguồn như xem trước ảnh, nén hoặc thư mục',
+    tr: 'Çıkış, görüntü dosyası türünde bir değerdir ve görüntü önizleme, sıkıştırma veya klasör gibi aşağı akış düğümlerine doğrudan bağlanabilir',
+    it: 'L’output è un valore di tipo file immagine e può essere collegato direttamente ai nodi a valle come anteprima immagine, compressione o cartella'
   }
 } satisfies Record<string, LocalizedText>

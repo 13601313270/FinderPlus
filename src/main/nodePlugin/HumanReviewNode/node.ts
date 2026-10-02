@@ -33,7 +33,13 @@ export class HumanReviewNode extends Node {
       ar: 'إدخال',
       fr: 'Entrée',
       pt: 'Entrada',
-      ru: 'Ввод'
+      ru: 'Ввод',
+      hi: 'इनपुट',
+      id: 'Masukan',
+      de: 'Eingabe',
+      vi: 'Đầu vào',
+      tr: 'Giriş',
+      it: 'Input'
     }
   })
 
@@ -142,7 +148,13 @@ export class HumanReviewNode extends Node {
       ar: 'موافقة',
       fr: 'Approuver',
       pt: 'Aprovar',
-      ru: 'Одобрить'
+      ru: 'Одобрить',
+      hi: 'स्वीकारें',
+      id: 'Setujui',
+      de: 'Genehmigen',
+      vi: 'Chấp thuận',
+      tr: 'Onayla',
+      it: 'Approva'
     })
     this.rejectOutput = new OutputPort('reject', valueClass, {
       zh: '拒绝',
@@ -153,7 +165,13 @@ export class HumanReviewNode extends Node {
       ar: 'رفض',
       fr: 'Rejeter',
       pt: 'Rejeitar',
-      ru: 'Отклонить'
+      ru: 'Отклонить',
+      hi: 'अस्वीकारें',
+      id: 'Tolak',
+      de: 'Ablehnen',
+      vi: 'Từ chối',
+      tr: 'Reddet',
+      it: 'Rifiuta'
     })
     this.addOutput(this.approveOutput)
     this.addOutput(this.rejectOutput)

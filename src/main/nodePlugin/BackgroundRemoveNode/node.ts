@@ -37,7 +37,13 @@ export class BackgroundRemoveNode extends Node {
       ar: 'صورة',
       fr: 'Image',
       pt: 'Imagem',
-      ru: 'Изображение'
+      ru: 'Изображение',
+      hi: 'छवि',
+      id: 'Gambar',
+      de: 'Bild',
+      vi: 'Ảnh',
+      tr: 'Görüntü',
+      it: 'Immagine'
     }
   })
 
@@ -51,7 +57,13 @@ export class BackgroundRemoveNode extends Node {
     ar: 'صورة بدون خلفية',
     fr: 'Image sans arrière-plan',
     pt: 'Imagem sem fundo',
-    ru: 'Изображение без фона'
+    ru: 'Изображение без фона',
+    hi: 'पृष्ठभूमि हटाई छवि',
+    id: 'Gambar tanpa latar',
+    de: 'Bild ohne Hintergrund',
+    vi: 'Ảnh đã xóa nền',
+    tr: 'Arka planı kaldırılmış görüntü',
+    it: 'Immagine senza sfondo'
   })
 
   /** 本次要处理的源节点 id（拖入路径的触发信号）。一次拖入只处理一次，处理完清空 */

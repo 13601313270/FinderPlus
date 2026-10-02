@@ -52,7 +52,13 @@ export abstract class FileNode extends Node {
     ar: 'مسار',
     fr: 'Chemin',
     pt: 'Caminho',
-    ru: 'Путь'
+    ru: 'Путь',
+    hi: 'पथ',
+    id: 'Jalur',
+    de: 'Pfad',
+    vi: 'Đường dẫn',
+    tr: 'Yol',
+    it: 'Percorso'
   })
 
   /** 文件数据输入端口。accepts 因文件类型而异，由子类声明后经 bindFileInput 注册 */

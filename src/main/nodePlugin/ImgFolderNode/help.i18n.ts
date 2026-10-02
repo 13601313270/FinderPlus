@@ -1,7 +1,7 @@
 import type { LocalizedText } from '../../../shared/language'
 
 /**
- * ImgFolder 节点帮助文档（ImgFolderHelpDialog）的全部文案，9 种语言全配。
+ * ImgFolder 节点帮助文档（ImgFolderHelpDialog）的全部文案，全部 15 种语言全配。
  *
  * 与节点自身的 i18n.ts 分开：卡片短文案变化频繁，帮助文档整篇体量大、改动少。
  * 约定：带行内 <code> / <b> 的句子，值里直接写 HTML，模板用 v-html 渲染；
@@ -18,7 +18,13 @@ export const helpMessages = {
     ar: 'ما هذا؟',
     fr: 'Qu’est-ce que c’est ?',
     pt: 'O que é isto?',
-    ru: 'Что это?'
+    ru: 'Что это?',
+    hi: 'यह क्या है?',
+    id: 'Apa ini?',
+    de: 'Was ist das?',
+    vi: 'Đây là gì?',
+    tr: 'Bu nedir?',
+    it: 'Cos’è questo?'
   },
   whatBody: {
     zh: '图片文件夹节点把多张图片收纳进一个<b>缩略图网格</b>：点格可选、右键出菜单、还能把图片拖回画布。当前选中的那张图片会从右侧 <code>image</code> 端口输出给下游节点。',
@@ -29,7 +35,13 @@ export const helpMessages = {
     ar: 'تجمع عقدة مجلد الصور عدة صور في <b>شبكة مصغّرات</b>: انقر على خلية لتحديدها، أو انقر بزر الفأرة الأيمن لفتح قائمة، ويمكنك سحب الصور مرة أخرى إلى اللوحة. تُخرَج الصورة المحدّدة حاليًا إلى العقد اللاحقة من منفذ <code>image</code> على اليمين.',
     fr: 'Le nœud Dossier d’images rassemble plusieurs images dans une <b>grille de vignettes</b> : cliquez sur une case pour la sélectionner, faites un clic droit pour un menu et faites glisser les images vers le canevas. L’image sélectionnée est envoyée aux nœuds en aval depuis le port <code>image</code> à droite.',
     pt: 'O nó Pasta de imagens reúne várias imagens em uma <b>grade de miniaturas</b>: clique em uma célula para selecionar, clique com o botão direito para um menu e arraste imagens de volta ao quadro. A imagem selecionada é enviada aos nós seguintes pelo porto <code>image</code> à direita.',
-    ru: 'Узел «Папка изображений» собирает несколько изображений в <b>сетку миниатюр</b>: щёлкните ячейку, чтобы выбрать, нажмите правой кнопкой для меню и перетащите изображения обратно на холст. Выбранное изображение выводится последующим узлам из порта <code>image</code> справа.'
+    ru: 'Узел «Папка изображений» собирает несколько изображений в <b>сетку миниатюр</b>: щёлкните ячейку, чтобы выбрать, нажмите правой кнопкой для меню и перетащите изображения обратно на холст. Выбранное изображение выводится последующим узлам из порта <code>image</code> справа.',
+    hi: 'छवि फ़ोल्डर नोड कई छवियों को एक <b>थंबनेल ग्रिड</b> में समेटता है: सेल पर क्लिक करके चुनें, मेन्यू के लिए राइट-क्लिक करें, और छवियों को वापस कैनवास पर खींच सकते हैं। वर्तमान में चयनित छवि दाईं ओर के <code>image</code> पोर्ट से डाउनस्ट्रीम नोड्स को भेजी जाती है।',
+    id: 'Node Folder Gambar mengumpulkan beberapa gambar ke dalam <b>kisi thumbnail</b>: klik sel untuk memilih, klik kanan untuk menu, dan seret gambar kembali ke kanvas. Gambar yang sedang dipilih dikirim ke node hilir dari port <code>image</code> di sebelah kanan.',
+    de: 'Der Knoten „Bildordner“ sammelt mehrere Bilder in einem <b>Miniaturansicht-Raster</b>: Klicke auf eine Zelle zum Auswählen, rechtsklicke für ein Menü und ziehe Bilder zurück auf die Leinwand. Das aktuell ausgewählte Bild wird über den Port <code>image</code> rechts an nachgelagerte Knoten ausgegeben.',
+    vi: 'Nút Thư mục ảnh gom nhiều ảnh vào một <b>lưới hình thu nhỏ</b>: nhấp vào ô để chọn, nhấp chuột phải để mở menu và kéo ảnh trở lại canvas. Ảnh đang được chọn sẽ được xuất từ cổng <code>image</code> bên phải tới các nút hạ nguồn.',
+    tr: 'Görüntü Klasörü düğümü birkaç görüntüyü bir <b>küçük resim ızgarasında</b> toplar: seçmek için bir hücreye tıklayın, menü için sağ tıklayın ve görüntüleri tuvale geri sürükleyin. Şu anda seçili görüntü, sağdaki <code>image</code> bağlantı noktasından aşağı akış düğümlerine gönderilir.',
+    it: 'Il nodo Cartella immagini raccoglie più immagini in una <b>griglia di miniature</b>: fai clic su una cella per selezionarla, fai clic destro per un menu e trascina le immagini di nuovo sulla tela. L’immagine attualmente selezionata viene inviata ai nodi a valle dalla porta <code>image</code> a destra.'
   },
 
   // —— 怎么用 ——
@@ -42,7 +54,13 @@ export const helpMessages = {
     ar: 'كيفية الاستخدام',
     fr: 'Utilisation',
     pt: 'Como usar',
-    ru: 'Как использовать'
+    ru: 'Как использовать',
+    hi: 'उपयोग कैसे करें',
+    id: 'Cara pakai',
+    de: 'Verwendung',
+    vi: 'Cách sử dụng',
+    tr: 'Nasıl kullanılır',
+    it: 'Come si usa'
   },
   useLi1: {
     zh: '<b>点一下</b>任意格子即切换选中；选中的格子高亮，右下角显示它的文件名',
@@ -53,7 +71,13 @@ export const helpMessages = {
     ar: '<b>انقر</b> على أي خلية لتغيير التحديد؛ تُبرَز الخلية المحدّدة ويظهر اسم ملفها في أسفل اليمين',
     fr: '<b>Cliquez</b> sur une case pour changer la sélection ; la case choisie est mise en surbrillance et son nom de fichier s’affiche en bas à droite',
     pt: '<b>Clique</b> em qualquer célula para mudar a seleção; a célula escolhida fica destacada e o nome do arquivo aparece no canto inferior direito',
-    ru: '<b>Щёлкните</b> любую ячейку, чтобы сменить выбор; выбранная ячейка подсвечивается, а её имя файла показывается внизу справа'
+    ru: '<b>Щёлкните</b> любую ячейку, чтобы сменить выбор; выбранная ячейка подсвечивается, а её имя файла показывается внизу справа',
+    hi: '<b>क्लिक करें</b> किसी भी सेल पर चयन बदलने के लिए; चयनित सेल हाइलाइट होती है और उसका फ़ाइल नाम नीचे दाईं ओर दिखता है',
+    id: '<b>Klik</b> sel mana pun untuk mengubah pilihan; sel terpilih disorot dan nama berkasnya tampil di kanan bawah',
+    de: '<b>Klicke</b> auf eine beliebige Zelle, um die Auswahl zu wechseln; die ausgewählte Zelle wird hervorgehoben und ihr Dateiname erscheint unten rechts',
+    vi: '<b>Nhấp</b> vào bất kỳ ô nào để chuyển lựa chọn; ô được chọn sẽ được tô sáng và tên tệp hiển thị ở góc dưới bên phải',
+    tr: '<b>Tıkla</b> herhangi bir hücreye seçimi değiştirmek için; seçili hücre vurgulanır ve dosya adı sağ altta görünür',
+    it: '<b>Fai clic</b> su una cella qualsiasi per cambiare la selezione; la cella selezionata è evidenziata e il suo nome file compare in basso a destra'
   },
   useLi2: {
     zh: '<b>右键</b>格子会弹出该图片节点自己的菜单（重命名、删除等）',
@@ -64,7 +88,13 @@ export const helpMessages = {
     ar: 'يؤدي <b>النقر بزر الفأرة الأيمن</b> على خلية إلى فتح قائمة عقدة الصورة نفسها (إعادة التسمية، الحذف، إلخ)',
     fr: '<b>Un clic droit</b> sur une case ouvre le menu propre à ce nœud image (renommer, supprimer, etc.)',
     pt: '<b>Clique com o botão direito</b> em uma célula para abrir o menu do próprio nó de imagem (renomear, excluir etc.)',
-    ru: '<b>Правый клик</b> по ячейке открывает собственное меню этого узла изображения (переименование, удаление и т. п.)'
+    ru: '<b>Правый клик</b> по ячейке открывает собственное меню этого узла изображения (переименование, удаление и т. п.)',
+    hi: '<b>राइट-क्लिक</b> करने पर उस छवि नोड का अपना मेन्यू खुलता है (नाम बदलें, हटाएँ, आदि)',
+    id: '<b>Klik kanan</b> pada sel untuk membuka menu node gambar itu sendiri (ganti nama, hapus, dll.)',
+    de: '<b>Rechtsklick</b> auf eine Zelle öffnet das eigene Menü dieses Bildknotens (Umbenennen, Löschen usw.)',
+    vi: '<b>Nhấp chuột phải</b> vào ô để mở menu riêng của nút ảnh đó (đổi tên, xóa, v.v.)',
+    tr: '<b>Sağ tıkla</b> bir hücreye o görüntü düğümünün kendi menüsünü açar (yeniden adlandır, sil vb.)',
+    it: '<b>Fai clic destro</b> su una cella per aprire il menu del nodo immagine stesso (rinomina, elimina ecc.)'
   },
   useLi3: {
     zh: '<b>拖动</b>格子可移动图片；拖到文件夹外松手就把它释放回画布，成为独立的图片节点',
@@ -75,7 +105,13 @@ export const helpMessages = {
     ar: '<b>اسحب</b> الخلية لتحريك الصورة؛ وإذا أفلتها خارج المجلد فستعود إلى اللوحة كعقدة صورة مستقلة',
     fr: '<b>Faites glisser</b> une case pour déplacer l’image ; relâchez-la hors du dossier pour la reposer sur le canevas en tant que nœud image indépendant',
     pt: '<b>Arraste</b> uma célula para mover a imagem; solte-a fora da pasta para devolvê-la ao quadro como um nó de imagem independente',
-    ru: '<b>Перетащите</b> ячейку, чтобы переместить изображение; отпустите за пределами папки, чтобы вернуть его на холст как отдельный узел изображения'
+    ru: '<b>Перетащите</b> ячейку, чтобы переместить изображение; отпустите за пределами папки, чтобы вернуть его на холст как отдельный узел изображения',
+    hi: '<b>खींचें</b> सेल को छवि हिलाने के लिए; फ़ोल्डर के बाहर छोड़ने पर यह कैनवास पर एक स्वतंत्र छवि नोड के रूप में वापस आ जाती है',
+    id: '<b>Seret</b> sel untuk memindahkan gambar; lepaskan di luar folder untuk mengembalikannya ke kanvas sebagai node gambar mandiri',
+    de: '<b>Ziehe</b> eine Zelle, um das Bild zu verschieben; lässt du es außerhalb des Ordners los, kehrt es als eigenständiger Bildknoten auf die Leinwand zurück',
+    vi: '<b>Kéo</b> ô để di chuyển ảnh; thả ra ngoài thư mục để đưa nó trở lại canvas thành một nút ảnh độc lập',
+    tr: '<b>Sürükle</b> bir hücreyi görüntüyü taşımak için; klasörün dışında bıraktığında bağımsız bir görüntü düğümü olarak tuvale geri döner',
+    it: '<b>Trascina</b> una cella per spostare l’immagine; rilasciandola fuori dalla cartella torna sulla tela come nodo immagine indipendente'
   },
   useLi4: {
     zh: '<b>按住顶部横栏</b>拖动可整体移动文件夹（横栏是移动整个文件夹的唯一手柄）',
@@ -86,7 +122,13 @@ export const helpMessages = {
     ar: '<b>اضغط مع السحب على الشريط العلوي</b> لتحريك المجلد بأكمله (الشريط هو المقبض الوحيد لتحريك المجلد)',
     fr: '<b>Maintenez et faites glisser la barre du haut</b> pour déplacer tout le dossier (la barre est la seule poignée pour déplacer le dossier)',
     pt: '<b>Pressione e arraste a barra superior</b> para mover a pasta inteira (a barra é a única alça para mover a pasta)',
-    ru: '<b>Зажмите и перетащите верхнюю панель</b>, чтобы переместить всю папку (панель — единственный маркер для перемещения папки)'
+    ru: '<b>Зажмите и перетащите верхнюю панель</b>, чтобы переместить всю папку (панель — единственный маркер для перемещения папки)',
+    hi: '<b>ऊपरी पट्टी दबाकर खींचें</b> पूरे फ़ोल्डर को हिलाने के लिए (पट्टी ही पूरे फ़ोल्डर को हिलाने का एकमात्र हैंडल है)',
+    id: '<b>Tekan dan seret bilah atas</b> untuk memindahkan seluruh folder (bilah ini satu-satunya gagang untuk memindahkan folder)',
+    de: '<b>Obere Leiste gedrückt halten und ziehen</b>, um den ganzen Ordner zu verschieben (die Leiste ist der einzige Griff zum Verschieben des Ordners)',
+    vi: '<b>Giữ và kéo thanh trên cùng</b> để di chuyển toàn bộ thư mục (thanh này là tay cầm duy nhất để di chuyển thư mục)',
+    tr: '<b>Üst çubuğu basılı tutup sürükle</b> tüm klasörü taşımak için (çubuk, klasörü taşımak için tek tutamaçtır)',
+    it: '<b>Tieni premuta e trascina la barra superiore</b> per spostare l’intera cartella (la barra è l’unica maniglia per spostare la cartella)'
   },
 
   // —— 说明 ——
@@ -99,7 +141,13 @@ export const helpMessages = {
     ar: 'ملاحظات',
     fr: 'Remarques',
     pt: 'Observações',
-    ru: 'Примечания'
+    ru: 'Примечания',
+    hi: 'नोट्स',
+    id: 'Catatan',
+    de: 'Hinweise',
+    vi: 'Ghi chú',
+    tr: 'Notlar',
+    it: 'Note'
   },
   notesLi1: {
     zh: '文件夹只接受<b>图片</b>——节点拖入、文件拖入、端口收值三条入口都限定为图片',
@@ -110,7 +158,13 @@ export const helpMessages = {
     ar: 'لا يقبل المجلد سوى <b>الصور</b> — المداخل الثلاثة (إفلات عقدة، إفلات ملف، استقبال قيمة عبر منفذ) كلها مقصورة على الصور',
     fr: 'Le dossier n’accepte que des <b>images</b> : les trois entrées (dépôt d’un nœud, dépôt d’un fichier, réception d’une valeur de port) sont limitées aux images',
     pt: 'A pasta aceita apenas <b>imagens</b> — as três entradas (soltar um nó, soltar um arquivo, receber um valor por porto) são restritas a imagens',
-    ru: 'Папка принимает только <b>изображения</b> — все три входа (перетаскивание узла, перетаскивание файла, приём значения через порт) ограничены изображениями'
+    ru: 'Папка принимает только <b>изображения</b> — все три входа (перетаскивание узла, перетаскивание файла, приём значения через порт) ограничены изображениями',
+    hi: 'फ़ोल्डर केवल <b>छवियाँ</b> स्वीकार करता है — नोड खींचना, फ़ाइल खींचना और पोर्ट से मान प्राप्त करना, तीनों प्रवेश बिंदु छवियों तक सीमित हैं',
+    id: 'Folder hanya menerima <b>gambar</b> — ketiga jalur masuk (menjatuhkan node, menjatuhkan berkas, menerima nilai port) dibatasi untuk gambar',
+    de: 'Der Ordner akzeptiert nur <b>Bilder</b> — alle drei Eingänge (Knoten ablegen, Datei ablegen, Wert über Port empfangen) sind auf Bilder beschränkt',
+    vi: 'Thư mục chỉ chấp nhận <b>ảnh</b> — cả ba lối vào (kéo thả nút, kéo thả tệp, nhận giá trị qua cổng) đều giới hạn ở ảnh',
+    tr: 'Klasör yalnızca <b>görüntüleri</b> kabul eder — üç giriş yolu da (düğüm bırakma, dosya bırakma, bağlantı noktasından değer alma) görüntülerle sınırlıdır',
+    it: 'La cartella accetta solo <b>immagini</b> — tutti e tre gli ingressi (rilascio di un nodo, rilascio di un file, ricezione di un valore da porta) sono limitati alle immagini'
   },
   notesLi2: {
     zh: '第一张被收纳的图片会自动选中；选中项被移出后自动回退到下一张，一张都不剩就清空右侧输出',
@@ -121,7 +175,13 @@ export const helpMessages = {
     ar: 'تُحدَّد الصورة الأولى المُضافة تلقائيًا؛ وإذا أُزيلت المحدّدة ينتقل التحديد إلى الصورة التالية، وإن لم تبقَ أي صورة يُفرَّغ الإخراج على اليمين',
     fr: 'La première image ajoutée est sélectionnée automatiquement ; si celle qui est sélectionnée est retirée, la sélection passe à l’image suivante, et la sortie à droite se vide s’il n’en reste aucune',
     pt: 'A primeira imagem adicionada é selecionada automaticamente; se a selecionada for removida, a seleção passa para a próxima imagem e, se não sobrar nenhuma, a saída à direita é esvaziada',
-    ru: 'Первое добавленное изображение выбирается автоматически; если выбранное убрать, выбор переходит к следующему изображению, а если не останется ни одного — правый выход очищается'
+    ru: 'Первое добавленное изображение выбирается автоматически; если выбранное убрать, выбор переходит к следующему изображению, а если не останется ни одного — правый выход очищается',
+    hi: 'पहली जोड़ी गई छवि स्वतः चयनित होती है; चयनित छवि हटने पर चयन अगली छवि पर चला जाता है, और यदि एक भी न बचे तो दाईं ओर का आउटपुट खाली हो जाता है',
+    id: 'Gambar pertama yang ditambahkan dipilih otomatis; jika yang dipilih dihapus, pilihan berpindah ke gambar berikutnya, dan jika tidak ada yang tersisa keluaran kanan dikosongkan',
+    de: 'Das erste hinzugefügte Bild wird automatisch ausgewählt; wird das ausgewählte entfernt, springt die Auswahl zum nächsten Bild, und wenn keines übrig bleibt, wird die Ausgabe rechts geleert',
+    vi: 'Ảnh đầu tiên được thêm sẽ tự động được chọn; nếu ảnh đang chọn bị xóa, lựa chọn chuyển sang ảnh tiếp theo, và nếu không còn ảnh nào thì đầu ra bên phải sẽ trống',
+    tr: 'Eklenen ilk görüntü otomatik olarak seçilir; seçili olan kaldırılırsa seçim bir sonraki görüntüye geçer ve hiç kalmazsa sağdaki çıkış boşaltılır',
+    it: 'La prima immagine aggiunta viene selezionata automaticamente; se quella selezionata viene rimossa, la selezione passa all’immagine successiva e, se non ne resta nessuna, l’output a destra viene svuotato'
   },
   notesLi3: {
     zh: '选中的图片通过右侧 <code>image</code> 端口输出，下游连边即可拿到「当前选中的图」；选中图片被替换或异步读回后，输出会自动更新',
@@ -132,7 +192,13 @@ export const helpMessages = {
     ar: 'تُخرَج الصورة المحدّدة من منفذ <code>image</code> على اليمين، لذا يحصل أي اتصال لاحق على «الصورة المحدّدة حاليًا»؛ وإذا استُبدلت هذه الصورة أو أُعيد قراءتها بشكل غير متزامن، يتحدّث الإخراج تلقائيًا',
     fr: 'L’image sélectionnée est émise par le port <code>image</code> à droite : une connexion en aval reçoit donc « l’image actuellement sélectionnée » ; si cette image est remplacée ou relue de façon asynchrone, la sortie se met à jour automatiquement',
     pt: 'A imagem selecionada é enviada pelo porto <code>image</code> à direita, então uma conexão seguinte recebe a “imagem selecionada no momento”; se essa imagem for substituída ou relida de forma assíncrona, a saída é atualizada automaticamente',
-    ru: 'Выбранное изображение выводится из порта <code>image</code> справа, поэтому соединение далее получает «текущее выбранное изображение»; если оно будет заменено или асинхронно перечитано, выход обновится автоматически'
+    ru: 'Выбранное изображение выводится из порта <code>image</code> справа, поэтому соединение далее получает «текущее выбранное изображение»; если оно будет заменено или асинхронно перечитано, выход обновится автоматически',
+    hi: 'चयनित छवि दाईं ओर के <code>image</code> पोर्ट से आउटपुट होती है, इसलिए डाउनस्ट्रीम किनारा जोड़ने पर «वर्तमान में चयनित छवि» मिलती है; चयनित छवि बदलने या एसिंक्रोनस रूप से फिर से पढ़े जाने पर आउटपुट स्वतः अपडेट हो जाता है',
+    id: 'Gambar terpilih dikirim dari port <code>image</code> di sebelah kanan, sehingga sambungan hilir menerima “gambar yang sedang dipilih”; jika gambar itu diganti atau dibaca ulang secara asinkron, keluaran diperbarui otomatis',
+    de: 'Das ausgewählte Bild wird über den Port <code>image</code> rechts ausgegeben, sodass eine nachgelagerte Verbindung das „aktuell ausgewählte Bild“ erhält; wird dieses Bild ersetzt oder asynchron neu eingelesen, aktualisiert sich die Ausgabe automatisch',
+    vi: 'Ảnh đã chọn được xuất qua cổng <code>image</code> bên phải, nên một kết nối hạ nguồn sẽ nhận được “ảnh đang được chọn”; nếu ảnh đó bị thay thế hoặc được đọc lại bất đồng bộ, đầu ra sẽ tự động cập nhật',
+    tr: 'Seçili görüntü sağdaki <code>image</code> bağlantı noktasından çıkar, böylece aşağı akıştaki bir bağlantı “şu anda seçili görüntüyü” alır; bu görüntü değiştirilir veya eşzamansız olarak yeniden okunursa çıkış otomatik güncellenir',
+    it: 'L’immagine selezionata viene emessa dalla porta <code>image</code> a destra, così una connessione a valle riceve la “immagine attualmente selezionata”; se quell’immagine viene sostituita o riletta in modo asincrono, l’output si aggiorna automaticamente'
   },
   notesLi4: {
     zh: '拖动右下角的手柄可调整文件夹大小（最小 2×2 格）',
@@ -143,7 +209,13 @@ export const helpMessages = {
     ar: 'اسحب المقبض في الزاوية السفلية اليمنى لتغيير حجم المجلد (الحد الأدنى 2×2)',
     fr: 'Faites glisser la poignée en bas à droite pour redimensionner le dossier (min. 2×2)',
     pt: 'Arraste a alça no canto inferior direito para redimensionar a pasta (mín. 2×2)',
-    ru: 'Перетащите маркер в правом нижнем углу, чтобы изменить размер папки (минимум 2×2)'
+    ru: 'Перетащите маркер в правом нижнем углу, чтобы изменить размер папки (минимум 2×2)',
+    hi: 'फ़ोल्डर का आकार बदलने के लिए नीचे दाईं ओर का हैंडल खींचें (न्यूनतम 2×2)',
+    id: 'Seret gagang di sudut kanan bawah untuk mengubah ukuran folder (min 2×2)',
+    de: 'Ziehe den Griff unten rechts, um die Ordnergröße zu ändern (min. 2×2)',
+    vi: 'Kéo tay cầm ở góc dưới bên phải để thay đổi kích thước thư mục (tối thiểu 2×2)',
+    tr: 'Klasör boyutunu değiştirmek için sağ alt köşedeki tutamacı sürükleyin (en az 2×2)',
+    it: 'Trascina la maniglia in basso a destra per ridimensionare la cartella (min 2×2)'
   },
   notesLi5: {
     zh: '底部提示实时显示图片总数和当前选中的文件名',
@@ -154,6 +226,12 @@ export const helpMessages = {
     ar: 'يظهر التلميح في الأسفل إجمالي عدد الصور واسم الملف المحدّد حاليًا في الوقت الفعلي',
     fr: 'L’indication en bas affiche en temps réel le nombre total d’images et le nom du fichier sélectionné',
     pt: 'A dica na parte inferior mostra em tempo real o total de imagens e o nome do arquivo selecionado',
-    ru: 'Подсказка внизу показывает в реальном времени общее число изображений и имя выбранного файла'
+    ru: 'Подсказка внизу показывает в реальном времени общее число изображений и имя выбранного файла',
+    hi: 'नीचे का संकेत वास्तविक समय में छवियों की कुल संख्या और वर्तमान चयनित फ़ाइल नाम दिखाता है',
+    id: 'Petunjuk di bagian bawah menampilkan jumlah total gambar dan nama berkas yang sedang dipilih secara real time',
+    de: 'Der Hinweis unten zeigt in Echtzeit die Gesamtzahl der Bilder und den aktuell ausgewählten Dateinamen',
+    vi: 'Gợi ý ở dưới cùng hiển thị theo thời gian thực tổng số ảnh và tên tệp đang được chọn',
+    tr: 'Alttaki ipucu, toplam görüntü sayısını ve şu anda seçili dosya adını gerçek zamanlı olarak gösterir',
+    it: 'Il suggerimento in basso mostra in tempo reale il numero totale di immagini e il nome del file attualmente selezionato'
   }
 } satisfies Record<string, LocalizedText>

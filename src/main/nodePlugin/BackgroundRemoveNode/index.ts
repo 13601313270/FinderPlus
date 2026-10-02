@@ -14,7 +14,13 @@ export const manifest: NodePluginManifest = {
     ar: 'إزالة الخلفية',
     fr: 'Suppression d’arrière-plan',
     pt: 'Remover fundo',
-    ru: 'Удаление фона'
+    ru: 'Удаление фона',
+    hi: 'पृष्ठभूमि हटाएँ',
+    id: 'Hapus Latar',
+    de: 'Hintergrund entfernen',
+    vi: 'Xóa nền',
+    tr: 'Arka Planı Kaldır',
+    it: 'Rimuovi sfondo'
   },
   render,
   help: () => import('./BackgroundRemoveHelpDialog.vue')

@@ -14,7 +14,13 @@ export const manifest: NodePluginManifest = {
     ar: 'ملف صورة',
     fr: 'Fichier image',
     pt: 'Ficheiro de imagem',
-    ru: 'Файл изображения'
+    ru: 'Файл изображения',
+    hi: 'छवि फ़ाइल',
+    id: 'Berkas gambar',
+    de: 'Bilddatei',
+    vi: 'Tệp ảnh',
+    tr: 'Görüntü dosyası',
+    it: 'File immagine'
   },
   render,
   help: () => import('./ImgFileHelpDialog.vue')

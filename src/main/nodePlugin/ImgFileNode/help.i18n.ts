@@ -1,7 +1,7 @@
 import type { LocalizedText } from '../../../shared/language'
 
 /**
- * ImgFile 节点帮助文档（ImgFileHelpDialog）的全部文案，9 种语言全配。
+ * ImgFile 节点帮助文档（ImgFileHelpDialog）的全部文案，全部 15 种语言全配。
  *
  * 与节点自身的 i18n.ts 分开：卡片短文案变化频繁，帮助文档整篇体量大、改动少。
  * 约定：带行内 <code> / <b> 的句子，值里直接写 HTML，模板用 v-html 渲染；
@@ -18,7 +18,13 @@ export const helpMessages = {
     ar: 'ما هذا؟',
     fr: 'Qu’est-ce que c’est ?',
     pt: 'O que é isto?',
-    ru: 'Что это?'
+    ru: 'Что это?',
+    hi: 'यह क्या है?',
+    id: 'Apa ini?',
+    de: 'Was ist das?',
+    vi: 'Đây là gì?',
+    tr: 'Bu nedir?',
+    it: 'Che cos’è?'
   },
   whatBody: {
     zh: '图片文件节点持有一个图片文件（<code>.jpg</code> / <code>.jpeg</code> / <code>.png</code> / <code>.gif</code> / <code>.webp</code> / <code>.bmp</code>），在卡片内以缩略图预览，并把该图片作为<b>文件</b>向下游送出。缩略图下方显示文件名、大小与格式，图片加载后还会显示原始像素尺寸。',
@@ -29,7 +35,13 @@ export const helpMessages = {
     ar: 'تحتفظ عقدة ملف الصورة بملف صورة واحد (<code>.jpg</code> / <code>.jpeg</code> / <code>.png</code> / <code>.gif</code> / <code>.webp</code> / <code>.bmp</code>)، وتعرضه كصورة مصغّرة داخل البطاقة، وتُرسله إلى العقد اللاحقة <b>كملف</b>. أسفل الصورة المصغّرة يظهر اسم الملف وحجمه وصيغته، وبعد تحميل الصورة تظهر أيضًا أبعادها الأصلية بالبكسل.',
     fr: 'Le nœud Fichier image contient un fichier image (<code>.jpg</code> / <code>.jpeg</code> / <code>.png</code> / <code>.gif</code> / <code>.webp</code> / <code>.bmp</code>), l’affiche en miniature dans la carte et l’envoie aux nœuds en aval comme <b>fichier</b>. Sous la miniature figurent le nom, la taille et le format, ainsi que les dimensions d’origine en pixels une fois l’image chargée.',
     pt: 'O nó Ficheiro de imagem contém um ficheiro de imagem (<code>.jpg</code> / <code>.jpeg</code> / <code>.png</code> / <code>.gif</code> / <code>.webp</code> / <code>.bmp</code>), pré-visualiza-o como miniatura dentro do cartão e envia-o aos nós seguintes como <b>ficheiro</b>. Abaixo da miniatura mostram-se o nome, o tamanho e o formato e, após o carregamento, também as dimensões originais em píxeis.',
-    ru: 'Узел «Файл изображения» хранит один файл изображения (<code>.jpg</code> / <code>.jpeg</code> / <code>.png</code> / <code>.gif</code> / <code>.webp</code> / <code>.bmp</code>), показывает его миниатюрой на карточке и отправляет последующим узлам как <b>файл</b>. Под миниатюрой отображаются имя, размер и формат, а после загрузки изображения — также исходные размеры в пикселях.'
+    ru: 'Узел «Файл изображения» хранит один файл изображения (<code>.jpg</code> / <code>.jpeg</code> / <code>.png</code> / <code>.gif</code> / <code>.webp</code> / <code>.bmp</code>), показывает его миниатюрой на карточке и отправляет последующим узлам как <b>файл</b>. Под миниатюрой отображаются имя, размер и формат, а после загрузки изображения — также исходные размеры в пикселях.',
+    hi: 'छवि फ़ाइल नोड एक छवि फ़ाइल (<code>.jpg</code> / <code>.jpeg</code> / <code>.png</code> / <code>.gif</code> / <code>.webp</code> / <code>.bmp</code>) रखता है, उसे कार्ड में थंबनेल के रूप में पूर्वावलोकित करता है, और उस छवि को डाउनस्ट्रीम <b>फ़ाइल</b> के रूप में भेजता है। थंबनेल के नीचे फ़ाइल का नाम, आकार और प्रारूप दिखता है, और छवि लोड होने पर उसके मूल पिक्सेल आयाम भी दिखते हैं।',
+    id: 'Node Berkas Gambar menyimpan satu berkas gambar (<code>.jpg</code> / <code>.jpeg</code> / <code>.png</code> / <code>.gif</code> / <code>.webp</code> / <code>.bmp</code>), menampilkan pratinjaunya sebagai miniatur di dalam kartu, dan mengirimkannya ke hilir sebagai <b>berkas</b>. Di bawah miniatur ditampilkan nama, ukuran, dan format berkas, serta dimensi piksel asli setelah gambar dimuat.',
+    de: 'Der Knoten „Bilddatei“ enthält eine Bilddatei (<code>.jpg</code> / <code>.jpeg</code> / <code>.png</code> / <code>.gif</code> / <code>.webp</code> / <code>.bmp</code>), zeigt sie als Vorschaubild auf der Karte an und gibt sie nachgelagert als <b>Datei</b> aus. Unter dem Vorschaubild werden Dateiname, Größe und Format angezeigt, nach dem Laden auch die ursprünglichen Pixelmaße.',
+    vi: 'Nút Tệp ảnh giữ một tệp ảnh (<code>.jpg</code> / <code>.jpeg</code> / <code>.png</code> / <code>.gif</code> / <code>.webp</code> / <code>.bmp</code>), xem trước nó dưới dạng ảnh thu nhỏ trong thẻ, và gửi ảnh đó cho hạ nguồn dưới dạng <b>tệp</b>. Bên dưới ảnh thu nhỏ hiển thị tên, kích thước và định dạng tệp, sau khi ảnh tải xong còn hiển thị kích thước pixel gốc.',
+    tr: 'Görüntü Dosyası düğümü bir görüntü dosyası (<code>.jpg</code> / <code>.jpeg</code> / <code>.png</code> / <code>.gif</code> / <code>.webp</code> / <code>.bmp</code>) tutar, kart içinde küçük resim olarak önizler ve görüntüyü aşağı akışa <b>dosya</b> olarak gönderir. Küçük resmin altında dosya adı, boyutu ve biçimi gösterilir; görüntü yüklendikten sonra orijinal piksel boyutları da görünür.',
+    it: 'Il nodo File immagine contiene un file immagine (<code>.jpg</code> / <code>.jpeg</code> / <code>.png</code> / <code>.gif</code> / <code>.webp</code> / <code>.bmp</code>), lo visualizza in anteprima come miniatura nella scheda e lo invia ai nodi a valle come <b>file</b>. Sotto la miniatura sono mostrati nome, dimensione e formato del file e, una volta caricata l’immagine, anche le dimensioni originali in pixel.'
   },
 
   // —— 端口 ——
@@ -42,7 +54,13 @@ export const helpMessages = {
     ar: 'المنافذ',
     fr: 'Ports',
     pt: 'Portas',
-    ru: 'Порты'
+    ru: 'Порты',
+    hi: 'पोर्ट',
+    id: 'Port',
+    de: 'Ports',
+    vi: 'Cổng',
+    tr: 'Bağlantı noktaları',
+    it: 'Porte'
   },
   portsLi1: {
     zh: '输出 <code>file</code>：<code>ImgFileValue</code>（kind 为 <code>img-file</code>），下游接受图片或通用文件类型的节点都能连上。',
@@ -53,7 +71,13 @@ export const helpMessages = {
     ar: 'منفذ الإخراج <code>file</code>: قيمة <code>ImgFileValue</code> (نوعها <code>img-file</code>)؛ ويمكن توصيل العقد اللاحقة التي تقبل الصور أو الملفات العامة بها.',
     fr: 'Sortie <code>file</code> : un <code>ImgFileValue</code> (kind <code>img-file</code>) ; les nœuds en aval acceptant les images ou les fichiers génériques peuvent s’y connecter.',
     pt: 'Saída <code>file</code>: um <code>ImgFileValue</code> (kind <code>img-file</code>); os nós seguintes que aceitem imagens ou ficheiros genéricos podem ligar-se.',
-    ru: 'Выход <code>file</code>: значение <code>ImgFileValue</code> (kind <code>img-file</code>); к нему подключаются последующие узлы, принимающие изображения или файлы общего типа.'
+    ru: 'Выход <code>file</code>: значение <code>ImgFileValue</code> (kind <code>img-file</code>); к нему подключаются последующие узлы, принимающие изображения или файлы общего типа.',
+    hi: 'आउटपुट <code>file</code>: <code>ImgFileValue</code> (kind <code>img-file</code>), डाउनस्ट्रीम छवि या सामान्य फ़ाइल प्रकार स्वीकार करने वाले नोड्स इसमें कनेक्ट हो सकते हैं।',
+    id: 'Keluaran <code>file</code>: <code>ImgFileValue</code> (kind <code>img-file</code>); node hilir yang menerima gambar atau berkas umum dapat terhubung.',
+    de: 'Ausgabe <code>file</code>: ein <code>ImgFileValue</code> (kind <code>img-file</code>); nachgelagerte Knoten, die Bilder oder allgemeine Dateien akzeptieren, können sich verbinden.',
+    vi: 'Đầu ra <code>file</code>: một <code>ImgFileValue</code> (kind <code>img-file</code>); các nút hạ nguồn nhận ảnh hoặc tệp chung đều có thể kết nối.',
+    tr: 'Çıkış <code>file</code>: bir <code>ImgFileValue</code> (kind <code>img-file</code>); görüntü veya genel dosya kabul eden aşağı akış düğümleri bağlanabilir.',
+    it: 'Output <code>file</code>: un <code>ImgFileValue</code> (kind <code>img-file</code>); i nodi a valle che accettano immagini o file generici possono connettersi.'
   },
   portsLi2: {
     zh: '输出 <code>path</code>：该文件在画布目录下的<b>绝对路径</b>（string）。',
@@ -64,7 +88,13 @@ export const helpMessages = {
     ar: 'منفذ الإخراج <code>path</code>: <b>المسار المطلق</b> للملف داخل مجلد اللوحة (سلسلة نصية).',
     fr: 'Sortie <code>path</code> : le <b>chemin absolu</b> du fichier dans le répertoire du canevas (chaîne).',
     pt: 'Saída <code>path</code>: o <b>caminho absoluto</b> do ficheiro dentro da pasta da tela (string).',
-    ru: 'Выход <code>path</code>: <b>абсолютный путь</b> к файлу в каталоге холста (строка).'
+    ru: 'Выход <code>path</code>: <b>абсолютный путь</b> к файлу в каталоге холста (строка).',
+    hi: 'आउटपुट <code>path</code>: कैनवास निर्देशिका में इस फ़ाइल का <b>पूर्ण पथ</b> (string)।',
+    id: 'Keluaran <code>path</code>: <b>jalur absolut</b> berkas ini di dalam direktori kanvas (string).',
+    de: 'Ausgabe <code>path</code>: der <b>absolute Pfad</b> dieser Datei im Canvas-Verzeichnis (string).',
+    vi: 'Đầu ra <code>path</code>: <b>đường dẫn tuyệt đối</b> của tệp này trong thư mục canvas (string).',
+    tr: 'Çıkış <code>path</code>: bu dosyanın tuval dizinindeki <b>mutlak yolu</b> (string).',
+    it: 'Output <code>path</code>: il <b>percorso assoluto</b> di questo file nella cartella della tela (string).'
   },
   portsLi3: {
     zh: '输入 <code>file-in</code>：只接受图片文件；收到文件会<b>替换</b>本节点当前文件，并重新读取二进制内容重建缩略图。',
@@ -75,7 +105,13 @@ export const helpMessages = {
     ar: 'منفذ الإدخال <code>file-in</code>: يقبل ملفات الصور فقط؛ وعند استلام ملف فإنه <b>يستبدل</b> ملف العقدة الحالي وتُعاد قراءة محتواه الثنائي لإعادة بناء الصورة المصغّرة.',
     fr: 'Entrée <code>file-in</code> : n’accepte que les fichiers image ; un fichier reçu <b>remplace</b> le fichier actuel du nœud et son contenu binaire est relu pour reconstruire la miniature.',
     pt: 'Entrada <code>file-in</code>: aceita apenas ficheiros de imagem; ao receber um, <b>substitui</b> o ficheiro atual do nó e o conteúdo binário é relido para reconstruir a miniatura.',
-    ru: 'Вход <code>file-in</code>: принимает только файлы изображений; полученный файл <b>заменяет</b> текущий файл узла, а его двоичное содержимое перечитывается для восстановления миниатюры.'
+    ru: 'Вход <code>file-in</code>: принимает только файлы изображений; полученный файл <b>заменяет</b> текущий файл узла, а его двоичное содержимое перечитывается для восстановления миниатюры.',
+    hi: 'इनपुट <code>file-in</code>: केवल छवि फ़ाइलें स्वीकार करता है; फ़ाइल प्राप्त होने पर यह इस नोड की वर्तमान फ़ाइल को <b>बदल</b> देता है और थंबनेल फिर से बनाने के लिए उसकी बाइनरी सामग्री फिर से पढ़ता है।',
+    id: 'Masukan <code>file-in</code>: hanya menerima berkas gambar; berkas yang diterima akan <b>mengganti</b> berkas node saat ini dan konten binernya dibaca ulang untuk membangun ulang miniaturnya.',
+    de: 'Eingabe <code>file-in</code>: akzeptiert nur Bilddateien; eine empfangene Datei <b>ersetzt</b> die aktuelle Datei des Knotens, und ihr binärer Inhalt wird neu eingelesen, um das Vorschaubild neu zu erstellen.',
+    vi: 'Đầu vào <code>file-in</code>: chỉ nhận tệp ảnh; tệp nhận được sẽ <b>thay thế</b> tệp hiện tại của nút này và nội dung nhị phân của nó được đọc lại để dựng lại ảnh thu nhỏ.',
+    tr: 'Giriş <code>file-in</code>: yalnızca görüntü dosyalarını kabul eder; alınan dosya bu düğümün geçerli dosyasını <b>değiştirir</b> ve küçük resmi yeniden oluşturmak için ikili içeriği yeniden okunur.',
+    it: 'Input <code>file-in</code>: accetta solo file immagine; un file ricevuto <b>sostituisce</b> il file corrente del nodo e il suo contenuto binario viene riletto per ricostruire la miniatura.'
   },
 
   // —— 使用与交互 ——
@@ -88,7 +124,13 @@ export const helpMessages = {
     ar: 'الاستخدام والتفاعل',
     fr: 'Utilisation et interaction',
     pt: 'Utilização e interação',
-    ru: 'Использование и взаимодействие'
+    ru: 'Использование и взаимодействие',
+    hi: 'उपयोग और इंटरैक्शन',
+    id: 'Penggunaan & interaksi',
+    de: 'Verwendung & Interaktion',
+    vi: 'Sử dụng & tương tác',
+    tr: 'Kullanım ve etkileşim',
+    it: 'Uso e interazione'
   },
   useLi1: {
     zh: '双击卡片，用<b>系统默认应用</b>打开该图片。',
@@ -99,7 +141,13 @@ export const helpMessages = {
     ar: 'انقر مرتين على البطاقة لفتح الصورة باستخدام <b>التطبيق الافتراضي للنظام</b>.',
     fr: 'Double-cliquez sur la carte pour ouvrir l’image avec l’<b>application par défaut du système</b>.',
     pt: 'Faça duplo clique no cartão para abrir a imagem com a <b>aplicação predefinida do sistema</b>.',
-    ru: 'Дважды щёлкните по карточке, чтобы открыть изображение <b>приложением по умолчанию</b>.'
+    ru: 'Дважды щёлкните по карточке, чтобы открыть изображение <b>приложением по умолчанию</b>.',
+    hi: 'छवि को <b>सिस्टम डिफ़ॉल्ट ऐप</b> से खोलने के लिए कार्ड पर डबल-क्लिक करें।',
+    id: 'Klik ganda kartu untuk membuka gambar dengan <b>aplikasi bawaan sistem</b>.',
+    de: 'Doppelklicken Sie auf die Karte, um das Bild mit der <b>System-Standard-App</b> zu öffnen.',
+    vi: 'Nhấp đúp vào thẻ để mở ảnh bằng <b>ứng dụng mặc định của hệ thống</b>.',
+    tr: 'Görüntüyü <b>sistem varsayılan uygulamasıyla</b> açmak için karta çift tıklayın.',
+    it: 'Fai doppio clic sulla scheda per aprire l’immagine con l’<b>app predefinita di sistema</b>.'
   },
   useLi2: {
     zh: '把卡片<b>拖出窗口</b>丢到桌面或文件夹，即可把文件移动到该位置。',
@@ -110,7 +158,13 @@ export const helpMessages = {
     ar: 'اسحب البطاقة <b>خارج النافذة</b> وأفلتها على سطح المكتب أو في مجلد لنقل الملف إلى هناك.',
     fr: 'Faites glisser la carte <b>hors de la fenêtre</b> vers le bureau ou un dossier pour y déplacer le fichier.',
     pt: 'Arraste o cartão <b>para fora da janela</b> até à área de trabalho ou a uma pasta para mover o ficheiro para lá.',
-    ru: 'Перетащите карточку <b>за пределы окна</b> на рабочий стол или в папку, чтобы переместить файл туда.'
+    ru: 'Перетащите карточку <b>за пределы окна</b> на рабочий стол или в папку, чтобы переместить файл туда.',
+    hi: 'फ़ाइल को उस स्थान पर ले जाने के लिए कार्ड को <b>विंडो से बाहर</b> डेस्कटॉप या फ़ोल्डर पर खींचकर छोड़ें।',
+    id: 'Seret kartu <b>keluar jendela</b> ke desktop atau folder untuk memindahkan berkas ke sana.',
+    de: 'Ziehen Sie die Karte <b>aus dem Fenster</b> auf den Desktop oder in einen Ordner, um die Datei dorthin zu verschieben.',
+    vi: 'Kéo thẻ <b>ra ngoài cửa sổ</b> thả vào màn hình nền hoặc thư mục để di chuyển tệp đến đó.',
+    tr: 'Dosyayı oraya taşımak için kartı <b>pencerenin dışına</b> masaüstüne veya bir klasöre sürükleyip bırakın.',
+    it: 'Trascina la scheda <b>fuori dalla finestra</b> sul desktop o in una cartella per spostare lì il file.'
   },
   useLi3: {
     zh: '拖动卡片<b>右下角</b>的手柄，可调整预览大小（宽度 100–800 像素），高度按<b>原图比例</b>自动变化。',
@@ -121,7 +175,13 @@ export const helpMessages = {
     ar: 'اسحب المقبض في <b>الزاوية السفلية اليمنى</b> للبطاقة لتغيير حجم المعاينة (العرض 100–800 بكسل)، ويتغيّر الارتفاع تلقائيًا حفاظًا على <b>نسبة الصورة الأصلية</b>.',
     fr: 'Faites glisser la poignée en <b>bas à droite</b> de la carte pour redimensionner l’aperçu (largeur 100–800 px) ; la hauteur s’ajuste automatiquement en conservant les <b>proportions d’origine</b>.',
     pt: 'Arraste o puxador no <b>canto inferior direito</b> do cartão para redimensionar a pré-visualização (largura 100–800 px); a altura ajusta-se automaticamente mantendo a <b>proporção original</b>.',
-    ru: 'Перетащите маркер в <b>правом нижнем углу</b> карточки, чтобы изменить размер предпросмотра (ширина 100–800 пикселей); высота меняется автоматически, сохраняя <b>пропорции оригинала</b>.'
+    ru: 'Перетащите маркер в <b>правом нижнем углу</b> карточки, чтобы изменить размер предпросмотра (ширина 100–800 пикселей); высота меняется автоматически, сохраняя <b>пропорции оригинала</b>.',
+    hi: 'प्रीव्यू का आकार बदलने के लिए कार्ड के <b>नीचे-दाएँ कोने</b> के हैंडल को खींचें (चौड़ाई 100–800 पिक्सेल); ऊँचाई <b>मूल छवि अनुपात</b> के अनुसार स्वतः बदलती है।',
+    id: 'Seret tuas di <b>kanan bawah</b> kartu untuk mengubah ukuran pratinjau (lebar 100–800 piksel); tinggi berubah otomatis mengikuti <b>rasio gambar asli</b>.',
+    de: 'Ziehen Sie den Griff <b>unten rechts</b> an der Karte, um die Vorschaugröße zu ändern (Breite 100–800 Pixel); die Höhe ändert sich automatisch im <b>Originalverhältnis</b>.',
+    vi: 'Kéo tay nắm ở <b>góc dưới bên phải</b> của thẻ để thay đổi kích thước xem trước (chiều rộng 100–800 pixel); chiều cao tự động thay đổi theo <b>tỷ lệ ảnh gốc</b>.',
+    tr: 'Önizleme boyutunu değiştirmek için kartın <b>sağ alt</b> köşesindeki tutamacı sürükleyin (genişlik 100–800 piksel); yükseklik <b>orijinal görüntü oranına</b> göre otomatik değişir.',
+    it: 'Trascina la maniglia in <b>basso a destra</b> della scheda per ridimensionare l’anteprima (larghezza 100–800 pixel); l’altezza cambia automaticamente mantenendo le <b>proporzioni originali</b>.'
   },
   useLi4: {
     zh: '拖动卡片本身（空白处或文件名）可移动节点在画布上的位置。',
@@ -132,7 +192,13 @@ export const helpMessages = {
     ar: 'اسحب البطاقة نفسها (من المساحة الفارغة أو اسم الملف) لتحريك العقدة على اللوحة.',
     fr: 'Faites glisser la carte elle-même (sur un espace vide ou le nom du fichier) pour déplacer le nœud sur le canevas.',
     pt: 'Arraste o próprio cartão (no espaço vazio ou no nome do ficheiro) para mover o nó pela tela.',
-    ru: 'Перетащите саму карточку (за пустое место или имя файла), чтобы переместить узел по холсту.'
+    ru: 'Перетащите саму карточку (за пустое место или имя файла), чтобы переместить узел по холсту.',
+    hi: 'नोड को कैनवास पर घुमाने के लिए कार्ड को ही (खाली जगह या फ़ाइल नाम से) खींचें।',
+    id: 'Seret kartu itu sendiri (pada ruang kosong atau nama berkas) untuk memindahkan node di kanvas.',
+    de: 'Ziehen Sie die Karte selbst (an leerer Stelle oder am Dateinamen), um den Knoten auf der Leinwand zu verschieben.',
+    vi: 'Kéo chính thẻ (ở chỗ trống hoặc tên tệp) để di chuyển nút trên canvas.',
+    tr: 'Düğümü tuval üzerinde taşımak için kartın kendisini (boş bir alandan veya dosya adından) sürükleyin.',
+    it: 'Trascina la scheda stessa (in un punto vuoto o sul nome del file) per spostare il nodo sulla tela.'
   },
 
   // —— 注意事项 ——
@@ -145,7 +211,13 @@ export const helpMessages = {
     ar: 'ملاحظات',
     fr: 'Remarques',
     pt: 'Notas',
-    ru: 'Примечания'
+    ru: 'Примечания',
+    hi: 'नोट्स',
+    id: 'Catatan',
+    de: 'Hinweise',
+    vi: 'Lưu ý',
+    tr: 'Notlar',
+    it: 'Note'
   },
   notesLi1: {
     zh: '尚未选择文件时，卡片上显示「<b>未选择文件</b>」，此时不会向下游输出文件。',
@@ -156,7 +228,13 @@ export const helpMessages = {
     ar: 'إلى أن يتم اختيار ملف، تعرض البطاقة «<b>لم يتم اختيار ملف</b>»، ولا يُخرَج أي ملف إلى العقد اللاحقة.',
     fr: 'Tant qu’aucun fichier n’est sélectionné, la carte affiche « <b>Aucun fichier sélectionné</b> » et aucun fichier n’est envoyé en aval.',
     pt: 'Enquanto não for selecionado um ficheiro, o cartão mostra “<b>Nenhum ficheiro selecionado</b>” e nenhum ficheiro é enviado a jusante.',
-    ru: 'Пока файл не выбран, на карточке отображается «<b>Файл не выбран</b>», и файл не отправляется дальше.'
+    ru: 'Пока файл не выбран, на карточке отображается «<b>Файл не выбран</b>», и файл не отправляется дальше.',
+    hi: 'जब तक फ़ाइल चयनित नहीं होती, कार्ड पर “<b>कोई फ़ाइल चयनित नहीं</b>” दिखता है, और डाउनस्ट्रीम कोई फ़ाइल नहीं भेजी जाती।',
+    id: 'Selama berkas belum dipilih, kartu menampilkan “<b>Tidak ada berkas dipilih</b>”, dan tidak ada berkas yang dikirim ke hilir.',
+    de: 'Solange keine Datei ausgewählt ist, zeigt die Karte „<b>Keine Datei ausgewählt</b>“ an, und es wird keine Datei nachgelagert ausgegeben.',
+    vi: 'Khi chưa chọn tệp, thẻ hiển thị “<b>Chưa chọn tệp</b>”, và không có tệp nào được gửi đến hạ nguồn.',
+    tr: 'Bir dosya seçilene kadar kartta “<b>Dosya seçilmedi</b>” görünür ve aşağı akışa hiçbir dosya gönderilmez.',
+    it: 'Finché non viene selezionato un file, la scheda mostra “<b>Nessun file selezionato</b>” e nessun file viene inviato a valle.'
   },
   notesLi2: {
     zh: '卡片内显示图片缩略图，下方为文件名、大小与格式（JPEG / PNG / GIF / WebP / BMP），图片加载后还会显示原始像素尺寸。',
@@ -167,7 +245,13 @@ export const helpMessages = {
     ar: 'تعرض البطاقة صورة مصغّرة، وأسفلها اسم الملف والحجم والصيغة (JPEG / PNG / GIF / WebP / BMP)، وبعد تحميل الصورة تظهر أيضًا أبعادها الأصلية بالبكسل.',
     fr: 'La carte affiche la miniature de l’image, puis en dessous le nom, la taille et le format (JPEG / PNG / GIF / WebP / BMP) ; une fois chargée, les dimensions d’origine en pixels s’affichent aussi.',
     pt: 'O cartão mostra a miniatura da imagem e, abaixo, o nome, o tamanho e o formato (JPEG / PNG / GIF / WebP / BMP); após o carregamento, também as dimensões originais em píxeis.',
-    ru: 'На карточке отображается миниатюра изображения, а под ней — имя, размер и формат (JPEG / PNG / GIF / WebP / BMP); после загрузки также показываются исходные размеры в пикселях.'
+    ru: 'На карточке отображается миниатюра изображения, а под ней — имя, размер и формат (JPEG / PNG / GIF / WebP / BMP); после загрузки также показываются исходные размеры в пикселях.',
+    hi: 'कार्ड में छवि का थंबनेल दिखता है, और उसके नीचे फ़ाइल का नाम, आकार और प्रारूप (JPEG / PNG / GIF / WebP / BMP); छवि लोड होने पर उसके मूल पिक्सेल आयाम भी दिखते हैं।',
+    id: 'Kartu menampilkan miniatur gambar, di bawahnya nama, ukuran, dan format berkas (JPEG / PNG / GIF / WebP / BMP); setelah gambar dimuat, dimensi piksel aslinya juga ditampilkan.',
+    de: 'Auf der Karte wird das Vorschaubild angezeigt, darunter Dateiname, Größe und Format (JPEG / PNG / GIF / WebP / BMP); nach dem Laden werden auch die ursprünglichen Pixelmaße angezeigt.',
+    vi: 'Thẻ hiển thị ảnh thu nhỏ, bên dưới là tên, kích thước và định dạng tệp (JPEG / PNG / GIF / WebP / BMP); sau khi ảnh tải xong còn hiển thị kích thước pixel gốc.',
+    tr: 'Kartta görüntü küçük resmi, altında dosya adı, boyutu ve biçimi (JPEG / PNG / GIF / WebP / BMP) gösterilir; görüntü yüklendikten sonra orijinal piksel boyutları da görünür.',
+    it: 'La scheda mostra la miniatura dell’immagine e, sotto, nome, dimensione e formato del file (JPEG / PNG / GIF / WebP / BMP); una volta caricata, mostra anche le dimensioni originali in pixel.'
   },
   notesLi3: {
     zh: '文件大小按 B / KB / MB 自动分档显示。',
@@ -178,6 +262,12 @@ export const helpMessages = {
     ar: 'يُعرض حجم الملف تلقائيًا بوحدات B / KB / MB.',
     fr: 'La taille du fichier est automatiquement affichée en B / KB / MB.',
     pt: 'O tamanho do ficheiro é mostrado automaticamente em B / KB / MB.',
-    ru: 'Размер файла автоматически отображается в B / KB / MB.'
+    ru: 'Размер файла автоматически отображается в B / KB / MB.',
+    hi: 'फ़ाइल का आकार B / KB / MB में स्वतः प्रदर्शित होता है।',
+    id: 'Ukuran berkas otomatis ditampilkan dalam B / KB / MB.',
+    de: 'Die Dateigröße wird automatisch in B / KB / MB angezeigt.',
+    vi: 'Kích thước tệp tự động hiển thị theo B / KB / MB.',
+    tr: 'Dosya boyutu otomatis olarak B / KB / MB cinsinden gösterilir.',
+    it: 'La dimensione del file è mostrata automaticamente in B / KB / MB.'
   }
 } satisfies Record<string, LocalizedText>

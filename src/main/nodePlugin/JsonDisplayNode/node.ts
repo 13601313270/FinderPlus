@@ -24,7 +24,13 @@ export class JsonDisplayNode extends Node {
       ar: 'JSON',
       fr: 'JSON',
       pt: 'JSON',
-      ru: 'JSON'
+      ru: 'JSON',
+      hi: 'JSON',
+      id: 'JSON',
+      de: 'JSON',
+      vi: 'JSON',
+      tr: 'JSON',
+      it: 'JSON'
     }
   })
 
@@ -38,7 +44,13 @@ export class JsonDisplayNode extends Node {
     ar: 'JSON',
     fr: 'JSON',
     pt: 'JSON',
-    ru: 'JSON'
+    ru: 'JSON',
+    hi: 'JSON',
+    id: 'JSON',
+    de: 'JSON',
+    vi: 'JSON',
+    tr: 'JSON',
+    it: 'JSON'
   })
 
   private parsed: unknown = undefined

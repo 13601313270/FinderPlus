@@ -14,7 +14,13 @@ export const manifest: NodePluginManifest = {
     ar: 'دمج النصوص',
     fr: 'Concaténation de chaînes',
     pt: 'Concatenar strings',
-    ru: 'Конкатенация строк'
+    ru: 'Конкатенация строк',
+    hi: 'स्ट्रिंग संयोजन',
+    id: 'Gabung String',
+    de: 'Zeichenketten verketten',
+    vi: 'Ghép chuỗi',
+    tr: 'Dize Birleştirme',
+    it: 'Concatenazione stringhe'
   },
   render,
   help: () => import('./StringConcatHelpDialog.vue')

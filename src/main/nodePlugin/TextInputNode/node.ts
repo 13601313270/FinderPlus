@@ -24,7 +24,13 @@ export class TextInputNode extends Node {
     ar: 'نص',
     fr: 'Texte',
     pt: 'Texto',
-    ru: 'Текст'
+    ru: 'Текст',
+    hi: 'पाठ',
+    id: 'Teks',
+    de: 'Text',
+    vi: 'Văn bản',
+    tr: 'Metin',
+    it: 'Testo'
   })
 
   private content = ''

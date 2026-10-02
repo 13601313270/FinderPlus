@@ -16,7 +16,13 @@ export const messages = {
     ar: 'اسحب العقدة (الترويسة بأكملها قابلة للسحب)',
     fr: 'Glisser le nœud (tout l’en-tête est déplaçable)',
     pt: 'Arrastar nó (o cabeçalho inteiro é arrastável)',
-    ru: 'Перетащить узел (перетаскивается весь заголовок)'
+    ru: 'Перетащить узел (перетаскивается весь заголовок)',
+    hi: "नोड खींचें (पूरा हेडर खींचा जा सकता है)",
+    id: "Seret node (seluruh header dapat diseret)",
+    de: "Knoten ziehen (der gesamte Kopfbereich ist ziehbar)",
+    vi: "Kéo nút (toàn bộ phần đầu có thể kéo được)",
+    tr: "Düğümü sürükle (başlığın tamamı sürüklenebilir)",
+    it: "Trascina il nodo (l’intera intestazione è trascinabile)",
   },
   keyConfigured: {
     zh: 'LLM 已配置，点击修改 Key',
@@ -27,7 +33,13 @@ export const messages = {
     ar: 'تم تهيئة LLM؛ انقر لتغيير المفتاح',
     fr: 'LLM configuré ; cliquez pour changer la clé',
     pt: 'LLM configurado; clique para alterar a chave',
-    ru: 'LLM настроен; нажмите, чтобы изменить ключ'
+    ru: 'LLM настроен; нажмите, чтобы изменить ключ',
+    hi: "LLM कॉन्फ़िगर हो चुका है; Key बदलने के लिए क्लिक करें",
+    id: "LLM sudah dikonfigurasi; klik untuk mengubah Key",
+    de: "LLM konfiguriert; klicken, um den Key zu ändern",
+    vi: "LLM đã được cấu hình; nhấp để đổi Key",
+    tr: "LLM yapılandırıldı; Key’i değiştirmek için tıklayın",
+    it: "LLM configurato; fai clic per modificare la Key",
   },
   keyMissing: {
     zh: '点击配置 LLM API Key',
@@ -38,7 +50,13 @@ export const messages = {
     ar: 'انقر لتهيئة مفتاح API الخاص بـ LLM',
     fr: 'Cliquez pour configurer la clé API LLM',
     pt: 'Clique para configurar a chave de API do LLM',
-    ru: 'Нажмите, чтобы настроить ключ API LLM'
+    ru: 'Нажмите, чтобы настроить ключ API LLM',
+    hi: "LLM API Key कॉन्फ़िगर करने के लिए क्लिक करें",
+    id: "Klik untuk mengonfigurasi LLM API Key",
+    de: "Klicken, um den LLM-API-Key zu konfigurieren",
+    vi: "Nhấp để cấu hình LLM API Key",
+    tr: "LLM API Key’i yapılandırmak için tıklayın",
+    it: "Fai clic per configurare la LLM API Key",
   },
   loading: {
     zh: '推理中…',
@@ -49,7 +67,13 @@ export const messages = {
     ar: 'جارٍ التفكير…',
     fr: 'Réflexion…',
     pt: 'Pensando…',
-    ru: 'Думает…'
+    ru: 'Думает…',
+    hi: "सोच रहा है…",
+    id: "Berpikir…",
+    de: "Denkt nach…",
+    vi: "Đang suy nghĩ…",
+    tr: "Düşünüyor…",
+    it: "Sto pensando…",
   },
   waitingUpstream: {
     zh: '（等待上游输入触发…）',
@@ -60,7 +84,13 @@ export const messages = {
     ar: '(في انتظار تفعيل الإدخال من المنبع…)',
     fr: '(En attente du déclenchement par l’entrée amont…)',
     pt: '(Aguardando o disparo da entrada anterior…)',
-    ru: '(Ожидание запуска от входящего ввода…)'
+    ru: '(Ожидание запуска от входящего ввода…)',
+    hi: "(अपस्ट्रीम इनपुट ट्रिगर की प्रतीक्षा में…)",
+    id: "(Menunggu pemicu masukan hulu…)",
+    de: "(Warten auf Auslösung durch vorgelagerte Eingabe…)",
+    vi: "(Đang chờ đầu vào thượng nguồn kích hoạt…)",
+    tr: "(Yukarı akış girişinin tetiklemesi bekleniyor…)",
+    it: "(In attesa dell’attivazione da input a monte…)",
   },
   promptHint: {
     zh: '（输入 prompt 后点击发送…）',
@@ -71,7 +101,13 @@ export const messages = {
     ar: '(أدخل موجهًا ثم انقر على إرسال…)',
     fr: '(Saisissez un prompt puis cliquez sur envoyer…)',
     pt: '(Insira um prompt e clique em enviar…)',
-    ru: '(Введите промпт и нажмите отправить…)'
+    ru: '(Введите промпт и нажмите отправить…)',
+    hi: "(prompt दर्ज करें और भेजें पर क्लिक करें…)",
+    id: "(Masukkan prompt lalu klik kirim…)",
+    de: "(prompt eingeben und auf „Senden“ klicken…)",
+    vi: "(Nhập prompt rồi nhấp gửi…)",
+    tr: "(prompt girin ve gönder’e tıklayın…)",
+    it: "(Inserisci un prompt e fai clic su invia…)",
   },
   nodeMissing: {
     zh: '节点不存在',
@@ -82,7 +118,13 @@ export const messages = {
     ar: 'العقدة غير موجودة',
     fr: 'Nœud introuvable',
     pt: 'Nó não encontrado',
-    ru: 'Узел не найден'
+    ru: 'Узел не найден',
+    hi: "नोड नहीं मिला",
+    id: "Node tidak ditemukan",
+    de: "Knoten nicht gefunden",
+    vi: "Không tìm thấy nút",
+    tr: "Düğüm bulunamadı",
+    it: "Nodo non trovato",
   },
   promptPlaceholder: {
     zh: '输入 prompt...',
@@ -93,7 +135,13 @@ export const messages = {
     ar: 'أدخل الموجه...',
     fr: 'Saisissez un prompt...',
     pt: 'Insira o prompt...',
-    ru: 'Введите промпт...'
+    ru: 'Введите промпт...',
+    hi: "prompt दर्ज करें...",
+    id: "Masukkan prompt...",
+    de: "prompt eingeben...",
+    vi: "Nhập prompt...",
+    tr: "prompt girin...",
+    it: "Inserisci prompt...",
   },
   autoCall: {
     zh: '自动调用',
@@ -104,7 +152,13 @@ export const messages = {
     ar: 'استدعاء تلقائي',
     fr: 'Appel automatique',
     pt: 'Chamada automática',
-    ru: 'Автовызов'
+    ru: 'Автовызов',
+    hi: "स्वतः कॉल",
+    id: "Panggil otomatis",
+    de: "Automatischer Aufruf",
+    vi: "Tự động gọi",
+    tr: "Otomatik çağrı",
+    it: "Chiamata automatica",
   },
   send: {
     zh: '发送',
@@ -115,7 +169,13 @@ export const messages = {
     ar: 'إرسال',
     fr: 'Envoyer',
     pt: 'Enviar',
-    ru: 'Отправить'
+    ru: 'Отправить',
+    hi: "भेजें",
+    id: "Kirim",
+    de: "Senden",
+    vi: "Gửi",
+    tr: "Gönder",
+    it: "Invia",
   },
   helpTitle: {
     zh: '使用说明',
@@ -126,7 +186,13 @@ export const messages = {
     ar: 'تعليمات',
     fr: 'Aide',
     pt: 'Ajuda',
-    ru: 'Справка'
+    ru: 'Справка',
+    hi: "सहायता",
+    id: "Bantuan",
+    de: "Hilfe",
+    vi: "Trợ giúp",
+    tr: "Yardım",
+    it: "Guida",
   },
   helpDialogTitle: {
     zh: '大模型节点使用说明',
@@ -137,6 +203,12 @@ export const messages = {
     ar: 'تعليمات عقدة النموذج اللغوي',
     fr: 'Aide du nœud Modèle de langage',
     pt: 'Ajuda do nó Modelo de linguagem',
-    ru: 'Справка по узлу «Языковая модель»'
+    ru: 'Справка по узлу «Языковая модель»',
+    hi: "LLM नोड सहायता",
+    id: "Bantuan node LLM",
+    de: "Hilfe zum LLM-Knoten",
+    vi: "Trợ giúp nút LLM",
+    tr: "LLM düğümü yardımı",
+    it: "Guida del nodo LLM",
   }
 } satisfies Record<string, LocalizedText>

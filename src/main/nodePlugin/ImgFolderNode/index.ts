@@ -14,7 +14,13 @@ export const manifest: NodePluginManifest = {
     ar: 'مجلد الصور',
     fr: 'Dossier d’images',
     pt: 'Pasta de imagens',
-    ru: 'Папка изображений'
+    ru: 'Папка изображений',
+    hi: 'छवि फ़ोल्डर',
+    id: 'Folder Gambar',
+    de: 'Bildordner',
+    vi: 'Thư mục ảnh',
+    tr: 'Görüntü Klasörü',
+    it: 'Cartella immagini'
   },
   render,
   help: () => import('./ImgFolderHelpDialog.vue')

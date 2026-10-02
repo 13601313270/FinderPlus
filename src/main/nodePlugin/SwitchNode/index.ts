@@ -14,7 +14,13 @@ export const manifest: NodePluginManifest = {
     ar: 'تفريع شرطي',
     fr: 'Branche conditionnelle',
     pt: 'Ramo condicional',
-    ru: 'Условное ветвление'
+    ru: 'Условное ветвление',
+    hi: 'शर्त शाखा',
+    id: 'Cabang kondisi',
+    de: 'Verzweigung',
+    vi: 'Nhánh điều kiện',
+    tr: 'Koşul dalı',
+    it: 'Ramo condizionale'
   },
   render,
   help: () => import('./SwitchHelpDialog.vue')

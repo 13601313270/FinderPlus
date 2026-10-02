@@ -14,7 +14,13 @@ export const manifest: NodePluginManifest = {
     ar: 'جودة الصورة',
     fr: 'Qualité d’image',
     pt: 'Qualidade de imagem',
-    ru: 'Качество изображения'
+    ru: 'Качество изображения',
+    hi: 'छवि गुणवत्ता',
+    id: 'Kualitas Gambar',
+    de: 'Bildqualität',
+    vi: 'Chất lượng ảnh',
+    tr: 'Görüntü kalitesi',
+    it: 'Qualità immagine'
   },
   render,
   help: () => import('./ImageQualityHelpDialog.vue')

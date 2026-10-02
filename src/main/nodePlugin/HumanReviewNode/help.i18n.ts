@@ -1,7 +1,7 @@
 import type { LocalizedText } from '../../../shared/language'
 
 /**
- * HumanReview 节点帮助文档（HumanReviewHelpDialog）的全部文案，9 种语言全配。
+ * HumanReview 节点帮助文档（HumanReviewHelpDialog）的全部文案，全部 15 种语言全配。
  *
  * 与节点自身的 i18n.ts 分开：卡片短文案变化频繁，帮助文档整篇体量大、改动少。
  * 约定：带行内 <code> / <b> 的句子，值里直接写 HTML，模板用 v-html 渲染；
@@ -18,7 +18,13 @@ export const helpMessages = {
     ar: 'ما هذا؟',
     fr: 'Qu’est-ce que c’est ?',
     pt: 'O que é isto?',
-    ru: 'Что это?'
+    ru: 'Что это?',
+    hi: "यह क्या है?",
+    id: "Apa ini?",
+    de: "Was ist das?",
+    vi: "Đây là gì?",
+    tr: "Bu nedir?",
+    it: "Che cos’è?",
   },
   whatBody: {
     zh: '人工审核节点把上游传来的值排成 <b>FIFO 队列</b>，等待人工逐项处理：点「同意」把当前项从右侧 <code>approve</code> 端口放行给下游，点「拒绝」则从 <code>reject</code> 端口放行。',
@@ -29,7 +35,13 @@ export const helpMessages = {
     ar: 'تضع عقدة المراجعة البشرية القيم الواردة في <b>طابور FIFO</b> وتنتظر معالجتها يدويًا عنصرًا عنصرًا: انقر «موافقة» لتمرير العنصر الحالي إلى العقد اللاحقة عبر منفذ <code>approve</code> على اليمين، أو «رفض» لتمريره عبر منفذ <code>reject</code>.',
     fr: 'Le nœud Révision humaine place les valeurs entrantes dans une <b>file FIFO</b> et attend un traitement manuel un par un : cliquez sur « Approuver » pour libérer l’élément courant vers l’aval via le port <code>approve</code> à droite, ou sur « Rejeter » pour le libérer via le port <code>reject</code>.',
     pt: 'O nó Revisão humana coloca os valores recebidos em uma <b>fila FIFO</b> e aguarda o tratamento manual um a um: clique em “Aprovar” para liberar o item atual adiante pelo porto <code>approve</code> à direita, ou em “Rejeitar” para liberá-lo pelo porto <code>reject</code>.',
-    ru: 'Узел «Ручная проверка» ставит входящие значения в <b>очередь FIFO</b> и ждёт ручной обработки по одному: нажмите «Одобрить», чтобы пропустить текущий элемент дальше через порт <code>approve</code> справа, или «Отклонить» — через порт <code>reject</code>.'
+    ru: 'Узел «Ручная проверка» ставит входящие значения в <b>очередь FIFO</b> и ждёт ручной обработки по одному: нажмите «Одобрить», чтобы пропустить текущий элемент дальше через порт <code>approve</code> справа, или «Отклонить» — через порт <code>reject</code>.',
+    hi: "मानव समीक्षा नोड अपस्ट्रीम से आने वाले मानों को <b>FIFO कतार</b> में लगाता है और एक-एक करके मानवीय प्रसंस्करण की प्रतीक्षा करता है: “स्वीकारें” पर क्लिक करें तो वर्तमान आइटम दाईं ओर <code>approve</code> पोर्ट से डाउनस्ट्रीम भेजा जाता है, और “अस्वीकारें” पर क्लिक करें तो <code>reject</code> पोर्ट से भेजा जाता है।",
+    id: "Node Tinjauan Manusia menyusun nilai yang masuk ke dalam <b>antrean FIFO</b> dan menunggu penanganan manual satu per satu: klik “Setujui” untuk melepaskan item saat ini ke hilir melalui port <code>approve</code> di sebelah kanan, atau “Tolak” untuk melepaskannya melalui port <code>reject</code>.",
+    de: "Der Knoten „Menschliche Prüfung“ reiht eingehende Werte in eine <b>FIFO-Warteschlange</b> ein und wartet auf die manuelle Bearbeitung Stück für Stück: Klicken Sie auf „Genehmigen“, um das aktuelle Element über den <code>approve</code>-Port rechts weiterzugeben, oder auf „Ablehnen“, um es über den <code>reject</code>-Port weiterzugeben.",
+    vi: "Nút Xem xét thủ công xếp các giá trị đến từ thượng nguồn vào <b>hàng đợi FIFO</b> và chờ xử lý thủ công từng mục một: nhấp “Chấp thuận” để cho mục hiện tại đi tiếp đến hạ nguồn qua cổng <code>approve</code> bên phải, hoặc “Từ chối” để cho đi qua cổng <code>reject</code>.",
+    tr: "İnsan İncelemesi düğümü, yukarı akıştan gelen değerleri bir <b>FIFO kuyruğuna</b> koyar ve elle tek tek işlenmesini bekler: geçerli öğeyi sağdaki <code>approve</code> bağlantı noktasından aşağı akışa göndermek için “Onayla”ya, <code>reject</code> bağlantı noktasından göndermek için “Reddet”e tıklayın.",
+    it: "Il nodo Revisione umana mette i valori in arrivo in una <b>coda FIFO</b> e attende la gestione manuale uno alla volta: fai clic su “Approva” per rilasciare l’elemento corrente a valle attraverso la porta <code>approve</code> a destra, oppure su “Rifiuta” per rilasciarlo attraverso la porta <code>reject</code>.",
   },
 
   // —— 输入 / 输出端口 ——
@@ -42,7 +54,13 @@ export const helpMessages = {
     ar: 'منافذ الإدخال / الإخراج',
     fr: 'Ports d’entrée / sortie',
     pt: 'Portas de entrada / saída',
-    ru: 'Входной / выходной порты'
+    ru: 'Входной / выходной порты',
+    hi: "इनपुट / आउटपुट पोर्ट",
+    id: "Port masukan / keluaran",
+    de: "Ein-/Ausgabeports",
+    vi: "Cổng đầu vào / đầu ra",
+    tr: "Giriş / çıkış bağlantı noktaları",
+    it: "Porte di input / output",
   },
   portsLi1: {
     zh: '左侧 <code>input</code> 输入端口接受数值、字符串和文件（<code>NumberValue</code> / <code>StringValue</code> / <code>FileValue</code>）',
@@ -53,7 +71,13 @@ export const helpMessages = {
     ar: 'يقبل منفذ <code>input</code> على اليسار الأرقام والنصوص والملفات (<code>NumberValue</code> / <code>StringValue</code> / <code>FileValue</code>)',
     fr: 'Le port <code>input</code> à gauche accepte les nombres, les chaînes et les fichiers (<code>NumberValue</code> / <code>StringValue</code> / <code>FileValue</code>)',
     pt: 'O porto <code>input</code> à esquerda aceita números, strings e arquivos (<code>NumberValue</code> / <code>StringValue</code> / <code>FileValue</code>)',
-    ru: 'Входной порт <code>input</code> слева принимает числа, строки и файлы (<code>NumberValue</code> / <code>StringValue</code> / <code>FileValue</code>)'
+    ru: 'Входной порт <code>input</code> слева принимает числа, строки и файлы (<code>NumberValue</code> / <code>StringValue</code> / <code>FileValue</code>)',
+    hi: "बाईं ओर का <code>input</code> इनपुट पोर्ट संख्याएँ, स्ट्रिंग्स और फ़ाइलें स्वीकार करता है (<code>NumberValue</code> / <code>StringValue</code> / <code>FileValue</code>)",
+    id: "Port masukan <code>input</code> di sebelah kiri menerima angka, string, dan file (<code>NumberValue</code> / <code>StringValue</code> / <code>FileValue</code>)",
+    de: "Der <code>input</code>-Port links akzeptiert Zahlen, Zeichenketten und Dateien (<code>NumberValue</code> / <code>StringValue</code> / <code>FileValue</code>)",
+    vi: "Cổng đầu vào <code>input</code> bên trái chấp nhận số, chuỗi và tệp (<code>NumberValue</code> / <code>StringValue</code> / <code>FileValue</code>)",
+    tr: "Soldaki <code>input</code> giriş bağlantı noktası sayıları, dizeleri ve dosyaları kabul eder (<code>NumberValue</code> / <code>StringValue</code> / <code>FileValue</code>)",
+    it: "La porta di input <code>input</code> a sinistra accetta numeri, stringhe e file (<code>NumberValue</code> / <code>StringValue</code> / <code>FileValue</code>)",
   },
   portsLi2: {
     zh: '右侧输出端口在<b>上游首次传来值</b>时才动态创建，类型跟随上游：<code>approve</code>（同意）与 <code>reject</code>（拒绝）',
@@ -64,7 +88,13 @@ export const helpMessages = {
     ar: 'تُنشأ منافذ الإخراج على اليمين ديناميكيًا فقط عند <b>إرسال المصدر لقيمة لأول مرة</b>، وتتبع نوعه: <code>approve</code> (موافقة) و<code>reject</code> (رفض)',
     fr: 'Les ports de sortie à droite ne sont créés dynamiquement que lorsque <b>l’amont envoie une valeur pour la première fois</b>, avec le même type : <code>approve</code> (approuver) et <code>reject</code> (rejeter)',
     pt: 'Os portos de saída à direita são criados dinamicamente apenas quando a <b>origem envia um valor pela primeira vez</b>, seguindo o tipo dela: <code>approve</code> (aprovar) e <code>reject</code> (rejeitar)',
-    ru: 'Выходные порты справа создаются динамически только когда <b>источник впервые присылает значение</b>, повторяя его тип: <code>approve</code> (одобрить) и <code>reject</code> (отклонить)'
+    ru: 'Выходные порты справа создаются динамически только когда <b>источник впервые присылает значение</b>, повторяя его тип: <code>approve</code> (одобрить) и <code>reject</code> (отклонить)',
+    hi: "दाईं ओर के आउटपुट पोर्ट तभी गतिशील रूप से बनते हैं जब <b>अपस्ट्रीम पहली बार मान भेजता है</b>, और प्रकार अपस्ट्रीम के अनुसार होता है: <code>approve</code> (स्वीकारें) और <code>reject</code> (अस्वीकारें)",
+    id: "Port keluaran di sebelah kanan dibuat secara dinamis hanya saat <b>hulu pertama kali mengirim nilai</b>, dengan tipe mengikuti hulu: <code>approve</code> (setujui) dan <code>reject</code> (tolak)",
+    de: "Die Ausgabeports rechts werden erst dynamisch erstellt, wenn die <b>vorgelagerte Quelle zum ersten Mal einen Wert sendet</b>, und übernehmen deren Typ: <code>approve</code> (genehmigen) und <code>reject</code> (ablehnen)",
+    vi: "Các cổng đầu ra bên phải chỉ được tạo động khi <b>thượng nguồn gửi giá trị lần đầu</b>, với kiểu theo thượng nguồn: <code>approve</code> (chấp thuận) và <code>reject</code> (từ chối)",
+    tr: "Sağdaki çıkış bağlantı noktaları yalnızca <b>yukarı akış ilk kez bir değer gönderdiğinde</b> dinamik olarak oluşturulur ve türü yukarı akışı izler: <code>approve</code> (onayla) ve <code>reject</code> (reddet)",
+    it: "Le porte di output a destra vengono create dinamicamente solo quando <b>l’origine invia un valore per la prima volta</b>, con lo stesso tipo dell’origine: <code>approve</code> (approva) e <code>reject</code> (rifiuta)",
   },
   portsLi3: {
     zh: '上游类型变化会重建输出端口（旧端口被删除、相关下游连线断开）；上游断开则输出端口一并移除',
@@ -75,7 +105,13 @@ export const helpMessages = {
     ar: 'إذا تغيّر نوع المصدر تُعاد بناء منافذ الإخراج (تُحذف القديمة وتُفصل وصلاتها اللاحقة)، وإذا انقطع المصدر تُزال منافذ الإخراج أيضًا',
     fr: 'Si le type de l’amont change, les ports de sortie sont reconstruits (les anciens sont supprimés et leurs liaisons aval déconnectées) ; si l’amont se déconnecte, les ports de sortie sont également retirés',
     pt: 'Se o tipo da origem mudar, os portos de saída são reconstruídos (os antigos são removidos e suas conexões adiante desconectadas); se a origem for desconectada, os portos de saída também são removidos',
-    ru: 'При смене типа источника выходные порты пересоздаются (старые удаляются, а их связи вниз разрываются); при отключении источника выходные порты также удаляются'
+    ru: 'При смене типа источника выходные порты пересоздаются (старые удаляются, а их связи вниз разрываются); при отключении источника выходные порты также удаляются',
+    hi: "अपस्ट्रीम प्रकार बदलने पर आउटपुट पोर्ट फिर से बनाए जाते हैं (पुराने हटा दिए जाते हैं और उनसे जुड़े डाउनस्ट्रीम कनेक्शन टूट जाते हैं); अपस्ट्रीम डिस्कनेक्ट होने पर आउटपुट पोर्ट भी हटा दिए जाते हैं",
+    id: "Perubahan tipe hulu akan membangun ulang port keluaran (port lama dihapus dan koneksi hilir terkait diputus); jika hulu terputus, port keluaran juga dihapus",
+    de: "Eine Änderung des vorgelagerten Typs erstellt die Ausgabeports neu (alte werden entfernt und zugehörige Verbindungen nach unten getrennt); trennt sich die Quelle, werden die Ausgabeports ebenfalls entfernt",
+    vi: "Thay đổi kiểu thượng nguồn sẽ tạo lại các cổng đầu ra (cổng cũ bị xóa và các kết nối hạ nguồn liên quan bị ngắt); nếu thượng nguồn ngắt kết nối, các cổng đầu ra cũng bị gỡ bỏ",
+    tr: "Yukarı akış türü değişirse çıkış bağlantı noktaları yeniden oluşturulur (eski olanlar silinir ve ilgili aşağı akış bağlantıları kopar); yukarı akış bağlantısı kesilirse çıkış bağlantı noktaları da kaldırılır",
+    it: "Un cambiamento del tipo a monte ricrea le porte di output (le vecchie vengono rimosse e i relativi collegamenti a valle disconnessi); se l’origine si disconnette, anche le porte di output vengono rimosse",
   },
   portsLi4: {
     zh: '队列与输出端口不持久化：重新打开工作区后，由上游重新送来值自动重建',
@@ -86,7 +122,13 @@ export const helpMessages = {
     ar: 'لا يُحفظ الطابور ومنافذ الإخراج: عند إعادة فتح مساحة العمل، يرسل المصدر القيم من جديد فتُعاد البناء تلقائيًا',
     fr: 'La file et les ports de sortie ne sont pas persistés : à la réouverture de l’espace de travail, l’amont renvoie les valeurs et ils sont reconstruits automatiquement',
     pt: 'A fila e os portos de saída não são persistidos: ao reabrir o espaço de trabalho, a origem reenvia os valores e eles são reconstruídos automaticamente',
-    ru: 'Очередь и выходные порты не сохраняются: при повторном открытии рабочей области источник снова присылает значения, и они пересоздаются автоматически'
+    ru: 'Очередь и выходные порты не сохраняются: при повторном открытии рабочей области источник снова присылает значения, и они пересоздаются автоматически',
+    hi: "कतार और आउटपुट पोर्ट सहेजे नहीं जाते: कार्यक्षेत्र दोबारा खोलने पर अपस्ट्रीम के फिर से मान भेजने पर वे स्वतः फिर बन जाते हैं",
+    id: "Antrean dan port keluaran tidak dipersistensi: setelah workspace dibuka kembali, keduanya dibangun ulang secara otomatis saat hulu mengirim nilai lagi",
+    de: "Warteschlange und Ausgabeports werden nicht gespeichert: Nach dem erneuten Öffnen des Arbeitsbereichs werden sie automatisch neu aufgebaut, wenn die Quelle erneut Werte sendet",
+    vi: "Hàng đợi và các cổng đầu ra không được lưu trữ: sau khi mở lại không gian làm việc, chúng được tạo lại tự động khi thượng nguồn gửi lại giá trị",
+    tr: "Kuyruk ve çıkış bağlantı noktaları kalıcı değildir: çalışma alanı yeniden açıldığında yukarı akış değerleri tekrar gönderince otomatik olarak yeniden oluşturulur",
+    it: "La coda e le porte di output non sono persistenti: dopo aver riaperto l’area di lavoro, vengono ricostruite automaticamente quando l’origine invia di nuovo i valori",
   },
 
   // —— 怎么用 ——
@@ -99,7 +141,13 @@ export const helpMessages = {
     ar: 'كيفية الاستخدام',
     fr: 'Utilisation',
     pt: 'Como usar',
-    ru: 'Как использовать'
+    ru: 'Как использовать',
+    hi: "कैसे उपयोग करें",
+    id: "Cara penggunaan",
+    de: "Verwendung",
+    vi: "Cách sử dụng",
+    tr: "Nasıl kullanılır",
+    it: "Come si usa",
   },
   useLi1: {
     zh: '卡片中间显示<b>当前正在审核的项</b>（其显示标签）与队列中剩余的数量',
@@ -110,7 +158,13 @@ export const helpMessages = {
     ar: 'يعرض وسط البطاقة <b>العنصر قيد المراجعة حاليًا</b> (تسميته الظاهرة) وعدد المتبقي في الطابور',
     fr: 'Au centre de la carte s’affichent l’<b>élément en cours de révision</b> (son libellé) et le nombre restant dans la file',
     pt: 'No centro do cartão são exibidos o <b>item em revisão no momento</b> (seu rótulo) e quantos restam na fila',
-    ru: 'В центре карточки показаны <b>текущий проверяемый элемент</b> (его метка) и сколько осталось в очереди'
+    ru: 'В центре карточки показаны <b>текущий проверяемый элемент</b> (его метка) и сколько осталось в очереди',
+    hi: "कार्ड के बीच में <b>अभी समीक्षा हो रही वस्तु</b> (उसका प्रदर्शित लेबल) और कतार में शेष संख्या दिखती है",
+    id: "Di tengah kartu ditampilkan <b>item yang sedang ditinjau</b> (label tampilannya) dan jumlah yang tersisa di antrean",
+    de: "In der Mitte der Karte werden das <b>aktuell geprüfte Element</b> (sein Anzeigelabel) und die verbleibende Anzahl in der Warteschlange angezeigt",
+    vi: "Ở giữa thẻ hiển thị <b>mục đang được xem xét hiện tại</b> (nhãn hiển thị của nó) và số lượng còn lại trong hàng đợi",
+    tr: "Kartın ortasında <b>şu anda incelenen öğe</b> (görünen etiketi) ve kuyrukta kalan sayı gösterilir",
+    it: "Al centro della scheda vengono mostrati l’<b>elemento attualmente in revisione</b> (la sua etichetta) e quanti ne restano nella coda",
   },
   useLi2: {
     zh: '点「同意」把当前项提交到 <code>approve</code> 端口并自动取下一项；点「拒绝」则从 <code>reject</code> 端口放行',
@@ -121,7 +175,13 @@ export const helpMessages = {
     ar: 'انقر «موافقة» لإرسال العنصر الحالي إلى منفذ <code>approve</code> والانتقال تلقائيًا إلى التالي، أو «رفض» لتمريره عبر منفذ <code>reject</code>',
     fr: 'Cliquez sur « Approuver » pour valider l’élément courant sur le port <code>approve</code> et passer automatiquement au suivant ; « Rejeter » le libère via le port <code>reject</code>',
     pt: 'Clique em “Aprovar” para confirmar o item atual no porto <code>approve</code> e avançar automaticamente para o próximo; “Rejeitar” libera-o pelo porto <code>reject</code>',
-    ru: 'Нажмите «Одобрить», чтобы отправить текущий элемент в порт <code>approve</code> и автоматически перейти к следующему; «Отклонить» пропускает его через порт <code>reject</code>'
+    ru: 'Нажмите «Одобрить», чтобы отправить текущий элемент в порт <code>approve</code> и автоматически перейти к следующему; «Отклонить» пропускает его через порт <code>reject</code>',
+    hi: "“स्वीकारें” पर क्लिक करके वर्तमान आइटम को <code>approve</code> पोर्ट पर सबमिट करें और स्वतः अगले पर चले जाएँ; “अस्वीकारें” पर क्लिक करने पर इसे <code>reject</code> पोर्ट से भेजा जाता है",
+    id: "Klik “Setujui” untuk mengirim item saat ini ke port <code>approve</code> dan otomatis lanjut ke item berikutnya; klik “Tolak” untuk melepaskannya melalui port <code>reject</code>",
+    de: "Klicken Sie auf „Genehmigen“, um das aktuelle Element an den <code>approve</code>-Port zu übermitteln und automatisch zum nächsten zu wechseln; „Ablehnen“ gibt es über den <code>reject</code>-Port weiter",
+    vi: "Nhấp “Chấp thuận” để gửi mục hiện tại đến cổng <code>approve</code> và tự động chuyển sang mục tiếp theo; nhấp “Từ chối” để cho đi qua cổng <code>reject</code>",
+    tr: "Geçerli öğeyi <code>approve</code> bağlantı noktasına göndermek ve otomatik olarak sonrakine geçmek için “Onayla”ya tıklayın; <code>reject</code> bağlantı noktasından göndermek için “Reddet”e tıklayın",
+    it: "Fai clic su “Approva” per inviare l’elemento corrente alla porta <code>approve</code> e passare automaticamente al successivo; “Rifiuta” lo rilascia attraverso la porta <code>reject</code>",
   },
   useLi3: {
     zh: '没有待审核项时两个按钮都会<b>置灰不可点</b>',
@@ -132,7 +192,13 @@ export const helpMessages = {
     ar: 'عند عدم وجود عنصر للمراجعة يظهر الزران <b>باهتين وغير قابلين للنقر</b>',
     fr: 'Lorsqu’il n’y a aucun élément à réviser, les deux boutons sont <b>grisés et non cliquables</b>',
     pt: 'Quando não há itens para revisar, os dois botões ficam <b>acinzentados e desabilitados</b>',
-    ru: 'Когда нет элементов для проверки, обе кнопки <b>становятся серыми и недоступными</b>'
+    ru: 'Когда нет элементов для проверки, обе кнопки <b>становятся серыми и недоступными</b>',
+    hi: "समीक्षा हेतु कोई आइटम न होने पर दोनों बटन <b>धूसर हो जाते हैं और क्लिक नहीं किए जा सकते</b>",
+    id: "Saat tidak ada item untuk ditinjau, kedua tombol akan <b>menjadi abu-abu dan tidak dapat diklik</b>",
+    de: "Wenn kein Element zur Prüfung vorliegt, werden beide Schaltflächen <b>ausgegraut und sind nicht anklickbar</b>",
+    vi: "Khi không có mục nào để xem xét, cả hai nút đều <b>bị làm mờ và không thể nhấp</b>",
+    tr: "İncelenecek öğe yoksa iki düğme de <b>grileşir ve tıklanamaz</b>",
+    it: "Quando non c’è alcun elemento da revisionare, entrambi i pulsanti diventano <b>in grigio e non cliccabili</b>",
   },
 
   // —— 处理流程 ——
@@ -145,7 +211,13 @@ export const helpMessages = {
     ar: 'آلية المعالجة',
     fr: 'Déroulement du traitement',
     pt: 'Fluxo de processamento',
-    ru: 'Порядок обработки'
+    ru: 'Порядок обработки',
+    hi: "प्रसंस्करण प्रवाह",
+    id: "Alur pemrosesan",
+    de: "Verarbeitungsablauf",
+    vi: "Quy trình xử lý",
+    tr: "İşleme akışı",
+    it: "Flusso di elaborazione",
   },
   runLi1: {
     zh: '上游每传来一个值：当前无审核项时它成为当前项，否则<b>追加到队列末尾</b>，严格按先来后到（FIFO）处理',
@@ -156,7 +228,13 @@ export const helpMessages = {
     ar: 'كل قيمة واردة تصبح العنصر الحالي إن لم يكن هناك عنصر قيد المراجعة، وإلا <b>تُضاف إلى نهاية الطابور</b>، وتُعالج بترتيب الوارد أولًا يخرج أولًا (FIFO)',
     fr: 'Chaque valeur entrante devient l’élément courant s’il n’y en a aucun en révision, sinon elle est <b>ajoutée à la fin de la file</b>. Le traitement est strictement premier entré, premier sorti (FIFO)',
     pt: 'Cada valor recebido vira o item atual se não houver nenhum em revisão; caso contrário é <b>adicionado ao fim da fila</b>. O processamento é estritamente FIFO',
-    ru: 'Каждое входящее значение становится текущим элементом, если ничего не проверяется, иначе <b>добавляется в конец очереди</b>. Обработка строго по принципу «первым пришёл — первым вышел» (FIFO)'
+    ru: 'Каждое входящее значение становится текущим элементом, если ничего не проверяется, иначе <b>добавляется в конец очереди</b>. Обработка строго по принципу «первым пришёл — первым вышел» (FIFO)',
+    hi: "अपस्ट्रीम से हर आने वाला मान: यदि कोई वस्तु समीक्षा में नहीं है तो वह वर्तमान आइटम बन जाता है, अन्यथा <b>कतार के अंत में जोड़ा</b> जाता है; प्रसंस्करण सख्ती से FIFO (पहले आओ, पहले पाओ) के अनुसार होता है",
+    id: "Setiap nilai yang masuk: jika tidak ada item yang sedang ditinjau, nilai itu menjadi item saat ini; jika tidak, nilai itu <b>ditambahkan ke akhir antrean</b>, dan diproses secara ketat FIFO (pertama masuk, pertama keluar)",
+    de: "Jeder eingehende Wert wird das aktuelle Element, wenn nichts geprüft wird; andernfalls wird er <b>an das Ende der Warteschlange angehängt</b>. Die Verarbeitung erfolgt streng nach FIFO (First In, First Out)",
+    vi: "Mỗi giá trị đến từ thượng nguồn: nếu không có mục nào đang xem xét thì nó trở thành mục hiện tại, ngược lại nó được <b>thêm vào cuối hàng đợi</b>; xử lý nghiêm ngặt theo thứ tự vào trước ra trước (FIFO)",
+    tr: "Yukarı akıştan gelen her değer: inceleme altında öğe yoksa geçerli öğe olur, aksi halde <b>kuyruğun sonuna eklenir</b>; işleme kesinlikle ilk giren ilk çıkar (FIFO) sırasına göre yapılır",
+    it: "Ogni valore in arrivo: se non c’è alcun elemento in revisione diventa quello corrente, altrimenti viene <b>aggiunto in fondo alla coda</b>; l’elaborazione è rigidamente FIFO (primo entrato, primo uscito)",
   },
   runLi2: {
     zh: '处理完一项后自动前进到下一项，无需手动刷新',
@@ -167,7 +245,13 @@ export const helpMessages = {
     ar: 'بعد معالجة عنصر ينتقل تلقائيًا إلى العنصر التالي دون حاجة إلى تحديث يدوي',
     fr: 'Après le traitement d’un élément, on passe automatiquement au suivant, sans actualisation manuelle',
     pt: 'Após processar um item, avança automaticamente para o próximo, sem necessidade de atualizar manualmente',
-    ru: 'После обработки элемента автоматически происходит переход к следующему — вручную обновлять не нужно'
+    ru: 'После обработки элемента автоматически происходит переход к следующему — вручную обновлять не нужно',
+    hi: "एक आइटम संभालने के बाद स्वतः अगले पर चला जाता है; मैन्युअल रीफ़्रेश की ज़रूरत नहीं",
+    id: "Setelah satu item ditangani, otomatis lanjut ke item berikutnya—tanpa perlu menyegarkan manual",
+    de: "Nach der Bearbeitung eines Elements wird automatisch zum nächsten gewechselt – kein manuelles Aktualisieren nötig",
+    vi: "Sau khi xử lý một mục, tự động chuyển sang mục tiếp theo—không cần làm mới thủ công",
+    tr: "Bir öğe işlendikten sonra otomatik olarak sonrakine geçilir; elle yenileme gerekmez",
+    it: "Dopo aver gestito un elemento, si passa automaticamente al successivo: nessun aggiornamento manuale",
   },
   runLi3: {
     zh: '同一时刻只审核一项，保证下游按<b>逐项放行</b>的顺序收到值',
@@ -178,7 +262,13 @@ export const helpMessages = {
     ar: 'تُراجع مراجعة واحدة فقط في كل مرة، مما يضمن وصول القيم إلى العقد اللاحقة <b>عنصرًا عنصرًا</b> وبالترتيب',
     fr: 'Un seul élément est révisé à la fois, ce qui garantit que l’aval reçoit les valeurs <b>un par un</b> dans l’ordre',
     pt: 'Apenas um item é revisado por vez, garantindo que o destino receba os valores <b>um a um</b> e em ordem',
-    ru: 'Одновременно проверяется только один элемент, поэтому дальше значения идут <b>по одному</b> и по порядку'
+    ru: 'Одновременно проверяется только один элемент, поэтому дальше значения идут <b>по одному</b> и по порядку',
+    hi: "एक समय में केवल एक आइटम की समीक्षा होती है, जिससे डाउनस्ट्रीम को मान <b>एक-एक करके</b> क्रम में मिलते हैं",
+    id: "Hanya satu item yang ditinjau pada satu waktu, memastikan hilir menerima nilai <b>satu per satu</b> secara berurutan",
+    de: "Es wird immer nur ein Element geprüft, sodass die nachgelagerte Seite Werte <b>einzeln</b> der Reihe nach erhält",
+    vi: "Chỉ xem xét một mục tại một thời điểm, đảm bảo hạ nguồn nhận giá trị <b>từng mục một</b> theo thứ tự",
+    tr: "Aynı anda yalnızca bir öğe incelenir, böylece aşağı akış değerleri sırayla <b>tek tek</b> alır",
+    it: "Si revisiona un solo elemento alla volta, garantendo che a valle i valori arrivino <b>uno alla volta</b> in ordine",
   },
 
   // —— 注意事项 ——
@@ -191,7 +281,13 @@ export const helpMessages = {
     ar: 'ملاحظات',
     fr: 'Remarques',
     pt: 'Observações',
-    ru: 'Примечания'
+    ru: 'Примечания',
+    hi: "ध्यान देने योग्य बातें",
+    id: "Catatan",
+    de: "Hinweise",
+    vi: "Lưu ý",
+    tr: "Notlar",
+    it: "Note",
   },
   notesLi1: {
     zh: '节点会<b>阻塞等待人工处理</b>：在点「同意」或「拒绝」之前，当前项不会流向下游',
@@ -202,7 +298,13 @@ export const helpMessages = {
     ar: 'تتوقف العقدة <b>في انتظار المعالجة اليدوية</b>: لن يمرّ العنصر الحالي إلى العقد اللاحقة حتى تنقر «موافقة» أو «رفض»',
     fr: 'Le nœud <b>se bloque jusqu’au traitement manuel</b> : l’élément courant ne passera pas en aval tant que vous n’aurez pas cliqué sur « Approuver » ou « Rejeter »',
     pt: 'O nó <b>bloqueia até o tratamento manual</b>: o item atual não flui adiante enquanto você não clicar em “Aprovar” ou “Rejeitar”',
-    ru: 'Узел <b>блокируется в ожидании ручной обработки</b>: текущий элемент не пойдёт дальше, пока вы не нажмёте «Одобрить» или «Отклонить»'
+    ru: 'Узел <b>блокируется в ожидании ручной обработки</b>: текущий элемент не пойдёт дальше, пока вы не нажмёте «Одобрить» или «Отклонить»',
+    hi: "नोड <b>मानवीय प्रसंस्करण की प्रतीक्षा में रुकता है</b>: “स्वीकारें” या “अस्वीकारें” पर क्लिक करने तक वर्तमान आइटम डाउनस्ट्रीम नहीं जाता",
+    id: "Node akan <b>menunggu hingga ditangani secara manual</b>: item saat ini tidak mengalir ke hilir sebelum Anda mengklik “Setujui” atau “Tolak”",
+    de: "Der Knoten <b>blockiert bis zur manuellen Bearbeitung</b>: Das aktuelle Element fließt erst weiter, nachdem Sie auf „Genehmigen“ oder „Ablehnen“ geklickt haben",
+    vi: "Nút sẽ <b>chặn chờ xử lý thủ công</b>: mục hiện tại sẽ không đi đến hạ nguồn cho đến khi bạn nhấp “Chấp thuận” hoặc “Từ chối”",
+    tr: "Düğüm <b>elle işlemeyi bekleyerek bloke eder</b>: siz “Onayla” veya “Reddet”e tıklamadan geçerli öğe aşağı akışa akmaz",
+    it: "Il nodo <b>si blocca in attesa della gestione manuale</b>: l’elemento corrente non fluirà a valle finché non fai clic su “Approva” o “Rifiuta”",
   },
   notesLi2: {
     zh: '队列不写入持久化状态；拖动或重新打开工作区后，由上游重新送来值自动恢复',
@@ -213,7 +315,13 @@ export const helpMessages = {
     ar: 'لا يُكتب الطابور في الحالة المحفوظة؛ بعد السحب أو إعادة فتح مساحة العمل يُستعاد تلقائيًا عندما يرسل المصدر القيم من جديد',
     fr: 'La file n’est pas écrite dans l’état persistant ; après un déplacement ou une réouverture de l’espace de travail, elle est restaurée automatiquement lorsque l’amont renvoie les valeurs',
     pt: 'A fila não é gravada no estado persistente; após arrastar ou reabrir o espaço de trabalho, ela é restaurada automaticamente quando a origem reenvia os valores',
-    ru: 'Очередь не сохраняется в постоянном состоянии; после перетаскивания или повторного открытия рабочей области она восстанавливается автоматически, когда источник снова присылает значения'
+    ru: 'Очередь не сохраняется в постоянном состоянии; после перетаскивания или повторного открытия рабочей области она восстанавливается автоматически, когда источник снова присылает значения',
+    hi: "कतार स्थायी स्थिति में नहीं लिखी जाती; खींचने या कार्यक्षेत्र दोबारा खोलने के बाद अपस्ट्रीम के फिर से मान भेजने पर यह स्वतः बहाल हो जाती है",
+    id: "Antrean tidak ditulis ke status persisten; setelah menyeret atau membuka kembali workspace, antrean dipulihkan otomatis saat hulu mengirim nilai lagi",
+    de: "Die Warteschlange wird nicht im persistenten Zustand gespeichert; nach dem Verschieben oder erneuten Öffnen des Arbeitsbereichs wird sie automatisch wiederhergestellt, wenn die Quelle erneut Werte sendet",
+    vi: "Hàng đợi không được ghi vào trạng thái lưu trữ; sau khi kéo hoặc mở lại không gian làm việc, nó được khôi phục tự động khi thượng nguồn gửi lại giá trị",
+    tr: "Kuyruk kalıcı duruma yazılmaz; sürükledikten veya çalışma alanını yeniden açtıktan sonra, yukarı akış değerleri tekrar gönderince otomatik olarak geri yüklenir",
+    it: "La coda non viene scritta nello stato persistente; dopo aver trascinato o riaperto l’area di lavoro, viene ripristinata automaticamente quando l’origine invia di nuovo i valori",
   },
   notesLi3: {
     zh: '上游类型变化会重建输出端口并<b>断开下游连线</b>，请重新连接后再继续',
@@ -224,6 +332,12 @@ export const helpMessages = {
     ar: 'يؤدي تغيّر نوع المصدر إلى إعادة بناء منافذ الإخراج و<b>فصل الوصلات اللاحقة</b>؛ أعد توصيلها قبل المتابعة',
     fr: 'Un changement de type en amont reconstruit les ports de sortie et <b>déconnecte les liaisons aval</b> ; reconnectez-les avant de continuer',
     pt: 'Uma mudança no tipo da origem reconstrói os portos de saída e <b>desconecta as conexões adiante</b>; reconecte-as antes de continuar',
-    ru: 'Смена типа источника пересоздаёт выходные порты и <b>разрывает связи вниз</b>; подключите их заново, прежде чем продолжать'
+    ru: 'Смена типа источника пересоздаёт выходные порты и <b>разрывает связи вниз</b>; подключите их заново, прежде чем продолжать',
+    hi: "अपस्ट्रीम प्रकार बदलने पर आउटपुट पोर्ट फिर से बनते हैं और <b>डाउनस्ट्रीम कनेक्शन टूट जाते हैं</b>; जारी रखने से पहले उन्हें फिर से कनेक्ट करें",
+    id: "Perubahan tipe hulu akan membangun ulang port keluaran dan <b>memutus koneksi hilir</b>; sambungkan kembali sebelum melanjutkan",
+    de: "Eine Änderung des vorgelagerten Typs erstellt die Ausgabeports neu und <b>trennt Verbindungen nach unten</b>; verbinden Sie sie erneut, bevor Sie fortfahren",
+    vi: "Thay đổi kiểu thượng nguồn sẽ tạo lại các cổng đầu ra và <b>ngắt kết nối hạ nguồn</b>; hãy kết nối lại trước khi tiếp tục",
+    tr: "Yukarı akış türü değişirse çıkış bağlantı noktaları yeniden oluşturulur ve <b>aşağı akış bağlantıları kopar</b>; devam etmeden önce bunları yeniden bağlayın",
+    it: "Un cambiamento del tipo a monte ricrea le porte di output e <b>disconnette i collegamenti a valle</b>; riconnettili prima di continuare",
   }
 } satisfies Record<string, LocalizedText>

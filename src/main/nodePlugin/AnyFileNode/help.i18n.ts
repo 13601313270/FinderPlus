@@ -1,7 +1,7 @@
 import type { LocalizedText } from '../../../shared/language'
 
 /**
- * AnyFile 节点帮助文档（AnyFileHelpDialog）的全部文案，9 种语言全配。
+ * AnyFile 节点帮助文档（AnyFileHelpDialog）的全部文案，全部 15 种语言全配。
  *
  * 与节点自身的 i18n.ts 分开：卡片短文案变化频繁，帮助文档整篇体量大、改动少。
  * 约定：带行内 <code> / <b> 的句子，值里直接写 HTML，模板用 v-html 渲染；
@@ -18,7 +18,13 @@ export const helpMessages = {
     ar: 'ما هذا؟',
     fr: 'Qu’est-ce que c’est ?',
     pt: 'O que é isto?',
-    ru: 'Что это?'
+    ru: 'Что это?',
+    hi: 'यह क्या है?',
+    id: 'Apa ini?',
+    de: 'Was ist das?',
+    vi: 'Đây là gì?',
+    tr: 'Bu nedir?',
+    it: 'Che cos’è?'
   },
   whatBody: {
     zh: '通用文件节点是文件类型的<b>兜底</b>：任何后缀都能接，注册表里排在最后，只有当其它文件节点都不匹配时才落到它身上。它没有标题栏，中间是文件图标，图标下方显示文件名与大小。',
@@ -29,7 +35,13 @@ export const helpMessages = {
     ar: 'عقدة الملف العام هي <b>الخيار الاحتياطي</b> لأنواع الملفات: تقبل أي امتداد وتأتي في آخر السجل، فلا تُستخدم إلا عندما لا تطابق أي عقدة ملف أخرى. لا تحتوي على شريط عنوان، وفي وسطها أيقونة ملف وتحتها اسم الملف وحجمه.',
     fr: 'Le nœud Fichier générique est le <b>repli</b> des types de fichiers : il accepte toute extension et se place en dernier dans le registre, il n’est donc utilisé que lorsqu’aucun autre nœud de fichier ne correspond. Il n’a pas de barre de titre : une icône de fichier est au centre, avec le nom et la taille en dessous.',
     pt: 'O nó Ficheiro genérico é o <b>recurso de reserva</b> dos tipos de ficheiro: aceita qualquer extensão e fica em último no registo, pelo que só é usado quando nenhum outro nó de ficheiro corresponde. Não tem barra de título: no centro está um ícone de ficheiro e, abaixo, o nome e o tamanho.',
-    ru: 'Узел «Обычный файл» — <b>запасной</b> для типов файлов: он принимает любое расширение и стоит последним в реестре, поэтому используется только тогда, когда ни один другой файловый узел не подошёл. У него нет заголовка: в центре — значок файла, под ним имя и размер.'
+    ru: 'Узел «Обычный файл» — <b>запасной</b> для типов файлов: он принимает любое расширение и стоит последним в реестре, поэтому используется только тогда, когда ни один другой файловый узел не подошёл. У него нет заголовка: в центре — значок файла, под ним имя и размер.',
+    hi: 'सामान्य फ़ाइल नोड फ़ाइल प्रकारों के लिए <b>बैकअप</b> है: यह किसी भी एक्सटेंशन को स्वीकार करता है और रजिस्ट्री में सबसे अंत में रहता है, इसलिए इसका उपयोग केवल तब होता है जब कोई अन्य फ़ाइल नोड मेल न खाए। इसकी कोई शीर्षक पट्टी नहीं है; बीच में फ़ाइल आइकन है और उसके नीचे फ़ाइल का नाम और आकार दिखता है।',
+    id: 'Node Berkas Umum adalah <b>cadangan</b> untuk jenis berkas: menerima ekstensi apa pun dan berada di urutan terakhir registri, jadi hanya dipakai saat tidak ada node berkas lain yang cocok. Tidak ada bilah judul; di tengah ada ikon berkas, dan di bawahnya ditampilkan nama serta ukuran berkas.',
+    de: 'Der Knoten „Beliebige Datei“ ist der <b>Fallback</b> für Dateitypen: Er akzeptiert jede Endung und steht im Register ganz hinten, sodass er nur verwendet wird, wenn kein anderer Dateiknoten passt. Er hat keine Titelleiste; in der Mitte steht ein Dateisymbol, darunter werden Dateiname und Größe angezeigt.',
+    vi: 'Nút Tệp chung là <b>phương án dự phòng</b> cho các loại tệp: nó chấp nhận mọi phần mở rộng và nằm cuối danh bạ, nên chỉ được dùng khi không có nút tệp nào khác khớp. Nó không có thanh tiêu đề; ở giữa là biểu tượng tệp, bên dưới hiển thị tên và kích thước tệp.',
+    tr: 'Genel Dosya düğümü, dosya türleri için <b>yedek</b> seçenektir: her uzantıyı kabul eder ve kayıtta en sonda yer alır, dolayısıyla yalnızca başka hiçbir dosya düğümü eşleşmediğinde kullanılır. Başlık çubuğu yoktur; ortada bir dosya simgesi, altında dosya adı ve boyutu görünür.',
+    it: 'Il nodo File generico è il <b>ripiego</b> per i tipi di file: accetta qualsiasi estensione ed è in fondo al registro, quindi viene usato solo quando nessun altro nodo file corrisponde. Non ha barra del titolo: al centro c’è un’icona di file, sotto la quale sono mostrati nome e dimensione.'
   },
 
   // —— 端口 ——
@@ -42,7 +54,13 @@ export const helpMessages = {
     ar: 'المنافذ',
     fr: 'Ports',
     pt: 'Portas',
-    ru: 'Порты'
+    ru: 'Порты',
+    hi: 'पोर्ट',
+    id: 'Port',
+    de: 'Ports',
+    vi: 'Cổng',
+    tr: 'Bağlantı noktaları',
+    it: 'Porte'
   },
   portsLi1: {
     zh: '输出 <code>file</code>：<code>FileValue</code>（kind 为 <code>file</code>），下游接通用文件类型的节点都能连上。',
@@ -53,7 +71,13 @@ export const helpMessages = {
     ar: 'منفذ الإخراج <code>file</code>: قيمة <code>FileValue</code> (نوعها <code>file</code>)؛ ويمكن توصيل العقد اللاحقة التي تقبل الملفات العامة بها.',
     fr: 'Sortie <code>file</code> : un <code>FileValue</code> (kind <code>file</code>) ; les nœuds en aval acceptant les fichiers génériques peuvent s’y connecter.',
     pt: 'Saída <code>file</code>: um <code>FileValue</code> (kind <code>file</code>); os nós seguintes que aceitem ficheiros genéricos podem ligar-se.',
-    ru: 'Выход <code>file</code>: значение <code>FileValue</code> (kind <code>file</code>); к нему подключаются последующие узлы, принимающие файлы общего типа.'
+    ru: 'Выход <code>file</code>: значение <code>FileValue</code> (kind <code>file</code>); к нему подключаются последующие узлы, принимающие файлы общего типа.',
+    hi: 'आउटपुट <code>file</code>: <code>FileValue</code> (kind <code>file</code>), डाउनस्ट्रीम सामान्य फ़ाइल प्रकार वाले नोड्स इसमें कनेक्ट हो सकते हैं।',
+    id: 'Keluaran <code>file</code>: <code>FileValue</code> (kind <code>file</code>); node hilir yang menerima berkas umum dapat terhubung.',
+    de: 'Ausgabe <code>file</code>: ein <code>FileValue</code> (kind <code>file</code>); nachgelagerte Knoten, die allgemeine Dateien akzeptieren, können sich verbinden.',
+    vi: 'Đầu ra <code>file</code>: một <code>FileValue</code> (kind <code>file</code>); các nút hạ nguồn nhận tệp chung đều có thể kết nối.',
+    tr: 'Çıkış <code>file</code>: bir <code>FileValue</code> (kind <code>file</code>); genel dosya kabul eden aşağı akış düğümleri bağlanabilir.',
+    it: 'Output <code>file</code>: un <code>FileValue</code> (kind <code>file</code>); i nodi a valle che accettano file generici possono connettersi.'
   },
   portsLi2: {
     zh: '输出 <code>path</code>：该文件在画布目录下的<b>绝对路径</b>（string）。',
@@ -64,7 +88,13 @@ export const helpMessages = {
     ar: 'منفذ الإخراج <code>path</code>: <b>المسار المطلق</b> للملف داخل مجلد اللوحة (سلسلة نصية).',
     fr: 'Sortie <code>path</code> : le <b>chemin absolu</b> du fichier dans le répertoire du canevas (chaîne).',
     pt: 'Saída <code>path</code>: o <b>caminho absoluto</b> do ficheiro dentro da pasta da tela (string).',
-    ru: 'Выход <code>path</code>: <b>абсолютный путь</b> к файлу в каталоге холста (строка).'
+    ru: 'Выход <code>path</code>: <b>абсолютный путь</b> к файлу в каталоге холста (строка).',
+    hi: 'आउटपुट <code>path</code>: कैनवास निर्देशिका में इस फ़ाइल का <b>पूर्ण पथ</b> (string)।',
+    id: 'Keluaran <code>path</code>: <b>jalur absolut</b> berkas ini di dalam direktori kanvas (string).',
+    de: 'Ausgabe <code>path</code>: der <b>absolute Pfad</b> dieser Datei im Canvas-Verzeichnis (string).',
+    vi: 'Đầu ra <code>path</code>: <b>đường dẫn tuyệt đối</b> của tệp này trong thư mục canvas (string).',
+    tr: 'Çıkış <code>path</code>: bu dosyanın tuval dizinindeki <b>mutlak yolu</b> (string).',
+    it: 'Output <code>path</code>: il <b>percorso assoluto</b> di questo file nella cartella della tela (string).'
   },
   portsLi3: {
     zh: '输入 <code>file-in</code>：接受任意文件，收到文件会<b>替换</b>本节点当前文件，并重新读取它。',
@@ -75,7 +105,13 @@ export const helpMessages = {
     ar: 'منفذ الإدخال <code>file-in</code>: يقبل أي ملف؛ وعند استلام ملف فإنه <b>يستبدل</b> ملف العقدة الحالي وتُعاد قراءته.',
     fr: 'Entrée <code>file-in</code> : accepte n’importe quel fichier ; un fichier reçu <b>remplace</b> le fichier actuel du nœud et est relu.',
     pt: 'Entrada <code>file-in</code>: aceita qualquer ficheiro; ao receber um, <b>substitui</b> o ficheiro atual do nó e este é relido.',
-    ru: 'Вход <code>file-in</code>: принимает любой файл; полученный файл <b>заменяет</b> текущий файл узла и читается заново.'
+    ru: 'Вход <code>file-in</code>: принимает любой файл; полученный файл <b>заменяет</b> текущий файл узла и читается заново.',
+    hi: 'इनपुट <code>file-in</code>: कोई भी फ़ाइल स्वीकार करता है; फ़ाइल प्राप्त होने पर यह इस नोड की वर्तमान फ़ाइल को <b>बदल</b> देता है और उसे फिर से पढ़ता है।',
+    id: 'Masukan <code>file-in</code>: menerima berkas apa pun; berkas yang diterima akan <b>mengganti</b> berkas node saat ini dan dibaca ulang.',
+    de: 'Eingabe <code>file-in</code>: akzeptiert jede Datei; eine empfangene Datei <b>ersetzt</b> die aktuelle Datei des Knotens und wird neu eingelesen.',
+    vi: 'Đầu vào <code>file-in</code>: chấp nhận mọi tệp; tệp nhận được sẽ <b>thay thế</b> tệp hiện tại của nút này và được đọc lại.',
+    tr: 'Giriş <code>file-in</code>: her dosyayı kabul eder; alınan dosya bu düğümün geçerli dosyasını <b>değiştirir</b> ve yeniden okunur.',
+    it: 'Input <code>file-in</code>: accetta qualsiasi file; un file ricevuto <b>sostituisce</b> il file corrente del nodo e viene riletto.'
   },
 
   // —— 使用与交互 ——
@@ -88,7 +124,13 @@ export const helpMessages = {
     ar: 'الاستخدام والتفاعل',
     fr: 'Utilisation et interaction',
     pt: 'Utilização e interação',
-    ru: 'Использование и взаимодействие'
+    ru: 'Использование и взаимодействие',
+    hi: 'उपयोग और इंटरैक्शन',
+    id: 'Penggunaan & interaksi',
+    de: 'Verwendung & Interaktion',
+    vi: 'Sử dụng & tương tác',
+    tr: 'Kullanım ve etkileşim',
+    it: 'Uso e interazione'
   },
   useLi1: {
     zh: '双击卡片，用<b>系统默认应用</b>打开该文件。',
@@ -99,7 +141,13 @@ export const helpMessages = {
     ar: 'انقر مرتين على البطاقة لفتح الملف باستخدام <b>التطبيق الافتراضي للنظام</b>.',
     fr: 'Double-cliquez sur la carte pour ouvrir le fichier avec l’<b>application par défaut du système</b>.',
     pt: 'Faça duplo clique no cartão para abrir o ficheiro com a <b>aplicação predefinida do sistema</b>.',
-    ru: 'Дважды щёлкните по карточке, чтобы открыть файл <b>приложением по умолчанию</b>.'
+    ru: 'Дважды щёлкните по карточке, чтобы открыть файл <b>приложением по умолчанию</b>.',
+    hi: 'फ़ाइल को <b>सिस्टम डिफ़ॉल्ट ऐप</b> से खोलने के लिए कार्ड पर डबल-क्लिक करें।',
+    id: 'Klik ganda kartu untuk membuka berkas dengan <b>aplikasi bawaan sistem</b>.',
+    de: 'Doppelklicken Sie auf die Karte, um die Datei mit der <b>System-Standard-App</b> zu öffnen.',
+    vi: 'Nhấp đúp vào thẻ để mở tệp bằng <b>ứng dụng mặc định của hệ thống</b>.',
+    tr: 'Dosyayı <b>sistem varsayılan uygulamasıyla</b> açmak için karta çift tıklayın.',
+    it: 'Fai doppio clic sulla scheda per aprire il file con l’<b>app predefinita di sistema</b>.'
   },
   useLi2: {
     zh: '把图标<b>拖出窗口</b>丢到桌面或文件夹，即可把文件移动到该位置。',
@@ -110,7 +158,13 @@ export const helpMessages = {
     ar: 'اسحب الأيقونة <b>خارج النافذة</b> وأفلتها على سطح المكتب أو في مجلد لنقل الملف إلى هناك.',
     fr: 'Faites glisser l’icône <b>hors de la fenêtre</b> vers le bureau ou un dossier pour y déplacer le fichier.',
     pt: 'Arraste o ícone <b>para fora da janela</b> até à área de trabalho ou a uma pasta para mover o ficheiro para lá.',
-    ru: 'Перетащите значок <b>за пределы окна</b> на рабочий стол или в папку, чтобы переместить файл туда.'
+    ru: 'Перетащите значок <b>за пределы окна</b> на рабочий стол или в папку, чтобы переместить файл туда.',
+    hi: 'फ़ाइल को उस स्थान पर ले जाने के लिए आइकन को <b>विंडो से बाहर</b> डेस्कटॉप या फ़ोल्डर पर खींचकर छोड़ें।',
+    id: 'Seret ikon <b>keluar jendela</b> ke desktop atau folder untuk memindahkan berkas ke sana.',
+    de: 'Ziehen Sie das Symbol <b>aus dem Fenster</b> auf den Desktop oder in einen Ordner, um die Datei dorthin zu verschieben.',
+    vi: 'Kéo biểu tượng <b>ra ngoài cửa sổ</b> thả vào màn hình nền hoặc thư mục để di chuyển tệp đến đó.',
+    tr: 'Dosyayı oraya taşımak için simgeyi <b>pencerenin dışına</b> masaüstüne veya bir klasöre sürükleyip bırakın.',
+    it: 'Trascina l’icona <b>fuori dalla finestra</b> sul desktop o in una cartella per spostare lì il file.'
   },
   useLi3: {
     zh: '拖动卡片本身（空白处或文件名）可移动节点在画布上的位置。',
@@ -121,7 +175,13 @@ export const helpMessages = {
     ar: 'اسحب البطاقة نفسها (من المساحة الفارغة أو اسم الملف) لتحريك العقدة على اللوحة.',
     fr: 'Faites glisser la carte elle-même (sur un espace vide ou le nom du fichier) pour déplacer le nœud sur le canevas.',
     pt: 'Arraste o próprio cartão (no espaço vazio ou no nome do ficheiro) para mover o nó pela tela.',
-    ru: 'Перетащите саму карточку (за пустое место или имя файла), чтобы переместить узел по холсту.'
+    ru: 'Перетащите саму карточку (за пустое место или имя файла), чтобы переместить узел по холсту.',
+    hi: 'नोड को कैनवास पर इधर-उधर ले जाने के लिए कार्ड को ही (खाली जगह या फ़ाइल नाम पर) खींचें।',
+    id: 'Seret kartu itu sendiri (pada ruang kosong atau nama berkas) untuk memindahkan node di kanvas.',
+    de: 'Ziehen Sie die Karte selbst (an einer freien Stelle oder am Dateinamen), um den Knoten auf dem Canvas zu verschieben.',
+    vi: 'Kéo chính thẻ (ở chỗ trống hoặc tên tệp) để di chuyển vị trí nút trên canvas.',
+    tr: 'Düğümü tuvalde taşımak için kartın kendisini (boş alanda veya dosya adında) sürükleyin.',
+    it: 'Trascina la scheda stessa (su uno spazio vuoto o sul nome del file) per spostare il nodo sulla tela.'
   },
 
   // —— 注意事项 ——
@@ -134,7 +194,13 @@ export const helpMessages = {
     ar: 'ملاحظات',
     fr: 'Remarques',
     pt: 'Notas',
-    ru: 'Примечания'
+    ru: 'Примечания',
+    hi: 'ध्यान देने योग्य बातें',
+    id: 'Catatan',
+    de: 'Hinweise',
+    vi: 'Lưu ý',
+    tr: 'Notlar',
+    it: 'Note'
   },
   notesLi1: {
     zh: '尚未选择文件时，卡片上显示「<b>未选择文件</b>」，此时不会向下游输出内容。',
@@ -145,7 +211,13 @@ export const helpMessages = {
     ar: 'إلى أن يتم اختيار ملف، تعرض البطاقة «<b>لم يتم اختيار ملف</b>»، ولا يُخرَج شيء إلى العقد اللاحقة.',
     fr: 'Tant qu’aucun fichier n’est sélectionné, la carte affiche « <b>Aucun fichier sélectionné</b> » et rien n’est envoyé en aval.',
     pt: 'Enquanto não for selecionado um ficheiro, o cartão mostra “<b>Nenhum ficheiro selecionado</b>” e nada é enviado a jusante.',
-    ru: 'Пока файл не выбран, на карточке отображается «<b>Файл не выбран</b>», и ничего не отправляется дальше.'
+    ru: 'Пока файл не выбран, на карточке отображается «<b>Файл не выбран</b>», и ничего не отправляется дальше.',
+    hi: 'जब तक कोई फ़ाइल चयनित न हो, कार्ड पर «<b>कोई फ़ाइल चयनित नहीं</b>» दिखता है, और डाउनस्ट्रीम कुछ भी आउटपुट नहीं होता।',
+    id: 'Selama belum ada berkas yang dipilih, kartu menampilkan “<b>Tidak ada berkas dipilih</b>”, dan tidak ada yang dikirim ke hilir.',
+    de: 'Solange keine Datei ausgewählt ist, zeigt die Karte „<b>Keine Datei ausgewählt</b>“ an, und es wird nichts nachgelagert ausgegeben.',
+    vi: 'Khi chưa chọn tệp, thẻ hiển thị “<b>Chưa chọn tệp</b>”, và không có gì được xuất cho hạ nguồn.',
+    tr: 'Bir dosya seçilene kadar kartta “<b>Dosya seçilmedi</b>” görünür ve aşağı akışa hiçbir şey gönderilmez.',
+    it: 'Finché non viene selezionato un file, la scheda mostra «<b>Nessun file selezionato</b>» e nulla viene inviato a valle.'
   },
   notesLi2: {
     zh: '图标下方显示文件名与大小，大小按 B / KB / MB 自动分档显示。',
@@ -156,7 +228,13 @@ export const helpMessages = {
     ar: 'تعرض البطاقة أسفل الأيقونة اسم الملف وحجمه، مع تحويل الحجم تلقائيًا إلى وحدات B / KB / MB.',
     fr: 'Sous l’icône, la carte affiche le nom et la taille du fichier, la taille étant automatiquement convertie en B / KB / MB.',
     pt: 'Abaixo do ícone, o cartão mostra o nome e o tamanho do ficheiro, com o tamanho convertido automaticamente em B / KB / MB.',
-    ru: 'Под значком карточка показывает имя и размер файла; размер автоматически переводится в B / KB / MB.'
+    ru: 'Под значком карточка показывает имя и размер файла; размер автоматически переводится в B / KB / MB.',
+    hi: 'आइकन के नीचे फ़ाइल का नाम और आकार दिखता है; आकार B / KB / MB में स्वतः बदलकर प्रदर्शित होता है।',
+    id: 'Di bawah ikon ditampilkan nama dan ukuran berkas; ukuran otomatis ditampilkan dalam B / KB / MB.',
+    de: 'Unter dem Symbol werden Dateiname und Größe angezeigt; die Größe wird automatisch in B / KB / MB skaliert.',
+    vi: 'Bên dưới biểu tượng hiển thị tên và kích thước tệp; kích thước tự động đổi sang B / KB / MB.',
+    tr: 'Simgenin altında dosya adı ve boyutu gösterilir; boyut otomatik olarak B / KB / MB cinsinden görüntülenir.',
+    it: 'Sotto l’icona sono mostrati nome e dimensione del file; la dimensione viene convertita automaticamente in B / KB / MB.'
   },
   notesLi3: {
     zh: '图标上的标签显示文件后缀缩写（大写）；没有后缀时显示 <code>FILE</code>。',
@@ -167,7 +245,13 @@ export const helpMessages = {
     ar: 'يعرض الملصق على الأيقونة اختصار امتداد الملف (بأحرف كبيرة)، وعند عدم وجود امتداد يظهر <code>FILE</code>.',
     fr: 'L’étiquette sur l’icône affiche l’extension du fichier en majuscules ; en l’absence d’extension, elle affiche <code>FILE</code>.',
     pt: 'A etiqueta no ícone mostra a extensão do ficheiro em maiúsculas; quando não há extensão, mostra <code>FILE</code>.',
-    ru: 'Ярлык на значке показывает расширение файла заглавными буквами; если расширения нет, отображается <code>FILE</code>.'
+    ru: 'Ярлык на значке показывает расширение файла заглавными буквами; если расширения нет, отображается <code>FILE</code>.',
+    hi: 'आइकन पर लेबल फ़ाइल एक्सटेंशन का संक्षिप्त रूप (बड़े अक्षरों में) दिखाता है; एक्सटेंशन न होने पर <code>FILE</code> दिखता है।',
+    id: 'Label pada ikon menampilkan singkatan ekstensi berkas (huruf besar); jika tidak ada ekstensi, ditampilkan <code>FILE</code>.',
+    de: 'Das Etikett auf dem Symbol zeigt die Dateiendung in Großbuchstaben; gibt es keine Endung, wird <code>FILE</code> angezeigt.',
+    vi: 'Nhãn trên biểu tượng hiển thị phần mở rộng tệp viết hoa; khi không có phần mở rộng, hiển thị <code>FILE</code>.',
+    tr: 'Simge üzerindeki etiket, dosya uzantısının kısaltmasını (büyük harfle) gösterir; uzantı yoksa <code>FILE</code> görünür.',
+    it: 'L’etichetta sull’icona mostra l’estensione del file in maiuscolo; in assenza di estensione mostra <code>FILE</code>.'
   },
   notesLi4: {
     zh: '删除本节点时，画布目录里对应的文件副本也会一并删除。',
@@ -178,6 +262,12 @@ export const helpMessages = {
     ar: 'عند حذف هذه العقدة تُحذف أيضًا نسخة الملف المقابلة في مجلد اللوحة.',
     fr: 'Supprimer ce nœud supprime aussi la copie correspondante du fichier dans le répertoire du canevas.',
     pt: 'Eliminar este nó elimina também a cópia correspondente do ficheiro na pasta da tela.',
-    ru: 'При удалении этого узла соответствующая копия файла в каталоге холста также удаляется.'
+    ru: 'При удалении этого узла соответствующая копия файла в каталоге холста также удаляется.',
+    hi: 'इस नोड को हटाने पर कैनवास निर्देशिका में उसकी संबंधित फ़ाइल प्रतिलिपि भी हट जाती है।',
+    id: 'Menghapus node ini juga menghapus salinan berkas yang sesuai di direktori kanvas.',
+    de: 'Beim Löschen dieses Knotens wird auch die zugehörige Dateikopie im Canvas-Verzeichnis gelöscht.',
+    vi: 'Xóa nút này cũng xóa bản sao tệp tương ứng trong thư mục canvas.',
+    tr: 'Bu düğümü silmek, tuval dizinindeki ilgili dosya kopyasını da siler.',
+    it: 'Eliminando questo nodo viene eliminata anche la copia corrispondente del file nella cartella della tela.'
   }
 } satisfies Record<string, LocalizedText>

@@ -14,7 +14,13 @@ export const manifest: NodePluginManifest = {
     ar: 'توليد الصور',
     fr: 'Génération d’images',
     pt: 'Geração de imagens',
-    ru: 'Генерация изображений'
+    ru: 'Генерация изображений',
+    hi: 'छवि निर्माण',
+    id: 'Pembuatan Gambar',
+    de: 'Bildgenerierung',
+    vi: 'Tạo ảnh',
+    tr: 'Görüntü Oluşturma',
+    it: 'Generazione immagine'
   },
   render,
   help: () => import('./ImageGenHelpDialog.vue')

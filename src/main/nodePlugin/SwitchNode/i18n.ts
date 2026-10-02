@@ -15,7 +15,13 @@ export const messages = {
     ar: 'اسحب العقدة',
     fr: 'Glisser le nœud',
     pt: 'Arrastar nó',
-    ru: 'Перетащить узел'
+    ru: 'Перетащить узел',
+    hi: 'नोड खींचें',
+    id: 'Seret node',
+    de: 'Knoten ziehen',
+    vi: 'Kéo nút',
+    tr: 'Düğümü sürükle',
+    it: 'Trascina nodo'
   },
   branchPass: {
     zh: '✓ 通过',
@@ -26,7 +32,13 @@ export const messages = {
     ar: '✓ يمر',
     fr: '✓ Pass',
     pt: '✓ Passa',
-    ru: '✓ Пропустить'
+    ru: '✓ Пропустить',
+    hi: '✓ पास',
+    id: '✓ Lolos',
+    de: '✓ Bestanden',
+    vi: '✓ Đạt',
+    tr: '✓ Geçti',
+    it: '✓ Supera'
   },
   branchFail: {
     zh: '✗ 驳回',
@@ -37,6 +49,12 @@ export const messages = {
     ar: '✗ يُرفض',
     fr: '✗ Rejet',
     pt: '✗ Rejeita',
-    ru: '✗ Отклонить'
+    ru: '✗ Отклонить',
+    hi: '✗ अस्वीकार',
+    id: '✗ Tolak',
+    de: '✗ Abgelehnt',
+    vi: '✗ Từ chối',
+    tr: '✗ Reddet',
+    it: '✗ Rifiuta'
   }
 } satisfies Record<string, LocalizedText>

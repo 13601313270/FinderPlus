@@ -53,7 +53,13 @@ export class ImgFileNode extends FileNode {
     ar: 'ملف',
     fr: 'Fichier',
     pt: 'Ficheiro',
-    ru: 'Файл'
+    ru: 'Файл',
+    hi: 'फ़ाइल',
+    id: 'Berkas',
+    de: 'Datei',
+    vi: 'Tệp',
+    tr: 'Dosya',
+    it: 'File'
   })
 
   /** 文件数据输入端口：只接受同类型（图片）文件，收到值即替换本节点文件 */
@@ -68,7 +74,13 @@ export class ImgFileNode extends FileNode {
       ar: 'كتابة البيانات',
       fr: 'Écrire des données',
       pt: 'Gravar dados',
-      ru: 'Запись данных'
+      ru: 'Запись данных',
+      hi: 'डेटा लिखें',
+      id: 'Tulis Data',
+      de: 'Daten schreiben',
+      vi: 'Ghi dữ liệu',
+      tr: 'Veri yaz',
+      it: 'Scrivi dati'
     }
   })
 

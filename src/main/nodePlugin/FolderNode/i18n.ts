@@ -16,7 +16,13 @@ export const messages = {
     ar: '{n} ملف',
     fr: '{n} fichiers',
     pt: '{n} arquivos',
-    ru: '{n} файлов'
+    ru: '{n} файлов',
+    hi: '{n} फ़ाइलें',
+    id: '{n} berkas',
+    de: '{n} Dateien',
+    vi: '{n} tệp',
+    tr: '{n} dosya',
+    it: '{n} file'
   },
   resizeHint: {
     zh: '拖动调整文件夹大小（最小 2×2）',
@@ -27,7 +33,13 @@ export const messages = {
     ar: 'اسحب لتغيير حجم المجلد (الحد الأدنى 2×2)',
     fr: 'Glissez pour redimensionner le dossier (min. 2×2)',
     pt: 'Arraste para redimensionar a pasta (mín. 2×2)',
-    ru: 'Перетащите, чтобы изменить размер папки (минимум 2×2)'
+    ru: 'Перетащите, чтобы изменить размер папки (минимум 2×2)',
+    hi: 'फ़ोल्डर का आकार बदलने के लिए खींचें (न्यूनतम 2×2)',
+    id: 'Seret untuk mengubah ukuran folder (min. 2×2)',
+    de: 'Ziehen, um die Ordnergröße zu ändern (min. 2×2)',
+    vi: 'Kéo để thay đổi kích thước thư mục (tối thiểu 2×2)',
+    tr: 'Klasör boyutunu değiştirmek için sürükleyin (en az 2×2)',
+    it: 'Trascina per ridimensionare la cartella (min. 2×2)'
   },
   helpTitle: {
     zh: '使用说明',
@@ -38,7 +50,13 @@ export const messages = {
     ar: 'مساعدة',
     fr: 'Aide',
     pt: 'Ajuda',
-    ru: 'Справка'
+    ru: 'Справка',
+    hi: 'सहायता',
+    id: 'Bantuan',
+    de: 'Hilfe',
+    vi: 'Trợ giúp',
+    tr: 'Yardım',
+    it: 'Guida'
   },
   helpDialogTitle: {
     zh: '文件夹节点使用说明',
@@ -49,6 +67,12 @@ export const messages = {
     ar: 'مساعدة عقدة المجلد',
     fr: 'Aide du nœud Dossier',
     pt: 'Ajuda do nó Pasta',
-    ru: 'Справка по узлу «Папка»'
+    ru: 'Справка по узлу «Папка»',
+    hi: 'फ़ोल्डर नोड सहायता',
+    id: 'Bantuan node Folder',
+    de: 'Hilfe zum Knoten „Ordner“',
+    vi: 'Trợ giúp nút Thư mục',
+    tr: 'Klasör düğümü yardımı',
+    it: 'Guida al nodo Cartella'
   }
 } satisfies Record<string, LocalizedText>

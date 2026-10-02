@@ -14,7 +14,13 @@ export const manifest: NodePluginManifest = {
     ar: 'عرض النص',
     fr: 'Affichage texte',
     pt: 'Exibir texto',
-    ru: 'Отображение текста'
+    ru: 'Отображение текста',
+    hi: 'टेक्स्ट प्रदर्शन',
+    id: 'Tampilan teks',
+    de: 'Textanzeige',
+    vi: 'Hiển thị văn bản',
+    tr: 'Metin Görüntüleme',
+    it: 'Visualizzazione testo'
   },
   render,
   help: () => import('./TextDisplayHelpDialog.vue')

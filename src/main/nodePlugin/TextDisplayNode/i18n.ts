@@ -16,7 +16,13 @@ export const messages = {
     ar: 'اسحب العقدة',
     fr: 'Glisser le nœud',
     pt: 'Arrastar nó',
-    ru: 'Перетащить узел'
+    ru: 'Перетащить узел',
+    hi: 'नोड खींचें',
+    id: 'Seret node',
+    de: 'Knoten ziehen',
+    vi: 'Kéo nút',
+    tr: 'Düğümü sürükle',
+    it: 'Trascina nodo'
   },
   empty: {
     zh: '（暂无输出）',
@@ -27,7 +33,13 @@ export const messages = {
     ar: '(لا يوجد إخراج)',
     fr: '(Aucune sortie)',
     pt: '(Sem saída)',
-    ru: '(Нет вывода)'
+    ru: '(Нет вывода)',
+    hi: '(कोई आउटपुट नहीं)',
+    id: '(Tidak ada keluaran)',
+    de: '(Keine Ausgabe)',
+    vi: '(Không có đầu ra)',
+    tr: '(Çıkış yok)',
+    it: '(Nessun output)'
   },
   nodeMissing: {
     zh: '节点不存在',
@@ -38,7 +50,13 @@ export const messages = {
     ar: 'العقدة غير موجودة',
     fr: 'Nœud introuvable',
     pt: 'Nó não encontrado',
-    ru: 'Узел не найден'
+    ru: 'Узел не найден',
+    hi: 'नोड मौजूद नहीं है',
+    id: 'Node tidak ditemukan',
+    de: 'Knoten nicht gefunden',
+    vi: 'Không tìm thấy nút',
+    tr: 'Düğüm bulunamadı',
+    it: 'Nodo non trovato'
   },
   resizeHint: {
     zh: '拖拽调整节点大小',
@@ -49,7 +67,13 @@ export const messages = {
     ar: 'اسحب لتغيير حجم العقدة',
     fr: 'Glisser pour redimensionner le nœud',
     pt: 'Arraste para redimensionar o nó',
-    ru: 'Перетащите, чтобы изменить размер узла'
+    ru: 'Перетащите, чтобы изменить размер узла',
+    hi: 'नोड का आकार बदलने के लिए खींचें',
+    id: 'Seret untuk mengubah ukuran node',
+    de: 'Ziehen, um die Knotengröße zu ändern',
+    vi: 'Kéo để thay đổi kích thước nút',
+    tr: 'Düğüm boyutunu değiştirmek için sürükle',
+    it: 'Trascina per ridimensionare il nodo'
   },
   helpTitle: {
     zh: '使用说明',
@@ -60,7 +84,13 @@ export const messages = {
     ar: 'مساعدة',
     fr: 'Aide',
     pt: 'Ajuda',
-    ru: 'Справка'
+    ru: 'Справка',
+    hi: 'सहायता',
+    id: 'Bantuan',
+    de: 'Hilfe',
+    vi: 'Trợ giúp',
+    tr: 'Yardım',
+    it: 'Guida'
   },
   helpDialogTitle: {
     zh: '文本展示节点使用说明',
@@ -71,6 +101,12 @@ export const messages = {
     ar: 'مساعدة عقدة عرض النص',
     fr: 'Aide du nœud Affichage texte',
     pt: 'Ajuda do nó Exibir texto',
-    ru: 'Справка по узлу «Отображение текста»'
+    ru: 'Справка по узлу «Отображение текста»',
+    hi: 'टेक्स्ट प्रदर्शन नोड सहायता',
+    id: 'Bantuan node Tampilan teks',
+    de: 'Hilfe zum Knoten „Textanzeige“',
+    vi: 'Trợ giúp nút Hiển thị văn bản',
+    tr: 'Metin Görüntüleme düğümü yardımı',
+    it: 'Guida del nodo Visualizzazione testo'
   }
 } satisfies Record<string, LocalizedText>

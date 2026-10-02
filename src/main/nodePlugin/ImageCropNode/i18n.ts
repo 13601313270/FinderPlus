@@ -16,7 +16,13 @@ export const messages = {
     ar: 'أفلت عقدة صورة للقص · أو صِل صورة بالمنفذ الأيسر للقص الفوري',
     fr: 'Déposez un nœud image pour recadrer · ou connectez une image au port gauche pour un recadrage en direct',
     pt: 'Solte um nó de imagem para recortar · ou conecte uma imagem à porta esquerda para recorte ao vivo',
-    ru: 'Перетащите узел изображения для обрезки · или подключите изображение к левому порту для обрезки в реальном времени'
+    ru: 'Перетащите узел изображения для обрезки · или подключите изображение к левому порту для обрезки в реальном времени',
+    hi: 'क्रॉप करने के लिए छवि नोड ड्रॉप करें · या लाइव क्रॉप के लिए बाएँ पोर्ट पर छवि जोड़ें',
+    id: 'Jatuhkan node gambar untuk memangkas · atau sambungkan gambar ke port kiri untuk pangkas langsung',
+    de: 'Bildknoten zum Zuschneiden ablegen · oder ein Bild für Live-Zuschnitt an den linken Port anschließen',
+    vi: 'Thả nút ảnh để cắt · hoặc nối ảnh vào cổng trái để cắt trực tiếp',
+    tr: 'Kırpmak için görüntü düğümü bırak · veya canlı kırpma için sol bağlantı noktasına görüntü bağla',
+    it: 'Trascina un nodo immagine per ritagliare · oppure collega un’immagine alla porta sinistra per il ritaglio dal vivo'
   },
   placeholder: {
     zh: '拖图片节点进来 · 或左侧端口接图片',
@@ -27,7 +33,13 @@ export const messages = {
     ar: 'أفلت عقدة صورة هنا · أو صِل صورة بالمنفذ الأيسر',
     fr: 'Déposez un nœud image ici · ou connectez une image au port gauche',
     pt: 'Solte um nó de imagem aqui · ou conecte uma imagem à porta esquerda',
-    ru: 'Перетащите узел изображения сюда · или подключите изображение к левому порту'
+    ru: 'Перетащите узел изображения сюда · или подключите изображение к левому порту',
+    hi: 'यहाँ छवि नोड खींचकर लाएँ · या बाएँ पोर्ट पर छवि जोड़ें',
+    id: 'Seret node gambar ke sini · atau sambungkan gambar ke port kiri',
+    de: 'Bildknoten hierher ziehen · oder ein Bild an den linken Port anschließen',
+    vi: 'Kéo nút ảnh vào đây · hoặc nối ảnh vào cổng trái',
+    tr: 'Görüntü düğümünü buraya sürükle · veya sol bağlantı noktasına görüntü bağla',
+    it: 'Trascina qui un nodo immagine · oppure collega un’immagine alla porta sinistra'
   },
   sourceAlt: {
     zh: '源图',
@@ -38,7 +50,13 @@ export const messages = {
     ar: 'الصورة المصدر',
     fr: 'Image source',
     pt: 'Imagem de origem',
-    ru: 'Исходное изображение'
+    ru: 'Исходное изображение',
+    hi: 'स्रोत छवि',
+    id: 'Gambar sumber',
+    de: 'Quellbild',
+    vi: 'Ảnh nguồn',
+    tr: 'Kaynak görüntü',
+    it: 'Immagine di origine'
   },
   croppedBadge: {
     zh: '已裁剪 ✓',
@@ -49,7 +67,13 @@ export const messages = {
     ar: 'تم القص ✓',
     fr: 'Recadré ✓',
     pt: 'Recortado ✓',
-    ru: 'Обрезано ✓'
+    ru: 'Обрезано ✓',
+    hi: 'क्रॉप किया गया ✓',
+    id: 'Sudah dipangkas ✓',
+    de: 'Zugeschnitten ✓',
+    vi: 'Đã cắt ✓',
+    tr: 'Kırpıldı ✓',
+    it: 'Ritagliato ✓'
   },
   autoCrop: {
     zh: '自动裁剪',
@@ -60,7 +84,13 @@ export const messages = {
     ar: 'قص تلقائي',
     fr: 'Recadrage automatique',
     pt: 'Recorte automático',
-    ru: 'Автообрезка'
+    ru: 'Автообрезка',
+    hi: 'स्वतः क्रॉप',
+    id: 'Pangkas otomatis',
+    de: 'Automatisch zuschneiden',
+    vi: 'Tự động cắt',
+    tr: 'Otomatik kırp',
+    it: 'Ritaglio automatico'
   },
   autoCropHint: {
     zh: '自动裁剪：开启后拖动裁剪框自动执行裁剪',
@@ -71,7 +101,13 @@ export const messages = {
     ar: 'قص تلقائي: يقص تلقائيًا بعد سحب إطار القص',
     fr: 'Recadrage automatique : recadre automatiquement après avoir déplacé le cadre de recadrage',
     pt: 'Recorte automático: recorta automaticamente após arrastar a caixa de recorte',
-    ru: 'Автообрезка: автоматически обрезает после перетаскивания рамки обрезки'
+    ru: 'Автообрезка: автоматически обрезает после перетаскивания рамки обрезки',
+    hi: 'स्वतः क्रॉप: चालू करने पर क्रॉप बॉक्स खींचने के बाद स्वतः क्रॉप होता है',
+    id: 'Pangkas otomatis: jika aktif, pemangkasan dijalankan otomatis setelah menyeret kotak pangkas',
+    de: 'Automatisch zuschneiden: schneidet nach dem Ziehen des Zuschnittrahmens automatisch zu',
+    vi: 'Tự động cắt: khi bật, tự động cắt sau khi kéo khung cắt',
+    tr: 'Otomatik kırp: açıldığında kırpma kutusunu sürükledikten sonra otomatik kırpar',
+    it: 'Ritaglio automatico: se attivo, ritaglia automaticamente dopo aver trascinato il riquadro di ritaglio'
   },
   confirmCrop: {
     zh: '确认裁剪',
@@ -82,7 +118,13 @@ export const messages = {
     ar: 'تأكيد القص',
     fr: 'Confirmer le recadrage',
     pt: 'Confirmar recorte',
-    ru: 'Подтвердить обрезку'
+    ru: 'Подтвердить обрезку',
+    hi: 'क्रॉप की पुष्टि करें',
+    id: 'Konfirmasi pangkas',
+    de: 'Zuschnitt bestätigen',
+    vi: 'Xác nhận cắt',
+    tr: 'Kırpmayı onayla',
+    it: 'Conferma ritaglio'
   },
   createNode: {
     zh: '生成图片文件节点',
@@ -93,7 +135,13 @@ export const messages = {
     ar: 'إنشاء عقدة ملف صورة',
     fr: 'Créer un nœud de fichier image',
     pt: 'Criar nó de arquivo de imagem',
-    ru: 'Создать узел файла изображения'
+    ru: 'Создать узел файла изображения',
+    hi: 'छवि फ़ाइल नोड बनाएँ',
+    id: 'Buat node berkas gambar',
+    de: 'Bilddatei-Knoten erstellen',
+    vi: 'Tạo nút tệp ảnh',
+    tr: 'Görüntü dosyası düğümü oluştur',
+    it: 'Crea nodo file immagine'
   },
   helpTitle: {
     zh: '使用说明',
@@ -104,7 +152,13 @@ export const messages = {
     ar: 'تعليمات الاستخدام',
     fr: 'Aide',
     pt: 'Ajuda',
-    ru: 'Справка'
+    ru: 'Справка',
+    hi: 'सहायता',
+    id: 'Bantuan',
+    de: 'Hilfe',
+    vi: 'Trợ giúp',
+    tr: 'Yardım',
+    it: 'Guida'
   },
   helpDialogTitle: {
     zh: '图片裁剪节点使用说明',
@@ -115,6 +169,12 @@ export const messages = {
     ar: 'تعليمات عقدة قص الصورة',
     fr: 'Aide du nœud Recadrage d’image',
     pt: 'Ajuda do nó Recortar imagem',
-    ru: 'Справка по узлу «Обрезка изображения»'
+    ru: 'Справка по узлу «Обрезка изображения»',
+    hi: 'छवि क्रॉप नोड सहायता',
+    id: 'Bantuan node Pangkas gambar',
+    de: 'Hilfe zum Knoten „Bild zuschneiden“',
+    vi: 'Trợ giúp nút Cắt ảnh',
+    tr: 'Görüntü kırpma düğümü yardımı',
+    it: 'Guida del nodo Ritaglio immagine'
   }
 } satisfies Record<string, LocalizedText>

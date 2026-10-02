@@ -1,7 +1,7 @@
 import type { LocalizedText } from '../../../shared/language'
 
 /**
- * NumberInput 节点帮助文档（NumberInputHelpDialog）的全部文案，9 种语言全配。
+ * NumberInput 节点帮助文档（NumberInputHelpDialog）的全部文案，全部 15 种语言全配。
  *
  * 与节点自身的 i18n.ts 分开：卡片短文案变化频繁，帮助文档整篇体量大、改动少。
  * 约定：带行内 <code> / <b> 的句子，值里直接写 HTML，模板用 v-html 渲染；
@@ -18,7 +18,13 @@ export const helpMessages = {
     ar: 'ما هذا؟',
     fr: 'Qu’est-ce que c’est ?',
     pt: 'O que é isto?',
-    ru: 'Что это?'
+    ru: 'Что это?',
+    hi: 'यह क्या है?',
+    id: 'Apa ini?',
+    de: 'Was ist das?',
+    vi: 'Đây là gì?',
+    tr: 'Bu nedir?',
+    it: 'Che cos’è?'
   },
   whatBody: {
     zh: '数字输入节点是一个<b>源头节点</b>：框里写几，就往外送几。它没有输入端口，只有一个 <code>number</code> 输出端口，把框内的数字提交给下游节点。',
@@ -29,7 +35,13 @@ export const helpMessages = {
     ar: 'عقدة إدخال الأرقام هي <b>عقدة مصدر</b>: الرقم الذي تكتبه في المربع هو ما يُرسَل. ليس لها منافذ إدخال، بل منفذ إخراج واحد <code>number</code> يرسل القيمة الموجودة في المربع إلى العقد اللاحقة.',
     fr: 'Le nœud Entrée numérique est un <b>nœud source</b> : le nombre saisi dans le champ est celui qui est émis. Il n’a aucun port d’entrée, mais un unique port de sortie <code>number</code> qui valide la valeur du champ vers les nœuds en aval.',
     pt: 'O nó Entrada numérica é um <b>nó de origem</b>: o número digitado na caixa é o que é enviado. Ele não tem portas de entrada, apenas uma porta de saída <code>number</code> que envia o valor da caixa aos nós seguintes.',
-    ru: 'Узел «Числовой ввод» — это <b>узел-источник</b>: какое число введёте в поле, такое и будет отправлено. У него нет входных портов, только один выходной порт <code>number</code>, который передаёт значение из поля последующим узлам.'
+    ru: 'Узел «Числовой ввод» — это <b>узел-источник</b>: какое число введёте в поле, такое и будет отправлено. У него нет входных портов, только один выходной порт <code>number</code>, который передаёт значение из поля последующим узлам.',
+    hi: 'संख्या इनपुट नोड एक <b>स्रोत नोड</b> है: बॉक्स में जो लिखेंगे, वही बाहर भेजा जाएगा। इसमें कोई इनपुट पोर्ट नहीं है, केवल एक <code>number</code> आउटपुट पोर्ट है, जो बॉक्स के अंदर की संख्या डाउनस्ट्रीम नोड को भेजता है।',
+    id: 'Node Masukan angka adalah sebuah <b>node sumber</b>: angka yang Anda tulis di kotak itulah yang dikirim keluar. Node ini tidak punya port masukan, hanya satu port keluaran <code>number</code> yang mengirim angka di dalam kotak ke node hilir.',
+    de: 'Der Knoten „Zahleneingabe“ ist ein <b>Quellknoten</b>: Was Sie in das Feld schreiben, wird ausgegeben. Er hat keinen Eingangsport, nur einen <code>number</code>-Ausgangsport, der die Zahl im Feld an nachgelagerte Knoten sendet.',
+    vi: 'Nút Đầu vào số là một <b>nút nguồn</b>: bạn nhập số nào vào ô thì nó gửi ra số đó. Nút không có cổng đầu vào, chỉ có một cổng đầu ra <code>number</code> gửi số trong ô đến các nút hạ nguồn.',
+    tr: 'Sayı Girişi düğümü bir <b>kaynak düğümdür</b>: kutuya hangi sayıyı yazarsanız onu dışarı gönderir. Giriş bağlantı noktası yoktur; yalnızca kutudaki sayıyı aşağı akış düğümlerine gönderen bir <code>number</code> çıkış bağlantı noktası vardır.',
+    it: 'Il nodo Input numerico è un <b>nodo sorgente</b>: il numero che scrivi nella casella è quello che viene inviato. Non ha porte di input, ma una sola porta di output <code>number</code> che invia il valore nella casella ai nodi a valle.'
   },
 
   // —— 怎么用 ——
@@ -42,7 +54,13 @@ export const helpMessages = {
     ar: 'كيفية الاستخدام',
     fr: 'Utilisation',
     pt: 'Como usar',
-    ru: 'Как использовать'
+    ru: 'Как использовать',
+    hi: 'इस्तेमाल कैसे करें',
+    id: 'Cara menggunakan',
+    de: 'Verwendung',
+    vi: 'Cách sử dụng',
+    tr: 'Nasıl kullanılır',
+    it: 'Come si usa'
   },
   useLi1: {
     zh: '标题下方的输入框接受<b>任意数字</b>：整数、小数、负数都行。步进设为「任意」（<code>step="any"</code>），不限制小数位数',
@@ -53,7 +71,13 @@ export const helpMessages = {
     ar: 'يقبل المربع أسفل العنوان <b>أي رقم</b>: صحيحًا أو عشريًا أو سالبًا. الخطوة مضبوطة على «أي» (<code>step="any"</code>)، فلا يوجد حد لعدد المنازل العشرية',
     fr: 'Le champ sous le titre accepte <b>n’importe quel nombre</b> : entiers, décimaux et négatifs. Le pas est réglé sur « quelconque » (<code>step="any"</code>), sans limite de décimales',
     pt: 'A caixa sob o título aceita <b>qualquer número</b>: inteiros, decimais e negativos. O passo está definido como “qualquer” (<code>step="any"</code>), sem limite de casas decimais',
-    ru: 'Поле под заголовком принимает <b>любое число</b>: целые, дробные и отрицательные. Шаг установлен как «любой» (<code>step="any"</code>), число знаков после запятой не ограничено'
+    ru: 'Поле под заголовком принимает <b>любое число</b>: целые, дробные и отрицательные. Шаг установлен как «любой» (<code>step="any"</code>), число знаков после запятой не ограничено',
+    hi: 'शीर्षक के नीचे का इनपुट बॉक्स <b>कोई भी संख्या</b> स्वीकार करता है: पूर्णांक, दशमलव, ऋणात्मक सभी। स्टेप "कोई भी" (<code>step="any"</code>) पर सेट है और दशमलव अंकों की संख्या सीमित नहीं है',
+    id: 'Kotak masukan di bawah judul menerima <b>angka apa pun</b>: bilangan bulat, desimal, maupun negatif. Langkahnya diatur ke “apa pun” (<code>step="any"</code>), tanpa batasan jumlah angka desimal',
+    de: 'Das Eingabefeld unter dem Titel akzeptiert <b>jede Zahl</b>: ganze Zahlen, Dezimalzahlen und negative Zahlen. Der Schritt ist auf „beliebig“ (<code>step="any"</code>) gesetzt, die Anzahl der Dezimalstellen ist nicht begrenzt',
+    vi: 'Ô nhập bên dưới tiêu đề chấp nhận <b>mọi số</b>: số nguyên, số thập phân, số âm đều được. Bước được đặt thành “bất kỳ” (<code>step="any"</code>), không giới hạn số chữ số thập phân',
+    tr: 'Başlığın altındaki giriş kutusu <b>her sayıyı</b> kabul eder: tam sayı, ondalık ve negatif. Adım “herhangi” (<code>step="any"</code>) olarak ayarlanmıştır ve ondalık basamak sayısı sınırlanmaz',
+    it: 'La casella di input sotto il titolo accetta <b>qualsiasi numero</b>: interi, decimali e negativi. Il passo è impostato su “qualsiasi” (<code>step="any"</code>) e il numero di decimali non è limitato'
   },
   useLi2: {
     zh: '该节点<b>不设最小值 / 最大值</b>，也不对输入做 clamp 截断：输入多少就输出多少，负数、超大值原样保留',
@@ -64,7 +88,13 @@ export const helpMessages = {
     ar: 'لا تضع هذه العقدة <b>حدًا أدنى أو أعلى</b> ولا تقوم بقصّ (clamp) الإدخال: يُخرَج ما تُدخله كما هو، بما في ذلك الأعداد السالبة والقيم الضخمة',
     fr: 'Le nœud <b>n’impose ni minimum ni maximum</b> et ne borne pas (clamp) l’entrée : la valeur saisie est émise telle quelle, y compris les négatifs et les très grandes valeurs',
     pt: 'O nó <b>não define mínimo nem máximo</b> e não limita (clamp) a entrada: o que você digitar é emitido como está, incluindo negativos e valores muito grandes',
-    ru: 'Узел <b>не задаёт минимум и максимум</b> и не ограничивает (clamp) ввод: значение выводится как есть, включая отрицательные и очень большие числа'
+    ru: 'Узел <b>не задаёт минимум и максимум</b> и не ограничивает (clamp) ввод: значение выводится как есть, включая отрицательные и очень большие числа',
+    hi: 'यह नोड <b>कोई न्यूनतम / अधिकतम मान नहीं रखता</b> और इनपुट पर clamp भी नहीं करता: जो इनपुट करें वही आउटपुट होगा, ऋणात्मक और बहुत बड़े मान बिना बदलाव रहते हैं',
+    id: 'Node ini <b>tidak menetapkan nilai minimum / maksimum</b> dan tidak melakukan clamp pada masukan: berapa pun yang dimasukkan itulah yang dikeluarkan, nilai negatif dan sangat besar dipertahankan apa adanya',
+    de: 'Dieser Knoten setzt <b>kein Minimum / Maximum</b> und führt kein Clamping der Eingabe durch: Was eingegeben wird, wird ausgegeben, negative und sehr große Werte bleiben unverändert',
+    vi: 'Nút này <b>không đặt giá trị nhỏ nhất / lớn nhất</b> và cũng không cắt (clamp) đầu vào: nhập bao nhiêu thì xuất bấy nhiêu, số âm và giá trị cực lớn được giữ nguyên',
+    tr: 'Bu düğüm <b>en küçük / en büyük değer koymaz</b> ve girişi clamp ile kırpmaz: ne girerseniz o çıkar; negatif ve çok büyük değerler olduğu gibi korunur',
+    it: 'Questo nodo <b>non imposta un minimo / massimo</b> e non applica alcun clamp all’input: ciò che inserisci viene emesso così com’è, inclusi numeri negativi e valori molto grandi'
   },
   useLi3: {
     zh: '空值处理：空串、<code>-</code>、<code>1.</code> 这类「还没敲完」的内容不会立即提交，只有成为一个完整且有限的数字后才生效；非数字文本一律忽略',
@@ -75,7 +105,13 @@ export const helpMessages = {
     ar: 'التعامل مع القيم الفارغة: النص الفارغ و<code>-</code> و<code>1.</code> وما شابه من محتوى «قيد الكتابة» لا يُرسَل فورًا، ولا يسري إلا رقم كامل ومنتهٍ؛ ويُتجاهل أي نص غير رقمي',
     fr: 'Valeurs vides : une chaîne vide, <code>-</code>, <code>1.</code> ou tout contenu « en cours de saisie » n’est pas validé immédiatement ; seul un nombre complet et fini prend effet. Tout texte non numérique est ignoré',
     pt: 'Entrada vazia: uma string vazia, <code>-</code>, <code>1.</code> e outros conteúdos “em digitação” não são confirmados de imediato; só um número completo e finito passa a valer. Texto não numérico é ignorado',
-    ru: 'Пустой ввод: пустая строка, <code>-</code>, <code>1.</code> и прочее «недопечатанное» содержимое не отправляется сразу — в силу вступает только полное конечное число; любой нечисловой текст игнорируется'
+    ru: 'Пустой ввод: пустая строка, <code>-</code>, <code>1.</code> и прочее «недопечатанное» содержимое не отправляется сразу — в силу вступает только полное конечное число; любой нечисловой текст игнорируется',
+    hi: 'खाली मान का प्रबंधन: खाली स्ट्रिंग, <code>-</code>, <code>1.</code> जैसी "अभी अधूरी" सामग्री तुरंत नहीं भेजी जाती, केवल पूर्ण और परिमित संख्या बनने पर ही लागू होती है; गैर-संख्यात्मक टेक्स्ट को अनदेखा किया जाता है',
+    id: 'Penanganan nilai kosong: string kosong, <code>-</code>, <code>1.</code> dan konten “belum selesai diketik” tidak langsung dikirim; hanya angka yang lengkap dan terbatas yang berlaku; teks non-numerik diabaikan',
+    de: 'Behandlung leerer Werte: eine leere Zeichenkette, <code>-</code>, <code>1.</code> und ähnlich „unfertige“ Eingaben werden nicht sofort gesendet — erst eine vollständige und endliche Zahl wird wirksam; nicht numerischer Text wird ignoriert',
+    vi: 'Xử lý giá trị trống: chuỗi rỗng, <code>-</code>, <code>1.</code> và những nội dung “chưa gõ xong” không được gửi ngay; chỉ khi trở thành một số hoàn chỉnh và hữu hạn mới có hiệu lực; mọi văn bản không phải số đều bị bỏ qua',
+    tr: 'Boş değer işleme: boş dize, <code>-</code>, <code>1.</code> gibi “henüz yazılmakta olan” içerikler hemen gönderilmez; yalnızca tam ve sonlu bir sayı olduğunda geçerli olur; sayısal olmayan metin yok sayılır',
+    it: 'Gestione dei valori vuoti: una stringa vuota, <code>-</code>, <code>1.</code> e altri contenuti “ancora incompleti” non vengono inviati subito; ha effetto solo un numero completo e finito; qualsiasi testo non numerico viene ignorato'
   },
 
   // —— 输出端口 ——
@@ -88,7 +124,13 @@ export const helpMessages = {
     ar: 'منفذ الإخراج',
     fr: 'Port de sortie',
     pt: 'Porta de saída',
-    ru: 'Выходной порт'
+    ru: 'Выходной порт',
+    hi: 'आउटपुट पोर्ट',
+    id: 'Port keluaran',
+    de: 'Ausgangsport',
+    vi: 'Cổng đầu ra',
+    tr: 'Çıkış bağlantı noktası',
+    it: 'Porta di output'
   },
   portsLi1: {
     zh: '右侧 <code>number</code> 端口输出框内的数字，类型为 <code>NumberValue</code>，供下游按数字类型连接使用',
@@ -99,7 +141,13 @@ export const helpMessages = {
     ar: 'يُخرج منفذ <code>number</code> على اليمين القيمة الموجودة في المربع بصيغة <code>NumberValue</code>، لتستخدمها العقد اللاحقة كرقم',
     fr: 'Le port <code>number</code> à droite émet la valeur du champ sous forme de <code>NumberValue</code>, prête à être utilisée comme nombre en aval',
     pt: 'A porta <code>number</code> à direita emite o valor da caixa como <code>NumberValue</code>, pronto para os nós seguintes usarem como número',
-    ru: 'Порт <code>number</code> справа выводит значение из поля как <code>NumberValue</code>, готовое к использованию последующими узлами как число'
+    ru: 'Порт <code>number</code> справа выводит значение из поля как <code>NumberValue</code>, готовое к использованию последующими узлами как число',
+    hi: 'दाईं ओर <code>number</code> पोर्ट बॉक्स के अंदर की संख्या को <code>NumberValue</code> प्रकार में आउटपुट करता है, ताकि डाउनस्ट्रीम इसे संख्या प्रकार के रूप में जोड़ सके',
+    id: 'Port <code>number</code> di kanan mengeluarkan angka di dalam kotak sebagai <code>NumberValue</code>, agar hilir dapat menyambungnya sebagai tipe angka',
+    de: 'Der <code>number</code>-Port rechts gibt die Zahl im Feld als <code>NumberValue</code> aus, damit nachgelagerte Knoten sie als Zahlentyp anbinden können',
+    vi: 'Cổng <code>number</code> bên phải xuất số trong ô dưới kiểu <code>NumberValue</code>, để hạ nguồn kết nối theo kiểu số',
+    tr: 'Sağdaki <code>number</code> bağlantı noktası kutudaki sayıyı <code>NumberValue</code> olarak çıkarır; aşağı akış bunu sayı tipi olarak bağlayabilir',
+    it: 'La porta <code>number</code> a destra emette il numero nella casella come <code>NumberValue</code>, così la parte a valle può collegarsi come tipo numerico'
   },
 
   // —— 注意事项 ——
@@ -112,7 +160,13 @@ export const helpMessages = {
     ar: 'ملاحظات',
     fr: 'Remarques',
     pt: 'Observações',
-    ru: 'Примечания'
+    ru: 'Примечания',
+    hi: 'ध्यान देने योग्य बातें',
+    id: 'Catatan',
+    de: 'Hinweise',
+    vi: 'Lưu ý',
+    tr: 'Notlar',
+    it: 'Note'
   },
   notesLi1: {
     zh: '为避免连续敲击时向下游刷大量中间值，输入停止约 <b>500ms</b>（防抖）后才提交新值',
@@ -123,7 +177,13 @@ export const helpMessages = {
     ar: 'لتجنّب إغراق العقد اللاحقة بقيم وسيطة أثناء الكتابة، لا تُرسَل القيمة الجديدة إلا بعد توقف الكتابة نحو <b>500ms</b> (تأخير)',
     fr: 'Pour éviter d’inonder les nœuds en aval de valeurs intermédiaires pendant la saisie, la nouvelle valeur n’est validée qu’après environ <b>500 ms</b> sans frappe (debounce)',
     pt: 'Para não inundar os nós seguintes com valores intermediários enquanto você digita, o novo valor só é confirmado após cerca de <b>500 ms</b> sem digitação (debounce)',
-    ru: 'Чтобы не заваливать последующие узлы промежуточными значениями во время набора, новое значение отправляется лишь после паузы около <b>500ms</b> (debounce)'
+    ru: 'Чтобы не заваливать последующие узлы промежуточными значениями во время набора, новое значение отправляется лишь после паузы около <b>500ms</b> (debounce)',
+    hi: 'लगातार टाइप करते समय डाउनस्ट्रीम पर ढेरों मध्यवर्ती मान भेजने से बचने के लिए, इनपुट लगभग <b>500ms</b> रुकने (डिबाउंस) के बाद ही नया मान भेजा जाता है',
+    id: 'Untuk menghindari membanjiri hilir dengan banyak nilai antara saat mengetik terus-menerus, nilai baru baru dikirim setelah masukan berhenti sekitar <b>500ms</b> (debounce)',
+    de: 'Um beim fortlaufenden Tippen nicht viele Zwischenwerte an nachgelagerte Knoten zu senden, wird ein neuer Wert erst nach etwa <b>500ms</b> Tipppause gesendet (Debounce)',
+    vi: 'Để tránh làm ngập hạ nguồn bằng nhiều giá trị trung gian khi gõ liên tục, giá trị mới chỉ được gửi sau khi ngừng nhập khoảng <b>500ms</b> (debounce)',
+    tr: 'Sürekli yazarken aşağı akışa çok sayıda ara değer yağdırmamak için, yeni değer ancak giriş yaklaşık <b>500ms</b> durduktan sonra gönderilir (debounce)',
+    it: 'Per evitare di inondare la parte a valle con molti valori intermedi mentre si digita, il nuovo valore viene inviato solo dopo circa <b>500ms</b> di pausa (debounce)'
   },
   notesLi2: {
     zh: '这是纯源头节点：没有输入端口，接收不到上游，数值只能从框里输入',
@@ -134,7 +194,13 @@ export const helpMessages = {
     ar: 'هذه عقدة مصدر خالصة: ليس لها منفذ إدخال ولا تستقبل شيئًا من العقد السابقة، ويمكن إدخال القيمة من المربع فقط',
     fr: 'C’est un nœud source pur : sans port d’entrée, il ne reçoit rien de l’amont et la valeur ne peut venir que du champ',
     pt: 'É um nó de origem puro: sem porta de entrada, não recebe nada de montante e o valor só pode vir da caixa',
-    ru: 'Это чистый узел-источник: у него нет входного порта, он ничего не получает сверху, и значение можно задать только в поле'
+    ru: 'Это чистый узел-источник: у него нет входного порта, он ничего не получает сверху, и значение можно задать только в поле',
+    hi: 'यह शुद्ध स्रोत नोड है: कोई इनपुट पोर्ट नहीं है, अपस्ट्रीम से कुछ नहीं मिलता, मान केवल बॉक्स से इनपुट किया जा सकता है',
+    id: 'Ini node sumber murni: tidak punya port masukan, tidak menerima apa pun dari hulu, nilai hanya bisa dimasukkan dari kotak',
+    de: 'Dies ist ein reiner Quellknoten: ohne Eingangsport empfängt er nichts von vorgelagert, der Wert kann nur über das Feld eingegeben werden',
+    vi: 'Đây là nút nguồn thuần: không có cổng đầu vào, không nhận gì từ thượng nguồn, giá trị chỉ có thể nhập từ ô',
+    tr: 'Bu saf bir kaynak düğümdür: giriş bağlantı noktası yoktur, yukarı akıştan hiçbir şey almaz; değer yalnızca kutudan girilebilir',
+    it: 'Questo è un nodo sorgente puro: senza porte di input non riceve nulla dalla parte a monte e il valore può essere inserito solo dalla casella'
   },
   notesLi3: {
     zh: '框内的数字会随项目一起保存（<code>saveState</code>），重新打开时自动恢复并重新提交给下游；未保存过时默认为 <code>0</code>',
@@ -145,6 +211,12 @@ export const helpMessages = {
     ar: 'يُحفَظ الرقم الموجود في المربع مع المشروع (<code>saveState</code>)، ويُستعاد ويُعاد إرساله إلى العقد اللاحقة عند إعادة الفتح؛ وإذا لم يُحفَظ شيء فالقيمة الافتراضية <code>0</code>',
     fr: 'Le nombre du champ est enregistré avec le projet (<code>saveState</code>) et, à la réouverture, restauré puis revalidé vers l’aval ; sans valeur enregistrée, la valeur par défaut est <code>0</code>',
     pt: 'O número da caixa é salvo junto com o projeto (<code>saveState</code>) e, ao reabrir, é restaurado e reenviado adiante; se nada foi salvo, o padrão é <code>0</code>',
-    ru: 'Число в поле сохраняется вместе с проектом (<code>saveState</code>) и при повторном открытии восстанавливается и снова отправляется дальше; если ничего не сохранено, значение по умолчанию — <code>0</code>'
+    ru: 'Число в поле сохраняется вместе с проектом (<code>saveState</code>) и при повторном открытии восстанавливается и снова отправляется дальше; если ничего не сохранено, значение по умолчанию — <code>0</code>',
+    hi: 'बॉक्स के अंदर की संख्या प्रोजेक्ट के साथ सहेजी जाती है (<code>saveState</code>); दोबारा खोलने पर यह स्वतः पुनर्स्थापित होकर डाउनस्ट्रीम को फिर से भेजी जाती है; न सहेजी होने पर डिफ़ॉल्ट <code>0</code> होती है',
+    id: 'Angka di dalam kotak disimpan bersama proyek (<code>saveState</code>); saat dibuka kembali dipulihkan otomatis dan dikirim ulang ke hilir; jika belum pernah disimpan, bawaannya <code>0</code>',
+    de: 'Die Zahl im Feld wird zusammen mit dem Projekt gespeichert (<code>saveState</code>); beim erneuten Öffnen wird sie automatisch wiederhergestellt und erneut nachgelagert gesendet; ohne gespeicherten Wert gilt <code>0</code> als Standard',
+    vi: 'Số trong ô được lưu cùng dự án (<code>saveState</code>); khi mở lại, nó tự động được khôi phục và gửi lại cho hạ nguồn; nếu chưa từng lưu thì mặc định là <code>0</code>',
+    tr: 'Kutudaki sayı projeyle birlikte kaydedilir (<code>saveState</code>); yeniden açıldığında otomatik geri yüklenir ve aşağı akışa yeniden gönderilir; daha önce kaydedilmemişse varsayılan <code>0</code> dır',
+    it: 'Il numero nella casella viene salvato insieme al progetto (<code>saveState</code>); alla riapertura viene ripristinato automaticamente e reinviato a valle; se non è mai stato salvato, il valore predefinito è <code>0</code>'
   }
 } satisfies Record<string, LocalizedText>

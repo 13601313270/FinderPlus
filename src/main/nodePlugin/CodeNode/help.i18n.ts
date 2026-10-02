@@ -1,7 +1,7 @@
 import type { LocalizedText } from '../../../shared/language'
 
 /**
- * Code 节点帮助文档（CodeHelpDialog）的全部文案，9 种语言全配。
+ * Code 节点帮助文档（CodeHelpDialog）的全部文案，全部 15 种语言全配。
  *
  * 与节点自身的 i18n.ts 分开：卡片/配置弹窗的短文案变化频繁，帮助文档整篇
  * 体量大且改动少，拆开后两边互不干扰。跟随节点文件夹一起搬运，保持插件自包含。
@@ -21,7 +21,13 @@ export const helpMessages = {
     ar: 'ما هذا؟',
     fr: 'Qu’est-ce que c’est ?',
     pt: 'O que é isto?',
-    ru: 'Что это?'
+    ru: 'Что это?',
+    hi: "यह क्या है?",
+    id: "Apa ini?",
+    de: "Was ist das?",
+    vi: "Đây là gì?",
+    tr: "Bu nedir?",
+    it: "Che cos’è?",
   },
   whatBody: {
     zh: '代码节点让你在画布上写一段 JavaScript 函数体，点击「执行」跑一次，通过 <code>callOutputPort</code> 把结果发给下游节点。输入端口的变量名在函数体里可以直接当变量用。',
@@ -32,7 +38,13 @@ export const helpMessages = {
     ar: 'تتيح لك عقدة الكود كتابة جسم دالة JavaScript على لوحة الرسم. انقر على «تنفيذ» لتشغيله مرة واحدة، وأرسل النتائج إلى العقد اللاحقة عبر <code>callOutputPort</code>. يمكن استخدام أسماء متغيرات منافذ الإدخال مباشرةً كمتغيرات داخل جسم الدالة.',
     fr: 'Le nœud Code vous permet d’écrire un corps de fonction JavaScript sur le canevas. Cliquez sur « Exécuter » pour l’exécuter une fois, puis envoyez le résultat aux nœuds en aval via <code>callOutputPort</code>. Les noms des variables des ports d’entrée peuvent être utilisés directement comme variables dans le corps de la fonction.',
     pt: 'O nó Código permite escrever um corpo de função JavaScript no canvas. Clique em “Executar” para executá-lo uma vez e envie o resultado aos nós seguintes através de <code>callOutputPort</code>. Os nomes das variáveis dos portos de entrada podem ser usados diretamente como variáveis no corpo da função.',
-    ru: 'Узел «Код» позволяет написать тело функции JavaScript на холсте. Нажмите «Выполнить», чтобы запустить его один раз, и отправьте результат последующим узлам через <code>callOutputPort</code>. Имена переменных входных портов можно использовать в теле функции напрямую как переменные.'
+    ru: 'Узел «Код» позволяет написать тело функции JavaScript на холсте. Нажмите «Выполнить», чтобы запустить его один раз, и отправьте результат последующим узлам через <code>callOutputPort</code>. Имена переменных входных портов можно использовать в теле функции напрямую как переменные.',
+    hi: "कोड नोड आपको कैनवास पर एक JavaScript फ़ंक्शन बॉडी लिखने देता है। “चलाएँ” पर क्लिक करके इसे एक बार चलाएँ और <code>callOutputPort</code> के ज़रिए नतीजे डाउनस्ट्रीम नोड को भेजें। इनपुट पोर्ट के चर नाम फ़ंक्शन बॉडी में सीधे चर की तरह उपयोग किए जा सकते हैं।",
+    id: "Node Kode memungkinkan Anda menulis isi fungsi JavaScript di kanvas. Klik “Jalankan” untuk menjalankannya sekali, lalu kirim hasilnya ke node hilir melalui <code>callOutputPort</code>. Nama variabel port masukan dapat digunakan langsung sebagai variabel di dalam isi fungsi.",
+    de: "Der Knoten „Code“ ermöglicht es Ihnen, einen JavaScript-Funktionskörper auf der Zeichenfläche zu schreiben. Klicken Sie auf „Ausführen“, um ihn einmal auszuführen, und senden Sie die Ergebnisse über <code>callOutputPort</code> an nachgelagerte Knoten. Die Variablennamen der Eingabeports können im Funktionskörper direkt als Variablen verwendet werden.",
+    vi: "Nút Mã cho phép bạn viết thân hàm JavaScript trên khung vẽ. Nhấp “Chạy” để thực thi một lần và gửi kết quả đến các nút hạ nguồn qua <code>callOutputPort</code>. Tên biến của cổng đầu vào có thể được dùng trực tiếp làm biến trong thân hàm.",
+    tr: "Kod düğümü, tuval üzerinde bir JavaScript işlev gövdesi yazmanızı sağlar. Bir kez çalıştırmak için “Çalıştır”a tıklayın ve sonuçları <code>callOutputPort</code> aracılığıyla aşağı akış düğümlerine gönderin. Giriş bağlantı noktalarının değişken adları, işlev gövdesinde doğrudan değişken olarak kullanılabilir.",
+    it: "Il nodo Codice ti consente di scrivere un corpo di funzione JavaScript sulla tela. Fai clic su “Esegui” per eseguirlo una volta e invia i risultati ai nodi a valle tramite <code>callOutputPort</code>. I nomi delle variabili delle porte di input possono essere usati direttamente come variabili nel corpo della funzione.",
   },
 
   // —— 输入端口 ——
@@ -45,7 +57,13 @@ export const helpMessages = {
     ar: 'منافذ الإدخال',
     fr: 'Ports d’entrée',
     pt: 'Portas de entrada',
-    ru: 'Входные порты'
+    ru: 'Входные порты',
+    hi: "इनपुट पोर्ट",
+    id: "Port masukan",
+    de: "Eingabeports",
+    vi: "Cổng đầu vào",
+    tr: "Giriş bağlantı noktaları",
+    it: "Porte di input",
   },
   inputsLead: {
     zh: '点「输入」右侧的 <code>+</code> 添加端口，每个端口配置：',
@@ -56,7 +74,13 @@ export const helpMessages = {
     ar: 'انقر على <code>+</code> على يمين «إدخال» لإضافة منفذ. يتم ضبط كل منفذ بما يلي:',
     fr: 'Cliquez sur <code>+</code> à droite de « Entrée » pour ajouter un port. Chaque port se configure avec :',
     pt: 'Clique no <code>+</code> à direita de “Entrada” para adicionar um porto. Cada porto é configurado com:',
-    ru: 'Нажмите <code>+</code> справа от «Вход», чтобы добавить порт. Каждый порт настраивается так:'
+    ru: 'Нажмите <code>+</code> справа от «Вход», чтобы добавить порт. Каждый порт настраивается так:',
+    hi: "“इनपुट” के दाईं ओर <code>+</code> पर क्लिक करके एक पोर्ट जोड़ें। हर पोर्ट को इस तरह कॉन्फ़िगर किया जाता है:",
+    id: "Klik <code>+</code> di sebelah kanan “Masukan” untuk menambahkan port. Setiap port dikonfigurasi dengan:",
+    de: "Klicken Sie auf das <code>+</code> rechts neben „Eingabe“, um einen Port hinzuzufügen. Jeder Port wird konfiguriert mit:",
+    vi: "Nhấp vào <code>+</code> ở bên phải “Đầu vào” để thêm một cổng. Mỗi cổng được cấu hình với:",
+    tr: "Bir bağlantı noktası eklemek için “Giriş”in sağındaki <code>+</code> simgesine tıklayın. Her bağlantı noktası şunlarla yapılandırılır:",
+    it: "Fai clic sul <code>+</code> a destra di “Input” per aggiungere una porta. Ogni porta è configurata con:",
   },
   inputsLiVarName: {
     zh: '<b>变量名</b>：函数体里直接用的标识符，例如 <code>price</code>、<code>items</code>',
@@ -67,7 +91,13 @@ export const helpMessages = {
     ar: '<b>اسم المتغير</b>: المعرّف المستخدم مباشرةً في جسم الدالة، مثل <code>price</code> و<code>items</code>',
     fr: '<b>Nom de variable</b> : l’identifiant utilisé directement dans le corps de la fonction, par ex. <code>price</code>, <code>items</code>',
     pt: '<b>Nome da variável</b>: o identificador usado diretamente no corpo da função, por exemplo <code>price</code>, <code>items</code>',
-    ru: '<b>Имя переменной</b>: идентификатор, используемый прямо в теле функции, например <code>price</code>, <code>items</code>'
+    ru: '<b>Имя переменной</b>: идентификатор, используемый прямо в теле функции, например <code>price</code>, <code>items</code>',
+    hi: "<b>चर नाम</b>: फ़ंक्शन बॉडी में सीधे उपयोग होने वाला पहचानकर्ता, जैसे <code>price</code>, <code>items</code>",
+    id: "<b>Nama variabel</b>: pengenal yang digunakan langsung di isi fungsi, misalnya <code>price</code>, <code>items</code>",
+    de: "<b>Variablenname</b>: der im Funktionskörper direkt verwendete Bezeichner, z. B. <code>price</code>, <code>items</code>",
+    vi: "<b>Tên biến</b>: định danh dùng trực tiếp trong thân hàm, ví dụ <code>price</code>, <code>items</code>",
+    tr: "<b>Değişken adı</b>: işlev gövdesinde doğrudan kullanılan tanımlayıcı, örn. <code>price</code>, <code>items</code>",
+    it: "<b>Nome variabile</b>: l’identificatore usato direttamente nel corpo della funzione, ad es. <code>price</code>, <code>items</code>",
   },
   inputsLiType: {
     zh: '<b>类型</b>：决定接受上游哪种值，代码里拿到的是原始 JS 值',
@@ -78,7 +108,13 @@ export const helpMessages = {
     ar: '<b>النوع</b>: يحدد نوع القيمة الواردة من المنبع، ويتلقى الكود قيمة JS الخام',
     fr: '<b>Type</b> : détermine le type de valeur amont accepté ; le code reçoit la valeur JS brute',
     pt: '<b>Tipo</b>: determina qual valor de entrada é aceito; o código recebe o valor JS bruto',
-    ru: '<b>Тип</b>: определяет, какое значение сверху принимается; код получает исходное значение JS'
+    ru: '<b>Тип</b>: определяет, какое значение сверху принимается; код получает исходное значение JS',
+    hi: "<b>प्रकार</b>: तय करता है कि अपस्ट्रीम से कौन-सा मान स्वीकार होगा; कोड को कच्चा JS मान मिलता है",
+    id: "<b>Jenis</b>: menentukan nilai hulu mana yang diterima; kode menerima nilai JS mentah",
+    de: "<b>Typ</b>: bestimmt, welcher vorgelagerte Wert akzeptiert wird; der Code erhält den rohen JS-Wert",
+    vi: "<b>Loại</b>: quyết định giá trị thượng nguồn nào được chấp nhận; mã nhận giá trị JS thô",
+    tr: "<b>Tür</b>: hangi yukarı akış değerinin kabul edileceğini belirler; kod ham JS değerini alır",
+    it: "<b>Tipo</b>: determina quale valore a monte viene accettato; il codice riceve il valore JS grezzo",
   },
   tblHeaderType: {
     zh: '类型',
@@ -89,7 +125,13 @@ export const helpMessages = {
     ar: 'النوع',
     fr: 'Type',
     pt: 'Tipo',
-    ru: 'Тип'
+    ru: 'Тип',
+    hi: "प्रकार",
+    id: "Jenis",
+    de: "Typ",
+    vi: "Loại",
+    tr: "Tür",
+    it: "Tipo",
   },
   tblHeaderGot: {
     zh: '代码里拿到什么',
@@ -100,7 +142,13 @@ export const helpMessages = {
     ar: 'ما الذي يتلقاه الكود',
     fr: 'Ce que le code reçoit',
     pt: 'O que o código recebe',
-    ru: 'Что получает код'
+    ru: 'Что получает код',
+    hi: "कोड को क्या मिलता है",
+    id: "Apa yang diterima kode",
+    de: "Was der Code erhält",
+    vi: "Mã nhận được gì",
+    tr: "Kodun aldığı değer",
+    it: "Ciò che riceve il codice",
   },
   tblNumber: {
     zh: '原始数字，如 <code>42</code>',
@@ -111,7 +159,13 @@ export const helpMessages = {
     ar: 'رقم خام، مثل <code>42</code>',
     fr: 'Nombre brut, par ex. <code>42</code>',
     pt: 'Número bruto, por exemplo <code>42</code>',
-    ru: 'Исходное число, например <code>42</code>'
+    ru: 'Исходное число, например <code>42</code>',
+    hi: "कच्ची संख्या, जैसे <code>42</code>",
+    id: "Angka mentah, misalnya <code>42</code>",
+    de: "Rohe Zahl, z. B. <code>42</code>",
+    vi: "Số thô, ví dụ <code>42</code>",
+    tr: "Ham sayı, örn. <code>42</code>",
+    it: "Numero grezzo, ad es. <code>42</code>",
   },
   tblString: {
     zh: '原始字符串，如 <code>"hello"</code>',
@@ -122,7 +176,13 @@ export const helpMessages = {
     ar: 'نص خام، مثل <code>"hello"</code>',
     fr: 'Chaîne brute, par ex. <code>"hello"</code>',
     pt: 'String bruta, por exemplo <code>"hello"</code>',
-    ru: 'Исходная строка, например <code>"hello"</code>'
+    ru: 'Исходная строка, например <code>"hello"</code>',
+    hi: "कच्ची स्ट्रिंग, जैसे <code>\"hello\"</code>",
+    id: "String mentah, misalnya <code>\"hello\"</code>",
+    de: "Rohe Zeichenkette, z. B. <code>\"hello\"</code>",
+    vi: "Chuỗi thô, ví dụ <code>\"hello\"</code>",
+    tr: "Ham dize, örn. <code>\"hello\"</code>",
+    it: "Stringa grezza, ad es. <code>\"hello\"</code>",
   },
   tblBool: {
     zh: '原始布尔值，如 <code>true</code>',
@@ -133,7 +193,13 @@ export const helpMessages = {
     ar: 'قيمة منطقية خام، مثل <code>true</code>',
     fr: 'Booléen brut, par ex. <code>true</code>',
     pt: 'Booleano bruto, por exemplo <code>true</code>',
-    ru: 'Исходное логическое значение, например <code>true</code>'
+    ru: 'Исходное логическое значение, например <code>true</code>',
+    hi: "कच्चा बूलियन, जैसे <code>true</code>",
+    id: "Boolean mentah, misalnya <code>true</code>",
+    de: "Roher Boolescher Wert, z. B. <code>true</code>",
+    vi: "Giá trị boolean thô, ví dụ <code>true</code>",
+    tr: "Ham boolean, örn. <code>true</code>",
+    it: "Booleano grezzo, ad es. <code>true</code>",
   },
   tblFile: {
     zh: '浏览器 <code>File</code> 对象（可读 <code>.name</code>、<code>.size</code>）',
@@ -144,7 +210,13 @@ export const helpMessages = {
     ar: 'كائن <code>File</code> الخاص بالمتصفح (يمكنك قراءة <code>.name</code> و<code>.size</code>)',
     fr: 'Objet <code>File</code> du navigateur (vous pouvez lire <code>.name</code>, <code>.size</code>)',
     pt: 'Objeto <code>File</code> do navegador (é possível ler <code>.name</code>, <code>.size</code>)',
-    ru: 'Объект <code>File</code> браузера (можно читать <code>.name</code>, <code>.size</code>)'
+    ru: 'Объект <code>File</code> браузера (можно читать <code>.name</code>, <code>.size</code>)',
+    hi: "ब्राउज़र <code>File</code> ऑब्जेक्ट (<code>.name</code>, <code>.size</code> पढ़ सकते हैं)",
+    id: "Objek <code>File</code> peramban (dapat membaca <code>.name</code>, <code>.size</code>)",
+    de: "Browser-<code>File</code>-Objekt (<code>.name</code>, <code>.size</code> lesbar)",
+    vi: "Đối tượng <code>File</code> của trình duyệt (có thể đọc <code>.name</code>, <code>.size</code>)",
+    tr: "Tarayıcı <code>File</code> nesnesi (<code>.name</code>, <code>.size</code> okunabilir)",
+    it: "Oggetto <code>File</code> del browser (puoi leggere <code>.name</code>, <code>.size</code>)",
   },
 
   // —— 输出端口 ——
@@ -157,7 +229,13 @@ export const helpMessages = {
     ar: 'منافذ الإخراج',
     fr: 'Ports de sortie',
     pt: 'Portas de saída',
-    ru: 'Выходные порты'
+    ru: 'Выходные порты',
+    hi: "आउटपुट पोर्ट",
+    id: "Port keluaran",
+    de: "Ausgabeports",
+    vi: "Cổng đầu ra",
+    tr: "Çıkış bağlantı noktaları",
+    it: "Porte di output",
   },
   outputsLead: {
     zh: '点「输出」右侧的 <code>+</code> 添加端口（至少保留一个），每个端口配置：',
@@ -168,7 +246,13 @@ export const helpMessages = {
     ar: 'انقر على <code>+</code> على يمين «إخراج» لإضافة منفذ (احتفظ بمنفذ واحد على الأقل). يتم ضبط كل منفذ بما يلي:',
     fr: 'Cliquez sur <code>+</code> à droite de « Sortie » pour ajouter un port (gardez-en au moins un). Chaque port se configure avec :',
     pt: 'Clique no <code>+</code> à direita de “Saída” para adicionar um porto (mantenha pelo menos um). Cada porto é configurado com:',
-    ru: 'Нажмите <code>+</code> справа от «Выход», чтобы добавить порт (оставьте хотя бы один). Каждый порт настраивается так:'
+    ru: 'Нажмите <code>+</code> справа от «Выход», чтобы добавить порт (оставьте хотя бы один). Каждый порт настраивается так:',
+    hi: "“आउटपुट” के दाईं ओर <code>+</code> पर क्लिक करके एक पोर्ट जोड़ें (कम से कम एक रखें)। हर पोर्ट को इस तरह कॉन्फ़िगर किया जाता है:",
+    id: "Klik <code>+</code> di sebelah kanan “Keluaran” untuk menambahkan port (pertahankan setidaknya satu). Setiap port dikonfigurasi dengan:",
+    de: "Klicken Sie auf das <code>+</code> rechts neben „Ausgabe“, um einen Port hinzuzufügen (mindestens einen behalten). Jeder Port wird konfiguriert mit:",
+    vi: "Nhấp vào <code>+</code> ở bên phải “Đầu ra” để thêm một cổng (giữ ít nhất một). Mỗi cổng được cấu hình với:",
+    tr: "Bir bağlantı noktası eklemek için “Çıkış”ın sağındaki <code>+</code> simgesine tıklayın (en az bir tane bırakın). Her bağlantı noktası şunlarla yapılandırılır:",
+    it: "Fai clic sul <code>+</code> a destra di “Output” per aggiungere una porta (mantienine almeno una). Ogni porta è configurata con:",
   },
   outputsLiPortName: {
     zh: '<b>端口名</b>：<code>callOutputPort</code> 里用的第一个参数，如 <code>"result"</code>',
@@ -179,7 +263,13 @@ export const helpMessages = {
     ar: '<b>اسم المنفذ</b>: الوسيط الأول المستخدم في <code>callOutputPort</code>، مثل <code>"result"</code>',
     fr: '<b>Nom du port</b> : le premier argument utilisé dans <code>callOutputPort</code>, par ex. <code>"result"</code>',
     pt: '<b>Nome do porto</b>: o primeiro argumento usado em <code>callOutputPort</code>, por exemplo <code>"result"</code>',
-    ru: '<b>Имя порта</b>: первый аргумент в <code>callOutputPort</code>, например <code>"result"</code>'
+    ru: '<b>Имя порта</b>: первый аргумент в <code>callOutputPort</code>, например <code>"result"</code>',
+    hi: "<b>पोर्ट नाम</b>: <code>callOutputPort</code> में उपयोग होने वाला पहला आर्ग्युमेंट, जैसे <code>\"result\"</code>",
+    id: "<b>Nama port</b>: argumen pertama yang digunakan di <code>callOutputPort</code>, misalnya <code>\"result\"</code>",
+    de: "<b>Portname</b>: das erste in <code>callOutputPort</code> verwendete Argument, z. B. <code>\"result\"</code>",
+    vi: "<b>Tên cổng</b>: đối số đầu tiên dùng trong <code>callOutputPort</code>, ví dụ <code>\"result\"</code>",
+    tr: "<b>Bağlantı noktası adı</b>: <code>callOutputPort</code> içinde kullanılan ilk argüman, örn. <code>\"result\"</code>",
+    it: "<b>Nome porta</b>: il primo argomento usato in <code>callOutputPort</code>, ad es. <code>\"result\"</code>",
   },
   outputsLiType: {
     zh: '<b>类型</b>：决定接受的输出值类型，会自动做校验和转换',
@@ -190,7 +280,13 @@ export const helpMessages = {
     ar: '<b>النوع</b>: يحدد نوع قيمة الإخراج المقبولة، ويتم التحقق والتحويل تلقائيًا',
     fr: '<b>Type</b> : détermine le type de valeur de sortie accepté ; la validation et la conversion sont automatiques',
     pt: '<b>Tipo</b>: determina o tipo de valor de saída aceito; a validação e a conversão são automáticas',
-    ru: '<b>Тип</b>: определяет принимаемый тип выходного значения; проверка и преобразование выполняются автоматически'
+    ru: '<b>Тип</b>: определяет принимаемый тип выходного значения; проверка и преобразование выполняются автоматически',
+    hi: "<b>प्रकार</b>: स्वीकार किए जाने वाले आउटपुट मान का प्रकार तय करता है; सत्यापन और रूपांतरण स्वतः होते हैं",
+    id: "<b>Jenis</b>: menentukan jenis nilai keluaran yang diterima; validasi dan konversi dilakukan otomatis",
+    de: "<b>Typ</b>: bestimmt den akzeptierten Ausgabewerttyp; Validierung und Konvertierung erfolgen automatisch",
+    vi: "<b>Loại</b>: quyết định kiểu giá trị đầu ra được chấp nhận; việc kiểm tra và chuyển đổi diễn ra tự động",
+    tr: "<b>Tür</b>: kabul edilen çıkış değeri türünü belirler; doğrulama ve dönüştürme otomatik yapılır",
+    it: "<b>Tipo</b>: determina il tipo di valore di output accettato; convalida e conversione sono automatiche",
   },
 
   // —— callOutputPort 语法 ——
@@ -203,7 +299,13 @@ export const helpMessages = {
     ar: 'بنية callOutputPort',
     fr: 'Syntaxe de callOutputPort',
     pt: 'Sintaxe de callOutputPort',
-    ru: 'Синтаксис callOutputPort'
+    ru: 'Синтаксис callOutputPort',
+    hi: "callOutputPort सिंटैक्स",
+    id: "Sintaks callOutputPort",
+    de: "callOutputPort-Syntax",
+    vi: "Cú pháp callOutputPort",
+    tr: "callOutputPort sözdizimi",
+    it: "Sintassi di callOutputPort",
   },
   snippetPortName: {
     zh: '"端口名"',
@@ -214,7 +316,13 @@ export const helpMessages = {
     ar: '"اسم المنفذ"',
     fr: '"nomPort"',
     pt: '"nomePorto"',
-    ru: '"имяПорта"'
+    ru: '"имяПорта"',
+    hi: "\"पोर्टनाम\"",
+    id: "\"namaPort\"",
+    de: "\"portName\"",
+    vi: "\"tenCong\"",
+    tr: "\"portAdi\"",
+    it: "\"nomePorta\"",
   },
   snippetValue: {
     zh: '值',
@@ -225,7 +333,13 @@ export const helpMessages = {
     ar: 'قيمة',
     fr: 'valeur',
     pt: 'valor',
-    ru: 'значение'
+    ru: 'значение',
+    hi: "मान",
+    id: "nilai",
+    de: "Wert",
+    vi: "giá trị",
+    tr: "değer",
+    it: "valore",
   },
   callNote: {
     zh: '一次执行里可以调多次，向不同端口各提一次，也可以向同一端口连续提多次（后一次覆盖前一次）。',
@@ -236,7 +350,13 @@ export const helpMessages = {
     ar: 'يمكنك استدعاؤه عدة مرات في تنفيذ واحد: الإرسال مرة واحدة إلى منافذ مختلفة، أو الإرسال بشكل متكرر إلى المنفذ نفسه (الاستدعاء اللاحق يستبدل السابق).',
     fr: 'Vous pouvez l’appeler plusieurs fois dans une même exécution : soumettre une fois vers différents ports, ou soumettre de façon répétée vers le même port (l’appel suivant écrase le précédent).',
     pt: 'Você pode chamá-lo várias vezes em uma execução: enviar uma vez para portos diferentes ou enviar repetidamente para o mesmo porto (a chamada posterior sobrescreve a anterior).',
-    ru: 'Его можно вызывать несколько раз за одно выполнение: отправить по одному разу в разные порты или многократно в один и тот же порт (последующий вызов перезаписывает предыдущий).'
+    ru: 'Его можно вызывать несколько раз за одно выполнение: отправить по одному разу в разные порты или многократно в один и тот же порт (последующий вызов перезаписывает предыдущий).',
+    hi: "एक ही निष्पादन में इसे कई बार कॉल किया जा सकता है: अलग-अलग पोर्ट पर एक बार भेजें, या उसी पोर्ट पर कई बार भेजें (बाद वाला कॉल पहले वाले को ओवरराइट करता है)।",
+    id: "Anda dapat memanggilnya beberapa kali dalam satu eksekusi: kirim sekali ke port berbeda, atau kirim berulang kali ke port yang sama (panggilan berikutnya menimpa yang sebelumnya).",
+    de: "Sie können es in einer Ausführung mehrmals aufrufen: einmal an verschiedene Ports senden oder wiederholt an denselben Port senden (der spätere Aufruf überschreibt den früheren).",
+    vi: "Bạn có thể gọi nó nhiều lần trong một lần thực thi: gửi một lần đến các cổng khác nhau, hoặc gửi lặp lại đến cùng một cổng (lệnh gọi sau ghi đè lệnh trước).",
+    tr: "Tek bir yürütmede birden çok kez çağırabilirsiniz: farklı bağlantı noktalarına birer kez gönderin veya aynı bağlantı noktasına art arda gönderin (sonraki çağrı öncekini geçersiz kılar).",
+    it: "Puoi chiamarlo più volte in una singola esecuzione: invia una volta a porte diverse oppure invia ripetutamente alla stessa porta (la chiamata successiva sovrascrive la precedente).",
   },
 
   // —— 示例 ——
@@ -249,7 +369,13 @@ export const helpMessages = {
     ar: 'أمثلة',
     fr: 'Exemples',
     pt: 'Exemplos',
-    ru: 'Примеры'
+    ru: 'Примеры',
+    hi: "उदाहरण",
+    id: "Contoh",
+    de: "Beispiele",
+    vi: "Ví dụ",
+    tr: "Örnekler",
+    it: "Esempi",
   },
   ex1Label: {
     zh: '例 1：两个 number 输入 → 一个乘积输出',
@@ -260,7 +386,13 @@ export const helpMessages = {
     ar: 'مثال 1: مدخلان number → مخرج حاصل الضرب واحد',
     fr: 'Exemple 1 : deux entrées number → une sortie produit',
     pt: 'Exemplo 1: duas entradas number → uma saída de produto',
-    ru: 'Пример 1: два входа number → один выход произведения'
+    ru: 'Пример 1: два входа number → один выход произведения',
+    hi: "उदाहरण 1: दो number इनपुट → एक गुणनफल आउटपुट",
+    id: "Contoh 1: dua input number → satu keluaran hasil kali",
+    de: "Beispiel 1: zwei number-Eingaben → eine Produktausgabe",
+    vi: "Ví dụ 1: hai đầu vào number → một đầu ra tích",
+    tr: "Örnek 1: iki number girişi → bir çarpım çıkışı",
+    it: "Esempio 1: due input number → un output prodotto",
   },
   ex1Comment1: {
     zh: '// 输入端口: price (number), qty (number)',
@@ -271,7 +403,13 @@ export const helpMessages = {
     ar: '// منافذ الإدخال: price (number), qty (number)',
     fr: '// Ports d’entrée : price (number), qty (number)',
     pt: '// Portas de entrada: price (number), qty (number)',
-    ru: '// Входные порты: price (number), qty (number)'
+    ru: '// Входные порты: price (number), qty (number)',
+    hi: "// इनपुट पोर्ट: price (number), qty (number)",
+    id: "// Port masukan: price (number), qty (number)",
+    de: "// Eingabeports: price (number), qty (number)",
+    vi: "// Cổng đầu vào: price (number), qty (number)",
+    tr: "// Giriş bağlantı noktaları: price (number), qty (number)",
+    it: "// Porte di input: price (number), qty (number)",
   },
   ex1Comment2: {
     zh: '// 输出端口: result (number)',
@@ -282,7 +420,13 @@ export const helpMessages = {
     ar: '// منافذ الإخراج: result (number)',
     fr: '// Ports de sortie : result (number)',
     pt: '// Portas de saída: result (number)',
-    ru: '// Выходные порты: result (number)'
+    ru: '// Выходные порты: result (number)',
+    hi: "// आउटपुट पोर्ट: result (number)",
+    id: "// Port keluaran: result (number)",
+    de: "// Ausgabeports: result (number)",
+    vi: "// Cổng đầu ra: result (number)",
+    tr: "// Çıkış bağlantı noktaları: result (number)",
+    it: "// Porte di output: result (number)",
   },
   ex2Label: {
     zh: '例 2：一次执行向多个输出端口提交',
@@ -293,7 +437,13 @@ export const helpMessages = {
     ar: 'مثال 2: الإرسال إلى عدة منافذ إخراج في تنفيذ واحد',
     fr: 'Exemple 2 : soumettre vers plusieurs ports de sortie en une exécution',
     pt: 'Exemplo 2: enviar para vários portos de saída em uma execução',
-    ru: 'Пример 2: отправка в несколько выходных портов за одно выполнение'
+    ru: 'Пример 2: отправка в несколько выходных портов за одно выполнение',
+    hi: "उदाहरण 2: एक निष्पादन में कई आउटपुट पोर्ट पर सबमिट करें",
+    id: "Contoh 2: kirim ke beberapa port keluaran dalam satu eksekusi",
+    de: "Beispiel 2: in einer Ausführung an mehrere Ausgabeports senden",
+    vi: "Ví dụ 2: gửi đến nhiều cổng đầu ra trong một lần thực thi",
+    tr: "Örnek 2: tek yürütmede birden çok çıkış bağlantı noktasına gönder",
+    it: "Esempio 2: invia a più porte di output in una singola esecuzione",
   },
   ex3Label: {
     zh: '例 3：兼容旧写法——直接 return（只提交到第一个输出端口）',
@@ -304,7 +454,13 @@ export const helpMessages = {
     ar: 'مثال 3: الأسلوب القديم — return مباشر (يُرسل إلى منفذ الإخراج الأول فقط)',
     fr: 'Exemple 3 : ancien style — return direct (soumet uniquement au premier port de sortie)',
     pt: 'Exemplo 3: estilo antigo — return direto (envia apenas para o primeiro porto de saída)',
-    ru: 'Пример 3: старый стиль — прямой return (отправляет только в первый выходной порт)'
+    ru: 'Пример 3: старый стиль — прямой return (отправляет только в первый выходной порт)',
+    hi: "उदाहरण 3: पुरानी शैली — सीधा return (केवल पहले आउटपुट पोर्ट पर सबमिट करता है)",
+    id: "Contoh 3: gaya lama — return langsung (hanya mengirim ke port keluaran pertama)",
+    de: "Beispiel 3: alter Stil — direktes return (sendet nur an den ersten Ausgabeport)",
+    vi: "Ví dụ 3: kiểu cũ — return trực tiếp (chỉ gửi đến cổng đầu ra đầu tiên)",
+    tr: "Örnek 3: eski stil — doğrudan return (yalnızca ilk çıkış bağlantı noktasına gönderir)",
+    it: "Esempio 3: stile precedente — return diretto (invia solo alla prima porta di output)",
   },
   ex4Label: {
     zh: '例 4：读取 File 对象属性',
@@ -315,7 +471,13 @@ export const helpMessages = {
     ar: 'مثال 4: قراءة خصائص كائن File',
     fr: 'Exemple 4 : lire les propriétés de l’objet File',
     pt: 'Exemplo 4: ler propriedades do objeto File',
-    ru: 'Пример 4: чтение свойств объекта File'
+    ru: 'Пример 4: чтение свойств объекта File',
+    hi: "उदाहरण 4: File ऑब्जेक्ट के गुण पढ़ें",
+    id: "Contoh 4: baca properti objek File",
+    de: "Beispiel 4: Eigenschaften des File-Objekts lesen",
+    vi: "Ví dụ 4: đọc thuộc tính đối tượng File",
+    tr: "Örnek 4: File nesnesi özelliklerini oku",
+    it: "Esempio 4: leggere le proprietà dell’oggetto File",
   },
   ex4Comment1: {
     zh: '// 输入端口: f (file)',
@@ -326,7 +488,13 @@ export const helpMessages = {
     ar: '// منافذ الإدخال: f (file)',
     fr: '// Ports d’entrée : f (file)',
     pt: '// Portas de entrada: f (file)',
-    ru: '// Входные порты: f (file)'
+    ru: '// Входные порты: f (file)',
+    hi: "// इनपुट पोर्ट: f (file)",
+    id: "// Port masukan: f (file)",
+    de: "// Eingabeports: f (file)",
+    vi: "// Cổng đầu vào: f (file)",
+    tr: "// Giriş bağlantı noktaları: f (file)",
+    it: "// Porte di input: f (file)",
   },
   ex4Comment2: {
     zh: '// 输出端口: name (string), size (number)',
@@ -337,7 +505,13 @@ export const helpMessages = {
     ar: '// منافذ الإخراج: name (string), size (number)',
     fr: '// Ports de sortie : name (string), size (number)',
     pt: '// Portas de saída: name (string), size (number)',
-    ru: '// Выходные порты: name (string), size (number)'
+    ru: '// Выходные порты: name (string), size (number)',
+    hi: "// आउटपुट पोर्ट: name (string), size (number)",
+    id: "// Port keluaran: name (string), size (number)",
+    de: "// Ausgabeports: name (string), size (number)",
+    vi: "// Cổng đầu ra: name (string), size (number)",
+    tr: "// Çıkış bağlantı noktaları: name (string), size (number)",
+    it: "// Porte di output: name (string), size (number)",
   },
 
   // —— 异步 & await ——
@@ -350,7 +524,13 @@ export const helpMessages = {
     ar: 'كلٌّ من async و await يعمل',
     fr: 'Async et await fonctionnent tous les deux',
     pt: 'Async e await funcionam',
-    ru: 'Асинхронность и await работают'
+    ru: 'Асинхронность и await работают',
+    hi: "Async और await दोनों काम करते हैं",
+    id: "Async & await keduanya berfungsi",
+    de: "Async & await funktionieren beide",
+    vi: "Cả async & await đều hoạt động",
+    tr: "Async & await ikisi de çalışır",
+    it: "Async e await funzionano entrambi",
   },
   asyncBody: {
     zh: '代码节点用 <code>AsyncFunction</code> 构造函数体，所以可以<b>直接写 <code>await</code></b>，也可以用 <code>setTimeout</code> / <code>setInterval</code> 做延迟输出。<code>callOutputPort</code> 的回调引用一直活着，<b>任何时机</b>的调用都能正常触发下游端口 commit。',
@@ -361,7 +541,13 @@ export const helpMessages = {
     ar: 'تبني عقدة الكود جسم الدالة عبر <code>AsyncFunction</code>، لذا يمكنك <b>كتابة <code>await</code> مباشرةً</b>، واستخدام <code>setTimeout</code> / <code>setInterval</code> لإخراج مؤجّل. يظل مرجع الاستدعاء الخاص بـ <code>callOutputPort</code> حيًّا، لذا فإن الاستدعاء في <b>أي وقت</b> يُفعّل commit المنفذ اللاحق بشكل صحيح.',
     fr: 'Le nœud Code construit le corps de la fonction avec <code>AsyncFunction</code>, vous pouvez donc <b>écrire <code>await</code> directement</b> et utiliser <code>setTimeout</code> / <code>setInterval</code> pour une sortie différée. La référence de rappel de <code>callOutputPort</code> reste active, donc les appels à <b>tout moment</b> déclenchent correctement le commit du port en aval.',
     pt: 'O nó Código constrói o corpo da função com <code>AsyncFunction</code>, então você pode <b>escrever <code>await</code> diretamente</b> e usar <code>setTimeout</code> / <code>setInterval</code> para saída atrasada. A referência de callback de <code>callOutputPort</code> permanece ativa, então chamadas em <b>qualquer momento</b> disparam corretamente o commit do porto seguinte.',
-    ru: 'Узел «Код» строит тело функции через <code>AsyncFunction</code>, поэтому можно <b>писать <code>await</code> напрямую</b> и использовать <code>setTimeout</code> / <code>setInterval</code> для отложенного вывода. Ссылка на колбэк <code>callOutputPort</code> остаётся живой, поэтому вызовы в <b>любой момент</b> корректно запускают commit последующего порта.'
+    ru: 'Узел «Код» строит тело функции через <code>AsyncFunction</code>, поэтому можно <b>писать <code>await</code> напрямую</b> и использовать <code>setTimeout</code> / <code>setInterval</code> для отложенного вывода. Ссылка на колбэк <code>callOutputPort</code> остаётся живой, поэтому вызовы в <b>любой момент</b> корректно запускают commit последующего порта.',
+    hi: "कोड नोड <code>AsyncFunction</code> से फ़ंक्शन बॉडी बनाता है, इसलिए आप <b>सीधे <code>await</code> लिख सकते हैं</b> और विलंबित आउटपुट के लिए <code>setTimeout</code> / <code>setInterval</code> का उपयोग कर सकते हैं। <code>callOutputPort</code> का कॉलबैक संदर्भ जीवित रहता है, इसलिए <b>किसी भी समय</b> का कॉल डाउनस्ट्रीम पोर्ट commit को सही ढंग से ट्रिगर करता है।",
+    id: "Node Kode membangun isi fungsi dengan <code>AsyncFunction</code>, sehingga Anda dapat <b>menulis <code>await</code> secara langsung</b> dan menggunakan <code>setTimeout</code> / <code>setInterval</code> untuk keluaran tertunda. Referensi callback <code>callOutputPort</code> tetap hidup, sehingga panggilan pada <b>waktu apa pun</b> memicu commit port hilir dengan benar.",
+    de: "Der Knoten „Code“ erstellt den Funktionskörper mit <code>AsyncFunction</code>, sodass Sie <b><code>await</code> direkt schreiben können</b> und <code>setTimeout</code> / <code>setInterval</code> für verzögerte Ausgabe verwenden können. Die Callback-Referenz von <code>callOutputPort</code> bleibt aktiv, daher löst ein Aufruf zu <b>jedem Zeitpunkt</b> korrekt einen Commit des nachgelagerten Ports aus.",
+    vi: "Nút Mã xây dựng thân hàm bằng <code>AsyncFunction</code>, nên bạn có thể <b>viết <code>await</code> trực tiếp</b> và dùng <code>setTimeout</code> / <code>setInterval</code> để xuất trễ. Tham chiếu callback của <code>callOutputPort</code> vẫn tồn tại, nên lệnh gọi ở <b>bất kỳ thời điểm nào</b> đều kích hoạt commit cổng hạ nguồn đúng cách.",
+    tr: "Kod düğümü işlev gövdesini <code>AsyncFunction</code> ile oluşturur, bu nedenle <b>doğrudan <code>await</code> yazabilirsiniz</b> ve gecikmeli çıktı için <code>setTimeout</code> / <code>setInterval</code> kullanabilirsiniz. <code>callOutputPort</code> geri çağırma referansı canlı kalır, bu yüzden <b>herhangi bir anda</b> yapılan çağrı aşağı akış portu commit’ini doğru şekilde tetikler.",
+    it: "Il nodo Codice costruisce il corpo della funzione con <code>AsyncFunction</code>, quindi puoi <b>scrivere <code>await</code> direttamente</b> e usare <code>setTimeout</code> / <code>setInterval</code> per un output differito. Il riferimento di callback di <code>callOutputPort</code> rimane attivo, quindi una chiamata in <b>qualsiasi momento</b> attiva correttamente il commit della porta a valle.",
   },
   asyncEx1Label: {
     zh: '用 await 串行等待',
@@ -372,7 +558,13 @@ export const helpMessages = {
     ar: 'انتظار متسلسل باستخدام await',
     fr: 'Attente séquentielle avec await',
     pt: 'Espera sequencial com await',
-    ru: 'Последовательное ожидание через await'
+    ru: 'Последовательное ожидание через await',
+    hi: "await से क्रमिक प्रतीक्षा",
+    id: "Menunggu berurutan dengan await",
+    de: "Sequenzielles Warten mit await",
+    vi: "Chờ tuần tự bằng await",
+    tr: "await ile sıralı bekleme",
+    it: "Attesa sequenziale con await",
   },
   asyncEx1Comment: {
     zh: '// 等 1 秒后才 commit',
@@ -383,7 +575,13 @@ export const helpMessages = {
     ar: '// commit بعد انتظار ثانية واحدة',
     fr: '// commit seulement après 1 seconde d’attente',
     pt: '// faz commit após 1 segundo',
-    ru: '// commit только через 1 секунду'
+    ru: '// commit только через 1 секунду',
+    hi: "// 1 सेकंड बाद ही commit होता है",
+    id: "// commit hanya setelah menunggu 1 detik",
+    de: "// commit erst nach 1 Sekunde Wartezeit",
+    vi: "// chỉ commit sau khi chờ 1 giây",
+    tr: "// yalnızca 1 saniye bekledikten sonra commit eder",
+    it: "// esegue il commit solo dopo 1 secondo",
   },
   asyncEx2Label: {
     zh: '用 setTimeout 延迟（不阻塞同步代码）',
@@ -394,7 +592,13 @@ export const helpMessages = {
     ar: 'التأجيل باستخدام setTimeout (لا يحجب الكود المتزامن)',
     fr: 'Différer avec setTimeout (ne bloque pas le code synchrone)',
     pt: 'Adiar com setTimeout (não bloqueia o código síncrono)',
-    ru: 'Отложить через setTimeout (не блокирует синхронный код)'
+    ru: 'Отложить через setTimeout (не блокирует синхронный код)',
+    hi: "setTimeout से विलंब (सिंक्रोनस कोड को ब्लॉक नहीं करता)",
+    id: "Tunda dengan setTimeout (tidak memblokir kode sinkron)",
+    de: "Mit setTimeout verzögern (blockiert synchronen Code nicht)",
+    vi: "Trì hoãn bằng setTimeout (không chặn mã đồng bộ)",
+    tr: "setTimeout ile geciktir (eşzamanlı kodu engellemez)",
+    it: "Ritarda con setTimeout (non blocca il codice sincrono)",
   },
   asyncEx2Comment1: {
     zh: '// 1 秒后 commit，不阻塞下面这行',
@@ -405,7 +609,13 @@ export const helpMessages = {
     ar: '// commit بعد ثانية واحدة، دون حجب السطر التالي',
     fr: '// commit après 1 seconde, sans bloquer la ligne suivante',
     pt: '// faz commit após 1 segundo, sem bloquear a linha seguinte',
-    ru: '// commit через 1 секунду, не блокируя следующую строку'
+    ru: '// commit через 1 секунду, не блокируя следующую строку',
+    hi: "// 1 सेकंड बाद commit, अगली पंक्ति को ब्लॉक नहीं करता",
+    id: "// commit setelah 1 detik, tanpa memblokir baris berikutnya",
+    de: "// commit nach 1 Sekunde, ohne die nächste Zeile zu blockieren",
+    vi: "// commit sau 1 giây, không chặn dòng tiếp theo",
+    tr: "// 1 saniye sonra commit eder, sonraki satırı engellemez",
+    it: "// esegue il commit dopo 1 secondo, senza bloccare la riga successiva",
   },
   asyncEx2Comment2: {
     zh: '// 先 commit port2=22，1 秒后被 33 覆盖',
@@ -416,7 +626,13 @@ export const helpMessages = {
     ar: '// commit لـ port2=22 أولًا، ثم يُستبدل بـ 33 بعد ثانية',
     fr: '// commit d’abord port2=22, puis écrasé par 33 après 1 seconde',
     pt: '// faz commit de port2=22 primeiro, depois sobrescrito por 33 após 1 segundo',
-    ru: '// сначала commit port2=22, затем через 1 секунду перезаписывается на 33'
+    ru: '// сначала commit port2=22, затем через 1 секунду перезаписывается на 33',
+    hi: "// पहले port2=22 commit होता है, 1 सेकंड बाद 33 से ओवरराइट होता है",
+    id: "// pertama commit port2=22, lalu ditimpa oleh 33 setelah 1 detik",
+    de: "// zuerst commit port2=22, nach 1 Sekunde von 33 überschrieben",
+    vi: "// commit port2=22 trước, sau 1 giây bị 33 ghi đè",
+    tr: "// önce port2=22 commit eder, 1 saniye sonra 33 ile üzerine yazılır",
+    it: "// prima commit port2=22, poi sovrascritto da 33 dopo 1 secondo",
   },
   asyncWarn: {
     zh: '同一个端口被多次 <code>callOutputPort</code> 调用时，后一次会覆盖前一次（端口值按指纹比对）。下游节点会跟着最新值刷新。',
@@ -427,6 +643,12 @@ export const helpMessages = {
     ar: 'عند استدعاء المنفذ نفسه عدة مرات عبر <code>callOutputPort</code>، يستبدل الاستدعاء اللاحق السابق (تُقارَن قيم المنافذ بالبصمة). تتحدّث العقد اللاحقة بأحدث قيمة.',
     fr: 'Lorsque le même port est appelé plusieurs fois par <code>callOutputPort</code>, l’appel suivant écrase le précédent (les valeurs de port sont comparées par empreinte). Les nœuds en aval se rafraîchissent avec la valeur la plus récente.',
     pt: 'Quando o mesmo porto é chamado várias vezes por <code>callOutputPort</code>, a chamada posterior sobrescreve a anterior (os valores de porto são comparados por impressão digital). Os nós seguintes atualizam com o valor mais recente.',
-    ru: 'Когда один и тот же порт вызывается через <code>callOutputPort</code> несколько раз, последующий вызов перезаписывает предыдущий (значения портов сравниваются по отпечатку). Последующие узлы обновляются по последнему значению.'
+    ru: 'Когда один и тот же порт вызывается через <code>callOutputPort</code> несколько раз, последующий вызов перезаписывает предыдущий (значения портов сравниваются по отпечатку). Последующие узлы обновляются по последнему значению.',
+    hi: "जब एक ही पोर्ट को <code>callOutputPort</code> से कई बार कॉल किया जाता है, तो बाद वाला कॉल पहले वाले को ओवरराइट करता है (पोर्ट मान फ़िंगरप्रिंट से तुलना किए जाते हैं)। डाउनस्ट्रीम नोड नवीनतम मान के साथ रीफ़्रेश होते हैं।",
+    id: "Ketika port yang sama dipanggil beberapa kali oleh <code>callOutputPort</code>, panggilan berikutnya menimpa yang sebelumnya (nilai port dibandingkan dengan sidik jari). Node hilir menyegarkan dengan nilai terbaru.",
+    de: "Wenn derselbe Port mehrmals durch <code>callOutputPort</code> aufgerufen wird, überschreibt der spätere Aufruf den früheren (Portwerte werden per Fingerabdruck verglichen). Nachgelagerte Knoten aktualisieren sich mit dem neuesten Wert.",
+    vi: "Khi cùng một cổng được gọi nhiều lần bởi <code>callOutputPort</code>, lệnh gọi sau ghi đè lệnh trước (giá trị cổng được so sánh bằng dấu vân tay). Các nút hạ nguồn làm mới theo giá trị mới nhất.",
+    tr: "Aynı bağlantı noktası <code>callOutputPort</code> ile birden çok kez çağrıldığında, sonraki çağrı öncekini geçersiz kılar (port değerleri parmak iziyle karşılaştırılır). Aşağı akış düğümleri en son değerle yenilenir.",
+    it: "Quando la stessa porta viene chiamata più volte da <code>callOutputPort</code>, la chiamata successiva sovrascrive la precedente (i valori delle porte sono confrontati tramite impronta). I nodi a valle si aggiornano con il valore più recente.",
   }
 } satisfies Record<string, LocalizedText>

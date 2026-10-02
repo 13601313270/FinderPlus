@@ -14,7 +14,13 @@ export const manifest: NodePluginManifest = {
     ar: 'إدخال منطقي',
     fr: 'Entrée booléenne',
     pt: 'Entrada booleana',
-    ru: 'Логический ввод'
+    ru: 'Логический ввод',
+    hi: 'बूलियन इनपुट',
+    id: 'Masukan boolean',
+    de: 'Boolesche Eingabe',
+    vi: 'Đầu vào boolean',
+    tr: 'Mantıksal Giriş',
+    it: 'Input booleano'
   },
   render,
   help: () => import('./BoolInputHelpDialog.vue')

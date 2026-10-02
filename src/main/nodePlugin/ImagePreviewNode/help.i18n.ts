@@ -1,7 +1,7 @@
 import type { LocalizedText } from '../../../shared/language'
 
 /**
- * ImagePreview 节点帮助文档（ImagePreviewHelpDialog）的全部文案，9 种语言全配。
+ * ImagePreview 节点帮助文档（ImagePreviewHelpDialog）的全部文案，全部 15 种语言全配。
  *
  * 与节点自身的 i18n.ts 分开：卡片短文案变化频繁，帮助文档整篇体量大、改动少。
  * 约定：带行内 <code> / <b> 的句子，值里直接写 HTML，模板用 v-html 渲染；
@@ -18,7 +18,13 @@ export const helpMessages = {
     ar: 'ما هذا؟',
     fr: 'Qu’est-ce que c’est ?',
     pt: 'O que é isto?',
-    ru: 'Что это?'
+    ru: 'Что это?',
+    hi: 'यह क्या है?',
+    id: 'Apa ini?',
+    de: 'Was ist das?',
+    vi: 'Đây là gì?',
+    tr: 'Bu nedir?',
+    it: 'Cos’è questo?'
   },
   whatBody: {
     zh: '图片预览节点接收一张图片并渲染预览，同时把这张图片<b>原样透传</b>到右侧 <code>image</code> 输出端口，供下游节点继续使用。',
@@ -29,7 +35,13 @@ export const helpMessages = {
     ar: 'تعرض عقدة معاينة الصورة الصورة الواردة، وتُمرّرها <b>كما هي</b> إلى منفذ <code>image</code> على اليمين لتستخدمها العقد اللاحقة.',
     fr: 'Le nœud Aperçu d’image affiche un aperçu de l’image reçue et la <b>transmet telle quelle</b> au port <code>image</code> à droite pour les nœuds en aval.',
     pt: 'O nó Pré-visualizar imagem mostra uma pré-visualização da imagem recebida e a <b>repassa sem alterações</b> ao porto <code>image</code> à direita para os nós seguintes.',
-    ru: 'Узел «Предпросмотр изображения» показывает полученное изображение и <b>передаёт его без изменений</b> в выходной порт <code>image</code> справа для последующих узлов.'
+    ru: 'Узел «Предпросмотр изображения» показывает полученное изображение и <b>передаёт его без изменений</b> в выходной порт <code>image</code> справа для последующих узлов.',
+    hi: 'छवि पूर्वावलोकन नोड प्राप्त छवि का पूर्वावलोकन दिखाता है और उसी छवि को <b>बिना बदलाव</b> दाईं ओर के <code>image</code> आउटपुट पोर्ट से नीचे के नोड्स के लिए भेजता है।',
+    id: 'Node Pratinjau gambar menampilkan pratinjau gambar yang diterima dan <b>meneruskannya tanpa perubahan</b> ke port keluaran <code>image</code> di sebelah kanan untuk node hilir.',
+    de: 'Der Knoten „Bildvorschau“ zeigt eine Vorschau des eingehenden Bilds an und <b>gibt es unverändert</b> an den Ausgabeport <code>image</code> rechts für nachgelagerte Knoten weiter.',
+    vi: 'Nút Xem trước ảnh hiển thị bản xem trước của ảnh nhận được và <b>truyền nguyên vẹn</b> ảnh đó tới cổng đầu ra <code>image</code> bên phải cho các nút hạ nguồn.',
+    tr: 'Görüntü önizleme düğümü gelen görüntünün önizlemesini gösterir ve aynı görüntüyü <b>değiştirmeden</b> sağdaki <code>image</code> çıkış bağlantı noktasından aşağı akış düğümlerine iletir.',
+    it: 'Il nodo Anteprima immagine mostra un’anteprima dell’immagine ricevuta e la <b>trasmette invariata</b> alla porta di output <code>image</code> a destra per i nodi a valle.'
   },
 
   // —— 拖拽与预览 ——
@@ -42,7 +54,13 @@ export const helpMessages = {
     ar: 'السحب والمعاينة',
     fr: 'Glisser et aperçu',
     pt: 'Arrastar e pré-visualizar',
-    ru: 'Перетаскивание и предпросмотр'
+    ru: 'Перетаскивание и предпросмотр',
+    hi: 'खींचना और पूर्वावलोकन',
+    id: 'Seret & pratinjau',
+    de: 'Ziehen & Vorschau',
+    vi: 'Kéo & xem trước',
+    tr: 'Sürükleme ve önizleme',
+    it: 'Trascinamento e anteprima'
   },
   useLi1: {
     zh: '在画布内拖动预览图或标题栏可移动节点位置',
@@ -53,7 +71,13 @@ export const helpMessages = {
     ar: 'اسحب صورة المعاينة أو شريط العنوان داخل اللوحة لتحريك العقدة',
     fr: 'Faites glisser l’aperçu ou la barre de titre dans le canevas pour déplacer le nœud',
     pt: 'Arraste a pré-visualização ou a barra de título dentro da tela para mover o nó',
-    ru: 'Перетаскивайте предпросмотр или заголовок внутри холста, чтобы переместить узел'
+    ru: 'Перетаскивайте предпросмотр или заголовок внутри холста, чтобы переместить узел',
+    hi: 'नोड हिलाने के लिए कैनवास के भीतर पूर्वावलोकन या शीर्षक पट्टी खींचें',
+    id: 'Seret pratinjau atau bilah judul di dalam kanvas untuk memindahkan node',
+    de: 'Ziehe die Vorschau oder die Titelleiste innerhalb der Zeichenfläche, um den Knoten zu verschieben',
+    vi: 'Kéo bản xem trước hoặc thanh tiêu đề trong canvas để di chuyển nút',
+    tr: 'Düğümü taşımak için tuval içinde önizlemeyi veya başlık çubuğunu sürükle',
+    it: 'Trascina l’anteprima o la barra del titolo all’interno della tela per spostare il nodo'
   },
   useLi2: {
     zh: '把预览图<b>拖出窗口外</b>，图片会写出为文件并交给系统拖拽，可在桌面或文件夹中放下导出',
@@ -64,7 +88,13 @@ export const helpMessages = {
     ar: 'اسحب المعاينة <b>خارج النافذة</b> ليُكتب الملف وتُسلَّم إلى سحب النظام، ثم أفلتها على سطح المكتب أو في مجلد للتصدير',
     fr: 'Faites glisser l’aperçu <b>hors de la fenêtre</b> pour écrire l’image dans un fichier et la confier au glisser-déposer du système ; déposez-la sur le bureau ou dans un dossier pour l’exporter',
     pt: 'Arraste a pré-visualização <b>para fora da janela</b> para gravar a imagem num arquivo e entregá-la ao arrasto do sistema; solte na área de trabalho ou numa pasta para exportar',
-    ru: 'Перетащите предпросмотр <b>за пределы окна</b>, чтобы записать изображение в файл и передать системе перетаскивания — отпустите на рабочем столе или в папке, чтобы экспортировать'
+    ru: 'Перетащите предпросмотр <b>за пределы окна</b>, чтобы записать изображение в файл и передать системе перетаскивания — отпустите на рабочем столе или в папке, чтобы экспортировать',
+    hi: 'छवि को फ़ाइल में लिखकर सिस्टम ड्रैग को सौंपने के लिए पूर्वावलोकन को <b>विंडो से बाहर</b> खींचें; निर्यात के लिए इसे डेस्कटॉप या फ़ोल्डर पर छोड़ें',
+    id: 'Seret pratinjau <b>ke luar jendela</b> untuk menulis gambar menjadi berkas dan menyerahkannya ke seret sistem; lepaskan di desktop atau folder untuk mengekspor',
+    de: 'Ziehe die Vorschau <b>aus dem Fenster</b>, um das Bild in eine Datei zu schreiben und an das System-Ziehen zu übergeben; zum Exportieren auf dem Desktop oder in einem Ordner ablegen',
+    vi: 'Kéo bản xem trước <b>ra ngoài cửa sổ</b> để ghi ảnh thành tệp và giao cho hệ thống kéo; thả vào màn hình nền hoặc thư mục để xuất',
+    tr: 'Görüntüyü bir dosyaya yazıp sistem sürüklemesine devretmek için önizlemeyi <b>pencere dışına</b> sürükle; dışa aktarmak için masaüstüne veya bir klasöre bırak',
+    it: 'Trascina l’anteprima <b>fuori dalla finestra</b> per scrivere l’immagine in un file e affidarla al trascinamento di sistema; rilasciala sul desktop o in una cartella per esportarla'
   },
   useLi3: {
     zh: '拖动右下角手柄可调整预览区大小（宽 <code>220–800px</code>、高 <code>120–600px</code>）',
@@ -75,7 +105,13 @@ export const helpMessages = {
     ar: 'اسحب المقبض في الزاوية السفلية اليمنى لتغيير حجم المعاينة (العرض <code>220–800px</code>، الارتفاع <code>120–600px</code>)',
     fr: 'Faites glisser la poignée en bas à droite pour redimensionner l’aperçu (largeur <code>220–800px</code>, hauteur <code>120–600px</code>)',
     pt: 'Arraste o puxador no canto inferior direito para redimensionar a pré-visualização (largura <code>220–800px</code>, altura <code>120–600px</code>)',
-    ru: 'Перетаскивайте маркер в правом нижнем углу, чтобы изменить размер области предпросмотра (ширина <code>220–800px</code>, высота <code>120–600px</code>)'
+    ru: 'Перетаскивайте маркер в правом нижнем углу, чтобы изменить размер области предпросмотра (ширина <code>220–800px</code>, высота <code>120–600px</code>)',
+    hi: 'पूर्वावलोकन क्षेत्र का आकार बदलने के लिए निचले दाएँ कोने का हैंडल खींचें (चौड़ाई <code>220–800px</code>, ऊँचाई <code>120–600px</code>)',
+    id: 'Seret pegangan di sudut kanan bawah untuk mengubah ukuran area pratinjau (lebar <code>220–800px</code>, tinggi <code>120–600px</code>)',
+    de: 'Ziehe den Griff unten rechts, um die Größe des Vorschaubereichs zu ändern (Breite <code>220–800px</code>, Höhe <code>120–600px</code>)',
+    vi: 'Kéo tay cầm ở góc dưới bên phải để thay đổi kích thước vùng xem trước (rộng <code>220–800px</code>, cao <code>120–600px</code>)',
+    tr: 'Önizleme alanını yeniden boyutlandırmak için sağ alt köşedeki tutamacı sürükle (genişlik <code>220–800px</code>, yükseklik <code>120–600px</code>)',
+    it: 'Trascina la maniglia in basso a destra per ridimensionare l’area di anteprima (larghezza <code>220–800px</code>, altezza <code>120–600px</code>)'
   },
 
   // —— 端口 ——
@@ -88,7 +124,13 @@ export const helpMessages = {
     ar: 'المنافذ',
     fr: 'Ports',
     pt: 'Portas',
-    ru: 'Порты'
+    ru: 'Порты',
+    hi: 'पोर्ट',
+    id: 'Port',
+    de: 'Ports',
+    vi: 'Cổng',
+    tr: 'Bağlantı noktaları',
+    it: 'Porte'
   },
   portsLi1: {
     zh: '左侧 <code>图片</code> 输入端口接收图片（<code>ImgFileValue</code>）',
@@ -99,7 +141,13 @@ export const helpMessages = {
     ar: 'يقبل منفذ الإدخال <code>صورة</code> على اليسار صورةً (<code>ImgFileValue</code>)',
     fr: 'Le port d’entrée <code>Image</code> à gauche accepte une image (<code>ImgFileValue</code>)',
     pt: 'O porto de entrada <code>Imagem</code> à esquerda aceita uma imagem (<code>ImgFileValue</code>)',
-    ru: 'Входной порт <code>Изображение</code> слева принимает изображение (<code>ImgFileValue</code>)'
+    ru: 'Входной порт <code>Изображение</code> слева принимает изображение (<code>ImgFileValue</code>)',
+    hi: 'बाईं ओर का <code>छवि</code> इनपुट पोर्ट छवि (<code>ImgFileValue</code>) प्राप्त करता है',
+    id: 'Port masukan <code>Gambar</code> di sebelah kiri menerima gambar (<code>ImgFileValue</code>)',
+    de: 'Der Eingabeport <code>Bild</code> links nimmt ein Bild (<code>ImgFileValue</code>) auf',
+    vi: 'Cổng đầu vào <code>Ảnh</code> bên trái nhận ảnh (<code>ImgFileValue</code>)',
+    tr: 'Soldaki <code>Görüntü</code> giriş bağlantı noktası bir görüntü (<code>ImgFileValue</code>) alır',
+    it: 'La porta di input <code>Immagine</code> a sinistra accetta un’immagine (<code>ImgFileValue</code>)'
   },
   portsLi2: {
     zh: '右侧 <code>图片</code> 输出端口把同一张图片<b>原样透传</b>给下游节点',
@@ -110,7 +158,13 @@ export const helpMessages = {
     ar: 'يُمرّر منفذ <code>صورة</code> على اليمين <b>الصورة نفسها كما هي</b> إلى العقد اللاحقة',
     fr: 'Le port de sortie <code>Image</code> à droite <b>transmet la même image telle quelle</b> aux nœuds en aval',
     pt: 'O porto de saída <code>Imagem</code> à direita <b>repassa a mesma imagem sem alterações</b> aos nós seguintes',
-    ru: 'Выходной порт <code>Изображение</code> справа <b>передаёт то же изображение без изменений</b> последующим узлам'
+    ru: 'Выходной порт <code>Изображение</code> справа <b>передаёт то же изображение без изменений</b> последующим узлам',
+    hi: 'दाईं ओर का <code>छवि</code> आउटपुट पोर्ट वही छवि <b>बिना बदलाव</b> नीचे के नोड्स को भेजता है',
+    id: 'Port keluaran <code>Gambar</code> di sebelah kanan <b>meneruskan gambar yang sama tanpa perubahan</b> ke node hilir',
+    de: 'Der Ausgabeport <code>Bild</code> rechts <b>gibt dasselbe Bild unverändert</b> an nachgelagerte Knoten weiter',
+    vi: 'Cổng đầu ra <code>Ảnh</code> bên phải <b>truyền nguyên vẹn</b> cùng ảnh đó cho các nút hạ nguồn',
+    tr: 'Sağdaki <code>Görüntü</code> çıkış bağlantı noktası aynı görüntüyü <b>değiştirmeden</b> aşağı akış düğümlerine iletir',
+    it: 'La porta di output <code>Immagine</code> a destra <b>trasmette la stessa immagine invariata</b> ai nodi a valle'
   },
   portsLi3: {
     zh: '上游没有图片时输入为空，输出端口会随之<b>清空</b>，下游一并清空',
@@ -121,7 +175,13 @@ export const helpMessages = {
     ar: 'عند عدم وجود صورة من المنبع يكون الإدخال فارغًا، ويُ<b>تفريغ</b> منفذ الإخراج تبعًا لذلك، وتُفرَّغ العقد اللاحقة أيضًا',
     fr: 'Sans image en amont, l’entrée est vide, le port de sortie est <b>vidé</b> en conséquence et les nœuds en aval aussi',
     pt: 'Sem imagem a montante, a entrada fica vazia, o porto de saída é <b>limpo</b> e os nós seguintes também',
-    ru: 'Если исходного изображения нет, вход пуст, выходной порт <b>очищается</b>, и последующие узлы тоже'
+    ru: 'Если исходного изображения нет, вход пуст, выходной порт <b>очищается</b>, и последующие узлы тоже',
+    hi: 'जब ऊपर कोई छवि न हो तो इनपुट खाली रहता है, आउटपुट पोर्ट तदनुसार <b>खाली हो जाता है</b>, और नीचे के नोड्स भी',
+    id: 'Jika tidak ada gambar hulu, masukan kosong, port keluaran ikut <b>dikosongkan</b>, dan node hilir juga',
+    de: 'Wenn kein vorgelagertes Bild vorhanden ist, ist der Eingang leer, der Ausgabeport wird entsprechend <b>geleert</b> und nachgelagerte Knoten ebenfalls',
+    vi: 'Khi không có ảnh thượng nguồn, đầu vào trống, cổng đầu ra theo đó bị <b>xóa</b> và các nút hạ nguồn cũng vậy',
+    tr: 'Yukarı akışta görüntü yoksa giriş boş kalır, çıkış bağlantı noktası da <b>temizlenir</b> ve aşağı akış düğümleri de öyle',
+    it: 'Quando non c’è un’immagine a monte l’input è vuoto, la porta di output viene <b>svuotata</b> di conseguenza e anche i nodi a valle'
   },
 
   // —— 底部信息与导出 ——
@@ -134,7 +194,13 @@ export const helpMessages = {
     ar: 'شريط المعلومات والتصدير',
     fr: 'Barre d’infos et export',
     pt: 'Barra de informações e exportação',
-    ru: 'Строка информации и экспорт'
+    ru: 'Строка информации и экспорт',
+    hi: 'सूचना पट्टी और निर्यात',
+    id: 'Bilah info & ekspor',
+    de: 'Infoleiste & Export',
+    vi: 'Thanh thông tin & xuất',
+    tr: 'Bilgi çubuğu ve dışa aktarma',
+    it: 'Barra informazioni ed esportazione'
   },
   outputLi1: {
     zh: '显示图片<b>原始尺寸</b>（<code>宽×高 px</code>），加载完成前显示「加载中」',
@@ -145,7 +211,13 @@ export const helpMessages = {
     ar: 'يعرض <b>الحجم الأصلي</b> للصورة (<code>العرض×الارتفاع بكسل</code>)، ويظهر «جارٍ التحميل» حتى يكتمل',
     fr: 'Affiche la <b>taille d’origine</b> de l’image (<code>L×H px</code>) ; « Chargement » s’affiche tant qu’elle n’est pas prête',
     pt: 'Mostra o <b>tamanho original</b> da imagem (<code>L×A px</code>); até carregar aparece “Carregando”',
-    ru: 'Показывает <b>исходный размер</b> изображения (<code>Ш×В px</code>); до загрузки отображается «Загрузка»'
+    ru: 'Показывает <b>исходный размер</b> изображения (<code>Ш×В px</code>); до загрузки отображается «Загрузка»',
+    hi: 'छवि का <b>मूल आकार</b> (<code>चौड़ाई×ऊँचाई px</code>) दिखाता है; तैयार होने तक «लोड हो रहा है» दिखता है',
+    id: 'Menampilkan <b>ukuran asli</b> gambar (<code>L×T px</code>); “Memuat” muncul sampai siap',
+    de: 'Zeigt die <b>Originalgröße</b> des Bilds an (<code>B×H px</code>); bis es bereit ist, erscheint „Wird geladen“',
+    vi: 'Hiển thị <b>kích thước gốc</b> của ảnh (<code>R×C px</code>); hiện “Đang tải” cho tới khi sẵn sàng',
+    tr: 'Görüntünün <b>özgün boyutunu</b> gösterir (<code>G×Y px</code>); hazır olana kadar “Yükleniyor” görünür',
+    it: 'Mostra la <b>dimensione originale</b> dell’immagine (<code>L×A px</code>); fino a quando è pronta appare «Caricamento»'
   },
   outputLi2: {
     zh: '显示文件<b>大小</b>（B / KB / MB）',
@@ -156,7 +228,13 @@ export const helpMessages = {
     ar: 'يعرض <b>حجم</b> الملف (B / KB / MB)',
     fr: 'Affiche la <b>taille</b> du fichier (B / Ko / Mo)',
     pt: 'Mostra o <b>tamanho</b> do arquivo (B / KB / MB)',
-    ru: 'Показывает <b>размер</b> файла (Б / КБ / МБ)'
+    ru: 'Показывает <b>размер</b> файла (Б / КБ / МБ)',
+    hi: 'फ़ाइल का <b>आकार</b> दिखाता है (B / KB / MB)',
+    id: 'Menampilkan <b>ukuran</b> berkas (B / KB / MB)',
+    de: 'Zeigt die Datei<b>größe</b> an (B / KB / MB)',
+    vi: 'Hiển thị <b>kích thước</b> tệp (B / KB / MB)',
+    tr: 'Dosya <b>boyutunu</b> gösterir (B / KB / MB)',
+    it: 'Mostra la <b>dimensione</b> del file (B / KB / MB)'
   },
   outputLi3: {
     zh: '显示图片<b>格式</b>徽标（如 PNG / JPEG / WEBP，取自 MIME，缺失时回退扩展名）',
@@ -167,7 +245,13 @@ export const helpMessages = {
     ar: 'يعرض شارة <b>التنسيق</b> (مثل PNG / JPEG / WEBP، مأخوذة من MIME، ومع غيابها من امتداد الملف)',
     fr: 'Affiche un badge de <b>format</b> (ex. PNG / JPEG / WEBP, issu du type MIME, sinon de l’extension)',
     pt: 'Mostra um selo de <b>formato</b> (ex.: PNG / JPEG / WEBP, obtido do MIME e, na falta, da extensão)',
-    ru: 'Показывает значок <b>формата</b> (напр. PNG / JPEG / WEBP — из MIME, при отсутствии — из расширения файла)'
+    ru: 'Показывает значок <b>формата</b> (напр. PNG / JPEG / WEBP — из MIME, при отсутствии — из расширения файла)',
+    hi: 'छवि <b>प्रारूप</b> बैज दिखाता है (जैसे PNG / JPEG / WEBP, MIME से लिया गया, न होने पर फ़ाइल एक्सटेंशन से)',
+    id: 'Menampilkan lencana <b>format</b> gambar (mis. PNG / JPEG / WEBP, diambil dari MIME, jika tidak ada dari ekstensi berkas)',
+    de: 'Zeigt ein Bild<b>format</b>-Abzeichen an (z. B. PNG / JPEG / WEBP, aus dem MIME-Typ, sonst aus der Dateiendung)',
+    vi: 'Hiển thị huy hiệu <b>định dạng</b> ảnh (ví dụ PNG / JPEG / WEBP, lấy từ MIME, nếu thiếu thì từ phần mở rộng tệp)',
+    tr: 'Bir görüntü <b>biçim</b> rozeti gösterir (örn. PNG / JPEG / WEBP; MIME’dan alınır, yoksa dosya uzantısından)',
+    it: 'Mostra un badge del <b>formato</b> immagine (ad es. PNG / JPEG / WEBP, preso dal MIME, in mancanza dall’estensione del file)'
   },
 
   // —— 注意事项 ——
@@ -180,7 +264,13 @@ export const helpMessages = {
     ar: 'ملاحظات',
     fr: 'Remarques',
     pt: 'Observações',
-    ru: 'Примечания'
+    ru: 'Примечания',
+    hi: 'नोट्स',
+    id: 'Catatan',
+    de: 'Hinweise',
+    vi: 'Ghi chú',
+    tr: 'Notlar',
+    it: 'Note'
   },
   notesLi1: {
     zh: '点「<b>新建图片文件节点</b>」会在当前节点旁新建一个图片文件节点，并把图片写出到画布目录',
@@ -191,7 +281,13 @@ export const helpMessages = {
     ar: 'عند النقر على «<b>إنشاء عقدة ملف صورة</b>» تُضاف عقدة ملف صورة بجوار هذه العقدة ويُكتب الملف في مجلد اللوحة',
     fr: 'Cliquer sur <b>Créer un nœud de fichier image</b> ajoute un nœud image à côté de celui-ci et écrit l’image dans le dossier du canevas',
     pt: 'Clicar em <b>Criar nó de arquivo de imagem</b> adiciona um nó de imagem ao lado deste e grava a imagem na pasta da tela',
-    ru: 'Нажатие <b>Создать узел файла изображения</b> добавляет узел изображения рядом с этим и записывает файл в папку холста'
+    ru: 'Нажатие <b>Создать узел файла изображения</b> добавляет узел изображения рядом с этим и записывает файл в папку холста',
+    hi: '<b>छवि फ़ाइल नोड बनाएँ</b> पर क्लिक करने से इसके बगल में एक छवि फ़ाइल नोड जुड़ता है और छवि कैनवास फ़ोल्डर में लिखी जाती है',
+    id: 'Mengklik <b>Buat node berkas gambar</b> menambahkan node berkas gambar di samping node ini dan menulis gambar ke folder kanvas',
+    de: 'Ein Klick auf <b>Bilddatei-Knoten erstellen</b> fügt neben diesem einen Bilddatei-Knoten hinzu und schreibt das Bild in den Ordner der Zeichenfläche',
+    vi: 'Nhấp vào <b>Tạo nút tệp ảnh</b> sẽ thêm một nút tệp ảnh bên cạnh nút này và ghi ảnh vào thư mục canvas',
+    tr: '<b>Görüntü dosyası düğümü oluştur</b> seçeneğine tıklamak, bunun yanına bir görüntü dosyası düğümü ekler ve görüntüyü tuval klasörüne yazar',
+    it: 'Facendo clic su <b>Crea nodo file immagine</b> si aggiunge un nodo file immagine accanto a questo e si scrive l’immagine nella cartella della tela'
   },
   notesLi2: {
     zh: '预览节点本身<b>不保存状态</b>，重新打开画布后由上游重新推送图片',
@@ -202,7 +298,13 @@ export const helpMessages = {
     ar: 'عقدة المعاينة نفسها <b>لا تحفظ أي حالة</b>؛ وعند إعادة فتح اللوحة تعيد العقدة المصدر إرسال الصورة',
     fr: 'Le nœud d’aperçu <b>n’enregistre aucun état</b> ; à la réouverture du canevas, le nœud en amont renvoie l’image',
     pt: 'O nó de pré-visualização <b>não guarda estado</b>; ao reabrir a tela, o nó de origem reenvia a imagem',
-    ru: 'Сам узел предпросмотра <b>не сохраняет состояние</b>; при повторном открытии холста исходный узел снова отправляет изображение'
+    ru: 'Сам узел предпросмотра <b>не сохраняет состояние</b>; при повторном открытии холста исходный узел снова отправляет изображение',
+    hi: 'पूर्वावलोकन नोड स्वयं <b>कोई स्थिति नहीं सहेजता</b>; कैनवास दोबारा खोलने पर ऊपरी नोड फिर से छवि भेजता है',
+    id: 'Node pratinjau sendiri <b>tidak menyimpan status</b>; saat kanvas dibuka kembali, node hulu mengirim ulang gambar',
+    de: 'Der Vorschauknoten selbst <b>speichert keinen Zustand</b>; beim erneuten Öffnen der Zeichenfläche sendet der vorgelagerte Knoten das Bild erneut',
+    vi: 'Bản thân nút xem trước <b>không lưu trạng thái</b>; khi mở lại canvas, nút thượng nguồn gửi lại ảnh',
+    tr: 'Önizleme düğümünün kendisi <b>durum kaydetmez</b>; tuval yeniden açıldığında yukarı akış düğümü görüntüyü yeniden gönderir',
+    it: 'Il nodo di anteprima stesso <b>non salva alcuno stato</b>; riaprendo la tela, il nodo a monte invia di nuovo l’immagine'
   },
   notesLi3: {
     zh: '输出端口直接透传原始文件，<b>不做</b>转码或压缩',
@@ -213,6 +315,12 @@ export const helpMessages = {
     ar: 'يُمرّر منفذ الإخراج الملف الأصلي كما هو <b>دون</b> إعادة ترميز أو ضغط',
     fr: 'Le port de sortie transmet le fichier d’origine tel quel, <b>sans</b> transcodage ni compression',
     pt: 'O porto de saída repassa o arquivo original tal qual, <b>sem</b> transcodificação nem compactação',
-    ru: 'Выходной порт передаёт исходный файл как есть, <b>без</b> перекодирования и сжатия'
+    ru: 'Выходной порт передаёт исходный файл как есть, <b>без</b> перекодирования и сжатия',
+    hi: 'आउटपुट पोर्ट मूल फ़ाइल को यथावत भेजता है, <b>बिना</b> ट्रांसकोडिंग या संपीड़न',
+    id: 'Port keluaran meneruskan berkas asli apa adanya, <b>tanpa</b> transkode atau kompresi',
+    de: 'Der Ausgabeport gibt die Originaldatei unverändert weiter, <b>ohne</b> Transkodierung oder Komprimierung',
+    vi: 'Cổng đầu ra truyền tệp gốc nguyên vẹn, <b>không</b> chuyển mã hay nén',
+    tr: 'Çıkış bağlantı noktası özgün dosyayı olduğu gibi iletir, <b>kod dönüştürme veya sıkıştırma yapmaz</b>',
+    it: 'La porta di output trasmette il file originale così com’è, <b>senza</b> transcodifica né compressione'
   }
 } satisfies Record<string, LocalizedText>

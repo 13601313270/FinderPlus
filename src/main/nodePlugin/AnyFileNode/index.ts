@@ -14,7 +14,13 @@ export const manifest: NodePluginManifest = {
     ar: 'أي ملف',
     fr: 'N’importe quel fichier',
     pt: 'Qualquer ficheiro',
-    ru: 'Любой файл'
+    ru: 'Любой файл',
+    hi: 'कोई भी फ़ाइल',
+    id: 'Berkas apa saja',
+    de: 'Beliebige Datei',
+    vi: 'Tệp bất kỳ',
+    tr: 'Herhangi bir dosya',
+    it: 'File qualsiasi'
   },
   render,
   help: () => import('./AnyFileHelpDialog.vue')

@@ -48,7 +48,13 @@ export class ImageOverlayNode extends Node {
     ar: 'صورة مركّبة',
     fr: 'Composite',
     pt: 'Composto',
-    ru: 'Составное изображение'
+    ru: 'Составное изображение',
+    hi: 'संयुक्त छवि',
+    id: 'Gambar gabungan',
+    de: 'Zusammengesetztes Bild',
+    vi: 'Ảnh tổng hợp',
+    tr: 'Birleşik görüntü',
+    it: 'Immagine composita'
   })
 
   /** 各端口 id 对应的 LayerState */
@@ -85,7 +91,13 @@ export class ImageOverlayNode extends Node {
         ar: `الطبقة ${index + 1}`,
         fr: `Calque ${index + 1}`,
         pt: `Camada ${index + 1}`,
-        ru: `Слой ${index + 1}`
+        ru: `Слой ${index + 1}`,
+        hi: `परत ${index + 1}`,
+        id: `Lapisan ${index + 1}`,
+        de: `Ebene ${index + 1}`,
+        vi: `Lớp ${index + 1}`,
+        tr: `Katman ${index + 1}`,
+        it: `Livello ${index + 1}`
       }
     })
     this.addInput(port)
@@ -128,7 +140,13 @@ export class ImageOverlayNode extends Node {
       ar: `الطبقة ${nextIndex + 1}`,
       fr: `Calque ${nextIndex + 1}`,
       pt: `Camada ${nextIndex + 1}`,
-      ru: `Слой ${nextIndex + 1}`
+      ru: `Слой ${nextIndex + 1}`,
+      hi: `परत ${nextIndex + 1}`,
+      id: `Lapisan ${nextIndex + 1}`,
+      de: `Ebene ${nextIndex + 1}`,
+      vi: `Lớp ${nextIndex + 1}`,
+      tr: `Katman ${nextIndex + 1}`,
+      it: `Livello ${nextIndex + 1}`
     })
   }
 

@@ -14,7 +14,13 @@ export const manifest: NodePluginManifest = {
     ar: 'إدخال رقمي',
     fr: 'Entrée numérique',
     pt: 'Entrada numérica',
-    ru: 'Числовой ввод'
+    ru: 'Числовой ввод',
+    hi: 'संख्या इनपुट',
+    id: 'Masukan angka',
+    de: 'Zahleneingabe',
+    vi: 'Đầu vào số',
+    tr: 'Sayı Girişi',
+    it: 'Input numerico'
   },
   render,
   help: () => import('./NumberInputHelpDialog.vue')

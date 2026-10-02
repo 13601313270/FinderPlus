@@ -14,7 +14,13 @@ export const manifest: NodePluginManifest = {
     ar: 'طلب HTTP',
     fr: 'Requête HTTP',
     pt: 'Requisição HTTP',
-    ru: 'HTTP-запрос'
+    ru: 'HTTP-запрос',
+    hi: 'HTTP अनुरोध',
+    id: 'Permintaan HTTP',
+    de: 'HTTP-Anfrage',
+    vi: 'Yêu cầu HTTP',
+    tr: 'HTTP İsteği',
+    it: 'Richiesta HTTP'
   },
   render,
   help: () => import('./HttpRequestHelpDialog.vue')

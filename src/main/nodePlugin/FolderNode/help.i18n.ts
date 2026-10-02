@@ -1,7 +1,7 @@
 import type { LocalizedText } from '../../../shared/language'
 
 /**
- * Folder 节点帮助文档（FolderHelpDialog）的全部文案，9 种语言全配。
+ * Folder 节点帮助文档（FolderHelpDialog）的全部文案，全部 15 种语言全配。
  *
  * 与节点自身的 i18n.ts 分开：卡片短文案变化频繁，帮助文档整篇体量大、改动少。
  * 约定：带行内 <code> / <b> 的句子，值里直接写 HTML，模板用 v-html 渲染；
@@ -18,7 +18,13 @@ export const helpMessages = {
     ar: 'ما هذا؟',
     fr: 'Qu’est-ce que c’est ?',
     pt: 'O que é isto?',
-    ru: 'Что это?'
+    ru: 'Что это?',
+    hi: 'यह क्या है?',
+    id: 'Apa ini?',
+    de: 'Was ist das?',
+    vi: 'Đây là gì?',
+    tr: 'Bu nedir?',
+    it: 'Che cos’è?'
   },
   whatBody: {
     zh: '文件夹节点是一个容器，用来把画布上的文件节点收纳、分组到同一个框里。收纳只是建立归属关系——子节点仍是画布上的真实节点，位置改为相对文件夹的<b>局部坐标</b>，原有连线保持不变。',
@@ -29,7 +35,13 @@ export const helpMessages = {
     ar: 'عقدة المجلد وعاء يجمع عقد الملفات على اللوحة في إطار واحد. لا ينشئ الاستقبال سوى علاقة انتماء؛ فالعقد التابعة تبقى عقدًا حقيقية على اللوحة، وتتحول مواضعها إلى <b>إحداثيات محلية</b> نسبةً إلى المجلد، وتبقى الوصلات الموجودة سليمة.',
     fr: 'Le nœud Dossier est un conteneur qui regroupe les nœuds de fichier du canevas dans un même cadre. L’adoption ne fait qu’établir une appartenance : les nœuds enfants restent de vrais nœuds du canevas, leurs positions deviennent des <b>coordonnées locales</b> relatives au dossier, et les connexions existantes restent intactes.',
     pt: 'O nó Pasta é um contêiner que agrupa os nós de arquivo do canvas em um mesmo quadro. A adoção apenas cria uma relação de pertencimento — os nós filhos continuam sendo nós reais do canvas, as posições passam a ser <b>coordenadas locais</b> relativas à pasta, e as conexões existentes permanecem intactas.',
-    ru: 'Узел «Папка» — это контейнер, который группирует файловые узлы холста в одной рамке. Приём лишь устанавливает принадлежность: дочерние узлы остаются настоящими узлами холста, их позиции становятся <b>локальными координатами</b> относительно папки, а существующие связи сохраняются.'
+    ru: 'Узел «Папка» — это контейнер, который группирует файловые узлы холста в одной рамке. Приём лишь устанавливает принадлежность: дочерние узлы остаются настоящими узлами холста, их позиции становятся <b>локальными координатами</b> относительно папки, а существующие связи сохраняются.',
+    hi: 'फ़ोल्डर नोड एक कंटेनर है जो कैनवास के फ़ाइल नोड्स को एक ही फ़्रेम में समूहित करता है। समाहित करना केवल स्वामित्व स्थापित करता है — चाइल्ड नोड्स कैनवास पर वास्तविक नोड्स बने रहते हैं, उनकी स्थिति फ़ोल्डर के सापेक्ष <b>स्थानीय निर्देशांक</b> हो जाती है, और मौजूदा कनेक्शन यथावत रहते हैं।',
+    id: 'Node Folder adalah wadah yang mengelompokkan node berkas di kanvas ke dalam satu bingkai. Menampung hanya membentuk hubungan kepemilikan — node anak tetap node nyata di kanvas, posisinya menjadi <b>koordinat lokal</b> relatif terhadap folder, dan koneksi yang ada tetap utuh.',
+    de: 'Der Knoten „Ordner“ ist ein Container, der Dateiknoten auf der Leinwand in einem Rahmen gruppiert. Das Aufnehmen stellt nur eine Zugehörigkeit her — untergeordnete Knoten bleiben echte Knoten auf der Leinwand, ihre Position wird zu <b>lokalen Koordinaten</b> relativ zum Ordner, und bestehende Verbindungen bleiben erhalten.',
+    vi: 'Nút Thư mục là một vùng chứa để nhóm các nút tệp trên canvas vào cùng một khung. Việc thu nhận chỉ thiết lập quan hệ sở thuộc — các nút con vẫn là nút thật trên canvas, vị trí của chúng trở thành <b>tọa độ cục bộ</b> tương đối so với thư mục, và các kết nối hiện có được giữ nguyên.',
+    tr: 'Klasör düğümü, tuval üzerindeki dosya düğümlerini tek bir çerçevede gruplayan bir kapsayıcıdır. Edinme yalnızca bir aidiyet ilişkisi kurar — alt düğümler tuval üzerindeki gerçek düğümler olarak kalır, konumları klasöre göre <b>yerel koordinatlara</b> dönüşür ve mevcut bağlantılar korunur.',
+    it: 'Il nodo Cartella è un contenitore che raggruppa i nodi file della tela in un’unica cornice. L’adozione stabilisce solo un rapporto di appartenenza — i nodi figli restano nodi reali sulla tela, le loro posizioni diventano <b>coordinate locali</b> relative alla cartella e i collegamenti esistenti restano intatti.'
   },
 
   // —— 基本用法 ——
@@ -42,7 +54,13 @@ export const helpMessages = {
     ar: 'طريقة الاستخدام',
     fr: 'Utilisation',
     pt: 'Como usar',
-    ru: 'Как пользоваться'
+    ru: 'Как пользоваться',
+    hi: 'मूल उपयोग',
+    id: 'Penggunaan dasar',
+    de: 'Grundlegende Verwendung',
+    vi: 'Cách dùng cơ bản',
+    tr: 'Temel kullanım',
+    it: 'Uso di base'
   },
   useLi1: {
     zh: '按住顶部横栏拖动，可连同里面的子节点一起移动整个文件夹。',
@@ -53,7 +71,13 @@ export const helpMessages = {
     ar: 'اسحب الشريط العلوي لتحريك المجلد بأكمله مع العقد التابعة بداخله.',
     fr: 'Faites glisser la barre supérieure pour déplacer tout le dossier avec les nœuds enfants qu’il contient.',
     pt: 'Arraste a barra superior para mover a pasta inteira junto com os nós filhos dentro dela.',
-    ru: 'Потяните за верхнюю панель, чтобы переместить всю папку вместе с дочерними узлами.'
+    ru: 'Потяните за верхнюю панель, чтобы переместить всю папку вместе с дочерними узлами.',
+    hi: 'ऊपरी पट्टी को दबाकर खींचें, जिससे पूरे फ़ोल्डर को उसके अंदर के चाइल्ड नोड्स के साथ ले जाया जा सके।',
+    id: 'Tahan dan seret bilah atas untuk memindahkan seluruh folder beserta node anak di dalamnya.',
+    de: 'Ziehen Sie die obere Leiste, um den gesamten Ordner samt der darin enthaltenen untergeordneten Knoten zu verschieben.',
+    vi: 'Giữ và kéo thanh trên cùng để di chuyển toàn bộ thư mục cùng với các nút con bên trong.',
+    tr: 'Tüm klasörü içindeki alt düğümlerle birlikte taşımak için üst çubuğu basılı tutup sürükleyin.',
+    it: 'Tieni premuto e trascina la barra superiore per spostare l’intera cartella insieme ai nodi figli al suo interno.'
   },
   useLi2: {
     zh: '把文件从系统里拖进内容区，会自动复制文件并在文件夹内新建对应的文件子节点。',
@@ -64,7 +88,13 @@ export const helpMessages = {
     ar: 'أفلت ملفًا من نظامك في منطقة المحتوى، فيُنسخ تلقائيًا وتُنشأ داخل المجلد عقدة ملف تابعة مقابلة.',
     fr: 'Déposez un fichier de votre système dans la zone de contenu : il est copié automatiquement et un nœud de fichier enfant correspondant est créé dans le dossier.',
     pt: 'Solte um arquivo do sistema na área de conteúdo: ele é copiado automaticamente e um nó filho de arquivo correspondente é criado dentro da pasta.',
-    ru: 'Перетащите файл из системы в область содержимого — он скопируется автоматически, и внутри папки появится соответствующий дочерний файловый узел.'
+    ru: 'Перетащите файл из системы в область содержимого — он скопируется автоматически, и внутри папки появится соответствующий дочерний файловый узел.',
+    hi: 'सिस्टम से फ़ाइल को सामग्री क्षेत्र में खींचें; यह स्वतः कॉपी हो जाएगी और फ़ोल्डर के अंदर संगत फ़ाइल चाइल्ड नोड बन जाएगा।',
+    id: 'Seret berkas dari sistem ke area konten; berkas akan otomatis disalin dan node anak berkas yang sesuai dibuat di dalam folder.',
+    de: 'Ziehen Sie eine Datei aus dem System in den Inhaltsbereich; sie wird automatisch kopiert und im Ordner wird ein passender untergeordneter Dateiknoten erstellt.',
+    vi: 'Kéo một tệp từ hệ thống vào vùng nội dung; tệp sẽ tự động được sao chép và một nút con tệp tương ứng được tạo bên trong thư mục.',
+    tr: 'Bir dosyayı sistemden içerik alanına sürükleyin; dosya otomatik olarak kopyalanır ve klasör içinde buna karşılık gelen bir dosya alt düğümü oluşturulur.',
+    it: 'Trascina un file dal sistema nell’area contenuti; viene copiato automaticamente e all’interno della cartella viene creato un nodo figlio file corrispondente.'
   },
   useLi3: {
     zh: '把画布上已有的文件节点拖进内容区即可收纳；只有尚未被收纳的文件节点能被收进来。',
@@ -75,7 +105,13 @@ export const helpMessages = {
     ar: 'اسحب عقدة ملف موجودة من اللوحة إلى منطقة المحتوى لاستقبالها؛ ولا يمكن إدخال إلا عقد الملفات غير المستقبَلة بعد.',
     fr: 'Faites glisser un nœud de fichier existant du canevas vers la zone de contenu pour l’adopter ; seuls les nœuds de fichier non encore adoptés peuvent être accueillis.',
     pt: 'Arraste um nó de arquivo existente do canvas para a área de conteúdo para adotá-lo; apenas nós de arquivo ainda não adotados podem ser incluídos.',
-    ru: 'Перетащите существующий файловый узел с холста в область содержимого, чтобы принять его; принимаются только ещё не принятые файловые узлы.'
+    ru: 'Перетащите существующий файловый узел с холста в область содержимого, чтобы принять его; принимаются только ещё не принятые файловые узлы.',
+    hi: 'कैनवास पर मौजूद फ़ाइल नोड को सामग्री क्षेत्र में खींचें, वह समाहित हो जाएगा; केवल वे फ़ाइल नोड समाहित किए जा सकते हैं जो अभी तक समाहित नहीं हुए।',
+    id: 'Seret node berkas yang ada di kanvas ke area konten untuk menampungnya; hanya node berkas yang belum ditampung yang dapat dimasukkan.',
+    de: 'Ziehen Sie einen vorhandenen Dateiknoten von der Leinwand in den Inhaltsbereich, um ihn aufzunehmen; nur noch nicht aufgenommene Dateiknoten können aufgenommen werden.',
+    vi: 'Kéo một nút tệp có sẵn trên canvas vào vùng nội dung để thu nhận; chỉ những nút tệp chưa được thu nhận mới có thể được đưa vào.',
+    tr: 'Tuvaldeki mevcut bir dosya düğümünü içerik alanına sürükleyerek edinin; yalnızca henüz edinilmemiş dosya düğümleri içeri alınabilir.',
+    it: 'Trascina un nodo file già presente sulla tela nell’area contenuti per adottarlo; possono essere accolti solo i nodi file non ancora adottati.'
   },
   useLi4: {
     zh: '左侧 <code>file</code> 端口同样接收文件值：会自动落盘并在文件夹内新建对应的文件子节点。',
@@ -86,7 +122,13 @@ export const helpMessages = {
     ar: 'يقبل منفذ <code>file</code> على اليسار أيضًا قيمة ملف: فيُحفظ على القرص تلقائيًا وتُنشأ داخل المجلد عقدة ملف تابعة مقابلة.',
     fr: 'Le port <code>file</code> à gauche accepte aussi une valeur de fichier : elle est enregistrée sur le disque automatiquement et un nœud de fichier enfant correspondant est créé dans le dossier.',
     pt: 'O porto <code>file</code> à esquerda também aceita um valor de arquivo: ele é gravado em disco automaticamente e um nó filho de arquivo correspondente é criado dentro da pasta.',
-    ru: 'Порт <code>file</code> слева тоже принимает файловое значение: оно автоматически сохраняется на диск, и внутри папки создаётся соответствующий дочерний файловый узел.'
+    ru: 'Порт <code>file</code> слева тоже принимает файловое значение: оно автоматически сохраняется на диск, и внутри папки создаётся соответствующий дочерний файловый узел.',
+    hi: 'बाईं ओर का <code>file</code> पोर्ट भी फ़ाइल मान स्वीकार करता है: यह स्वतः डिस्क पर लिखा जाता है और फ़ोल्डर के अंदर संगत फ़ाइल चाइल्ड नोड बन जाता है।',
+    id: 'Port <code>file</code> di sebelah kiri juga menerima nilai berkas: berkas otomatis ditulis ke disk dan node anak berkas yang sesuai dibuat di dalam folder.',
+    de: 'Der Port <code>file</code> auf der linken Seite nimmt ebenfalls einen Dateiwert an: Er wird automatisch auf die Festplatte geschrieben und im Ordner wird ein passender untergeordneter Dateiknoten erstellt.',
+    vi: 'Cổng <code>file</code> bên trái cũng nhận giá trị tệp: tệp tự động được ghi ra đĩa và một nút con tệp tương ứng được tạo bên trong thư mục.',
+    tr: 'Soldaki <code>file</code> bağlantı noktası da bir dosya değeri alır: otomatik olarak diske yazılır ve klasör içinde buna karşılık gelen bir dosya alt düğümü oluşturulur.',
+    it: 'Anche la porta <code>file</code> a sinistra accetta un valore file: viene scritto automaticamente su disco e all’interno della cartella viene creato un nodo figlio file corrispondente.'
   },
   useLi5: {
     zh: '拖右下角的手柄调整文件夹大小（最小 100×80）。',
@@ -97,7 +139,13 @@ export const helpMessages = {
     ar: 'اسحب المقبض في الزاوية اليمنى السفلى لتغيير حجم المجلد (الحد الأدنى 100×80).',
     fr: 'Faites glisser la poignée en bas à droite pour redimensionner le dossier (minimum 100×80).',
     pt: 'Arraste a alça no canto inferior direito para redimensionar a pasta (mínimo 100×80).',
-    ru: 'Потяните за маркер в правом нижнем углу, чтобы изменить размер папки (минимум 100×80).'
+    ru: 'Потяните за маркер в правом нижнем углу, чтобы изменить размер папки (минимум 100×80).',
+    hi: 'फ़ोल्डर का आकार बदलने के लिए नीचे-दाएँ कोने का हैंडल खींचें (न्यूनतम 100×80)।',
+    id: 'Seret tuas di sudut kanan bawah untuk mengubah ukuran folder (min. 100×80).',
+    de: 'Ziehen Sie den Griff unten rechts, um die Ordnergröße zu ändern (min. 100×80).',
+    vi: 'Kéo tay nắm ở góc dưới bên phải để thay đổi kích thước thư mục (tối thiểu 100×80).',
+    tr: 'Klasör boyutunu değiştirmek için sağ alt köşedeki tutamacı sürükleyin (en az 100×80).',
+    it: 'Trascina la maniglia nell’angolo in basso a destra per ridimensionare la cartella (minimo 100×80).'
   },
 
   // —— 注意事项 ——
@@ -110,7 +158,13 @@ export const helpMessages = {
     ar: 'ملاحظات',
     fr: 'Remarques',
     pt: 'Observações',
-    ru: 'Примечания'
+    ru: 'Примечания',
+    hi: 'नोट्स',
+    id: 'Catatan',
+    de: 'Hinweise',
+    vi: 'Lưu ý',
+    tr: 'Notlar',
+    it: 'Note'
   },
   notesLi1: {
     zh: '只有顶部横栏能拖动整个文件夹；在内容区里拖动某个子节点只会移动那个子节点，不会误拖整个文件夹。',
@@ -121,7 +175,13 @@ export const helpMessages = {
     ar: 'الشريط العلوي وحده يحرّك المجلد بأكمله؛ وسحب عقدة تابعة داخل منطقة المحتوى يحرّك تلك العقدة فقط دون تحريك المجلد كله عن طريق الخطأ.',
     fr: 'Seule la barre supérieure déplace tout le dossier ; faire glisser un nœud enfant dans la zone de contenu ne déplace que cet enfant, sans risquer de déplacer tout le dossier.',
     pt: 'Apenas a barra superior move a pasta inteira; arrastar um nó filho dentro da área de conteúdo move somente esse filho, sem mover a pasta inteira por engano.',
-    ru: 'Только верхняя панель перемещает всю папку; перетаскивание дочернего узла в области содержимого двигает лишь этот узел и не сдвинет папку по ошибке.'
+    ru: 'Только верхняя панель перемещает всю папку; перетаскивание дочернего узла в области содержимого двигает лишь этот узел и не сдвинет папку по ошибке.',
+    hi: 'केवल ऊपरी पट्टी ही पूरे फ़ोल्डर को खींच सकती है; सामग्री क्षेत्र में किसी चाइल्ड नोड को खींचने पर केवल वही चाइल्ड हिलेगा, पूरा फ़ोल्डर गलती से नहीं खिंचेगा।',
+    id: 'Hanya bilah atas yang dapat memindahkan seluruh folder; menyeret node anak di area konten hanya memindahkan anak itu saja, tidak akan keliru menyeret seluruh folder.',
+    de: 'Nur die obere Leiste verschiebt den gesamten Ordner; das Ziehen eines untergeordneten Knotens im Inhaltsbereich bewegt nur diesen, nicht versehentlich den ganzen Ordner.',
+    vi: 'Chỉ thanh trên cùng mới di chuyển được toàn bộ thư mục; kéo một nút con trong vùng nội dung chỉ di chuyển nút con đó, không vô tình kéo cả thư mục.',
+    tr: 'Tüm klasörü yalnızca üst çubuk taşır; içerik alanında bir alt düğümü sürüklemek yalnızca o alt düğümü hareket ettirir, tüm klasörü yanlışlıkla sürüklemez.',
+    it: 'Solo la barra superiore sposta l’intera cartella; trascinare un nodo figlio nell’area contenuti sposta solo quel figlio, senza spostare per errore l’intera cartella.'
   },
   notesLi2: {
     zh: '删除文件夹不会删除子节点——它们会回到原来的世界位置并保留原有连线。',
@@ -132,7 +192,13 @@ export const helpMessages = {
     ar: 'حذف المجلد لا يحذف العقد التابعة؛ فهي تعود إلى مواضعها العالمية الأصلية وتحتفظ بوصلاتها.',
     fr: 'Supprimer le dossier ne supprime pas les nœuds enfants : ils reviennent à leur position mondiale d’origine et conservent leurs connexions.',
     pt: 'Excluir a pasta não exclui os nós filhos — eles voltam à posição mundial original e mantêm as conexões existentes.',
-    ru: 'Удаление папки не удаляет дочерние узлы — они возвращаются на прежние мировые позиции и сохраняют свои связи.'
+    ru: 'Удаление папки не удаляет дочерние узлы — они возвращаются на прежние мировые позиции и сохраняют свои связи.',
+    hi: 'फ़ोल्डर हटाने से चाइल्ड नोड नहीं हटते — वे अपनी मूल विश्व स्थिति में लौट जाते हैं और मौजूदा कनेक्शन बनाए रखते हैं।',
+    id: 'Menghapus folder tidak menghapus node anak — mereka kembali ke posisi dunia semula dan mempertahankan koneksi yang ada.',
+    de: 'Das Löschen des Ordners löscht die untergeordneten Knoten nicht — sie kehren an ihre ursprüngliche Weltposition zurück und behalten ihre bestehenden Verbindungen.',
+    vi: 'Xóa thư mục không xóa các nút con — chúng quay về vị trí thế giới ban đầu và giữ nguyên các kết nối hiện có.',
+    tr: 'Klasörü silmek alt düğümleri silmez — özgün dünya konumlarına dönerler ve mevcut bağlantılarını korurlar.',
+    it: 'Eliminare la cartella non elimina i nodi figli — tornano alla loro posizione globale originale e mantengono i collegamenti esistenti.'
   },
   notesLi3: {
     zh: '子节点在文件夹内的位置是局部坐标；移动文件夹时它们自动跟随，不需要单独重新摆位。',
@@ -143,7 +209,13 @@ export const helpMessages = {
     ar: 'مواضع العقد التابعة داخل المجلد إحداثيات محلية؛ وهي تتبع تلقائيًا عند تحريك المجلد دون حاجة إلى إعادة وضعها.',
     fr: 'Les positions des enfants dans le dossier sont des coordonnées locales ; elles suivent automatiquement le dossier, sans repositionnement manuel.',
     pt: 'As posições dos filhos dentro da pasta são coordenadas locais; eles acompanham automaticamente quando a pasta se move, sem precisar reposicioná-los.',
-    ru: 'Позиции дочерних узлов внутри папки — локальные координаты; при перемещении папки они следуют автоматически, вручную расставлять их не нужно.'
+    ru: 'Позиции дочерних узлов внутри папки — локальные координаты; при перемещении папки они следуют автоматически, вручную расставлять их не нужно.',
+    hi: 'फ़ोल्डर के अंदर चाइल्ड नोड की स्थिति स्थानीय निर्देशांक होती है; फ़ोल्डर हिलाने पर वे स्वतः साथ चलते हैं, अलग से फिर से रखने की ज़रूरत नहीं।',
+    id: 'Posisi node anak di dalam folder adalah koordinat lokal; saat folder dipindahkan, mereka otomatis mengikuti, tanpa perlu menata ulang satu per satu.',
+    de: 'Die Positionen der untergeordneten Knoten im Ordner sind lokale Koordinaten; beim Verschieben des Ordners folgen sie automatisch, ein erneutes Platzieren ist nicht nötig.',
+    vi: 'Vị trí của các nút con trong thư mục là tọa độ cục bộ; khi di chuyển thư mục, chúng tự động đi theo, không cần đặt lại riêng lẻ.',
+    tr: 'Alt düğümlerin klasör içindeki konumları yerel koordinatlardır; klasör taşındığında otomatik olarak takip ederler, ayrıca yeniden konumlandırmaya gerek yoktur.',
+    it: 'Le posizioni dei nodi figli all’interno della cartella sono coordinate locali; quando la cartella si sposta, la seguono automaticamente, senza bisogno di riposizionarli singolarmente.'
   },
   notesLi4: {
     zh: '文件夹不能收纳自己的祖先（会成环）；同一文件经端口重复进入也会自动去重。',
@@ -154,6 +226,12 @@ export const helpMessages = {
     ar: 'لا يمكن للمجلد استقبال أسلافه (فذلك ينشئ حلقة)، كما يُستبعد الملف نفسه تلقائيًا عند دخوله مجددًا عبر المنفذ.',
     fr: 'Un dossier ne peut pas adopter ses propres ancêtres (cela créerait un cycle), et un même fichier entrant à nouveau par le port est automatiquement dédupliqué.',
     pt: 'Uma pasta não pode adotar seus próprios ancestrais (isso criaria um ciclo), e o mesmo arquivo que entra de novo pelo porto é deduplicado automaticamente.',
-    ru: 'Папка не может принять своих предков (это создало бы цикл), а один и тот же файл, снова пришедший через порт, автоматически отбрасывается как дубликат.'
+    ru: 'Папка не может принять своих предков (это создало бы цикл), а один и тот же файл, снова пришедший через порт, автоматически отбрасывается как дубликат.',
+    hi: 'फ़ोल्डर अपने पूर्वजों को समाहित नहीं कर सकता (इससे चक्र बनेगा); वही फ़ाइल पोर्ट से दोबारा आने पर स्वतः डुप्लीकेट हटा दी जाती है।',
+    id: 'Folder tidak dapat menampung leluhurnya sendiri (akan membentuk siklus); berkas yang sama masuk lagi melalui port juga otomatis dideduplikasi.',
+    de: 'Ein Ordner kann seine eigenen Vorfahren nicht aufnehmen (das würde einen Zyklus erzeugen); dieselbe Datei, die erneut über den Port eintrifft, wird automatisch dedupliziert.',
+    vi: 'Thư mục không thể thu nhận tổ tiên của chính nó (sẽ tạo thành chu trình); cùng một tệp đi vào lại qua cổng cũng tự động được loại trùng.',
+    tr: 'Bir klasör kendi üst öğelerini edinemez (bu bir döngü oluşturur); aynı dosya bağlantı noktasından yeniden girdiğinde otomatik olarak tekilleştirilir.',
+    it: 'Una cartella non può adottare i propri antenati (creerebbe un ciclo); lo stesso file che rientra attraverso la porta viene deduplicato automaticamente.'
   }
 } satisfies Record<string, LocalizedText>

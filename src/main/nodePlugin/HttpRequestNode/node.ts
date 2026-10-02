@@ -45,7 +45,13 @@ export class HttpRequestNode extends Node {
     ar: 'جسم الاستجابة',
     fr: 'Corps de la réponse',
     pt: 'Corpo da resposta',
-    ru: 'Тело ответа'
+    ru: 'Тело ответа',
+    hi: 'प्रतिक्रिया body',
+    id: 'Body respons',
+    de: 'Antwort-body',
+    vi: 'Body phản hồi',
+    tr: 'Yanıt body’si',
+    it: 'Corpo della risposta'
   })
 
   // —— 持久化字段 ——

@@ -1,7 +1,7 @@
 import type { LocalizedText } from '../../../shared/language'
 
 /**
- * Command 节点帮助文档（CommandHelpDialog）的全部文案，9 种语言全配。
+ * Command 节点帮助文档（CommandHelpDialog）的全部文案，全部 15 种语言全配。
  *
  * 与节点自身的 i18n.ts 分开：卡片短文案变化频繁，帮助文档整篇体量大、改动少。
  * 约定：带行内 <code> / <b> 的句子，值里直接写 HTML，模板用 v-html 渲染；
@@ -18,7 +18,13 @@ export const helpMessages = {
     ar: 'ما هذا؟',
     fr: 'Qu’est-ce que c’est ?',
     pt: 'O que é isto?',
-    ru: 'Что это?'
+    ru: 'Что это?',
+    hi: 'यह क्या है?',
+    id: 'Apa ini?',
+    de: 'Was ist das?',
+    vi: 'Đây là gì?',
+    tr: 'Bu nedir?',
+    it: 'Che cos’è?'
   },
   whatBody: {
     zh: '命令行节点把一条常用 <b>shell 命令</b>保存在节点里，之后点「执行」即可重复运行。命令是<b>模板</b>：用 <code>$1</code> <code>$2</code> … 引用第 N 个输入端口的值，拼出最终命令后在主进程<b>真实执行</b>，结果从右侧 <code>text</code> 端口输出给下游节点。',
@@ -29,7 +35,13 @@ export const helpMessages = {
     ar: 'تحفظ عقدة الأوامر <b>أمر shell</b> شائع الاستخدام، ثم يمكنك إعادة تشغيله بنقرة واحدة على «تشغيل». الأمر عبارة عن <b>قالب</b>: استخدم <code>$1</code> <code>$2</code> … للإشارة إلى قيمة المنفذ رقم N. يُنفَّذ الأمر النهائي <b>فعليًا</b> في العملية الرئيسية، وتُخرَج النتيجة إلى العقد اللاحقة من منفذ <code>text</code> على اليمين.',
     fr: 'Le nœud Commande <b>enregistre</b> une commande <b>shell</b> fréquemment utilisée pour la relancer d’un simple clic sur « Exécuter ». La commande est un <b>modèle</b> : utilisez <code>$1</code> <code>$2</code> … pour référencer la valeur du Nième port d’entrée. La commande finale est <b>réellement exécutée</b> dans le processus principal, et le résultat est envoyé aux nœuds en aval depuis le port <code>text</code> à droite.',
     pt: 'O nó Comando <b>salva</b> um comando de shell de uso frequente para reexecutá-lo com um único clique em “Executar”. O comando é um <b>modelo</b>: use <code>$1</code> <code>$2</code> … para referenciar o valor do enésimo porto de entrada. O comando final é <b>executado de verdade</b> no processo principal, e o resultado é enviado aos nós seguintes pelo porto <code>text</code> à direita.',
-    ru: 'Узел «Команда» <b>сохраняет</b> часто используемую <b>shell-команду</b>, чтобы запускать её повторно одним нажатием «Выполнить». Команда — это <b>шаблон</b>: используйте <code>$1</code> <code>$2</code> … для ссылки на значение N-го входного порта. Итоговая команда <b>реально выполняется</b> в главном процессе, а результат выводится последующим узлам из порта <code>text</code> справа.'
+    ru: 'Узел «Команда» <b>сохраняет</b> часто используемую <b>shell-команду</b>, чтобы запускать её повторно одним нажатием «Выполнить». Команда — это <b>шаблон</b>: используйте <code>$1</code> <code>$2</code> … для ссылки на значение N-го входного порта. Итоговая команда <b>реально выполняется</b> в главном процессе, а результат выводится последующим узлам из порта <code>text</code> справа.',
+    hi: 'कमांड नोड एक आम <b>shell कमांड</b> को नोड में सहेजता है, फिर "चलाएँ" पर क्लिक करके उसे बार-बार चला सकते हैं। कमांड एक <b>टेम्पलेट</b> है: <code>$1</code> <code>$2</code> … से Nवें इनपुट पोर्ट का मान संदर्भित करें, अंतिम कमांड बनाकर मुख्य प्रक्रिया में <b>वास्तव में चलाएँ</b>, और परिणाम दाईं ओर के <code>text</code> पोर्ट से डाउनस्ट्रीम नोड्स को भेजा जाता है।',
+    id: 'Node Perintah <b>menyimpan</b> sebuah <b>perintah shell</b> yang sering dipakai di dalam node, lalu dapat dijalankan berulang dengan klik "Jalankan". Perintah berupa <b>templat</b>: gunakan <code>$1</code> <code>$2</code> … untuk merujuk nilai port masukan ke-N, menyusun perintah akhir lalu <b>benar-benar menjalankannya</b> di proses utama, dan hasilnya dikeluarkan ke node hilir dari port <code>text</code> di kanan.',
+    de: 'Der Befehls-Knoten <b>speichert</b> einen häufig genutzten <b>Shell-Befehl</b> im Knoten, der dann per Klick auf „Ausführen“ wiederholt ausgeführt werden kann. Der Befehl ist eine <b>Vorlage</b>: Verweisen Sie mit <code>$1</code> <code>$2</code> … auf den Wert des N-ten Eingabeports, setzen Sie den endgültigen Befehl zusammen und <b>führen Sie ihn tatsächlich aus</b> im Hauptprozess; das Ergebnis wird vom Port <code>text</code> rechts an nachgelagerte Knoten ausgegeben.',
+    vi: 'Nút Lệnh <b>lưu</b> một <b>lệnh shell</b> thường dùng trong nút, sau đó có thể chạy lại bằng một cú nhấp vào "Chạy". Lệnh là một <b>mẫu</b>: dùng <code>$1</code> <code>$2</code> … để tham chiếu giá trị của cổng vào thứ N, ghép thành lệnh cuối cùng rồi <b>thực thi thật</b> trong tiến trình chính, kết quả được xuất đến các nút hạ nguồn từ cổng <code>text</code> bên phải.',
+    tr: 'Komut düğümü sık kullanılan bir <b>shell komutunu</b> düğümde <b>saklar</b>; ardından "Çalıştır"a tıklayarak tekrar tekrar çalıştırabilirsiniz. Komut bir <b>şablondur</b>: <code>$1</code> <code>$2</code> … ile N. giriş bağlantı noktasının değerine başvurun, son komutu oluşturup ana süreçte <b>gerçekten çalıştırın</b>; sonuç, sağdaki <code>text</code> bağlantı noktasından aşağı akış düğümlerine gönderilir.',
+    it: 'Il nodo Comando <b>salva</b> un <b>comando shell</b> di uso frequente nel nodo, poi lo si può rieseguire con un clic su "Esegui". Il comando è un <b>modello</b>: usa <code>$1</code> <code>$2</code> … per fare riferimento al valore dell’N-esima porta di input, componi il comando finale e <b>eseguilo davvero</b> nel processo principale; il risultato viene inviato ai nodi a valle dalla porta <code>text</code> a destra.'
   },
 
   // —— 配置项 ——
@@ -42,7 +54,13 @@ export const helpMessages = {
     ar: 'الإعدادات',
     fr: 'Paramètres',
     pt: 'Configurações',
-    ru: 'Настройки'
+    ru: 'Настройки',
+    hi: 'कॉन्फ़िगरेशन',
+    id: 'Konfigurasi',
+    de: 'Einstellungen',
+    vi: 'Cấu hình',
+    tr: 'Yapılandırma',
+    it: 'Impostazioni'
   },
   configLi1: {
     zh: '顶部的<b>名称输入框</b>用于辨识这条命令（例如「构建项目」），只作显示，不参与执行',
@@ -53,7 +71,13 @@ export const helpMessages = {
     ar: 'حقل <b>الاسم</b> في الأعلى يُستخدم لتمييز هذا الأمر (مثل «بناء المشروع»)، وهو للعرض فقط ولا يشارك في التنفيذ',
     fr: 'Le <b>champ de nom</b> en haut sert à identifier la commande (p. ex. « Compiler le projet ») ; il est purement indicatif et n’intervient pas dans l’exécution',
     pt: 'O <b>campo de nome</b> no topo identifica o comando (ex.: “Compilar projeto”); é apenas informativo e não participa da execução',
-    ru: '<b>Поле имени</b> сверху служит для опознавания команды (например, «Собрать проект»); оно только отображается и не участвует в выполнении'
+    ru: '<b>Поле имени</b> сверху служит для опознавания команды (например, «Собрать проект»); оно только отображается и не участвует в выполнении',
+    hi: 'ऊपर का <b>नाम इनपुट फ़ील्ड</b> इस कमांड की पहचान के लिए है (जैसे "प्रोजेक्ट बनाएँ"), केवल प्रदर्शन हेतु, निष्पादन में भाग नहीं लेता',
+    id: '<b>Kolom nama</b> di atas untuk mengenali perintah ini (mis. "Bangun proyek"), hanya untuk tampilan dan tidak ikut dalam eksekusi',
+    de: 'Das <b>Namensfeld</b> oben dient zum Erkennen dieses Befehls (z. B. „Projekt erstellen“); es ist nur Anzeige und nicht an der Ausführung beteiligt',
+    vi: '<b>Ô nhập tên</b> ở trên dùng để nhận biết lệnh này (ví dụ "Tạo dự án"), chỉ để hiển thị, không tham gia thực thi',
+    tr: 'Üstteki <b>ad giriş alanı</b> bu komutu tanımak içindir (örn. "Projeyi derle"); yalnızca gösterim amaçlıdır ve yürütmeye katılmaz',
+    it: 'Il <b>campo del nome</b> in alto serve a identificare questo comando (ad es. "Compila progetto"); è solo informativo e non partecipa all’esecuzione'
   },
   configLi2: {
     zh: '点命令预览区或右上角<b>齿轮</b>打开编辑面板，修改命令模板后点「保存」写回节点',
@@ -64,7 +88,13 @@ export const helpMessages = {
     ar: 'انقر على منطقة معاينة الأمر أو على <b>الترس</b> في الأعلى يمينًا لفتح لوحة التحرير، ثم عدّل القالب واضغط «حفظ» لتثبيته في العقدة',
     fr: 'Cliquez sur l’aperçu de la commande ou sur l’<b>engrenage</b> en haut à droite pour ouvrir l’éditeur ; modifiez le modèle puis cliquez sur « Enregistrer » pour l’appliquer au nœud',
     pt: 'Clique na pré-visualização do comando ou na <b>engrenagem</b> no canto superior direito para abrir o editor; edite o modelo e clique em “Salvar” para aplicá-lo ao nó',
-    ru: 'Нажмите на область предпросмотра команды или на <b>шестерёнку</b> справа вверху, чтобы открыть редактор; измените шаблон и нажмите «Сохранить», чтобы записать его в узел'
+    ru: 'Нажмите на область предпросмотра команды или на <b>шестерёнку</b> справа вверху, чтобы открыть редактор; измените шаблон и нажмите «Сохранить», чтобы записать его в узел',
+    hi: 'कमांड पूर्वावलोकन क्षेत्र या ऊपर दाईं ओर के <b>गियर</b> पर क्लिक करके संपादन पैनल खोलें, कमांड टेम्पलेट बदलकर "सहेजें" पर क्लिक करें',
+    id: 'Klik area pratinjau perintah atau <b>ikon gerigi</b> di kanan atas untuk membuka panel edit, ubah templat perintah lalu klik "Simpan" untuk menulisnya kembali ke node',
+    de: 'Klicken Sie auf den Befehlsvorschau-Bereich oder das <b>Zahnrad</b> oben rechts, um das Bearbeitungsfeld zu öffnen; ändern Sie die Vorlage und klicken Sie auf „Speichern“, um sie in den Knoten zu schreiben',
+    vi: 'Nhấp vào vùng xem trước lệnh hoặc <b>biểu tượng bánh răng</b> ở góc trên bên phải để mở bảng chỉnh sửa, sửa mẫu lệnh rồi nhấp "Lưu" để ghi lại vào nút',
+    tr: 'Düzenleme panelini açmak için komut önizleme alanına veya sağ üstteki <b>dişli simgesine</b> tıklayın, şablonu değiştirip "Kaydet"e tıklayarak düğüme yazın',
+    it: 'Fai clic sull’area di anteprima del comando o sull’<b>ingranaggio</b> in alto a destra per aprire il pannello di modifica, modifica il modello e fai clic su "Salva" per riscriverlo nel nodo'
   },
 
   // —— 输入端口 & $N ——
@@ -77,7 +107,13 @@ export const helpMessages = {
     ar: 'منافذ الإدخال وقالب $N',
     fr: 'Ports d’entrée et modèle $N',
     pt: 'Portas de entrada e o modelo $N',
-    ru: 'Входные порты и шаблон $N'
+    ru: 'Входные порты и шаблон $N',
+    hi: 'इनपुट पोर्ट और $N टेम्पलेट',
+    id: 'Port masukan & templat $N',
+    de: 'Eingabeports & die $N-Vorlage',
+    vi: 'Cổng vào & mẫu $N',
+    tr: 'Giriş bağlantı noktaları ve $N şablonu',
+    it: 'Porte di input e modello $N'
   },
   portsLi1: {
     zh: '每个输入端口只接受<b>字符串</b>，端口标签依次是 <code>$1</code>、<code>$2</code>…',
@@ -88,7 +124,13 @@ export const helpMessages = {
     ar: 'يقبل كل منفذ إدخال <b>النصوص</b> فقط، وتكون التسميات <code>$1</code> و<code>$2</code>… بالترتيب',
     fr: 'Chaque port d’entrée n’accepte que des <b>chaînes</b> ; les libellés sont <code>$1</code>, <code>$2</code>, … dans l’ordre',
     pt: 'Cada porto de entrada aceita apenas <b>strings</b>; os rótulos são <code>$1</code>, <code>$2</code>, … em ordem',
-    ru: 'Каждый входной порт принимает только <b>строки</b>; метки портов по порядку — <code>$1</code>, <code>$2</code>, …'
+    ru: 'Каждый входной порт принимает только <b>строки</b>; метки портов по порядку — <code>$1</code>, <code>$2</code>, …',
+    hi: 'प्रत्येक इनपुट पोर्ट केवल <b>स्ट्रिंग</b> स्वीकार करता है, पोर्ट लेबल क्रम से <code>$1</code>, <code>$2</code>… हैं',
+    id: 'Setiap port masukan hanya menerima <b>string</b>; label port berurutan <code>$1</code>, <code>$2</code>, …',
+    de: 'Jeder Eingabeport akzeptiert nur <b>Strings</b>; die Port-Bezeichnungen lauten der Reihe nach <code>$1</code>, <code>$2</code>, …',
+    vi: 'Mỗi cổng vào chỉ nhận <b>chuỗi</b>; nhãn cổng lần lượt là <code>$1</code>, <code>$2</code>…',
+    tr: 'Her giriş bağlantı noktası yalnızca <b>dize</b> kabul eder; bağlantı noktası etiketleri sırasıyla <code>$1</code>, <code>$2</code>… şeklindedir',
+    it: 'Ogni porta di input accetta solo <b>stringhe</b>; le etichette delle porte sono in ordine <code>$1</code>, <code>$2</code>, …'
   },
   portsLi2: {
     zh: '点「<code>＋</code>」追加一个端口，点「<code>－</code>」移除<b>末尾</b>端口（至少保留 1 个）',
@@ -99,7 +141,13 @@ export const helpMessages = {
     ar: 'انقر على «<code>＋</code>» لإضافة منفذ، وعلى «<code>－</code>» لإزالة المنفذ <b>الأخير</b> (احتفظ بمنفذ واحد على الأقل)',
     fr: 'Cliquez sur « <code>＋</code> » pour ajouter un port, et sur « <code>－</code> » pour supprimer le <b>dernier</b> (gardez-en au moins un)',
     pt: 'Clique em “<code>＋</code>” para adicionar um porto e em “<code>－</code>” para remover o <b>último</b> (mantenha pelo menos um)',
-    ru: 'Нажмите «<code>＋</code>», чтобы добавить порт, и «<code>－</code>», чтобы удалить <b>последний</b> (оставьте хотя бы один)'
+    ru: 'Нажмите «<code>＋</code>», чтобы добавить порт, и «<code>－</code>», чтобы удалить <b>последний</b> (оставьте хотя бы один)',
+    hi: '"<code>＋</code>" पर क्लिक करके पोर्ट जोड़ें, "<code>－</code>" पर क्लिक करके <b>अंतिम</b> पोर्ट हटाएँ (कम से कम 1 बनाए रखें)',
+    id: 'Klik "<code>＋</code>" untuk menambah port, dan "<code>－</code>" untuk menghapus port <b>terakhir</b> (sisakan minimal 1)',
+    de: 'Klicken Sie auf „<code>＋</code>“, um einen Port hinzuzufügen, und auf „<code>－</code>“, um den <b>letzten</b> zu entfernen (mindestens einen behalten)',
+    vi: 'Nhấp "<code>＋</code>" để thêm cổng, nhấp "<code>－</code>" để xóa cổng <b>cuối cùng</b> (giữ lại ít nhất 1)',
+    tr: 'Port eklemek için "<code>＋</code>", <b>son</b> portu kaldırmak için "<code>－</code>" öğesine tıklayın (en az bir tane kalmalı)',
+    it: 'Fai clic su "<code>＋</code>" per aggiungere una porta e su "<code>－</code>" per rimuovere la <b>ultima</b> (mantienine almeno una)'
   },
   portsLi3: {
     zh: '模板里写 <code>$N</code> 就取第 N 个端口的值；该端口没值或不存在时替换为<b>空串</b>',
@@ -110,7 +158,13 @@ export const helpMessages = {
     ar: 'كتابة <code>$N</code> في القالب تأخذ قيمة المنفذ رقم N؛ وإذا لم يكن له قيمة أو لم يكن موجودًا، فيُستبدل بـ<b>نص فارغ</b>',
     fr: 'Écrire <code>$N</code> dans le modèle prend la valeur du Nième port ; si ce port n’a pas de valeur ou n’existe pas, il est remplacé par une <b>chaîne vide</b>',
     pt: 'Escrever <code>$N</code> no modelo usa o valor do enésimo porto; se esse porto não tiver valor ou não existir, é substituído por uma <b>string vazia</b>',
-    ru: 'Запись <code>$N</code> в шаблоне берёт значение N-го порта; если у порта нет значения или он не существует, подставляется <b>пустая строка</b>'
+    ru: 'Запись <code>$N</code> в шаблоне берёт значение N-го порта; если у порта нет значения или он не существует, подставляется <b>пустая строка</b>',
+    hi: 'टेम्पलेट में <code>$N</code> लिखने पर Nवें पोर्ट का मान लिया जाता है; उस पोर्ट में मान न हो या मौजूद न हो तो <b>खाली स्ट्रिंग</b> से बदल दिया जाता है',
+    id: 'Menulis <code>$N</code> di templat akan mengambil nilai port ke-N; jika port itu tidak bernilai atau tidak ada, diganti dengan <b>string kosong</b>',
+    de: 'Wenn Sie <code>$N</code> in der Vorlage schreiben, wird der Wert des N-ten Ports genommen; hat dieser Port keinen Wert oder existiert nicht, wird er durch einen <b>leeren String</b> ersetzt',
+    vi: 'Viết <code>$N</code> trong mẫu sẽ lấy giá trị của cổng thứ N; nếu cổng đó không có giá trị hoặc không tồn tại, sẽ thay bằng <b>chuỗi rỗng</b>',
+    tr: 'Şablonda <code>$N</code> yazmak, N. portun değerini alır; o portta değer yoksa veya port yoksa <b>boş dize</b> ile değiştirilir',
+    it: 'Scrivere <code>$N</code> nel modello prende il valore dell’N-esima porta; se quella porta non ha valore o non esiste, viene sostituita con una <b>stringa vuota</b>'
   },
   portsLi4: {
     zh: '想输出字面量的 <code>$</code>，写成 <code>$$</code>',
@@ -121,7 +175,13 @@ export const helpMessages = {
     ar: 'لإخراج <code>$</code> حرفيًا، اكتب <code>$$</code>',
     fr: 'Pour afficher un <code>$</code> littéral, écrivez <code>$$</code>',
     pt: 'Para exibir um <code>$</code> literal, escreva <code>$$</code>',
-    ru: 'Чтобы вывести литерал <code>$</code>, напишите <code>$$</code>'
+    ru: 'Чтобы вывести литерал <code>$</code>, напишите <code>$$</code>',
+    hi: 'शाब्दिक <code>$</code> आउटपुट करने के लिए <code>$$</code> लिखें',
+    id: 'Untuk menampilkan <code>$</code> literal, tulis <code>$$</code>',
+    de: 'Um ein wörtliches <code>$</code> auszugeben, schreiben Sie <code>$$</code>',
+    vi: 'Để xuất <code>$</code> theo nghĩa đen, hãy viết <code>$$</code>',
+    tr: 'Birebir <code>$</code> çıktısı için <code>$$</code> yazın',
+    it: 'Per mostrare un <code>$</code> letterale, scrivi <code>$$</code>'
   },
 
   // —— 执行与状态 ——
@@ -134,7 +194,13 @@ export const helpMessages = {
     ar: 'التنفيذ والحالة',
     fr: 'Exécution et état',
     pt: 'Execução e estado',
-    ru: 'Выполнение и статус'
+    ru: 'Выполнение и статус',
+    hi: 'निष्पादन और स्थिति',
+    id: 'Eksekusi & status',
+    de: 'Ausführung & Status',
+    vi: 'Thực thi & trạng thái',
+    tr: 'Yürütme ve durum',
+    it: 'Esecuzione e stato'
   },
   runLi1: {
     zh: '点底部「执行」按钮，用生成的最终命令<b>真实运行</b>；输入值变化会即时重算命令，但只有点执行时才真正跑',
@@ -145,7 +211,13 @@ export const helpMessages = {
     ar: 'انقر على زر «تشغيل» في الأسفل <b>لتنفيذ</b> الأمر النهائي فعليًا؛ يؤدي تغيير المدخلات إلى إعادة توليده فورًا، لكنه لا يعمل إلا عند الضغط على تشغيل',
     fr: 'Cliquez sur « Exécuter » en bas pour <b>exécuter réellement</b> la commande générée ; modifier les entrées la régénère aussitôt, mais elle ne s’exécute qu’au clic sur Exécuter',
     pt: 'Clique no botão “Executar” na parte inferior para <b>executar de verdade</b> o comando gerado; alterar as entradas o regenera na hora, mas ele só roda ao clicar em Executar',
-    ru: 'Нажмите «Выполнить» внизу, чтобы <b>реально запустить</b> сформированную команду; при изменении входов она сразу пересчитывается, но выполняется только по нажатию кнопки'
+    ru: 'Нажмите «Выполнить» внизу, чтобы <b>реально запустить</b> сформированную команду; при изменении входов она сразу пересчитывается, но выполняется только по нажатию кнопки',
+    hi: 'नीचे "चलाएँ" बटन पर क्लिक करके बने अंतिम कमांड को <b>वास्तव में चलाएँ</b>; इनपुट मान बदलने पर कमांड तुरंत फिर से गणना होती है, लेकिन वास्तव में चलता केवल चलाएँ पर क्लिक करने पर ही है',
+    id: 'Klik tombol "Jalankan" di bawah untuk <b>benar-benar menjalankan</b> perintah akhir yang dihasilkan; perubahan nilai masukan menghitung ulang perintah seketika, tetapi hanya berjalan saat Anda klik Jalankan',
+    de: 'Klicken Sie unten auf „Ausführen“, um den erzeugten endgültigen Befehl <b>tatsächlich auszuführen</b>; Änderungen der Eingabewerte berechnen den Befehl sofort neu, ausgeführt wird er aber nur beim Klick auf Ausführen',
+    vi: 'Nhấp nút "Chạy" ở dưới để <b>thực sự chạy</b> lệnh cuối cùng đã tạo; thay đổi giá trị đầu vào sẽ tính lại lệnh ngay, nhưng chỉ thực sự chạy khi bạn nhấp Chạy',
+    tr: 'Oluşturulan son komutu <b>gerçekten çalıştırmak</b> için alttaki "Çalıştır" düğmesine tıklayın; giriş değerleri değişince komut anında yeniden hesaplanır, ancak yalnızca Çalıştır’a tıklandığında gerçekten çalışır',
+    it: 'Fai clic sul pulsante "Esegui" in basso per <b>eseguire davvero</b> il comando finale generato; modificare i valori di input lo ricalcola subito, ma viene eseguito solo al clic su Esegui'
   },
   runLi2: {
     zh: '执行期间状态显示「执行中…」（转圈）且按钮禁用；一次执行完成前<b>无法重复触发或取消</b>',
@@ -156,7 +228,13 @@ export const helpMessages = {
     ar: 'أثناء التنفيذ تظهر الحالة «جارٍ التنفيذ…» (مع مؤشر دوّار) ويُعطَّل الزر؛ ولا يمكن <b>إعادة التشغيل أو الإلغاء</b> حتى ينتهي',
     fr: 'Pendant l’exécution, l’état affiche « Exécution… » (avec un indicateur) et le bouton est désactivé ; impossible de <b>relancer ou d’annuler</b> avant la fin',
     pt: 'Durante a execução, o estado mostra “Executando…” (com spinner) e o botão fica desativado; não é possível <b>reexecutar nem cancelar</b> até terminar',
-    ru: 'Во время выполнения статус показывает «Выполняется…» (со спиннером), а кнопка отключена; до завершения <b>нельзя запустить повторно или отменить</b>'
+    ru: 'Во время выполнения статус показывает «Выполняется…» (со спиннером), а кнопка отключена; до завершения <b>нельзя запустить повторно или отменить</b>',
+    hi: 'निष्पादन के दौरान स्थिति "चल रहा है…" (स्पिनर) दिखाती है और बटन अक्षम रहता है; एक निष्पादन पूरा होने से पहले <b>दोबारा ट्रिगर या रद्द नहीं कर सकते</b>',
+    id: 'Selama eksekusi, status menampilkan "Menjalankan…" (spinner) dan tombol dinonaktifkan; sebelum satu eksekusi selesai <b>tidak dapat memicu ulang atau membatalkan</b>',
+    de: 'Während der Ausführung zeigt der Status „Wird ausgeführt…“ (mit Spinner) und die Schaltfläche ist deaktiviert; vor Abschluss einer Ausführung ist <b>ein erneutes Auslösen oder Abbrechen nicht möglich</b>',
+    vi: 'Trong khi thực thi, trạng thái hiển thị "Đang chạy…" (vòng xoay) và nút bị vô hiệu hóa; trước khi một lần thực thi hoàn tất <b>không thể kích hoạt lại hay hủy</b>',
+    tr: 'Yürütme sırasında durum "Çalışıyor…" (dönen gösterge) olur ve düğme devre dışı kalır; bir yürütme bitmeden <b>yeniden tetiklenemez veya iptal edilemez</b>',
+    it: 'Durante l’esecuzione lo stato mostra "In esecuzione…" (con spinner) e il pulsante è disabilitato; prima che un’esecuzione finisca <b>non è possibile ritentare né annullare</b>'
   },
   runLi3: {
     zh: '命令为空（模板为空或占位符都解析成空串）时不会执行',
@@ -167,7 +245,13 @@ export const helpMessages = {
     ar: 'إذا كان الأمر فارغًا (قالب فارغ أو كل العناصر تُحلّ إلى نص فارغ)، فلن يُنفَّذ شيء',
     fr: 'Si la commande est vide (modèle vide ou tous les espaces résolus vides), rien n’est exécuté',
     pt: 'Se o comando estiver vazio (modelo vazio ou todos os marcadores resolvidos como vazio), nada é executado',
-    ru: 'Если команда пуста (пустой шаблон или все подстановки пусты), ничего не выполняется'
+    ru: 'Если команда пуста (пустой шаблон или все подстановки пусты), ничего не выполняется',
+    hi: 'कमांड खाली होने पर (टेम्पलेट खाली या सभी प्लेसहोल्डर खाली स्ट्रिंग में बदलें) निष्पादित नहीं होता',
+    id: 'Jika perintah kosong (templat kosong atau semua placeholder menjadi string kosong), tidak akan dijalankan',
+    de: 'Wenn der Befehl leer ist (leere Vorlage oder alle Platzhalter werden zu leeren Strings), wird nichts ausgeführt',
+    vi: 'Khi lệnh trống (mẫu trống hoặc mọi trình giữ chỗ đều thành chuỗi rỗng), sẽ không thực thi',
+    tr: 'Komut boşsa (şablon boş veya tüm yer tutucular boş dizeye çözümleniyorsa) çalıştırılmaz',
+    it: 'Se il comando è vuoto (modello vuoto o tutti i segnaposto risolti come stringa vuota), non viene eseguito'
   },
 
   // —— 输出端口 ——
@@ -180,7 +264,13 @@ export const helpMessages = {
     ar: 'منفذ الإخراج',
     fr: 'Port de sortie',
     pt: 'Porto de saída',
-    ru: 'Выходной порт'
+    ru: 'Выходной порт',
+    hi: 'आउटपुट पोर्ट',
+    id: 'Port keluaran',
+    de: 'Ausgabeport',
+    vi: 'Cổng ra',
+    tr: 'Çıkış bağlantı noktası',
+    it: 'Porta di output'
   },
   outputLi1: {
     zh: '右侧 <code>text</code> 端口把本次执行结果发往下游：执行成功发 <b>stdout</b>，失败发 <b>stderr</b>',
@@ -191,7 +281,13 @@ export const helpMessages = {
     ar: 'يُرسل منفذ <code>text</code> على اليمين نتيجة التنفيذ إلى العقد اللاحقة: <b>stdout</b> عند النجاح، و<b>stderr</b> عند الفشل',
     fr: 'Le port <code>text</code> à droite envoie le résultat aux nœuds en aval : <b>stdout</b> en cas de succès, <b>stderr</b> en cas d’échec',
     pt: 'O porto <code>text</code> à direita envia o resultado aos nós seguintes: <b>stdout</b> em caso de sucesso e <b>stderr</b> em caso de falha',
-    ru: 'Порт <code>text</code> справа передаёт результат последующим узлам: <b>stdout</b> при успехе и <b>stderr</b> при ошибке'
+    ru: 'Порт <code>text</code> справа передаёт результат последующим узлам: <b>stdout</b> при успехе и <b>stderr</b> при ошибке',
+    hi: 'दाईं ओर का <code>text</code> पोर्ट इस निष्पादन का परिणाम डाउनस्ट्रीम भेजता है: सफल होने पर <b>stdout</b>, विफल होने पर <b>stderr</b>',
+    id: 'Port <code>text</code> di kanan mengirim hasil eksekusi ini ke hilir: <b>stdout</b> saat berhasil, <b>stderr</b> saat gagal',
+    de: 'Der Port <code>text</code> rechts sendet das Ergebnis dieser Ausführung an nachgelagerte Knoten: bei Erfolg <b>stdout</b>, bei Fehler <b>stderr</b>',
+    vi: 'Cổng <code>text</code> bên phải gửi kết quả lần thực thi này đến hạ nguồn: thành công gửi <b>stdout</b>, thất bại gửi <b>stderr</b>',
+    tr: 'Sağdaki <code>text</code> bağlantı noktası bu yürütmenin sonucunu aşağı akışa gönderir: başarıda <b>stdout</b>, başarısızlıkta <b>stderr</b>',
+    it: 'La porta <code>text</code> a destra invia il risultato di questa esecuzione a valle: <b>stdout</b> in caso di successo, <b>stderr</b> in caso di errore'
   },
   outputLi2: {
     zh: '卡片中的结果区显示最近一次输出：出错时以<b>红色</b>显示 <b>stderr</b> 内容',
@@ -202,7 +298,13 @@ export const helpMessages = {
     ar: 'تعرض منطقة النتيجة في البطاقة آخر مخرجات؛ وعند الخطأ تظهر محتوى <b>stderr</b> باللون <b>الأحمر</b>',
     fr: 'La zone de résultat de la carte affiche la dernière sortie ; en cas d’erreur, elle montre le contenu de <b>stderr</b> en <b>rouge</b>',
     pt: 'A área de resultado do cartão mostra a última saída; em caso de erro, exibe o conteúdo de <b>stderr</b> em <b>vermelho</b>',
-    ru: 'Область результата в карточке показывает последний вывод; при ошибке <b>stderr</b> отображается <b>красным</b>'
+    ru: 'Область результата в карточке показывает последний вывод; при ошибке <b>stderr</b> отображается <b>красным</b>',
+    hi: 'कार्ड के परिणाम क्षेत्र में नवीनतम आउटपुट दिखता है: त्रुटि होने पर <b>stderr</b> की सामग्री <b>लाल</b> रंग में दिखती है',
+    id: 'Area hasil di kartu menampilkan keluaran terakhir: saat error, isi <b>stderr</b> ditampilkan dengan warna <b>merah</b>',
+    de: 'Der Ergebnisbereich in der Karte zeigt die letzte Ausgabe: bei einem Fehler wird der Inhalt von <b>stderr</b> in <b>Rot</b> angezeigt',
+    vi: 'Vùng kết quả trong thẻ hiển thị đầu ra gần nhất: khi lỗi, nội dung <b>stderr</b> hiển thị bằng màu <b>đỏ</b>',
+    tr: 'Karttaki sonuç alanı en son çıktıyı gösterir: hata durumunda <b>stderr</b> içeriği <b>kırmızı</b> renkte gösterilir',
+    it: 'L’area del risultato nella scheda mostra l’ultimo output: in caso di errore visualizza il contenuto di <b>stderr</b> in <b>rosso</b>'
   },
 
   // —— 注意事项 ——
@@ -215,7 +317,13 @@ export const helpMessages = {
     ar: 'ملاحظات',
     fr: 'Remarques',
     pt: 'Observações',
-    ru: 'Примечания'
+    ru: 'Примечания',
+    hi: 'ध्यान देने योग्य बातें',
+    id: 'Catatan',
+    de: 'Hinweise',
+    vi: 'Lưu ý',
+    tr: 'Notlar',
+    it: 'Note'
   },
   noticeLi1: {
     zh: '命令通过主进程 <code>child_process.exec</code> 以你当前的系统权限<b>真实执行</b>，请只运行可信的命令',
@@ -226,7 +334,13 @@ export const helpMessages = {
     ar: 'تُنفَّذ الأوامر <b>فعليًا</b> في العملية الرئيسية عبر <code>child_process.exec</code> بصلاحيات نظامك الحالية — شغّل أوامر موثوقة فقط',
     fr: 'Les commandes sont <b>réellement exécutées</b> dans le processus principal via <code>child_process.exec</code> avec vos permissions système actuelles — n’exécutez que des commandes de confiance',
     pt: 'Os comandos são <b>executados de verdade</b> no processo principal via <code>child_process.exec</code> com as suas permissões atuais do sistema — execute apenas comandos confiáveis',
-    ru: 'Команды <b>реально выполняются</b> в главном процессе через <code>child_process.exec</code> с вашими текущими системными правами — запускайте только доверенные команды'
+    ru: 'Команды <b>реально выполняются</b> в главном процессе через <code>child_process.exec</code> с вашими текущими системными правами — запускайте только доверенные команды',
+    hi: 'कमांड मुख्य प्रक्रिया में <code>child_process.exec</code> द्वारा आपके वर्तमान सिस्टम अनुमतियों के साथ <b>वास्तव में निष्पादित</b> होती है — केवल विश्वसनीय कमांड ही चलाएँ',
+    id: 'Perintah <b>benar-benar dijalankan</b> di proses utama melalui <code>child_process.exec</code> dengan izin sistem Anda saat ini — jalankan hanya perintah tepercaya',
+    de: 'Befehle werden im Hauptprozess über <code>child_process.exec</code> mit Ihren aktuellen Systemrechten <b>tatsächlich ausgeführt</b> — führen Sie nur vertrauenswürdige Befehle aus',
+    vi: 'Lệnh được <b>thực thi thật</b> trong tiến trình chính qua <code>child_process.exec</code> với quyền hệ thống hiện tại của bạn — chỉ chạy các lệnh đáng tin cậy',
+    tr: 'Komutlar ana süreçte <code>child_process.exec</code> aracılığıyla mevcut sistem izinlerinizle <b>gerçekten çalıştırılır</b> — yalnızca güvenilir komutları çalıştırın',
+    it: 'I comandi vengono <b>eseguiti davvero</b> nel processo principale tramite <code>child_process.exec</code> con i tuoi permessi di sistema attuali — esegui solo comandi attendibili'
   },
   noticeLi2: {
     zh: '命令可能有副作用（改文件、装依赖、联网等），执行前请确认影响范围',
@@ -237,7 +351,13 @@ export const helpMessages = {
     ar: 'قد يكون للأوامر آثار جانبية (تعديل الملفات، تثبيت الاعتماديات، الاتصال بالشبكة وغيرها)؛ تأكد من نطاق التأثير قبل التشغيل',
     fr: 'Les commandes peuvent avoir des effets de bord (modifier des fichiers, installer des dépendances, accéder au réseau, etc.) ; vérifiez l’impact avant d’exécuter',
     pt: 'Os comandos podem ter efeitos colaterais (alterar arquivos, instalar dependências, acessar a rede, etc.); confirme o impacto antes de executar',
-    ru: 'Команды могут иметь побочные эффекты (изменение файлов, установка зависимостей, доступ к сети и т. п.) — проверьте последствия перед запуском'
+    ru: 'Команды могут иметь побочные эффекты (изменение файлов, установка зависимостей, доступ к сети и т. п.) — проверьте последствия перед запуском',
+    hi: 'कमांड के दुष्प्रभाव हो सकते हैं (फ़ाइल बदलना, निर्भरताएँ स्थापित करना, नेटवर्क आदि), निष्पादन से पहले प्रभाव का दायरा जाँच लें',
+    id: 'Perintah dapat memiliki efek samping (mengubah berkas, memasang dependensi, mengakses jaringan, dll.); pastikan dampaknya sebelum menjalankan',
+    de: 'Befehle können Nebenwirkungen haben (Dateien ändern, Abhängigkeiten installieren, Netzwerkzugriff usw.); prüfen Sie vor der Ausführung den Umfang der Auswirkungen',
+    vi: 'Lệnh có thể có tác dụng phụ (sửa tệp, cài phụ thuộc, truy cập mạng, v.v.); hãy xác nhận phạm vi ảnh hưởng trước khi chạy',
+    tr: 'Komutların yan etkileri olabilir (dosya değiştirme, bağımlılık kurma, ağ erişimi vb.); çalıştırmadan önce etkisini doğrulayın',
+    it: 'I comandi possono avere effetti collaterali (modificare file, installare dipendenze, accedere alla rete, ecc.); verifica l’impatto prima di eseguire'
   },
 
   // —— 示例 ——
@@ -250,7 +370,13 @@ export const helpMessages = {
     ar: 'مثال',
     fr: 'Exemple',
     pt: 'Exemplo',
-    ru: 'Пример'
+    ru: 'Пример',
+    hi: 'उदाहरण',
+    id: 'Contoh',
+    de: 'Beispiel',
+    vi: 'Ví dụ',
+    tr: 'Örnek',
+    it: 'Esempio'
   },
   exampleLabel: {
     zh: '例：模板 <code>npm run build -- $1</code>，$1 是构建目标',
@@ -261,7 +387,13 @@ export const helpMessages = {
     ar: 'مثال: القالب <code>npm run build -- $1</code>، حيث $1 هو هدف البناء',
     fr: 'Exemple : modèle <code>npm run build -- $1</code>, où $1 est la cible de compilation',
     pt: 'Exemplo: modelo <code>npm run build -- $1</code>, onde $1 é o alvo de compilação',
-    ru: 'Пример: шаблон <code>npm run build -- $1</code>, где $1 — цель сборки'
+    ru: 'Пример: шаблон <code>npm run build -- $1</code>, где $1 — цель сборки',
+    hi: 'उदाहरण: टेम्पलेट <code>npm run build -- $1</code>, जहाँ $1 बिल्ड लक्ष्य है',
+    id: 'Contoh: templat <code>npm run build -- $1</code>, $1 adalah target build',
+    de: 'Beispiel: Vorlage <code>npm run build -- $1</code>, wobei $1 das Build-Ziel ist',
+    vi: 'Ví dụ: mẫu <code>npm run build -- $1</code>, $1 là mục tiêu build',
+    tr: 'Örnek: şablon <code>npm run build -- $1</code>, $1 derleme hedefidir',
+    it: 'Esempio: modello <code>npm run build -- $1</code>, dove $1 è il target di build'
   },
   exampleComment1: {
     zh: '// 模板',
@@ -272,7 +404,13 @@ export const helpMessages = {
     ar: '// القالب',
     fr: '// Modèle',
     pt: '// Modelo',
-    ru: '// Шаблон'
+    ru: '// Шаблон',
+    hi: '// टेम्पलेट',
+    id: '// Templat',
+    de: '// Vorlage',
+    vi: '// Mẫu',
+    tr: '// Şablon',
+    it: '// Modello'
   },
   exampleComment2: {
     zh: '// 生成的命令',
@@ -283,6 +421,12 @@ export const helpMessages = {
     ar: '// الأمر الناتج',
     fr: '// Commande générée',
     pt: '// Comando gerado',
-    ru: '// Итоговая команда'
+    ru: '// Итоговая команда',
+    hi: '// बनी कमांड',
+    id: '// Perintah yang dihasilkan',
+    de: '// Erzeugter Befehl',
+    vi: '// Lệnh đã tạo',
+    tr: '// Oluşturulan komut',
+    it: '// Comando generato'
   }
 } satisfies Record<string, LocalizedText>

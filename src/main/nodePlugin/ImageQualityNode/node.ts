@@ -43,7 +43,13 @@ export class ImageQualityNode extends Node {
       ar: 'صورة',
       fr: 'Image',
       pt: 'Imagem',
-      ru: 'Изображение'
+      ru: 'Изображение',
+      hi: 'छवि',
+      id: 'Gambar',
+      de: 'Bild',
+      vi: 'Ảnh',
+      tr: 'Görüntü',
+      it: 'Immagine'
     }
   })
 
@@ -57,7 +63,13 @@ export class ImageQualityNode extends Node {
     ar: 'بعد الضبط',
     fr: 'Ajusté',
     pt: 'Ajustado',
-    ru: 'Скорректировано'
+    ru: 'Скорректировано',
+    hi: 'समायोजित',
+    id: 'Disesuaikan',
+    de: 'Angepasst',
+    vi: 'Đã điều chỉnh',
+    tr: 'Ayarlanmış',
+    it: 'Regolata'
   })
 
   /** 本次要处理的源节点 id（拖入路径的触发信号）。一次拖入只处理一次，处理完清空 */

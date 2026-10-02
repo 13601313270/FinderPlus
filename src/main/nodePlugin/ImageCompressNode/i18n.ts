@@ -16,7 +16,13 @@ export const messages = {
     ar: 'أفلت عقدة صورة للضغط مرة واحدة · أو صِل صورة بالمنفذ الأيسر للضغط الفوري',
     fr: 'Déposez un nœud image pour compresser une fois · ou connectez une image au port gauche pour une compression en direct',
     pt: 'Solte um nó de imagem para comprimir uma vez · ou conecte uma imagem à porta esquerda para compressão ao vivo',
-    ru: 'Перетащите узел изображения для однократного сжатия · или подключите изображение к левому порту для сжатия в реальном времени'
+    ru: 'Перетащите узел изображения для однократного сжатия · или подключите изображение к левому порту для сжатия в реальном времени',
+    hi: 'संपीड़ित करने के लिए छवि नोड छोड़ें · या बाएँ पोर्ट पर छवि जोड़कर रीयल-टाइम संपीड़न करें',
+    id: 'Jatuhkan node gambar untuk mengompres sekali · atau sambungkan gambar ke port kiri untuk kompres langsung',
+    de: 'Bildknoten ablegen, um einmal zu komprimieren · oder ein Bild an den linken Port anschließen für Live-Komprimierung',
+    vi: 'Thả một nút ảnh để nén một lần · hoặc kết nối ảnh vào cổng bên trái để nén trực tiếp',
+    tr: 'Bir kez sıkıştırmak için görüntü düğümünü bırakın · veya canlı sıkıştırma için sol bağlantı noktasına bir görüntü bağlayın',
+    it: 'Trascina un nodo immagine per comprimere una volta · oppure collega un’immagine alla porta sinistra per la compressione in tempo reale'
   },
   formatHint: {
     zh: '选择导出格式（改变后按新格式重新压缩）',
@@ -27,7 +33,13 @@ export const messages = {
     ar: 'اختر صيغة التصدير (يُعاد الضغط بالصيغة الجديدة)',
     fr: 'Choisissez le format d’export (recompresse avec le nouveau format)',
     pt: 'Escolha o formato de exportação (recomprime com o novo formato)',
-    ru: 'Выберите формат экспорта (повторное сжатие в новом формате)'
+    ru: 'Выберите формат экспорта (повторное сжатие в новом формате)',
+    hi: 'निर्यात प्रारूप चुनें (बदलने पर नए प्रारूप में फिर से संपीड़ित)',
+    id: 'Pilih format ekspor (mengompres ulang dengan format baru)',
+    de: 'Exportformat wählen (komprimiert mit dem neuen Format neu)',
+    vi: 'Chọn định dạng xuất (nén lại theo định dạng mới)',
+    tr: 'Dışa aktarma biçimini seçin (yeni biçimle yeniden sıkıştırır)',
+    it: 'Scegli il formato di esportazione (ricomprime con il nuovo formato)'
   },
   resultAlt: {
     zh: '压缩结果预览',
@@ -38,7 +50,13 @@ export const messages = {
     ar: 'معاينة النتيجة المضغوطة',
     fr: 'Aperçu du résultat compressé',
     pt: 'Prévia do resultado comprimido',
-    ru: 'Предпросмотр сжатого результата'
+    ru: 'Предпросмотр сжатого результата',
+    hi: 'संपीड़ित परिणाम का पूर्वावलोकन',
+    id: 'Pratinjau hasil kompres',
+    de: 'Vorschau des komprimierten Ergebnisses',
+    vi: 'Xem trước kết quả nén',
+    tr: 'Sıkıştırılmış sonuç önizlemesi',
+    it: 'Anteprima del risultato compresso'
   },
   placeholder: {
     zh: '拖图片节点进来 · 或左侧端口接图片（≤ {size}px）',
@@ -49,7 +67,13 @@ export const messages = {
     ar: 'أفلت عقدة صورة هنا · أو صِل صورة بالمنفذ الأيسر (≤ {size}px)',
     fr: 'Déposez un nœud image ici · ou connectez une image au port gauche (≤ {size}px)',
     pt: 'Solte um nó de imagem aqui · ou conecte uma imagem à porta esquerda (≤ {size}px)',
-    ru: 'Перетащите узел изображения сюда · или подключите изображение к левому порту (≤ {size}px)'
+    ru: 'Перетащите узел изображения сюда · или подключите изображение к левому порту (≤ {size}px)',
+    hi: 'यहाँ छवि नोड छोड़ें · या बाएँ पोर्ट पर छवि जोड़ें (≤ {size}px)',
+    id: 'Jatuhkan node gambar di sini · atau sambungkan gambar ke port kiri (≤ {size}px)',
+    de: 'Bildknoten hier ablegen · oder ein Bild an den linken Port anschließen (≤ {size}px)',
+    vi: 'Thả nút ảnh vào đây · hoặc kết nối ảnh vào cổng bên trái (≤ {size}px)',
+    tr: 'Görüntü düğümünü buraya bırakın · veya sol bağlantı noktasına bir görüntü bağlayın (≤ {size}px)',
+    it: 'Trascina qui un nodo immagine · oppure collega un’immagine alla porta sinistra (≤ {size}px)'
   },
   createNode: {
     zh: '生成图片文件节点',
@@ -60,7 +84,13 @@ export const messages = {
     ar: 'إنشاء عقدة ملف صورة',
     fr: 'Créer un nœud image',
     pt: 'Criar nó de imagem',
-    ru: 'Создать узел изображения'
+    ru: 'Создать узел изображения',
+    hi: 'छवि फ़ाइल नोड बनाएँ',
+    id: 'Buat node berkas gambar',
+    de: 'Bilddatei-Knoten erzeugen',
+    vi: 'Tạo nút tệp ảnh',
+    tr: 'Görüntü dosyası düğümü oluştur',
+    it: 'Crea nodo file immagine'
   },
   createNodeHint: {
     zh: '以压缩结果为基础新建一个图片文件节点',
@@ -71,7 +101,13 @@ export const messages = {
     ar: 'إنشاء عقدة ملف صورة جديدة بناءً على النتيجة المضغوطة',
     fr: 'Créer un nouveau nœud de fichier image à partir du résultat compressé',
     pt: 'Criar um novo nó de arquivo de imagem a partir do resultado comprimido',
-    ru: 'Создать новый узел файла изображения на основе сжатого результата'
+    ru: 'Создать новый узел файла изображения на основе сжатого результата',
+    hi: 'संपीड़ित परिणाम के आधार पर नया छवि फ़ाइल नोड बनाएँ',
+    id: 'Buat node berkas gambar baru berdasarkan hasil kompres',
+    de: 'Einen neuen Bilddatei-Knoten auf Basis des komprimierten Ergebnisses erstellen',
+    vi: 'Tạo nút tệp ảnh mới dựa trên kết quả nén',
+    tr: 'Sıkıştırılmış sonuca dayalı yeni bir görüntü dosyası düğümü oluştur',
+    it: 'Crea un nuovo nodo file immagine dal risultato compresso'
   },
   hint: {
     zh: '端口响应式 · 拖入一次性',
@@ -82,7 +118,13 @@ export const messages = {
     ar: 'المنفذ: فوري · الإفلات: مرة واحدة',
     fr: 'Port : en direct · Dépôt : unique',
     pt: 'Porta: ao vivo · Soltar: uma vez',
-    ru: 'Порт: в реальном времени · Перетаскивание: однократно'
+    ru: 'Порт: в реальном времени · Перетаскивание: однократно',
+    hi: 'पोर्ट: रीयल-टाइम · ड्रॉप: एक बार',
+    id: 'Port: langsung · Jatuhkan: sekali',
+    de: 'Port: live · Ablegen: einmalig',
+    vi: 'Cổng: trực tiếp · Thả: một lần',
+    tr: 'Bağlantı noktası: canlı · Bırakma: tek seferlik',
+    it: 'Porta: in tempo reale · Trascina: una volta'
   },
   helpTitle: {
     zh: '使用说明',
@@ -93,7 +135,13 @@ export const messages = {
     ar: 'مساعدة',
     fr: 'Aide',
     pt: 'Ajuda',
-    ru: 'Справка'
+    ru: 'Справка',
+    hi: 'सहायता',
+    id: 'Bantuan',
+    de: 'Hilfe',
+    vi: 'Trợ giúp',
+    tr: 'Yardım',
+    it: 'Guida'
   },
   helpDialogTitle: {
     zh: '图片压缩节点使用说明',
@@ -104,6 +152,12 @@ export const messages = {
     ar: 'مساعدة عقدة ضغط الصورة',
     fr: 'Aide du nœud Compresser l’image',
     pt: 'Ajuda do nó Comprimir imagem',
-    ru: 'Справка по узлу «Сжатие изображения»'
+    ru: 'Справка по узлу «Сжатие изображения»',
+    hi: 'छवि संपीड़न नोड सहायता',
+    id: 'Bantuan node Kompres Gambar',
+    de: 'Hilfe zum Bildkomprimierungs-Knoten',
+    vi: 'Trợ giúp nút Nén ảnh',
+    tr: 'Görüntü Sıkıştırma düğümü yardımı',
+    it: 'Guida del nodo Comprimi immagine'
   }
 } satisfies Record<string, LocalizedText>

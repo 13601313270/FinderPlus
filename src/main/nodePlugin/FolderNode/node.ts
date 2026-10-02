@@ -65,7 +65,13 @@ export class FolderNode extends Node {
       ar: 'ملف',
       fr: 'Fichier',
       pt: 'Arquivo',
-      ru: 'Файл'
+      ru: 'Файл',
+      hi: 'फ़ाइल',
+      id: 'Berkas',
+      de: 'Datei',
+      vi: 'Tệp',
+      tr: 'Dosya',
+      it: 'File'
     }
   })
 

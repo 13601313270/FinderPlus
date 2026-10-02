@@ -14,7 +14,13 @@ export const manifest: NodePluginManifest = {
     ar: 'معاينة الصورة',
     fr: 'Aperçu d’image',
     pt: 'Pré-visualizar imagem',
-    ru: 'Предпросмотр изображения'
+    ru: 'Предпросмотр изображения',
+    hi: 'छवि पूर्वावलोकन',
+    id: 'Pratinjau gambar',
+    de: 'Bildvorschau',
+    vi: 'Xem trước ảnh',
+    tr: 'Görüntü önizlemesi',
+    it: 'Anteprima immagine'
   },
   render,
   help: () => import('./ImagePreviewHelpDialog.vue')

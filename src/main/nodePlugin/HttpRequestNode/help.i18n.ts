@@ -1,7 +1,7 @@
 import type { LocalizedText } from '../../../shared/language'
 
 /**
- * HTTP 请求节点帮助文档（HttpRequestHelpDialog）的全部文案，9 种语言全配。
+ * HTTP 请求节点帮助文档（HttpRequestHelpDialog）的全部文案，全部 15 种语言全配。
  *
  * 与节点自身的 i18n.ts 分开：卡片/配置弹窗的短文案变化频繁，帮助文档整篇
  * 体量大且改动少，拆开后两边互不干扰。跟随节点文件夹一起搬运，保持插件自包含。
@@ -22,7 +22,13 @@ export const helpMessages = {
     ar: 'ما هذا؟',
     fr: 'Qu’est-ce que c’est ?',
     pt: 'O que é isto?',
-    ru: 'Что это?'
+    ru: 'Что это?',
+    hi: "यह क्या है?",
+    id: "Apa ini?",
+    de: "Was ist das?",
+    vi: "Đây là gì?",
+    tr: "Bu nedir?",
+    it: "Che cos’è?",
   },
   whatBody: {
     zh: 'HTTP 请求节点把一条常发的 HTTP / HTTPS 请求<b>保存</b>在节点里，点「发送」执行一次，响应体（字符串）从右侧 <code>text</code> 端口发给下游节点。请求在主进程发出，因此<b>不受渲染进程 CORS 限制</b>，内网服务、自签证书的地址也能访问。',
@@ -33,7 +39,13 @@ export const helpMessages = {
     ar: 'تحفظ عقدة طلب HTTP طلب HTTP / HTTPS متكررًا داخل العقدة. انقر على «إرسال» لتنفيذه مرة واحدة، ويُرسَل جسم الاستجابة (نص) إلى العقد اللاحقة من منفذ <code>text</code> على اليمين. تُرسَل الطلبات من العملية الرئيسية، لذا فهي <b>غير خاضعة لقيود CORS الخاصة بعملية العرض</b>، ويمكن الوصول أيضًا إلى خدمات الشبكة الداخلية والعناوين ذات الشهادات الموقّعة ذاتيًا.',
     fr: 'Le nœud Requête HTTP <b>enregistre</b> une requête HTTP / HTTPS fréquente dans le nœud. Cliquez sur « Envoyer » pour l’exécuter une fois, et le corps de la réponse (une chaîne) est envoyé aux nœuds en aval depuis le port <code>text</code> à droite. Les requêtes sont émises dans le processus principal, elles ne sont donc <b>pas soumises aux restrictions CORS du processus de rendu</b>, et les services intranet ainsi que les adresses à certificat auto-signé restent accessibles.',
     pt: 'O nó Requisição HTTP <b>salva</b> uma requisição HTTP / HTTPS frequente no nó. Clique em “Enviar” para executá-la uma vez, e o corpo da resposta (uma string) é enviado aos nós seguintes pelo porto <code>text</code> à direita. As requisições são emitidas no processo principal, portanto <b>não estão sujeitas às restrições CORS do processo de renderização</b>, e serviços de intranet e endereços com certificados autoassinados também podem ser acessados.',
-    ru: 'Узел «HTTP-запрос» <b>сохраняет</b> часто используемый HTTP / HTTPS-запрос в узле. Нажмите «Отправить», чтобы выполнить его один раз, и тело ответа (строка) отправляется последующим узлам из порта <code>text</code> справа. Запросы выполняются в главном процессе, поэтому <b>не подпадают под ограничения CORS процесса отрисовки</b>, а также доступны сервисы внутренней сети и адреса с самоподписанными сертификатами.'
+    ru: 'Узел «HTTP-запрос» <b>сохраняет</b> часто используемый HTTP / HTTPS-запрос в узле. Нажмите «Отправить», чтобы выполнить его один раз, и тело ответа (строка) отправляется последующим узлам из порта <code>text</code> справа. Запросы выполняются в главном процессе, поэтому <b>не подпадают под ограничения CORS процесса отрисовки</b>, а также доступны сервисы внутренней сети и адреса с самоподписанными сертификатами.',
+    hi: "HTTP अनुरोध नोड एक अक्सर भेजे जाने वाले HTTP / HTTPS अनुरोध को नोड में <b>सहेजता</b> है। “भेजें” पर क्लिक करके इसे एक बार चलाएँ, और प्रतिक्रिया body (एक स्ट्रिंग) दाईं ओर <code>text</code> पोर्ट से डाउनस्ट्रीम नोड को भेजी जाती है। अनुरोध मुख्य प्रक्रिया में भेजे जाते हैं, इसलिए वे <b>रेंडरर प्रक्रिया की CORS सीमाओं के अधीन नहीं</b> होते, और इंट्रानेट सेवाओं तथा स्व-हस्ताक्षरित प्रमाणपत्र वाले पतों को भी एक्सेस किया जा सकता है।",
+    id: "Node Permintaan HTTP <b>menyimpan</b> permintaan HTTP / HTTPS yang sering digunakan di dalam node. Klik “Kirim” untuk menjalankannya sekali, dan body respons (string) dikirim ke node hilir dari port <code>text</code> di sebelah kanan. Permintaan dikirim dari proses utama, sehingga <b>tidak tunduk pada batasan CORS proses renderer</b>, dan layanan intranet serta alamat dengan sertifikat yang ditandatangani sendiri juga dapat diakses.",
+    de: "Der Knoten „HTTP-Anfrage“ <b>speichert</b> eine häufig verwendete HTTP-/HTTPS-Anfrage im Knoten. Klicken Sie auf „Senden“, um sie einmal auszuführen, und der Antwort-body (eine Zeichenkette) wird vom <code>text</code>-Port rechts an nachgelagerte Knoten gesendet. Anfragen werden im Hauptprozess ausgeführt, unterliegen daher <b>nicht den CORS-Beschränkungen des Renderer-Prozesses</b>, und auch Intranet-Dienste sowie Adressen mit selbstsignierten Zertifikaten sind erreichbar.",
+    vi: "Nút Yêu cầu HTTP <b>lưu</b> một yêu cầu HTTP / HTTPS thường dùng trong nút. Nhấp “Gửi” để thực thi một lần, và body phản hồi (một chuỗi) được gửi đến các nút hạ nguồn từ cổng <code>text</code> bên phải. Yêu cầu được gửi từ tiến trình chính, do đó <b>không bị ràng buộc bởi hạn chế CORS của tiến trình renderer</b>, và các dịch vụ mạng nội bộ cùng địa chỉ có chứng chỉ tự ký cũng có thể truy cập được.",
+    tr: "HTTP İsteği düğümü, sık kullanılan bir HTTP / HTTPS isteğini düğümde <b>saklar</b>. Bir kez çalıştırmak için “Gönder”e tıklayın ve yanıt body’si (bir dize) sağdaki <code>text</code> bağlantı noktasından aşağı akış düğümlerine gönderilir. İstekler ana süreçte yapılır, bu nedenle <b>renderer sürecinin CORS kısıtlamalarına tabi değildir</b>; iç ağ hizmetlerine ve kendinden imzalı sertifika adreslerine de erişilebilir.",
+    it: "Il nodo Richiesta HTTP <b>salva</b> una richiesta HTTP / HTTPS usata di frequente nel nodo. Fai clic su “Invia” per eseguirla una volta: il body della risposta (una stringa) viene inviato ai nodi a valle dalla porta <code>text</code> a destra. Le richieste vengono effettuate nel processo principale, quindi <b>non sono soggette alle restrizioni CORS del processo di rendering</b>, e sono accessibili anche servizi intranet e indirizzi con certificati autofirmati.",
   },
 
   // —— 展开 / 收起 ——
@@ -46,7 +58,13 @@ export const helpMessages = {
     ar: 'توسيع / طيّ',
     fr: 'Développer / réduire',
     pt: 'Expandir / recolher',
-    ru: 'Развернуть / свернуть'
+    ru: 'Развернуть / свернуть',
+    hi: "विस्तृत / संकुचित करें",
+    id: "Bentangkan / ciutkan",
+    de: "Ausklappen / einklappen",
+    vi: "Mở rộng / thu gọn",
+    tr: "Genişlet / daralt",
+    it: "Espandi / comprimi",
   },
   expandLi1: {
     zh: '<b>折叠态</b>：只显示「方法 + URL」预览、headers/body 摘要、结果区、发送按钮',
@@ -57,7 +75,13 @@ export const helpMessages = {
     ar: '<b>الحالة المطويّة</b>: تعرض فقط معاينة «الطريقة + URL»، وملخص headers/body، ومنطقة النتائج، وزر الإرسال',
     fr: '<b>Réduit</b> : affiche uniquement l’aperçu « méthode + URL », un résumé headers/body, la zone de résultat et le bouton Envoyer',
     pt: '<b>Recolhido</b>: mostra apenas a pré-visualização de “método + URL”, um resumo de headers/body, a área de resultado e o botão Enviar',
-    ru: '<b>Свёрнутое состояние</b>: отображаются только предпросмотр «метод + URL», сводка headers/body, область результата и кнопка «Отправить»'
+    ru: '<b>Свёрнутое состояние</b>: отображаются только предпросмотр «метод + URL», сводка headers/body, область результата и кнопка «Отправить»',
+    hi: "<b>संकुचित अवस्था</b>: केवल “तरीका + URL” पूर्वावलोकन, headers/body सारांश, परिणाम क्षेत्र और भेजें बटन दिखाता है",
+    id: "<b>Ciut</b>: hanya menampilkan pratinjau “metode + URL”, ringkasan headers/body, area hasil, dan tombol Kirim",
+    de: "<b>Eingeklappt</b>: zeigt nur die Vorschau „Methode + URL“, eine headers/body-Zusammenfassung, den Ergebnisbereich und die Schaltfläche „Senden“",
+    vi: "<b>Thu gọn</b>: chỉ hiển thị bản xem trước “phương thức + URL”, tóm tắt headers/body, vùng kết quả và nút Gửi",
+    tr: "<b>Daraltılmış</b>: yalnızca “yöntem + URL” önizlemesini, headers/body özetini, sonuç alanını ve Gönder düğmesini gösterir",
+    it: "<b>Compresso</b>: mostra solo l’anteprima “metodo + URL”, un riepilogo headers/body, l’area dei risultati e il pulsante Invia",
   },
   expandLi2: {
     zh: '<b>展开态</b>：点头部的「展开」，额外显示方法下拉、URL 输入、Headers、Body、超时、端口增删',
@@ -68,7 +92,13 @@ export const helpMessages = {
     ar: '<b>الحالة الموسّعة</b>: انقر على «توسيع» في الرأس لعرض قائمة الطريقة المنسدلة، وإدخال URL، وHeaders، وBody، والمهلة، وإضافة/حذف المنافذ',
     fr: '<b>Développé</b> : cliquez sur « Développer » dans l’en-tête pour afficher en plus la liste déroulante de méthode, le champ URL, les Headers, le Body, le délai d’expiration et l’ajout/suppression de ports',
     pt: '<b>Expandido</b>: clique em “Expandir” no cabeçalho para mostrar também a lista suspensa de método, o campo de URL, Headers, Body, o tempo limite e a adição/remoção de portos',
-    ru: '<b>Развёрнутое состояние</b>: нажмите «Развернуть» в заголовке, чтобы дополнительно показать раскрывающийся список методов, поле URL, Headers, Body, тайм-аут и добавление/удаление портов'
+    ru: '<b>Развёрнутое состояние</b>: нажмите «Развернуть» в заголовке, чтобы дополнительно показать раскрывающийся список методов, поле URL, Headers, Body, тайм-аут и добавление/удаление портов',
+    hi: "<b>विस्तृत अवस्था</b>: हेडर में “विस्तृत करें” पर क्लिक करने पर तरीका ड्रॉपडाउन, URL इनपुट, Headers, Body, टाइमआउट और पोर्ट जोड़ना/हटाना भी दिखता है",
+    id: "<b>Bentang</b>: klik “Bentangkan” di header untuk juga menampilkan dropdown metode, input URL, Headers, Body, tenggat, dan penambahan/penghapusan port",
+    de: "<b>Ausgeklappt</b>: Klicken Sie im Kopfbereich auf „Ausklappen“, um zusätzlich das Methoden-Dropdown, die URL-Eingabe, Headers, Body, die Zeitüberschreitung und das Hinzufügen/Entfernen von Ports anzuzeigen",
+    vi: "<b>Mở rộng</b>: nhấp “Mở rộng” ở phần đầu để hiển thị thêm danh sách phương thức, ô nhập URL, Headers, Body, hết thời gian và thêm/xóa cổng",
+    tr: "<b>Genişletilmiş</b>: yöntem açılır listesini, URL girişini, Headers, Body, zaman aşımını ve bağlantı noktası ekleme/kaldırmayı da göstermek için başlıktaki “Genişlet”e tıklayın",
+    it: "<b>Espanso</b>: fai clic su “Espandi” nell’intestazione per mostrare anche il menu a discesa del metodo, il campo URL, Headers, Body, il timeout e l’aggiunta/rimozione delle porte",
   },
   expandLi3: {
     zh: '所有编辑控件都是<b>改了直接写回节点</b>，没有草稿态，也不需要额外的保存动作',
@@ -79,7 +109,13 @@ export const helpMessages = {
     ar: 'تُكتب جميع عناصر التحرير <b>مباشرةً في العقدة عند التغيير</b>، فلا توجد مسودة ولا حاجة إلى إجراء حفظ إضافي',
     fr: 'Tous les contrôles d’édition <b>réécrivent directement dans le nœud</b> ; il n’y a ni brouillon ni action d’enregistrement supplémentaire',
     pt: 'Todos os controles de edição <b>gravam diretamente no nó</b>; não há estado de rascunho nem ação extra de salvar',
-    ru: 'Все элементы редактирования <b>записываются в узел сразу при изменении</b>; черновика нет, и дополнительное сохранение не требуется'
+    ru: 'Все элементы редактирования <b>записываются в узел сразу при изменении</b>; черновика нет, и дополнительное сохранение не требуется',
+    hi: "सभी संपादन नियंत्रण <b>बदलाव सीधे नोड में लिख देते हैं</b>; कोई ड्राफ़्ट अवस्था नहीं है और अतिरिक्त सहेजने की क्रिया की ज़रूरत नहीं है",
+    id: "Semua kontrol pengeditan <b>langsung menulis kembali ke node</b>; tidak ada status draf dan tidak perlu tindakan simpan tambahan",
+    de: "Alle Bearbeitungselemente <b>schreiben Änderungen direkt in den Knoten zurück</b>; es gibt keinen Entwurfszustand und keine zusätzliche Speicheraktion",
+    vi: "Mọi điều khiển chỉnh sửa đều <b>ghi trực tiếp trở lại nút</b>; không có trạng thái nháp và không cần thao tác lưu thêm",
+    tr: "Tüm düzenleme denetimleri <b>değişiklikleri doğrudan düğüme geri yazar</b>; taslak durumu yoktur ve ek kaydetme işlemi gerekmez",
+    it: "Tutti i controlli di modifica <b>riscrivono direttamente nel nodo</b>; non esiste uno stato bozza né un’azione di salvataggio aggiuntiva",
   },
   expandLi4: {
     zh: '折叠状态会随场景一起保存，重新打开时保持原样',
@@ -90,7 +126,13 @@ export const helpMessages = {
     ar: 'تُحفَظ حالة الطيّ مع المشهد وتبقى كما هي عند إعادة فتحه',
     fr: 'L’état réduit est enregistré avec la scène et conservé à la réouverture',
     pt: 'O estado recolhido é salvo junto com a cena e permanece igual ao reabri-la',
-    ru: 'Свёрнутое состояние сохраняется вместе со сценой и остаётся прежним при повторном открытии'
+    ru: 'Свёрнутое состояние сохраняется вместе со сценой и остаётся прежним при повторном открытии',
+    hi: "संकुचित अवस्था दृश्य के साथ सहेजी जाती है और दोबारा खोलने पर वैसी ही रहती है",
+    id: "Status terciut disimpan bersama adegan dan tetap sama saat dibuka kembali",
+    de: "Der eingeklappte Zustand wird mit der Szene gespeichert und beim erneuten Öffnen beibehalten",
+    vi: "Trạng thái thu gọn được lưu cùng cảnh và giữ nguyên khi mở lại",
+    tr: "Daraltılmış durum sahneyle birlikte kaydedilir ve yeniden açıldığında korunur",
+    it: "Lo stato compresso viene salvato insieme alla scena e mantenuto alla riapertura",
   },
 
   // —— 输入端口 & $N 模板 ——
@@ -103,7 +145,13 @@ export const helpMessages = {
     ar: 'منافذ الإدخال وقالب $N',
     fr: 'Ports d’entrée et gabarits $N',
     pt: 'Portas de entrada e modelos $N',
-    ru: 'Входные порты и шаблоны $N'
+    ru: 'Входные порты и шаблоны $N',
+    hi: "इनपुट पोर्ट और $N टेम्पलेट",
+    id: "Port masukan & templat $N",
+    de: "Eingabeports & $N-Vorlagen",
+    vi: "Cổng đầu vào & mẫu $N",
+    tr: "Giriş bağlantı noktaları ve $N şablonları",
+    it: "Porte di input e modelli $N",
   },
   portsLead: {
     zh: 'URL、Headers 的 key / value、Body 都是<b>模板</b>：用 <code>$1</code> <code>$2</code> <code>$3</code> … 引用第 N 个字符串输入端口的值，执行时拼成最终内容。',
@@ -114,7 +162,13 @@ export const helpMessages = {
     ar: 'إن URL و key / value الخاصة بـ Headers و Body كلها <b>قوالب</b>: استخدم <code>$1</code> <code>$2</code> <code>$3</code> … للإشارة إلى قيمة منفذ الإدخال النصي رقم N، وتُدمج معًا لتكوين المحتوى النهائي عند التنفيذ.',
     fr: 'L’URL, la key / value des Headers et le Body sont tous des <b>gabarits</b> : utilisez <code>$1</code> <code>$2</code> <code>$3</code> … pour référencer la valeur du Nième port d’entrée de type chaîne ; ils sont assemblés en contenu final au moment de l’exécution.',
     pt: 'A URL, a key / value dos Headers e o Body são todos <b>modelos</b>: use <code>$1</code> <code>$2</code> <code>$3</code> … para referenciar o valor do enésimo porto de entrada de string, e eles são combinados no conteúdo final na execução.',
-    ru: 'URL, key / value в Headers и Body — это <b>шаблоны</b>: используйте <code>$1</code> <code>$2</code> <code>$3</code> … чтобы сослаться на значение N-го строкового входного порта; при выполнении они собираются в итоговое содержимое.'
+    ru: 'URL, key / value в Headers и Body — это <b>шаблоны</b>: используйте <code>$1</code> <code>$2</code> <code>$3</code> … чтобы сослаться на значение N-го строкового входного порта; при выполнении они собираются в итоговое содержимое.',
+    hi: "URL, Headers की key / value और Body सभी <b>टेम्पलेट</b> हैं: Nवें स्ट्रिंग इनपुट पोर्ट के मान को संदर्भित करने के लिए <code>$1</code> <code>$2</code> <code>$3</code> … उपयोग करें, और निष्पादन के समय इन्हें अंतिम सामग्री में जोड़ा जाता है।",
+    id: "URL, key / value dari Headers, dan Body semuanya adalah <b>templat</b>: gunakan <code>$1</code> <code>$2</code> <code>$3</code> … untuk merujuk nilai port masukan string ke-N, dan semuanya digabungkan menjadi konten akhir saat eksekusi.",
+    de: "Die URL, die key / value der Headers und der Body sind alle <b>Vorlagen</b>: Verwenden Sie <code>$1</code> <code>$2</code> <code>$3</code> …, um auf den Wert des N-ten String-Eingabeports zu verweisen; zur Ausführungszeit werden sie zum endgültigen Inhalt zusammengesetzt.",
+    vi: "URL, key / value của Headers và Body đều là <b>mẫu</b>: dùng <code>$1</code> <code>$2</code> <code>$3</code> … để tham chiếu giá trị của cổng đầu vào chuỗi thứ N, và chúng được ghép thành nội dung cuối cùng khi thực thi.",
+    tr: "URL, Headers’ın key / value değerleri ve Body’nin tümü <b>şablondur</b>: N. dize giriş bağlantı noktasının değerine başvurmak için <code>$1</code> <code>$2</code> <code>$3</code> … kullanın; çalıştırma sırasında nihai içeriğe birleştirilirler.",
+    it: "L’URL, la key / value degli Headers e il Body sono tutti <b>modelli</b>: usa <code>$1</code> <code>$2</code> <code>$3</code> … per fare riferimento al valore dell’N-esima porta di input stringa; al momento dell’esecuzione vengono combinati nel contenuto finale.",
   },
   portsLi1: {
     zh: '端口默认 1 个，标签就是 <code>$1</code>、<code>$2</code>…；只接受<b>字符串</b>类型的值',
@@ -125,7 +179,13 @@ export const helpMessages = {
     ar: 'يوجد منفذ واحد افتراضيًا، وتسميته <code>$1</code> و<code>$2</code>…؛ وتُقبل قيم من نوع <b>نص</b> فقط',
     fr: 'Un seul port par défaut, étiqueté <code>$1</code>, <code>$2</code>… ; seules les valeurs de type <b>chaîne</b> sont acceptées',
     pt: 'Há 1 porto por padrão, rotulado <code>$1</code>, <code>$2</code>…; apenas valores do tipo <b>string</b> são aceitos',
-    ru: 'По умолчанию один порт с меткой <code>$1</code>, <code>$2</code>…; принимаются только значения типа <b>строка</b>'
+    ru: 'По умолчанию один порт с меткой <code>$1</code>, <code>$2</code>…; принимаются только значения типа <b>строка</b>',
+    hi: "डिफ़ॉल्ट रूप से 1 पोर्ट होता है, जिसका लेबल <code>$1</code>, <code>$2</code>… है; केवल <b>स्ट्रिंग</b> प्रकार के मान स्वीकार किए जाते हैं",
+    id: "Secara default ada 1 port, berlabel <code>$1</code>, <code>$2</code>…; hanya nilai bertipe <b>string</b> yang diterima",
+    de: "Standardmäßig gibt es 1 Port, beschriftet mit <code>$1</code>, <code>$2</code>…; es werden nur Werte vom Typ <b>String</b> akzeptiert",
+    vi: "Mặc định có 1 cổng, nhãn là <code>$1</code>, <code>$2</code>…; chỉ chấp nhận giá trị kiểu <b>chuỗi</b>",
+    tr: "Varsayılan olarak 1 bağlantı noktası vardır ve etiketi <code>$1</code>, <code>$2</code>… şeklindedir; yalnızca <b>dize</b> türünde değerler kabul edilir",
+    it: "Per impostazione predefinita c’è 1 porta, etichettata <code>$1</code>, <code>$2</code>…; sono accettati solo valori di tipo <b>stringa</b>",
   },
   portsLi2: {
     zh: '所有端口都被占满时会<b>自动新增</b>一个端口；也可以点展开态里的 <code>＋</code> / <code>－</code> 手动增删',
@@ -136,7 +196,13 @@ export const helpMessages = {
     ar: 'عند امتلاء جميع المنافذ يُضاف منفذ <b>تلقائيًا</b>؛ ويمكنك أيضًا النقر على <code>＋</code> / <code>－</code> في الحالة الموسّعة لإضافة المنافذ أو حذفها يدويًا',
     fr: 'Lorsque tous les ports sont occupés, un port est <b>ajouté automatiquement</b> ; vous pouvez aussi utiliser <code>＋</code> / <code>－</code> dans l’état développé pour les ajouter ou les supprimer manuellement',
     pt: 'Quando todos os portos estiverem ocupados, um porto é <b>adicionado automaticamente</b>; você também pode usar <code>＋</code> / <code>－</code> no estado expandido para adicionar ou remover manualmente',
-    ru: 'Когда все порты заняты, порт <b>добавляется автоматически</b>; также можно нажимать <code>＋</code> / <code>－</code> в развёрнутом состоянии, чтобы добавлять и удалять их вручную'
+    ru: 'Когда все порты заняты, порт <b>добавляется автоматически</b>; также можно нажимать <code>＋</code> / <code>－</code> в развёрнутом состоянии, чтобы добавлять и удалять их вручную',
+    hi: "जब सभी पोर्ट भर जाते हैं तो एक पोर्ट <b>स्वतः जोड़ा</b> जाता है; विस्तृत अवस्था में <code>＋</code> / <code>－</code> पर क्लिक करके मैन्युअल रूप से भी जोड़/हटा सकते हैं",
+    id: "Saat semua port terisi, satu port <b>ditambahkan secara otomatis</b>; Anda juga dapat mengklik <code>＋</code> / <code>－</code> di kondisi bentang untuk menambah/menghapus secara manual",
+    de: "Wenn alle Ports belegt sind, wird ein Port <b>automatisch hinzugefügt</b>; Sie können im ausgeklappten Zustand auch <code>＋</code> / <code>－</code> verwenden, um sie manuell hinzuzufügen oder zu entfernen",
+    vi: "Khi tất cả các cổng đều đã được dùng, một cổng sẽ được <b>tự động thêm</b>; bạn cũng có thể nhấp <code>＋</code> / <code>－</code> ở trạng thái mở rộng để thêm/xóa thủ công",
+    tr: "Tüm bağlantı noktaları dolduğunda bir bağlantı noktası <b>otomatik olarak eklenir</b>; genişletilmiş durumdaki <code>＋</code> / <code>－</code> kullanarak bunları elle de ekleyip kaldırabilirsiniz",
+    it: "Quando tutte le porte sono occupate, ne viene <b>aggiunta automaticamente</b> una; puoi anche usare <code>＋</code> / <code>－</code> nello stato espanso per aggiungerle o rimuoverle manualmente",
   },
   portsLi3: {
     zh: '只能删<b>末尾</b>端口，且至少保留 1 个',
@@ -147,7 +213,13 @@ export const helpMessages = {
     ar: 'يمكن حذف المنفذ <b>الأخير</b> فقط، مع الإبقاء على منفذ واحد على الأقل',
     fr: 'Seul le port <b>final</b> peut être supprimé, et au moins 1 doit rester',
     pt: 'Apenas o porto <b>final</b> pode ser removido, e pelo menos 1 deve permanecer',
-    ru: 'Удалить можно только <b>последний</b> порт, и хотя бы один должен остаться'
+    ru: 'Удалить можно только <b>последний</b> порт, и хотя бы один должен остаться',
+    hi: "केवल <b>अंतिम</b> पोर्ट हटाया जा सकता है, और कम से कम 1 शेष रहना चाहिए",
+    id: "Hanya port <b>terakhir</b> yang dapat dihapus, dan minimal 1 harus tersisa",
+    de: "Es kann nur der <b>letzte</b> Port entfernt werden, und mindestens 1 muss übrig bleiben",
+    vi: "Chỉ có thể xóa cổng <b>cuối cùng</b>, và phải giữ lại ít nhất 1",
+    tr: "Yalnızca <b>son</b> bağlantı noktası kaldırılabilir ve en az 1 tanesi kalmalıdır",
+    it: "È possibile rimuovere solo la porta <b>finale</b> e ne deve rimanere almeno 1",
   },
   portsLi4: {
     zh: '占位符没有对应端口、或该端口当前没值时，替换为<b>空串</b>',
@@ -158,7 +230,13 @@ export const helpMessages = {
     ar: 'إذا لم يكن للعنصر النائب منفذ مقابل، أو لم تكن لذلك المنفذ قيمة حاليًا، فيُستبدل بـ<b>نص فارغ</b>',
     fr: 'Si un espace réservé n’a pas de port correspondant, ou si ce port n’a pas de valeur, il est remplacé par une <b>chaîne vide</b>',
     pt: 'Se um marcador não tiver um porto correspondente, ou esse porto não tiver valor no momento, ele é substituído por uma <b>string vazia</b>',
-    ru: 'Если у плейсхолдера нет соответствующего порта или у этого порта сейчас нет значения, он заменяется на <b>пустую строку</b>'
+    ru: 'Если у плейсхолдера нет соответствующего порта или у этого порта сейчас нет значения, он заменяется на <b>пустую строку</b>',
+    hi: "यदि किसी प्लेसहोल्डर के लिए कोई संगत पोर्ट नहीं है, या उस पोर्ट पर इस समय कोई मान नहीं है, तो इसे <b>खाली स्ट्रिंग</b> से बदल दिया जाता है",
+    id: "Jika sebuah placeholder tidak memiliki port yang sesuai, atau port itu tidak memiliki nilai saat ini, maka diganti dengan <b>string kosong</b>",
+    de: "Wenn ein Platzhalter keinen passenden Port hat oder dieser Port aktuell keinen Wert hat, wird er durch eine <b>leere Zeichenkette</b> ersetzt",
+    vi: "Nếu một phần giữ chỗ không có cổng tương ứng, hoặc cổng đó hiện không có giá trị, nó sẽ được thay bằng <b>chuỗi rỗng</b>",
+    tr: "Bir yer tutucunun karşılık gelen bağlantı noktası yoksa veya o bağlantı noktasında şu anda değer yoksa, yerine <b>boş dize</b> konur",
+    it: "Se un segnaposto non ha una porta corrispondente, o quella porta non ha un valore al momento, viene sostituito con una <b>stringa vuota</b>",
   },
   portsLi5: {
     zh: '想输出字面量的 <code>$</code>，写成 <code>$$</code>',
@@ -169,7 +247,13 @@ export const helpMessages = {
     ar: 'لإخراج <code>$</code> حرفي، اكتب <code>$$</code>',
     fr: 'Pour produire un <code>$</code> littéral, écrivez <code>$$</code>',
     pt: 'Para gerar um <code>$</code> literal, escreva <code>$$</code>',
-    ru: 'Чтобы вывести литерал <code>$</code>, напишите <code>$$</code>'
+    ru: 'Чтобы вывести литерал <code>$</code>, напишите <code>$$</code>',
+    hi: "शाब्दिक <code>$</code> आउटपुट करने के लिए <code>$$</code> लिखें",
+    id: "Untuk menampilkan <code>$</code> literal, tulis <code>$$</code>",
+    de: "Um ein literales <code>$</code> auszugeben, schreiben Sie <code>$$</code>",
+    vi: "Để xuất <code>$</code> theo nghĩa đen, hãy viết <code>$$</code>",
+    tr: "Düz metin <code>$</code> çıkarmak için <code>$$</code> yazın",
+    it: "Per produrre un <code>$</code> letterale, scrivi <code>$$</code>",
   },
   portsExampleLabel: {
     zh: '例：$1 是用户 id，$2 是 token',
@@ -180,7 +264,13 @@ export const helpMessages = {
     ar: 'مثال: $1 هو معرّف المستخدم، و$2 هو الرمز token',
     fr: 'Exemple : $1 est l’id utilisateur, $2 est le token',
     pt: 'Exemplo: $1 é o id do usuário, $2 é o token',
-    ru: 'Пример: $1 — идентификатор пользователя, $2 — токен'
+    ru: 'Пример: $1 — идентификатор пользователя, $2 — токен',
+    hi: "उदाहरण: $1 उपयोगकर्ता id है, $2 token है",
+    id: "Contoh: $1 adalah id pengguna, $2 adalah token",
+    de: "Beispiel: $1 ist die Benutzer-id, $2 ist das Token",
+    vi: "Ví dụ: $1 là id người dùng, $2 là token",
+    tr: "Örnek: $1 kullanıcı id’sidir, $2 token’dır",
+    it: "Esempio: $1 è l’id utente, $2 è il token",
   },
   portsComment1: {
     zh: '// URL 模板',
@@ -191,7 +281,13 @@ export const helpMessages = {
     ar: '// قالب URL',
     fr: '// Gabarit d’URL',
     pt: '// Modelo de URL',
-    ru: '// Шаблон URL'
+    ru: '// Шаблон URL',
+    hi: "// URL टेम्पलेट",
+    id: "// Templat URL",
+    de: "// URL-Vorlage",
+    vi: "// Mẫu URL",
+    tr: "// URL şablonu",
+    it: "// Modello URL",
   },
   portsComment2: {
     zh: '// Headers 里的一条',
@@ -202,7 +298,13 @@ export const helpMessages = {
     ar: '// عنصر واحد في Headers',
     fr: '// Une entrée dans Headers',
     pt: '// Uma entrada em Headers',
-    ru: '// Одна запись в Headers'
+    ru: '// Одна запись в Headers',
+    hi: "// Headers में एक प्रविष्टि",
+    id: "// Satu entri di Headers",
+    de: "// Ein Eintrag in Headers",
+    vi: "// Một mục trong Headers",
+    tr: "// Headers içinde bir girdi",
+    it: "// Una voce in Headers",
   },
 
   // —— 请求配置 ——
@@ -215,7 +317,13 @@ export const helpMessages = {
     ar: 'إعدادات الطلب',
     fr: 'Configuration de la requête',
     pt: 'Configurações da requisição',
-    ru: 'Настройки запроса'
+    ru: 'Настройки запроса',
+    hi: "अनुरोध कॉन्फ़िगरेशन",
+    id: "Konfigurasi permintaan",
+    de: "Anfragekonfiguration",
+    vi: "Cấu hình yêu cầu",
+    tr: "İstek yapılandırması",
+    it: "Configurazione della richiesta",
   },
   tblHeaderItem: {
     zh: '项',
@@ -226,7 +334,13 @@ export const helpMessages = {
     ar: 'العنصر',
     fr: 'Élément',
     pt: 'Item',
-    ru: 'Пункт'
+    ru: 'Пункт',
+    hi: "आइटम",
+    id: "Item",
+    de: "Element",
+    vi: "Mục",
+    tr: "Öğe",
+    it: "Elemento",
   },
   tblHeaderDesc: {
     zh: '说明',
@@ -237,7 +351,13 @@ export const helpMessages = {
     ar: 'الوصف',
     fr: 'Description',
     pt: 'Descrição',
-    ru: 'Описание'
+    ru: 'Описание',
+    hi: "विवरण",
+    id: "Deskripsi",
+    de: "Beschreibung",
+    vi: "Mô tả",
+    tr: "Açıklama",
+    it: "Descrizione",
   },
   tblMethodLabel: {
     zh: '<b>方法</b>',
@@ -248,7 +368,13 @@ export const helpMessages = {
     ar: '<b>الطريقة</b>',
     fr: '<b>Méthode</b>',
     pt: '<b>Método</b>',
-    ru: '<b>Метод</b>'
+    ru: '<b>Метод</b>',
+    hi: "<b>तरीका</b>",
+    id: "<b>Metode</b>",
+    de: "<b>Methode</b>",
+    vi: "<b>Phương thức</b>",
+    tr: "<b>Yöntem</b>",
+    it: "<b>Metodo</b>",
   },
   tblHeadersLabel: {
     zh: '<b>Headers</b>',
@@ -259,7 +385,13 @@ export const helpMessages = {
     ar: '<b>Headers</b>',
     fr: '<b>Headers</b>',
     pt: '<b>Headers</b>',
-    ru: '<b>Headers</b>'
+    ru: '<b>Headers</b>',
+    hi: "<b>Headers</b>",
+    id: "<b>Headers</b>",
+    de: "<b>Headers</b>",
+    vi: "<b>Headers</b>",
+    tr: "<b>Headers</b>",
+    it: "<b>Headers</b>",
   },
   tblHeadersDesc: {
     zh: 'KV 列表逐条编辑；<b>key 为空</b>的条目会被跳过，value 允许空串',
@@ -270,7 +402,13 @@ export const helpMessages = {
     ar: 'حرّر قائمة KV عنصرًا بعنصر؛ وتُتجاهل العناصر ذات <b>key الفارغ</b>، ويُسمح بأن يكون value نصًا فارغًا',
     fr: 'Modifiez la liste KV entrée par entrée ; les entrées dont la <b>key est vide</b> sont ignorées, et la value peut être une chaîne vide',
     pt: 'Edite a lista KV entrada por entrada; entradas com <b>key vazia</b> são ignoradas, e o value pode ser uma string vazia',
-    ru: 'Редактируйте список KV запись за записью; записи с <b>пустым key</b> пропускаются, а value может быть пустой строкой'
+    ru: 'Редактируйте список KV запись за записью; записи с <b>пустым key</b> пропускаются, а value может быть пустой строкой',
+    hi: "KV सूची को एक-एक करके संपादित करें; <b>key खाली</b> वाली प्रविष्टियाँ छोड़ दी जाती हैं, value में खाली स्ट्रिंग की अनुमति है",
+    id: "Edit daftar KV satu per satu; entri dengan <b>key kosong</b> dilewati, dan value boleh berupa string kosong",
+    de: "Bearbeiten Sie die KV-Liste Eintrag für Eintrag; Einträge mit <b>leerem key</b> werden übersprungen, die value darf eine leere Zeichenkette sein",
+    vi: "Chỉnh sửa danh sách KV từng mục một; các mục có <b>key trống</b> sẽ bị bỏ qua, value được phép là chuỗi rỗng",
+    tr: "KV listesini girdi girdi düzenleyin; <b>key’i boş</b> olan girdiler atlanır, value boş dize olabilir",
+    it: "Modifica l’elenco KV voce per voce; le voci con <b>key vuota</b> vengono saltate, mentre la value può essere una stringa vuota",
   },
   tblBodyLabel: {
     zh: '<b>Body</b>',
@@ -281,7 +419,13 @@ export const helpMessages = {
     ar: '<b>Body</b>',
     fr: '<b>Body</b>',
     pt: '<b>Body</b>',
-    ru: '<b>Body</b>'
+    ru: '<b>Body</b>',
+    hi: "<b>Body</b>",
+    id: "<b>Body</b>",
+    de: "<b>Body</b>",
+    vi: "<b>Body</b>",
+    tr: "<b>Body</b>",
+    it: "<b>Body</b>",
   },
   tblBodyDesc: {
     zh: '<code>GET</code> / <code>HEAD</code> 不带 body（输入框置灰，执行时也跳过）；其余方法原样发送',
@@ -292,7 +436,13 @@ export const helpMessages = {
     ar: 'لا تحمل <code>GET</code> / <code>HEAD</code> جسمًا (يُعطّل حقل الإدخال ويُتخطى عند التنفيذ)؛ أما بقية الطرق فترسله كما هو',
     fr: '<code>GET</code> / <code>HEAD</code> n’ont pas de body (le champ est grisé et ignoré à l’exécution) ; les autres méthodes l’envoient tel quel',
     pt: '<code>GET</code> / <code>HEAD</code> não têm body (o campo fica esmaecido e é ignorado na execução); os demais métodos o enviam como está',
-    ru: '<code>GET</code> / <code>HEAD</code> не передают body (поле неактивно и пропускается при выполнении); остальные методы отправляют его как есть'
+    ru: '<code>GET</code> / <code>HEAD</code> не передают body (поле неактивно и пропускается при выполнении); остальные методы отправляют его как есть',
+    hi: "<code>GET</code> / <code>HEAD</code> में body नहीं होता (इनपुट ग्रे हो जाता है और निष्पादन के समय भी छोड़ दिया जाता है); बाकी तरीके इसे वैसे ही भेजते हैं",
+    id: "<code>GET</code> / <code>HEAD</code> tidak membawa body (input menjadi abu-abu dan dilewati saat eksekusi); metode lainnya mengirimkannya apa adanya",
+    de: "<code>GET</code> / <code>HEAD</code> haben keinen body (das Eingabefeld wird ausgegraut und bei der Ausführung übersprungen); andere Methoden senden ihn unverändert",
+    vi: "<code>GET</code> / <code>HEAD</code> không mang body (ô nhập bị làm mờ và bị bỏ qua khi thực thi); các phương thức khác gửi nguyên trạng",
+    tr: "<code>GET</code> / <code>HEAD</code> body taşımaz (giriş alanı grileşir ve çalıştırmada atlanır); diğer yöntemler olduğu gibi gönderir",
+    it: "<code>GET</code> / <code>HEAD</code> non hanno body (il campo viene disattivato e saltato all’esecuzione); gli altri metodi lo inviano così com’è",
   },
   tblTimeoutLabel: {
     zh: '<b>超时</b>',
@@ -303,7 +453,13 @@ export const helpMessages = {
     ar: '<b>المهلة</b>',
     fr: '<b>Délai d’expiration</b>',
     pt: '<b>Tempo limite</b>',
-    ru: '<b>Тайм-аут</b>'
+    ru: '<b>Тайм-аут</b>',
+    hi: "<b>टाइमआउट</b>",
+    id: "<b>Tenggat</b>",
+    de: "<b>Zeitüberschreitung</b>",
+    vi: "<b>Hết thời gian</b>",
+    tr: "<b>Zaman aşımı</b>",
+    it: "<b>Timeout</b>",
   },
   tblTimeoutDesc: {
     zh: '毫秒，取值会被夹到 <code>1000</code>–<code>60000</code>，默认 <code>15000</code>',
@@ -314,7 +470,13 @@ export const helpMessages = {
     ar: 'بالميلي ثانية، وتُقيَّد القيمة بين <code>1000</code> و<code>60000</code>، والقيمة الافتراضية <code>15000</code>',
     fr: 'Millisecondes ; la valeur est limitée à <code>1000</code>–<code>60000</code>, par défaut <code>15000</code>',
     pt: 'Milissegundos; o valor é limitado a <code>1000</code>–<code>60000</code>, padrão <code>15000</code>',
-    ru: 'Миллисекунды; значение ограничивается диапазоном <code>1000</code>–<code>60000</code>, по умолчанию <code>15000</code>'
+    ru: 'Миллисекунды; значение ограничивается диапазоном <code>1000</code>–<code>60000</code>, по умолчанию <code>15000</code>',
+    hi: "मिलीसेकंड; मान को <code>1000</code>–<code>60000</code> तक सीमित किया जाता है, डिफ़ॉल्ट <code>15000</code>",
+    id: "Milidetik; nilai dijepit ke <code>1000</code>–<code>60000</code>, default <code>15000</code>",
+    de: "Millisekunden; der Wert wird auf <code>1000</code>–<code>60000</code> begrenzt, Standard <code>15000</code>",
+    vi: "Mili giây; giá trị được kẹp trong khoảng <code>1000</code>–<code>60000</code>, mặc định <code>15000</code>",
+    tr: "Milisaniye; değer <code>1000</code>–<code>60000</code> aralığına sıkıştırılır, varsayılan <code>15000</code>",
+    it: "Millisecondi; il valore viene limitato a <code>1000</code>–<code>60000</code>, predefinito <code>15000</code>",
   },
 
   // —— 执行与结果 ——
@@ -327,7 +489,13 @@ export const helpMessages = {
     ar: 'التنفيذ والنتائج',
     fr: 'Exécution et résultats',
     pt: 'Execução e resultados',
-    ru: 'Выполнение и результат'
+    ru: 'Выполнение и результат',
+    hi: "निष्पादन और परिणाम",
+    id: "Eksekusi dan hasil",
+    de: "Ausführung und Ergebnis",
+    vi: "Thực thi và kết quả",
+    tr: "Yürütme ve sonuçlar",
+    it: "Esecuzione e risultati",
   },
   execLi1: {
     zh: '点「发送」执行，URL 为空时按钮不可点',
@@ -338,7 +506,13 @@ export const helpMessages = {
     ar: 'انقر على «إرسال» للتنفيذ، ويكون الزر معطّلًا عندما يكون URL فارغًا',
     fr: 'Cliquez sur « Envoyer » pour exécuter ; le bouton est désactivé si l’URL est vide',
     pt: 'Clique em “Enviar” para executar; o botão fica desativado quando a URL está vazia',
-    ru: 'Нажмите «Отправить» для выполнения; кнопка недоступна, если URL пуст'
+    ru: 'Нажмите «Отправить» для выполнения; кнопка недоступна, если URL пуст',
+    hi: "चलाने के लिए “भेजें” पर क्लिक करें; URL खाली होने पर बटन क्लिक नहीं किया जा सकता",
+    id: "Klik “Kirim” untuk menjalankan; tombol tidak dapat diklik saat URL kosong",
+    de: "Klicken Sie zum Ausführen auf „Senden“; bei leerer URL ist die Schaltfläche nicht anklickbar",
+    vi: "Nhấp “Gửi” để thực thi; nút không thể nhấp khi URL trống",
+    tr: "Çalıştırmak için “Gönder”e tıklayın; URL boşken düğme tıklanamaz",
+    it: "Fai clic su “Invia” per eseguire; il pulsante non è cliccabile quando l’URL è vuoto",
   },
   execLi2: {
     zh: '执行中按钮显示「发送中…」，同一个节点不会并发重复触发',
@@ -349,7 +523,13 @@ export const helpMessages = {
     ar: 'أثناء التنفيذ يعرض الزر «جارٍ الإرسال…»، ولن تُشغَّل العقدة نفسها بشكل متزامن ومتكرر',
     fr: 'Pendant l’exécution, le bouton affiche « Envoi… », et un même nœud ne sera pas déclenché de façon concurrente',
     pt: 'Durante a execução, o botão mostra “Enviando…”, e o mesmo nó não é disparado de forma concorrente',
-    ru: 'Во время выполнения кнопка показывает «Отправка…», и один и тот же узел не запускается параллельно повторно'
+    ru: 'Во время выполнения кнопка показывает «Отправка…», и один и тот же узел не запускается параллельно повторно',
+    hi: "चलने के दौरान बटन “भेजा जा रहा है…” दिखाता है, और एक ही नोड एक साथ दोबारा ट्रिगर नहीं होता",
+    id: "Saat berjalan, tombol menampilkan “Mengirim…”, dan node yang sama tidak dipicu ulang secara bersamaan",
+    de: "Während der Ausführung zeigt die Schaltfläche „Wird gesendet…“ an, und derselbe Knoten wird nicht gleichzeitig erneut ausgelöst",
+    vi: "Trong khi chạy, nút hiển thị “Đang gửi…”, và cùng một nút sẽ không được kích hoạt lại đồng thời",
+    tr: "Çalışırken düğme “Gönderiliyor…” gösterir ve aynı düğüm eşzamanlı olarak yeniden tetiklenmez",
+    it: "Durante l’esecuzione il pulsante mostra “Invio in corso…”, e lo stesso nodo non viene attivato di nuovo in modo concorrente",
   },
   execLi3: {
     zh: '返回后结果区显示<b>状态码 + 响应体</b>，并同时把响应体提交到输出端口',
@@ -360,7 +540,13 @@ export const helpMessages = {
     ar: 'بعد العودة تعرض منطقة النتائج <b>رمز الحالة + جسم الاستجابة</b>، ويُرسَل جسم الاستجابة أيضًا إلى منفذ الإخراج',
     fr: 'Au retour, la zone de résultat affiche le <b>code d’état + le corps de la réponse</b>, et le corps de la réponse est aussi soumis au port de sortie',
     pt: 'Ao retornar, a área de resultado mostra o <b>código de status + o corpo da resposta</b>, e o corpo da resposta também é enviado ao porto de saída',
-    ru: 'После возврата в области результата отображаются <b>код состояния + тело ответа</b>, и тело ответа также передаётся в выходной порт'
+    ru: 'После возврата в области результата отображаются <b>код состояния + тело ответа</b>, и тело ответа также передаётся в выходной порт',
+    hi: "लौटने के बाद परिणाम क्षेत्र <b>स्थिति कोड + प्रतिक्रिया body</b> दिखाता है, और साथ ही प्रतिक्रिया body को आउटपुट पोर्ट पर सबमिट करता है",
+    id: "Setelah kembali, area hasil menampilkan <b>kode status + body respons</b>, dan sekaligus mengirimkan body respons ke port keluaran",
+    de: "Nach der Rückkehr zeigt der Ergebnisbereich den <b>Statuscode + Antwort-body</b> an und übermittelt den Antwort-body zugleich an den Ausgabeport",
+    vi: "Sau khi trả về, vùng kết quả hiển thị <b>mã trạng thái + body phản hồi</b>, đồng thời gửi body phản hồi đến cổng đầu ra",
+    tr: "Döndükten sonra sonuç alanı <b>durum kodu + yanıt body’si</b> gösterir ve yanıt body’sini aynı anda çıkış bağlantı noktasına gönderir",
+    it: "Al ritorno, l’area dei risultati mostra il <b>codice di stato + il body della risposta</b> e invia contemporaneamente il body della risposta alla porta di output",
   },
   execLi4: {
     zh: 'HTTP <b>4xx / 5xx 也算请求完成</b>：状态码用告警色显示，响应体照样发给下游',
@@ -371,7 +557,13 @@ export const helpMessages = {
     ar: 'تُعدّ <b>4xx / 5xx أيضًا طلبًا مكتملًا</b>: يُعرض رمز الحالة بلون تحذيري، ويُرسَل جسم الاستجابة إلى العقد اللاحقة كما هو',
     fr: 'Les <b>4xx / 5xx comptent aussi comme requête terminée</b> : le code d’état s’affiche dans une couleur d’avertissement et le corps de la réponse est tout de même envoyé en aval',
     pt: 'Os <b>4xx / 5xx também contam como requisição concluída</b>: o código de status é exibido em cor de alerta e o corpo da resposta é enviado aos nós seguintes mesmo assim',
-    ru: '<b>4xx / 5xx также считаются завершённым запросом</b>: код состояния отображается предупреждающим цветом, а тело ответа всё равно отправляется далее'
+    ru: '<b>4xx / 5xx также считаются завершённым запросом</b>: код состояния отображается предупреждающим цветом, а тело ответа всё равно отправляется далее',
+    hi: "HTTP <b>4xx / 5xx भी अनुरोध पूर्ण माने जाते हैं</b>: स्थिति कोड चेतावनी रंग में दिखाया जाता है, और प्रतिक्रिया body फिर भी डाउनस्ट्रीम भेजी जाती है",
+    id: "HTTP <b>4xx / 5xx juga dianggap permintaan selesai</b>: kode status ditampilkan dengan warna peringatan, dan body respons tetap dikirim ke hilir",
+    de: "HTTP <b>4xx / 5xx gelten ebenfalls als abgeschlossene Anfrage</b>: Der Statuscode wird in Warnfarbe angezeigt, und der Antwort-body wird trotzdem weitergeleitet",
+    vi: "HTTP <b>4xx / 5xx cũng được coi là yêu cầu hoàn tất</b>: mã trạng thái hiển thị bằng màu cảnh báo, và body phản hồi vẫn được gửi đến hạ nguồn",
+    tr: "HTTP <b>4xx / 5xx da tamamlanmış istek sayılır</b>: durum kodu uyarı renginde gösterilir ve yanıt body’si yine de aşağı akışa gönderilir",
+    it: "Anche gli HTTP <b>4xx / 5xx contano come richiesta completata</b>: il codice di stato è mostrato in colore di avviso e il body della risposta viene comunque inviato a valle",
   },
   execLi5: {
     zh: '只有网络层失败（DNS 解析失败、超时、断网等）才标红为「网络错误」，此时<b>不提交</b>输出值',
@@ -382,7 +574,13 @@ export const helpMessages = {
     ar: 'تُعلَّم بالإطار الأحمر حالات «خطأ الشبكة» فقط عند فشل طبقة الشبكة (فشل تحليل DNS، أو المهلة، أو انقطاع الاتصال، إلخ)؛ وفي هذه الحالة <b>لا تُرسَل</b> قيمة الإخراج',
     fr: 'Seules les défaillances de la couche réseau (échec de résolution DNS, délai d’expiration, absence de connexion, etc.) sont signalées en rouge comme « erreur réseau » ; dans ce cas la valeur de sortie <b>n’est pas soumise</b>',
     pt: 'Somente falhas da camada de rede (falha na resolução de DNS, tempo limite, falta de conexão etc.) são marcadas em vermelho como “erro de rede”; nesse caso o valor de saída <b>não é enviado</b>',
-    ru: 'Только сбои сетевого уровня (ошибка разрешения DNS, тайм-аут, отсутствие подключения и т. п.) выделяются красным как «сетевая ошибка»; в этом случае выходное значение <b>не передаётся</b>'
+    ru: 'Только сбои сетевого уровня (ошибка разрешения DNS, тайм-аут, отсутствие подключения и т. п.) выделяются красным как «сетевая ошибка»; в этом случае выходное значение <b>не передаётся</b>',
+    hi: "केवल नेटवर्क-स्तर की विफलताएँ (DNS विश्लेषण विफलता, टाइमआउट, कनेक्टिविटी न होना आदि) “नेटवर्क त्रुटि” के रूप में लाल चिह्नित होती हैं; ऐसी स्थिति में आउटपुट मान <b>सबमिट नहीं</b> किया जाता",
+    id: "Hanya kegagalan lapisan jaringan (gagal resolve DNS, tenggat, tidak ada koneksi, dll.) yang ditandai merah sebagai “kesalahan jaringan”; dalam kasus ini nilai keluaran <b>tidak dikirim</b>",
+    de: "Nur Fehler der Netzwerkschicht (DNS-Auflösungsfehler, Zeitüberschreitung, fehlende Verbindung usw.) werden rot als „Netzwerkfehler“ markiert; in diesem Fall wird der Ausgabewert <b>nicht übermittelt</b>",
+    vi: "Chỉ những lỗi ở tầng mạng (lỗi phân giải DNS, hết thời gian, mất kết nối, v.v.) mới được đánh dấu đỏ là “lỗi mạng”; trong trường hợp này giá trị đầu ra <b>không được gửi</b>",
+    tr: "Yalnızca ağ katmanı hataları (DNS çözümleme hatası, zaman aşımı, bağlantı yokluğu vb.) “ağ hatası” olarak kırmızı işaretlenir; bu durumda çıkış değeri <b>gönderilmez</b>",
+    it: "Solo i guasti a livello di rete (errore di risoluzione DNS, timeout, assenza di connessione, ecc.) sono evidenziati in rosso come “errore di rete”; in tal caso il valore di output <b>non viene inviato</b>",
   },
   execWarn: {
     zh: '每点一次「发送」就是一次<b>真实的网络请求</b>，节点不做任何缓存或去重。对接会产生副作用的接口（下单、发消息等）时注意。',
@@ -393,6 +591,12 @@ export const helpMessages = {
     ar: 'كل نقرة على «إرسال» هي <b>طلب شبكة حقيقي</b>، ولا تُجري العقدة أي تخزين مؤقت أو إزالة تكرار. احترس عند التكامل مع واجهات تُحدث آثارًا جانبية (إنشاء طلبات، إرسال رسائل، إلخ).',
     fr: 'Chaque clic sur « Envoyer » est une <b>véritable requête réseau</b>, et le nœud ne fait aucune mise en cache ni déduplication. Soyez prudent lorsque vous vous connectez à des API ayant des effets de bord (passer commande, envoyer des messages, etc.).',
     pt: 'Cada clique em “Enviar” é uma <b>requisição de rede real</b>, e o nó não faz nenhum cache ou deduplicação. Tenha cuidado ao integrar com APIs que causam efeitos colaterais (fazer pedidos, enviar mensagens etc.).',
-    ru: 'Каждое нажатие «Отправить» — это <b>реальный сетевой запрос</b>, и узел не выполняет кэширование или дедупликацию. Будьте осторожны при интеграции с интерфейсами, вызывающими побочные эффекты (оформление заказа, отправка сообщений и т. п.).'
+    ru: 'Каждое нажатие «Отправить» — это <b>реальный сетевой запрос</b>, и узел не выполняет кэширование или дедупликацию. Будьте осторожны при интеграции с интерфейсами, вызывающими побочные эффекты (оформление заказа, отправка сообщений и т. п.).',
+    hi: "“भेजें” पर हर क्लिक एक <b>वास्तविक नेटवर्क अनुरोध</b> है, और नोड कोई कैश या डुप्लिकेट हटाना नहीं करता। ऐसे इंटरफ़ेस से जोड़ते समय सावधान रहें जो दुष्प्रभाव उत्पन्न करते हैं (ऑर्डर देना, संदेश भेजना आदि)।",
+    id: "Setiap klik pada “Kirim” adalah <b>permintaan jaringan nyata</b>, dan node tidak melakukan cache atau deduplikasi apa pun. Berhati-hatilah saat berintegrasi dengan API yang menimbulkan efek samping (melakukan pemesanan, mengirim pesan, dll.).",
+    de: "Jeder Klick auf „Senden“ ist eine <b>echte Netzwerkanfrage</b>, und der Knoten führt keinerlei Zwischenspeicherung oder Deduplizierung durch. Seien Sie vorsichtig bei der Anbindung an Schnittstellen mit Nebenwirkungen (Bestellungen aufgeben, Nachrichten senden usw.).",
+    vi: "Mỗi lần nhấp “Gửi” là một <b>yêu cầu mạng thực sự</b>, và nút không thực hiện bất kỳ bộ đệm hay loại bỏ trùng lặp nào. Hãy cẩn thận khi tích hợp với các API gây ra tác dụng phụ (đặt hàng, gửi tin nhắn, v.v.).",
+    tr: "“Gönder”e yapılan her tıklama <b>gerçek bir ağ isteğidir</b> ve düğüm hiçbir önbellekleme veya yinelenen kaldırma yapmaz. Yan etki yaratan uç noktalarla (sipariş verme, mesaj gönderme vb.) entegre olurken dikkatli olun.",
+    it: "Ogni clic su “Invia” è una <b>richiesta di rete reale</b> e il nodo non esegue alcuna cache né deduplicazione. Presta attenzione quando ti integri con API che producono effetti collaterali (effettuare ordini, inviare messaggi, ecc.).",
   }
 } satisfies Record<string, LocalizedText>

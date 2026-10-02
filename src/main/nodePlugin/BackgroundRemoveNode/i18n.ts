@@ -16,7 +16,13 @@ export const messages = {
     ar: 'أفلت عقدة صورة لإزالة الخلفية مرة واحدة · أو صِل صورة بالمنفذ الأيسر للإزالة الفورية',
     fr: 'Déposez un nœud image pour supprimer l’arrière-plan une fois · ou connectez une image au port gauche pour une suppression en direct',
     pt: 'Solte um nó de imagem para remover o fundo uma vez · ou conecte uma imagem à porta esquerda para remoção ao vivo',
-    ru: 'Перетащите узел изображения для однократного удаления фона · или подключите изображение к левому порту для удаления в реальном времени'
+    ru: 'Перетащите узел изображения для однократного удаления фона · или подключите изображение к левому порту для удаления в реальном времени',
+    hi: 'एक बार पृष्ठभूमि हटाने के लिए छवि नोड ड्रॉप करें · या लाइव हटाने के लिए बाएँ पोर्ट पर छवि कनेक्ट करें',
+    id: 'Jatuhkan node gambar untuk menghapus latar sekali · atau sambungkan gambar ke port kiri untuk penghapusan langsung',
+    de: 'Bild-Knoten ablegen, um den Hintergrund einmal zu entfernen · oder ein Bild am linken Port anschließen für Live-Entfernung',
+    vi: 'Thả nút ảnh để xóa nền một lần · hoặc nối ảnh vào cổng bên trái để xóa nền trực tiếp',
+    tr: 'Bir kez arka planı kaldırmak için görüntü düğümünü bırakın · ya da canlı kaldırma için sol bağlantı noktasına bir görüntü bağlayın',
+    it: 'Trascina un nodo immagine per rimuovere lo sfondo una volta · oppure collega un’immagine alla porta sinistra per la rimozione in tempo reale'
   },
   resultAlt: {
     zh: '去背景结果预览',
@@ -27,7 +33,13 @@ export const messages = {
     ar: 'معاينة النتيجة بعد إزالة الخلفية',
     fr: 'Aperçu du résultat sans arrière-plan',
     pt: 'Prévia do resultado sem fundo',
-    ru: 'Предпросмотр результата без фона'
+    ru: 'Предпросмотр результата без фона',
+    hi: 'पृष्ठभूमि हटाने के परिणाम का पूर्वावलोकन',
+    id: 'Pratinjau hasil penghapusan latar',
+    de: 'Vorschau des Ergebnisses ohne Hintergrund',
+    vi: 'Xem trước kết quả xóa nền',
+    tr: 'Arka planı kaldırılmış sonuç önizlemesi',
+    it: 'Anteprima del risultato senza sfondo'
   },
   preparing: {
     zh: '准备中…',
@@ -38,7 +50,13 @@ export const messages = {
     ar: 'جارٍ التحضير…',
     fr: 'Préparation…',
     pt: 'A preparar…',
-    ru: 'Подготовка…'
+    ru: 'Подготовка…',
+    hi: 'तैयार हो रहा है…',
+    id: 'Menyiapkan…',
+    de: 'Vorbereitung…',
+    vi: 'Đang chuẩn bị…',
+    tr: 'Hazırlanıyor…',
+    it: 'Preparazione…'
   },
   processing: {
     zh: '处理中 {pct}%',
@@ -49,7 +67,13 @@ export const messages = {
     ar: 'جارٍ المعالجة {pct}%',
     fr: 'Traitement {pct}%',
     pt: 'A processar {pct}%',
-    ru: 'Обработка {pct}%'
+    ru: 'Обработка {pct}%',
+    hi: 'प्रक्रिया {pct}%',
+    id: 'Memproses {pct}%',
+    de: 'Verarbeitung {pct}%',
+    vi: 'Đang xử lý {pct}%',
+    tr: 'İşleniyor {pct}%',
+    it: 'Elaborazione {pct}%'
   },
   processingFallback: {
     zh: '处理中…',
@@ -60,7 +84,13 @@ export const messages = {
     ar: 'جارٍ المعالجة…',
     fr: 'Traitement…',
     pt: 'A processar…',
-    ru: 'Обработка…'
+    ru: 'Обработка…',
+    hi: 'प्रक्रिया जारी…',
+    id: 'Memproses…',
+    de: 'Verarbeitung…',
+    vi: 'Đang xử lý…',
+    tr: 'İşleniyor…',
+    it: 'Elaborazione…'
   },
   failed: {
     zh: '处理失败',
@@ -71,7 +101,13 @@ export const messages = {
     ar: 'فشلت المعالجة',
     fr: 'Échec du traitement',
     pt: 'Falha no processamento',
-    ru: 'Не удалось обработать'
+    ru: 'Не удалось обработать',
+    hi: 'प्रक्रिया विफल',
+    id: 'Pemrosesan gagal',
+    de: 'Verarbeitung fehlgeschlagen',
+    vi: 'Xử lý thất bại',
+    tr: 'İşlem başarısız',
+    it: 'Elaborazione non riuscita'
   },
   emptyPlaceholder: {
     zh: '拖图片节点进来 · 或左侧端口接图片',
@@ -82,7 +118,13 @@ export const messages = {
     ar: 'أفلت عقدة صورة هنا · أو صِل صورة بالمنفذ الأيسر',
     fr: 'Déposez un nœud image ici · ou connectez une image au port gauche',
     pt: 'Solte um nó de imagem aqui · ou conecte uma imagem à porta esquerda',
-    ru: 'Перетащите узел изображения сюда · или подключите изображение к левому порту'
+    ru: 'Перетащите узел изображения сюда · или подключите изображение к левому порту',
+    hi: 'यहाँ छवि नोड ड्रॉप करें · या बाएँ पोर्ट पर छवि कनेक्ट करें',
+    id: 'Jatuhkan node gambar di sini · atau sambungkan gambar ke port kiri',
+    de: 'Bild-Knoten hier ablegen · oder ein Bild am linken Port anschließen',
+    vi: 'Thả nút ảnh vào đây · hoặc nối ảnh vào cổng bên trái',
+    tr: 'Buraya görüntü düğümü bırakın · ya da sol bağlantı noktasına görüntü bağlayın',
+    it: 'Trascina qui un nodo immagine · oppure collega un’immagine alla porta sinistra'
   },
   done: {
     zh: '背景已去除',
@@ -93,7 +135,13 @@ export const messages = {
     ar: 'تمت إزالة الخلفية',
     fr: 'Arrière-plan supprimé',
     pt: 'Fundo removido',
-    ru: 'Фон удалён'
+    ru: 'Фон удалён',
+    hi: 'पृष्ठभूमि हटा दी गई',
+    id: 'Latar belakang dihapus',
+    de: 'Hintergrund entfernt',
+    vi: 'Đã xóa nền',
+    tr: 'Arka plan kaldırıldı',
+    it: 'Sfondo rimosso'
   },
   hint: {
     zh: '端口响应式 · 拖入一次性',
@@ -104,7 +152,13 @@ export const messages = {
     ar: 'المنفذ: فوري · الإفلات: مرة واحدة',
     fr: 'Port : en direct · Dépôt : unique',
     pt: 'Porta: ao vivo · Soltar: uma vez',
-    ru: 'Порт: в реальном времени · Перетаскивание: однократно'
+    ru: 'Порт: в реальном времени · Перетаскивание: однократно',
+    hi: 'पोर्ट: लाइव · ड्रॉप: एक बार',
+    id: 'Port: langsung · Jatuhkan: sekali',
+    de: 'Port: live · Ablegen: einmalig',
+    vi: 'Cổng: trực tiếp · Thả: một lần',
+    tr: 'Bağlantı noktası: canlı · Bırakma: tek seferlik',
+    it: 'Porta: in tempo reale · Trascina: una tantum'
   },
   createNode: {
     zh: '生成图片文件节点',
@@ -115,7 +169,13 @@ export const messages = {
     ar: 'إنشاء عقدة ملف صورة',
     fr: 'Créer un nœud de fichier image',
     pt: 'Criar nó de arquivo de imagem',
-    ru: 'Создать узел файла изображения'
+    ru: 'Создать узел файла изображения',
+    hi: 'छवि फ़ाइल नोड बनाएँ',
+    id: 'Buat node berkas gambar',
+    de: 'Bilddatei-Knoten erzeugen',
+    vi: 'Tạo nút tệp ảnh',
+    tr: 'Görüntü dosyası düğümü oluştur',
+    it: 'Crea nodo file immagine'
   },
   createNodeHint: {
     zh: '以抠图结果为基础新建一个图片文件节点',
@@ -126,7 +186,13 @@ export const messages = {
     ar: 'إنشاء عقدة ملف صورة جديدة بناءً على النتيجة بعد إزالة الخلفية',
     fr: 'Créer un nouveau nœud de fichier image à partir du résultat sans arrière-plan',
     pt: 'Criar um novo nó de arquivo de imagem a partir do resultado sem fundo',
-    ru: 'Создать новый узел файла изображения на основе результата без фона'
+    ru: 'Создать новый узел файла изображения на основе результата без фона',
+    hi: 'पृष्ठभूमि हटाने के परिणाम के आधार पर एक नया छवि फ़ाइल नोड बनाएँ',
+    id: 'Buat node berkas gambar baru berdasarkan hasil penghapusan latar',
+    de: 'Einen neuen Bilddatei-Knoten auf Basis des freigestellten Ergebnisses erzeugen',
+    vi: 'Tạo nút tệp ảnh mới dựa trên kết quả xóa nền',
+    tr: 'Arka planı kaldırılmış sonuca dayalı yeni bir görüntü dosyası düğümü oluştur',
+    it: 'Crea un nuovo nodo file immagine dal risultato senza sfondo'
   },
   helpTitle: {
     zh: '使用说明',
@@ -137,7 +203,13 @@ export const messages = {
     ar: 'تعليمات الاستخدام',
     fr: 'Aide',
     pt: 'Ajuda',
-    ru: 'Справка'
+    ru: 'Справка',
+    hi: 'सहायता',
+    id: 'Bantuan',
+    de: 'Hilfe',
+    vi: 'Trợ giúp',
+    tr: 'Yardım',
+    it: 'Guida'
   },
   helpDialogTitle: {
     zh: '背景移除节点使用说明',
@@ -148,6 +220,12 @@ export const messages = {
     ar: 'تعليمات عقدة إزالة الخلفية',
     fr: 'Aide du nœud Suppression d’arrière-plan',
     pt: 'Ajuda do nó Remover fundo',
-    ru: 'Справка по узлу «Удаление фона»'
+    ru: 'Справка по узлу «Удаление фона»',
+    hi: 'पृष्ठभूमि हटाने वाले नोड की सहायता',
+    id: 'Bantuan node Hapus Latar',
+    de: 'Hilfe zum Knoten „Hintergrund entfernen“',
+    vi: 'Trợ giúp nút Xóa nền',
+    tr: 'Arka Planı Kaldır düğümü yardımı',
+    it: 'Guida del nodo Rimuovi sfondo'
   }
 } satisfies Record<string, LocalizedText>

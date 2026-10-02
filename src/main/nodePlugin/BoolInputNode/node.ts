@@ -24,7 +24,13 @@ export class BoolInputNode extends Node {
     ar: 'منطقي',
     fr: 'Booléen',
     pt: 'Booleano',
-    ru: 'Логическое'
+    ru: 'Логическое',
+    hi: 'बूलियन',
+    id: 'Boolean',
+    de: 'Boolesch',
+    vi: 'Boolean',
+    tr: 'Mantıksal',
+    it: 'Booleano'
   })
 
   private content = false

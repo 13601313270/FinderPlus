@@ -16,7 +16,13 @@ export const messages = {
     ar: 'أفلت عقدة صورة للضغط مرة واحدة · أو صِل صورة بالمنفذ الأيسر للضغط الفوري',
     fr: 'Déposez un nœud image pour compresser une fois · ou connectez une image au port gauche pour une compression en direct',
     pt: 'Solte um nó de imagem para comprimir uma vez · ou conecte uma imagem à porta esquerda para compressão ao vivo',
-    ru: 'Перетащите узел изображения для однократного сжатия · или подключите изображение к левому порту для сжатия в реальном времени'
+    ru: 'Перетащите узел изображения для однократного сжатия · или подключите изображение к левому порту для сжатия в реальном времени',
+    hi: 'संपीड़ित करने के लिए छवि नोड छोड़ें · या बाएँ पोर्ट पर छवि जोड़कर रीयल-टाइम संपीड़न करें',
+    id: 'Jatuhkan node gambar untuk mengompres sekali · atau sambungkan gambar ke port kiri untuk kompres langsung',
+    de: 'Bildknoten ablegen, um einmal zu komprimieren · oder ein Bild an den linken Port anschließen für Live-Komprimierung',
+    vi: 'Thả một nút ảnh để nén một lần · hoặc kết nối ảnh vào cổng bên trái để nén trực tiếp',
+    tr: 'Bir kez sıkıştırmak için görüntü düğümünü bırakın · veya canlı sıkıştırma için sol bağlantı noktasına bir görüntü bağlayın',
+    it: 'Trascina un nodo immagine per comprimere una volta · oppure collega un’immagine alla porta sinistra per la compressione in tempo reale'
   },
   formatHint: {
     zh: '选择导出格式（改变后重新压缩）',
@@ -27,7 +33,13 @@ export const messages = {
     ar: 'اختر صيغة التصدير (يُعاد الضغط عند التغيير)',
     fr: 'Choisissez le format d’export (recompresse au changement)',
     pt: 'Escolha o formato de exportação (recomprime ao alterar)',
-    ru: 'Выберите формат экспорта (повторное сжатие при изменении)'
+    ru: 'Выберите формат экспорта (повторное сжатие при изменении)',
+    hi: 'निर्यात प्रारूप चुनें (बदलने पर फिर से संपीड़ित)',
+    id: 'Pilih format ekspor (mengompres ulang saat diubah)',
+    de: 'Exportformat wählen (komprimiert bei Änderung neu)',
+    vi: 'Chọn định dạng xuất (nén lại khi thay đổi)',
+    tr: 'Dışa aktarma biçimini seçin (değiştiğinde yeniden sıkıştırır)',
+    it: 'Scegli il formato di esportazione (ricomprime alla modifica)'
   },
   resultAlt: {
     zh: '压缩结果预览',
@@ -38,7 +50,13 @@ export const messages = {
     ar: 'معاينة النتيجة المضغوطة',
     fr: 'Aperçu du résultat compressé',
     pt: 'Prévia do resultado comprimido',
-    ru: 'Предпросмотр сжатого результата'
+    ru: 'Предпросмотр сжатого результата',
+    hi: 'संपीड़ित परिणाम का पूर्वावलोकन',
+    id: 'Pratinjau hasil kompres',
+    de: 'Vorschau des komprimierten Ergebnisses',
+    vi: 'Xem trước kết quả nén',
+    tr: 'Sıkıştırılmış sonuç önizlemesi',
+    it: 'Anteprima del risultato compresso'
   },
   placeholder: {
     zh: '拖图片节点进来 · 或左侧端口接图片',
@@ -49,7 +67,13 @@ export const messages = {
     ar: 'أفلت عقدة صورة هنا · أو صِل صورة بالمنفذ الأيسر',
     fr: 'Déposez un nœud image ici · ou connectez une image au port gauche',
     pt: 'Solte um nó de imagem aqui · ou conecte uma imagem à porta esquerda',
-    ru: 'Перетащите узел изображения сюда · или подключите изображение к левому порту'
+    ru: 'Перетащите узел изображения сюда · или подключите изображение к левому порту',
+    hi: 'यहाँ छवि नोड छोड़ें · या बाएँ पोर्ट पर छवि जोड़ें',
+    id: 'Jatuhkan node gambar di sini · atau sambungkan gambar ke port kiri',
+    de: 'Bildknoten hier ablegen · oder ein Bild an den linken Port anschließen',
+    vi: 'Thả nút ảnh vào đây · hoặc kết nối ảnh vào cổng bên trái',
+    tr: 'Görüntü düğümünü buraya bırakın · veya sol bağlantı noktasına bir görüntü bağlayın',
+    it: 'Trascina qui un nodo immagine · oppure collega un’immagine alla porta sinistra'
   },
   qualityLabel: {
     zh: '质量',
@@ -60,7 +84,13 @@ export const messages = {
     ar: 'الجودة',
     fr: 'Qualité',
     pt: 'Qualidade',
-    ru: 'Качество'
+    ru: 'Качество',
+    hi: 'गुणवत्ता',
+    id: 'Kualitas',
+    de: 'Qualität',
+    vi: 'Chất lượng',
+    tr: 'Kalite',
+    it: 'Qualità'
   },
   sliderHint: {
     zh: '调整压缩质量（松手后重新压缩）',
@@ -71,7 +101,13 @@ export const messages = {
     ar: 'اضبط جودة الضغط (يُعاد الضغط عند الإفلات)',
     fr: 'Réglez la qualité de compression (recompresse au relâchement)',
     pt: 'Ajuste a qualidade de compressão (recomprime ao soltar)',
-    ru: 'Настройте качество сжатия (повторное сжатие при отпускании)'
+    ru: 'Настройте качество сжатия (повторное сжатие при отпускании)',
+    hi: 'संपीड़न गुणवत्ता समायोजित करें (छोड़ने पर फिर से संपीड़ित)',
+    id: 'Sesuaikan kualitas kompres (mengompres ulang saat dilepas)',
+    de: 'Komprimierungsqualität anpassen (komprimiert beim Loslassen neu)',
+    vi: 'Điều chỉnh chất lượng nén (nén lại khi thả)',
+    tr: 'Sıkıştırma kalitesini ayarlayın (bırakınca yeniden sıkıştırır)',
+    it: 'Regola la qualità di compressione (ricomprime al rilascio)'
   },
   hint: {
     zh: '端口响应式 · 拖入一次性',
@@ -82,7 +118,13 @@ export const messages = {
     ar: 'المنفذ: فوري · الإفلات: مرة واحدة',
     fr: 'Port : en direct · Dépôt : unique',
     pt: 'Porta: ao vivo · Soltar: uma vez',
-    ru: 'Порт: в реальном времени · Перетаскивание: однократно'
+    ru: 'Порт: в реальном времени · Перетаскивание: однократно',
+    hi: 'पोर्ट: रीयल-टाइम · ड्रॉप: एक बार',
+    id: 'Port: langsung · Jatuhkan: sekali',
+    de: 'Port: live · Ablegen: einmalig',
+    vi: 'Cổng: trực tiếp · Thả: một lần',
+    tr: 'Bağlantı noktası: canlı · Bırakma: tek seferlik',
+    it: 'Porta: in tempo reale · Trascina: una volta'
   },
   createNode: {
     zh: '生成图片文件节点',
@@ -93,7 +135,13 @@ export const messages = {
     ar: 'إنشاء عقدة ملف صورة',
     fr: 'Créer un nœud image',
     pt: 'Criar nó de imagem',
-    ru: 'Создать узел изображения'
+    ru: 'Создать узел изображения',
+    hi: 'छवि फ़ाइल नोड बनाएँ',
+    id: 'Buat node berkas gambar',
+    de: 'Bilddatei-Knoten erzeugen',
+    vi: 'Tạo nút tệp ảnh',
+    tr: 'Görüntü dosyası düğümü oluştur',
+    it: 'Crea nodo file immagine'
   },
   createNodeHint: {
     zh: '以压缩结果为基础新建一个图片文件节点',
@@ -104,7 +152,13 @@ export const messages = {
     ar: 'إنشاء عقدة ملف صورة جديدة بناءً على النتيجة المضغوطة',
     fr: 'Créer un nouveau nœud de fichier image à partir du résultat compressé',
     pt: 'Criar um novo nó de arquivo de imagem a partir do resultado comprimido',
-    ru: 'Создать новый узел файла изображения на основе сжатого результата'
+    ru: 'Создать новый узел файла изображения на основе сжатого результата',
+    hi: 'संपीड़ित परिणाम के आधार पर नया छवि फ़ाइल नोड बनाएँ',
+    id: 'Buat node berkas gambar baru berdasarkan hasil kompres',
+    de: 'Einen neuen Bilddatei-Knoten auf Basis des komprimierten Ergebnisses erstellen',
+    vi: 'Tạo nút tệp ảnh mới dựa trên kết quả nén',
+    tr: 'Sıkıştırılmış sonuca dayalı yeni bir görüntü dosyası düğümü oluştur',
+    it: 'Crea un nuovo nodo file immagine dal risultato compresso'
   },
   errorUnsupported: {
     zh: '压缩失败：不支持的图片格式或文件已损坏',
@@ -115,7 +169,13 @@ export const messages = {
     ar: 'فشل الضغط: صيغة صورة غير مدعومة أو ملف تالف',
     fr: 'Échec de la compression : format d’image non pris en charge ou fichier corrompu',
     pt: 'Falha na compressão: formato de imagem não suportado ou arquivo corrompido',
-    ru: 'Не удалось сжать: неподдерживаемый формат изображения или повреждённый файл'
+    ru: 'Не удалось сжать: неподдерживаемый формат изображения или повреждённый файл',
+    hi: 'संपीड़न विफल: असमर्थित छवि प्रारूप या क्षतिग्रस्त फ़ाइल',
+    id: 'Kompres gagal: format gambar tidak didukung atau berkas rusak',
+    de: 'Komprimierung fehlgeschlagen: nicht unterstütztes Bildformat oder beschädigte Datei',
+    vi: 'Nén thất bại: định dạng ảnh không được hỗ trợ hoặc tệp bị hỏng',
+    tr: 'Sıkıştırma başarısız: desteklenmeyen görüntü biçimi veya bozuk dosya',
+    it: 'Compressione non riuscita: formato immagine non supportato o file danneggiato'
   },
   errorWasm: {
     zh: '压缩失败：wasm 初始化或编码出错',
@@ -126,7 +186,13 @@ export const messages = {
     ar: 'فشل الضغط: خطأ في تهيئة wasm أو الترميز',
     fr: 'Échec de la compression : erreur d’initialisation wasm ou d’encodage',
     pt: 'Falha na compressão: erro de inicialização do wasm ou de codificação',
-    ru: 'Не удалось сжать: ошибка инициализации wasm или кодирования'
+    ru: 'Не удалось сжать: ошибка инициализации wasm или кодирования',
+    hi: 'संपीड़न विफल: wasm आरंभीकरण या एन्कोडिंग में त्रुटि',
+    id: 'Kompres gagal: kesalahan inisialisasi wasm atau pengodean',
+    de: 'Komprimierung fehlgeschlagen: wasm-Initialisierung oder Codierungsfehler',
+    vi: 'Nén thất bại: lỗi khởi tạo wasm hoặc mã hóa',
+    tr: 'Sıkıştırma başarısız: wasm başlatma veya kodlama hatası',
+    it: 'Compressione non riuscita: errore di inizializzazione wasm o di codifica'
   },
   helpTitle: {
     zh: '使用说明',
@@ -137,7 +203,13 @@ export const messages = {
     ar: 'تعليمات',
     fr: 'Aide',
     pt: 'Ajuda',
-    ru: 'Справка'
+    ru: 'Справка',
+    hi: 'सहायता',
+    id: 'Bantuan',
+    de: 'Hilfe',
+    vi: 'Trợ giúp',
+    tr: 'Yardım',
+    it: 'Guida'
   },
   helpDialogTitle: {
     zh: '图片质量节点使用说明',
@@ -148,6 +220,12 @@ export const messages = {
     ar: 'تعليمات عقدة جودة الصورة',
     fr: 'Aide du nœud Qualité d’image',
     pt: 'Ajuda do nó Qualidade de imagem',
-    ru: 'Справка по узлу «Качество изображения»'
+    ru: 'Справка по узлу «Качество изображения»',
+    hi: 'छवि गुणवत्ता नोड सहायता',
+    id: 'Bantuan node Kualitas Gambar',
+    de: 'Hilfe zum Bildqualitäts-Knoten',
+    vi: 'Trợ giúp nút Chất lượng ảnh',
+    tr: 'Görüntü Kalitesi düğümü yardımı',
+    it: 'Guida del nodo Qualità immagine'
   }
 } satisfies Record<string, LocalizedText>

@@ -16,7 +16,13 @@ export const messages = {
     ar: 'الطبقة {n}',
     fr: 'Calque {n}',
     pt: 'Camada {n}',
-    ru: 'Слой {n}'
+    ru: 'Слой {n}',
+    hi: 'परत {n}',
+    id: 'Lapisan {n}',
+    de: 'Ebene {n}',
+    vi: 'Lớp {n}',
+    tr: 'Katman {n}',
+    it: 'Livello {n}'
   },
   portSummary: {
     zh: '{total} 端口 · {connected} 已连',
@@ -27,7 +33,13 @@ export const messages = {
     ar: '{total} منفذ · {connected} متصل',
     fr: '{total} ports · {connected} connectés',
     pt: '{total} portas · {connected} ligadas',
-    ru: '{total} портов · {connected} подключено'
+    ru: '{total} портов · {connected} подключено',
+    hi: '{total} पोर्ट · {connected} जुड़े',
+    id: '{total} port · {connected} tersambung',
+    de: '{total} Ports · {connected} verbunden',
+    vi: '{total} cổng · {connected} đã kết nối',
+    tr: '{total} bağlantı noktası · {connected} bağlı',
+    it: '{total} porte · {connected} collegate'
   },
   canvasSizeTitle: {
     zh: '画布尺寸设置',
@@ -38,7 +50,13 @@ export const messages = {
     ar: 'إعدادات حجم اللوحة',
     fr: 'Réglage de la taille du canevas',
     pt: 'Configurações do tamanho do canvas',
-    ru: 'Настройки размера холста'
+    ru: 'Настройки размера холста',
+    hi: 'कैनवास आकार सेटिंग',
+    id: 'Pengaturan ukuran kanvas',
+    de: 'Einstellungen der Leinwandgröße',
+    vi: 'Cài đặt kích thước khung vẽ',
+    tr: 'Tuval boyutu ayarları',
+    it: 'Impostazioni dimensione tela'
   },
   helpTitle: {
     zh: '使用说明',
@@ -49,7 +67,13 @@ export const messages = {
     ar: 'تعليمات الاستخدام',
     fr: 'Aide',
     pt: 'Ajuda',
-    ru: 'Справка'
+    ru: 'Справка',
+    hi: 'सहायता',
+    id: 'Bantuan',
+    de: 'Hilfe',
+    vi: 'Trợ giúp',
+    tr: 'Yardım',
+    it: 'Guida'
   },
   removeLayerHint: {
     zh: '删除此图层（仅尾部可删）',
@@ -60,7 +84,13 @@ export const messages = {
     ar: 'حذف هذه الطبقة (الأخيرة فقط)',
     fr: 'Supprimer ce calque (uniquement le dernier)',
     pt: 'Eliminar esta camada (apenas a última)',
-    ru: 'Удалить этот слой (только последний)'
+    ru: 'Удалить этот слой (только последний)',
+    hi: 'इस परत को हटाएँ (केवल अंतिम वाली)',
+    id: 'Hapus lapisan ini (hanya yang terakhir)',
+    de: 'Diese Ebene entfernen (nur die letzte)',
+    vi: 'Xóa lớp này (chỉ lớp cuối)',
+    tr: 'Bu katmanı kaldır (yalnızca sonuncu)',
+    it: 'Rimuovi questo livello (solo l’ultimo)'
   },
   notConnected: {
     zh: '未连接',
@@ -71,7 +101,13 @@ export const messages = {
     ar: 'غير متصل',
     fr: 'Non connecté',
     pt: 'Não ligado',
-    ru: 'Не подключено'
+    ru: 'Не подключено',
+    hi: 'जुड़ा नहीं',
+    id: 'Belum tersambung',
+    de: 'Nicht verbunden',
+    vi: 'Chưa kết nối',
+    tr: 'Bağlı değil',
+    it: 'Non collegato'
   },
   addLayerHint: {
     zh: '添加图层',
@@ -82,7 +118,13 @@ export const messages = {
     ar: 'إضافة طبقة',
     fr: 'Ajouter un calque',
     pt: 'Adicionar camada',
-    ru: 'Добавить слой'
+    ru: 'Добавить слой',
+    hi: 'परत जोड़ें',
+    id: 'Tambah lapisan',
+    de: 'Ebene hinzufügen',
+    vi: 'Thêm lớp',
+    tr: 'Katman ekle',
+    it: 'Aggiungi livello'
   },
   addLayer: {
     zh: '＋ 添加图层',
@@ -93,7 +135,13 @@ export const messages = {
     ar: '＋ إضافة طبقة',
     fr: '＋ Ajouter un calque',
     pt: '＋ Adicionar camada',
-    ru: '＋ Добавить слой'
+    ru: '＋ Добавить слой',
+    hi: '＋ परत जोड़ें',
+    id: '＋ Tambah lapisan',
+    de: '＋ Ebene hinzufügen',
+    vi: '＋ Thêm lớp',
+    tr: '＋ Katman ekle',
+    it: '＋ Aggiungi livello'
   },
   emptyHint: {
     zh: '连接端口或点击左侧 ＋ 添加图层',
@@ -104,7 +152,13 @@ export const messages = {
     ar: 'صِل منفذًا أو انقر على ＋ على اليسار لإضافة طبقة',
     fr: 'Connectez un port ou cliquez sur ＋ à gauche pour ajouter un calque',
     pt: 'Ligue uma porta ou clique em ＋ à esquerda para adicionar uma camada',
-    ru: 'Подключите порт или нажмите ＋ слева, чтобы добавить слой'
+    ru: 'Подключите порт или нажмите ＋ слева, чтобы добавить слой',
+    hi: 'पोर्ट कनेक्ट करें या बाईं ओर ＋ पर क्लिक करके परत जोड़ें',
+    id: 'Sambungkan port atau klik ＋ di sebelah kiri untuk menambah lapisan',
+    de: 'Verbinde einen Port oder klicke links auf ＋, um eine Ebene hinzuzufügen',
+    vi: 'Kết nối cổng hoặc nhấn ＋ bên trái để thêm lớp',
+    tr: 'Bir bağlantı noktası bağla veya soldaki ＋ ile katman ekle',
+    it: 'Collega una porta o fai clic su ＋ a sinistra per aggiungere un livello'
   },
   zoomInTitle: {
     zh: '放大预览',
@@ -115,7 +169,13 @@ export const messages = {
     ar: 'تكبير المعاينة',
     fr: 'Zoom avant sur l’aperçu',
     pt: 'Ampliar prévia',
-    ru: 'Увеличить предпросмотр'
+    ru: 'Увеличить предпросмотр',
+    hi: 'पूर्वावलोकन ज़ूम इन',
+    id: 'Perbesar pratinjau',
+    de: 'Vorschau vergrößern',
+    vi: 'Phóng to xem trước',
+    tr: 'Önizlemeyi büyüt',
+    it: 'Ingrandisci anteprima'
   },
   zoomOutTitle: {
     zh: '缩小预览',
@@ -126,7 +186,13 @@ export const messages = {
     ar: 'تصغير المعاينة',
     fr: 'Zoom arrière sur l’aperçu',
     pt: 'Reduzir prévia',
-    ru: 'Уменьшить предпросмотр'
+    ru: 'Уменьшить предпросмотр',
+    hi: 'पूर्वावलोकन ज़ूम आउट',
+    id: 'Perkecil pratinjau',
+    de: 'Vorschau verkleinern',
+    vi: 'Thu nhỏ xem trước',
+    tr: 'Önizlemeyi küçült',
+    it: 'Riduci anteprima'
   },
   resetZoomTitle: {
     zh: '恢复自适应缩放',
@@ -137,7 +203,13 @@ export const messages = {
     ar: 'استعادة التكبير التلقائي',
     fr: 'Rétablir le zoom automatique',
     pt: 'Restaurar o zoom automático',
-    ru: 'Вернуть автоматическое масштабирование'
+    ru: 'Вернуть автоматическое масштабирование',
+    hi: 'फ़िट ज़ूम पर लौटें',
+    id: 'Kembalikan zoom otomatis',
+    de: 'Automatisches Zoomen wiederherstellen',
+    vi: 'Khôi phục thu phóng tự động',
+    tr: 'Otomatik yakınlaştırmaya dön',
+    it: 'Ripristina zoom automatico'
   },
   pngTransparent: {
     zh: 'PNG透明',
@@ -148,7 +220,13 @@ export const messages = {
     ar: 'PNG شفاف',
     fr: 'PNG transparent',
     pt: 'PNG transparente',
-    ru: 'PNG прозрачный'
+    ru: 'PNG прозрачный',
+    hi: 'PNG पारदर्शी',
+    id: 'PNG transparan',
+    de: 'PNG transparent',
+    vi: 'PNG trong suốt',
+    tr: 'PNG saydam',
+    it: 'PNG trasparente'
   },
   createNode: {
     zh: '生成图片文件节点',
@@ -159,7 +237,13 @@ export const messages = {
     ar: 'إنشاء عقدة ملف صورة',
     fr: 'Créer un nœud de fichier image',
     pt: 'Criar nó de arquivo de imagem',
-    ru: 'Создать узел файла изображения'
+    ru: 'Создать узел файла изображения',
+    hi: 'छवि फ़ाइल नोड बनाएँ',
+    id: 'Buat node berkas gambar',
+    de: 'Bilddatei-Knoten erstellen',
+    vi: 'Tạo nút tệp ảnh',
+    tr: 'Görüntü dosyası düğümü oluştur',
+    it: 'Crea nodo file immagine'
   },
   canvasSizeDialogTitle: {
     zh: '画布尺寸',
@@ -170,7 +254,13 @@ export const messages = {
     ar: 'حجم اللوحة',
     fr: 'Taille du canevas',
     pt: 'Tamanho do canvas',
-    ru: 'Размер холста'
+    ru: 'Размер холста',
+    hi: 'कैनवास आकार',
+    id: 'Ukuran kanvas',
+    de: 'Leinwandgröße',
+    vi: 'Kích thước khung vẽ',
+    tr: 'Tuval boyutu',
+    it: 'Dimensione tela'
   },
   modeLabel: {
     zh: '模式',
@@ -181,7 +271,13 @@ export const messages = {
     ar: 'الوضع',
     fr: 'Mode',
     pt: 'Modo',
-    ru: 'Режим'
+    ru: 'Режим',
+    hi: 'मोड',
+    id: 'Mode',
+    de: 'Modus',
+    vi: 'Chế độ',
+    tr: 'Mod',
+    it: 'Modalità'
   },
   modeAuto: {
     zh: '自动（按图层边界）',
@@ -192,7 +288,13 @@ export const messages = {
     ar: 'تلقائي (وفق حدود الطبقات)',
     fr: 'Automatique (ajuster aux limites des calques)',
     pt: 'Automático (ajustar aos limites das camadas)',
-    ru: 'Автоматически (по границам слоёв)'
+    ru: 'Автоматически (по границам слоёв)',
+    hi: 'स्वचालित (परत सीमाओं के अनुसार)',
+    id: 'Otomatis (sesuai batas lapisan)',
+    de: 'Automatisch (nach Ebenengrenzen)',
+    vi: 'Tự động (theo ranh giới lớp)',
+    tr: 'Otomatik (katman sınırlarına göre)',
+    it: 'Automatico (in base ai limiti dei livelli)'
   },
   modeFixed: {
     zh: '固定尺寸',
@@ -203,7 +305,13 @@ export const messages = {
     ar: 'حجم ثابت',
     fr: 'Taille fixe',
     pt: 'Tamanho fixo',
-    ru: 'Фиксированный размер'
+    ru: 'Фиксированный размер',
+    hi: 'निश्चित आकार',
+    id: 'Ukuran tetap',
+    de: 'Feste Größe',
+    vi: 'Kích thước cố định',
+    tr: 'Sabit boyut',
+    it: 'Dimensione fissa'
   },
   widthLabel: {
     zh: '宽',
@@ -214,7 +322,13 @@ export const messages = {
     ar: 'العرض',
     fr: 'Largeur',
     pt: 'Largura',
-    ru: 'Ширина'
+    ru: 'Ширина',
+    hi: 'चौड़ाई',
+    id: 'Lebar',
+    de: 'Breite',
+    vi: 'Chiều rộng',
+    tr: 'Genişlik',
+    it: 'Larghezza'
   },
   heightLabel: {
     zh: '高',
@@ -225,7 +339,13 @@ export const messages = {
     ar: 'الارتفاع',
     fr: 'Hauteur',
     pt: 'Altura',
-    ru: 'Высота'
+    ru: 'Высота',
+    hi: 'ऊँचाई',
+    id: 'Tinggi',
+    de: 'Höhe',
+    vi: 'Chiều cao',
+    tr: 'Yükseklik',
+    it: 'Altezza'
   },
   resetAuto: {
     zh: '恢复自动',
@@ -236,7 +356,13 @@ export const messages = {
     ar: 'استعادة التلقائي',
     fr: 'Rétablir auto',
     pt: 'Restaurar automático',
-    ru: 'Вернуть автоматически'
+    ru: 'Вернуть автоматически',
+    hi: 'स्वचालित पर लौटें',
+    id: 'Kembalikan ke otomatis',
+    de: 'Auf automatisch zurücksetzen',
+    vi: 'Khôi phục tự động',
+    tr: 'Otomatiğe sıfırla',
+    it: 'Ripristina automatico'
   },
   cancel: {
     zh: '取消',
@@ -247,7 +373,13 @@ export const messages = {
     ar: 'إلغاء',
     fr: 'Annuler',
     pt: 'Cancelar',
-    ru: 'Отмена'
+    ru: 'Отмена',
+    hi: 'रद्द करें',
+    id: 'Batal',
+    de: 'Abbrechen',
+    vi: 'Hủy',
+    tr: 'İptal',
+    it: 'Annulla'
   },
   confirm: {
     zh: '确定',
@@ -258,7 +390,13 @@ export const messages = {
     ar: 'موافق',
     fr: 'OK',
     pt: 'OK',
-    ru: 'ОК'
+    ru: 'ОК',
+    hi: 'ठीक है',
+    id: 'OK',
+    de: 'OK',
+    vi: 'OK',
+    tr: 'Tamam',
+    it: 'OK'
   },
   resizeNodeHint: {
     zh: '拖拽调整节点大小（最小 400×400）',
@@ -269,7 +407,13 @@ export const messages = {
     ar: 'اسحب لتغيير حجم العقدة (الحد الأدنى 400×400)',
     fr: 'Faites glisser pour redimensionner le nœud (min 400×400)',
     pt: 'Arraste para redimensionar o nó (mín. 400×400)',
-    ru: 'Перетащите, чтобы изменить размер узла (мин. 400×400)'
+    ru: 'Перетащите, чтобы изменить размер узла (мин. 400×400)',
+    hi: 'नोड का आकार बदलने के लिए खींचें (न्यूनतम 400×400)',
+    id: 'Seret untuk mengubah ukuran node (min. 400×400)',
+    de: 'Zum Ändern der Knotengröße ziehen (min. 400×400)',
+    vi: 'Kéo để thay đổi kích thước nút (tối thiểu 400×400)',
+    tr: 'Düğüm boyutunu değiştirmek için sürükle (en az 400×400)',
+    it: 'Trascina per ridimensionare il nodo (min 400×400)'
   },
   helpDialogTitle: {
     zh: '图片叠加节点使用说明',
@@ -280,6 +424,12 @@ export const messages = {
     ar: 'تعليمات عقدة تراكب الصور',
     fr: 'Aide du nœud Superposition d’images',
     pt: 'Ajuda do nó Sobreposição de imagens',
-    ru: 'Справка по узлу «Наложение изображений»'
+    ru: 'Справка по узлу «Наложение изображений»',
+    hi: 'छवि ओवरले नोड सहायता',
+    id: 'Bantuan node Hamparan gambar',
+    de: 'Hilfe zum Knoten „Bildüberlagerung“',
+    vi: 'Trợ giúp nút Lớp phủ ảnh',
+    tr: 'Görüntü katmanı düğümü yardımı',
+    it: 'Guida del nodo Sovrapposizione immagini'
   }
 } satisfies Record<string, LocalizedText>

@@ -16,7 +16,13 @@ export const messages = {
     ar: 'اسحب العقدة',
     fr: 'Glisser le nœud',
     pt: 'Arrastar nó',
-    ru: 'Перетащить узел'
+    ru: 'Перетащить узел',
+    hi: 'नोड खींचें',
+    id: 'Seret node',
+    de: 'Knoten ziehen',
+    vi: 'Kéo nút',
+    tr: 'Düğümü sürükle',
+    it: 'Trascina nodo'
   },
   noInput: {
     zh: '（暂无输入）',
@@ -27,7 +33,13 @@ export const messages = {
     ar: '(لا يوجد إدخال)',
     fr: '(Aucune entrée)',
     pt: '(Sem entrada)',
-    ru: '(Нет входа)'
+    ru: '(Нет входа)',
+    hi: '(अभी कोई इनपुट नहीं)',
+    id: '(Belum ada masukan)',
+    de: '(Noch keine Eingabe)',
+    vi: '(Chưa có đầu vào)',
+    tr: '(Henüz giriş yok)',
+    it: '(Ancora nessun input)'
   },
   parseErrorTitle: {
     zh: 'JSON 解析失败',
@@ -38,7 +50,13 @@ export const messages = {
     ar: 'فشل تحليل JSON',
     fr: 'Échec de l’analyse JSON',
     pt: 'Falha na análise do JSON',
-    ru: 'Ошибка разбора JSON'
+    ru: 'Ошибка разбора JSON',
+    hi: 'JSON पार्स विफल',
+    id: 'Gagal mengurai JSON',
+    de: 'JSON-Analyse fehlgeschlagen',
+    vi: 'Phân tích JSON thất bại',
+    tr: 'JSON ayrıştırma başarısız',
+    it: 'Analisi JSON non riuscita'
   },
   emptyInput: {
     zh: '（空输入）',
@@ -49,7 +67,13 @@ export const messages = {
     ar: '(إدخال فارغ)',
     fr: '(Entrée vide)',
     pt: '(Entrada vazia)',
-    ru: '(Пустой ввод)'
+    ru: '(Пустой ввод)',
+    hi: '(खाली इनपुट)',
+    id: '(Masukan kosong)',
+    de: '(Leere Eingabe)',
+    vi: '(Đầu vào trống)',
+    tr: '(Boş giriş)',
+    it: '(Input vuoto)'
   },
   resizeHint: {
     zh: '拖拽调整节点大小',
@@ -60,7 +84,13 @@ export const messages = {
     ar: 'اسحب لتغيير حجم العقدة',
     fr: 'Glisser pour redimensionner le nœud',
     pt: 'Arraste para redimensionar o nó',
-    ru: 'Перетащите, чтобы изменить размер узла'
+    ru: 'Перетащите, чтобы изменить размер узла',
+    hi: 'नोड का आकार बदलने के लिए खींचें',
+    id: 'Seret untuk mengubah ukuran node',
+    de: 'Ziehen, um die Knotengröße zu ändern',
+    vi: 'Kéo để thay đổi kích thước nút',
+    tr: 'Düğüm boyutunu değiştirmek için sürükle',
+    it: 'Trascina per ridimensionare il nodo'
   },
   collapse: {
     zh: '收起',
@@ -71,7 +101,13 @@ export const messages = {
     ar: 'طي',
     fr: 'Replier',
     pt: 'Recolher',
-    ru: 'Свернуть'
+    ru: 'Свернуть',
+    hi: 'संकुचित करें',
+    id: 'Ciutkan',
+    de: 'Einklappen',
+    vi: 'Thu gọn',
+    tr: 'Daralt',
+    it: 'Comprimi'
   },
   expand: {
     zh: '展开',
@@ -82,7 +118,13 @@ export const messages = {
     ar: 'توسيع',
     fr: 'Déplier',
     pt: 'Expandir',
-    ru: 'Развернуть'
+    ru: 'Развернуть',
+    hi: 'विस्तृत करें',
+    id: 'Perluas',
+    de: 'Ausklappen',
+    vi: 'Mở rộng',
+    tr: 'Genişlet',
+    it: 'Espandi'
   },
   helpTitle: {
     zh: '使用说明',
@@ -93,7 +135,13 @@ export const messages = {
     ar: 'مساعدة',
     fr: 'Aide',
     pt: 'Ajuda',
-    ru: 'Справка'
+    ru: 'Справка',
+    hi: 'सहायता',
+    id: 'Bantuan',
+    de: 'Hilfe',
+    vi: 'Trợ giúp',
+    tr: 'Yardım',
+    it: 'Guida'
   },
   helpDialogTitle: {
     zh: 'JSON 展示节点使用说明',
@@ -104,6 +152,12 @@ export const messages = {
     ar: 'مساعدة عقدة عرض JSON',
     fr: 'Aide du nœud Affichage JSON',
     pt: 'Ajuda do nó Exibir JSON',
-    ru: 'Справка по узлу «Отображение JSON»'
+    ru: 'Справка по узлу «Отображение JSON»',
+    hi: 'JSON प्रदर्शन नोड सहायता',
+    id: 'Bantuan node Tampilan JSON',
+    de: 'Hilfe zum Knoten „JSON-Anzeige“',
+    vi: 'Trợ giúp nút Hiển thị JSON',
+    tr: 'JSON Görüntüleme düğümü yardımı',
+    it: 'Guida del nodo Visualizzazione JSON'
   }
 } satisfies Record<string, LocalizedText>

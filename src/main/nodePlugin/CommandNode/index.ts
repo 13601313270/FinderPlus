@@ -14,7 +14,13 @@ export const manifest: NodePluginManifest = {
     ar: 'أمر',
     fr: 'Commande',
     pt: 'Comando',
-    ru: 'Команда'
+    ru: 'Команда',
+    hi: 'कमांड',
+    id: 'Perintah',
+    de: 'Befehl',
+    vi: 'Lệnh',
+    tr: 'Komut',
+    it: 'Comando'
   },
   render,
   help: () => import('./CommandHelpDialog.vue')

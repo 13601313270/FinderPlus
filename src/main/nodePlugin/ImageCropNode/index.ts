@@ -14,7 +14,13 @@ export const manifest: NodePluginManifest = {
     ar: 'قص الصورة',
     fr: 'Recadrage d’image',
     pt: 'Recortar imagem',
-    ru: 'Обрезка изображения'
+    ru: 'Обрезка изображения',
+    hi: 'छवि क्रॉप',
+    id: 'Pangkas gambar',
+    de: 'Bild zuschneiden',
+    vi: 'Cắt ảnh',
+    tr: 'Görüntü kırpma',
+    it: 'Ritaglio immagine'
   },
   render,
   help: () => import('./ImageCropHelpDialog.vue')

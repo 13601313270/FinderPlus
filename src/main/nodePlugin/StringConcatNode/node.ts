@@ -29,7 +29,13 @@ export class StringConcatNode extends Node {
     ar: 'النتيجة',
     fr: 'Résultat',
     pt: 'Resultado',
-    ru: 'Результат'
+    ru: 'Результат',
+    hi: 'परिणाम',
+    id: 'Hasil',
+    de: 'Ergebnis',
+    vi: 'Kết quả',
+    tr: 'Sonuç',
+    it: 'Risultato'
   })
 
   /** 模板字符串 */

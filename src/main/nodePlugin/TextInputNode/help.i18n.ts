@@ -1,7 +1,7 @@
 import type { LocalizedText } from '../../../shared/language'
 
 /**
- * 文本输入节点帮助文档（TextInputHelpDialog）的全部文案，9 种语言全配。
+ * 文本输入节点帮助文档（TextInputHelpDialog）的全部文案，全部 15 种语言全配。
  *
  * 与节点自身的 i18n.ts 分开：卡片短文案变化频繁，帮助文档整篇体量大、改动少。
  * 约定：带行内 <code> / <b> 的句子，值里直接写 HTML，模板用 v-html 渲染；
@@ -18,7 +18,13 @@ export const helpMessages = {
     ar: 'ما هذا؟',
     fr: 'Qu’est-ce que c’est ?',
     pt: 'O que é isto?',
-    ru: 'Что это?'
+    ru: 'Что это?',
+    hi: "यह क्या है?",
+    id: "Apa ini?",
+    de: "Was ist das?",
+    vi: "Đây là gì?",
+    tr: "Bu nedir?",
+    it: "Cos’è questo?",
   },
   whatBody: {
     zh: '文本输入节点是<b>源头节点</b>，在节点里键入文本，即可把这段字符串从右侧 <code>text</code> 端口发送给下游节点。它没有输入端口，内容完全由你手动输入。',
@@ -29,7 +35,13 @@ export const helpMessages = {
     ar: 'عقدة إدخال النص هي <b>عقدة مصدر</b>: اكتب نصًا داخلها فتُرسَل هذه السلسلة النصية إلى العقد اللاحقة من منفذ <code>text</code> على اليمين. لا تملك منافذ إدخال، والمحتوى يأتي بالكامل من كتابتك.',
     fr: 'Le nœud Saisie de texte est un <b>nœud source</b> : saisissez du texte dedans et cette chaîne est envoyée aux nœuds en aval depuis le port <code>text</code> à droite. Il n’a aucun port d’entrée ; le contenu provient entièrement de votre saisie.',
     pt: 'O nó Entrada de texto é um <b>nó de origem</b>: escreva texto nele e essa string é enviada aos nós seguintes pelo porto <code>text</code> à direita. Não tem portas de entrada; o conteúdo vem inteiramente do que escreve.',
-    ru: 'Узел «Ввод текста» — это <b>узел-источник</b>: введите в него текст, и эта строка будет отправлена последующим узлам из порта <code>text</code> справа. Входных портов у него нет, содержимое задаётся полностью вручную.'
+    ru: 'Узел «Ввод текста» — это <b>узел-источник</b>: введите в него текст, и эта строка будет отправлена последующим узлам из порта <code>text</code> справа. Входных портов у него нет, содержимое задаётся полностью вручную.',
+    hi: "टेक्स्ट इनपुट नोड एक <b>स्रोत नोड</b> है: इसमें टेक्स्ट लिखें और वह स्ट्रिंग दाईं ओर के <code>text</code> पोर्ट से डाउनस्ट्रीम नोड्स को भेजी जाती है। इसमें कोई इनपुट पोर्ट नहीं है; सामग्री पूरी तरह आपके द्वारा लिखी जाती है।",
+    id: "Node Masukan Teks adalah <b>node sumber</b>: ketik teks ke dalamnya dan string tersebut dikirim ke node hilir dari port <code>text</code> di sebelah kanan. Node ini tidak memiliki port masukan; isinya sepenuhnya berasal dari yang Anda ketik.",
+    de: "Der Knoten Texteingabe ist ein <b>Quellknoten</b>: Text hineintippen und diese Zeichenkette wird aus dem <code>text</code>-Port rechts an nachgelagerte Knoten gesendet. Er hat keine Eingangsports; der Inhalt stammt vollständig aus deiner Eingabe.",
+    vi: "Nút Nhập văn bản là một <b>nút nguồn</b>: nhập văn bản vào đó và chuỗi đó được gửi đến các nút hạ nguồn từ cổng <code>text</code> ở bên phải. Nút không có cổng vào; nội dung hoàn toàn do bạn nhập.",
+    tr: "Metin girişi düğümü bir <b>kaynak düğümdür</b>: içine metin yazın, o dize sağdaki <code>text</code> bağlantı noktasından alt düğümlere gönderilir. Giriş bağlantı noktası yoktur; içerik tamamen sizin yazdıklarınızdan gelir.",
+    it: "Il nodo Input di testo è un <b>nodo sorgente</b>: digita del testo al suo interno e quella stringa viene inviata ai nodi a valle dal port <code>text</code> a destra. Non ha porte di ingresso; il contenuto proviene interamente da ciò che digiti.",
   },
 
   // —— 节点设置（齿轮） ——
@@ -42,7 +54,13 @@ export const helpMessages = {
     ar: 'إعدادات العقدة (الترس)',
     fr: 'Réglages du nœud (engrenage)',
     pt: 'Definições do nó (engrenagem)',
-    ru: 'Настройки узла (шестерёнка)'
+    ru: 'Настройки узла (шестерёнка)',
+    hi: "नोड सेटिंग्स (गियर)",
+    id: "Pengaturan node (roda gigi)",
+    de: "Knoten-Einstellungen (Zahnrad)",
+    vi: "Cài đặt nút (bánh răng)",
+    tr: "Düğüm ayarları (dişli)",
+    it: "Impostazioni nodo (ingranaggio)",
   },
   configLi1: {
     zh: '点标题栏最右侧的<b>齿轮</b>按钮打开设置面板。',
@@ -53,7 +71,13 @@ export const helpMessages = {
     ar: 'انقر على زر <b>الترس</b> في أقصى يمين شريط العنوان لفتح لوحة الإعدادات.',
     fr: 'Cliquez sur le bouton <b>engrenage</b> à l’extrême droite de la barre de titre pour ouvrir le panneau de réglages.',
     pt: 'Clique no botão de <b>engrenagem</b> no extremo direito da barra de título para abrir o painel de definições.',
-    ru: 'Нажмите кнопку с <b>шестерёнкой</b> в правом углу заголовка, чтобы открыть панель настроек.'
+    ru: 'Нажмите кнопку с <b>шестерёнкой</b> в правом углу заголовка, чтобы открыть панель настроек.',
+    hi: "सेटिंग्स पैनल खोलने के लिए शीर्षक पट्टी के सबसे दाएँ <b>गियर</b> बटन पर क्लिक करें।",
+    id: "Klik tombol <b>roda gigi</b> di paling kanan bilah judul untuk membuka panel pengaturan.",
+    de: "Klicke auf die <b>Zahnrad</b>-Schaltfläche ganz rechts in der Titelleiste, um das Einstellungsfenster zu öffnen.",
+    vi: "Nhấp vào nút <b>bánh răng</b> ở ngoài cùng bên phải thanh tiêu đề để mở bảng cài đặt.",
+    tr: "Ayarlar panelini açmak için başlık çubuğunun en sağındaki <b>dişli</b> düğmesine tıklayın.",
+    it: "Fai clic sul pulsante <b>ingranaggio</b> all’estrema destra della barra del titolo per aprire il pannello delle impostazioni.",
   },
   configLi2: {
     zh: '「多行输入」：开启后输入框变为多行文本框，节点随之变高；关闭时会自动把内容中的换行替换为空格。',
@@ -64,7 +88,13 @@ export const helpMessages = {
     ar: '«إدخال متعدد الأسطر»: عند تشغيله يتحول حقل الإدخال إلى مربع نص متعدد الأسطر ويزداد ارتفاع العقدة؛ وعند إيقافه تُستبدل فواصل الأسطر في المحتوى بمسافات تلقائيًا.',
     fr: '« Saisie multiligne » : une fois activée, le champ devient une zone de texte multiligne et le nœud s’agrandit en hauteur ; une fois désactivée, les sauts de ligne du contenu sont automatiquement remplacés par des espaces.',
     pt: '“Entrada multilinha”: quando ativada, o campo torna-se uma caixa de texto multilinha e o nó fica mais alto; quando desativada, as quebras de linha do conteúdo são automaticamente substituídas por espaços.',
-    ru: '«Многострочный ввод»: при включении поле становится многострочным текстовым блоком, а узел — выше; при выключении переводы строк в содержимом автоматически заменяются пробелами.'
+    ru: '«Многострочный ввод»: при включении поле становится многострочным текстовым блоком, а узел — выше; при выключении переводы строк в содержимом автоматически заменяются пробелами.',
+    hi: "“बहु-पंक्ति इनपुट”: चालू करने पर इनपुट फ़ील्ड बहु-पंक्ति टेक्स्ट बॉक्स बन जाता है और नोड ऊँचा हो जाता है; बंद करने पर सामग्री में मौजूद लाइन ब्रेक स्वतः रिक्त स्थान से बदल दिए जाते हैं।",
+    id: "“Masukan multibaris”: saat aktif, kolom masukan menjadi kotak teks multibaris dan node menjadi lebih tinggi; saat dinonaktifkan, jeda baris dalam isi otomatis diganti dengan spasi.",
+    de: "„Mehrzeilige Eingabe“: Wenn aktiviert, wird das Eingabefeld zu einem mehrzeiligen Textfeld und der Knoten höher; beim Deaktivieren werden Zeilenumbrüche im Inhalt automatisch durch Leerzeichen ersetzt.",
+    vi: "“Nhập nhiều dòng”: khi bật, ô nhập liệu trở thành hộp văn bản nhiều dòng và nút cao hơn; khi tắt, các dấu ngắt dòng trong nội dung tự động được thay bằng dấu cách.",
+    tr: "“Çok satırlı giriş”: açıldığında giriş alanı çok satırlı bir metin kutusuna dönüşür ve düğüm yükselir; kapatıldığında içerikteki satır sonları otomatik olarak boşlukla değiştirilir.",
+    it: "“Input multilinea”: quando attivo, il campo diventa una casella di testo multilinea e il nodo si allunga; quando disattivato, le interruzioni di riga nel contenuto vengono sostituite automaticamente con spazi.",
   },
   configLi3: {
     zh: '「自动发送」：开启后停止输入约 500ms 自动把内容发送到下游，发送按钮随之置灰。',
@@ -75,7 +105,13 @@ export const helpMessages = {
     ar: '«الإرسال التلقائي»: عند تشغيله يُرسَل المحتوى إلى العقد اللاحقة تلقائيًا بعد نحو 500ms من التوقف عن الكتابة، ويصبح زر الإرسال باهتًا.',
     fr: '« Envoi automatique » : une fois activé, le contenu est envoyé en aval environ 500 ms après l’arrêt de la saisie, et le bouton Envoyer est grisé.',
     pt: '“Envio automático”: quando ativado, o conteúdo é enviado a jusante cerca de 500ms depois de parar de escrever, e o botão Enviar fica esbatido.',
-    ru: '«Автоотправка»: при включении содержимое автоматически отправляется дальше примерно через 500 мс после остановки ввода, а кнопка «Отправить» становится неактивной.'
+    ru: '«Автоотправка»: при включении содержимое автоматически отправляется дальше примерно через 500 мс после остановки ввода, а кнопка «Отправить» становится неактивной.',
+    hi: "“स्वतः भेजें”: चालू करने पर लिखना बंद करने के लगभग 500ms बाद सामग्री स्वतः डाउनस्ट्रीम भेज दी जाती है, और भेजें बटन धूसर हो जाता है।",
+    id: "“Kirim otomatis”: saat aktif, isi dikirim ke hilir secara otomatis sekitar 500ms setelah berhenti mengetik, dan tombol Kirim menjadi abu-abu.",
+    de: "„Automatisch senden“: Wenn aktiviert, wird der Inhalt etwa 500ms nach dem Tippen automatisch nachgelagert gesendet und die Schaltfläche Senden wird ausgegraut.",
+    vi: "“Tự động gửi”: khi bật, nội dung được tự động gửi đến hạ nguồn khoảng 500ms sau khi ngừng nhập, và nút Gửi bị làm mờ.",
+    tr: "“Otomatik gönder”: açıldığında, yazmayı bıraktıktan yaklaşık 500ms sonra içerik otomatik olarak alta gönderilir ve Gönder düğmesi grileşir.",
+    it: "“Invio automatico”: quando attivo, il contenuto viene inviato a valle automaticamente circa 500ms dopo aver smesso di digitare e il pulsante Invia viene disattivato (in grigio).",
   },
 
   // —— 端口 ——
@@ -88,7 +124,13 @@ export const helpMessages = {
     ar: 'المنافذ',
     fr: 'Ports',
     pt: 'Portas',
-    ru: 'Порты'
+    ru: 'Порты',
+    hi: "पोर्ट",
+    id: "Port",
+    de: "Ports",
+    vi: "Cổng",
+    tr: "Bağlantı noktaları",
+    it: "Porte",
   },
   portsLi1: {
     zh: '本节点是源头节点，<b>没有输入端口</b>，只有右侧一个 <code>text</code> 输出端口。',
@@ -99,7 +141,13 @@ export const helpMessages = {
     ar: 'هذه عقدة مصدر <b>بلا منافذ إدخال</b>؛ لديها منفذ إخراج واحد فقط <code>text</code> على اليمين.',
     fr: 'Ce nœud est un nœud source <b>sans port d’entrée</b> ; il ne possède qu’un port de sortie <code>text</code> à droite.',
     pt: 'Este é um nó de origem <b>sem portas de entrada</b>; tem apenas uma porta de saída <code>text</code> à direita.',
-    ru: 'Это узел-источник, у него <b>нет входных портов</b> — только один выходной порт <code>text</code> справа.'
+    ru: 'Это узел-источник, у него <b>нет входных портов</b> — только один выходной порт <code>text</code> справа.',
+    hi: "यह एक स्रोत नोड है, इसका <b>कोई इनपुट पोर्ट नहीं</b> है; दाईं ओर केवल एक <code>text</code> आउटपुट पोर्ट है।",
+    id: "Ini adalah node sumber <b>tanpa port masukan</b>; hanya ada satu port keluaran <code>text</code> di sebelah kanan.",
+    de: "Dies ist ein Quellknoten <b>ohne Eingangsports</b>; er hat nur einen <code>text</code>-Ausgangsport rechts.",
+    vi: "Đây là nút nguồn <b>không có cổng vào</b>; chỉ có một cổng ra <code>text</code> ở bên phải.",
+    tr: "Bu, <b>giriş bağlantı noktası olmayan</b> bir kaynak düğümdür; yalnızca sağda bir <code>text</code> çıkış bağlantı noktası vardır.",
+    it: "Questo è un nodo sorgente <b>senza porte di ingresso</b>; ha solo una porta di uscita <code>text</code> a destra.",
   },
   portsLi2: {
     zh: '<code>text</code> 端口输出<b>字符串</b>，可连接到任何接受字符串的下游节点。',
@@ -110,7 +158,13 @@ export const helpMessages = {
     ar: 'يُخرج منفذ <code>text</code> <b>نصًا</b>، ويمكن توصيله بأي عقدة لاحقة تقبل نصًا.',
     fr: 'Le port <code>text</code> émet une <b>chaîne</b> et peut être connecté à tout nœud en aval acceptant une chaîne.',
     pt: 'A porta <code>text</code> emite uma <b>string</b> e pode ser ligada a qualquer nó seguinte que aceite uma string.',
-    ru: 'Порт <code>text</code> выводит <b>строку</b> и может быть подключён к любому последующему узлу, принимающему строку.'
+    ru: 'Порт <code>text</code> выводит <b>строку</b> и может быть подключён к любому последующему узлу, принимающему строку.',
+    hi: "<code>text</code> पोर्ट एक <b>स्ट्रिंग</b> आउटपुट करता है और किसी भी स्ट्रिंग स्वीकार करने वाले डाउनस्ट्रीम नोड से कनेक्ट किया जा सकता है।",
+    id: "Port <code>text</code> mengeluarkan sebuah <b>string</b> dan dapat dihubungkan ke node hilir mana pun yang menerima string.",
+    de: "Der <code>text</code>-Port gibt eine <b>Zeichenkette</b> aus und kann mit jedem nachgelagerten Knoten verbunden werden, der eine Zeichenkette akzeptiert.",
+    vi: "Cổng <code>text</code> xuất ra một <b>chuỗi</b> và có thể được kết nối với bất kỳ nút hạ nguồn nào chấp nhận chuỗi.",
+    tr: "<code>text</code> bağlantı noktası bir <b>dize</b> çıkarır ve dize kabul eden herhangi bir alt düğüme bağlanabilir.",
+    it: "La porta <code>text</code> emette una <b>stringa</b> e può essere collegata a qualsiasi nodo a valle che accetti una stringa.",
   },
   portsLi3: {
     zh: '节点不接收文件拖入，把文件拖到节点上不会有任何反应。',
@@ -121,7 +175,13 @@ export const helpMessages = {
     ar: 'لا تقبل العقدة إفلات الملفات؛ ولن يحدث شيء إذا أفلتت ملفًا فوقها.',
     fr: 'Le nœud n’accepte pas de fichiers déposés ; déposer un fichier dessus n’a aucun effet.',
     pt: 'O nó não aceita ficheiros arrastados; largar um ficheiro sobre ele não faz nada.',
-    ru: 'Узел не принимает перетаскиваемые файлы: перетаскивание файла на узел ничего не делает.'
+    ru: 'Узел не принимает перетаскиваемые файлы: перетаскивание файла на узел ничего не делает.',
+    hi: "नोड फ़ाइल ड्रॉप स्वीकार नहीं करता; किसी फ़ाइल को नोड पर खींचने पर कुछ नहीं होगा।",
+    id: "Node tidak menerima file yang diseret; menjatuhkan file ke node tidak akan bereaksi apa pun.",
+    de: "Der Knoten nimmt keine hineingezogenen Dateien an; das Ablegen einer Datei auf dem Knoten bewirkt nichts.",
+    vi: "Nút không nhận tệp kéo vào; kéo tệp lên nút sẽ không có phản ứng gì.",
+    tr: "Düğüm sürüklenen dosyaları kabul etmez; düğüme dosya bırakmanın hiçbir etkisi olmaz.",
+    it: "Il nodo non accetta file trascinati; trascinare un file sopra di esso non produce alcun effetto.",
   },
 
   // —— 编辑与发送 ——
@@ -134,7 +194,13 @@ export const helpMessages = {
     ar: 'التحرير والإرسال',
     fr: 'Édition et envoi',
     pt: 'Edição e envio',
-    ru: 'Редактирование и отправка'
+    ru: 'Редактирование и отправка',
+    hi: "संपादन और भेजना",
+    id: "Mengedit & mengirim",
+    de: "Bearbeiten & Senden",
+    vi: "Chỉnh sửa & gửi",
+    tr: "Düzenleme ve gönderme",
+    it: "Modifica e invio",
   },
   runLi1: {
     zh: '在输入框里键入内容只是在编辑<b>草稿</b>，此时不会下发到下游。',
@@ -145,7 +211,13 @@ export const helpMessages = {
     ar: 'الكتابة في حقل الإدخال تعدّل <b>المسودة</b> فقط، ولا يُرسَل شيء إلى العقد اللاحقة في هذه المرحلة.',
     fr: 'Saisir du texte dans le champ ne modifie que le <b>brouillon</b> ; rien n’est encore envoyé en aval.',
     pt: 'Escrever no campo apenas edita o <b>rascunho</b>; nada é enviado a jusante nesta fase.',
-    ru: 'Ввод текста в поле редактирует только <b>черновик</b>; в этот момент дальше ничего не отправляется.'
+    ru: 'Ввод текста в поле редактирует только <b>черновик</b>; в этот момент дальше ничего не отправляется.',
+    hi: "इनपुट फ़ील्ड में टाइप करना केवल <b>ड्राफ़्ट</b> संपादित करना है; इस समय डाउनस्ट्रीम को कुछ नहीं भेजा जाता।",
+    id: "Mengetik di kolom masukan hanya mengedit <b>draf</b>; saat ini tidak ada yang dikirim ke hilir.",
+    de: "Tippen im Eingabefeld bearbeitet nur den <b>Entwurf</b>; dabei wird noch nichts nachgelagert gesendet.",
+    vi: "Nhập nội dung trong ô nhập liệu chỉ là chỉnh sửa <b>bản nháp</b>; lúc này chưa có gì được gửi xuống hạ nguồn.",
+    tr: "Giriş alanına yazmak yalnızca <b>taslağı</b> düzenler; şu anda alta hiçbir şey gönderilmez.",
+    it: "Digitare nel campo di input modifica solo la <b>bozza</b>; in questo momento non viene inviato nulla a valle.",
   },
   runLi2: {
     zh: '点「发送」按钮（或触发快捷键）才会把草稿提交到 <code>text</code> 端口，下游才会收到。',
@@ -156,7 +228,13 @@ export const helpMessages = {
     ar: 'عند النقر على «إرسال» (أو استخدام اختصار) فقط تُثبَّت المسودة في منفذ <code>text</code>، فتستقبلها العقد اللاحقة.',
     fr: 'Seul un clic sur « Envoyer » (ou un raccourci) valide le brouillon sur le port <code>text</code>, et les nœuds en aval le reçoivent.',
     pt: 'Só ao clicar em “Enviar” (ou usar um atalho) o rascunho é confirmado na porta <code>text</code>, e os nós seguintes recebem-no.',
-    ru: 'Только нажатие «Отправить» (или горячая клавиша) фиксирует черновик в порте <code>text</code>, и последующие узлы его получают.'
+    ru: 'Только нажатие «Отправить» (или горячая клавиша) фиксирует черновик в порте <code>text</code>, и последующие узлы его получают.',
+    hi: "“भेजें” बटन पर क्लिक करने (या शॉर्टकट दबाने) पर ही ड्राफ़्ट <code>text</code> पोर्ट पर कमिट होता है, तभी डाउनस्ट्रीम को यह मिलता है।",
+    id: "Hanya dengan mengeklik tombol “Kirim” (atau memicu pintasan) draf dikomit ke port <code>text</code>, sehingga hilir menerimanya.",
+    de: "Erst ein Klick auf „Senden“ (oder ein Tastenkürzel) überträgt den Entwurf in den <code>text</code>-Port, sodass er nachgelagert ankommt.",
+    vi: "Chỉ khi nhấp nút “Gửi” (hoặc dùng phím tắt), bản nháp mới được ghi vào cổng <code>text</code> và hạ nguồn mới nhận được.",
+    tr: "Yalnızca “Gönder” düğmesine tıklamak (veya bir kısayolu tetiklemek) taslağı <code>text</code> bağlantı noktasına işler ve ancak o zaman alt düğümler alır.",
+    it: "Solo facendo clic su “Invia” (o usando una scorciatoia) la bozza viene confermata sulla porta <code>text</code> e i nodi a valle la ricevono.",
   },
   runLi3: {
     zh: '快捷键：<b>单行</b>模式按 <code>Enter</code> 发送；<b>多行</b>模式按 <code>Ctrl/⌘ + Enter</code> 发送，单独的 <code>Enter</code> 用于换行。',
@@ -167,7 +245,13 @@ export const helpMessages = {
     ar: 'الاختصارات: في وضع <b>سطر واحد</b> اضغط <code>Enter</code> للإرسال؛ وفي وضع <b>متعدد الأسطر</b> اضغط <code>Ctrl/⌘ + Enter</code> للإرسال، بينما يُدرج <code>Enter</code> وحده فاصل سطر.',
     fr: 'Raccourcis : en mode <b>monoligne</b>, appuyez sur <code>Enter</code> pour envoyer ; en mode <b>multiligne</b>, appuyez sur <code>Ctrl/⌘ + Enter</code> pour envoyer, et <code>Enter</code> seul insère un saut de ligne.',
     pt: 'Atalhos: no modo <b>uma linha</b>, prima <code>Enter</code> para enviar; no modo <b>multilinha</b>, prima <code>Ctrl/⌘ + Enter</code> para enviar, e <code>Enter</code> sozinho insere uma quebra de linha.',
-    ru: 'Горячие клавиши: в <b>однострочном</b> режиме нажмите <code>Enter</code>, чтобы отправить; в <b>многострочном</b> — <code>Ctrl/⌘ + Enter</code>, а одиночный <code>Enter</code> переносит строку.'
+    ru: 'Горячие клавиши: в <b>однострочном</b> режиме нажмите <code>Enter</code>, чтобы отправить; в <b>многострочном</b> — <code>Ctrl/⌘ + Enter</code>, а одиночный <code>Enter</code> переносит строку.',
+    hi: "शॉर्टकट: <b>एकल-पंक्ति</b> मोड में भेजने के लिए <code>Enter</code> दबाएँ; <b>बहु-पंक्ति</b> मोड में भेजने के लिए <code>Ctrl/⌘ + Enter</code> दबाएँ, और अकेला <code>Enter</code> नई पंक्ति के लिए है।",
+    id: "Pintasan: dalam mode <b>satu baris</b> tekan <code>Enter</code> untuk mengirim; dalam mode <b>multibaris</b> tekan <code>Ctrl/⌘ + Enter</code> untuk mengirim, dan <code>Enter</code> saja untuk baris baru.",
+    de: "Tastenkürzel: Im <b>einzeiligen</b> Modus mit <code>Enter</code> senden; im <b>mehrzeiligen</b> Modus mit <code>Ctrl/⌘ + Enter</code> senden, ein einzelnes <code>Enter</code> fügt einen Zeilenumbruch ein.",
+    vi: "Phím tắt: ở chế độ <b>một dòng</b> nhấn <code>Enter</code> để gửi; ở chế độ <b>nhiều dòng</b> nhấn <code>Ctrl/⌘ + Enter</code> để gửi, còn <code>Enter</code> riêng để xuống dòng.",
+    tr: "<b>Tek satır</b> modunda göndermek için <code>Enter</code> tuşuna basın; <b>çok satırlı</b> modda göndermek için <code>Ctrl/⌘ + Enter</code> tuşlarına basın, tek başına <code>Enter</code> yeni satır içindir.",
+    it: "Scorciatoie: in modalità <b>riga singola</b> premi <code>Enter</code> per inviare; in modalità <b>multilinea</b> premi <code>Ctrl/⌘ + Enter</code> per inviare, mentre <code>Enter</code> da solo inserisce un’interruzione di riga.",
   },
   runLi4: {
     zh: '开启「自动发送」后即可省略手动点击，停止输入即自动提交。',
@@ -178,7 +262,13 @@ export const helpMessages = {
     ar: 'مع تفعيل «الإرسال التلقائي» يمكنك الاستغناء عن النقر اليدوي، إذ تُثبَّت المسودة تلقائيًا بمجرد التوقف عن الكتابة.',
     fr: 'Avec « Envoi automatique » activé, plus besoin de cliquer : le brouillon est validé automatiquement dès que vous arrêtez de saisir.',
     pt: 'Com “Envio automático” ativado, dispensa o clique manual: o rascunho é confirmado automaticamente assim que para de escrever.',
-    ru: 'При включённой «Автоотправке» можно обойтись без ручных нажатий: черновик фиксируется автоматически, как только вы прекратите ввод.'
+    ru: 'При включённой «Автоотправке» можно обойтись без ручных нажатий: черновик фиксируется автоматически, как только вы прекратите ввод.',
+    hi: "“स्वतः भेजें” चालू करने पर मैन्युअल क्लिक की आवश्यकता नहीं रहती; लिखना बंद करते ही स्वतः कमिट हो जाता है।",
+    id: "Dengan “Kirim otomatis” aktif, Anda bisa melewati klik manual — draf dikomit otomatis begitu berhenti mengetik.",
+    de: "Mit aktiviertem „Automatisch senden“ entfällt das manuelle Klicken – der Entwurf wird automatisch übernommen, sobald du aufhörst zu tippen.",
+    vi: "Khi bật “Tự động gửi”, bạn có thể bỏ qua thao tác nhấp thủ công — bản nháp được ghi tự động ngay khi ngừng nhập.",
+    tr: "“Otomatik gönder” açıkken elle tıklamayı atlayabilirsiniz — yazmayı bıraktığınızda taslak otomatik olarak işlenir.",
+    it: "Con “Invio automatico” attivo puoi evitare il clic manuale: la bozza viene confermata automaticamente appena smetti di digitare.",
   },
 
   // —— 输出 ——
@@ -191,7 +281,13 @@ export const helpMessages = {
     ar: 'الإخراج',
     fr: 'Sortie',
     pt: 'Saída',
-    ru: 'Выход'
+    ru: 'Выход',
+    hi: "आउटपुट",
+    id: "Keluaran",
+    de: "Ausgabe",
+    vi: "Đầu ra",
+    tr: "Çıktı",
+    it: "Uscita",
   },
   outputLi1: {
     zh: '<code>text</code> 端口携带最近一次<b>已提交</b>的字符串。',
@@ -202,7 +298,13 @@ export const helpMessages = {
     ar: 'يحمل منفذ <code>text</code> آخر سلسلة نصية <b>مُثبَّتة</b>.',
     fr: 'Le port <code>text</code> contient la dernière chaîne <b>validée</b>.',
     pt: 'A porta <code>text</code> transporta a string <b>confirmada</b> mais recente.',
-    ru: 'Порт <code>text</code> хранит последнюю <b>зафиксированную</b> строку.'
+    ru: 'Порт <code>text</code> хранит последнюю <b>зафиксированную</b> строку.',
+    hi: "<code>text</code> पोर्ट सबसे हाल ही में <b>कमिट किए गए</b> स्ट्रिंग को ले जाता है।",
+    id: "Port <code>text</code> membawa string yang terakhir <b>dikomit</b>.",
+    de: "Der <code>text</code>-Port trägt die zuletzt <b>übernommene</b> Zeichenkette.",
+    vi: "Cổng <code>text</code> mang chuỗi <b>đã ghi</b> gần nhất.",
+    tr: "<code>text</code> bağlantı noktası en son <b>işlenen</b> dizeyi taşır.",
+    it: "La porta <code>text</code> trasporta la stringa <b>confermata</b> più recente.",
   },
   outputLi2: {
     zh: '只有「发送」/ 快捷键 / 自动发送触发时输出才更新，仅编辑草稿不会影响下游。',
@@ -213,7 +315,13 @@ export const helpMessages = {
     ar: 'لا يتحدّث الإخراج إلا عند تفعيله بـ«إرسال» أو اختصار أو الإرسال التلقائي؛ ومجرد تعديل المسودة لا يؤثر على العقد اللاحقة.',
     fr: 'La sortie n’est mise à jour que lorsqu’elle est déclenchée par Envoyer, un raccourci ou l’envoi automatique ; le simple fait de modifier le brouillon n’affecte pas les nœuds en aval.',
     pt: 'A saída só é atualizada quando acionada por Enviar, um atalho ou o envio automático; apenas editar o rascunho não afeta os nós seguintes.',
-    ru: 'Вывод обновляется только при срабатывании «Отправить», горячей клавиши или автоотправки; само редактирование черновика не влияет на последующие узлы.'
+    ru: 'Вывод обновляется только при срабатывании «Отправить», горячей клавиши или автоотправки; само редактирование черновика не влияет на последующие узлы.',
+    hi: "आउटपुट तभी अपडेट होता है जब “भेजें” / शॉर्टकट / स्वतः भेजना सक्रिय हो; केवल ड्राफ़्ट संपादित करने से डाउनस्ट्रीम प्रभावित नहीं होता।",
+    id: "Keluaran hanya diperbarui saat dipicu oleh Kirim, pintasan, atau kirim otomatis; sekadar mengedit draf tidak memengaruhi hilir.",
+    de: "Die Ausgabe wird nur aktualisiert, wenn sie durch Senden, ein Tastenkürzel oder das automatische Senden ausgelöst wird; das bloße Bearbeiten des Entwurfs beeinflusst die nachgelagerten Knoten nicht.",
+    vi: "Đầu ra chỉ cập nhật khi được kích hoạt bởi Gửi, phím tắt hoặc tự động gửi; chỉ chỉnh sửa bản nháp không ảnh hưởng đến hạ nguồn.",
+    tr: "Çıktı yalnızca Gönder, bir kısayol veya otomatik gönder tetiklendiğinde güncellenir; yalnızca taslağı düzenlemek alt düğümleri etkilemez.",
+    it: "L’uscita si aggiorna solo quando viene attivata da Invia, da una scorciatoia o dall’invio automatico; la sola modifica della bozza non influisce sui nodi a valle.",
   },
 
   // —— 注意事项 ——
@@ -226,7 +334,13 @@ export const helpMessages = {
     ar: 'ملاحظات',
     fr: 'Remarques',
     pt: 'Notas',
-    ru: 'Примечания'
+    ru: 'Примечания',
+    hi: "ध्यान दें",
+    id: "Catatan",
+    de: "Hinweise",
+    vi: "Lưu ý",
+    tr: "Notlar",
+    it: "Note",
   },
   notesLi1: {
     zh: '草稿与输出分离，避免编辑过程中下游被反复重算。',
@@ -237,7 +351,13 @@ export const helpMessages = {
     ar: 'تُفصَل المسودة عن الإخراج، تفاديًا لإعادة حساب العقد اللاحقة مرارًا أثناء التحرير.',
     fr: 'Le brouillon et la sortie sont séparés, ce qui évite de recalculer sans cesse les nœuds en aval pendant l’édition.',
     pt: 'O rascunho e a saída estão separados, evitando que os nós seguintes sejam recalculados repetidamente durante a edição.',
-    ru: 'Черновик и вывод разделены, поэтому последующие узлы не пересчитываются многократно во время редактирования.'
+    ru: 'Черновик и вывод разделены, поэтому последующие узлы не пересчитываются многократно во время редактирования.',
+    hi: "ड्राफ़्ट और आउटपुट अलग रखे जाते हैं, ताकि संपादन के दौरान डाउनस्ट्रीम बार-बार दोबारा गणना न करे।",
+    id: "Draf dan keluaran dipisahkan, agar hilir tidak dihitung ulang berulang kali selama mengedit.",
+    de: "Entwurf und Ausgabe sind getrennt, damit nachgelagerte Knoten während der Bearbeitung nicht wiederholt neu berechnet werden.",
+    vi: "Bản nháp và đầu ra được tách riêng, tránh việc hạ nguồn bị tính lại liên tục trong khi chỉnh sửa.",
+    tr: "Taslak ile çıktı ayrı tutulur; böylece düzenleme sırasında alt düğümler tekrar tekrar yeniden hesaplanmaz.",
+    it: "La bozza e l’uscita sono separate, evitando che i nodi a valle vengano ricalcolati ripetutamente durante la modifica.",
   },
   notesLi2: {
     zh: '从多行切回单行时，内容中的换行符会被替换为空格并立即提交。',
@@ -248,7 +368,13 @@ export const helpMessages = {
     ar: 'عند العودة من متعدد الأسطر إلى سطر واحد تُستبدل فواصل الأسطر في المحتوى بمسافات وتُثبَّت فورًا.',
     fr: 'En repassant de multiligne à monoligne, les sauts de ligne du contenu sont remplacés par des espaces et validés immédiatement.',
     pt: 'Ao voltar de multilinha para uma linha, as quebras de linha do conteúdo são substituídas por espaços e confirmadas de imediato.',
-    ru: 'При возврате из многострочного режима в однострочный переводы строк в содержимом заменяются пробелами и сразу фиксируются.'
+    ru: 'При возврате из многострочного режима в однострочный переводы строк в содержимом заменяются пробелами и сразу фиксируются.',
+    hi: "बहु-पंक्ति से एकल-पंक्ति में लौटने पर, सामग्री में मौजूद लाइन ब्रेक रिक्त स्थान से बदल दिए जाते हैं और तुरंत कमिट हो जाते हैं।",
+    id: "Saat beralih dari multibaris kembali ke satu baris, jeda baris dalam isi diganti dengan spasi dan langsung dikomit.",
+    de: "Beim Wechsel von mehrzeilig zurück auf einzeilig werden Zeilenumbrüche im Inhalt durch Leerzeichen ersetzt und sofort übernommen.",
+    vi: "Khi chuyển từ nhiều dòng về một dòng, các dấu ngắt dòng trong nội dung được thay bằng dấu cách và được ghi ngay lập tức.",
+    tr: "Çok satırlıdan tek satıra dönerken içerikteki satır sonları boşlukla değiştirilir ve hemen işlenir.",
+    it: "Passando da multilinea a riga singola, le interruzioni di riga nel contenuto vengono sostituite con spazi e confermate immediatamente.",
   },
   notesLi3: {
     zh: '内容随工作区一起保存，重新打开工作区时会把内容提交到输出端口。',
@@ -259,7 +385,13 @@ export const helpMessages = {
     ar: 'يُحفظ المحتوى مع مساحة العمل؛ وعند إعادة فتحها يُثبَّت المحتوى في منفذ الإخراج.',
     fr: 'Le contenu est enregistré avec l’espace de travail ; à sa réouverture, il est validé sur le port de sortie.',
     pt: 'O conteúdo é guardado com o espaço de trabalho; ao reabri-lo, é confirmado na porta de saída.',
-    ru: 'Содержимое сохраняется вместе с рабочим пространством; при его повторном открытии содержимое фиксируется в выходном порте.'
+    ru: 'Содержимое сохраняется вместе с рабочим пространством; при его повторном открытии содержимое фиксируется в выходном порте.',
+    hi: "सामग्री कार्यक्षेत्र के साथ सहेजी जाती है; कार्यक्षेत्र दोबारा खोलने पर सामग्री आउटपुट पोर्ट पर कमिट कर दी जाती है।",
+    id: "Isi disimpan bersama ruang kerja; saat ruang kerja dibuka kembali, isi dikomit ke port keluaran.",
+    de: "Der Inhalt wird mit dem Arbeitsbereich gespeichert; beim erneuten Öffnen des Arbeitsbereichs wird er in den Ausgangsport übernommen.",
+    vi: "Nội dung được lưu cùng không gian làm việc; khi mở lại không gian làm việc, nội dung được ghi vào cổng ra.",
+    tr: "İçerik çalışma alanıyla birlikte kaydedilir; çalışma alanını yeniden açtığınızda içerik çıkış bağlantı noktasına işlenir.",
+    it: "Il contenuto viene salvato insieme all’area di lavoro; riaprendola, il contenuto viene confermato sulla porta di uscita.",
   },
 
   // —— 示例 ——
@@ -272,7 +404,13 @@ export const helpMessages = {
     ar: 'مثال',
     fr: 'Exemple',
     pt: 'Exemplo',
-    ru: 'Пример'
+    ru: 'Пример',
+    hi: "उदाहरण",
+    id: "Contoh",
+    de: "Beispiel",
+    vi: "Ví dụ",
+    tr: "Örnek",
+    it: "Esempio",
   },
   exampleLabel: {
     zh: '例：输入 <code>Hello, world!</code> 并发送后，<code>text</code> 端口输出同一字符串给下游节点。',
@@ -283,7 +421,13 @@ export const helpMessages = {
     ar: 'مثال: بعد كتابة <code>Hello, world!</code> وإرساله، يُخرج منفذ <code>text</code> السلسلة نفسها إلى العقد اللاحقة.',
     fr: 'Exemple : après avoir saisi <code>Hello, world!</code> et envoyé, le port <code>text</code> émet la même chaîne vers les nœuds en aval.',
     pt: 'Exemplo: depois de escrever <code>Hello, world!</code> e enviar, a porta <code>text</code> emite a mesma string aos nós seguintes.',
-    ru: 'Пример: после ввода <code>Hello, world!</code> и отправки порт <code>text</code> выводит ту же строку последующим узлам.'
+    ru: 'Пример: после ввода <code>Hello, world!</code> и отправки порт <code>text</code> выводит ту же строку последующим узлам.',
+    hi: "उदाहरण: <code>Hello, world!</code> लिखकर भेजने के बाद, <code>text</code> पोर्ट वही स्ट्रिंग डाउनस्ट्रीम नोड्स को आउटपुट करता है।",
+    id: "Contoh: setelah mengetik <code>Hello, world!</code> dan mengirimnya, port <code>text</code> mengeluarkan string yang sama ke node hilir.",
+    de: "Beispiel: Nach Eingabe von <code>Hello, world!</code> und dem Senden gibt der <code>text</code>-Port dieselbe Zeichenkette an nachgelagerte Knoten aus.",
+    vi: "Ví dụ: sau khi nhập <code>Hello, world!</code> và gửi, cổng <code>text</code> xuất ra cùng chuỗi đó cho các nút hạ nguồn.",
+    tr: "Örnek: <code>Hello, world!</code> yazıp gönderdikten sonra <code>text</code> bağlantı noktası aynı dizeyi alt düğümlere verir.",
+    it: "Esempio: dopo aver digitato <code>Hello, world!</code> e inviato, la porta <code>text</code> emette la stessa stringa verso i nodi a valle.",
   },
   exampleComment1: {
     zh: '// 输入框（草稿）',
@@ -294,7 +438,13 @@ export const helpMessages = {
     ar: '// حقل الإدخال (مسودة)',
     fr: '// Champ de saisie (brouillon)',
     pt: '// Campo de entrada (rascunho)',
-    ru: '// Поле ввода (черновик)'
+    ru: '// Поле ввода (черновик)',
+    hi: "// इनपुट फ़ील्ड (ड्राफ़्ट)",
+    id: "// Kolom masukan (draf)",
+    de: "// Eingabefeld (Entwurf)",
+    vi: "// Ô nhập liệu (bản nháp)",
+    tr: "// Giriş alanı (taslak)",
+    it: "// Campo di input (bozza)",
   },
   exampleComment2: {
     zh: '// 发送后输出',
@@ -305,6 +455,12 @@ export const helpMessages = {
     ar: '// الإخراج بعد الإرسال',
     fr: '// Sortie après envoi',
     pt: '// Saída após enviar',
-    ru: '// Вывод после отправки'
+    ru: '// Вывод после отправки',
+    hi: "// भेजने के बाद आउटपुट",
+    id: "// Keluaran setelah mengirim",
+    de: "// Ausgabe nach dem Senden",
+    vi: "// Đầu ra sau khi gửi",
+    tr: "// Gönderdikten sonra çıktı",
+    it: "// Uscita dopo l’invio",
   }
 } satisfies Record<string, LocalizedText>

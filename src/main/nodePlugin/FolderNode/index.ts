@@ -14,7 +14,13 @@ export const manifest: NodePluginManifest = {
     ar: 'مجلد',
     fr: 'Dossier',
     pt: 'Pasta',
-    ru: 'Папка'
+    ru: 'Папка',
+    hi: 'फ़ोल्डर',
+    id: 'Folder',
+    de: 'Ordner',
+    vi: 'Thư mục',
+    tr: 'Klasör',
+    it: 'Cartella'
   },
   render,
   help: () => import('./FolderHelpDialog.vue')

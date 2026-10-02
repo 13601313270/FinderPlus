@@ -4,7 +4,7 @@ import type { BuiltinValueKind } from '../../../main/engine/data/Value'
  * 词条契约类型：所有语言词条（locales/*.ts）都必须满足这个结构。
  *
  * 这是**唯一的结构事实来源**，中文词条也不例外——zh.ts 同样写成 `const zh: Language = {...}`。
- * 所以新增 / 重命名 / 删除任何一个 key，9 种语言会一起在 typecheck 阶段报错，
+ * 所以新增 / 重命名 / 删除任何一个 key，全部语言会一起在 typecheck 阶段报错，
  * 不会出现「某个语言悄悄少了 settingsDialog.languageHint」这种漂移。
  *
  * 用 `type` 而非 `interface` 是有意的：type alias 自带隐式索引签名，
@@ -60,7 +60,7 @@ export type Language = {
    * 端口类型标签（port-label__kinds 上的小胶囊，如 string / txt-file）的文案。
    *
    * 键就是引擎内置的类型标签名，来自 main/engine/data/Value.ts 的 BUILTIN_VALUE_KINDS；
-   * 用 Record<BuiltinValueKind, string> 约束，新增内置类型时 9 种语言会被强制补齐。
+   * 用 Record<BuiltinValueKind, string> 约束，新增内置类型时全部语言会被强制补齐。
    * 插件自定义的类型不在契约内，UI 侧遇到时原样显示标识符（见 NodePort.vue 的 kindLabel）。
    */
   valueKind: Record<BuiltinValueKind, string>

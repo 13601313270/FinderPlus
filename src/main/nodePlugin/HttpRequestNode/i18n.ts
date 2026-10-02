@@ -15,7 +15,13 @@ export const messages = {
     ar: 'اسحب العقدة',
     fr: 'Glisser le nœud',
     pt: 'Arrastar nó',
-    ru: 'Перетащить узел'
+    ru: 'Перетащить узел',
+    hi: "नोड खींचें",
+    id: "Seret node",
+    de: "Knoten ziehen",
+    vi: "Kéo nút",
+    tr: "Düğümü sürükle",
+    it: "Trascina il nodo",
   },
   collapseConfig: {
     zh: '收起配置',
@@ -26,7 +32,13 @@ export const messages = {
     ar: 'طيّ الإعدادات',
     fr: 'Réduire les réglages',
     pt: 'Recolher configurações',
-    ru: 'Свернуть настройки'
+    ru: 'Свернуть настройки',
+    hi: "कॉन्फ़िगरेशन संकुचित करें",
+    id: "Ciutkan pengaturan",
+    de: "Einstellungen einklappen",
+    vi: "Thu gọn cấu hình",
+    tr: "Ayarları daralt",
+    it: "Comprimi impostazioni",
   },
   expandConfig: {
     zh: '展开配置',
@@ -37,7 +49,13 @@ export const messages = {
     ar: 'توسيع الإعدادات',
     fr: 'Développer les réglages',
     pt: 'Expandir configurações',
-    ru: 'Развернуть настройки'
+    ru: 'Развернуть настройки',
+    hi: "कॉन्फ़िगरेशन विस्तृत करें",
+    id: "Bentangkan pengaturan",
+    de: "Einstellungen ausklappen",
+    vi: "Mở rộng cấu hình",
+    tr: "Ayarları genişlet",
+    it: "Espandi impostazioni",
   },
   collapse: {
     zh: '收起',
@@ -48,7 +66,13 @@ export const messages = {
     ar: 'طيّ',
     fr: 'Réduire',
     pt: 'Recolher',
-    ru: 'Свернуть'
+    ru: 'Свернуть',
+    hi: "संकुचित करें",
+    id: "Ciutkan",
+    de: "Einklappen",
+    vi: "Thu gọn",
+    tr: "Daralt",
+    it: "Comprimi",
   },
   expand: {
     zh: '展开',
@@ -59,7 +83,13 @@ export const messages = {
     ar: 'توسيع',
     fr: 'Développer',
     pt: 'Expandir',
-    ru: 'Развернуть'
+    ru: 'Развернуть',
+    hi: "विस्तृत करें",
+    id: "Bentangkan",
+    de: "Ausklappen",
+    vi: "Mở rộng",
+    tr: "Genişlet",
+    it: "Espandi",
   },
   helpHint: {
     zh: '使用说明',
@@ -70,7 +100,13 @@ export const messages = {
     ar: 'تعليمات',
     fr: 'Aide',
     pt: 'Ajuda',
-    ru: 'Справка'
+    ru: 'Справка',
+    hi: "सहायता",
+    id: "Bantuan",
+    de: "Hilfe",
+    vi: "Trợ giúp",
+    tr: "Yardım",
+    it: "Guida",
   },
   urlEmptyHint: {
     zh: '（展开后填写 URL）',
@@ -81,7 +117,13 @@ export const messages = {
     ar: '(وسّع لإدخال URL)',
     fr: '(Développez pour saisir une URL)',
     pt: '(Expanda para inserir uma URL)',
-    ru: '(Разверните, чтобы ввести URL)'
+    ru: '(Разверните, чтобы ввести URL)',
+    hi: "(URL भरने के लिए विस्तृत करें)",
+    id: "(Bentangkan untuk memasukkan URL)",
+    de: "(Zum Eingeben einer URL ausklappen)",
+    vi: "(Mở rộng để nhập URL)",
+    tr: "(URL girmek için genişletin)",
+    it: "(Espandi per inserire un URL)",
   },
   headersSummary: {
     zh: 'headers: {n} 条',
@@ -92,7 +134,13 @@ export const messages = {
     ar: 'headers: {n}',
     fr: 'headers : {n}',
     pt: 'headers: {n}',
-    ru: 'headers: {n}'
+    ru: 'headers: {n}',
+    hi: "headers: {n}",
+    id: "headers: {n}",
+    de: "headers: {n}",
+    vi: "headers: {n}",
+    tr: "headers: {n}",
+    it: "headers: {n}",
   },
   bodySet: {
     zh: '已设置',
@@ -103,7 +151,13 @@ export const messages = {
     ar: 'مُعيَّن',
     fr: 'Défini',
     pt: 'Definido',
-    ru: 'Задано'
+    ru: 'Задано',
+    hi: "सेट",
+    id: "Diatur",
+    de: "Festgelegt",
+    vi: "Đã đặt",
+    tr: "Ayarlı",
+    it: "Impostato",
   },
   bodyNone: {
     zh: '无',
@@ -114,7 +168,13 @@ export const messages = {
     ar: 'لا شيء',
     fr: 'Aucun',
     pt: 'Nenhum',
-    ru: 'Нет'
+    ru: 'Нет',
+    hi: "कोई नहीं",
+    id: "Tidak ada",
+    de: "Keine",
+    vi: "Không có",
+    tr: "Yok",
+    it: "Nessuno",
   },
   bodyNotSent: {
     zh: '{method} 不带',
@@ -125,7 +185,13 @@ export const messages = {
     ar: '{method} لا يُرسَل',
     fr: '{method} non envoyé',
     pt: '{method} não é enviado',
-    ru: '{method} не отправляется'
+    ru: '{method} не отправляется',
+    hi: "{method} नहीं भेजा जाता",
+    id: "{method} tidak dikirim",
+    de: "{method} wird nicht gesendet",
+    vi: "{method} không được gửi",
+    tr: "{method} gönderilmez",
+    it: "{method} non inviato",
   },
   portSummary: {
     zh: '$端口: {n}',
@@ -136,7 +202,13 @@ export const messages = {
     ar: '$منافذ: {n}',
     fr: '$ports : {n}',
     pt: '$portas: {n}',
-    ru: '$порты: {n}'
+    ru: '$порты: {n}',
+    hi: "$पोर्ट: {n}",
+    id: "$port: {n}",
+    de: "$Ports: {n}",
+    vi: "$cổng: {n}",
+    tr: "$bağlantı noktası: {n}",
+    it: "$porte: {n}",
   },
   labelMethod: {
     zh: '方法',
@@ -147,7 +219,13 @@ export const messages = {
     ar: 'الطريقة',
     fr: 'Méthode',
     pt: 'Método',
-    ru: 'Метод'
+    ru: 'Метод',
+    hi: "तरीका",
+    id: "Metode",
+    de: "Methode",
+    vi: "Phương thức",
+    tr: "Yöntem",
+    it: "Metodo",
   },
   headersLabel: {
     zh: 'Headers（KV）',
@@ -158,7 +236,13 @@ export const messages = {
     ar: 'Headers (KV)',
     fr: 'Headers (KV)',
     pt: 'Headers (KV)',
-    ru: 'Headers (KV)'
+    ru: 'Headers (KV)',
+    hi: "Headers (KV)",
+    id: "Headers (KV)",
+    de: "Headers (KV)",
+    vi: "Headers (KV)",
+    tr: "Headers (KV)",
+    it: "Headers (KV)",
   },
   deleteHeaderHint: {
     zh: '删除这条 header',
@@ -169,7 +253,13 @@ export const messages = {
     ar: 'إزالة هذا header',
     fr: 'Supprimer cet header',
     pt: 'Remover este header',
-    ru: 'Удалить этот header'
+    ru: 'Удалить этот header',
+    hi: "इस header को हटाएँ",
+    id: "Hapus header ini",
+    de: "Diesen header entfernen",
+    vi: "Xóa header này",
+    tr: "Bu header’ı kaldır",
+    it: "Rimuovi questo header",
   },
   addHeader: {
     zh: '+ 添加 Header',
@@ -180,7 +270,13 @@ export const messages = {
     ar: '+ إضافة Header',
     fr: '+ Ajouter Header',
     pt: '+ Adicionar Header',
-    ru: '+ Добавить Header'
+    ru: '+ Добавить Header',
+    hi: "+ Header जोड़ें",
+    id: "+ Tambah Header",
+    de: "+ Header hinzufügen",
+    vi: "+ Thêm Header",
+    tr: "+ Header ekle",
+    it: "+ Aggiungi Header",
   },
   bodyLabelOptional: {
     zh: 'Body（可选）',
@@ -191,7 +287,13 @@ export const messages = {
     ar: 'Body (اختياري)',
     fr: 'Body (facultatif)',
     pt: 'Body (opcional)',
-    ru: 'Body (необязательно)'
+    ru: 'Body (необязательно)',
+    hi: "Body (वैकल्पिक)",
+    id: "Body (Opsional)",
+    de: "Body (optional)",
+    vi: "Body (tùy chọn)",
+    tr: "Body (isteğe bağlı)",
+    it: "Body (opzionale)",
   },
   bodyLabelDisabled: {
     zh: 'Body（{method} 无 body）',
@@ -202,7 +304,13 @@ export const messages = {
     ar: 'Body ({method} بلا body)',
     fr: 'Body ({method} n’a pas de body)',
     pt: 'Body ({method} não tem body)',
-    ru: 'Body ({method} без body)'
+    ru: 'Body ({method} без body)',
+    hi: "Body ({method} में body नहीं)",
+    id: "Body ({method} tidak punya body)",
+    de: "Body ({method} hat keinen body)",
+    vi: "Body ({method} không có body)",
+    tr: "Body ({method} body içermez)",
+    it: "Body ({method} non ha body)",
   },
   bodyPlaceholder: {
     zh: '请求体',
@@ -213,7 +321,13 @@ export const messages = {
     ar: 'جسم الطلب',
     fr: 'Corps de la requête',
     pt: 'Corpo da requisição',
-    ru: 'Тело запроса'
+    ru: 'Тело запроса',
+    hi: "अनुरोध body",
+    id: "Body permintaan",
+    de: "Anfrage-body",
+    vi: "Body yêu cầu",
+    tr: "İstek body’si",
+    it: "Corpo della richiesta",
   },
   bodyPlaceholderDisabled: {
     zh: '{method} 请求不发送 body',
@@ -224,7 +338,13 @@ export const messages = {
     ar: 'طلبات {method} لا ترسل body',
     fr: 'Les requêtes {method} n’envoient pas de body',
     pt: 'Requisições {method} não enviam body',
-    ru: 'Запросы {method} не отправляют body'
+    ru: 'Запросы {method} не отправляют body',
+    hi: "{method} अनुरोध body नहीं भेजते",
+    id: "Permintaan {method} tidak mengirim body",
+    de: "{method}-Anfragen senden keinen body",
+    vi: "Yêu cầu {method} không gửi body",
+    tr: "{method} istekleri body göndermez",
+    it: "Le richieste {method} non inviano un body",
   },
   timeoutLabel: {
     zh: '超时(ms)',
@@ -235,7 +355,13 @@ export const messages = {
     ar: 'المهلة (ms)',
     fr: 'Délai d’expiration (ms)',
     pt: 'Tempo limite (ms)',
-    ru: 'Тайм-аут (ms)'
+    ru: 'Тайм-аут (ms)',
+    hi: "टाइमआउट (ms)",
+    id: "Tenggat (ms)",
+    de: "Zeitüberschreitung (ms)",
+    vi: "Hết thời gian (ms)",
+    tr: "Zaman aşımı (ms)",
+    it: "Timeout (ms)",
   },
   portsCount: {
     zh: '输入端口：{n} 个（$1…$N 引用到 URL 模板）',
@@ -246,7 +372,13 @@ export const messages = {
     ar: 'منافذ الإدخال: {n} (أشِر إليها بـ $1…$N في قالب URL)',
     fr: 'Ports d’entrée : {n} (référencez-les par $1…$N dans le gabarit d’URL)',
     pt: 'Portas de entrada: {n} (referencie como $1…$N no modelo de URL)',
-    ru: 'Входные порты: {n} (ссылайтесь как $1…$N в шаблоне URL)'
+    ru: 'Входные порты: {n} (ссылайтесь как $1…$N в шаблоне URL)',
+    hi: "इनपुट पोर्ट: {n} ($1…$N को URL टेम्पलेट में संदर्भित करें)",
+    id: "Port masukan: {n} (rujuk sebagai $1…$N di templat URL)",
+    de: "Eingabeports: {n} (als $1…$N in der URL-Vorlage referenzieren)",
+    vi: "Cổng đầu vào: {n} (tham chiếu là $1…$N trong mẫu URL)",
+    tr: "Giriş bağlantı noktaları: {n} (URL şablonunda $1…$N olarak başvurun)",
+    it: "Porte di input: {n} (fai riferimento come $1…$N nel modello URL)",
   },
   requesting: {
     zh: '请求中…',
@@ -257,7 +389,13 @@ export const messages = {
     ar: 'جارٍ الطلب…',
     fr: 'Requête en cours…',
     pt: 'Solicitando…',
-    ru: 'Запрос…'
+    ru: 'Запрос…',
+    hi: "अनुरोध हो रहा है…",
+    id: "Meminta…",
+    de: "Anfrage läuft…",
+    vi: "Đang yêu cầu…",
+    tr: "İsteniyor…",
+    it: "Richiesta in corso…",
   },
   networkError: {
     zh: '网络错误',
@@ -268,7 +406,13 @@ export const messages = {
     ar: 'خطأ الشبكة',
     fr: 'Erreur réseau',
     pt: 'Erro de rede',
-    ru: 'Сетевая ошибка'
+    ru: 'Сетевая ошибка',
+    hi: "नेटवर्क त्रुटि",
+    id: "Kesalahan jaringan",
+    de: "Netzwerkfehler",
+    vi: "Lỗi mạng",
+    tr: "Ağ hatası",
+    it: "Errore di rete",
   },
   statusCode: {
     zh: '状态码：{code}',
@@ -279,7 +423,13 @@ export const messages = {
     ar: 'رمز الحالة: {code}',
     fr: 'Code d’état : {code}',
     pt: 'Código de status: {code}',
-    ru: 'Код состояния: {code}'
+    ru: 'Код состояния: {code}',
+    hi: "स्थिति: {code}",
+    id: "Status: {code}",
+    de: "Status: {code}",
+    vi: "Trạng thái: {code}",
+    tr: "Durum: {code}",
+    it: "Stato: {code}",
   },
   noResponseBody: {
     zh: '（响应无 body）',
@@ -290,7 +440,13 @@ export const messages = {
     ar: '(الاستجابة بلا body)',
     fr: '(La réponse n’a pas de body)',
     pt: '(A resposta não tem body)',
-    ru: '(У ответа нет body)'
+    ru: '(У ответа нет body)',
+    hi: "(प्रतिक्रिया में body नहीं)",
+    id: "(Respons tidak punya body)",
+    de: "(Antwort hat keinen body)",
+    vi: "(Phản hồi không có body)",
+    tr: "(Yanıtta body yok)",
+    it: "(La risposta non ha body)",
   },
   clickToSend: {
     zh: '（点击「发送」执行请求）',
@@ -301,7 +457,13 @@ export const messages = {
     ar: '(انقر على «إرسال» لتنفيذ الطلب)',
     fr: '(Cliquez sur « Envoyer » pour exécuter la requête)',
     pt: '(Clique em “Enviar” para executar a requisição)',
-    ru: '(Нажмите «Отправить» для выполнения запроса)'
+    ru: '(Нажмите «Отправить» для выполнения запроса)',
+    hi: "(अनुरोध चलाने के लिए “भेजें” पर क्लिक करें)",
+    id: "(Klik “Kirim” untuk menjalankan permintaan)",
+    de: "(Zum Ausführen der Anfrage auf „Senden“ klicken)",
+    vi: "(Nhấp “Gửi” để thực thi yêu cầu)",
+    tr: "(İsteği çalıştırmak için “Gönder”e tıklayın)",
+    it: "(Fai clic su “Invia” per eseguire la richiesta)",
   },
   sendHint: {
     zh: '发送请求',
@@ -312,7 +474,13 @@ export const messages = {
     ar: 'إرسال الطلب',
     fr: 'Envoyer la requête',
     pt: 'Enviar requisição',
-    ru: 'Отправить запрос'
+    ru: 'Отправить запрос',
+    hi: "अनुरोध भेजें",
+    id: "Kirim permintaan",
+    de: "Anfrage senden",
+    vi: "Gửi yêu cầu",
+    tr: "İstek gönder",
+    it: "Invia richiesta",
   },
   sendHintNoUrl: {
     zh: '请先填写 URL',
@@ -323,7 +491,13 @@ export const messages = {
     ar: 'أدخل URL أولًا',
     fr: 'Saisissez d’abord une URL',
     pt: 'Insira primeiro uma URL',
-    ru: 'Сначала введите URL'
+    ru: 'Сначала введите URL',
+    hi: "कृपया पहले URL भरें",
+    id: "Harap masukkan URL terlebih dahulu",
+    de: "Bitte zuerst eine URL eingeben",
+    vi: "Vui lòng nhập URL trước",
+    tr: "Lütfen önce bir URL girin",
+    it: "Inserisci prima un URL",
   },
   sending: {
     zh: '发送中…',
@@ -334,7 +508,13 @@ export const messages = {
     ar: 'جارٍ الإرسال…',
     fr: 'Envoi…',
     pt: 'Enviando…',
-    ru: 'Отправка…'
+    ru: 'Отправка…',
+    hi: "भेजा जा रहा है…",
+    id: "Mengirim…",
+    de: "Wird gesendet…",
+    vi: "Đang gửi…",
+    tr: "Gönderiliyor…",
+    it: "Invio in corso…",
   },
   send: {
     zh: '发送',
@@ -345,7 +525,13 @@ export const messages = {
     ar: 'إرسال',
     fr: 'Envoyer',
     pt: 'Enviar',
-    ru: 'Отправить'
+    ru: 'Отправить',
+    hi: "भेजें",
+    id: "Kirim",
+    de: "Senden",
+    vi: "Gửi",
+    tr: "Gönder",
+    it: "Invia",
   },
   helpTitle: {
     zh: 'HTTP 请求节点使用说明',
@@ -356,6 +542,12 @@ export const messages = {
     ar: 'دليل عقدة طلب HTTP',
     fr: 'Guide du nœud Requête HTTP',
     pt: 'Guia do nó Requisição HTTP',
-    ru: 'Справка по узлу «HTTP-запрос»'
+    ru: 'Справка по узлу «HTTP-запрос»',
+    hi: "HTTP अनुरोध नोड गाइड",
+    id: "Panduan Node Permintaan HTTP",
+    de: "Anleitung zum HTTP-Anfrage-Knoten",
+    vi: "Hướng dẫn nút Yêu cầu HTTP",
+    tr: "HTTP İsteği Düğümü Kılavuzu",
+    it: "Guida del nodo Richiesta HTTP",
   }
 } satisfies Record<string, LocalizedText>

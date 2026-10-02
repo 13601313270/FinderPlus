@@ -1,7 +1,7 @@
 import type { LocalizedText } from '../../../shared/language'
 
 /**
- * BackgroundRemove 节点帮助文档（BackgroundRemoveHelpDialog）的全部文案，9 种语言全配。
+ * BackgroundRemove 节点帮助文档（BackgroundRemoveHelpDialog）的全部文案，全部 15 种语言全配。
  *
  * 与节点自身的 i18n.ts 分开：卡片短文案变化频繁，帮助文档整篇体量大、改动少。
  * 约定：带行内 <code> / <b> 的句子，值里直接写 HTML，模板用 v-html 渲染；
@@ -18,7 +18,13 @@ export const helpMessages = {
     ar: 'ما هذا؟',
     fr: 'Qu’est-ce que c’est ?',
     pt: 'O que é isto?',
-    ru: 'Что это?'
+    ru: 'Что это?',
+    hi: 'यह क्या है?',
+    id: 'Apa ini?',
+    de: 'Was ist das?',
+    vi: 'Đây là gì?',
+    tr: 'Bu nedir?',
+    it: 'Che cos’è?'
   },
   whatBody: {
     zh: '背景移除节点接收一张图片，在本地去除背景后输出透明 PNG，结果从右侧 <code>image</code> 端口交给下游节点。抠图由 <code>@imgly/background-removal</code> 在应用内完成，图片不会上传到服务器。',
@@ -29,7 +35,13 @@ export const helpMessages = {
     ar: 'تستقبل عقدة إزالة الخلفية صورةً، وتزيل خلفيتها محليًا، ثم تُخرج صورة PNG شفافة إلى العقد اللاحقة من منفذ <code>image</code> على اليمين. تتم الإزالة داخل التطبيق بواسطة <code>@imgly/background-removal</code>، ولا تُرفع الصور إلى أي خادم.',
     fr: 'Le nœud Suppression d’arrière-plan prend une image, supprime son arrière-plan localement et envoie un PNG transparent aux nœuds en aval depuis le port <code>image</code> à droite. La suppression est effectuée dans l’application par <code>@imgly/background-removal</code> ; les images ne sont jamais envoyées à un serveur.',
     pt: 'O nó Remover fundo recebe uma imagem, remove o fundo localmente e envia um PNG transparente aos nós seguintes pelo porto <code>image</code> à direita. A remoção é feita dentro do app por <code>@imgly/background-removal</code>; as imagens nunca são enviadas a um servidor.',
-    ru: 'Узел «Удаление фона» принимает изображение, локально удаляет фон и выводит прозрачный PNG последующим узлам из порта <code>image</code> справа. Удаление выполняет <code>@imgly/background-removal</code> внутри приложения; изображения не отправляются на сервер.'
+    ru: 'Узел «Удаление фона» принимает изображение, локально удаляет фон и выводит прозрачный PNG последующим узлам из порта <code>image</code> справа. Удаление выполняет <code>@imgly/background-removal</code> внутри приложения; изображения не отправляются на сервер.',
+    hi: 'पृष्ठभूमि हटाने वाला नोड एक छवि प्राप्त करता है, स्थानीय रूप से पृष्ठभूमि हटाकर पारदर्शी PNG आउटपुट करता है, और परिणाम दाईं ओर के <code>image</code> पोर्ट से डाउनस्ट्रीम नोड्स को देता है। पृष्ठभूमि हटाना ऐप के भीतर <code>@imgly/background-removal</code> द्वारा किया जाता है; छवियाँ सर्वर पर अपलोड नहीं की जातीं।',
+    id: 'Node Hapus Latar menerima sebuah gambar, menghapus latarnya secara lokal, lalu mengeluarkan PNG transparan, dan meneruskan hasilnya ke node hilir dari port <code>image</code> di sebelah kanan. Penghapusan dilakukan di dalam aplikasi oleh <code>@imgly/background-removal</code>; gambar tidak pernah diunggah ke server.',
+    de: 'Der Knoten „Hintergrund entfernen“ nimmt ein Bild entgegen, entfernt den Hintergrund lokal und gibt ein transparentes PNG aus; das Ergebnis geht vom rechten <code>image</code>-Port an nachgelagerte Knoten. Die Freistellung erfolgt innerhalb der App durch <code>@imgly/background-removal</code>; Bilder werden nie auf einen Server hochgeladen.',
+    vi: 'Nút Xóa nền nhận một ảnh, xóa nền ngay trên máy rồi xuất PNG trong suốt, và chuyển kết quả tới các nút hạ nguồn từ cổng <code>image</code> bên phải. Việc xóa nền do <code>@imgly/background-removal</code> thực hiện trong ứng dụng; ảnh không bao giờ được tải lên máy chủ.',
+    tr: 'Arka Planı Kaldır düğümü bir görüntü alır, arka planı yerel olarak kaldırır ve saydam bir PNG üretir; sonuç sağdaki <code>image</code> bağlantı noktasından aşağı akış düğümlerine iletilir. Kaldırma işlemi uygulama içinde <code>@imgly/background-removal</code> ile yapılır; görüntüler hiçbir zaman bir sunucuya yüklenmez.',
+    it: 'Il nodo Rimuovi sfondo riceve un’immagine, rimuove lo sfondo in locale e restituisce un PNG trasparente; il risultato va ai nodi a valle dalla porta <code>image</code> a destra. La rimozione avviene all’interno dell’app tramite <code>@imgly/background-removal</code>; le immagini non vengono mai caricate su un server.'
   },
 
   // —— 端口 ——
@@ -42,7 +54,13 @@ export const helpMessages = {
     ar: 'المنافذ',
     fr: 'Ports',
     pt: 'Portas',
-    ru: 'Порты'
+    ru: 'Порты',
+    hi: 'पोर्ट',
+    id: 'Port',
+    de: 'Ports',
+    vi: 'Cổng',
+    tr: 'Bağlantı noktaları',
+    it: 'Porte'
   },
   portsLi1: {
     zh: '左侧 <code>图片</code> 输入端口接收图片（<code>ImgFileValue</code>）；上游图片变化时会自动重新抠图',
@@ -53,7 +71,13 @@ export const helpMessages = {
     ar: 'يقبل منفذ الإدخال <code>صورة</code> على اليسار صورةً (<code>ImgFileValue</code>)؛ وعند تغيّر الصورة من المنبع تُعاد الإزالة تلقائيًا',
     fr: 'Le port d’entrée <code>Image</code> à gauche accepte une image (<code>ImgFileValue</code>) ; lorsque l’image en amont change, la suppression se relance automatiquement',
     pt: 'O porto de entrada <code>Imagem</code> à esquerda aceita uma imagem (<code>ImgFileValue</code>); quando a imagem de origem muda, a remoção é refeita sozinha',
-    ru: 'Входной порт <code>Изображение</code> слева принимает изображение (<code>ImgFileValue</code>); при изменении исходного изображения удаление запускается заново автоматически'
+    ru: 'Входной порт <code>Изображение</code> слева принимает изображение (<code>ImgFileValue</code>); при изменении исходного изображения удаление запускается заново автоматически',
+    hi: 'बाईं ओर का <code>छवि</code> इनपुट पोर्ट एक छवि (<code>ImgFileValue</code>) प्राप्त करता है; अपस्ट्रीम छवि बदलने पर पृष्ठभूमि हटाना स्वतः दोबारा चलता है',
+    id: 'Port masukan <code>Gambar</code> di sebelah kiri menerima sebuah gambar (<code>ImgFileValue</code>); saat gambar hulu berubah, penghapusan latar otomatis dijalankan ulang',
+    de: 'Der linke <code>Bild</code>-Eingangsport nimmt ein Bild entgegen (<code>ImgFileValue</code>); ändert sich das vorgelagerte Bild, wird die Freistellung automatisch erneut ausgeführt',
+    vi: 'Cổng vào <code>Ảnh</code> bên trái nhận một ảnh (<code>ImgFileValue</code>); khi ảnh thượng nguồn thay đổi, việc xóa nền tự động chạy lại',
+    tr: 'Soldaki <code>Görüntü</code> giriş bağlantı noktası bir görüntü (<code>ImgFileValue</code>) alır; yukarı akış görüntüsü değiştiğinde kaldırma otomatik olarak yeniden çalışır',
+    it: 'La porta di input <code>Immagine</code> a sinistra accetta un’immagine (<code>ImgFileValue</code>); quando l’immagine a monte cambia, la rimozione viene rieseguita automaticamente'
   },
   portsLi2: {
     zh: '右侧 <code>去背景图</code> 输出端口输出透明 <b>PNG</b>（<code>ImgFileValue</code>），文件名在原名后加 <code>-nobg</code>',
@@ -64,7 +88,13 @@ export const helpMessages = {
     ar: 'يُخرج منفذ <code>الصورة منزوعة الخلفية</code> على اليمين صورة <b>PNG</b> شفافة (<code>ImgFileValue</code>) مع إضافة <code>-nobg</code> إلى اسم الملف',
     fr: 'Le port de sortie <code>Image sans fond</code> à droite émet un <b>PNG</b> transparent (<code>ImgFileValue</code>), en ajoutant <code>-nobg</code> au nom',
     pt: 'O porto de saída <code>Imagem sem fundo</code> à direita emite um <b>PNG</b> transparente (<code>ImgFileValue</code>), acrescentando <code>-nobg</code> ao nome',
-    ru: 'Выходной порт <code>Изображение без фона</code> справа выдаёт прозрачный <b>PNG</b> (<code>ImgFileValue</code>), добавляя <code>-nobg</code> к имени файла'
+    ru: 'Выходной порт <code>Изображение без фона</code> справа выдаёт прозрачный <b>PNG</b> (<code>ImgFileValue</code>), добавляя <code>-nobg</code> к имени файла',
+    hi: 'दाईं ओर का <code>पृष्ठभूमि हटाई छवि</code> आउटपुट पोर्ट पारदर्शी <b>PNG</b> (<code>ImgFileValue</code>) आउटपुट करता है, फ़ाइल नाम के अंत में <code>-nobg</code> जोड़ा जाता है',
+    id: 'Port keluaran <code>Gambar tanpa latar</code> di sebelah kanan mengeluarkan <b>PNG</b> transparan (<code>ImgFileValue</code>), dengan <code>-nobg</code> ditambahkan pada nama berkas',
+    de: 'Der rechte Ausgangsport <code>Bild ohne Hintergrund</code> gibt ein transparentes <b>PNG</b> aus (<code>ImgFileValue</code>), wobei <code>-nobg</code> an den Dateinamen angehängt wird',
+    vi: 'Cổng ra <code>Ảnh đã xóa nền</code> bên phải xuất <b>PNG</b> trong suốt (<code>ImgFileValue</code>), thêm <code>-nobg</code> vào sau tên tệp',
+    tr: 'Sağdaki <code>Arka planı kaldırılmış görüntü</code> çıkış bağlantı noktası saydam <b>PNG</b> (<code>ImgFileValue</code>) verir; dosya adının sonuna <code>-nobg</code> eklenir',
+    it: 'La porta di output <code>Immagine senza sfondo</code> a destra restituisce un <b>PNG</b> trasparente (<code>ImgFileValue</code>), con <code>-nobg</code> aggiunto al nome del file'
   },
   portsLi3: {
     zh: '支持两种触发：拖入<b>图片节点</b>（一次性抠图），或端口接线（响应式，上游变化自动重抠）',
@@ -75,7 +105,13 @@ export const helpMessages = {
     ar: 'طريقتان للتشغيل: إسقاط <b>عقدة صورة</b> (إزالة لمرة واحدة) أو توصيل المنفذ (تفاعلي، يُعاد عند تغيّر المنبع)',
     fr: 'Deux déclencheurs : déposer un <b>nœud image</b> (suppression ponctuelle) ou connecter le port (réactif, relancé au changement en amont)',
     pt: 'Duas formas de disparar: soltar um <b>nó de imagem</b> (remoção pontual) ou conectar o porto (reativo, refaz quando a origem muda)',
-    ru: 'Два способа запуска: перетащить <b>узел изображения</b> (разовое удаление) или подключить порт (реактивно, перезапуск при изменении источника)'
+    ru: 'Два способа запуска: перетащить <b>узел изображения</b> (разовое удаление) или подключить порт (реактивно, перезапуск при изменении источника)',
+    hi: 'दो तरह से ट्रिगर होता है: <b>छवि नोड</b> ड्रॉप करें (एक बार हटाना), या पोर्ट कनेक्ट करें (लाइव, अपस्ट्रीम बदलने पर स्वतः दोबारा)',
+    id: 'Dua cara pemicu: jatuhkan <b>node gambar</b> (penghapusan sekali) atau sambungkan port (langsung, dijalankan ulang saat hulu berubah)',
+    de: 'Zwei Auslöser: einen <b>Bild-Knoten</b> ablegen (einmalige Freistellung) oder den Port verbinden (reaktiv, erneut bei Änderung vorgelagert)',
+    vi: 'Hai cách kích hoạt: thả <b>nút ảnh</b> (xóa một lần) hoặc nối cổng (trực tiếp, tự chạy lại khi thượng nguồn thay đổi)',
+    tr: 'İki tetikleme yolu: <b>görüntü düğümü</b> bırakın (tek seferlik kaldırma) veya bağlantı noktasını bağlayın (canlı, yukarı akış değişince yeniden çalışır)',
+    it: 'Due modi di attivazione: trascina un <b>nodo immagine</b> (rimozione una tantum) oppure collega la porta (in tempo reale, riesegue quando cambia a monte)'
   },
 
   // —— 处理与进度 ——
@@ -88,7 +124,13 @@ export const helpMessages = {
     ar: 'المعالجة والتقدم',
     fr: 'Traitement et progression',
     pt: 'Processamento e progresso',
-    ru: 'Обработка и прогресс'
+    ru: 'Обработка и прогресс',
+    hi: 'प्रक्रिया और प्रगति',
+    id: 'Pemrosesan & kemajuan',
+    de: 'Verarbeitung & Fortschritt',
+    vi: 'Xử lý & tiến độ',
+    tr: 'İşlem ve ilerleme',
+    it: 'Elaborazione e avanzamento'
   },
   runLi1: {
     zh: '拖入图片节点或端口值变化后自动开始抠图，结果提交到输出端口，下游节点随即刷新',
@@ -99,7 +141,13 @@ export const helpMessages = {
     ar: 'تبدأ الإزالة تلقائيًا عند إسقاط عقدة صورة أو تغيّر قيمة المنفذ، وتُثبَّت النتيجة في منفذ الإخراج فتتحدّث العقد اللاحقة فورًا',
     fr: 'La suppression démarre automatiquement après le dépôt d’un nœud image ou un changement de valeur du port ; le résultat est validé sur le port de sortie et les nœuds en aval se rafraîchissent aussitôt',
     pt: 'A remoção começa sozinha ao soltar um nó de imagem ou quando o valor do porto muda; o resultado é confirmado no porto de saída e os nós seguintes atualizam-se logo',
-    ru: 'Удаление запускается автоматически после перетаскивания узла изображения или изменения значения порта; результат отправляется в выходной порт, и последующие узлы сразу обновляются'
+    ru: 'Удаление запускается автоматически после перетаскивания узла изображения или изменения значения порта; результат отправляется в выходной порт, и последующие узлы сразу обновляются',
+    hi: 'छवि नोड ड्रॉप करने या पोर्ट मान बदलने पर पृष्ठभूमि हटाना स्वतः शुरू होता है, परिणाम आउटपुट पोर्ट पर भेजा जाता है और डाउनस्ट्रीम नोड्स तुरंत रीफ़्रेश होते हैं',
+    id: 'Penghapusan latar otomatis dimulai setelah menjatuhkan node gambar atau saat nilai port berubah; hasilnya dikirim ke port keluaran dan node hilir langsung diperbarui',
+    de: 'Nach dem Ablegen eines Bild-Knotens oder einer Änderung des Portwerts startet die Freistellung automatisch; das Ergebnis wird an den Ausgangsport übergeben und nachgelagerte Knoten aktualisieren sich sofort',
+    vi: 'Việc xóa nền tự động bắt đầu sau khi thả nút ảnh hoặc khi giá trị cổng thay đổi; kết quả được gửi tới cổng ra và các nút hạ nguồn cập nhật ngay',
+    tr: 'Görüntü düğümü bırakıldıktan veya bağlantı noktası değeri değiştiğinde kaldırma otomatik başlar; sonuç çıkış bağlantı noktasına gönderilir ve aşağı akış düğümleri anında yenilenir',
+    it: 'La rimozione inizia automaticamente dopo aver trascinato un nodo immagine o quando cambia il valore della porta; il risultato viene inviato alla porta di output e i nodi a valle si aggiornano subito'
   },
   runLi2: {
     zh: '处理期间预览区显示进度（<code>处理中 {pct}%</code>），完成后显示「背景已去除」',
@@ -110,7 +158,13 @@ export const helpMessages = {
     ar: 'أثناء المعالجة تعرض منطقة المعاينة التقدّم (<code>جارٍ المعالجة {pct}%</code>)، وعند الانتهاء تظهر «تمت إزالة الخلفية»',
     fr: 'Pendant le traitement, la zone d’aperçu affiche la progression (<code>Traitement {pct}%</code>) ; une fois terminé, « Arrière-plan supprimé » s’affiche',
     pt: 'Durante o processamento, a área de pré-visualização mostra o progresso (<code>Processando {pct}%</code>); ao concluir, mostra «Fundo removido»',
-    ru: 'Во время обработки в области предпросмотра показывается прогресс (<code>Обработка {pct}%</code>), а по завершении — «Фон удалён»'
+    ru: 'Во время обработки в области предпросмотра показывается прогресс (<code>Обработка {pct}%</code>), а по завершении — «Фон удалён»',
+    hi: 'प्रक्रिया के दौरान पूर्वावलोकन क्षेत्र प्रगति (<code>प्रक्रिया {pct}%</code>) दिखाता है, और पूरा होने पर «पृष्ठभूमि हटा दी गई» दिखाता है',
+    id: 'Selama pemrosesan, area pratinjau menampilkan kemajuan (<code>Memproses {pct}%</code>); setelah selesai menampilkan “Latar belakang dihapus”',
+    de: 'Während der Verarbeitung zeigt der Vorschaubereich den Fortschritt an (<code>Verarbeitung {pct}%</code>); nach Abschluss erscheint „Hintergrund entfernt“',
+    vi: 'Trong khi xử lý, vùng xem trước hiển thị tiến độ (<code>Đang xử lý {pct}%</code>); khi xong hiển thị “Đã xóa nền”',
+    tr: 'İşlem sırasında önizleme alanı ilerlemeyi gösterir (<code>İşleniyor {pct}%</code>); tamamlandığında “Arka plan kaldırıldı” görünür',
+    it: 'Durante l’elaborazione l’area di anteprima mostra l’avanzamento (<code>Elaborazione {pct}%</code>); al termine mostra “Sfondo rimosso”'
   },
   runLi3: {
     zh: '源图未变化时会<b>跳过</b>重复抠图（按文件指纹去重）',
@@ -121,7 +175,13 @@ export const helpMessages = {
     ar: 'إذا لم تتغيّر الصورة الأصلية يتم <b>تخطي</b> الإزالة المكررة (بإزالة التكرار عبر بصمة الملف)',
     fr: 'Si l’image source n’a pas changé, la suppression répétée est <b>ignorée</b> (déduplication par empreinte du fichier)',
     pt: 'Se a imagem de origem não mudar, a remoção repetida é <b>ignorada</b> (deduplicação por impressão digital do arquivo)',
-    ru: 'Если исходное изображение не изменилось, повторное удаление <b>пропускается</b> (дедупликация по отпечатку файла)'
+    ru: 'Если исходное изображение не изменилось, повторное удаление <b>пропускается</b> (дедупликация по отпечатку файла)',
+    hi: 'यदि स्रोत छवि नहीं बदली है तो दोबारा पृष्ठभूमि हटाना <b>छोड़ दिया जाता है</b> (फ़ाइल फ़िंगरप्रिंट से डुप्लिकेट हटाकर)',
+    id: 'Jika gambar sumber tidak berubah, penghapusan berulang <b>dilewati</b> (diduplikasi berdasarkan sidik jari berkas)',
+    de: 'Ist das Quellbild unverändert, wird eine erneute Freistellung <b>übersprungen</b> (Deduplizierung über den Datei-Fingerabdruck)',
+    vi: 'Nếu ảnh nguồn không đổi, việc xóa nền lặp lại sẽ bị <b>bỏ qua</b> (khử trùng lặp theo dấu vân tay tệp)',
+    tr: 'Kaynak görüntü değişmediyse yinelenen kaldırma <b>atlanır</b> (dosya parmak izine göre tekilleştirme)',
+    it: 'Se l’immagine di origine non è cambiata, la rimozione ripetuta viene <b>saltata</b> (deduplicazione tramite impronta del file)'
   },
   runLi4: {
     zh: '处理失败时底部显示「处理失败」，可重新拖入图片节点或改动上游图片后再试',
@@ -132,7 +192,13 @@ export const helpMessages = {
     ar: 'عند الفشل يظهر أسفل البطاقة «فشلت المعالجة»؛ أعد إسقاط عقدة صورة أو غيّر صورة المنبع ثم حاول مجددًا',
     fr: 'En cas d’échec, le pied affiche « Échec du traitement » ; déposez à nouveau un nœud image ou modifiez l’image en amont puis réessayez',
     pt: 'Em caso de falha, o rodapé mostra «Falha no processamento»; solte um nó de imagem novamente ou mude a imagem de origem e tente de novo',
-    ru: 'При сбое внизу показывается «Обработка не удалась»; перетащите узел изображения снова или измените исходное изображение и повторите'
+    ru: 'При сбое внизу показывается «Обработка не удалась»; перетащите узел изображения снова или измените исходное изображение и повторите',
+    hi: 'विफल होने पर नीचे «प्रक्रिया विफल» दिखता है; दोबारा छवि नोड ड्रॉप करें या अपस्ट्रीम छवि बदलकर पुनः प्रयास करें',
+    id: 'Jika gagal, bagian bawah menampilkan “Pemrosesan gagal”; jatuhkan lagi node gambar atau ubah gambar hulu lalu coba lagi',
+    de: 'Bei Fehlschlag zeigt der Fußbereich „Verarbeitung fehlgeschlagen“; legen Sie erneut einen Bild-Knoten ab oder ändern Sie das vorgelagerte Bild und versuchen Sie es erneut',
+    vi: 'Khi thất bại, phần dưới hiển thị “Xử lý thất bại”; hãy thả lại nút ảnh hoặc thay đổi ảnh thượng nguồn rồi thử lại',
+    tr: 'Başarısız olursa alt kısımda “İşlem başarısız” görünür; bir görüntü düğümünü yeniden bırakın veya yukarı akış görüntüsünü değiştirip tekrar deneyin',
+    it: 'In caso di errore il piè di pagina mostra “Elaborazione non riuscita”; trascina di nuovo un nodo immagine o modifica l’immagine a monte e riprova'
   },
 
   // —— 结果与输出 ——
@@ -145,7 +211,13 @@ export const helpMessages = {
     ar: 'النتيجة والإخراج',
     fr: 'Résultat et sortie',
     pt: 'Resultado e saída',
-    ru: 'Результат и вывод'
+    ru: 'Результат и вывод',
+    hi: 'परिणाम और आउटपुट',
+    id: 'Hasil & keluaran',
+    de: 'Ergebnis & Ausgabe',
+    vi: 'Kết quả & đầu ra',
+    tr: 'Sonuç ve çıkış',
+    it: 'Risultato e output'
   },
   outputLi1: {
     zh: '抠图结果以透明 <b>PNG</b> 保存在输出端口，仅在内存中，<b>不会自动写入磁盘</b>',
@@ -156,7 +228,13 @@ export const helpMessages = {
     ar: 'تُحفظ النتيجة كصورة <b>PNG</b> شفافة في منفذ الإخراج، في الذاكرة فقط، و<b>لا تُكتب على القرص تلقائيًا</b>',
     fr: 'Le résultat est conservé en <b>PNG</b> transparent sur le port de sortie, en mémoire uniquement — il <b>n’est pas écrit sur le disque automatiquement</b>',
     pt: 'O resultado é mantido como <b>PNG</b> transparente no porto de saída, apenas na memória — <b>não é gravado no disco automaticamente</b>',
-    ru: 'Результат хранится как прозрачный <b>PNG</b> в выходном порту, только в памяти — <b>на диск автоматически не записывается</b>'
+    ru: 'Результат хранится как прозрачный <b>PNG</b> в выходном порту, только в памяти — <b>на диск автоматически не записывается</b>',
+    hi: 'हटाने का परिणाम आउटपुट पोर्ट पर पारदर्शी <b>PNG</b> के रूप में रहता है, केवल मेमोरी में — <b>डिस्क पर स्वतः नहीं लिखा जाता</b>',
+    id: 'Hasil disimpan sebagai <b>PNG</b> transparan pada port keluaran, hanya di memori — <b>tidak ditulis ke disk secara otomatis</b>',
+    de: 'Das Ergebnis liegt als transparentes <b>PNG</b> am Ausgangsport vor, nur im Speicher — es <b>wird nicht automatisch auf die Festplatte geschrieben</b>',
+    vi: 'Kết quả được giữ dưới dạng <b>PNG</b> trong suốt trên cổng ra, chỉ trong bộ nhớ — <b>không tự động ghi vào đĩa</b>',
+    tr: 'Sonuç, çıkış bağlantı noktasında saydam <b>PNG</b> olarak tutulur, yalnızca bellekte — <b>diske otomatik yazılmaz</b>',
+    it: 'Il risultato è conservato come <b>PNG</b> trasparente sulla porta di output, solo in memoria — <b>non viene scritto su disco automaticamente</b>'
   },
   outputLi2: {
     zh: '点「<b>生成图片文件节点</b>」会把结果写成文件，并在本节点附近新建一个图片文件节点',
@@ -167,7 +245,13 @@ export const helpMessages = {
     ar: 'انقر على «<b>إنشاء عقدة ملف صورة</b>» لكتابة النتيجة في ملف وإنشاء عقدة ملف صورة قرب هذه العقدة',
     fr: 'Cliquez sur <b>Créer un nœud de fichier image</b> pour écrire le résultat dans un fichier et ajouter un nœud image près de celui-ci',
     pt: 'Clique em <b>Criar nó de arquivo de imagem</b> para gravar o resultado num arquivo e criar um nó de imagem perto deste',
-    ru: 'Нажмите <b>Создать узел файла изображения</b>, чтобы сохранить результат в файл и добавить узел изображения рядом с этим'
+    ru: 'Нажмите <b>Создать узел файла изображения</b>, чтобы сохранить результат в файл и добавить узел изображения рядом с этим',
+    hi: '«<b>छवि फ़ाइल नोड बनाएँ</b>» पर क्लिक करने से परिणाम एक फ़ाइल में लिखा जाता है और इस नोड के पास एक छवि फ़ाइल नोड बनाया जाता है',
+    id: 'Klik <b>Buat node berkas gambar</b> untuk menulis hasil ke berkas dan membuat node berkas gambar di dekat node ini',
+    de: 'Klicken Sie auf <b>Bilddatei-Knoten erzeugen</b>, um das Ergebnis in eine Datei zu schreiben und einen Bilddatei-Knoten in der Nähe dieses Knotens zu erstellen',
+    vi: 'Nhấn <b>Tạo nút tệp ảnh</b> để ghi kết quả ra tệp và tạo một nút tệp ảnh gần nút này',
+    tr: '<b>Görüntü dosyası düğümü oluştur</b> seçeneğine tıklamak sonucu bir dosyaya yazar ve bu düğümün yakınında bir görüntü dosyası düğümü oluşturur',
+    it: 'Fai clic su <b>Crea nodo file immagine</b> per scrivere il risultato in un file e creare un nodo file immagine vicino a questo nodo'
   },
 
   // —— 注意事项 ——
@@ -180,7 +264,13 @@ export const helpMessages = {
     ar: 'ملاحظات',
     fr: 'Remarques',
     pt: 'Observações',
-    ru: 'Примечания'
+    ru: 'Примечания',
+    hi: 'नोट्स',
+    id: 'Catatan',
+    de: 'Hinweise',
+    vi: 'Lưu ý',
+    tr: 'Notlar',
+    it: 'Note'
   },
   notesLi1: {
     zh: '拖入图片节点属于<b>一次性</b>操作，之后源节点变化不会自动重抠；需要响应式请改用端口接线',
@@ -191,7 +281,13 @@ export const helpMessages = {
     ar: 'إسقاط عقدة صورة إجراء <b>لمرة واحدة</b>؛ ولن تُعاد الإزالة تلقائيًا عند تغيّر العقدة المصدر لاحقًا — استخدم توصيل المنفذ للتفاعل',
     fr: 'Déposer un nœud image est une action <b>ponctuelle</b> ; les changements ultérieurs du nœud source ne relancent pas la suppression — utilisez le port pour un comportement réactif',
     pt: 'Soltar um nó de imagem é uma ação <b>pontual</b>; mudanças posteriores no nó de origem não refazem a remoção sozinhas — para algo reativo, use o porto',
-    ru: 'Перетаскивание узла изображения — <b>разовое</b> действие; последующие изменения исходного узла не перезапускают удаление — для реактивности подключайте порт'
+    ru: 'Перетаскивание узла изображения — <b>разовое</b> действие; последующие изменения исходного узла не перезапускают удаление — для реактивности подключайте порт',
+    hi: 'छवि नोड ड्रॉप करना <b>एक बार</b> का कार्य है; उसके बाद स्रोत नोड बदलने पर स्वतः दोबारा नहीं होगा — लाइव व्यवहार के लिए पोर्ट कनेक्शन इस्तेमाल करें',
+    id: 'Menjatuhkan node gambar adalah tindakan <b>sekali</b>; perubahan berikutnya pada node sumber tidak menjalankan ulang secara otomatis — gunakan koneksi port untuk perilaku langsung',
+    de: 'Das Ablegen eines Bild-Knotens ist eine <b>einmalige</b> Aktion; spätere Änderungen am Quellknoten lösen keine erneute Freistellung aus — nutzen Sie für reaktives Verhalten die Portverbindung',
+    vi: 'Thả nút ảnh là thao tác <b>một lần</b>; thay đổi sau đó ở nút nguồn sẽ không tự chạy lại — hãy dùng kết nối cổng nếu cần phản ứng',
+    tr: 'Görüntü düğümü bırakmak <b>tek seferlik</b> bir işlemdir; kaynak düğümdeki sonraki değişiklikler otomatik yeniden çalışmaz — canlı davranış için bağlantı noktasını kullanın',
+    it: 'Trascinare un nodo immagine è un’azione <b>una tantum</b>; le successive modifiche al nodo di origine non rieseguono la rimozione automaticamente — collega la porta per un comportamento reattivo'
   },
   notesLi2: {
     zh: '抠图在应用内<b>本地</b>完成，首次使用需下载模型，耗时较长；处理期间请耐心等待',
@@ -202,7 +298,13 @@ export const helpMessages = {
     ar: 'تتم الإزالة <b>محليًا</b> داخل التطبيق، ويُنزَّل النموذج عند أول استخدام وقد يستغرق وقتًا؛ يُرجى الانتظار أثناء المعالجة',
     fr: 'La suppression s’exécute <b>localement</b> dans l’application ; le modèle est téléchargé à la première utilisation, ce qui peut être long — patientez pendant le traitement',
     pt: 'A remoção é feita <b>localmente</b> dentro do app; o modelo é baixado no primeiro uso e pode demorar — aguarde durante o processamento',
-    ru: 'Удаление выполняется <b>локально</b> в приложении; при первом использовании загружается модель, это может занять время — подождите во время обработки'
+    ru: 'Удаление выполняется <b>локально</b> в приложении; при первом использовании загружается модель, это может занять время — подождите во время обработки',
+    hi: 'पृष्ठभूमि हटाना ऐप के भीतर <b>स्थानीय रूप से</b> होता है; पहली बार उपयोग में मॉडल डाउनलोड होना ज़रूरी है और इसमें समय लगता है — प्रक्रिया के दौरान प्रतीक्षा करें',
+    id: 'Penghapusan dilakukan <b>secara lokal</b> di dalam aplikasi; model diunduh saat pertama kali dipakai dan memerlukan waktu — harap tunggu selama pemrosesan',
+    de: 'Die Freistellung erfolgt <b>lokal</b> in der App; beim ersten Einsatz wird ein Modell heruntergeladen, was länger dauern kann — bitte während der Verarbeitung warten',
+    vi: 'Việc xóa nền được thực hiện <b>cục bộ</b> trong ứng dụng; lần đầu sử dụng cần tải mô hình, khá lâu — vui lòng chờ trong khi xử lý',
+    tr: 'Kaldırma işlemi uygulama içinde <b>yerel olarak</b> yapılır; ilk kullanımda model indirilir ve zaman alabilir — işlem sırasında lütfen bekleyin',
+    it: 'La rimozione avviene <b>in locale</b> all’interno dell’app; al primo utilizzo il modello viene scaricato e può richiedere tempo — attendi durante l’elaborazione'
   },
   notesLi3: {
     zh: '处理状态与结果<b>不会随画布保存</b>，重新打开画布后需重新拖入图片节点或改动上游触发',
@@ -213,6 +315,12 @@ export const helpMessages = {
     ar: 'لا تُحفظ حالة المعالجة والنتيجة <b>مع اللوحة</b>؛ بعد إعادة فتحها، أعد إسقاط عقدة صورة أو غيّر المنبع للتشغيل',
     fr: 'L’état de traitement et le résultat <b>ne sont pas enregistrés avec le canevas</b> ; après réouverture, déposez à nouveau un nœud image ou modifiez l’amont',
     pt: 'O estado de processamento e o resultado <b>não são guardados com a tela</b>; após reabrir, solte um nó de imagem novamente ou mude a origem para disparar',
-    ru: 'Состояние обработки и результат <b>не сохраняются вместе с холстом</b>; после повторного открытия перетащите узел изображения снова или измените источник'
+    ru: 'Состояние обработки и результат <b>не сохраняются вместе с холстом</b>; после повторного открытия перетащите узел изображения снова или измените источник',
+    hi: 'प्रक्रिया की स्थिति और परिणाम <b>कैनवास के साथ सहेजे नहीं जाते</b>; दोबारा खोलने पर छवि नोड दोबारा ड्रॉप करें या अपस्ट्रीम बदलकर ट्रिगर करें',
+    id: 'Status dan hasil pemrosesan <b>tidak disimpan bersama kanvas</b>; setelah dibuka kembali, jatuhkan lagi node gambar atau ubah hulu untuk memicu',
+    de: 'Verarbeitungsstatus und Ergebnis <b>werden nicht mit der Zeichenfläche gespeichert</b>; nach dem erneuten Öffnen legen Sie wieder einen Bild-Knoten ab oder ändern Sie den vorgelagerten Knoten',
+    vi: 'Trạng thái xử lý và kết quả <b>không được lưu cùng canvas</b>; sau khi mở lại, hãy thả lại nút ảnh hoặc thay đổi thượng nguồn để kích hoạt',
+    tr: 'İşlem durumu ve sonucu <b>tuvalle birlikte kaydedilmez</b>; yeniden açtıktan sonra bir görüntü düğümünü tekrar bırakın veya yukarı akışı değiştirerek tetikleyin',
+    it: 'Lo stato di elaborazione e il risultato <b>non vengono salvati con la tela</b>; dopo la riapertura trascina di nuovo un nodo immagine o modifica il monte per attivare'
   }
 } satisfies Record<string, LocalizedText>

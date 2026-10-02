@@ -58,7 +58,13 @@ export class ImageGenNode extends Node {
       ar: 'موجّه',
       fr: 'Prompt',
       pt: 'Prompt',
-      ru: 'Промпт'
+      ru: 'Промпт',
+      hi: 'प्रॉम्प्ट',
+      id: 'Prompt',
+      de: 'Prompt',
+      vi: 'Prompt',
+      tr: 'İstem',
+      it: 'Prompt'
     }
   })
 
@@ -74,7 +80,13 @@ export class ImageGenNode extends Node {
       ar: 'الحجم',
       fr: 'Taille',
       pt: 'Tamanho',
-      ru: 'Размер'
+      ru: 'Размер',
+      hi: 'आकार',
+      id: 'Ukuran',
+      de: 'Größe',
+      vi: 'Kích thước',
+      tr: 'Boyut',
+      it: 'Dimensione'
     }
   })
 
@@ -88,7 +100,13 @@ export class ImageGenNode extends Node {
     ar: 'صورة مُنشأة',
     fr: 'Image générée',
     pt: 'Imagem gerada',
-    ru: 'Созданное изображение'
+    ru: 'Созданное изображение',
+    hi: 'बनाई गई छवि',
+    id: 'Gambar yang dibuat',
+    de: 'Erzeugtes Bild',
+    vi: 'Ảnh đã tạo',
+    tr: 'Oluşturulan görüntü',
+    it: 'Immagine generata'
   })
 
   /** 本地选择的尺寸（sizeInput 未接线时用）。空串 = 跟随当前模型默认尺寸 */

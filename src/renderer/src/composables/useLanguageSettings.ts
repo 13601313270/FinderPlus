@@ -31,7 +31,13 @@ const LANGUAGE_LABELS: Record<LanguageCode, string> = {
   ar: 'العربية',
   fr: 'Français',
   pt: 'Português',
-  ru: 'Русский'
+  ru: 'Русский',
+  hi: 'हिन्दी',
+  id: 'Bahasa Indonesia',
+  de: 'Deutsch',
+  vi: 'Tiếng Việt',
+  tr: 'Türkçe',
+  it: 'Italiano'
 }
 
 /** 支持的语言选项（代码 + 下拉标签），顺序由 shared 的 LANGUAGE_CODES 决定 */

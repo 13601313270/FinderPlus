@@ -105,7 +105,13 @@ export class LLMNode extends Node {
       ar: 'النظام',
       fr: 'Système',
       pt: 'Sistema',
-      ru: 'Система'
+      ru: 'Система',
+      hi: 'सिस्टम',
+      id: 'Sistem',
+      de: 'System',
+      vi: 'Hệ thống',
+      tr: 'Sistem',
+      it: 'Sistema'
     }
   })
 
@@ -121,7 +127,13 @@ export class LLMNode extends Node {
       ar: 'موجه المستخدم',
       fr: 'Prompt utilisateur',
       pt: 'Prompt de usuário',
-      ru: 'Пользовательский промпт'
+      ru: 'Пользовательский промпт',
+      hi: 'उपयोगकर्ता prompt',
+      id: 'Prompt pengguna',
+      de: 'Benutzer-prompt',
+      vi: 'Prompt người dùng',
+      tr: 'Kullanıcı prompt’u',
+      it: 'Prompt utente'
     }
   })
 
@@ -135,7 +147,13 @@ export class LLMNode extends Node {
     ar: 'رد',
     fr: 'Réponse',
     pt: 'Resposta',
-    ru: 'Ответ'
+    ru: 'Ответ',
+    hi: 'उत्तर',
+    id: 'Balasan',
+    de: 'Antwort',
+    vi: 'Trả lời',
+    tr: 'Yanıt',
+    it: 'Risposta'
   })
 
   /** 内部 prompt 文本（仅 promptInput 未接边时使用） */

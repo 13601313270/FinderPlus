@@ -1,7 +1,7 @@
 import type { LocalizedText } from '../../../shared/language'
 
 /**
- * TxtFile 节点帮助文档（TxtFileHelpDialog）的全部文案，9 种语言全配。
+ * TxtFile 节点帮助文档（TxtFileHelpDialog）的全部文案，全部 15 种语言全配。
  *
  * 与节点自身的 i18n.ts 分开：卡片短文案变化频繁，帮助文档整篇体量大、改动少。
  * 约定：带行内 <code> / <b> 的句子，值里直接写 HTML，模板用 v-html 渲染；
@@ -18,7 +18,13 @@ export const helpMessages = {
     ar: 'ما هذا؟',
     fr: 'Qu’est-ce que c’est ?',
     pt: 'O que é isto?',
-    ru: 'Что это?'
+    ru: 'Что это?',
+    hi: 'यह क्या है?',
+    id: 'Apa ini?',
+    de: 'Was ist das?',
+    vi: 'Đây là gì?',
+    tr: 'Bu nedir?',
+    it: 'Che cos’è?'
   },
   whatBody: {
     zh: '文本文件节点持有一段 <code>.txt</code> 文本，并把它同时作为<b>纯文本</b>和<b>文件</b>向下游送出。它没有标题栏，中间是文件图标，图标下方显示文件名与大小。',
@@ -29,7 +35,13 @@ export const helpMessages = {
     ar: 'تحتفظ عقدة ملف النص بمحتوى نصي من نوع <code>.txt</code> وتُرسله إلى العقد اللاحقة <b>كنص عادي</b> و<b>كملف</b> في آن واحد. لا تحتوي على شريط عنوان، وفي وسطها أيقونة ملف وتحتها اسم الملف وحجمه.',
     fr: 'Le nœud Fichier texte contient un texte <code>.txt</code> et l’envoie aux nœuds en aval à la fois comme <b>texte brut</b> et comme <b>fichier</b>. Il n’a pas de barre de titre : une icône de fichier est au centre, avec le nom et la taille en dessous.',
     pt: 'O nó Ficheiro de texto contém um texto <code>.txt</code> e envia-o aos nós seguintes tanto como <b>texto simples</b> como <b>ficheiro</b>. Não tem barra de título: no centro está um ícone de ficheiro e, abaixo, o nome e o tamanho.',
-    ru: 'Узел «Текстовый файл» хранит текст <code>.txt</code> и отправляет его последующим узлам и как <b>простой текст</b>, и как <b>файл</b>. У него нет заголовка: в центре — значок файла, под ним имя и размер.'
+    ru: 'Узел «Текстовый файл» хранит текст <code>.txt</code> и отправляет его последующим узлам и как <b>простой текст</b>, и как <b>файл</b>. У него нет заголовка: в центре — значок файла, под ним имя и размер.',
+    hi: 'टेक्स्ट फ़ाइल नोड एक <code>.txt</code> टेक्स्ट रखता है और उसे डाउनस्ट्रीम को <b>सादा टेक्स्ट</b> और <b>फ़ाइल</b> दोनों रूपों में भेजता है। इसकी कोई शीर्षक पट्टी नहीं है; बीच में फ़ाइल आइकन है और उसके नीचे फ़ाइल का नाम और आकार दिखता है।',
+    id: 'Node Berkas Teks menyimpan teks <code>.txt</code> dan mengirimkannya ke hilir baik sebagai <b>teks biasa</b> maupun sebagai <b>berkas</b>. Tidak ada bilah judul; di tengah ada ikon berkas, dan di bawahnya ditampilkan nama serta ukuran berkas.',
+    de: 'Der Knoten „Textdatei“ enthält einen <code>.txt</code>-Text und gibt ihn nachgelagert sowohl als <b>Nur-Text</b> als auch als <b>Datei</b> aus. Er hat keine Titelleiste; in der Mitte steht ein Dateisymbol, darunter werden Dateiname und Größe angezeigt.',
+    vi: 'Nút Tệp văn bản giữ một đoạn văn bản <code>.txt</code> và gửi nó cho hạ nguồn dưới cả dạng <b>văn bản thuần</b> lẫn <b>tệp</b>. Nó không có thanh tiêu đề; ở giữa là biểu tượng tệp, bên dưới hiển thị tên và kích thước tệp.',
+    tr: 'Metin Dosyası düğümü bir <code>.txt</code> metni tutar ve bunu aşağı akışa hem <b>düz metin</b> hem de <b>dosya</b> olarak gönderir. Başlık çubuğu yoktur; ortada bir dosya simgesi, altında dosya adı ve boyutu görünür.',
+    it: 'Il nodo File di testo contiene un testo <code>.txt</code> e lo invia ai nodi a valle sia come <b>testo semplice</b> sia come <b>file</b>. Non ha barra del titolo: al centro c’è un’icona di file, sotto la quale sono mostrati nome e dimensione.'
   },
 
   // —— 端口 ——
@@ -42,7 +54,13 @@ export const helpMessages = {
     ar: 'المنافذ',
     fr: 'Ports',
     pt: 'Portas',
-    ru: 'Порты'
+    ru: 'Порты',
+    hi: 'पोर्ट',
+    id: 'Port',
+    de: 'Ports',
+    vi: 'Cổng',
+    tr: 'Bağlantı noktaları',
+    it: 'Porte'
   },
   portsLi1: {
     zh: '输出 <code>content</code>：节点当前持有的<b>纯文本</b>（string），任何接受字符串的下游节点都能直接接上。',
@@ -53,7 +71,13 @@ export const helpMessages = {
     ar: 'منفذ الإخراج <code>content</code>: <b>النص العادي</b> (سلسلة نصية) الذي تحتفظ به العقدة حاليًا؛ ويمكن توصيله مباشرة بأي عقدة لاحقة تقبل نصًا.',
     fr: 'Sortie <code>content</code> : le <b>texte brut</b> (chaîne) que le nœud contient actuellement ; tout nœud en aval acceptant une chaîne peut s’y connecter directement.',
     pt: 'Saída <code>content</code>: o <b>texto simples</b> (string) que o nó contém atualmente; qualquer nó seguinte que aceite uma string pode ligar-se diretamente.',
-    ru: 'Выход <code>content</code>: текущий <b>простой текст</b> узла (строка); к нему можно напрямую подключить любой последующий узел, принимающий строку.'
+    ru: 'Выход <code>content</code>: текущий <b>простой текст</b> узла (строка); к нему можно напрямую подключить любой последующий узел, принимающий строку.',
+    hi: 'आउटपुट <code>content</code>: नोड द्वारा वर्तमान में रखा गया <b>सादा टेक्स्ट</b> (string), कोई भी डाउनस्ट्रीम नोड जो स्ट्रिंग स्वीकार करता है, सीधे कनेक्ट हो सकता है।',
+    id: 'Keluaran <code>content</code>: <b>teks biasa</b> (string) yang saat ini dipegang node; node hilir mana pun yang menerima string dapat terhubung langsung.',
+    de: 'Ausgabe <code>content</code>: der aktuell gehaltene <b>Nur-Text</b> des Knotens (string); jeder nachgelagerte Knoten, der eine Zeichenkette akzeptiert, kann sich direkt verbinden.',
+    vi: 'Đầu ra <code>content</code>: <b>văn bản thuần</b> (string) mà nút đang giữ; mọi nút hạ nguồn nhận chuỗi đều có thể kết nối trực tiếp.',
+    tr: 'Çıkış <code>content</code>: düğümün geçerli olarak tuttuğu <b>düz metin</b> (string); dize kabul eden her aşağı akış düğümü doğrudan bağlanabilir.',
+    it: 'Output <code>content</code>: il <b>testo semplice</b> (string) attualmente contenuto dal nodo; qualsiasi nodo a valle che accetta una stringa può connettersi direttamente.'
   },
   portsLi2: {
     zh: '输出 <code>file</code>：<code>TxtFileValue</code>（kind 为 <code>txt-file</code>），下游接 txt 或通用文件类型的节点都能连上。',
@@ -64,7 +88,13 @@ export const helpMessages = {
     ar: 'منفذ الإخراج <code>file</code>: قيمة <code>TxtFileValue</code> (نوعها <code>txt-file</code>)؛ ويمكن توصيل العقد اللاحقة التي تقبل ملفات txt أو الملفات العامة بها.',
     fr: 'Sortie <code>file</code> : un <code>TxtFileValue</code> (kind <code>txt-file</code>) ; les nœuds en aval acceptant les fichiers txt ou les fichiers génériques peuvent s’y connecter.',
     pt: 'Saída <code>file</code>: um <code>TxtFileValue</code> (kind <code>txt-file</code>); os nós seguintes que aceitem ficheiros txt ou ficheiros genéricos podem ligar-se.',
-    ru: 'Выход <code>file</code>: значение <code>TxtFileValue</code> (kind <code>txt-file</code>); к нему подключаются последующие узлы, принимающие txt-файлы или файлы общего типа.'
+    ru: 'Выход <code>file</code>: значение <code>TxtFileValue</code> (kind <code>txt-file</code>); к нему подключаются последующие узлы, принимающие txt-файлы или файлы общего типа.',
+    hi: 'आउटपुट <code>file</code>: <code>TxtFileValue</code> (kind <code>txt-file</code>), डाउनस्ट्रीम txt या सामान्य फ़ाइल प्रकार वाले नोड्स इसमें कनेक्ट हो सकते हैं।',
+    id: 'Keluaran <code>file</code>: <code>TxtFileValue</code> (kind <code>txt-file</code>); node hilir yang menerima berkas txt atau berkas umum dapat terhubung.',
+    de: 'Ausgabe <code>file</code>: ein <code>TxtFileValue</code> (kind <code>txt-file</code>); nachgelagerte Knoten, die txt- oder allgemeine Dateien akzeptieren, können sich verbinden.',
+    vi: 'Đầu ra <code>file</code>: một <code>TxtFileValue</code> (kind <code>txt-file</code>); các nút hạ nguồn nhận tệp txt hoặc tệp chung đều có thể kết nối.',
+    tr: 'Çıkış <code>file</code>: bir <code>TxtFileValue</code> (kind <code>txt-file</code>); txt veya genel dosya kabul eden aşağı akış düğümleri bağlanabilir.',
+    it: 'Output <code>file</code>: un <code>TxtFileValue</code> (kind <code>txt-file</code>); i nodi a valle che accettano file txt o generici possono connettersi.'
   },
   portsLi3: {
     zh: '输出 <code>path</code>：该文件在画布目录下的<b>绝对路径</b>（string）。',
@@ -75,7 +105,13 @@ export const helpMessages = {
     ar: 'منفذ الإخراج <code>path</code>: <b>المسار المطلق</b> للملف داخل مجلد اللوحة (سلسلة نصية).',
     fr: 'Sortie <code>path</code> : le <b>chemin absolu</b> du fichier dans le répertoire du canevas (chaîne).',
     pt: 'Saída <code>path</code>: o <b>caminho absoluto</b> do ficheiro dentro da pasta da tela (string).',
-    ru: 'Выход <code>path</code>: <b>абсолютный путь</b> к файлу в каталоге холста (строка).'
+    ru: 'Выход <code>path</code>: <b>абсолютный путь</b> к файлу в каталоге холста (строка).',
+    hi: 'आउटपुट <code>path</code>: कैनवास निर्देशिका में इस फ़ाइल का <b>पूर्ण पथ</b> (string)।',
+    id: 'Keluaran <code>path</code>: <b>jalur absolut</b> berkas ini di dalam direktori kanvas (string).',
+    de: 'Ausgabe <code>path</code>: der <b>absolute Pfad</b> dieser Datei im Canvas-Verzeichnis (string).',
+    vi: 'Đầu ra <code>path</code>: <b>đường dẫn tuyệt đối</b> của tệp này trong thư mục canvas (string).',
+    tr: 'Çıkış <code>path</code>: bu dosyanın tuval dizinindeki <b>mutlak yolu</b> (string).',
+    it: 'Output <code>path</code>: il <b>percorso assoluto</b> di questo file nella cartella della tela (string).'
   },
   portsLi4: {
     zh: '输入 <code>file-in</code>：只接受 txt 文件；收到文件会<b>替换</b>本节点当前文件，并重新读取其内容。',
@@ -86,7 +122,13 @@ export const helpMessages = {
     ar: 'منفذ الإدخال <code>file-in</code>: يقبل ملفات txt فقط؛ وعند استلام ملف فإنه <b>يستبدل</b> ملف العقدة الحالي وتُعاد قراءة محتواه.',
     fr: 'Entrée <code>file-in</code> : n’accepte que les fichiers txt ; un fichier reçu <b>remplace</b> le fichier actuel du nœud et son contenu est relu.',
     pt: 'Entrada <code>file-in</code>: aceita apenas ficheiros txt; ao receber um, <b>substitui</b> o ficheiro atual do nó e o conteúdo é relido.',
-    ru: 'Вход <code>file-in</code>: принимает только txt-файлы; полученный файл <b>заменяет</b> текущий файл узла, и его содержимое читается заново.'
+    ru: 'Вход <code>file-in</code>: принимает только txt-файлы; полученный файл <b>заменяет</b> текущий файл узла, и его содержимое читается заново.',
+    hi: 'इनपुट <code>file-in</code>: केवल txt फ़ाइलें स्वीकार करता है; फ़ाइल प्राप्त होने पर यह इस नोड की वर्तमान फ़ाइल को <b>बदल</b> देता है और उसकी सामग्री फिर से पढ़ता है।',
+    id: 'Masukan <code>file-in</code>: hanya menerima berkas txt; berkas yang diterima akan <b>mengganti</b> berkas node saat ini dan isinya dibaca ulang.',
+    de: 'Eingabe <code>file-in</code>: akzeptiert nur txt-Dateien; eine empfangene Datei <b>ersetzt</b> die aktuelle Datei des Knotens und ihr Inhalt wird neu eingelesen.',
+    vi: 'Đầu vào <code>file-in</code>: chỉ nhận tệp txt; tệp nhận được sẽ <b>thay thế</b> tệp hiện tại của nút này và nội dung của nó được đọc lại.',
+    tr: 'Giriş <code>file-in</code>: yalnızca txt dosyalarını kabul eder; alınan dosya bu düğümün geçerli dosyasını <b>değiştirir</b> ve içeriği yeniden okunur.',
+    it: 'Input <code>file-in</code>: accetta solo file txt; un file ricevuto <b>sostituisce</b> il file corrente del nodo e il suo contenuto viene riletto.'
   },
   portsLi5: {
     zh: '输入 <code>content-in</code>：收到字符串即写入节点内容；若本节点<b>已有文件名</b>，新内容会同步落盘覆盖该文件。',
@@ -97,7 +139,13 @@ export const helpMessages = {
     ar: 'منفذ الإدخال <code>content-in</code>: تُكتَب السلسلة المستلمة في محتوى العقدة؛ وإذا كان للعقدة <b>اسم ملف</b> بالفعل، فيُكتَب المحتوى الجديد على القرص أيضًا مستبدلًا ذلك الملف.',
     fr: 'Entrée <code>content-in</code> : la chaîne reçue est écrite dans le contenu du nœud ; si le nœud a <b>déjà un nom de fichier</b>, le nouveau contenu est aussi écrit sur le disque, écrasant ce fichier.',
     pt: 'Entrada <code>content-in</code>: a string recebida é escrita no conteúdo do nó; se o nó <b>já tiver um nome de ficheiro</b>, o novo conteúdo também é gravado no disco, substituindo esse ficheiro.',
-    ru: 'Вход <code>content-in</code>: полученная строка записывается в содержимое узла; если у узла <b>уже есть имя файла</b>, новое содержимое также сохраняется на диск, перезаписывая этот файл.'
+    ru: 'Вход <code>content-in</code>: полученная строка записывается в содержимое узла; если у узла <b>уже есть имя файла</b>, новое содержимое также сохраняется на диск, перезаписывая этот файл.',
+    hi: 'इनपुट <code>content-in</code>: प्राप्त स्ट्रिंग नोड की सामग्री में लिखी जाती है; यदि इस नोड का <b>फ़ाइल नाम पहले से है</b>, तो नई सामग्री डिस्क पर भी लिखी जाती है और उस फ़ाइल को अधिलेखित कर देती है।',
+    id: 'Masukan <code>content-in</code>: string yang diterima ditulis ke konten node; jika node <b>sudah memiliki nama berkas</b>, konten baru juga ditulis ke disk dan menimpa berkas tersebut.',
+    de: 'Eingabe <code>content-in</code>: eine empfangene Zeichenkette wird in den Inhalt des Knotens geschrieben; hat der Knoten <b>bereits einen Dateinamen</b>, wird der neue Inhalt auch auf die Festplatte geschrieben und überschreibt diese Datei.',
+    vi: 'Đầu vào <code>content-in</code>: chuỗi nhận được sẽ ghi vào nội dung của nút; nếu nút <b>đã có tên tệp</b>, nội dung mới cũng được ghi xuống đĩa và ghi đè tệp đó.',
+    tr: 'Giriş <code>content-in</code>: alınan dize düğümün içeriğine yazılır; düğümün <b>zaten bir dosya adı varsa</b>, yeni içerik diske de yazılır ve o dosyanın üzerine yazar.',
+    it: 'Input <code>content-in</code>: la stringa ricevuta viene scritta nel contenuto del nodo; se il nodo <b>ha già un nome file</b>, il nuovo contenuto viene scritto anche su disco, sovrascrivendo quel file.'
   },
 
   // —— 使用与交互 ——
@@ -110,7 +158,13 @@ export const helpMessages = {
     ar: 'الاستخدام والتفاعل',
     fr: 'Utilisation et interaction',
     pt: 'Utilização e interação',
-    ru: 'Использование и взаимодействие'
+    ru: 'Использование и взаимодействие',
+    hi: 'उपयोग और इंटरैक्शन',
+    id: 'Penggunaan & interaksi',
+    de: 'Verwendung & Interaktion',
+    vi: 'Sử dụng & tương tác',
+    tr: 'Kullanım ve etkileşim',
+    it: 'Uso e interazione'
   },
   useLi1: {
     zh: '双击卡片，用<b>系统默认应用</b>打开该文件。',
@@ -121,7 +175,13 @@ export const helpMessages = {
     ar: 'انقر مرتين على البطاقة لفتح الملف باستخدام <b>التطبيق الافتراضي للنظام</b>.',
     fr: 'Double-cliquez sur la carte pour ouvrir le fichier avec l’<b>application par défaut du système</b>.',
     pt: 'Faça duplo clique no cartão para abrir o ficheiro com a <b>aplicação predefinida do sistema</b>.',
-    ru: 'Дважды щёлкните по карточке, чтобы открыть файл <b>приложением по умолчанию</b>.'
+    ru: 'Дважды щёлкните по карточке, чтобы открыть файл <b>приложением по умолчанию</b>.',
+    hi: 'फ़ाइल को <b>सिस्टम डिफ़ॉल्ट ऐप</b> से खोलने के लिए कार्ड पर डबल-क्लिक करें।',
+    id: 'Klik ganda kartu untuk membuka berkas dengan <b>aplikasi bawaan sistem</b>.',
+    de: 'Doppelklicken Sie auf die Karte, um die Datei mit der <b>System-Standard-App</b> zu öffnen.',
+    vi: 'Nhấp đúp vào thẻ để mở tệp bằng <b>ứng dụng mặc định của hệ thống</b>.',
+    tr: 'Dosyayı <b>sistem varsayılan uygulamasıyla</b> açmak için karta çift tıklayın.',
+    it: 'Fai doppio clic sulla scheda per aprire il file con l’<b>app predefinita di sistema</b>.'
   },
   useLi2: {
     zh: '把图标<b>拖出窗口</b>丢到桌面或文件夹，即可把文件移动到该位置。',
@@ -132,7 +192,13 @@ export const helpMessages = {
     ar: 'اسحب الأيقونة <b>خارج النافذة</b> وأفلتها على سطح المكتب أو في مجلد لنقل الملف إلى هناك.',
     fr: 'Faites glisser l’icône <b>hors de la fenêtre</b> vers le bureau ou un dossier pour y déplacer le fichier.',
     pt: 'Arraste o ícone <b>para fora da janela</b> até à área de trabalho ou a uma pasta para mover o ficheiro para lá.',
-    ru: 'Перетащите значок <b>за пределы окна</b> на рабочий стол или в папку, чтобы переместить файл туда.'
+    ru: 'Перетащите значок <b>за пределы окна</b> на рабочий стол или в папку, чтобы переместить файл туда.',
+    hi: 'फ़ाइल को उस स्थान पर ले जाने के लिए आइकन को <b>विंडो से बाहर</b> डेस्कटॉप या फ़ोल्डर पर खींचकर छोड़ें।',
+    id: 'Seret ikon <b>keluar jendela</b> ke desktop atau folder untuk memindahkan berkas ke sana.',
+    de: 'Ziehen Sie das Symbol <b>aus dem Fenster</b> auf den Desktop oder in einen Ordner, um die Datei dorthin zu verschieben.',
+    vi: 'Kéo biểu tượng <b>ra ngoài cửa sổ</b> thả vào màn hình nền hoặc thư mục để di chuyển tệp đến đó.',
+    tr: 'Dosyayı oraya taşımak için simgeyi <b>pencerenin dışına</b> masaüstüne veya bir klasöre sürükleyip bırakın.',
+    it: 'Trascina l’icona <b>fuori dalla finestra</b> sul desktop o in una cartella per spostare lì il file.'
   },
   useLi3: {
     zh: '拖动卡片本身（空白处或文件名）可移动节点在画布上的位置。',
@@ -143,7 +209,13 @@ export const helpMessages = {
     ar: 'اسحب البطاقة نفسها (من المساحة الفارغة أو اسم الملف) لتحريك العقدة على اللوحة.',
     fr: 'Faites glisser la carte elle-même (sur un espace vide ou le nom du fichier) pour déplacer le nœud sur le canevas.',
     pt: 'Arraste o próprio cartão (no espaço vazio ou no nome do ficheiro) para mover o nó pela tela.',
-    ru: 'Перетащите саму карточку (за пустое место или имя файла), чтобы переместить узел по холсту.'
+    ru: 'Перетащите саму карточку (за пустое место или имя файла), чтобы переместить узел по холсту.',
+    hi: 'नोड को कैनवास पर इधर-उधर ले जाने के लिए कार्ड को ही (खाली जगह या फ़ाइल नाम पर) खींचें।',
+    id: 'Seret kartu itu sendiri (pada ruang kosong atau nama berkas) untuk memindahkan node di kanvas.',
+    de: 'Ziehen Sie die Karte selbst (an einer freien Stelle oder am Dateinamen), um den Knoten auf dem Canvas zu verschieben.',
+    vi: 'Kéo chính thẻ (ở chỗ trống hoặc tên tệp) để di chuyển vị trí nút trên canvas.',
+    tr: 'Düğümü tuvalde taşımak için kartın kendisini (boş alanda veya dosya adında) sürükleyin.',
+    it: 'Trascina la scheda stessa (su uno spazio vuoto o sul nome del file) per spostare il nodo sulla tela.'
   },
   useLi4: {
     zh: '用外部编辑器改动该文件时，节点会自动<b>重新读取</b>内容并把新文本传给下游。',
@@ -154,7 +226,13 @@ export const helpMessages = {
     ar: 'عند تعديل الملف في محرر خارجي، تعيد العقدة <b>قراءة</b> المحتوى تلقائيًا وتمرّر النص الجديد إلى العقد اللاحقة.',
     fr: 'Si le fichier est modifié dans un éditeur externe, le nœud le <b>relit</b> automatiquement et transmet le nouveau texte en aval.',
     pt: 'Se o ficheiro for alterado num editor externo, o nó <b>volta a ler</b> o conteúdo automaticamente e passa o novo texto a jusante.',
-    ru: 'Если файл изменён во внешнем редакторе, узел автоматически <b>перечитывает</b> содержимое и передаёт новый текст дальше.'
+    ru: 'Если файл изменён во внешнем редакторе, узел автоматически <b>перечитывает</b> содержимое и передаёт новый текст дальше.',
+    hi: 'जब इस फ़ाइल को किसी बाहरी संपादक में बदला जाता है, तो नोड स्वतः सामग्री <b>फिर से पढ़ता है</b> और नया टेक्स्ट डाउनस्ट्रीम भेजता है।',
+    id: 'Saat berkas ini diubah di editor eksternal, node otomatis <b>membaca ulang</b> isinya dan meneruskan teks baru ke hilir.',
+    de: 'Wird die Datei in einem externen Editor geändert, <b>liest</b> der Knoten den Inhalt automatisch <b>neu ein</b> und gibt den neuen Text nachgelagert weiter.',
+    vi: 'Khi tệp này được sửa bằng trình soạn thảo bên ngoài, nút sẽ tự động <b>đọc lại</b> nội dung và truyền văn bản mới cho hạ nguồn.',
+    tr: 'Bu dosya harici bir düzenleyicide değiştirildiğinde düğüm içeriği otomatik olarak <b>yeniden okur</b> ve yeni metni aşağı akışa iletir.',
+    it: 'Quando il file viene modificato in un editor esterno, il nodo <b>rilegge</b> automaticamente il contenuto e trasmette il nuovo testo a valle.'
   },
 
   // —— 注意事项 ——
@@ -167,7 +245,13 @@ export const helpMessages = {
     ar: 'ملاحظات',
     fr: 'Remarques',
     pt: 'Notas',
-    ru: 'Примечания'
+    ru: 'Примечания',
+    hi: 'ध्यान देने योग्य बातें',
+    id: 'Catatan',
+    de: 'Hinweise',
+    vi: 'Lưu ý',
+    tr: 'Notlar',
+    it: 'Note'
   },
   notesLi1: {
     zh: '尚未选择文件时，卡片上显示「<b>未选择文件</b>」，此时不会向下游输出内容。',
@@ -178,7 +262,13 @@ export const helpMessages = {
     ar: 'إلى أن يتم اختيار ملف، تعرض البطاقة «<b>لم يتم اختيار ملف</b>»، ولا يُخرَج شيء إلى العقد اللاحقة.',
     fr: 'Tant qu’aucun fichier n’est sélectionné, la carte affiche « <b>Aucun fichier sélectionné</b> » et rien n’est envoyé en aval.',
     pt: 'Enquanto não for selecionado um ficheiro, o cartão mostra “<b>Nenhum ficheiro selecionado</b>” e nada é enviado a jusante.',
-    ru: 'Пока файл не выбран, на карточке отображается «<b>Файл не выбран</b>», и ничего не отправляется дальше.'
+    ru: 'Пока файл не выбран, на карточке отображается «<b>Файл не выбран</b>», и ничего не отправляется дальше.',
+    hi: 'जब तक कोई फ़ाइल चयनित न हो, कार्ड पर «<b>कोई फ़ाइल चयनित नहीं</b>» दिखता है, और डाउनस्ट्रीम कुछ भी आउटपुट नहीं होता।',
+    id: 'Selama belum ada berkas yang dipilih, kartu menampilkan “<b>Tidak ada berkas dipilih</b>”, dan tidak ada yang dikirim ke hilir.',
+    de: 'Solange keine Datei ausgewählt ist, zeigt die Karte „<b>Keine Datei ausgewählt</b>“ an, und es wird nichts nachgelagert ausgegeben.',
+    vi: 'Khi chưa chọn tệp, thẻ hiển thị “<b>Chưa chọn tệp</b>”, và không có gì được xuất cho hạ nguồn.',
+    tr: 'Bir dosya seçilene kadar kartta “<b>Dosya seçilmedi</b>” görünür ve aşağı akışa hiçbir şey gönderilmez.',
+    it: 'Finché non viene selezionato un file, la scheda mostra «<b>Nessun file selezionato</b>» e nulla viene inviato a valle.'
   },
   notesLi2: {
     zh: '卡片下方显示文件名与大小，大小按 B / KB / MB 自动分档显示。',
@@ -189,6 +279,12 @@ export const helpMessages = {
     ar: 'تعرض البطاقة أسفل الأيقونة اسم الملف وحجمه، مع تحويل الحجم تلقائيًا إلى وحدات B / KB / MB.',
     fr: 'Sous l’icône, la carte affiche le nom et la taille du fichier, la taille étant automatiquement convertie en B / KB / MB.',
     pt: 'Abaixo do ícone, o cartão mostra o nome e o tamanho do ficheiro, com o tamanho convertido automaticamente em B / KB / MB.',
-    ru: 'Под значком карточка показывает имя и размер файла; размер автоматически переводится в B / KB / MB.'
+    ru: 'Под значком карточка показывает имя и размер файла; размер автоматически переводится в B / KB / MB.',
+    hi: 'कार्ड के नीचे फ़ाइल का नाम और आकार दिखता है; आकार B / KB / MB में स्वतः बदलकर प्रदर्शित होता है।',
+    id: 'Di bawah kartu ditampilkan nama dan ukuran berkas; ukuran otomatis ditampilkan dalam B / KB / MB.',
+    de: 'Unterhalb der Karte werden Dateiname und Größe angezeigt; die Größe wird automatisch in B / KB / MB skaliert.',
+    vi: 'Bên dưới thẻ hiển thị tên và kích thước tệp; kích thước tự động đổi sang B / KB / MB.',
+    tr: 'Kartın altında dosya adı ve boyutu gösterilir; boyut otomatik olarak B / KB / MB cinsinden görüntülenir.',
+    it: 'Sotto la scheda sono mostrati nome e dimensione del file; la dimensione viene convertita automaticamente in B / KB / MB.'
   }
 } satisfies Record<string, LocalizedText>

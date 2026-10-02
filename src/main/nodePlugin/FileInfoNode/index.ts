@@ -14,7 +14,13 @@ export const manifest: NodePluginManifest = {
     ar: 'معلومات الملف',
     fr: 'Informations de fichier',
     pt: 'Informações do arquivo',
-    ru: 'Информация о файле'
+    ru: 'Информация о файле',
+    hi: 'फ़ाइल जानकारी',
+    id: 'Informasi berkas',
+    de: 'Dateiinfo',
+    vi: 'Thông tin tệp',
+    tr: 'Dosya bilgisi',
+    it: 'Informazioni file'
   },
   render,
   help: () => import('./FileInfoHelpDialog.vue')

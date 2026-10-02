@@ -14,7 +14,13 @@ export const manifest: NodePluginManifest = {
     ar: 'عرض JSON',
     fr: 'Affichage JSON',
     pt: 'Exibir JSON',
-    ru: 'Отображение JSON'
+    ru: 'Отображение JSON',
+    hi: 'JSON प्रदर्शन',
+    id: 'Tampilan JSON',
+    de: 'JSON-Anzeige',
+    vi: 'Hiển thị JSON',
+    tr: 'JSON Görüntüleme',
+    it: 'Visualizzazione JSON'
   },
   render,
   help: () => import('./JsonDisplayHelpDialog.vue')

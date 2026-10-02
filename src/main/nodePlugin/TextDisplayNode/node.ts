@@ -22,7 +22,13 @@ export class TextDisplayNode extends Node {
       ar: 'نص',
       fr: 'Texte',
       pt: 'Texto',
-      ru: 'Текст'
+      ru: 'Текст',
+      hi: 'टेक्स्ट',
+      id: 'Teks',
+      de: 'Text',
+      vi: 'Văn bản',
+      tr: 'Metin',
+      it: 'Testo'
     }
   })
 

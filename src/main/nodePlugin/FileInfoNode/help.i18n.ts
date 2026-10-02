@@ -1,7 +1,7 @@
 import type { LocalizedText } from '../../../shared/language'
 
 /**
- * FileInfo 节点帮助文档（FileInfoHelpDialog）的全部文案，9 种语言全配。
+ * FileInfo 节点帮助文档（FileInfoHelpDialog）的全部文案，全部 15 种语言全配。
  *
  * 与节点自身的 i18n.ts 分开：卡片短文案变化频繁，帮助文档整篇体量大、改动少。
  * 约定：带行内 <code> / <b> 的句子，值里直接写 HTML，模板用 v-html 渲染；
@@ -18,7 +18,13 @@ export const helpMessages = {
     ar: 'ما هذا؟',
     fr: 'Qu’est-ce que c’est ?',
     pt: 'O que é isto?',
-    ru: 'Что это?'
+    ru: 'Что это?',
+    hi: 'यह क्या है?',
+    id: 'Apa ini?',
+    de: 'Was ist das?',
+    vi: 'Đây là gì?',
+    tr: 'Bu nedir?',
+    it: 'Cos’è questo?'
   },
   whatBody: {
     zh: '文件信息节点把上游送来的<b>文件</b>的元信息展示在卡片上，并把文件大小与 MIME 类型派发给下游节点。它不读取也不修改文件内容，只做信息展示与转发。',
@@ -29,7 +35,13 @@ export const helpMessages = {
     ar: 'تعرض عقدة معلومات الملف البيانات الوصفية لـ<b>الملف</b> القادم من المرحلة السابقة على البطاقة، وتُمرّر حجم الملف ونوع MIME إلى العقد اللاحقة. وهي لا تقرأ محتوى الملف ولا تعدّله، بل تعرض المعلومات وتمرّرها فقط.',
     fr: 'Le nœud Informations de fichier affiche sur la carte les métadonnées du <b>fichier</b> reçu en amont, et transmet la taille et le type MIME du fichier aux nœuds en aval. Il ne lit ni ne modifie le contenu du fichier : il ne fait qu’afficher et transmettre des informations.',
     pt: 'O nó Informações do arquivo exibe no cartão os metadados do <b>arquivo</b> recebido de montante e repassa o tamanho e o tipo MIME do arquivo aos nós seguintes. Ele não lê nem modifica o conteúdo do arquivo: apenas exibe e repassa informações.',
-    ru: 'Узел «Информация о файле» показывает на карточке метаданные <b>файла</b>, пришедшего из предыдущего узла, и передаёт размер файла и тип MIME последующим узлам. Он не читает и не изменяет содержимое файла — только отображает и передаёт информацию.'
+    ru: 'Узел «Информация о файле» показывает на карточке метаданные <b>файла</b>, пришедшего из предыдущего узла, и передаёт размер файла и тип MIME последующим узлам. Он не читает и не изменяет содержимое файла — только отображает и передаёт информацию.',
+    hi: 'फ़ाइल सूचना नोड ऊपरी प्रवाह से आने वाली <b>फ़ाइल</b> की मेटा जानकारी कार्ड पर दिखाता है और फ़ाइल का आकार तथा MIME प्रकार नीचे के नोड्स को भेजता है। यह फ़ाइल की सामग्री न पढ़ता है न बदलता है—केवल जानकारी दिखाता और आगे भेजता है।',
+    id: 'Node Informasi berkas menampilkan info meta <b>berkas</b> yang datang dari hulu pada kartu, serta mengirim ukuran dan jenis MIME berkas ke node hilir. Node ini tidak membaca atau mengubah isi berkas—hanya menampilkan dan meneruskan informasi.',
+    de: 'Der Knoten „Dateiinfo“ zeigt die Metainformationen der von vorgelagert kommenden <b>Datei</b> auf der Karte an und gibt Dateigröße und MIME-Typ an nachgelagerte Knoten weiter. Er liest und verändert den Dateiinhalt nicht – er zeigt Informationen nur an und leitet sie weiter.',
+    vi: 'Nút Thông tin tệp hiển thị thông tin meta của <b>tệp</b> từ thượng nguồn trên thẻ, đồng thời gửi kích thước và loại MIME của tệp đến các nút hạ nguồn. Nút không đọc cũng không sửa nội dung tệp—chỉ hiển thị và chuyển tiếp thông tin.',
+    tr: 'Dosya bilgisi düğümü, yukarı akıştan gelen <b>dosyanın</b> meta bilgilerini kartta gösterir ve dosya boyutunu ile MIME türünü aşağı akış düğümlerine iletir. Dosya içeriğini ne okur ne değiştirir—yalnızca bilgiyi gösterir ve iletir.',
+    it: 'Il nodo Informazioni file mostra sulla scheda le metainformazioni del <b>file</b> proveniente a monte e inoltra la dimensione e il tipo MIME del file ai nodi a valle. Non legge né modifica il contenuto del file: si limita a mostrare e inoltrare le informazioni.'
   },
 
   // —— 输入 / 输出端口 ——
@@ -42,7 +54,13 @@ export const helpMessages = {
     ar: 'منافذ الإدخال / الإخراج',
     fr: 'Ports d’entrée / sortie',
     pt: 'Portas de entrada / saída',
-    ru: 'Входной / выходной порты'
+    ru: 'Входной / выходной порты',
+    hi: 'इनपुट / आउटपुट पोर्ट',
+    id: 'Port masukan / keluaran',
+    de: 'Eingabe- / Ausgabeports',
+    vi: 'Cổng đầu vào / đầu ra',
+    tr: 'Giriş / çıkış bağlantı noktaları',
+    it: 'Porte di input / output'
   },
   portsLi1: {
     zh: '左侧 <code>file</code> 输入端口接受 <code>FileValue</code>（含文本文件等子类）',
@@ -53,7 +71,13 @@ export const helpMessages = {
     ar: 'يقبل منفذ الإدخال <code>file</code> على اليسار قيمة <code>FileValue</code> (بما في ذلك الأصناف الفرعية مثل ملفات النصوص)',
     fr: 'Le port d’entrée <code>file</code> à gauche accepte un <code>FileValue</code> (y compris les sous-classes comme les fichiers texte)',
     pt: 'O porto de entrada <code>file</code> à esquerda aceita um <code>FileValue</code> (incluindo subclasses, como arquivos de texto)',
-    ru: 'Входной порт <code>file</code> слева принимает <code>FileValue</code> (включая подклассы, например текстовые файлы)'
+    ru: 'Входной порт <code>file</code> слева принимает <code>FileValue</code> (включая подклассы, например текстовые файлы)',
+    hi: 'बाईं ओर का <code>file</code> इनपुट पोर्ट <code>FileValue</code> स्वीकार करता है (टेक्स्ट फ़ाइल जैसे उपवर्गों सहित)',
+    id: 'Port masukan <code>file</code> di sebelah kiri menerima <code>FileValue</code> (termasuk subkelas seperti berkas teks)',
+    de: 'Der Eingabeport <code>file</code> links akzeptiert ein <code>FileValue</code> (einschließlich Unterklassen wie Textdateien)',
+    vi: 'Cổng đầu vào <code>file</code> bên trái chấp nhận <code>FileValue</code> (bao gồm các lớp con như tệp văn bản)',
+    tr: 'Soldaki <code>file</code> giriş bağlantı noktası <code>FileValue</code> kabul eder (metin dosyaları gibi alt sınıflar dahil)',
+    it: 'La porta di input <code>file</code> a sinistra accetta un <code>FileValue</code> (incluse sottoclassi come i file di testo)'
   },
   portsLi2: {
     zh: '右侧 <code>number</code> 输出端口派发文件大小，单位为 <b>KB</b>（四舍五入到两位小数）',
@@ -64,7 +88,13 @@ export const helpMessages = {
     ar: 'يُمرّر منفذ الإخراج <code>number</code> على اليمين حجم الملف بوحدة <b>KB</b> (مقرَّبًا إلى منزلتين عشريتين)',
     fr: 'Le port de sortie <code>number</code> à droite transmet la taille du fichier en <b>KB</b> (arrondie à deux décimales)',
     pt: 'O porto de saída <code>number</code> à direita repassa o tamanho do arquivo em <b>KB</b> (arredondado para duas casas decimais)',
-    ru: 'Выходной порт <code>number</code> справа передаёт размер файла в <b>KB</b> (с округлением до двух знаков после запятой)'
+    ru: 'Выходной порт <code>number</code> справа передаёт размер файла в <b>KB</b> (с округлением до двух знаков после запятой)',
+    hi: 'दाईं ओर का <code>number</code> आउटपुट पोर्ट फ़ाइल का आकार <b>KB</b> में भेजता है (दो दशमलव स्थानों तक पूर्णांकित)',
+    id: 'Port keluaran <code>number</code> di sebelah kanan mengirim ukuran berkas dalam <b>KB</b> (dibulatkan ke dua desimal)',
+    de: 'Der Ausgabeport <code>number</code> rechts gibt die Dateigröße in <b>KB</b> aus (auf zwei Nachkommastellen gerundet)',
+    vi: 'Cổng đầu ra <code>number</code> bên phải gửi kích thước tệp theo đơn vị <b>KB</b> (làm tròn đến hai chữ số thập phân)',
+    tr: 'Sağdaki <code>number</code> çıkış bağlantı noktası dosya boyutunu <b>KB</b> cinsinden iletir (iki ondalık basamağa yuvarlanır)',
+    it: 'La porta di output <code>number</code> a destra inoltra la dimensione del file in <b>KB</b> (arrotondata a due decimali)'
   },
   portsLi3: {
     zh: '右侧 <code>string</code> 输出端口派发文件的 <b>MIME 类型</b>（如 <code>image/png</code>）',
@@ -75,7 +105,13 @@ export const helpMessages = {
     ar: 'يُمرّر منفذ الإخراج <code>string</code> على اليمين <b>نوع MIME</b> للملف (مثل <code>image/png</code>)',
     fr: 'Le port de sortie <code>string</code> à droite transmet le <b>type MIME</b> du fichier (par ex. <code>image/png</code>)',
     pt: 'O porto de saída <code>string</code> à direita repassa o <b>tipo MIME</b> do arquivo (por ex. <code>image/png</code>)',
-    ru: 'Выходной порт <code>string</code> справа передаёт <b>тип MIME</b> файла (например, <code>image/png</code>)'
+    ru: 'Выходной порт <code>string</code> справа передаёт <b>тип MIME</b> файла (например, <code>image/png</code>)',
+    hi: 'दाईं ओर का <code>string</code> आउटपुट पोर्ट फ़ाइल का <b>MIME प्रकार</b> भेजता है (जैसे <code>image/png</code>)',
+    id: 'Port keluaran <code>string</code> di sebelah kanan mengirim <b>jenis MIME</b> berkas (mis. <code>image/png</code>)',
+    de: 'Der Ausgabeport <code>string</code> rechts gibt den <b>MIME-Typ</b> der Datei aus (z. B. <code>image/png</code>)',
+    vi: 'Cổng đầu ra <code>string</code> bên phải gửi <b>loại MIME</b> của tệp (ví dụ <code>image/png</code>)',
+    tr: 'Sağdaki <code>string</code> çıkış bağlantı noktası dosyanın <b>MIME türünü</b> iletir (örn. <code>image/png</code>)',
+    it: 'La porta di output <code>string</code> a destra inoltra il <b>tipo MIME</b> del file (ad es. <code>image/png</code>)'
   },
 
   // —— 怎么用 ——
@@ -88,7 +124,13 @@ export const helpMessages = {
     ar: 'كيفية الاستخدام',
     fr: 'Utilisation',
     pt: 'Como usar',
-    ru: 'Как использовать'
+    ru: 'Как использовать',
+    hi: 'उपयोग कैसे करें',
+    id: 'Cara pakai',
+    de: 'Verwendung',
+    vi: 'Cách sử dụng',
+    tr: 'Nasıl kullanılır',
+    it: 'Come si usa'
   },
   useLi1: {
     zh: '卡片依次展示 <b>名称</b>、<b>大小</b>、<b>类型</b> 三行信息；类型为空时不显示该行',
@@ -99,7 +141,13 @@ export const helpMessages = {
     ar: 'تعرض البطاقة ثلاثة صفوف بالترتيب: <b>الاسم</b> و<b>الحجم</b> و<b>النوع</b>؛ ويُخفى صف النوع عندما يكون النوع فارغًا',
     fr: 'La carte affiche trois lignes dans l’ordre : <b>nom</b>, <b>taille</b> et <b>type</b> ; la ligne du type est masquée lorsque le type est vide',
     pt: 'O cartão mostra três linhas na ordem: <b>nome</b>, <b>tamanho</b> e <b>tipo</b>; a linha do tipo é ocultada quando o tipo está vazio',
-    ru: 'Карточка показывает три строки по порядку: <b>имя</b>, <b>размер</b> и <b>тип</b>; строка типа скрыта, если тип пуст'
+    ru: 'Карточка показывает три строки по порядку: <b>имя</b>, <b>размер</b> и <b>тип</b>; строка типа скрыта, если тип пуст',
+    hi: 'कार्ड क्रम से तीन पंक्तियाँ दिखाता है: <b>नाम</b>, <b>आकार</b> और <b>प्रकार</b>; प्रकार खाली होने पर वह पंक्ति नहीं दिखाई जाती',
+    id: 'Kartu menampilkan tiga baris berurutan: <b>Nama</b>, <b>Ukuran</b>, dan <b>Jenis</b>; baris jenis disembunyikan bila jenisnya kosong',
+    de: 'Die Karte zeigt drei Zeilen in dieser Reihenfolge: <b>Name</b>, <b>Größe</b> und <b>Typ</b>; die Typzeile wird ausgeblendet, wenn der Typ leer ist',
+    vi: 'Thẻ hiển thị ba dòng theo thứ tự: <b>Tên</b>, <b>Kích thước</b> và <b>Loại</b>; dòng loại sẽ ẩn khi loại trống',
+    tr: 'Kart sırasıyla üç satır gösterir: <b>Ad</b>, <b>Boyut</b> ve <b>Tür</b>; tür boşsa o satır gizlenir',
+    it: 'La scheda mostra tre righe in ordine: <b>Nome</b>, <b>Dimensione</b> e <b>Tipo</b>; la riga del tipo è nascosta quando il tipo è vuoto'
   },
   useLi2: {
     zh: '大小按量级自动格式化：小于 1 KB 显示 <code>B</code>，小于 1 MB 显示 <code>KB</code>，否则显示 <code>MB</code>',
@@ -110,7 +158,13 @@ export const helpMessages = {
     ar: 'يُنسَّق الحجم تلقائيًا حسب المقدار: أقل من 1 KB يُعرض بـ<code>B</code>، وأقل من 1 MB بـ<code>KB</code>، وإلا فبـ<code>MB</code>',
     fr: 'La taille est mise en forme automatiquement selon son ordre de grandeur : moins de 1 KB affiche <code>B</code>, moins de 1 MB affiche <code>KB</code>, sinon <code>MB</code>',
     pt: 'O tamanho é formatado automaticamente conforme a ordem de grandeza: menos de 1 KB mostra <code>B</code>, menos de 1 MB mostra <code>KB</code> e, caso contrário, <code>MB</code>',
-    ru: 'Размер форматируется автоматически в зависимости от величины: меньше 1 KB — <code>B</code>, меньше 1 MB — <code>KB</code>, иначе <code>MB</code>'
+    ru: 'Размер форматируется автоматически в зависимости от величины: меньше 1 KB — <code>B</code>, меньше 1 MB — <code>KB</code>, иначе <code>MB</code>',
+    hi: 'आकार परिमाण के अनुसार स्वतः फ़ॉर्मैट होता है: 1 KB से कम पर <code>B</code>, 1 MB से कम पर <code>KB</code>, अन्यथा <code>MB</code> दिखता है',
+    id: 'Ukuran diformat otomatis menurut besarnya: di bawah 1 KB menampilkan <code>B</code>, di bawah 1 MB menampilkan <code>KB</code>, selain itu <code>MB</code>',
+    de: 'Die Größe wird je nach Größenordnung automatisch formatiert: unter 1 KB wird <code>B</code> angezeigt, unter 1 MB <code>KB</code>, sonst <code>MB</code>',
+    vi: 'Kích thước được định dạng tự động theo độ lớn: dưới 1 KB hiển thị <code>B</code>, dưới 1 MB hiển thị <code>KB</code>, còn lại là <code>MB</code>',
+    tr: 'Boyut büyüklüğe göre otomatik biçimlendirilir: 1 KB altında <code>B</code>, 1 MB altında <code>KB</code>, aksi halde <code>MB</code> gösterilir',
+    it: 'La dimensione è formattata automaticamente in base all’ordine di grandezza: sotto 1 KB mostra <code>B</code>, sotto 1 MB mostra <code>KB</code>, altrimenti <code>MB</code>'
   },
   useLi3: {
     zh: '上游文件变化时卡片<b>立即刷新</b>，同时把新的大小与类型提交到输出端口',
@@ -121,7 +175,13 @@ export const helpMessages = {
     ar: 'عندما يتغيّر الملف في المرحلة السابقة تتحدّث البطاقة <b>فورًا</b> ويُرسل الحجم والنوع الجديدان إلى منافذ الإخراج',
     fr: 'Lorsque le fichier en amont change, la carte <b>se met à jour immédiatement</b> et valide la nouvelle taille et le nouveau type sur les ports de sortie',
     pt: 'Quando o arquivo de montante muda, o cartão <b>atualiza imediatamente</b> e confirma o novo tamanho e tipo nos portos de saída',
-    ru: 'Когда файл выше по потоку меняется, карточка <b>сразу обновляется</b> и отправляет новый размер и тип в выходные порты'
+    ru: 'Когда файл выше по потоку меняется, карточка <b>сразу обновляется</b> и отправляет новый размер и тип в выходные порты',
+    hi: 'ऊपरी प्रवाह में फ़ाइल बदलने पर कार्ड <b>तुरंत रीफ़्रेश</b> होता है और नया आकार व प्रकार आउटपुट पोर्ट पर commit करता है',
+    id: 'Saat berkas di hulu berubah, kartu <b>langsung menyegarkan</b> dan meng-commit ukuran serta jenis baru ke port keluaran',
+    de: 'Wenn sich die vorgelagerte Datei ändert, wird die Karte <b>sofort aktualisiert</b> und überträgt die neue Größe und den neuen Typ an die Ausgabeports',
+    vi: 'Khi tệp thượng nguồn thay đổi, thẻ <b>làm mới ngay</b> và commit kích thước cùng loại mới vào cổng đầu ra',
+    tr: 'Yukarı akıştaki dosya değiştiğinde kart <b>anında yenilenir</b> ve yeni boyut ile türü çıkış bağlantı noktalarına commit eder',
+    it: 'Quando il file a monte cambia, la scheda <b>si aggiorna subito</b> e conferma la nuova dimensione e il nuovo tipo sulle porte di output'
   },
 
   // —— 注意事项 ——
@@ -134,7 +194,13 @@ export const helpMessages = {
     ar: 'ملاحظات',
     fr: 'Remarques',
     pt: 'Observações',
-    ru: 'Примечания'
+    ru: 'Примечания',
+    hi: 'नोट्स',
+    id: 'Catatan',
+    de: 'Hinweise',
+    vi: 'Ghi chú',
+    tr: 'Notlar',
+    it: 'Note'
   },
   notesLi1: {
     zh: '没有接输入、或上游尚未计算时，卡片显示「<b>暂无输入</b>」空状态',
@@ -145,7 +211,13 @@ export const helpMessages = {
     ar: 'إذا لم يكن هناك إدخال متصل أو لم تُحسب المرحلة السابقة بعد، تعرض البطاقة حالة فارغة «<b>لا يوجد إدخال</b>»',
     fr: 'Si aucune entrée n’est connectée ou si l’amont n’a pas encore calculé, la carte affiche l’état vide « <b>Aucune entrée</b> »',
     pt: 'Se não houver entrada conectada ou se a montante ainda não tiver calculado, o cartão exibe o estado vazio “<b>Sem entrada</b>”',
-    ru: 'Если вход не подключён или предыдущий узел ещё не выполнил расчёт, карточка показывает пустое состояние «<b>Нет входа</b>»'
+    ru: 'Если вход не подключён или предыдущий узел ещё не выполнил расчёт, карточка показывает пустое состояние «<b>Нет входа</b>»',
+    hi: 'जब कोई इनपुट जुड़ा न हो, या ऊपरी प्रवाह ने अभी गणना न की हो, कार्ड «<b>कोई इनपुट नहीं</b>» खाली स्थिति दिखाता है',
+    id: 'Saat tidak ada input tersambung, atau hulu belum menghitung, kartu menampilkan status kosong “<b>Tidak ada masukan</b>”',
+    de: 'Wenn keine Eingabe angeschlossen ist oder der vorgelagerte Teil noch nicht berechnet hat, zeigt die Karte den leeren Zustand „<b>Keine Eingabe</b>“ an',
+    vi: 'Khi chưa kết nối đầu vào, hoặc thượng nguồn chưa tính, thẻ hiển thị trạng thái trống “<b>Không có đầu vào</b>”',
+    tr: 'Giriş bağlı değilse veya yukarı akış henüz hesaplamadıysa, kart “<b>Giriş yok</b>” boş durumunu gösterir',
+    it: 'Se non è collegato alcun input, o il monte non ha ancora calcolato, la scheda mostra lo stato vuoto «<b>Nessun input</b>»'
   },
   notesLi2: {
     zh: '本节点<b>不接收文件拖放</b>，也不读写文件内容，只展示元信息',
@@ -156,7 +228,13 @@ export const helpMessages = {
     ar: 'لا تقبل هذه العقدة <b>سحب وإفلات الملفات</b> ولا تقرأ محتوى الملف أو تكتبه، بل تعرض البيانات الوصفية فقط',
     fr: 'Ce nœud <b>n’accepte pas le glisser-déposer de fichiers</b> et ne lit ni n’écrit le contenu du fichier : il n’affiche que les métadonnées',
     pt: 'Este nó <b>não aceita arrastar e soltar arquivos</b> e não lê nem grava o conteúdo do arquivo: exibe apenas metadados',
-    ru: 'Этот узел <b>не принимает перетаскивание файлов</b> и не читает и не записывает содержимое файла — он показывает только метаданные'
+    ru: 'Этот узел <b>не принимает перетаскивание файлов</b> и не читает и не записывает содержимое файла — он показывает только метаданные',
+    hi: 'यह नोड <b>फ़ाइल ड्रैग-ड्रॉप स्वीकार नहीं करता</b> और फ़ाइल सामग्री न पढ़ता न लिखता है, केवल मेटा जानकारी दिखाता है',
+    id: 'Node ini <b>tidak menerima seret-lepas berkas</b> dan tidak membaca atau menulis isi berkas, hanya menampilkan info meta',
+    de: 'Dieser Knoten <b>nimmt kein Ablegen von Dateien an</b> und liest oder schreibt den Dateiinhalt nicht – er zeigt nur Metainformationen',
+    vi: 'Nút này <b>không nhận kéo thả tệp</b> và không đọc hay ghi nội dung tệp, chỉ hiển thị thông tin meta',
+    tr: 'Bu düğüm <b>dosya sürükleyip bırakmayı kabul etmez</b> ve dosya içeriğini okumaz veya yazmaz—yalnızca meta bilgileri gösterir',
+    it: 'Questo nodo <b>non accetta il trascinamento dei file</b> e non legge né scrive il contenuto del file: mostra solo metainformazioni'
   },
   notesLi3: {
     zh: '信息较多时卡片内部可滚动查看',
@@ -167,6 +245,12 @@ export const helpMessages = {
     ar: 'عند كثرة المعلومات يمكن التمرير داخل البطاقة لاستعراضها',
     fr: 'Lorsqu’il y a beaucoup d’informations, la carte défile en interne',
     pt: 'Quando há muita informação, o cartão pode ser rolado internamente',
-    ru: 'При большом объёме информации карточку можно прокручивать изнутри'
+    ru: 'При большом объёме информации карточку можно прокручивать изнутри',
+    hi: 'जानकारी अधिक होने पर कार्ड के भीतर स्क्रॉल करके देखा जा सकता है',
+    id: 'Saat informasi banyak, kartu dapat digulir di dalamnya',
+    de: 'Bei vielen Informationen lässt sich die Karte intern scrollen',
+    vi: 'Khi có nhiều thông tin, thẻ có thể cuộn bên trong để xem',
+    tr: 'Bilgi çok olduğunda kartın içinde kaydırılarak görüntülenebilir',
+    it: 'Quando le informazioni sono molte, la scheda può scorrere internamente'
   }
 } satisfies Record<string, LocalizedText>

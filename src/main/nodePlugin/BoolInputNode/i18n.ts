@@ -16,7 +16,13 @@ export const messages = {
     ar: 'اسحب العقدة',
     fr: 'Glisser le nœud',
     pt: 'Arrastar nó',
-    ru: 'Перетащить узел'
+    ru: 'Перетащить узел',
+    hi: 'नोड खींचें',
+    id: 'Seret node',
+    de: 'Knoten ziehen',
+    vi: 'Kéo nút',
+    tr: 'Düğümü sürükle',
+    it: 'Trascina nodo'
   },
   clickToOpen: {
     zh: '点击开启',
@@ -27,7 +33,13 @@ export const messages = {
     ar: 'انقر للتشغيل',
     fr: 'Cliquer pour activer',
     pt: 'Clique para ligar',
-    ru: 'Нажмите, чтобы включить'
+    ru: 'Нажмите, чтобы включить',
+    hi: 'चालू करने के लिए क्लिक करें',
+    id: 'Klik untuk menyalakan',
+    de: 'Zum Einschalten klicken',
+    vi: 'Nhấp để bật',
+    tr: 'Açmak için tıkla',
+    it: 'Clicca per attivare'
   },
   clickToClose: {
     zh: '点击关闭',
@@ -38,7 +50,13 @@ export const messages = {
     ar: 'انقر للإيقاف',
     fr: 'Cliquer pour désactiver',
     pt: 'Clique para desligar',
-    ru: 'Нажмите, чтобы выключить'
+    ru: 'Нажмите, чтобы выключить',
+    hi: 'बंद करने के लिए क्लिक करें',
+    id: 'Klik untuk mematikan',
+    de: 'Zum Ausschalten klicken',
+    vi: 'Nhấp để tắt',
+    tr: 'Kapatmak için tıkla',
+    it: 'Clicca per disattivare'
   },
   helpTitle: {
     zh: '使用说明',
@@ -49,7 +67,13 @@ export const messages = {
     ar: 'مساعدة',
     fr: 'Aide',
     pt: 'Ajuda',
-    ru: 'Справка'
+    ru: 'Справка',
+    hi: 'सहायता',
+    id: 'Bantuan',
+    de: 'Hilfe',
+    vi: 'Trợ giúp',
+    tr: 'Yardım',
+    it: 'Guida'
   },
   helpDialogTitle: {
     zh: '布尔输入节点使用说明',
@@ -60,6 +84,12 @@ export const messages = {
     ar: 'مساعدة عقدة الإدخال المنطقي',
     fr: 'Aide du nœud Entrée booléenne',
     pt: 'Ajuda do nó Entrada booleana',
-    ru: 'Справка по узлу «Логический ввод»'
+    ru: 'Справка по узлу «Логический ввод»',
+    hi: 'बूलियन इनपुट नोड सहायता',
+    id: 'Bantuan node Masukan boolean',
+    de: 'Hilfe zum Knoten „Boolesche Eingabe“',
+    vi: 'Trợ giúp nút Đầu vào boolean',
+    tr: 'Mantıksal Giriş düğümü yardımı',
+    it: 'Guida del nodo Input booleano'
   }
 } satisfies Record<string, LocalizedText>

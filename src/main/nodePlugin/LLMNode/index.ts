@@ -14,7 +14,13 @@ export const manifest: NodePluginManifest = {
     ar: 'نموذج لغوي',
     fr: 'Modèle de langage',
     pt: 'Modelo de linguagem',
-    ru: 'Языковая модель'
+    ru: 'Языковая модель',
+    hi: 'भाषा मॉडल',
+    id: 'Model bahasa',
+    de: 'Sprachmodell',
+    vi: 'Mô hình ngôn ngữ',
+    tr: 'Dil modeli',
+    it: 'Modello linguistico'
   },
   render,
   help: () => import('./LLMHelpDialog.vue')

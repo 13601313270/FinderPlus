@@ -14,7 +14,13 @@ export const manifest: NodePluginManifest = {
     ar: 'ضغط الصورة',
     fr: 'Compresser l’image',
     pt: 'Comprimir imagem',
-    ru: 'Сжатие изображения'
+    ru: 'Сжатие изображения',
+    hi: 'छवि संपीड़न',
+    id: 'Kompres Gambar',
+    de: 'Bild komprimieren',
+    vi: 'Nén ảnh',
+    tr: 'Görüntüyü sıkıştır',
+    it: 'Comprimi immagine'
   },
   render,
   help: () => import('./ImageCompressHelpDialog.vue')

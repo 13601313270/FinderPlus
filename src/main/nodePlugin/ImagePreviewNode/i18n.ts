@@ -16,7 +16,13 @@ export const messages = {
     ar: 'اسحب داخل اللوحة لتحريك العقدة · واسحب خارج النافذة لتصدير الصورة إلى سطح المكتب/المجلد',
     fr: 'Faites glisser dans le canevas pour déplacer · faites glisser hors de la fenêtre pour exporter l’image vers le bureau/dossier',
     pt: 'Arraste dentro do canvas para mover · arraste para fora da janela para exportar a imagem para o ambiente de trabalho/pasta',
-    ru: 'Перетащите внутри холста, чтобы переместить узел · перетащите за пределы окна, чтобы экспортировать изображение на рабочий стол/в папку'
+    ru: 'Перетащите внутри холста, чтобы переместить узел · перетащите за пределы окна, чтобы экспортировать изображение на рабочий стол/в папку',
+    hi: 'नोड हिलाने के लिए कैनवास के भीतर खींचें · छवि को डेस्कटॉप/फ़ोल्डर में निर्यात करने के लिए विंडो से बाहर खींचें',
+    id: 'Seret di dalam kanvas untuk memindahkan · seret keluar jendela untuk mengekspor gambar ke desktop/folder',
+    de: 'Innerhalb der Zeichenfläche ziehen, um zu verschieben · aus dem Fenster ziehen, um das Bild auf den Desktop/in einen Ordner zu exportieren',
+    vi: 'Kéo trong canvas để di chuyển · kéo ra ngoài cửa sổ để xuất ảnh ra màn hình nền/thư mục',
+    tr: 'Taşımak için tuval içinde sürükle · görüntüyü masaüstüne/klasöre aktarmak için pencere dışına sürükle',
+    it: 'Trascina all’interno della tela per spostare · trascina fuori dalla finestra per esportare l’immagine sul desktop/in una cartella'
   },
   needSourceHint: {
     zh: '请先连接图片来源',
@@ -27,7 +33,13 @@ export const messages = {
     ar: 'صِل مصدر صورة أولًا',
     fr: 'Connectez d’abord une source d’image',
     pt: 'Ligue primeiro uma fonte de imagem',
-    ru: 'Сначала подключите источник изображения'
+    ru: 'Сначала подключите источник изображения',
+    hi: 'पहले कोई छवि स्रोत जोड़ें',
+    id: 'Sambungkan sumber gambar terlebih dahulu',
+    de: 'Zuerst eine Bildquelle anschließen',
+    vi: 'Hãy kết nối nguồn ảnh trước',
+    tr: 'Önce bir görüntü kaynağı bağla',
+    it: 'Collega prima una sorgente immagine'
   },
   altPreview: {
     zh: '图片预览',
@@ -38,7 +50,13 @@ export const messages = {
     ar: 'معاينة الصورة',
     fr: 'Aperçu de l’image',
     pt: 'Prévia da imagem',
-    ru: 'Предпросмотр изображения'
+    ru: 'Предпросмотр изображения',
+    hi: 'छवि पूर्वावलोकन',
+    id: 'Pratinjau gambar',
+    de: 'Bildvorschau',
+    vi: 'Xem trước ảnh',
+    tr: 'Görüntü önizlemesi',
+    it: 'Anteprima immagine'
   },
   waitingInput: {
     zh: '等待图片输入',
@@ -49,7 +67,13 @@ export const messages = {
     ar: 'في انتظار إدخال صورة',
     fr: 'En attente d’une image en entrée',
     pt: 'A aguardar entrada de imagem',
-    ru: 'Ожидание ввода изображения'
+    ru: 'Ожидание ввода изображения',
+    hi: 'छवि इनपुट की प्रतीक्षा में',
+    id: 'Menunggu masukan gambar',
+    de: 'Warte auf Bildeingabe',
+    vi: 'Đang chờ đầu vào ảnh',
+    tr: 'Görüntü girişi bekleniyor',
+    it: 'In attesa di un’immagine'
   },
   loading: {
     zh: '图片加载中…',
@@ -60,7 +84,13 @@ export const messages = {
     ar: 'جارٍ تحميل الصورة…',
     fr: 'Chargement de l’image…',
     pt: 'A carregar imagem…',
-    ru: 'Загрузка изображения…'
+    ru: 'Загрузка изображения…',
+    hi: 'छवि लोड हो रही है…',
+    id: 'Memuat gambar…',
+    de: 'Bild wird geladen…',
+    vi: 'Đang tải ảnh…',
+    tr: 'Görüntü yükleniyor…',
+    it: 'Caricamento immagine…'
   },
   createNode: {
     zh: '新建图片文件节点',
@@ -71,7 +101,13 @@ export const messages = {
     ar: 'إنشاء عقدة ملف صورة جديدة',
     fr: 'Créer un nœud de fichier image',
     pt: 'Criar nó de arquivo de imagem',
-    ru: 'Создать узел файла изображения'
+    ru: 'Создать узел файла изображения',
+    hi: 'छवि फ़ाइल नोड बनाएँ',
+    id: 'Buat node berkas gambar',
+    de: 'Bilddatei-Knoten erstellen',
+    vi: 'Tạo nút tệp ảnh',
+    tr: 'Görüntü dosyası düğümü oluştur',
+    it: 'Crea nodo file immagine'
   },
   createNodeHint: {
     zh: '点击在当前节点旁边新建图片文件节点',
@@ -82,7 +118,13 @@ export const messages = {
     ar: 'انقر لإنشاء عقدة ملف صورة بجوار هذه العقدة',
     fr: 'Cliquez pour créer un nœud de fichier image à côté de celui-ci',
     pt: 'Clique para criar um nó de arquivo de imagem ao lado deste',
-    ru: 'Нажмите, чтобы создать узел файла изображения рядом с этим'
+    ru: 'Нажмите, чтобы создать узел файла изображения рядом с этим',
+    hi: 'इसके बगल में छवि फ़ाइल नोड बनाने के लिए क्लिक करें',
+    id: 'Klik untuk membuat node berkas gambar di samping node ini',
+    de: 'Klicke, um neben diesem einen Bilddatei-Knoten zu erstellen',
+    vi: 'Nhấp để tạo nút tệp ảnh bên cạnh nút này',
+    tr: 'Bunun yanında bir görüntü dosyası düğümü oluşturmak için tıkla',
+    it: 'Fai clic per creare un nodo file immagine accanto a questo'
   },
   resizeHint: {
     zh: '拖拽调整预览大小（保持图片比例）',
@@ -93,7 +135,13 @@ export const messages = {
     ar: 'اسحب لتغيير حجم المعاينة (مع الحفاظ على نسبة الصورة)',
     fr: 'Faites glisser pour redimensionner l’aperçu (conserve les proportions de l’image)',
     pt: 'Arraste para redimensionar a prévia (mantém a proporção da imagem)',
-    ru: 'Перетащите, чтобы изменить размер предпросмотра (сохраняет пропорции изображения)'
+    ru: 'Перетащите, чтобы изменить размер предпросмотра (сохраняет пропорции изображения)',
+    hi: 'पूर्वावलोकन का आकार बदलने के लिए खींचें (छवि का अनुपात बनाए रखता है)',
+    id: 'Seret untuk mengubah ukuran pratinjau (mempertahankan rasio gambar)',
+    de: 'Ziehen, um die Vorschaugröße zu ändern (behält das Bildverhältnis bei)',
+    vi: 'Kéo để thay đổi kích thước xem trước (giữ tỉ lệ ảnh)',
+    tr: 'Önizleme boyutunu değiştirmek için sürükle (görüntü oranını korur)',
+    it: 'Trascina per ridimensionare l’anteprima (mantiene le proporzioni dell’immagine)'
   },
   formatUnknown: {
     zh: '未知',
@@ -104,7 +152,13 @@ export const messages = {
     ar: 'غير معروف',
     fr: 'Inconnu',
     pt: 'Desconhecido',
-    ru: 'Неизвестно'
+    ru: 'Неизвестно',
+    hi: 'अज्ञात',
+    id: 'Tidak diketahui',
+    de: 'Unbekannt',
+    vi: 'Không rõ',
+    tr: 'Bilinmiyor',
+    it: 'Sconosciuto'
   },
   helpTitle: {
     zh: '使用说明',
@@ -115,7 +169,13 @@ export const messages = {
     ar: 'تعليمات الاستخدام',
     fr: 'Aide',
     pt: 'Ajuda',
-    ru: 'Справка'
+    ru: 'Справка',
+    hi: 'सहायता',
+    id: 'Bantuan',
+    de: 'Hilfe',
+    vi: 'Trợ giúp',
+    tr: 'Yardım',
+    it: 'Guida'
   },
   helpDialogTitle: {
     zh: '图片预览节点使用说明',
@@ -126,6 +186,12 @@ export const messages = {
     ar: 'تعليمات عقدة معاينة الصورة',
     fr: 'Aide du nœud Aperçu d’image',
     pt: 'Ajuda do nó Pré-visualizar imagem',
-    ru: 'Справка по узлу «Предпросмотр изображения»'
+    ru: 'Справка по узлу «Предпросмотр изображения»',
+    hi: 'छवि पूर्वावलोकन नोड सहायता',
+    id: 'Bantuan node Pratinjau gambar',
+    de: 'Hilfe zum Knoten „Bildvorschau“',
+    vi: 'Trợ giúp nút Xem trước ảnh',
+    tr: 'Görüntü önizleme düğümü yardımı',
+    it: 'Guida del nodo Anteprima immagine'
   }
 } satisfies Record<string, LocalizedText>

@@ -40,7 +40,13 @@ export class ImgFolderNode extends FolderNode {
     ar: 'الصورة المحددة',
     fr: 'Image sélectionnée',
     pt: 'Imagem selecionada',
-    ru: 'Выбранное изображение'
+    ru: 'Выбранное изображение',
+    hi: 'चयनित छवि',
+    id: 'Gambar Terpilih',
+    de: 'Ausgewähltes Bild',
+    vi: 'Ảnh đã chọn',
+    tr: 'Seçili Görüntü',
+    it: 'Immagine selezionata'
   })
 
   /** 当前选中的子节点 id；空串表示未选中 */

@@ -1,7 +1,7 @@
 import type { LocalizedText } from '../../../shared/language'
 
 /**
- * ImageCrop 节点帮助文档（ImageCropHelpDialog）的全部文案，9 种语言全配。
+ * ImageCrop 节点帮助文档（ImageCropHelpDialog）的全部文案，全部 15 种语言全配。
  *
  * 与节点自身的 i18n.ts 分开：卡片短文案变化频繁，帮助文档整篇体量大、改动少。
  * 约定：带行内 <code> / <b> 的句子，值里直接写 HTML，模板用 v-html 渲染；
@@ -18,7 +18,13 @@ export const helpMessages = {
     ar: 'ما هذا؟',
     fr: 'Qu’est-ce que c’est ?',
     pt: 'O que é isto?',
-    ru: 'Что это?'
+    ru: 'Что это?',
+    hi: 'यह क्या है?',
+    id: 'Apa ini?',
+    de: 'Was ist das?',
+    vi: 'Đây là gì?',
+    tr: 'Bu nedir?',
+    it: 'Cos’è questo?'
   },
   whatBody: {
     zh: '图片裁剪节点接收一张图片，框选一块区域裁剪后从右侧 <code>image</code> 端口输出给下游节点。裁剪框坐标按<b>原图像素</b>保存。',
@@ -29,7 +35,13 @@ export const helpMessages = {
     ar: 'تستقبل عقدة قص الصورة صورةً، وتقصّ منطقة محددة، ثم تُخرج النتيجة إلى العقد اللاحقة من منفذ <code>image</code> على اليمين. تُحفظ إحداثيات إطار القص بوحدة <b>بكسل الصورة الأصلية</b>.',
     fr: 'Le nœud Recadrage d’image prend une image, découpe la zone sélectionnée et envoie le résultat aux nœuds en aval depuis le port <code>image</code> à droite. Les coordonnées du cadre sont stockées en <b>pixels de l’image d’origine</b>.',
     pt: 'O nó Recortar imagem recebe uma imagem, recorta a região selecionada e envia o resultado aos nós seguintes pelo porto <code>image</code> à direita. As coordenadas do quadro de recorte são guardadas em <b>pixels da imagem original</b>.',
-    ru: 'Узел «Обрезка изображения» принимает изображение, обрезает выбранную область и выводит результат последующим узлам из порта <code>image</code> справа. Координаты рамки хранятся в <b>пикселях исходного изображения</b>.'
+    ru: 'Узел «Обрезка изображения» принимает изображение, обрезает выбранную область и выводит результат последующим узлам из порта <code>image</code> справа. Координаты рамки хранятся в <b>пикселях исходного изображения</b>.',
+    hi: 'छवि क्रॉप नोड एक छवि लेता है, किसी क्षेत्र को चुनकर क्रॉप करता है और परिणाम दाईं ओर के <code>image</code> पोर्ट से नीचे के नोड्स को भेजता है। क्रॉप बॉक्स के निर्देशांक <b>मूल छवि पिक्सेल</b> में सहेजे जाते हैं।',
+    id: 'Node Pangkas gambar menerima sebuah gambar, memilih suatu area lalu memangkasnya, dan mengeluarkan hasilnya ke node hilir dari port <code>image</code> di sebelah kanan. Koordinat kotak pangkas disimpan dalam <b>piksel gambar asli</b>.',
+    de: 'Der Knoten „Bild zuschneiden“ nimmt ein Bild, schneidet einen ausgewählten Bereich zu und gibt das Ergebnis über den Port <code>image</code> rechts an nachgelagerte Knoten aus. Die Koordinaten des Zuschnittrahmens werden in <b>Pixeln des Originalbilds</b> gespeichert.',
+    vi: 'Nút Cắt ảnh nhận một ảnh, chọn một vùng rồi cắt, và xuất kết quả cho các nút hạ nguồn từ cổng <code>image</code> bên phải. Tọa độ khung cắt được lưu theo <b>pixel ảnh gốc</b>.',
+    tr: 'Görüntü kırpma düğümü bir görüntü alır, seçilen bir bölgeyi kırpar ve sonucu sağdaki <code>image</code> bağlantı noktasından aşağı akış düğümlerine verir. Kırpma kutusunun koordinatları <b>özgün görüntü pikseli</b> cinsinden saklanır.',
+    it: 'Il nodo Ritaglio immagine riceve un’immagine, ritaglia un’area selezionata e invia il risultato ai nodi a valle dalla porta <code>image</code> a destra. Le coordinate del riquadro di ritaglio sono salvate in <b>pixel dell’immagine originale</b>.'
   },
 
   // —— 如何框选 ——
@@ -42,7 +54,13 @@ export const helpMessages = {
     ar: 'كيفية تحديد منطقة القص',
     fr: 'Sélection de la zone',
     pt: 'Como selecionar a área',
-    ru: 'Выбор области'
+    ru: 'Выбор области',
+    hi: 'क्रॉप क्षेत्र कैसे चुनें',
+    id: 'Cara memilih area pangkas',
+    de: 'Auswahl des Zuschnittbereichs',
+    vi: 'Cách chọn vùng cắt',
+    tr: 'Kırpma alanı nasıl seçilir',
+    it: 'Selezione dell’area di ritaglio'
   },
   useLi1: {
     zh: '拖动裁剪框<b>内部</b>可整体移动位置',
@@ -53,7 +71,13 @@ export const helpMessages = {
     ar: 'اسحب <b>داخل</b> إطار القص لتحريكه بالكامل',
     fr: 'Faites glisser <b>à l’intérieur</b> du cadre pour le déplacer entièrement',
     pt: 'Arraste <b>dentro</b> do quadro para movê-lo por inteiro',
-    ru: 'Перетаскивайте <b>внутри</b> рамки, чтобы переместить её целиком'
+    ru: 'Перетаскивайте <b>внутри</b> рамки, чтобы переместить её целиком',
+    hi: 'पूरे बॉक्स को हिलाने के लिए क्रॉप बॉक्स के <b>भीतर</b> खींचें',
+    id: 'Seret <b>di dalam</b> kotak pangkas untuk memindahkannya secara keseluruhan',
+    de: 'Ziehe <b>innerhalb</b> des Zuschnittrahmens, um ihn als Ganzes zu verschieben',
+    vi: 'Kéo <b>bên trong</b> khung cắt để di chuyển toàn bộ khung',
+    tr: 'Kutuyu bir bütün olarak taşımak için kırpma kutusunun <b>içinden</b> sürükle',
+    it: 'Trascina <b>all’interno</b> del riquadro di ritaglio per spostarlo interamente'
   },
   useLi2: {
     zh: '拖动四角与四边的<b>八个手柄</b>可自由缩放裁剪框',
@@ -64,7 +88,13 @@ export const helpMessages = {
     ar: 'اسحب <b>المقابض الثمانية</b> على الزوايا والحواف لتغيير حجم إطار القص بحرية',
     fr: 'Faites glisser les <b>huit poignées</b> des coins et des bords pour redimensionner librement le cadre',
     pt: 'Arraste os <b>oito puxadores</b> dos cantos e das bordas para redimensionar o quadro livremente',
-    ru: 'Перетаскивайте <b>восемь маркеров</b> по углам и сторонам, чтобы свободно менять размер рамки'
+    ru: 'Перетаскивайте <b>восемь маркеров</b> по углам и сторонам, чтобы свободно менять размер рамки',
+    hi: 'क्रॉप बॉक्स को स्वतंत्र रूप से स्केल करने के लिए कोनों और किनारों के <b>आठ हैंडल</b> खींचें',
+    id: 'Seret <b>delapan pegangan</b> di sudut dan sisi untuk mengubah ukuran kotak pangkas dengan bebas',
+    de: 'Ziehe die <b>acht Griffe</b> an den Ecken und Kanten, um den Zuschnittrahmen frei zu skalieren',
+    vi: 'Kéo <b>tám tay cầm</b> ở bốn góc và bốn cạnh để thu phóng khung cắt tự do',
+    tr: 'Kırpma kutusunu serbestçe ölçeklemek için köşelerdeki ve kenarlardaki <b>sekiz tutamacı</b> sürükle',
+    it: 'Trascina le <b>otto maniglie</b> agli angoli e ai lati per ridimensionare liberamente il riquadro'
   },
   useLi3: {
     zh: '裁剪框上方实时显示当前区域的像素尺寸（<code>宽×高</code>）',
@@ -75,7 +105,13 @@ export const helpMessages = {
     ar: 'يُعرض فوق إطار القص حجم المنطقة الحالي بالبكسل (<code>العرض×الارتفاع</code>) في الوقت الفعلي',
     fr: 'La taille en pixels de la zone actuelle (<code>L×H</code>) s’affiche en temps réel au-dessus du cadre',
     pt: 'O tamanho em pixels da região atual (<code>L×A</code>) é mostrado acima do quadro em tempo real',
-    ru: 'Над рамкой в реальном времени показывается размер области в пикселях (<code>Ш×В</code>)'
+    ru: 'Над рамкой в реальном времени показывается размер области в пикселях (<code>Ш×В</code>)',
+    hi: 'क्रॉप बॉक्स के ऊपर वर्तमान क्षेत्र का पिक्सेल आकार (<code>चौड़ाई×ऊँचाई</code>) रीयल-टाइम में दिखता है',
+    id: 'Ukuran piksel area saat ini (<code>L×T</code>) ditampilkan secara real-time di atas kotak pangkas',
+    de: 'Über dem Zuschnittrahmen wird die Pixelgröße des aktuellen Bereichs (<code>B×H</code>) in Echtzeit angezeigt',
+    vi: 'Kích thước pixel của vùng hiện tại (<code>R×C</code>) hiển thị theo thời gian thực phía trên khung cắt',
+    tr: 'Geçerli alanın piksel boyutu (<code>G×Y</code>) kırpma kutusunun üzerinde gerçek zamanlı gösterilir',
+    it: 'La dimensione in pixel dell’area corrente (<code>L×A</code>) è mostrata in tempo reale sopra il riquadro'
   },
 
   // —— 端口 ——
@@ -88,7 +124,13 @@ export const helpMessages = {
     ar: 'المنافذ',
     fr: 'Ports',
     pt: 'Portas',
-    ru: 'Порты'
+    ru: 'Порты',
+    hi: 'पोर्ट',
+    id: 'Port',
+    de: 'Ports',
+    vi: 'Cổng',
+    tr: 'Bağlantı noktaları',
+    it: 'Porte'
   },
   portsLi1: {
     zh: '左侧 <code>图片</code> 输入端口接收图片（<code>ImgFileValue</code>）；上游图片变化时源图与裁剪框自动刷新',
@@ -99,7 +141,13 @@ export const helpMessages = {
     ar: 'يقبل منفذ الإدخال <code>صورة</code> على اليسار صورةً (<code>ImgFileValue</code>)؛ وعند تغيّر الصورة من المنبع تتحدّث الصورة الأصلية وإطار القص تلقائيًا',
     fr: 'Le port d’entrée <code>Image</code> à gauche accepte une image (<code>ImgFileValue</code>) ; lorsque l’image en amont change, l’image source et le cadre se rafraîchissent automatiquement',
     pt: 'O porto de entrada <code>Imagem</code> à esquerda aceita uma imagem (<code>ImgFileValue</code>); quando a imagem de origem muda, a imagem-fonte e o quadro de recorte atualizam-se sozinhos',
-    ru: 'Входной порт <code>Изображение</code> слева принимает изображение (<code>ImgFileValue</code>); при изменении исходного изображения картинка и рамка обновляются автоматически'
+    ru: 'Входной порт <code>Изображение</code> слева принимает изображение (<code>ImgFileValue</code>); при изменении исходного изображения картинка и рамка обновляются автоматически',
+    hi: 'बाईं ओर का <code>छवि</code> इनपुट पोर्ट छवि (<code>ImgFileValue</code>) प्राप्त करता है; ऊपरी छवि बदलने पर स्रोत छवि और क्रॉप बॉक्स स्वतः रीफ़्रेश होते हैं',
+    id: 'Port masukan <code>Gambar</code> di sebelah kiri menerima gambar (<code>ImgFileValue</code>); saat gambar hulu berubah, gambar sumber dan kotak pangkas menyegarkan otomatis',
+    de: 'Der Eingabeport <code>Bild</code> links nimmt ein Bild (<code>ImgFileValue</code>) auf; ändert sich das vorgelagerte Bild, werden Quellbild und Zuschnittrahmen automatisch aktualisiert',
+    vi: 'Cổng đầu vào <code>Ảnh</code> bên trái nhận ảnh (<code>ImgFileValue</code>); khi ảnh thượng nguồn thay đổi, ảnh nguồn và khung cắt tự động làm mới',
+    tr: 'Soldaki <code>Görüntü</code> giriş bağlantı noktası bir görüntü (<code>ImgFileValue</code>) alır; yukarı akıştaki görüntü değişince kaynak görüntü ve kırpma kutusu otomatik yenilenir',
+    it: 'La porta di input <code>Immagine</code> a sinistra accetta un’immagine (<code>ImgFileValue</code>); quando l’immagine a monte cambia, l’immagine di origine e il riquadro si aggiornano automaticamente'
   },
   portsLi2: {
     zh: '右侧 <code>裁剪图</code> 输出端口输出裁剪结果（<code>ImgFileValue</code>），保持源图格式、文件名加 <code>-cropped</code> 后缀',
@@ -110,7 +158,13 @@ export const helpMessages = {
     ar: 'يُخرج منفذ <code>الصورة المقصوصة</code> على اليمين النتيجة (<code>ImgFileValue</code>) مع الحفاظ على تنسيق المصدر وإضافة اللاحقة <code>-cropped</code> إلى اسم الملف',
     fr: 'Le port de sortie <code>Image recadrée</code> à droite émet le résultat (<code>ImgFileValue</code>), en conservant le format source et en ajoutant <code>-cropped</code> au nom',
     pt: 'O porto de saída <code>Imagem recortada</code> à direita emite o resultado (<code>ImgFileValue</code>), mantendo o formato de origem e acrescentando <code>-cropped</code> ao nome',
-    ru: 'Выходной порт <code>Обрезанное изображение</code> справа выдаёт результат (<code>ImgFileValue</code>), сохраняя формат источника и добавляя <code>-cropped</code> к имени'
+    ru: 'Выходной порт <code>Обрезанное изображение</code> справа выдаёт результат (<code>ImgFileValue</code>), сохраняя формат источника и добавляя <code>-cropped</code> к имени',
+    hi: 'दाईं ओर का <code>क्रॉप की गई छवि</code> आउटपुट पोर्ट क्रॉप परिणाम (<code>ImgFileValue</code>) देता है, स्रोत प्रारूप बनाए रखता है और फ़ाइल नाम में <code>-cropped</code> जोड़ता है',
+    id: 'Port keluaran <code>Gambar yang dipangkas</code> di sebelah kanan mengeluarkan hasil pangkas (<code>ImgFileValue</code>), mempertahankan format sumber dan menambahkan akhiran <code>-cropped</code> pada nama berkas',
+    de: 'Der Ausgabeport <code>Zugeschnittenes Bild</code> rechts gibt das Zuschnittergebnis (<code>ImgFileValue</code>) aus, behält das Quellformat bei und hängt <code>-cropped</code> an den Dateinamen an',
+    vi: 'Cổng đầu ra <code>Ảnh đã cắt</code> bên phải xuất kết quả cắt (<code>ImgFileValue</code>), giữ nguyên định dạng nguồn và thêm hậu tố <code>-cropped</code> vào tên tệp',
+    tr: 'Sağdaki <code>Kırpılmış görüntü</code> çıkış bağlantı noktası kırpma sonucunu (<code>ImgFileValue</code>) verir, kaynak biçimi korur ve dosya adına <code>-cropped</code> sonekini ekler',
+    it: 'La porta di output <code>Immagine ritagliata</code> a destra restituisce il risultato del ritaglio (<code>ImgFileValue</code>), mantenendo il formato di origine e aggiungendo <code>-cropped</code> al nome del file'
   },
   portsLi3: {
     zh: '可拖入<b>图片节点</b>（一次性裁剪），也可用端口接线（响应式裁剪）',
@@ -121,7 +175,13 @@ export const helpMessages = {
     ar: 'يمكنك إسقاط <b>عقدة صورة</b> (قص لمرة واحدة) أو توصيل المنفذ (قص تفاعلي)',
     fr: 'Vous pouvez déposer un <b>nœud image</b> (recadrage ponctuel) ou connecter le port (recadrage réactif)',
     pt: 'Você pode soltar um <b>nó de imagem</b> (recorte pontual) ou conectar o porto (recorte reativo)',
-    ru: 'Можно перетащить <b>узел изображения</b> (разовая обрезка) или подключить порт (реактивная обрезка)'
+    ru: 'Можно перетащить <b>узел изображения</b> (разовая обрезка) или подключить порт (реактивная обрезка)',
+    hi: '<b>छवि नोड</b> खींचकर ला सकते हैं (एक बार का क्रॉप), या पोर्ट से जोड़ सकते हैं (प्रतिक्रियाशील क्रॉप)',
+    id: 'Anda dapat menjatuhkan <b>node gambar</b> (pangkas sekali), atau menyambungkan port (pangkas reaktif)',
+    de: 'Du kannst einen <b>Bildknoten</b> ablegen (einmaliges Zuschneiden) oder den Port anschließen (reaktives Zuschneiden)',
+    vi: 'Bạn có thể thả <b>nút ảnh</b> (cắt một lần), hoặc nối cổng (cắt phản ứng)',
+    tr: '<b>Görüntü düğümünü</b> bırakabilir (tek seferlik kırpma) ya da bağlantı noktasını bağlayabilirsin (tepkisel kırpma)',
+    it: 'Puoi trascinare un <b>nodo immagine</b> (ritaglio una tantum) oppure collegare la porta (ritaglio reattivo)'
   },
 
   // —— 裁剪与输出 ——
@@ -134,7 +194,13 @@ export const helpMessages = {
     ar: 'القص والإخراج',
     fr: 'Recadrage et sortie',
     pt: 'Recorte e saída',
-    ru: 'Обрезка и вывод'
+    ru: 'Обрезка и вывод',
+    hi: 'क्रॉप और आउटपुट',
+    id: 'Pangkas & keluaran',
+    de: 'Zuschneiden & Ausgabe',
+    vi: 'Cắt & đầu ra',
+    tr: 'Kırpma ve çıkış',
+    it: 'Ritaglio e output'
   },
   runLi1: {
     zh: '点「<b>确认裁剪</b>」按当前裁剪框裁剪，结果提交到输出端口，下游节点随即刷新',
@@ -145,7 +211,13 @@ export const helpMessages = {
     ar: 'انقر على «<b>تأكيد القص</b>» للقص وفق الإطار الحالي، وتُثبَّت النتيجة في منفذ الإخراج فتتحدّث العقد اللاحقة',
     fr: 'Cliquez sur <b>Confirmer le recadrage</b> pour recadrer selon le cadre actuel ; le résultat est validé sur le port de sortie et les nœuds en aval se rafraîchissent',
     pt: 'Clique em <b>Confirmar recorte</b> para recortar com o quadro atual; o resultado é confirmado no porto de saída e os nós seguintes atualizam-se',
-    ru: 'Нажмите <b>Подтвердить обрезку</b>, чтобы обрезать по текущей рамке; результат отправляется в выходной порт, и последующие узлы обновляются'
+    ru: 'Нажмите <b>Подтвердить обрезку</b>, чтобы обрезать по текущей рамке; результат отправляется в выходной порт, и последующие узлы обновляются',
+    hi: 'वर्तमान बॉक्स से क्रॉप करने के लिए <b>क्रॉप की पुष्टि करें</b> पर क्लिक करें; परिणाम आउटपुट पोर्ट पर भेजा जाता है और नीचे के नोड्स तुरंत अपडेट होते हैं',
+    id: 'Klik <b>Konfirmasi pangkas</b> untuk memangkas sesuai kotak saat ini; hasilnya dikirim ke port keluaran dan node hilir langsung menyegarkan',
+    de: 'Klicke auf <b>Zuschnitt bestätigen</b>, um anhand des aktuellen Rahmens zuzuschneiden; das Ergebnis wird an den Ausgabeport übergeben und nachgelagerte Knoten aktualisieren sich',
+    vi: 'Nhấn <b>Xác nhận cắt</b> để cắt theo khung hiện tại; kết quả được gửi tới cổng đầu ra và các nút hạ nguồn cập nhật ngay',
+    tr: 'Geçerli kutuya göre kırpmak için <b>Kırpmayı onayla</b> seçeneğine tıkla; sonuç çıkış bağlantı noktasına gönderilir ve aşağı akış düğümleri yenilenir',
+    it: 'Fai clic su <b>Conferma ritaglio</b> per ritagliare in base al riquadro corrente; il risultato viene inviato alla porta di output e i nodi a valle si aggiornano'
   },
   runLi2: {
     zh: '打开「<b>自动裁剪</b>」后，拖动裁剪框结束或源图加载完成时会自动裁剪',
@@ -156,7 +228,13 @@ export const helpMessages = {
     ar: 'عند تفعيل «<b>القص التلقائي</b>» يتم القص تلقائيًا عند انتهاء سحب الإطار أو اكتمال تحميل الصورة',
     fr: 'Avec <b>Recadrage auto</b> activé, le recadrage se fait automatiquement à la fin du glissement ou au chargement de l’image',
     pt: 'Com o <b>Recorte automático</b> ligado, o recorte acontece sozinho ao terminar de arrastar o quadro ou ao carregar a imagem',
-    ru: 'При включённой <b>автообрезке</b> обрезка выполняется автоматически после перетаскивания рамки или загрузки исходного изображения'
+    ru: 'При включённой <b>автообрезке</b> обрезка выполняется автоматически после перетаскивания рамки или загрузки исходного изображения',
+    hi: '<b>स्वतः क्रॉप</b> चालू होने पर क्रॉप बॉक्स खींचना समाप्त करने या स्रोत छवि लोड होने पर स्वतः क्रॉप होता है',
+    id: 'Saat <b>pangkas otomatis</b> aktif, pemangkasan berjalan otomatis setelah selesai menyeret kotak pangkas atau saat gambar sumber selesai dimuat',
+    de: 'Bei aktiviertem <b>automatischem Zuschneiden</b> wird nach dem Ziehen des Rahmens oder dem Laden des Quellbilds automatisch zugeschnitten',
+    vi: 'Khi bật <b>tự động cắt</b>, việc cắt diễn ra tự động sau khi kéo xong khung cắt hoặc sau khi ảnh nguồn tải xong',
+    tr: '<b>Otomatik kırp</b> açıkken, kırpma kutusunu sürüklemeyi bitirdiğinde veya kaynak görüntü yüklendiğinde otomatik olarak kırpılır',
+    it: 'Con il <b>ritaglio automatico</b> attivo, il ritaglio avviene automaticamente al termine del trascinamento del riquadro o al caricamento dell’immagine di origine'
   },
   runLi3: {
     zh: '源图与裁剪框都没变化时会<b>跳过</b>重复裁剪',
@@ -167,7 +245,13 @@ export const helpMessages = {
     ar: 'إذا لم تتغيّر الصورة الأصلية ولا إطار القص، يتم <b>تخطي</b> القص المكرر',
     fr: 'Si ni l’image source ni le cadre n’ont changé, le recadrage est <b>ignoré</b>',
     pt: 'Se nem a imagem-fonte nem o quadro mudaram, o recorte é <b>ignorado</b>',
-    ru: 'Если ни исходное изображение, ни рамка не изменились, повторная обрезка <b>пропускается</b>'
+    ru: 'Если ни исходное изображение, ни рамка не изменились, повторная обрезка <b>пропускается</b>',
+    hi: 'यदि स्रोत छवि और क्रॉप बॉक्स दोनों नहीं बदले हैं, तो दोबारा क्रॉप <b>छोड़ दिया जाता है</b>',
+    id: 'Jika gambar sumber dan kotak pangkas tidak berubah, pemangkasan berulang akan <b>dilewati</b>',
+    de: 'Wenn sich weder Quellbild noch Rahmen geändert haben, wird ein erneutes Zuschneiden <b>übersprungen</b>',
+    vi: 'Nếu cả ảnh nguồn lẫn khung cắt đều không đổi, việc cắt lặp lại sẽ <b>bị bỏ qua</b>',
+    tr: 'Ne kaynak görüntü ne de kırpma kutusu değiştiyse, yinelenen kırpma <b>atlanır</b>',
+    it: 'Se né l’immagine di origine né il riquadro sono cambiati, il ritaglio ripetuto viene <b>saltato</b>'
   },
   runLi4: {
     zh: '点「<b>生成图片文件节点</b>」会先裁剪、写出文件，并在节点下方创建一个图片文件节点',
@@ -178,7 +262,13 @@ export const helpMessages = {
     ar: 'انقر على «<b>إنشاء عقدة ملف صورة</b>» ليقصّ أولًا ويكتب الملف وينشئ عقدة ملف صورة أسفل هذه العقدة',
     fr: 'Cliquez sur <b>Créer un nœud de fichier image</b> pour recadrer, écrire le fichier et ajouter un nœud image en dessous',
     pt: 'Clique em <b>Criar nó de arquivo de imagem</b> para recortar, gravar o arquivo e criar um nó de imagem abaixo',
-    ru: 'Нажмите <b>Создать узел файла изображения</b>, чтобы обрезать, сохранить файл и добавить узел изображения ниже'
+    ru: 'Нажмите <b>Создать узел файла изображения</b>, чтобы обрезать, сохранить файл и добавить узел изображения ниже',
+    hi: 'क्रॉप करने, फ़ाइल लिखने और नीचे छवि फ़ाइल नोड जोड़ने के लिए <b>छवि फ़ाइल नोड बनाएँ</b> पर क्लिक करें',
+    id: 'Klik <b>Buat node berkas gambar</b> untuk memangkas, menulis berkas, dan membuat node gambar di bawah node ini',
+    de: 'Klicke auf <b>Bilddatei-Knoten erstellen</b>, um zuzuschneiden, die Datei zu schreiben und unter diesem Knoten einen Bildknoten anzulegen',
+    vi: 'Nhấn <b>Tạo nút tệp ảnh</b> để cắt, ghi tệp và tạo một nút ảnh bên dưới nút này',
+    tr: 'Kırpmak, dosyayı yazmak ve bu düğümün altında bir görüntü düğümü oluşturmak için <b>Görüntü dosyası düğümü oluştur</b> seçeneğine tıkla',
+    it: 'Fai clic su <b>Crea nodo file immagine</b> per ritagliare, scrivere il file e creare un nodo immagine sotto questo'
   },
 
   // —— 注意事项 ——
@@ -191,7 +281,13 @@ export const helpMessages = {
     ar: 'ملاحظات',
     fr: 'Remarques',
     pt: 'Observações',
-    ru: 'Примечания'
+    ru: 'Примечания',
+    hi: 'नोट्स',
+    id: 'Catatan',
+    de: 'Hinweise',
+    vi: 'Ghi chú',
+    tr: 'Notlar',
+    it: 'Note'
   },
   notesLi1: {
     zh: '重新拖入图片节点或上游端口值变化时，裁剪框会重置为<b>整张原图</b>',
@@ -202,7 +298,13 @@ export const helpMessages = {
     ar: 'عند إسقاط عقدة صورة مرة أخرى أو تغيّر قيمة منفذ المنبع، يُعاد ضبط إطار القص إلى <b>الصورة كاملة</b>',
     fr: 'Déposer à nouveau un nœud image ou un changement de valeur en amont réinitialise le cadre à l’<b>image entière</b>',
     pt: 'Soltar um nó de imagem de novo ou uma mudança de valor a montante redefine o quadro para a <b>imagem inteira</b>',
-    ru: 'Повторное перетаскивание узла изображения или изменение значения входного порта сбрасывает рамку на <b>всё изображение</b>'
+    ru: 'Повторное перетаскивание узла изображения или изменение значения входного порта сбрасывает рамку на <b>всё изображение</b>',
+    hi: 'छवि नोड को दोबारा खींचकर लाने या इनपुट पोर्ट मान बदलने पर क्रॉप बॉक्स <b>पूरी छवि</b> पर रीसेट हो जाता है',
+    id: 'Menjatuhkan node gambar lagi atau perubahan nilai port masukan akan mengatur ulang kotak pangkas ke <b>seluruh gambar</b>',
+    de: 'Erneutes Ablegen eines Bildknotens oder eine Änderung des Eingabeport-Werts setzt den Rahmen auf das <b>ganze Bild</b> zurück',
+    vi: 'Kéo lại nút ảnh hoặc thay đổi giá trị cổng đầu vào sẽ đặt lại khung cắt về <b>toàn bộ ảnh</b>',
+    tr: 'Görüntü düğümünü yeniden bırakmak veya giriş bağlantı noktası değerinin değişmesi kırpma kutusunu <b>tüm görüntüye</b> sıfırlar',
+    it: 'Trascinare di nuovo un nodo immagine o una modifica del valore della porta di input reimposta il riquadro sull’<b>intera immagine</b>'
   },
   notesLi2: {
     zh: '拖入图片节点属于<b>一次性</b>操作，之后源节点变化不会自动重裁；需要响应式请改用端口接线',
@@ -213,7 +315,13 @@ export const helpMessages = {
     ar: 'إسقاط عقدة صورة إجراء <b>لمرة واحدة</b>؛ ولن يُعاد القص تلقائيًا عند تغيّر العقدة المصدر لاحقًا — استخدم توصيل المنفذ للقص التفاعلي',
     fr: 'Déposer un nœud image est une action <b>ponctuelle</b> ; les changements ultérieurs du nœud source ne recadrent pas automatiquement — utilisez le port pour un recadrage réactif',
     pt: 'Soltar um nó de imagem é uma ação <b>pontual</b>; mudanças posteriores no nó de origem não recortam sozinhas — para recorte reativo, use o porto',
-    ru: 'Перетаскивание узла изображения — <b>разовое</b> действие; последующие изменения исходного узла не перезапускают обрезку — для реактивности подключайте порт'
+    ru: 'Перетаскивание узла изображения — <b>разовое</b> действие; последующие изменения исходного узла не перезапускают обрезку — для реактивности подключайте порт',
+    hi: 'छवि नोड खींचकर लाना <b>एक बार</b> का कार्य है; बाद में स्रोत नोड बदलने पर क्रॉप स्वतः दोबारा नहीं होता — प्रतिक्रियाशीलता के लिए पोर्ट जोड़ें',
+    id: 'Menjatuhkan node gambar adalah tindakan <b>sekali</b>; perubahan berikutnya pada node sumber tidak memangkas ulang otomatis — untuk reaktif, sambungkan port',
+    de: 'Das Ablegen eines Bildknotens ist eine <b>einmalige</b> Aktion; spätere Änderungen des Quellknotens schneiden nicht automatisch neu zu — für Reaktivität den Port anschließen',
+    vi: 'Kéo nút ảnh là thao tác <b>một lần</b>; các thay đổi sau đó ở nút nguồn sẽ không tự cắt lại — muốn phản ứng thì nối cổng',
+    tr: 'Görüntü düğümünü bırakmak <b>tek seferlik</b> bir işlemdir; kaynak düğümdeki sonraki değişiklikler otomatik olarak yeniden kırpmaz — tepkisellik için bağlantı noktasını kullan',
+    it: 'Trascinare un nodo immagine è un’azione <b>una tantum</b>; le modifiche successive al nodo di origine non ritagliano di nuovo — per la reattività collega la porta'
   },
   notesLi3: {
     zh: '裁剪框位置随画布保存，重新打开后自动恢复',
@@ -224,6 +332,12 @@ export const helpMessages = {
     ar: 'يُحفظ موضع إطار القص مع اللوحة ويُستعاد عند إعادة فتحها',
     fr: 'La position du cadre est enregistrée avec le canevas et restaurée à la réouverture',
     pt: 'A posição do quadro é guardada com a tela e restaurada ao reabrir',
-    ru: 'Положение рамки сохраняется вместе с холстом и восстанавливается при повторном открытии'
+    ru: 'Положение рамки сохраняется вместе с холстом и восстанавливается при повторном открытии',
+    hi: 'क्रॉप बॉक्स की स्थिति कैनवास के साथ सहेजी जाती है और दोबारा खोलने पर बहाल हो जाती है',
+    id: 'Posisi kotak pangkas disimpan bersama kanvas dan dipulihkan saat dibuka kembali',
+    de: 'Die Position des Rahmens wird mit der Zeichenfläche gespeichert und beim erneuten Öffnen wiederhergestellt',
+    vi: 'Vị trí khung cắt được lưu cùng canvas và khôi phục khi mở lại',
+    tr: 'Kırpma kutusunun konumu tuvalle birlikte kaydedilir ve yeniden açıldığında geri yüklenir',
+    it: 'La posizione del riquadro viene salvata insieme alla tela e ripristinata alla riapertura'
   }
 } satisfies Record<string, LocalizedText>

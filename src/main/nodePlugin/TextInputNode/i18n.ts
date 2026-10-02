@@ -15,7 +15,13 @@ export const messages = {
     ar: 'اسحب العقدة',
     fr: 'Glisser le nœud',
     pt: 'Arrastar nó',
-    ru: 'Перетащить узел'
+    ru: 'Перетащить узел',
+    hi: "नोड खींचें",
+    id: "Seret node",
+    de: "Knoten ziehen",
+    vi: "Kéo nút",
+    tr: "Düğümü sürükle",
+    it: "Trascina nodo",
   },
   nodeSettings: {
     zh: '节点设置',
@@ -26,7 +32,13 @@ export const messages = {
     ar: 'إعدادات العقدة',
     fr: 'Paramètres du nœud',
     pt: 'Configurações do nó',
-    ru: 'Настройки узла'
+    ru: 'Настройки узла',
+    hi: "नोड सेटिंग्स",
+    id: "Pengaturan node",
+    de: "Knoten-Einstellungen",
+    vi: "Cài đặt nút",
+    tr: "Düğüm ayarları",
+    it: "Impostazioni nodo",
   },
   placeholderMultiline: {
     zh: '输入文本…  (Ctrl+Enter 发送)',
@@ -37,7 +49,13 @@ export const messages = {
     ar: 'اكتب النص…  (Ctrl+Enter للإرسال)',
     fr: 'Saisissez du texte…  (Ctrl+Entrée pour envoyer)',
     pt: 'Digite o texto…  (Ctrl+Enter para enviar)',
-    ru: 'Введите текст…  (Ctrl+Enter для отправки)'
+    ru: 'Введите текст…  (Ctrl+Enter для отправки)',
+    hi: "पाठ लिखें…  (भेजने के लिए Ctrl+Enter)",
+    id: "Ketik teks…  (Ctrl+Enter untuk mengirim)",
+    de: "Text eingeben…  (Ctrl+Enter zum Senden)",
+    vi: "Nhập văn bản…  (Ctrl+Enter để gửi)",
+    tr: "Metin girin…  (Göndermek için Ctrl+Enter)",
+    it: "Digita testo…  (Ctrl+Enter per inviare)",
   },
   placeholderSingle: {
     zh: '输入文本…  (Enter 发送)',
@@ -48,7 +66,13 @@ export const messages = {
     ar: 'اكتب النص…  (Enter للإرسال)',
     fr: 'Saisissez du texte…  (Entrée pour envoyer)',
     pt: 'Digite o texto…  (Enter para enviar)',
-    ru: 'Введите текст…  (Enter для отправки)'
+    ru: 'Введите текст…  (Enter для отправки)',
+    hi: "पाठ लिखें…  (भेजने के लिए Enter)",
+    id: "Ketik teks…  (Enter untuk mengirim)",
+    de: "Text eingeben…  (Enter zum Senden)",
+    vi: "Nhập văn bản…  (Enter để gửi)",
+    tr: "Metin girin…  (Göndermek için Enter)",
+    it: "Digita testo…  (Enter per inviare)",
   },
   nodeMissing: {
     zh: '节点不存在',
@@ -59,7 +83,13 @@ export const messages = {
     ar: 'العقدة غير موجودة',
     fr: 'Nœud introuvable',
     pt: 'Nó não encontrado',
-    ru: 'Узел не найден'
+    ru: 'Узел не найден',
+    hi: "नोड मौजूद नहीं है",
+    id: "Node tidak ditemukan",
+    de: "Knoten nicht gefunden",
+    vi: "Không tìm thấy nút",
+    tr: "Düğüm bulunamadı",
+    it: "Nodo non trovato",
   },
   autoSendOn: {
     zh: '已开启：停止输入后自动发送',
@@ -70,7 +100,13 @@ export const messages = {
     ar: 'مفعّل: إرسال تلقائي بعد التوقف عن الكتابة',
     fr: 'Activé : envoi automatique après l’arrêt de la saisie',
     pt: 'Ativado: envio automático ao parar de digitar',
-    ru: 'Вкл.: автоотправка после остановки ввода'
+    ru: 'Вкл.: автоотправка после остановки ввода',
+    hi: "चालू: टाइप करना बंद करने पर स्वतः भेजें",
+    id: "Aktif: kirim otomatis setelah berhenti mengetik",
+    de: "An: automatisches Senden nach dem Tippen",
+    vi: "Bật: tự động gửi sau khi ngừng nhập",
+    tr: "Açık: yazmayı bıraktıktan sonra otomatik gönder",
+    it: "Attivo: invio automatico dopo aver smesso di digitare",
   },
   autoSendOff: {
     zh: '已关闭：需手动点击发送',
@@ -81,7 +117,13 @@ export const messages = {
     ar: 'متوقف: أرسل يدويًا',
     fr: 'Désactivé : envoi manuel',
     pt: 'Desativado: enviar manualmente',
-    ru: 'Выкл.: отправить вручную'
+    ru: 'Выкл.: отправить вручную',
+    hi: "बंद: मैन्युअल रूप से भेजें",
+    id: "Nonaktif: kirim manual",
+    de: "Aus: manuell senden",
+    vi: "Tắt: gửi thủ công",
+    tr: "Kapalı: elle gönder",
+    it: "Disattivo: invia manualmente",
   },
   autoSendDisabled: {
     zh: '自动发送已开启，无需手动发送',
@@ -92,7 +134,13 @@ export const messages = {
     ar: 'الإرسال التلقائي مفعّل؛ لا حاجة للإرسال يدويًا',
     fr: 'L’envoi automatique est activé ; pas besoin d’envoyer manuellement',
     pt: 'O envio automático está ativado; não é preciso enviar manualmente',
-    ru: 'Автоотправка включена; отправлять вручную не нужно'
+    ru: 'Автоотправка включена; отправлять вручную не нужно',
+    hi: "स्वतः भेजना चालू है; मैन्युअल रूप से भेजने की आवश्यकता नहीं",
+    id: "Kirim otomatis aktif; tidak perlu mengirim manual",
+    de: "Automatisches Senden ist an; kein manuelles Senden nötig",
+    vi: "Tự động gửi đang bật; không cần gửi thủ công",
+    tr: "Otomatik gönder açık; elle göndermeye gerek yok",
+    it: "L’invio automatico è attivo; non serve inviare manualmente",
   },
   sendHint: {
     zh: '发送到下游节点',
@@ -103,7 +151,13 @@ export const messages = {
     ar: 'أرسل إلى العقدة اللاحقة',
     fr: 'Envoyer au nœud en aval',
     pt: 'Enviar para o nó seguinte',
-    ru: 'Отправить в следующий узел'
+    ru: 'Отправить в следующий узел',
+    hi: "डाउनस्ट्रीम नोड पर भेजें",
+    id: "Kirim ke node hilir",
+    de: "An nachgelagerten Knoten senden",
+    vi: "Gửi đến nút hạ nguồn",
+    tr: "Alt düğüme gönder",
+    it: "Invia al nodo a valle",
   },
   autoSend: {
     zh: '自动发送',
@@ -114,7 +168,13 @@ export const messages = {
     ar: 'إرسال تلقائي',
     fr: 'Envoi automatique',
     pt: 'Envio automático',
-    ru: 'Автоотправка'
+    ru: 'Автоотправка',
+    hi: "स्वतः भेजें",
+    id: "Kirim otomatis",
+    de: "Automatisch senden",
+    vi: "Tự động gửi",
+    tr: "Otomatik gönder",
+    it: "Invio automatico",
   },
   send: {
     zh: '发送',
@@ -125,7 +185,13 @@ export const messages = {
     ar: 'إرسال',
     fr: 'Envoyer',
     pt: 'Enviar',
-    ru: 'Отправить'
+    ru: 'Отправить',
+    hi: "भेजें",
+    id: "Kirim",
+    de: "Senden",
+    vi: "Gửi",
+    tr: "Gönder",
+    it: "Invia",
   },
   multiline: {
     zh: '多行输入',
@@ -136,7 +202,13 @@ export const messages = {
     ar: 'إدخال متعدد الأسطر',
     fr: 'Saisie multiligne',
     pt: 'Entrada multilinha',
-    ru: 'Многострочный ввод'
+    ru: 'Многострочный ввод',
+    hi: "बहु-पंक्ति इनपुट",
+    id: "Masukan multibaris",
+    de: "Mehrzeilige Eingabe",
+    vi: "Nhập nhiều dòng",
+    tr: "Çok satırlı giriş",
+    it: "Input multilinea",
   },
   helpTitle: {
     zh: '使用说明',
@@ -147,7 +219,13 @@ export const messages = {
     ar: 'تعليمات',
     fr: 'Aide',
     pt: 'Ajuda',
-    ru: 'Справка'
+    ru: 'Справка',
+    hi: "सहायता",
+    id: "Bantuan",
+    de: "Hilfe",
+    vi: "Trợ giúp",
+    tr: "Yardım",
+    it: "Aiuto",
   },
   helpDialogTitle: {
     zh: '文本输入节点使用说明',
@@ -158,6 +236,12 @@ export const messages = {
     ar: 'تعليمات عقدة إدخال النص',
     fr: 'Aide du nœud Saisie de texte',
     pt: 'Ajuda do nó Entrada de texto',
-    ru: 'Справка по узлу «Ввод текста»'
+    ru: 'Справка по узлу «Ввод текста»',
+    hi: "टेक्स्ट इनपुट नोड सहायता",
+    id: "Bantuan node Masukan Teks",
+    de: "Hilfe zum Knoten Texteingabe",
+    vi: "Trợ giúp nút Nhập văn bản",
+    tr: "Metin girişi düğümü yardımı",
+    it: "Aiuto del nodo Input di testo",
   }
 } satisfies Record<string, LocalizedText>

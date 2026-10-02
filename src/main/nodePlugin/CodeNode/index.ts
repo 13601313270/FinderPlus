@@ -14,7 +14,13 @@ export const manifest: NodePluginManifest = {
     ar: 'كود',
     fr: 'Code',
     pt: 'Código',
-    ru: 'Код'
+    ru: 'Код',
+    hi: 'कोड',
+    id: 'Kode',
+    de: 'Code',
+    vi: 'Mã',
+    tr: 'Kod',
+    it: 'Codice'
   },
   render,
   help: () => import('./CodeHelpDialog.vue')

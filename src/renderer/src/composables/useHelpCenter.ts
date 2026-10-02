@@ -29,6 +29,11 @@ const INTRO_TOPIC_TYPE = '__intro__'
 const loadIntro = (): Promise<{ default: Component }> =>
   import('@renderer/components/help/Introduction.vue')
 
+/** 文件类节点拖拽指南 topic 的固定 type 与加载器 */
+const FILE_DRAG_TOPIC_TYPE = '__file_drag__'
+const loadFileDragGuide = (): Promise<{ default: Component }> =>
+  import('@renderer/components/help/FileDragDropGuide.vue')
+
 /**
  * 节点帮助 topics：从注册表里过滤出有 help 的节点，映射成 HelpTopic。
  * label 这里填 type 只是占位（不参与查找），真正的显示名在 helpGroups 里按语言现算。
@@ -44,6 +49,7 @@ const nodeTopics: HelpTopic[] = nodeManifests
 /** 按 type 查找用的静态表（label 只作展示、不参与查找，这里不必翻译） */
 const lookupTopics: ReadonlyArray<HelpTopic> = [
   { type: INTRO_TOPIC_TYPE, label: '', load: loadIntro },
+  { type: FILE_DRAG_TOPIC_TYPE, label: '', load: loadFileDragGuide },
   ...nodeTopics
 ]
 
@@ -62,7 +68,10 @@ export const helpGroups = computed<ReadonlyArray<HelpTopicGroup>>(() => {
   return [
     {
       title: '',
-      items: [{ type: INTRO_TOPIC_TYPE, label: translate('helpCenter.about'), load: loadIntro }]
+      items: [
+        { type: INTRO_TOPIC_TYPE, label: translate('helpCenter.about'), load: loadIntro },
+        { type: FILE_DRAG_TOPIC_TYPE, label: translate('fileDragGuide.title'), load: loadFileDragGuide }
+      ]
     },
     {
       title: translate('helpCenter.groupNodes'),

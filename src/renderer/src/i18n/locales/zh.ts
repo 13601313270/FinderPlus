@@ -108,6 +108,41 @@ const zh: Language = {
       container: '容器',
       footer: '左侧「节点帮助」列表里列出了当前已注册帮助文档的节点，点击可查看详细用法。'
     }
+  },
+  fileDragGuide: {
+    title: '文件类节点',
+    whatIs: {
+      title: '什么是文件类节点？',
+      body: '文件类节点是 Finder+ 中一类特殊节点，包括 {txt}、{img}、{any} 以及容器节点 {folder}、{imgfolder}。它们以真实文件为载体，把磁盘上的文件引入画布，再通过端口把内容送给下游节点处理。'
+    },
+    palette: {
+      title: '为什么调色板里找不到它们？',
+      body: '文件类节点不在左上角 {plus} 调色板中列出——因为它们的创建方式和普通节点不同：普通节点是"空壳"，需要用户手动填数据；而文件类节点直接绑定真实文件，通过"拖拽文件进画布"一步完成创建和数据导入。'
+    },
+    howTo: {
+      title: '如何创建',
+      step1: '打开系统文件管理器（macOS Finder 或 Windows 资源管理器）',
+      step2: '选中一个文件（或文件夹），按住鼠标左键拖入 Finder+ 的画布区域',
+      step3: '松开鼠标，Finder+ 会根据文件类型自动识别并创建对应节点，节点会落在你松手的位置',
+      noteTitle: '提示',
+      noteBody: '支持一次拖入多个文件，Finder+ 会依次为每个文件创建一个独立节点。如果拖入的是文件夹，会自动创建 folder 或 img-folder 容器节点。'
+    },
+    mapping: {
+      title: '文件类型映射表',
+      category: '类别',
+      fileType: '文件后缀',
+      nodeType: '生成的节点类型',
+      txt: '.txt（纯文本文件）',
+      img: '.jpg / .jpeg / .png / .gif / .webp / .bmp',
+      any: '其他所有文件类型',
+      folder: '普通文件夹',
+      imgfolder: '图片文件夹（含图片的文件夹）',
+      footer: '映射优先级从上到下：具体类型（txt、图片）先匹配，匹配不到的归入 any-file 通用节点。'
+    },
+    intoFolder: {
+      title: '拖入 {folder} 容器',
+      body: '如果画布上已经有 {folder} 或 img-folder 容器节点，把文件拖入它的内容区域而不是空白画布——文件不会新建独立节点，而是会被文件夹"收养"为子节点，自动按后缀生成对应的文件节点类型。'
+    }
   }
 }
 

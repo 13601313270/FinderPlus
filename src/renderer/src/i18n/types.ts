@@ -123,4 +123,44 @@ export type Language = {
       footer: string
     }
   }
+  /** 「文件类节点」帮助文章，讲解通过拖拽文件进画布创建节点的方式 */
+  fileDragGuide: {
+    title: string
+    whatIs: {
+      title: string
+      /** 占位符 {txt} {img} {any} {folder} {imgfolder}，均为行内代码 */
+      body: string
+    }
+    palette: {
+      title: string
+      /** 占位符 {plus}，行内代码 */
+      body: string
+    }
+    howTo: {
+      title: string
+      /** 占位符 {finder}，行内代码 */
+      step1: string
+      step2: string
+      step3: string
+      noteTitle: string
+      noteBody: string
+    }
+    mapping: {
+      title: string
+      category: string
+      fileType: string
+      nodeType: string
+      txt: string
+      img: string
+      any: string
+      folder: string
+      imgfolder: string
+      footer: string
+    }
+    intoFolder: {
+      title: string
+      /** 占位符 {folder}，行内代码 */
+      body: string
+    }
+  }
 }

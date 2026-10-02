@@ -102,7 +102,43 @@ const de: Language = {
       container: 'Container',
       footer: 'Die Liste "Knotenhilfe" links zeigt die Knoten, für die derzeit Hilfedokumente registriert sind. Klicke auf einen, um die detaillierte Verwendung anzuzeigen.'
     }
+  },
+  fileDragGuide: {
+    title: 'File nodes',
+    whatIs: {
+      title: 'What are file nodes?',
+      body: 'File nodes are a special category of nodes in Finder+, including {txt}, {img}, {any}, and the container nodes {folder}, {imgfolder}. They are backed by real files — bring a file from disk onto the canvas, then pipe its contents through output ports to downstream nodes.'
+    },
+    palette: {
+      title: 'Why aren\'t they in the palette?',
+      body: 'File nodes are not listed in the {plus} palette in the top-left corner — because they are created differently from regular nodes. Regular nodes are "empty shells" that you fill with data manually; file nodes are bound directly to real files, so "drag file onto canvas" creates the node and imports the data in one step.'
+    },
+    howTo: {
+      title: 'How to create them',
+      step1: 'Open your system file manager (Finder on macOS, File Explorer on Windows)',
+      step2: 'Select a file (or folder), then drag it into the Finder+ canvas while holding the left mouse button',
+      step3: 'Release the mouse button — Finder+ automatically detects the file type and creates the matching node at the drop location',
+      noteTitle: 'Tip',
+      noteBody: 'You can drag multiple files at once; Finder+ creates an independent node for each one. If you drag a folder, a folder or img-folder container node is created automatically.'
+    },
+    mapping: {
+      title: 'File type mapping',
+      category: 'Category',
+      fileType: 'File extension',
+      nodeType: 'Created node type',
+      txt: '.txt (plain text)',
+      img: '.jpg / .jpeg / .png / .gif / .webp / .bmp',
+      any: 'All other file types',
+      folder: 'Regular folder',
+      imgfolder: 'Image folder (folder containing images)',
+      footer: 'Matching priority is top to bottom — specific types (txt, images) are matched first, anything else falls through to the any-file generic node.'
+    },
+    intoFolder: {
+      title: 'Dropping into a {folder} container',
+      body: 'If a {folder} or img-folder container node already exists on the canvas, drop the file inside its content area instead of the blank canvas. The file will not create a new top-level node — it will be "adopted" by the folder as a child node, with the correct file-node type determined automatically by its extension.'
+    }
   }
+
 }
 
 export default de

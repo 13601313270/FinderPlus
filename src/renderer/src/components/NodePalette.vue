@@ -319,7 +319,7 @@ onBeforeUnmount(() => {
     </button>
 
     <transition name="palette-fade">
-      <div v-if="expanded || true" ref="menuEl" class="palette__menu" @wheel.stop>
+      <div v-if="expanded" ref="menuEl" class="palette__menu" @wheel.stop>
         <div class="palette__search">
           <svg
             class="palette__search-icon"

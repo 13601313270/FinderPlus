@@ -43,6 +43,18 @@ export const messages = {
     zh: '连接端口或点击左侧 ＋ 添加图层',
     en: 'Connect a port or click ＋ on the left to add a layer'
   },
+  zoomInTitle: {
+    zh: '放大预览',
+    en: 'Zoom in'
+  },
+  zoomOutTitle: {
+    zh: '缩小预览',
+    en: 'Zoom out'
+  },
+  resetZoomTitle: {
+    zh: '恢复自适应缩放',
+    en: 'Reset zoom'
+  },
   pngTransparent: {
     zh: 'PNG透明',
     en: 'PNG transparent'

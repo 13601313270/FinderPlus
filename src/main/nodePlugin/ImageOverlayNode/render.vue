@@ -124,8 +124,29 @@ const loadedImages = new Map<string, HTMLImageElement>()
 const previewAreaRef = ref<HTMLElement | null>(null)
 
 // —— 预览缩放比 + 画布尺寸 ——
-const previewScale = ref(1)
+const fitScale = ref(1)      // 容器自适应算出的基础缩放
+const zoomFactor = ref(1)    // 用户在预览区里额外设置的缩放倍数
 const canvasSize = ref({ width: 1, height: 1 })
+
+const ZOOM_STEP = 1.2
+const ZOOM_MIN_FACTOR = 0.1
+const ZOOM_MAX_FACTOR = 8
+
+// 最终展示缩放 = 自适应缩放 × 用户缩放
+const previewScale = computed(() => {
+  const s = fitScale.value * zoomFactor.value
+  return s > 0 ? s : 1
+})
+const zoomPercent = computed(() => Math.round(previewScale.value * 100))
+
+function zoomBy(factor: number): void {
+  const next = zoomFactor.value * factor
+  zoomFactor.value = Math.min(ZOOM_MAX_FACTOR, Math.max(ZOOM_MIN_FACTOR, next))
+}
+
+function resetZoom(): void {
+  zoomFactor.value = 1
+}
 
 function loadImageFromFile(file: File): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
@@ -273,7 +294,7 @@ function refreshLayers(): void {
   }
 }
 
-// —— 预览缩放比 ——
+// —— 预览自适应缩放 ——
 function recalcScale(): void {
   const area = previewAreaRef.value
   if (!area) return
@@ -284,7 +305,7 @@ function recalcScale(): void {
     rect.height / canvasSize.value.height,
     1
   )
-  previewScale.value = s > 0 ? s : 1
+  fitScale.value = s > 0 ? s : 1
 }
 
 function canvasToDom(v: number): number { return v * previewScale.value }
@@ -681,6 +702,33 @@ function onRemoveLayer(e: PointerEvent, portId: string): void {
 
       <!-- 右面板：画布预览 + 层内拖拽缩放 -->
       <div ref="previewAreaRef" class="overlay-card__preview" @pointerdown.stop="selectedPortId = null">
+        <!-- 预览缩放控件 -->
+        <div
+          v-if="layers.some(l => l.connected)"
+          class="overlay-card__preview-zoom"
+          @pointerdown.stop
+          @wheel.stop
+        >
+          <button
+            class="overlay-card__preview-zoom-btn"
+            type="button"
+            :title="t('zoomOutTitle')"
+            @click="zoomBy(1 / ZOOM_STEP)"
+          >−</button>
+          <button
+            class="overlay-card__preview-zoom-pct"
+            type="button"
+            :title="t('resetZoomTitle')"
+            @click="resetZoom"
+          >{{ zoomPercent }}%</button>
+          <button
+            class="overlay-card__preview-zoom-btn"
+            type="button"
+            :title="t('zoomInTitle')"
+            @click="zoomBy(ZOOM_STEP)"
+          >＋</button>
+        </div>
+
         <div
           v-if="layers.some(l => l.connected)"
           class="overlay-card__preview-canvas"
@@ -908,8 +956,37 @@ function onRemoveLayer(e: PointerEvent, portId: string): void {
     flex: 1; min-width: 0;
     background: repeating-conic-gradient(#f4f5f7 0% 25%, #e8eaed 0% 50%) 50% / 16px 16px;
     border: 1px solid #e5e7eb; border-radius: 6px;
-    overflow: visible; display: flex; align-items: center; justify-content: center;
+    overflow: hidden; display: flex; align-items: center; justify-content: center;
     position: relative;
+  }
+
+  // 预览缩放控件：固定在预览区右上角
+  &__preview-zoom {
+    position: absolute; top: 6px; right: 6px; z-index: 20;
+    display: flex; align-items: center; gap: 2px;
+    padding: 2px;
+    border: 1px solid #d5d9e0; border-radius: 6px;
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  }
+  &__preview-zoom-btn {
+    width: 20px; height: 20px; padding: 0;
+    display: flex; align-items: center; justify-content: center;
+    border: none; border-radius: 4px;
+    background: transparent; color: #3d4551;
+    font-size: 13px; line-height: 1; cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+    &:hover { background: #eef2ff; color: #4a7cff; }
+  }
+  &__preview-zoom-pct {
+    min-width: 36px; height: 20px; padding: 0 3px;
+    display: flex; align-items: center; justify-content: center;
+    border: none; border-radius: 4px;
+    background: transparent; color: #7a828f;
+    font-size: 10px; line-height: 1; cursor: pointer;
+    font-variant-numeric: tabular-nums;
+    transition: background 0.15s ease, color 0.15s ease;
+    &:hover { background: #eef2ff; color: #4a7cff; }
   }
   &__preview-canvas {
     position: relative; background: #fff;

@@ -1,11 +1,16 @@
 <script setup lang="ts">
 import { debounce } from 'lodash-es'
-import { onMounted, onUnmounted, ref, shallowRef } from 'vue'
+import { computed, onMounted, onUnmounted, ref, shallowRef } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { LLMNode } from './node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
-import { useLLMSettings } from '@renderer/composables/useLLMSettings'
+import { useGlobalSettings } from '@renderer/composables/useGlobalSettings'
+import {
+  LLM_PROVIDERS,
+  useLLMSettings,
+  type LLMProvider
+} from '@renderer/composables/useLLMSettings'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
 import { messages } from './i18n'
 import GearIcon from '@renderer/components/icons/GearIcon.vue'
@@ -14,22 +19,19 @@ import LLMHelpDialog from './LLMHelpDialog.vue'
 
 /**
  * LLM 节点的渲染组件：
+ * - 节点配置行：provider 下拉 + model 输入 + jsonMode checkbox（仅 deepseek）
  * - 底部操作栏：左侧 prompt textarea（仅端口未连接时显示）+ 右侧发送按钮
  * - 控制栏有"自动调用"开关（仅 promptInput 接边时显示）
  */
 const props = defineProps<{ id: string }>()
 
-const { openSettings, hasKey } = useLLMSettings()
+const { openSettings: openGlobalSettings } = useGlobalSettings()
+const { hasKey } = useLLMSettings()
 
-// 卡片内文案走节点本地的 i18n.ts（放在节点文件夹里，便于插件化替换），跟随界面语言
 const t = useLocalizedMessages(messages)
-
-// 帮助浮层开关（弹窗壳由 HelpDialog 负责）
 const showHelp = ref(false)
-
 const llmNode = shallowRef<LLMNode | undefined>(undefined)
 
-// 卡片标题走插件 manifest 的多语言 title，未配当前语言时由 resolveNodeTitle 兜底
 const nodeTitle = useNodeTitle(() => llmNode.value, '?')
 const response = ref('')
 const status = ref<'idle' | 'loading' | 'done' | 'error'>('idle')
@@ -37,9 +39,22 @@ const autoCall = ref(false)
 const promptConnected = ref(false)
 const localPrompt = ref('')
 
+// 节点级配置（从 LLMNode 实例读写）
+const provider = ref<LLMProvider>('deepseek')
+const model = ref('')
+const jsonMode = ref(false)
+
 let unsubscribe: (() => void) | undefined
 
 const { startDrag } = useNodePosition(() => llmNode.value)
+
+const providers = Object.entries(LLM_PROVIDERS) as [LLMProvider, typeof LLM_PROVIDERS[LLMProvider]][]
+
+/** 当前 provider 是否已配全局 Key —— 决定齿轮 tooltip */
+const currentProviderKeyOk = computed(() => hasKey(provider.value))
+
+/** 当前 provider 的默认 model（model 为空时显示） */
+const currentDefaultModel = computed(() => LLM_PROVIDERS[provider.value].defaultModel)
 
 // 防抖 300ms：textarea 输入过程中不频繁触发 notifyChanged
 const debouncedSetPrompt = debounce((val: string) => {
@@ -55,12 +70,20 @@ onMounted(() => {
     autoCall.value = found.displayAutoCall
     promptConnected.value = found.displayPromptConnected
     localPrompt.value = found.displayLocalPrompt
+    provider.value = found.displayProvider
+    model.value = found.displayModel
+    jsonMode.value = found.displayJsonMode
+
     unsubscribe = found.onChanged(() => {
       response.value = found.displayResponse
       status.value = found.displayStatus
       autoCall.value = found.displayAutoCall
       promptConnected.value = found.displayPromptConnected
       localPrompt.value = found.displayLocalPrompt
+      // provider / model / jsonMode 改了也同步
+      if (found.displayProvider !== provider.value) provider.value = found.displayProvider
+      if (found.displayModel !== model.value) model.value = found.displayModel
+      if (found.displayJsonMode !== jsonMode.value) jsonMode.value = found.displayJsonMode
     })
   }
 })
@@ -72,7 +95,23 @@ onUnmounted(() => {
 
 function onGearClick(e: MouseEvent): void {
   e.stopPropagation()
-  openSettings()
+  openGlobalSettings()
+}
+
+function onProviderChange(val: LLMProvider): void {
+  provider.value = val
+  llmNode.value?.setProvider(val)
+}
+
+function onModelChange(val: string): void {
+  model.value = val
+  llmNode.value?.setModel(val)
+}
+
+function onJsonModeChange(e: Event): void {
+  const target = e.target as HTMLInputElement
+  jsonMode.value = target.checked
+  llmNode.value?.setJsonMode(target.checked)
 }
 
 function onAutoCallChange(e: Event): void {
@@ -86,7 +125,6 @@ function onPromptInput(val: string): void {
 }
 
 function onSendClick(): void {
-  // 立即刷一次 localPrompt 到节点，避免防抖还没刷就触发
   debouncedSetPrompt.flush()
   llmNode.value?.manualTrigger()
 }
@@ -101,7 +139,7 @@ function onSendClick(): void {
           v-if="llmNode"
           class="node__gear"
           type="button"
-          :title="hasKey() ? t('keyConfigured') : t('keyMissing')"
+          :title="currentProviderKeyOk ? 'API Key 已配置' : '当前服务商 Key 未配置，点击全局设置'"
           @pointerdown.stop
           @click.stop="onGearClick"
         >
@@ -117,9 +155,39 @@ function onSendClick(): void {
       </div>
     </div>
 
+    <!-- 节点级配置行：provider + model + jsonMode(仅 deepseek) -->
+    <div v-if="llmNode" class="node__config-row">
+      <select
+        class="node__provider-select"
+        :value="provider"
+        @change="(e) => onProviderChange((e.target as HTMLSelectElement).value as LLMProvider)"
+      >
+        <option v-for="[key, preset] in providers" :key="key" :value="key">
+          {{ preset.label }}
+        </option>
+      </select>
+      <input
+        class="node__model-input"
+        :value="model"
+        :placeholder="currentDefaultModel"
+        type="text"
+        spellcheck="false"
+        @input="(e) => onModelChange((e.target as HTMLInputElement).value)"
+      />
+      <label v-if="provider === 'deepseek'" class="node__json-label" title="开启后响应强制为 JSON 格式">
+        <input
+          type="checkbox"
+          :checked="jsonMode"
+          @change="onJsonModeChange"
+        />
+        <span>JSON</span>
+      </label>
+    </div>
+
     <!-- 输出区 -->
     <div
       class="llm-output"
+      @wheel.stop
       :class="{
         'llm-output--empty': !response && status !== 'loading',
         'llm-output--error': status === 'error',
@@ -181,7 +249,7 @@ function onSendClick(): void {
   overflow: auto;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   padding: 10px;
   background: @color-surface;
   border: 1px solid #d5d9e0;
@@ -208,13 +276,84 @@ function onSendClick(): void {
     padding: 2px 0;
   }
 
-  // 右侧按钮组：齿轮 + 帮助，靠右对齐（head 已 space-between，auto 双保险）
   &__header-actions {
     display: flex;
     align-items: center;
     gap: 2px;
     margin-left: auto;
   }
+
+  // —— 节点配置行 ——
+  &__config-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  &__provider-select {
+    font-size: 11px;
+    padding: 3px 6px;
+    border: 1px solid #d5d9e0;
+    border-radius: 4px;
+    background: #fff;
+    color: #374151;
+    outline: none;
+    cursor: pointer;
+
+    &:focus {
+      border-color: #3b82f6;
+    }
+  }
+
+  &__model-input {
+    flex: 1;
+    min-width: 0;
+    font-size: 11px;
+    padding: 3px 6px;
+    border: 1px solid #d5d9e0;
+    border-radius: 4px;
+    background: #fff;
+    color: #374151;
+    outline: none;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+
+    &:focus {
+      border-color: #3b82f6;
+    }
+
+    &::placeholder {
+      color: #b4bcc7;
+    }
+  }
+
+  &__json-label {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 10px;
+    color: #0369a1;
+    cursor: pointer;
+    user-select: none;
+    padding: 2px 6px;
+    background: #f0f9ff;
+    border: 1px solid #bae6fd;
+    border-radius: 4px;
+    flex-shrink: 0;
+
+    input {
+      margin: 0;
+      width: 11px;
+      height: 11px;
+      accent-color: #3b82f6;
+    }
+
+    span {
+      font-weight: 500;
+    }
+  }
+
+  // —— 底部操作栏（不变） ——
 
   &__help {
     all: unset;
@@ -308,7 +447,6 @@ function onSendClick(): void {
     }
   }
 
-  // 底部操作栏：左输入/开关 + 右按钮
   &__bottom {
     display: flex;
     align-items: stretch;
@@ -380,11 +518,12 @@ function onSendClick(): void {
   white-space: pre-wrap;
   word-break: break-all;
   flex: 1;
-  min-height: 80px;
+  min-height: 60px;
   display: flex;
   align-items: center;
   gap: 8px;
   color: #1f2937;
+  overflow: auto;
 
   &--empty {
     color: #9aa2ad;

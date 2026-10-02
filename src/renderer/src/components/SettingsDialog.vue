@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useGlobalSettings } from '@renderer/composables/useGlobalSettings'
 import {
@@ -7,6 +7,11 @@ import {
   type LanguageCode
 } from '@renderer/composables/useLanguageSettings'
 import { useOnboarding } from '@renderer/composables/useOnboarding'
+import {
+  LLM_PROVIDERS,
+  useLLMSettings,
+  type LLMProvider
+} from '@renderer/composables/useLLMSettings'
 import SelectMenu from './SelectMenu.vue'
 
 /**
@@ -19,6 +24,23 @@ const { t } = useI18n()
 const { visible, openSettings, closeSettings } = useGlobalSettings()
 const { language, setLanguage, languageOptions } = useLanguageSettings()
 const { restart: restartOnboarding } = useOnboarding()
+const {
+  initDraft: initLLMDraft,
+  draftKeys: llmDraftKeys,
+  saveSettings: saveLLMSettings,
+  clearKey: clearLLMKey
+} = useLLMSettings()
+
+/** SettingsDialog 打开时同步初始化 LLM draft */
+watch(visible, (v) => {
+  if (v) initLLMDraft()
+})
+
+const llmProviders = Object.entries(LLM_PROVIDERS) as [LLMProvider, typeof LLM_PROVIDERS[LLMProvider]][]
+
+function onSaveLLM(): void {
+  saveLLMSettings()
+}
 
 /** 重置新手引导：清除 seen 标记并立即弹出 */
 function onRestartOnboarding(): void {
@@ -222,6 +244,50 @@ onUnmounted(() => {
             />
           </section>
 
+          <!-- LLM API Key 配置（每个服务商单独一行） -->
+          <section class="gs-section">
+            <h4 class="gs-section__title">大语言模型 API Key</h4>
+            <p class="gs-section__hint">
+              在此配置各服务商的 API Key。每个 LLM 节点可独立选择使用哪个服务商和模型。
+            </p>
+
+            <div class="gs-llm__key-list">
+              <div
+                v-for="[key, preset] in llmProviders"
+                :key="key"
+                class="gs-llm__key-row"
+              >
+                <div class="gs-llm__key-header">
+                  <span class="gs-llm__key-label">{{ preset.label }}</span>
+                  <span
+                    class="gs-llm__key-status"
+                    :class="{ 'gs-llm__key-status--set': llmDraftKeys[key].length > 0 }"
+                  >{{ llmDraftKeys[key].length > 0 ? '已配置' : '未配置' }}</span>
+                </div>
+                <div class="gs-llm__key-input-row">
+                  <input
+                    v-model="llmDraftKeys[key]"
+                    class="gs-llm__input"
+                    type="password"
+                    :placeholder="`${preset.label} API Key`"
+                    autocomplete="off"
+                    spellcheck="false"
+                  />
+                  <button
+                    class="gs-btn gs-btn--ghost gs-btn--clear-sm"
+                    type="button"
+                    :disabled="!llmDraftKeys[key]"
+                    @click="clearLLMKey(key)"
+                  >清除</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="gs-llm__actions">
+              <button class="gs-btn gs-btn--primary" type="button" @click="onSaveLLM">保存所有 Key</button>
+            </div>
+          </section>
+
           <!-- 数据迁移 -->
           <section class="gs-section">
             <h4 class="gs-section__title">{{ t('settingsDialog.transferTitle') }}</h4>
@@ -396,6 +462,104 @@ onUnmounted(() => {
       border-color: #1d4ed8;
     }
   }
+
+  &--ghost {
+    background: #fff;
+    border-color: #d1d5db;
+    color: #374151;
+
+    &:hover:not(:disabled) {
+      background: #f3f4f6;
+    }
+  }
+
+  &--fetch {
+    padding: 6px 10px;
+    white-space: nowrap;
+  }
+}
+
+// —— LLM 设置分区样式 ——
+.gs-llm {
+  &__input {
+    width: 100%;
+    padding: 8px 10px;
+    font-size: 13px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    box-sizing: border-box;
+    background: #fff;
+
+    &:focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+    }
+  }
+
+  &__key-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  &__key-row {
+    padding: 10px 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background: #f9fafb;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  &__key-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  &__key-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #374151;
+  }
+
+  &__key-status {
+    font-size: 10px;
+    font-weight: 500;
+    padding: 2px 6px;
+    border-radius: 10px;
+    background: #fee2e2;
+    color: #dc2626;
+
+    &--set {
+      background: #dcfce7;
+      color: #16a34a;
+    }
+  }
+
+  &__key-input-row {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+
+  &__actions {
+    margin-top: 10px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+}
+
+.gs-btn--clear-sm {
+  padding: 4px 10px;
+  font-size: 11px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 @keyframes gsFadeIn {

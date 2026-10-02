@@ -14,6 +14,7 @@ const {
   draftProvider,
   draftKeys,
   draftModels,
+  draftJsonModes,
   modelLists,
   modelsLoading,
   modelsError,
@@ -125,6 +126,22 @@ onUnmounted(() => {
         <p v-else-if="currentModels.length > 0" class="llm-dialog__hint">
           点击上方任一模型填入输入框，或直接手动输入自定义模型名。
         </p>
+
+        <!-- DeepSeek 专属：JSON 输出模式 -->
+        <div v-if="draftProvider === 'deepseek'" class="llm-dialog__json-mode">
+          <label class="llm-dialog__checkbox-label">
+            <input
+              type="checkbox"
+              v-model="draftJsonModes[draftProvider]"
+              class="llm-dialog__checkbox"
+            />
+            <span>强制 JSON 格式输出</span>
+          </label>
+          <p class="llm-dialog__hint">
+            开启后请求会带上 <code>response_format: json_object</code>，模型只返回合法 JSON。
+            提示：prompt 中需包含 "json" 关键词，否则 API 会返回 400 错误。
+          </p>
+        </div>
 
         <p class="llm-dialog__hint">
           配置保存在浏览器 localStorage 中，清除浏览器数据会一并清除。
@@ -277,6 +294,35 @@ onUnmounted(() => {
     margin: 2px 0 0;
     font-size: 11px;
     color: #dc2626;
+  }
+
+  &__json-mode {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-top: 4px;
+    padding: 8px 10px;
+    background: #f0f9ff;
+    border: 1px solid #bae6fd;
+    border-radius: 6px;
+  }
+
+  &__checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #0369a1;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  &__checkbox {
+    margin: 0;
+    width: 14px;
+    height: 14px;
+    accent-color: #3b82f6;
   }
 
   &__actions {

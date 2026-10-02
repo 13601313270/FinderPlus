@@ -9,8 +9,9 @@ import { Node } from '../../engine/node/Node'
  * - prompt 支持两种来源：上游 InputPort（接了边就用它）或节点内部文本框（没接边时用）
  * - 输出一条 LLM 回复字符串
  *
- * API Key 从 localStorage 读取（canvasdesk.llm.api_key），
- * 所有 LLMNode 实例共享一份，不存节点自身。
+ * 架构（v2）：
+ * - Provider 选择、Model 名称、JSON 输出模式 → 节点级配置（存 saveState/readState）
+ * - API Key → 全局配置（localStorage canvasdesk.llm.config），所有节点共享各 provider 的 key
  *
  * Stale-call 取消策略：用递增的 requestId 标记每次请求，
  * 并发的后发请求回来时 ID 不匹配就丢弃，避免旧响应覆盖新响应。
@@ -18,80 +19,67 @@ import { Node } from '../../engine/node/Node'
 
 type LLMStatus = 'idle' | 'loading' | 'done' | 'error'
 
-interface StoredLLMConfig {
-  provider: 'deepseek' | 'openai' | 'kimi' | 'qwen' | 'glm' | 'minimax' | 'groq' | 'mistral' | 'siliconflow'
-  providers: Record<string, { key: string; model: string }>
-}
+export type LLMProviderId =
+  | 'deepseek' | 'openai' | 'kimi' | 'qwen' | 'glm'
+  | 'minimax' | 'groq' | 'mistral' | 'siliconflow'
 
 const CONFIG_KEY = 'canvasdesk.llm.config'
 const LEGACY_KEY = 'canvasdesk.llm.api_key'
 
 /** Provider 预设（与渲染层 useLLMSettings 的 LLM_PROVIDERS 保持一致） */
-const PROVIDER_PRESETS: Record<string, { url: string; defaultModel: string }> = {
-  deepseek: {
-    url: 'https://api.deepseek.com/chat/completions',
-    defaultModel: 'deepseek-flash'
-  },
-  openai: {
-    url: 'https://api.openai.com/v1/chat/completions',
-    defaultModel: 'gpt-4o-mini'
-  },
-  kimi: {
-    url: 'https://api.moonshot.cn/v1/chat/completions',
-    defaultModel: 'moonshot-v1-8k'
-  },
-  qwen: {
-    url: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
-    defaultModel: 'qwen-plus'
-  },
-  glm: {
-    url: 'https://open.bigmodel.cn/api/paas/v4/chat/completions',
-    defaultModel: 'glm-4'
-  },
-  minimax: {
-    url: 'https://api.minimax.chat/v1/text/chatcompletion_v2',
-    defaultModel: 'abab6.5s-chat'
-  },
-  groq: {
-    url: 'https://api.groq.com/openai/v1/chat/completions',
-    defaultModel: 'llama-3.3-70b-versatile'
-  },
-  mistral: {
-    url: 'https://api.mistral.ai/v1/chat/completions',
-    defaultModel: 'mistral-small-latest'
-  },
-  siliconflow: {
-    url: 'https://api.siliconflow.cn/v1/chat/completions',
-    defaultModel: 'Qwen/Qwen2.5-7B-Instruct'
-  }
+const PROVIDER_PRESETS: Record<LLMProviderId, { url: string; defaultModel: string }> = {
+  deepseek:    { url: 'https://api.deepseek.com/chat/completions',                          defaultModel: 'deepseek-flash' },
+  openai:      { url: 'https://api.openai.com/v1/chat/completions',                           defaultModel: 'gpt-4o-mini' },
+  kimi:        { url: 'https://api.moonshot.cn/v1/chat/completions',                           defaultModel: 'moonshot-v1-8k' },
+  qwen:        { url: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',   defaultModel: 'qwen-plus' },
+  glm:         { url: 'https://open.bigmodel.cn/api/paas/v4/chat/completions',                defaultModel: 'glm-4' },
+  minimax:     { url: 'https://api.minimax.chat/v1/text/chatcompletion_v2',                   defaultModel: 'abab6.5s-chat' },
+  groq:        { url: 'https://api.groq.com/openai/v1/chat/completions',                       defaultModel: 'llama-3.3-70b-versatile' },
+  mistral:     { url: 'https://api.mistral.ai/v1/chat/completions',                            defaultModel: 'mistral-small-latest' },
+  siliconflow: { url: 'https://api.siliconflow.cn/v1/chat/completions',                        defaultModel: 'Qwen/Qwen2.5-7B-Instruct' }
 }
 
-/** 从 localStorage 读当前生效的 API 端点配置，带旧版 key 兼容 */
-function readEndpoint(): { key: string; url: string; model: string } {
+/** 节点可用的 provider 列表（遍历这个就行） */
+export const ALL_PROVIDERS: readonly LLMProviderId[] = Object.keys(PROVIDER_PRESETS) as LLMProviderId[]
+
+/** 按 provider 从全局配置取 API Key（localStorage） */
+function readProviderKey(provider: LLMProviderId): string {
   try {
     const raw = localStorage.getItem(CONFIG_KEY)
     if (raw) {
-      const cfg = JSON.parse(raw) as StoredLLMConfig
-      const provider = cfg.provider
-      const preset = PROVIDER_PRESETS[provider]
-      const providerCfg = cfg.providers?.[provider]
-      if (preset && providerCfg) {
-        const model = (providerCfg.model && providerCfg.model.trim()) || preset.defaultModel
-        return { key: providerCfg.key ?? '', url: preset.url, model }
-      }
+      const cfg = JSON.parse(raw) as { providers?: Record<string, { key?: string }> }
+      return cfg.providers?.[provider]?.key ?? ''
     }
   } catch {
     // fall through
   }
-  // 旧版兼容：只有 api_key，按 deepseek 处理
-  const legacyKey = localStorage.getItem(LEGACY_KEY) ?? ''
-  const preset = PROVIDER_PRESETS.deepseek
-  return { key: legacyKey, url: preset.url, model: preset.defaultModel }
+  // 旧版兼容：只有 legacy api_key，按 deepseek 处理
+  if (provider === 'deepseek') {
+    return localStorage.getItem(LEGACY_KEY) ?? ''
+  }
+  return ''
+}
+
+/** 从节点级 provider + model 算出最终的 URL 和 model 名 */
+function resolveEndpoint(
+  provider: LLMProviderId,
+  model: string
+): { url: string; model: string } {
+  const preset = PROVIDER_PRESETS[provider]
+  return {
+    url: preset.url,
+    model: (model && model.trim()) || preset.defaultModel
+  }
 }
 
 export class LLMNode extends Node {
   static readonly TYPE = 'llm'
   readonly type = LLMNode.TYPE
+
+  // —— 节点级配置 ——
+  private provider: LLMProviderId = 'deepseek'
+  private model = ''       // 空串表示用 PROVIDER_PRESETS[provider].defaultModel
+  private jsonMode = false // 仅 deepseek 有效
 
   /** 输入端口：系统提示词 */
   readonly systemInput = new InputPort('system', {
@@ -177,8 +165,35 @@ export class LLMNode extends Node {
     this.addInput(this.systemInput)
     this.addInput(this.promptInput)
     this.addOutput(this.textOutput)
-    // 内容区硬约束：手柄 + 控制栏 + 输出 + 底部操作栏（左输入框 + 右发送）
     this.setBox(320, 280)
+  }
+
+  // —— 节点级配置的 getter / setter ——
+
+  get displayProvider(): LLMProviderId { return this.provider }
+  setProvider(v: LLMProviderId): void {
+    if (this.provider === v) return
+    this.provider = v
+    this.notifyChanged()
+  }
+
+  get displayModel(): string { return this.model }
+  setModel(v: string): void {
+    if (this.model === v) return
+    this.model = v
+    this.notifyChanged()
+  }
+
+  get displayJsonMode(): boolean { return this.jsonMode }
+  setJsonMode(v: boolean): void {
+    if (this.jsonMode === v) return
+    this.jsonMode = v
+    this.notifyChanged()
+  }
+
+  /** 当前 provider 是否已配全局 Key —— UI 读它决定是否显示警告 */
+  get hasProviderKey(): boolean {
+    return readProviderKey(this.provider).length > 0
   }
 
   /** 当前是否自动调用 —— UI 读它决定是显示发送按钮还是静默自动 */
@@ -263,7 +278,6 @@ export class LLMNode extends Node {
     const system = sysFirst instanceof StringValue ? sysFirst.value : ''
 
     let prompt = this.localPrompt
-    // promptInput 接了边时优先用端口值
     if (this.promptInput.incomingEdgeCount > 0) {
       const [promptFirst] = this.promptInput.value
       if (promptFirst instanceof StringValue) {
@@ -276,18 +290,16 @@ export class LLMNode extends Node {
   /** 真正执行取值 + 检查 + fetch；由防抖定时器或手动触发 */
   private doFetch(): void {
     const { system, prompt } = this.resolveInputs()
-    const endpoint = readEndpoint()
+    const key = readProviderKey(this.provider)
 
-    // Key 检查
-    if (!endpoint.key) {
+    if (!key) {
       this.status = 'error'
-      this.errorMessage = '请先点击右上角齿轮配置 LLM API Key'
+      this.errorMessage = `请在全局设置中为 ${PROVIDER_PRESETS[this.provider].url} 配置 API Key`
       this.response = ''
       this.notifyChanged()
       return
     }
 
-    // 空 prompt 不浪费 token
     if (!prompt.trim()) {
       this.status = 'idle'
       this.response = ''
@@ -296,19 +308,20 @@ export class LLMNode extends Node {
       return
     }
 
-    // 递增请求 ID，标记"这是最新的一次请求"
+    const { url, model } = resolveEndpoint(this.provider, this.model)
     const myRequestId = ++this.requestId
-    void this.fetchAndCommit(endpoint, system, prompt, myRequestId)
+    void this.fetchAndCommit(key, url, model, system, prompt, myRequestId)
   }
 
-  /** 异步调用当前配置的 Provider API，完成后写 response + commit 到输出端口 */
+  /** 异步调用 Provider API，完成后写 response + commit 到输出端口 */
   private async fetchAndCommit(
-    endpoint: { key: string; url: string; model: string },
+    key: string,
+    url: string,
+    model: string,
     system: string,
     prompt: string,
     myRequestId: number
   ): Promise<void> {
-    // 先标记 loading，UI 会显示 spinner
     this.status = 'loading'
     this.errorMessage = ''
     this.notifyChanged()
@@ -318,20 +331,26 @@ export class LLMNode extends Node {
     let ok = false
 
     try {
-      const res = await fetch(endpoint.url, {
+      const body: Record<string, unknown> = {
+        model,
+        messages: [
+          { role: 'system', content: system || 'You are a helpful assistant.' },
+          { role: 'user', content: prompt }
+        ],
+        stream: false
+      }
+
+      if (this.provider === 'deepseek' && this.jsonMode) {
+        body.response_format = { type: 'json_object' }
+      }
+
+      const res = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${endpoint.key}`
+          'Authorization': `Bearer ${key}`
         },
-        body: JSON.stringify({
-          model: endpoint.model,
-          messages: [
-            { role: 'system', content: system || 'You are a helpful assistant.' },
-            { role: 'user', content: prompt }
-          ],
-          stream: false
-        })
+        body: JSON.stringify(body)
       })
 
       const data = await res.json()
@@ -352,8 +371,6 @@ export class LLMNode extends Node {
     }
 
     // —— Stale-call 守卫 ——
-    // 如果此时 requestId 已经不是 myRequestId，说明用户又触发了新请求，
-    // 这次回来的结果就丢弃，不覆盖 UI / 不 commit 到输出端口
     if (this.requestId !== myRequestId) return
 
     if (ok) {
@@ -369,19 +386,31 @@ export class LLMNode extends Node {
   }
 
   saveState(): Record<string, unknown> {
-    return { autoCall: this.autoCall, localPrompt: this.localPrompt }
+    return {
+      provider: this.provider,
+      model: this.model,
+      jsonMode: this.jsonMode,
+      autoCall: this.autoCall,
+      localPrompt: this.localPrompt
+    }
   }
 
   readState(state: Record<string, unknown>): void {
-    // 布尔开关用 typeof === 'boolean' 判断，避免把用户显式 false 当成缺省覆盖
+    if (typeof state.provider === 'string' && PROVIDER_PRESETS[state.provider as LLMProviderId]) {
+      this.provider = state.provider as LLMProviderId
+    }
+    if (typeof state.model === 'string') {
+      this.model = state.model
+    }
+    if (typeof state.jsonMode === 'boolean') {
+      this.jsonMode = state.jsonMode
+    }
     if (typeof state.autoCall === 'boolean') {
       this.autoCall = state.autoCall
     }
-    // localPrompt 是普通字符串，只有确实存了才恢复
     if (typeof state.localPrompt === 'string') {
       this.localPrompt = state.localPrompt
     }
-    // response / status 等派生状态等上游恢复后自然会刷新
   }
 
   /** 节点销毁时清理防抖定时器，防止卸载后还触发 fetch */
@@ -390,7 +419,6 @@ export class LLMNode extends Node {
       clearTimeout(this.debounceTimer)
       this.debounceTimer = null
     }
-    // 废弃所有未完成请求：递增 requestId，让 in-flight 的 fetch 回来时自然丢弃
     this.requestId++
   }
 }

@@ -17,7 +17,6 @@ import NodePalette from './components/NodePalette.vue'
 import ContextMenu, { type MenuItem } from './components/ContextMenu.vue'
 import type { NodeMenuItem } from '../../main/engine/node/Node'
 import { canvasNotice } from '@renderer/canvas/notice'
-import LLMSettingsDialog from './components/LLMSettingsDialog.vue'
 import ImageSettingsDialog from './components/ImageSettingsDialog.vue'
 import HelpCenter from './components/HelpCenter.vue'
 import OnboardingGuide from './components/OnboardingGuide.vue'
@@ -841,9 +840,6 @@ onUnmounted(() => {
       <ContextMenu v-if="contextMenu.visible && targetNode" :ref="setMenuRoot" :x="contextMenu.x" :y="contextMenu.y"
         :items="buildMenuItems(targetNode)" @close="closeContextMenu" />
     </div>
-
-    <!-- LLM 全局设置弹窗：Teleport 到 body，全局唯一一份，所有 LLM 节点的齿轮按钮都共享它 -->
-    <LLMSettingsDialog />
 
     <!-- 图像生成全局设置弹窗：与 LLM 设置相互独立（独立 localStorage 键），文生图节点的齿轮按钮共享它 -->
     <ImageSettingsDialog />

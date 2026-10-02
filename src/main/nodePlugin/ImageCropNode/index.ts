@@ -23,6 +23,7 @@ export const manifest: NodePluginManifest = {
     it: 'Ritaglio immagine'
   },
   render,
+  iconPaths: ['M6 2v14a2 2 0 0 0 2 2h14', 'M2 6h14a2 2 0 0 1 2 2v14'],
   help: () => import('./ImageCropHelpDialog.vue')
 }
 

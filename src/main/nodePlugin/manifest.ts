@@ -34,6 +34,14 @@ export interface NodePluginManifest {
    */
   readonly title?: NodeTitle
   /**
+   * 调色板图标（可选）：24×24 视图盒内的一组 SVG path 的 d 字符串，
+   * 由渲染方统一以描边风格（stroke=currentColor）绘制，因此不写死颜色、自动跟随主题。
+   *
+   * 与 title 同理，图标由插件自己声明，第三方插件不必去改渲染进程的中央图标表。
+   * 不配时调色板项只显示文字（与加入本字段之前的行为一致）。
+   */
+  readonly iconPaths?: readonly string[]
+  /**
    * 帮助文档组件（可选）。
    * 异步加载函数形式，如 `help: () => import('./CodeHelpDialog.vue')`。
    * 点击节点上的帮助按钮时会 resolve 这个函数，把默认导出的组件嵌进 HelpDialog 弹窗。

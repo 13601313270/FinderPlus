@@ -23,6 +23,7 @@ export const manifest: NodePluginManifest = {
     it: 'Visualizzazione JSON'
   },
   render,
+  iconPaths: ['M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2 2 2 0 0 1 2 2v5a2 2 0 0 0 2 2h1', 'M16 3h1a2 2 0 0 1 2 2v5a2 2 0 0 0 2 2 2 2 0 0 0-2 2v5a2 2 0 0 1-2 2h-1'],
   help: () => import('./JsonDisplayHelpDialog.vue')
 }
 

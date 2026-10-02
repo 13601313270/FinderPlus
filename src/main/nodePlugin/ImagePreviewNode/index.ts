@@ -23,6 +23,7 @@ export const manifest: NodePluginManifest = {
     it: 'Anteprima immagine'
   },
   render,
+  iconPaths: ['M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z', 'M9 9m-1.5 0a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0', 'm21 15-5-5-11 11'],
   help: () => import('./ImagePreviewHelpDialog.vue')
 }
 

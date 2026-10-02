@@ -23,6 +23,7 @@ export const manifest: NodePluginManifest = {
     it: 'Input numerico'
   },
   render,
+  iconPaths: ['M4 9h16', 'M4 15h16', 'M10 3 8 21', 'M16 3l-2 18'],
   help: () => import('./NumberInputHelpDialog.vue')
 }
 

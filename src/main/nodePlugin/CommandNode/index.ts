@@ -23,6 +23,7 @@ export const manifest: NodePluginManifest = {
     it: 'Comando'
   },
   render,
+  iconPaths: ['m5 7 5 5-5 5', 'M13 17h6'],
   help: () => import('./CommandHelpDialog.vue')
 }
 

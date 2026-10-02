@@ -23,6 +23,7 @@ export const manifest: NodePluginManifest = {
     it: 'Codice'
   },
   render,
+  iconPaths: ['m8 6-6 6 6 6', 'm16 6 6 6-6 6'],
   help: () => import('./CodeHelpDialog.vue')
 }
 

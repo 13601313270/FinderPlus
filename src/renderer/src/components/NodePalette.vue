@@ -43,9 +43,11 @@ function onSelectType(type: string): void {
 // 下拉项文案取自各个插件 manifest 自己声明的多语言 title；
 // 插件没配当前语言时由 resolveNodeTitle 兜底（en → zh → 已配的第一种 → type）。
 // 这样新增/第三方插件不用改 Finder+ 的中央词条表就能带上自己的显示名。
+// 图标同理：manifest.iconPaths 由插件自己声明，缺省时列表项只显示文字。
 const items = computed(() => paletteManifests.map((m) => ({
  type: m.type,
- label: resolveNodeTitle(m, language.value)
+ label: resolveNodeTitle(m, language.value),
+ iconPaths: m.iconPaths ?? []
 })));
 </script>
 
@@ -66,7 +68,22 @@ const items = computed(() => paletteManifests.map((m) => ({
           class="palette__item"
           @click.stop="onSelectType(item.type)"
         >
-          {{ item.label }}
+          <svg
+            v-if="item.iconPaths.length"
+            class="palette__icon"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path v-for="(d, i) in item.iconPaths" :key="i" :d="d" />
+          </svg>
+          <span class="palette__label">{{ item.label }}</span>
         </li>
       </ul>
     </transition>
@@ -119,6 +136,9 @@ const items = computed(() => paletteManifests.map((m) => ({
   }
 
   &__item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     padding: 8px 14px;
     font-size: 13px;
     color: @color-text;
@@ -128,7 +148,21 @@ const items = computed(() => paletteManifests.map((m) => ({
     &:hover {
       background: #eef1f5;
       color: @color-primary;
+
+      .palette__icon {
+        color: @color-primary;
+      }
     }
+  }
+
+  &__icon {
+    flex: 0 0 auto;
+    color: #8a919c;
+    transition: color 0.1s ease;
+  }
+
+  &__label {
+    white-space: nowrap;
   }
 }
 

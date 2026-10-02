@@ -23,6 +23,7 @@ export const manifest: NodePluginManifest = {
     it: 'Revisione umana'
   },
   render,
+  iconPaths: ['M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z', 'M12 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0-6 0'],
   help: () => import('./HumanReviewHelpDialog.vue')
 }
 

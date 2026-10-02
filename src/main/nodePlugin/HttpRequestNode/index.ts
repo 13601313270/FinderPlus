@@ -23,6 +23,7 @@ export const manifest: NodePluginManifest = {
     it: 'Richiesta HTTP'
   },
   render,
+  iconPaths: ['M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0-18 0', 'M3 12h18', 'M12 3a14 14 0 0 1 0 18', 'M12 3a14 14 0 0 0 0 18'],
   help: () => import('./HttpRequestHelpDialog.vue')
 }
 

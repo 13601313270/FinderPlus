@@ -23,6 +23,7 @@ export const manifest: NodePluginManifest = {
     it: 'Concatenazione stringhe'
   },
   render,
+  iconPaths: ['M10 13a5 5 0 0 0 7.1 0l2.4-2.4a5 5 0 0 0-7.1-7.1L11 4.9', 'M14 11a5 5 0 0 0-7.1 0l-2.4 2.4a5 5 0 0 0 7.1 7.1L13 19.1'],
   help: () => import('./StringConcatHelpDialog.vue')
 }
 

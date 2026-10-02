@@ -23,6 +23,7 @@ export const manifest: NodePluginManifest = {
     it: 'Visualizzazione testo'
   },
   render,
+  iconPaths: ['M4 6h16', 'M4 11h16', 'M4 16h10'],
   help: () => import('./TextDisplayHelpDialog.vue')
 }
 

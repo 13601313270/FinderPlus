@@ -23,6 +23,7 @@ export const manifest: NodePluginManifest = {
     it: 'Input booleano'
   },
   render,
+  iconPaths: ['M6 7h12a5 5 0 0 1 0 10H6a5 5 0 0 1 0-10Z', 'M16.5 12m-2.5 0a2.5 2.5 0 1 0 5 0a2.5 2.5 0 1 0-5 0'],
   help: () => import('./BoolInputHelpDialog.vue')
 }
 

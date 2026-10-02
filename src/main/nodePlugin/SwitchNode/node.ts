@@ -60,21 +60,21 @@ export class SwitchNode extends Node {
   readonly dataInput = new InputPort('data', {
     accepts: SwitchNode.ALL_VALUE_CLASSES,
     label: {
-      zh: '数据',
-      en: 'Data',
-      ja: 'データ',
-      ko: '데이터',
-      es: 'Datos',
-      ar: 'البيانات',
-      fr: 'Données',
-      pt: 'Dados',
-      ru: 'Данные',
-      hi: 'डेटा',
-      id: 'Data',
-      de: 'Daten',
-      vi: 'Dữ liệu',
-      tr: 'Veri',
-      it: 'Dati'
+      zh: '传入数据',
+      en: 'Input Data',
+      ja: '入力データ',
+      ko: '입력 데이터',
+      es: 'Datos de entrada',
+      ar: 'بيانات الإدخال',
+      fr: 'Données d\'entrée',
+      pt: 'Dados de entrada',
+      ru: 'Входные данные',
+      hi: 'इनपुट डेटा',
+      id: 'Data Masukan',
+      de: 'Eingabedaten',
+      vi: 'Dữ liệu đầu vào',
+      tr: 'Girdi Verisi',
+      it: 'Dati di input'
     }
   })
 

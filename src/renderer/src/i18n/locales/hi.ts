@@ -35,7 +35,10 @@ const hi: Language = {
     reset: 'रीसेट'
   },
   palette: {
-    addNode: 'नोड जोड़ें'
+    addNode: 'नोड जोड़ें',
+    searchPlaceholder: 'नोड खोजें…',
+    noResult: 'कोई मेल खाता नोड नहीं',
+    nodeHelp: 'नोड दस्तावेज़ देखें'
   },
   connection: {
     selfLoop: 'एक ही नोड के पोर्ट आपस में जोड़े नहीं जा सकते',

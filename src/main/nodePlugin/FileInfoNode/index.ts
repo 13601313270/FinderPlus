@@ -24,6 +24,7 @@ export const manifest: NodePluginManifest = {
   },
   render,
   iconPaths: ['M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7l-5-5Z', 'M14 2v5h5', 'M12 17h.01', 'M12 11v3'],
+  category: 'input',
   help: () => import('./FileInfoHelpDialog.vue')
 }
 

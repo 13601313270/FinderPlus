@@ -35,7 +35,10 @@ const it: Language = {
     reset: 'Reimposta'
   },
   palette: {
-    addNode: 'Aggiungi nodo'
+    addNode: 'Aggiungi nodo',
+    searchPlaceholder: 'Cerca nodi…',
+    noResult: 'Nessun nodo corrispondente',
+    nodeHelp: 'Visualizza la documentazione del nodo'
   },
   connection: {
     selfLoop: 'Le porte sullo stesso nodo non possono essere collegate',

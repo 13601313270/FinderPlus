@@ -35,7 +35,10 @@ const id: Language = {
     reset: 'Atur ulang'
   },
   palette: {
-    addNode: 'Tambah node'
+    addNode: 'Tambah node',
+    searchPlaceholder: 'Cari node…',
+    noResult: 'Tidak ada node yang cocok',
+    nodeHelp: 'Lihat dokumentasi node'
   },
   connection: {
     selfLoop: 'Port pada node yang sama tidak dapat dihubungkan',

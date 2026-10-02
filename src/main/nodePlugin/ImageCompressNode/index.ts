@@ -24,6 +24,7 @@ export const manifest: NodePluginManifest = {
   },
   render,
   iconPaths: ['M4 4l6 6', 'M4 10V4h6', 'M20 20l-6-6', 'M20 14v6h-6'],
+  category: 'image',
   help: () => import('./ImageCompressHelpDialog.vue')
 }
 

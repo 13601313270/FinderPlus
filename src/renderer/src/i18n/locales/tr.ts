@@ -35,7 +35,10 @@ const tr: Language = {
     reset: 'Sıfırla'
   },
   palette: {
-    addNode: 'Düğüm ekle'
+    addNode: 'Düğüm ekle',
+    searchPlaceholder: 'Düğüm ara…',
+    noResult: 'Eşleşen düğüm yok',
+    nodeHelp: 'Düğüm belgelerini görüntüle'
   },
   connection: {
     selfLoop: 'Aynı düğümdeki bağlantı noktaları birbirine bağlanamaz',

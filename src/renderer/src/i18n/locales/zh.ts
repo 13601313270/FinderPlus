@@ -40,7 +40,10 @@ const zh: Language = {
     reset: '复位'
   },
   palette: {
-    addNode: '添加节点'
+    addNode: '添加节点',
+    searchPlaceholder: '搜索节点…',
+    noResult: '没有匹配的节点',
+    nodeHelp: '查看该节点的使用说明'
   },
   connection: {
     selfLoop: '同一个节点的端口之间不能连线',

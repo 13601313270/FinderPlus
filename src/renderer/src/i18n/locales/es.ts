@@ -35,7 +35,10 @@ const es: Language = {
     reset: 'Restablecer'
   },
   palette: {
-    addNode: 'Añadir nodo'
+    addNode: 'Añadir nodo',
+    searchPlaceholder: 'Buscar nodos…',
+    noResult: 'No hay nodos coincidentes',
+    nodeHelp: 'Ver la documentación del nodo'
   },
   connection: {
     selfLoop: 'No se pueden conectar puertos del mismo nodo',

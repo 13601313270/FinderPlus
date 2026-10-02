@@ -35,7 +35,10 @@ const ko: Language = {
     reset: '초기화'
   },
   palette: {
-    addNode: '노드 추가'
+    addNode: '노드 추가',
+    searchPlaceholder: '노드 검색…',
+    noResult: '일치하는 노드가 없습니다',
+    nodeHelp: '노드 설명 보기'
   },
   connection: {
     selfLoop: '같은 노드의 포트끼리는 연결할 수 없습니다',

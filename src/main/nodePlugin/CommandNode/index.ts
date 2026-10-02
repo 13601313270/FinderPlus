@@ -24,6 +24,7 @@ export const manifest: NodePluginManifest = {
   },
   render,
   iconPaths: ['m5 7 5 5-5 5', 'M13 17h6'],
+  category: 'flow',
   help: () => import('./CommandHelpDialog.vue')
 }
 

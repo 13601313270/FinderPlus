@@ -24,6 +24,7 @@ export const manifest: NodePluginManifest = {
   },
   render,
   iconPaths: ['M6 15V3', 'M6 18m-3 0a3 3 0 1 0 6 0a3 3 0 1 0-6 0', 'M18 6m-3 0a3 3 0 1 0 6 0a3 3 0 1 0-6 0', 'M18 9a9 9 0 0 1-9 9'],
+  category: 'flow',
   help: () => import('./SwitchHelpDialog.vue')
 }
 

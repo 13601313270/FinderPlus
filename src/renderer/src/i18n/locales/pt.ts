@@ -35,7 +35,10 @@ const pt: Language = {
     reset: 'Redefinir'
   },
   palette: {
-    addNode: 'Adicionar nó'
+    addNode: 'Adicionar nó',
+    searchPlaceholder: 'Buscar nós…',
+    noResult: 'Nenhum nó correspondente',
+    nodeHelp: 'Ver a documentação do nó'
   },
   connection: {
     selfLoop: 'As portas do mesmo nó não podem ser conectadas',

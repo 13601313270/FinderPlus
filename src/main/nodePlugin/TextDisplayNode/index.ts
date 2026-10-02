@@ -24,6 +24,7 @@ export const manifest: NodePluginManifest = {
   },
   render,
   iconPaths: ['M4 6h16', 'M4 11h16', 'M4 16h10'],
+  category: 'text-data',
   help: () => import('./TextDisplayHelpDialog.vue')
 }
 

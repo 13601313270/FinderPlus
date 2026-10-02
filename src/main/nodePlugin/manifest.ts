@@ -1,6 +1,7 @@
 import type { Component } from 'vue'
 import type { Node } from '../engine/node/Node'
 import type { LanguageCode, LocalizedText } from '../../shared/language'
+import type { NodeCategory } from './category'
 
 /**
  * 节点显示名的多语言表。
@@ -41,6 +42,13 @@ export interface NodePluginManifest {
    * 不配时调色板项只显示文字（与加入本字段之前的行为一致）。
    */
   readonly iconPaths?: readonly string[]
+  /**
+   * 调色板分组（可选）。取值见 category.ts 的 NodeCategory。
+   *
+   * 做成可选（缺省归 DEFAULT_NODE_CATEGORY = 'other'）是为了兼容第三方/尚未适配的插件，
+   * 而不是必填——漏配一个分类字段不该让节点从菜单里消失。
+   */
+  readonly category?: NodeCategory
   /**
    * 帮助文档组件（可选）。
    * 异步加载函数形式，如 `help: () => import('./CodeHelpDialog.vue')`。

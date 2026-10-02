@@ -35,7 +35,10 @@ const ru: Language = {
     reset: 'Сбросить'
   },
   palette: {
-    addNode: 'Добавить узел'
+    addNode: 'Добавить узел',
+    searchPlaceholder: 'Поиск узлов…',
+    noResult: 'Нет подходящих узлов',
+    nodeHelp: 'Открыть справку по узлу'
   },
   connection: {
     selfLoop: 'Порты одного узла нельзя соединить между собой',

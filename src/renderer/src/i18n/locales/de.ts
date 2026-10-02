@@ -35,7 +35,10 @@ const de: Language = {
     reset: 'Zurücksetzen'
   },
   palette: {
-    addNode: 'Knoten hinzufügen'
+    addNode: 'Knoten hinzufügen',
+    searchPlaceholder: 'Knoten suchen…',
+    noResult: 'Keine passenden Knoten',
+    nodeHelp: 'Knotendokumentation ansehen'
   },
   connection: {
     selfLoop: 'Ports am selben Knoten können nicht verbunden werden',

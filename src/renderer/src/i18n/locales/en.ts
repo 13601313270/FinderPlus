@@ -35,7 +35,10 @@ const en: Language = {
     reset: 'Reset'
   },
   palette: {
-    addNode: 'Add node'
+    addNode: 'Add node',
+    searchPlaceholder: 'Search nodes…',
+    noResult: 'No matching nodes',
+    nodeHelp: 'View node documentation'
   },
   connection: {
     selfLoop: 'Ports on the same node cannot be connected',

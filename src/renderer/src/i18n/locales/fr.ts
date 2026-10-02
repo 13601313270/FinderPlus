@@ -35,7 +35,10 @@ const fr: Language = {
     reset: 'Réinitialiser'
   },
   palette: {
-    addNode: 'Ajouter un nœud'
+    addNode: 'Ajouter un nœud',
+    searchPlaceholder: 'Rechercher des nœuds…',
+    noResult: 'Aucun nœud correspondant',
+    nodeHelp: 'Voir la documentation du nœud'
   },
   connection: {
     selfLoop: 'Les ports d\'un même nœud ne peuvent pas être reliés',

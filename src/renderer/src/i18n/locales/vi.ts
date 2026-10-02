@@ -35,7 +35,10 @@ const vi: Language = {
     reset: 'Đặt lại'
   },
   palette: {
-    addNode: 'Thêm nút'
+    addNode: 'Thêm nút',
+    searchPlaceholder: 'Tìm nút…',
+    noResult: 'Không có nút phù hợp',
+    nodeHelp: 'Xem tài liệu về nút'
   },
   connection: {
     selfLoop: 'Không thể kết nối các cổng trên cùng một nút',

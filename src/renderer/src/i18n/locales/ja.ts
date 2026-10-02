@@ -35,7 +35,10 @@ const ja: Language = {
     reset: 'リセット'
   },
   palette: {
-    addNode: 'ノードを追加'
+    addNode: 'ノードを追加',
+    searchPlaceholder: 'ノードを検索…',
+    noResult: '一致するノードがありません',
+    nodeHelp: 'このノードの説明を見る'
   },
   connection: {
     selfLoop: '同じノードのポート同士は接続できません',

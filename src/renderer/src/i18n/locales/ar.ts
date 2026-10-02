@@ -35,7 +35,10 @@ const ar: Language = {
     reset: 'إعادة التهيئة'
   },
   palette: {
-    addNode: 'إضافة عقدة'
+    addNode: 'إضافة عقدة',
+    searchPlaceholder: 'ابحث عن العقد…',
+    noResult: 'لا توجد عقد مطابقة',
+    nodeHelp: 'عرض وثائق العقدة'
   },
   connection: {
     selfLoop: 'لا يمكن ربط المنافذ ضمن العقدة نفسها',

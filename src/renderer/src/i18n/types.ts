@@ -46,6 +46,12 @@ export type Language = {
   }
   palette: {
     addNode: string
+    /** 调色板搜索框的占位符 */
+    searchPlaceholder: string
+    /** 搜索无匹配节点时的提示 */
+    noResult: string
+    /** 瓦片角上「?」帮助入口的提示文案 */
+    nodeHelp: string
   }
   connection: {
     /** 端口自环 */

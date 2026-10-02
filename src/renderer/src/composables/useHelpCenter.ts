@@ -94,6 +94,17 @@ function closeCenter(): void {
 }
 
 /**
+ * 打开帮助中心并直接定位到某个节点（调色板瓦片角上的「?」走这里）。
+ *
+ * 必须先 await 加载完再置 visible：HelpCenter 里有个 watch(visible)，
+ * 看到 currentComp 还是空就会抢着选中第一个 topic，顺序反了就被覆盖成默认的介绍页。
+ */
+async function openTopic(type: string): Promise<void> {
+  await selectTopic(type)
+  visible.value = true
+}
+
+/**
  * 选中某个 topic，异步加载它的帮助组件。
  * 可以显式传 HelpTopic，也可以传 type（字符串）按注册表查找。
  */
@@ -115,5 +126,8 @@ async function selectTopic(target: HelpTopic | string): Promise<void> {
 }
 
 export function useHelpCenter() {
-  return { visible, loading, currentComp, currentType, helpGroups, openCenter, closeCenter, selectTopic }
+  return {
+    visible, loading, currentComp, currentType, helpGroups,
+    openCenter, closeCenter, openTopic, selectTopic
+  }
 }

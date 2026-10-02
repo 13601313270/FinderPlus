@@ -2,7 +2,7 @@
 
 A node-based visual automation canvas for macOS. Drag nodes onto an infinite canvas, wire their ports together, and data flows through the graph — turning text, images, LLM calls, HTTP requests and shell commands into a reusable pipeline you can see.
 
-English | [中文](README.zh-CN.md)
+English · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md) · [العربية](README.ar.md) · [Français](README.fr.md) · [Português](README.pt.md) · [Русский](README.ru.md) · [हिन्दी](README.hi.md) · [Bahasa Indonesia](README.id.md) · [Deutsch](README.de.md) · [Tiếng Việt](README.vi.md) · [Türkçe](README.tr.md) · [Italiano](README.it.md)
 
 ---
 
@@ -86,7 +86,7 @@ API keys are entered in the app's settings and stored **locally only**.
 
 ## Languages
 
-The interface ships in 9 languages: English, 简体中文, 日本語, 한국어, Español, العربية, Français, Português, Русский.
+The interface ships in 15 languages: English, 简体中文, 日本語, 한국어, Español, العربية, Français, Português, Русский, हिन्दी, Bahasa Indonesia, Deutsch, Tiếng Việt, Türkçe, Italiano.
 
 ## Where your data lives
 

@@ -2,7 +2,7 @@
 
 macOS 上的节点式可视化自动化画布。把节点拖到无限画布上，用端口连线，数据就会沿着连线流动——文本、图片、大模型、HTTP 请求、Shell 命令都能变成一条看得见的流水线。
 
-[English](README.md) | 中文
+[English](README.md) · 简体中文 · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md) · [العربية](README.ar.md) · [Français](README.fr.md) · [Português](README.pt.md) · [Русский](README.ru.md) · [हिन्दी](README.hi.md) · [Bahasa Indonesia](README.id.md) · [Deutsch](README.de.md) · [Tiếng Việt](README.vi.md) · [Türkçe](README.tr.md) · [Italiano](README.it.md)
 
 ---
 
@@ -86,7 +86,7 @@ API Key 在应用内的设置里填写，**只存在本地**。
 
 ## 界面语言
 
-内置 9 种语言：English、简体中文、日本語、한국어、Español、العربية、Français、Português、Русский。
+内置 15 种语言：English、简体中文、日本語、한국어、Español、العربية、Français、Português、Русский、हिन्दी、Bahasa Indonesia、Deutsch、Tiếng Việt、Türkçe、Italiano。
 
 ## 数据存在哪
 

@@ -348,9 +348,9 @@ onBeforeUnmount(() => {
 
         <div class="palette__list" role="listbox">
           <div v-if="!groups.length" class="palette__empty">{{ t('palette.noResult') }}</div>
-          <div v-for="group in groups" :key="group.key">
+          <div v-for="group in groups" :key="group.key" class="groupItem">
             <div v-if="group.label" class="palette__group" role="presentation">
-              {{ group.label }}
+              <span>{{ group.label }}</span>
             </div>
             <div class="palette__grid" role="presentation">
               <div
@@ -437,15 +437,20 @@ onBeforeUnmount(() => {
     left: 0;
     display: flex;
     flex-direction: column;
-    min-width: 300px;
+    width: 500px;
     // 只按视口比例限高，不再叠加固定像素上限：
     // 菜单距顶 52px，70vh 在 173px 以上的窗口都塞得下，所以不会溢出；
     // 而多出来那一截像素上限只会让本来放得下的列表白白出现滚动条。
     max-height: 80vh;
-    border: 1px solid #d5d9e0;
+    border: 1px solid #c0c6d0;
     border-radius: 8px;
     background: @color-surface;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    // 双层叠加：近层给「贴着画布」的接触感，远层给「浮在空中」的高度感。
+    // 原来单层 `0 4px 16px / 0.12` 在浅灰画布和白色节点卡片上几乎看不见，
+    // 面板和底下的节点糊成一片，分不出层级。
+    box-shadow:
+      0 2px 8px rgba(0, 0, 0, 0.1),
+      0 12px 40px rgba(0, 0, 0, 0.18);
     overflow: hidden; // 裁掉子元素直角，圆角才生效
   }
 
@@ -490,23 +495,32 @@ onBeforeUnmount(() => {
     min-height: 0;
     display: flex;
     flex-direction: column;
+    flex-wrap: wrap;
     gap: 10px;
     overflow-y: auto;
+    padding: 8px;
+
+    .groupItem {
+      display: flex;
+      align-items: start;
+    }
   }
 
   // 组内 4 列网格：高度不再随节点数线性增长，7 组 22 项只占 8 行左右。
   // 列数必须与脚本里的 GRID_COLUMNS 保持一致。
   &__grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 2px;
-    padding: 6px 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
   }
 
   // 滚动时把当前分类标题钉在顶部，省得滑几屏后不知道在看哪一组
   &__group {
     position: sticky;
     top: 0;
+    width: 100px;
+    height: 34px;
+    flex-shrink: 0;
     z-index: 1;
     padding: 6px 12px 4px;
     background: @color-surface;
@@ -516,20 +530,23 @@ onBeforeUnmount(() => {
     letter-spacing: 0.04em;
     color: #8a919c;
     text-transform: uppercase;
+    display: flex;
+    align-items: center;
   }
 
   // 图标在上、名字在下：4 列下每格约 70px，菜单不至于为了长名字被撑得太宽
   &__item {
-    // 给角上的「?」帮助入口提供定位基准
     position: relative;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
     gap: 3px;
-    padding: 6px 4px;
+    padding: 6px 8px;
+    min-width: 60px;
+    height: 48px;
     border-radius: 6px;
     font-size: 12px;
-    color: @color-text;
+    color: #1f2329;
     cursor: pointer;
     border: solid 1px #dedede;
     transition: background 0.1s ease, color 0.1s ease;

@@ -6,7 +6,8 @@ export const manifest: NodePluginManifest = {
   type: BoolInputNode.TYPE,
   nodeClass: BoolInputNode,
   title: { zh: '布尔输入', en: 'Boolean Input' },
-  render
+  render,
+  help: () => import('./BoolInputHelpDialog.vue')
 }
 
 export default manifest

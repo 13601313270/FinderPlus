@@ -7,6 +7,8 @@ import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
 import { messages } from './i18n'
 import GearIcon from '@renderer/components/icons/GearIcon.vue'
+import HelpDialog from '@renderer/components/HelpDialog.vue'
+import CommandHelpDialog from './CommandHelpDialog.vue'
 
 /**
  * 命令行节点的渲染组件。
@@ -26,6 +28,10 @@ const nodeTitle = useNodeTitle(() => commandNode.value, '?')
 
 // 卡片内文案走节点本地的 i18n.ts（放在节点文件夹里，便于插件化替换），跟随界面语言
 const t = useLocalizedMessages(messages)
+
+// 帮助浮层开关（弹窗壳由 HelpDialog 负责）
+const showHelp = ref(false)
+
 const name = ref('')
 /** 命令模板原文（设置面板里编辑的那个，含 $1 $2…） */
 const template = ref('')
@@ -173,6 +179,13 @@ function onSave(): void {
     <div class="node__header" @pointerdown="startDrag">
       <span class="node__handle" :title="t('dragHint')">{{ nodeTitle }}</span>
       <button
+        class="node__help"
+        type="button"
+        :title="t('helpTitle')"
+        @pointerdown.stop
+        @click.stop="showHelp = true"
+      >?</button>
+      <button
         v-if="commandNode"
         ref="gearBtn"
         class="node__gear"
@@ -263,6 +276,11 @@ function onSave(): void {
     </button>
   </div>
 
+  <!-- 帮助弹窗 -->
+  <HelpDialog :visible="showHelp" :title="t('helpDialogTitle')" @close="showHelp = false">
+    <CommandHelpDialog />
+  </HelpDialog>
+
   <!-- 编辑面板：Teleport 到 body，避免被节点 overflow clip -->
   <Teleport to="body">
     <div
@@ -325,6 +343,29 @@ function onSave(): void {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  &__help {
+    all: unset;
+    cursor: pointer;
+    margin-left: auto;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #f3f4f6;
+    color: #6b7280;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+    transition: background 0.15s, color 0.15s;
+
+    &:hover {
+      background: #dbeafe;
+      color: #2563eb;
+    }
   }
 
   &__gear {

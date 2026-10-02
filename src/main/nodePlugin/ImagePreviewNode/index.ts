@@ -6,7 +6,8 @@ export const manifest: NodePluginManifest = {
   type: ImagePreviewNode.TYPE,
   nodeClass: ImagePreviewNode,
   title: { zh: '图片预览', en: 'Image Preview' },
-  render
+  render,
+  help: () => import('./ImagePreviewHelpDialog.vue')
 }
 
 export default manifest

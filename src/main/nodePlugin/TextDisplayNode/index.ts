@@ -6,7 +6,8 @@ export const manifest: NodePluginManifest = {
   type: TextDisplayNode.TYPE,
   nodeClass: TextDisplayNode,
   title: { zh: '文本展示', en: 'Text Display' },
-  render
+  render,
+  help: () => import('./TextDisplayHelpDialog.vue')
 }
 
 export default manifest

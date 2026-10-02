@@ -42,5 +42,27 @@ export const messages = {
   hint: {
     zh: '端口响应式 · 拖入一次性',
     en: 'Port: live · Drop: one-shot'
+  },
+  helpTitle: {
+    zh: '使用说明',
+    en: 'Help',
+    ja: '使い方',
+    ko: '사용 설명',
+    es: 'Ayuda',
+    ar: 'مساعدة',
+    fr: 'Aide',
+    pt: 'Ajuda',
+    ru: 'Справка'
+  },
+  helpDialogTitle: {
+    zh: '图片压缩节点使用说明',
+    en: 'Image Compress node help',
+    ja: '画像圧縮ノードの使い方',
+    ko: '이미지 압축 노드 사용 설명',
+    es: 'Ayuda del nodo Comprimir imagen',
+    ar: 'مساعدة عقدة ضغط الصورة',
+    fr: 'Aide du nœud Compresser l’image',
+    pt: 'Ajuda do nó Comprimir imagem',
+    ru: 'Справка по узлу «Сжатие изображения»'
   }
 } satisfies Record<string, LocalizedText>

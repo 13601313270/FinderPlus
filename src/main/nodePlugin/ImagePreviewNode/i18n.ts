@@ -42,5 +42,27 @@ export const messages = {
   formatUnknown: {
     zh: '未知',
     en: 'Unknown'
+  },
+  helpTitle: {
+    zh: '使用说明',
+    en: 'Help',
+    ja: '使い方',
+    ko: '사용 설명',
+    es: 'Ayuda',
+    ar: 'تعليمات الاستخدام',
+    fr: 'Aide',
+    pt: 'Ajuda',
+    ru: 'Справка'
+  },
+  helpDialogTitle: {
+    zh: '图片预览节点使用说明',
+    en: 'Image Preview node help',
+    ja: '画像プレビューノードの使い方',
+    ko: '이미지 미리보기 노드 사용 설명',
+    es: 'Ayuda del nodo Vista previa de imagen',
+    ar: 'تعليمات عقدة معاينة الصورة',
+    fr: 'Aide du nœud Aperçu d’image',
+    pt: 'Ajuda do nó Pré-visualizar imagem',
+    ru: 'Справка по узлу «Предпросмотр изображения»'
   }
 } satisfies Record<string, LocalizedText>

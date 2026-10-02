@@ -26,5 +26,27 @@ export const messages = {
   createNodeHint: {
     zh: '以抠图结果为基础新建一个图片文件节点',
     en: 'Create a new image file node from the background-removed result'
+  },
+  helpTitle: {
+    zh: '使用说明',
+    en: 'Help',
+    ja: '使い方',
+    ko: '사용 설명',
+    es: 'Ayuda',
+    ar: 'تعليمات الاستخدام',
+    fr: 'Aide',
+    pt: 'Ajuda',
+    ru: 'Справка'
+  },
+  helpDialogTitle: {
+    zh: '背景移除节点使用说明',
+    en: 'Background Remove node help',
+    ja: '背景除去ノードの使い方',
+    ko: '배경 제거 노드 사용 설명',
+    es: 'Ayuda del nodo Quitar fondo',
+    ar: 'تعليمات عقدة إزالة الخلفية',
+    fr: 'Aide du nœud Suppression d’arrière-plan',
+    pt: 'Ajuda do nó Remover fundo',
+    ru: 'Справка по узлу «Удаление фона»'
   }
 } satisfies Record<string, LocalizedText>

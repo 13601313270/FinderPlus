@@ -26,5 +26,27 @@ export const messages = {
   empty: {
     zh: '（暂无输入）',
     en: '(No input)'
+  },
+  helpTitle: {
+    zh: '使用说明',
+    en: 'Help',
+    ja: 'ヘルプ',
+    ko: '도움말',
+    es: 'Ayuda',
+    ar: 'مساعدة',
+    fr: 'Aide',
+    pt: 'Ajuda',
+    ru: 'Справка'
+  },
+  helpDialogTitle: {
+    zh: '文件信息节点使用说明',
+    en: 'File Info node help',
+    ja: 'ファイル情報ノードの使い方',
+    ko: '파일 정보 노드 사용 방법',
+    es: 'Ayuda del nodo Información de archivo',
+    ar: 'مساعدة عقدة معلومات الملف',
+    fr: 'Aide du nœud Informations de fichier',
+    pt: 'Ajuda do nó Informações do arquivo',
+    ru: 'Справка по узлу «Информация о файле»'
   }
 } satisfies Record<string, LocalizedText>

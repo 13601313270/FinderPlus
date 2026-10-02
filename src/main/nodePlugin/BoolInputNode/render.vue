@@ -6,6 +6,8 @@ import { useNodePosition } from '@renderer/composables/useNodePosition'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
 import { messages } from './i18n'
+import HelpDialog from '@renderer/components/HelpDialog.vue'
+import BoolInputHelpDialog from './BoolInputHelpDialog.vue'
 
 /**
  * 布尔开关节点的渲染组件（只画卡片内容）。
@@ -29,6 +31,9 @@ const nodeTitle = useNodeTitle(() => boolNode.value, '?')
 
 // 卡片内文案走节点本地的 i18n.ts（放在节点文件夹里，便于插件化替换），跟随界面语言
 const t = useLocalizedMessages(messages)
+
+// 帮助浮层开关（弹窗壳由 HelpDialog 负责）
+const showHelp = ref(false)
 
 /** 引擎字段是普通类字段，Vue 追踪不到，所以走 Node.onChanged 这条桥刷进本地 ref */
 const checked = ref(false)
@@ -59,7 +64,15 @@ function onToggle(): void {
 
 <template>
   <div class="node">
-    <span class="node__handle" :title="t('dragHint')" @pointerdown="startDrag">{{ nodeTitle }}</span>
+    <div class="node__header">
+      <span class="node__handle" :title="t('dragHint')" @pointerdown="startDrag">{{ nodeTitle }}</span>
+      <button
+        class="node__help"
+        type="button"
+        :title="t('helpTitle')"
+        @click.stop="showHelp = true"
+      >?</button>
+    </div>
     <div class="node__row">
       <button
         class="node__switch"
@@ -76,6 +89,11 @@ function onToggle(): void {
       <span class="node__state">{{ checked ? 'true' : 'false' }}</span>
     </div>
   </div>
+
+  <!-- 帮助弹窗 -->
+  <HelpDialog :visible="showHelp" :title="t('helpDialogTitle')" @close="showHelp = false">
+    <BoolInputHelpDialog />
+  </HelpDialog>
 </template>
 
 <style scoped lang="less">
@@ -93,17 +111,51 @@ function onToggle(): void {
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 
+  &__header {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-bottom: 4px;
+    border-bottom: 1px dashed #d5d9e0;
+    flex-shrink: 0;
+  }
+
   &__handle {
     cursor: grab;
     user-select: none;
     font-size: 12px;
     color: @color-text-weak;
     text-align: center;
-    padding: 2px 0;
-    border-bottom: 1px dashed #d5d9e0;
 
     &:active {
       cursor: grabbing;
+    }
+  }
+
+  &__help {
+    all: unset;
+    position: absolute;
+    right: 0;
+    top: 8px;
+    transform: translateY(-50%);
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #f3f4f6;
+    color: #6b7280;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+    transition: background 0.15s, color 0.15s;
+
+    &:hover {
+      background: #dbeafe;
+      color: #2563eb;
     }
   }
 

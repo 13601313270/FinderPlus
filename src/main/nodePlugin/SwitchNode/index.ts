@@ -6,7 +6,8 @@ export const manifest: NodePluginManifest = {
   type: SwitchNode.TYPE,
   nodeClass: SwitchNode,
   title: { zh: '条件分支', en: 'Switch' },
-  render
+  render,
+  help: () => import('./SwitchHelpDialog.vue')
 }
 
 export default manifest

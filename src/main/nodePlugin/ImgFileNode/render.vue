@@ -10,12 +10,17 @@ import { useFileDragOut } from '@renderer/composables/useFileDragOut'
 import { useFileOpenInSystem } from '@renderer/composables/useFileOpenInSystem'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
 import { viewport } from '@renderer/canvas/viewport'
+import HelpDialog from '@renderer/components/HelpDialog.vue'
 import { messages } from './i18n'
+import ImgFileHelpDialog from './ImgFileHelpDialog.vue'
 
 const props = defineProps<{ id: string }>()
 
 // 卡片内文案走节点本地的 i18n.ts（放在节点文件夹里，便于插件化替换），跟随界面语言
 const t = useLocalizedMessages(messages)
+
+// 帮助浮层开关（弹窗壳由 HelpDialog 负责）
+const showHelp = ref(false)
 
 const fileNode = computed(() => {
   const node = workspaceScene.getNode(props.id)
@@ -192,7 +197,22 @@ onUnmounted(() => {
 
     <!-- resize handle：右下角，拖拽改宽度（保持原图比例） -->
     <div class="file-card__resize-handle" @pointerdown.stop.prevent="onResizePointerDown" :title="t('resizeHint')" />
+
+    <!-- 帮助入口：悬浮在卡片右上角 -->
+    <button
+      class="file-card__help"
+      type="button"
+      :title="t('helpTitle')"
+      @pointerdown.stop
+      @dblclick.stop
+      @click.stop="showHelp = true"
+    >?</button>
   </div>
+
+  <!-- 帮助弹窗 -->
+  <HelpDialog :visible="showHelp" :title="t('helpDialogTitle')" @close="showHelp = false">
+    <ImgFileHelpDialog />
+  </HelpDialog>
 </template>
 
 <style scoped lang="less">
@@ -304,6 +324,31 @@ onUnmounted(() => {
     &:active {
       border-color: #2d5de0;
       background: rgba(74, 124, 255, 0.18);
+    }
+  }
+
+  &__help {
+    all: unset;
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #f3f4f6;
+    color: #6b7280;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+    transition: background 0.15s, color 0.15s;
+
+    &:hover {
+      background: #dbeafe;
+      color: #2563eb;
     }
   }
 }

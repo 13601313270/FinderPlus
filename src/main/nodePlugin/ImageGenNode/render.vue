@@ -8,6 +8,8 @@ import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
 import { messages } from './i18n'
 import GearIcon from '@renderer/components/icons/GearIcon.vue'
+import HelpDialog from '@renderer/components/HelpDialog.vue'
+import ImageGenHelpDialog from './ImageGenHelpDialog.vue'
 
 // 卡片头部标题走插件 manifest 的多语言 title，未配当前语言时由 resolveNodeTitle 兜底
 const nodeTitle = useNodeTitle(ImageGenNode.TYPE)
@@ -28,6 +30,9 @@ const { config, hasKey, openSettings } = useImageSettings()
 
 const node = shallowRef<ImageGenNode | undefined>(undefined)
 const status = ref<'idle' | 'loading' | 'done' | 'error'>('idle')
+
+// 帮助浮层开关（弹窗壳由 HelpDialog 负责）
+const showHelp = ref(false)
 const errorMessage = ref('')
 const promptConnected = ref(false)
 const sizeConnected = ref(false)
@@ -125,16 +130,25 @@ function onGenClick(): void {
   <div class="node">
     <div class="node__header" @pointerdown="startDrag">
       <span class="node__handle" :title="t('dragHint')">{{ nodeTitle }}</span>
-      <button
-        v-if="node"
-        class="node__gear"
-        type="button"
-        :title="hasKey() ? t('gearConfigured') : t('gearConfigure')"
-        @pointerdown.stop
-        @click.stop="onGearClick"
-      >
-        <GearIcon />
-      </button>
+      <div class="node__header-actions">
+        <button
+          v-if="node"
+          class="node__gear"
+          type="button"
+          :title="hasKey() ? t('gearConfigured') : t('gearConfigure')"
+          @pointerdown.stop
+          @click.stop="onGearClick"
+        >
+          <GearIcon />
+        </button>
+        <button
+          class="node__help"
+          type="button"
+          :title="t('helpTitle')"
+          @pointerdown.stop
+          @click.stop="showHelp = true"
+        >?</button>
+      </div>
     </div>
 
     <!-- 预览区 -->
@@ -186,6 +200,11 @@ function onGenClick(): void {
       </button>
     </div>
   </div>
+
+  <!-- 帮助弹窗 -->
+  <HelpDialog :visible="showHelp" :title="t('helpDialogTitle')" @close="showHelp = false">
+    <ImageGenHelpDialog />
+  </HelpDialog>
 </template>
 
 <style scoped lang="less">
@@ -221,6 +240,36 @@ function onGenClick(): void {
     font-size: 12px;
     color: @color-text-weak;
     padding: 2px 0;
+  }
+
+  // 右侧按钮组：齿轮 + 帮助，靠右对齐（head 已 space-between，auto 双保险）
+  &__header-actions {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    margin-left: auto;
+  }
+
+  &__help {
+    all: unset;
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #f3f4f6;
+    color: #6b7280;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+    transition: background 0.15s, color 0.15s;
+
+    &:hover {
+      background: #dbeafe;
+      color: #2563eb;
+    }
   }
 
   &__gear {

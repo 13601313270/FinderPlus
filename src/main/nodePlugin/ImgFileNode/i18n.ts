@@ -16,5 +16,27 @@ export const messages = {
   resizeHint: {
     zh: '拖拽调整预览大小（保持原图比例）',
     en: 'Drag to resize the preview (keeps image ratio)'
+  },
+  helpTitle: {
+    zh: '使用说明',
+    en: 'Help',
+    ja: '使い方',
+    ko: '사용 설명',
+    es: 'Ayuda',
+    ar: 'تعليمات الاستخدام',
+    fr: 'Aide',
+    pt: 'Ajuda',
+    ru: 'Справка'
+  },
+  helpDialogTitle: {
+    zh: '图片文件节点使用说明',
+    en: 'Image file node help',
+    ja: '画像ファイルノードの使い方',
+    ko: '이미지 파일 노드 사용 설명',
+    es: 'Ayuda del nodo Archivo de imagen',
+    ar: 'تعليمات عقدة ملف الصورة',
+    fr: 'Aide du nœud Fichier image',
+    pt: 'Ajuda do nó Ficheiro de imagem',
+    ru: 'Справка по узлу «Файл изображения»'
   }
 } satisfies Record<string, LocalizedText>

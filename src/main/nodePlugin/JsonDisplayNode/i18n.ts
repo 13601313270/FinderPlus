@@ -34,5 +34,13 @@ export const messages = {
   expand: {
     zh: '展开',
     en: 'Expand'
+  },
+  helpTitle: {
+    zh: '使用说明',
+    en: 'Help'
+  },
+  helpDialogTitle: {
+    zh: 'JSON 展示节点使用说明',
+    en: 'JSON Display node help'
   }
 } satisfies Record<string, LocalizedText>

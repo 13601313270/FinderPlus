@@ -23,7 +23,7 @@ export class BoolInputNode extends Node {
     super(id)
     this.addOutput(this.boolOutput)
     // 内容区硬约束：手柄 + 开关 + padding ≈ 76px 高，宽 220px
-    this.setBox(100, 76)
+    this.setBox(120, 76)
   }
 
   /** 拖入文件落点命中本节点时被调用；本节点不接收文件，返回 false */

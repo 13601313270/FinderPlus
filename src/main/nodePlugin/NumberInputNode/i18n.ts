@@ -14,5 +14,27 @@ export const messages = {
   placeholder: {
     zh: '输入数字…',
     en: 'Enter a number…'
+  },
+  helpTitle: {
+    zh: '使用说明',
+    en: 'Help',
+    ja: 'ヘルプ',
+    ko: '도움말',
+    es: 'Ayuda',
+    ar: 'مساعدة',
+    fr: 'Aide',
+    pt: 'Ajuda',
+    ru: 'Справка'
+  },
+  helpDialogTitle: {
+    zh: '数字输入节点使用说明',
+    en: 'Number Input node help',
+    ja: '数値入力ノードの使い方',
+    ko: '숫자 입력 노드 사용 방법',
+    es: 'Ayuda del nodo Entrada numérica',
+    ar: 'مساعدة عقدة إدخال الأرقام',
+    fr: 'Aide du nœud Entrée numérique',
+    pt: 'Ajuda do nó Entrada numérica',
+    ru: 'Справка по узлу «Числовой ввод»'
   }
 } satisfies Record<string, LocalizedText>

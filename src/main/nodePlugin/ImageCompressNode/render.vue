@@ -8,6 +8,8 @@ import { useNodePosition } from '@renderer/composables/useNodePosition'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
 import { messages } from './i18n'
+import HelpDialog from '@renderer/components/HelpDialog.vue'
+import ImageCompressHelpDialog from './ImageCompressHelpDialog.vue'
 
 // 卡片头部标题走插件 manifest 的多语言 title，未配当前语言时由 resolveNodeTitle 兜底
 const nodeTitle = useNodeTitle(ImageCompressNode.TYPE)
@@ -24,6 +26,9 @@ const node = computed(() => {
 
 // —— 拖拽：压缩节点自身也参与画布移动 ——
 const { startDrag } = useNodePosition(() => node.value)
+
+// —— 帮助浮层开关（弹窗壳由 HelpDialog 负责） ——
+const showHelp = ref(false)
 
 // —— JPEG 输出质量（固定策略，最小实现；后续可做成节点 UI 参数） ——
 const JPEG_QUALITY = 0.85
@@ -262,16 +267,25 @@ onUnmounted(() => {
     <!-- 头部类型标签 + 导出格式选择（与图片预览节点区分） -->
     <div class="compress-card__header">
       <span class="compress-card__title">{{ nodeTitle }}</span>
-      <select
-        class="compress-card__format"
-        :value="exportFormat"
-        :title="t('formatHint')"
-        @pointerdown.stop
-        @change="onFormatChange"
-      >
-        <option value="jpg">jpg</option>
-        <option value="png">png</option>
-      </select>
+      <div class="compress-card__header-actions">
+        <select
+          class="compress-card__format"
+          :value="exportFormat"
+          :title="t('formatHint')"
+          @pointerdown.stop
+          @change="onFormatChange"
+        >
+          <option value="jpg">jpg</option>
+          <option value="png">png</option>
+        </select>
+        <button
+          class="compress-card__help"
+          type="button"
+          :title="t('helpTitle')"
+          @pointerdown.stop
+          @click.stop="showHelp = true"
+        >?</button>
+      </div>
     </div>
 
     <!-- 压缩结果预览区 -->
@@ -314,6 +328,11 @@ onUnmounted(() => {
       <span v-else class="compress-card__hint">{{ t('hint') }}</span>
     </div>
   </div>
+
+  <!-- 帮助弹窗 -->
+  <HelpDialog :visible="showHelp" :title="t('helpDialogTitle')" @close="showHelp = false">
+    <ImageCompressHelpDialog />
+  </HelpDialog>
 </template>
 
 <style scoped lang="less">
@@ -344,6 +363,37 @@ onUnmounted(() => {
     padding-bottom: 2px;
     border-bottom: 1px dashed #d5d9e0;
     overflow: hidden;
+  }
+
+  // 头部右侧操作区：导出格式下拉 + 帮助按钮
+  &__header-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+
+  // 帮助按钮沿用其他节点的灰底圆问号外观
+  &__help {
+    all: unset;
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #f3f4f6;
+    color: #6b7280;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+    transition: background 0.15s, color 0.15s;
+
+    &:hover {
+      background: #dbeafe;
+      color: #2563eb;
+    }
   }
 
   &__title {

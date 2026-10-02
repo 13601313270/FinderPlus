@@ -8,14 +8,19 @@ import { useNodePosition } from '@renderer/composables/useNodePosition'
 import { viewport } from '@renderer/canvas/viewport'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
+import HelpDialog from '@renderer/components/HelpDialog.vue'
 import { FolderNode } from './node'
 import { messages } from './i18n'
+import FolderHelpDialog from './FolderHelpDialog.vue'
 
 // 卡片头部标题走插件 manifest 的多语言 title，未配当前语言时由 resolveNodeTitle 兜底
 const nodeTitle = useNodeTitle(FolderNode.TYPE)
 
 // 卡片内文案走节点本地的 i18n.ts（放在节点文件夹里，便于插件化替换），跟随界面语言
 const t = useLocalizedMessages(messages)
+
+// 帮助浮层开关（弹窗壳由 HelpDialog 负责）
+const showHelp = ref(false)
 
 const props = defineProps<{ id: string }>()
 
@@ -95,6 +100,13 @@ onUnmounted(() => {
          不再把 startDrag 绑在整个 .folder 上——那样点在子节点上会冒泡同时拖起文件夹和子节点。 -->
     <div class="folder__bar" @pointerdown="startDrag">
       <span class="folder__bar__text">{{ nodeTitle }}</span>
+      <button
+        class="folder__help"
+        type="button"
+        :title="t('helpTitle')"
+        @pointerdown.stop
+        @click.stop="showHelp = true"
+      >?</button>
     </div>
 
     <!-- 内容区底色：子节点渲染在此之上（嵌套 NodeShell，相对坐标 → 世界坐标正确） -->
@@ -113,6 +125,11 @@ onUnmounted(() => {
     <!-- 东南角 resize 手柄 -->
     <div class="folder__resize" @pointerdown.stop="startResize" :title="t('resizeHint')" />
   </div>
+
+  <!-- 帮助弹窗 -->
+  <HelpDialog :visible="showHelp" :title="t('helpDialogTitle')" @close="showHelp = false">
+    <FolderHelpDialog />
+  </HelpDialog>
 </template>
 
 <style scoped lang="less">
@@ -137,6 +154,7 @@ onUnmounted(() => {
     display: flex;
     align-items: center;
     padding-left: 10px;
+    padding-right: 8px;
     z-index: 2;
     cursor: grab; // 只有这根横栏能拖着整个文件夹移动
     background: rgba(122, 160, 255, 0.18); // 比主体背景略深，做出横条质感
@@ -152,6 +170,31 @@ onUnmounted(() => {
     font-size: 12px;
     font-weight: 600;
     color: #3d6ce0;
+  }
+
+  // 帮助按钮沿用其余节点的灰底圆问号外观（margin-left:auto 推到横栏最右）
+  &__help {
+    all: unset;
+    cursor: pointer;
+    margin-left: auto;
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #f3f4f6;
+    color: #6b7280;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+    transition: background 0.15s, color 0.15s;
+
+    &:hover {
+      background: #dbeafe;
+      color: #2563eb;
+    }
   }
 
   &__surface {

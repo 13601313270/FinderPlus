@@ -31,5 +31,13 @@ export const messages = {
   nodeMissing: { zh: '节点不存在', en: 'Node not found' },
   promptPlaceholder: { zh: '输入 prompt...', en: 'Enter prompt...' },
   autoCall: { zh: '自动调用', en: 'Auto-call' },
-  send: { zh: '发送', en: 'Send' }
+  send: { zh: '发送', en: 'Send' },
+  helpTitle: {
+    zh: '使用说明',
+    en: 'Help'
+  },
+  helpDialogTitle: {
+    zh: '大模型节点使用说明',
+    en: 'LLM node help'
+  }
 } satisfies Record<string, LocalizedText>

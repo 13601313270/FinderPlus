@@ -6,7 +6,8 @@ export const manifest: NodePluginManifest = {
   type: ImageQualityNode.TYPE,
   nodeClass: ImageQualityNode,
   title: { zh: '图片质量', en: 'Image Quality' },
-  render
+  render,
+  help: () => import('./ImageQualityHelpDialog.vue')
 }
 
 export default manifest

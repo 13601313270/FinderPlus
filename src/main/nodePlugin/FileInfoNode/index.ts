@@ -6,7 +6,8 @@ export const manifest: NodePluginManifest = {
   type: FileInfoNode.TYPE,
   nodeClass: FileInfoNode,
   title: { zh: '文件信息', en: 'File Info' },
-  render
+  render,
+  help: () => import('./FileInfoHelpDialog.vue')
 }
 
 export default manifest

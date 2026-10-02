@@ -5,7 +5,9 @@ import render from './render.vue'
 export const manifest: NodePluginManifest = {
   type: ImgFileNode.TYPE,
   nodeClass: ImgFileNode,
-  render
+  title: { zh: '图片文件', en: 'Image file' },
+  render,
+  help: () => import('./ImgFileHelpDialog.vue')
 }
 
 export default manifest

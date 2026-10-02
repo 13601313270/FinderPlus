@@ -50,5 +50,27 @@ export const messages = {
   errorWasm: {
     zh: '压缩失败：wasm 初始化或编码出错',
     en: 'Compression failed: wasm init or encoding error'
+  },
+  helpTitle: {
+    zh: '使用说明',
+    en: 'Help',
+    ja: '使い方',
+    ko: '사용 안내',
+    es: 'Ayuda',
+    ar: 'تعليمات',
+    fr: 'Aide',
+    pt: 'Ajuda',
+    ru: 'Справка'
+  },
+  helpDialogTitle: {
+    zh: '图片质量节点使用说明',
+    en: 'Image Quality node help',
+    ja: '画像品質ノードの使い方',
+    ko: '이미지 품질 노드 사용 안내',
+    es: 'Ayuda del nodo Calidad de imagen',
+    ar: 'تعليمات عقدة جودة الصورة',
+    fr: 'Aide du nœud Qualité d’image',
+    pt: 'Ajuda do nó Qualidade de imagem',
+    ru: 'Справка по узлу «Качество изображения»'
   }
 } satisfies Record<string, LocalizedText>

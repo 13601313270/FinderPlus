@@ -33,5 +33,27 @@ export const messages = {
   sendHint: { zh: '发送到下游节点', en: 'Send to downstream node' },
   autoSend: { zh: '自动发送', en: 'Auto-send' },
   send: { zh: '发送', en: 'Send' },
-  multiline: { zh: '多行输入', en: 'Multiline input' }
+  multiline: { zh: '多行输入', en: 'Multiline input' },
+  helpTitle: {
+    zh: '使用说明',
+    en: 'Help',
+    ja: '使い方',
+    ko: '사용 설명',
+    es: 'Ayuda',
+    ar: 'تعليمات',
+    fr: 'Aide',
+    pt: 'Ajuda',
+    ru: 'Справка'
+  },
+  helpDialogTitle: {
+    zh: '文本输入节点使用说明',
+    en: 'Text Input node help',
+    ja: 'テキスト入力ノードの使い方',
+    ko: '텍스트 입력 노드 사용 설명',
+    es: 'Ayuda del nodo Entrada de texto',
+    ar: 'تعليمات عقدة إدخال النص',
+    fr: 'Aide du nœud Saisie de texte',
+    pt: 'Ajuda do nó Entrada de texto',
+    ru: 'Справка по узлу «Ввод текста»'
+  }
 } satisfies Record<string, LocalizedText>

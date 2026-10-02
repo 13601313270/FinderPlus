@@ -18,5 +18,27 @@ export const messages = {
   clickToClose: {
     zh: '点击关闭',
     en: 'Click to turn off'
+  },
+  helpTitle: {
+    zh: '使用说明',
+    en: 'Help',
+    ja: '使い方',
+    ko: '사용 안내',
+    es: 'Ayuda',
+    ar: 'مساعدة',
+    fr: 'Aide',
+    pt: 'Ajuda',
+    ru: 'Справка'
+  },
+  helpDialogTitle: {
+    zh: '布尔输入节点使用说明',
+    en: 'Boolean Input node help',
+    ja: 'ブール入力ノードの使い方',
+    ko: '불리언 입력 노드 사용 안내',
+    es: 'Ayuda del nodo Entrada booleana',
+    ar: 'مساعدة عقدة الإدخال المنطقي',
+    fr: 'Aide du nœud Entrée booléenne',
+    pt: 'Ajuda do nó Entrada booleana',
+    ru: 'Справка по узлу «Логический ввод»'
   }
 } satisfies Record<string, LocalizedText>

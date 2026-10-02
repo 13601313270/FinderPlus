@@ -22,5 +22,27 @@ export const messages = {
   resizeHint: {
     zh: '拖拽调整节点大小',
     en: 'Drag to resize the node'
+  },
+  helpTitle: {
+    zh: '使用说明',
+    en: 'Help',
+    ja: 'ヘルプ',
+    ko: '도움말',
+    es: 'Ayuda',
+    ar: 'مساعدة',
+    fr: 'Aide',
+    pt: 'Ajuda',
+    ru: 'Справка'
+  },
+  helpDialogTitle: {
+    zh: '文本展示节点使用说明',
+    en: 'Text Display node help',
+    ja: 'テキスト表示ノードの使い方',
+    ko: '텍스트 표시 노드 도움말',
+    es: 'Ayuda del nodo Mostrar texto',
+    ar: 'مساعدة عقدة عرض النص',
+    fr: 'Aide du nœud Affichage texte',
+    pt: 'Ajuda do nó Exibir texto',
+    ru: 'Справка по узлу «Отображение текста»'
   }
 } satisfies Record<string, LocalizedText>

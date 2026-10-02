@@ -9,12 +9,17 @@ import { useNodePosition } from '@renderer/composables/useNodePosition'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
 import { messages } from './i18n'
+import HelpDialog from '@renderer/components/HelpDialog.vue'
+import ImageQualityHelpDialog from './ImageQualityHelpDialog.vue'
 
 // 卡片头部标题走插件 manifest 的多语言 title，未配当前语言时由 resolveNodeTitle 兜底
 const nodeTitle = useNodeTitle(ImageQualityNode.TYPE)
 
 // 卡片内文案走节点本地的 i18n.ts（放在节点文件夹里，便于插件化替换），跟随界面语言
 const t = useLocalizedMessages(messages)
+
+// 帮助浮层开关（弹窗壳由 HelpDialog 负责）
+const showHelp = ref(false)
 
 const props = defineProps<{ id: string }>()
 
@@ -266,14 +271,17 @@ onUnmounted(() => {
 
 <template>
   <div class="quality-card" @pointerdown="startDrag" :title="t('dragHint')">
-    <!-- 头部类型标签 + 导出格式选择 -->
+    <!-- 头部类型标签 + 导出格式选择 + 帮助 -->
     <div class="quality-card__header">
       <span class="quality-card__title">{{ nodeTitle }}</span>
-      <select class="quality-card__format" :value="exportFormat" :title="t('formatHint')"
-        @pointerdown.stop @change="onFormatChange">
-        <option value="jpeg">jpeg</option>
-        <option value="png">png</option>
-      </select>
+      <div class="quality-card__header-actions">
+        <select class="quality-card__format" :value="exportFormat" :title="t('formatHint')"
+          @pointerdown.stop @change="onFormatChange">
+          <option value="jpeg">jpeg</option>
+          <option value="png">png</option>
+        </select>
+        <button class="quality-card__help" type="button" :title="t('helpTitle')" @pointerdown.stop @click.stop="showHelp = true">?</button>
+      </div>
     </div>
 
     <!-- 压缩结果预览区 -->
@@ -315,6 +323,11 @@ onUnmounted(() => {
       </button>
     </div>
   </div>
+
+  <!-- 帮助弹窗 -->
+  <HelpDialog :visible="showHelp" :title="t('helpDialogTitle')" @close="showHelp = false">
+    <ImageQualityHelpDialog />
+  </HelpDialog>
 </template>
 
 <style scoped lang="less">
@@ -357,6 +370,38 @@ onUnmounted(() => {
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
+  }
+
+  // 头部右侧：导出格式下拉 + 帮助按钮
+  &__header-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+
+  // 帮助按钮沿用 code 节点的灰底圆问号外观
+  &__help {
+    all: unset;
+    flex-shrink: 0;
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #f3f4f6;
+    color: #6b7280;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+    transition: background 0.15s, color 0.15s;
+
+    &:hover {
+      background: #dbeafe;
+      color: #2563eb;
+    }
   }
 
   // 导出格式下拉：贴合卡片风格的小尺寸 select

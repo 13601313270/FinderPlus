@@ -34,5 +34,27 @@ export const messages = {
   reject: {
     zh: '拒绝',
     en: 'Reject'
+  },
+  helpTitle: {
+    zh: '使用说明',
+    en: 'Help',
+    ja: '使い方',
+    ko: '사용 설명',
+    es: 'Ayuda',
+    ar: 'مساعدة',
+    fr: 'Aide',
+    pt: 'Ajuda',
+    ru: 'Справка'
+  },
+  helpDialogTitle: {
+    zh: '人工审核节点使用说明',
+    en: 'Human Review node help',
+    ja: '人によるレビューノードの使い方',
+    ko: '인간 검토 노드 사용 설명',
+    es: 'Ayuda del nodo Revisión humana',
+    ar: 'مساعدة عقدة المراجعة البشرية',
+    fr: 'Aide du nœud Révision humaine',
+    pt: 'Ajuda do nó Revisão humana',
+    ru: 'Справка по узлу «Ручная проверка»'
   }
 } satisfies Record<string, LocalizedText>

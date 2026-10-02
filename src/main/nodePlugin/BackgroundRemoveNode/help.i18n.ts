@@ -1,0 +1,218 @@
+import type { LocalizedText } from '../../../shared/language'
+
+/**
+ * BackgroundRemove 节点帮助文档（BackgroundRemoveHelpDialog）的全部文案，9 种语言全配。
+ *
+ * 与节点自身的 i18n.ts 分开：卡片短文案变化频繁，帮助文档整篇体量大、改动少。
+ * 约定：带行内 <code> / <b> 的句子，值里直接写 HTML，模板用 v-html 渲染；
+ * 纯文字句子用 {{ }} 插值。
+ */
+export const helpMessages = {
+  // —— 这是什么 ——
+  whatTitle: {
+    zh: '这是什么？',
+    en: 'What is this?',
+    ja: 'これは何？',
+    ko: '이것은 무엇인가요?',
+    es: '¿Qué es esto?',
+    ar: 'ما هذا؟',
+    fr: 'Qu’est-ce que c’est ?',
+    pt: 'O que é isto?',
+    ru: 'Что это?'
+  },
+  whatBody: {
+    zh: '背景移除节点接收一张图片，在本地去除背景后输出透明 PNG，结果从右侧 <code>image</code> 端口交给下游节点。抠图由 <code>@imgly/background-removal</code> 在应用内完成，图片不会上传到服务器。',
+    en: 'The Background Remove node takes an image, removes its background locally, and outputs a transparent PNG to downstream nodes from the <code>image</code> port on the right. Removal is done inside the app by <code>@imgly/background-removal</code>; images are never uploaded to a server.',
+    ja: '背景除去ノードは画像を受け取り、ローカルで背景を除去して透過 PNG を出力し、右側の <code>image</code> ポートから下流ノードへ渡します。除去は <code>@imgly/background-removal</code> がアプリ内で実行し、画像がサーバーへ送信されることはありません。',
+    ko: '배경 제거 노드는 이미지를 받아 로컬에서 배경을 제거한 뒤 투명 PNG를 출력하고, 오른쪽 <code>image</code> 포트에서 하위 노드로 전달합니다. 제거는 <code>@imgly/background-removal</code>가 앱 내에서 수행하며, 이미지는 서버로 전송되지 않습니다.',
+    es: 'El nodo Quitar fondo toma una imagen, elimina su fondo localmente y emite un PNG transparente a los nodos posteriores desde el puerto <code>image</code> de la derecha. La eliminación la realiza <code>@imgly/background-removal</code> dentro de la app; las imágenes nunca se suben a un servidor.',
+    ar: 'تستقبل عقدة إزالة الخلفية صورةً، وتزيل خلفيتها محليًا، ثم تُخرج صورة PNG شفافة إلى العقد اللاحقة من منفذ <code>image</code> على اليمين. تتم الإزالة داخل التطبيق بواسطة <code>@imgly/background-removal</code>، ولا تُرفع الصور إلى أي خادم.',
+    fr: 'Le nœud Suppression d’arrière-plan prend une image, supprime son arrière-plan localement et envoie un PNG transparent aux nœuds en aval depuis le port <code>image</code> à droite. La suppression est effectuée dans l’application par <code>@imgly/background-removal</code> ; les images ne sont jamais envoyées à un serveur.',
+    pt: 'O nó Remover fundo recebe uma imagem, remove o fundo localmente e envia um PNG transparente aos nós seguintes pelo porto <code>image</code> à direita. A remoção é feita dentro do app por <code>@imgly/background-removal</code>; as imagens nunca são enviadas a um servidor.',
+    ru: 'Узел «Удаление фона» принимает изображение, локально удаляет фон и выводит прозрачный PNG последующим узлам из порта <code>image</code> справа. Удаление выполняет <code>@imgly/background-removal</code> внутри приложения; изображения не отправляются на сервер.'
+  },
+
+  // —— 端口 ——
+  portsTitle: {
+    zh: '端口',
+    en: 'Ports',
+    ja: 'ポート',
+    ko: '포트',
+    es: 'Puertos',
+    ar: 'المنافذ',
+    fr: 'Ports',
+    pt: 'Portas',
+    ru: 'Порты'
+  },
+  portsLi1: {
+    zh: '左侧 <code>图片</code> 输入端口接收图片（<code>ImgFileValue</code>）；上游图片变化时会自动重新抠图',
+    en: 'The <code>Image</code> input port on the left accepts an image (<code>ImgFileValue</code>); when the upstream image changes, removal runs again automatically',
+    ja: '左側の <code>画像</code> 入力ポートは画像（<code>ImgFileValue</code>）を受け取ります。上流の画像が変わると自動で再除去されます',
+    ko: '왼쪽 <code>이미지</code> 입력 포트는 이미지(<code>ImgFileValue</code>)를 받습니다. 상위 이미지가 바뀌면 자동으로 다시 제거합니다',
+    es: 'El puerto de entrada <code>Imagen</code> de la izquierda acepta una imagen (<code>ImgFileValue</code>); cuando cambia la imagen en curso, la eliminación se repite sola',
+    ar: 'يقبل منفذ الإدخال <code>صورة</code> على اليسار صورةً (<code>ImgFileValue</code>)؛ وعند تغيّر الصورة من المنبع تُعاد الإزالة تلقائيًا',
+    fr: 'Le port d’entrée <code>Image</code> à gauche accepte une image (<code>ImgFileValue</code>) ; lorsque l’image en amont change, la suppression se relance automatiquement',
+    pt: 'O porto de entrada <code>Imagem</code> à esquerda aceita uma imagem (<code>ImgFileValue</code>); quando a imagem de origem muda, a remoção é refeita sozinha',
+    ru: 'Входной порт <code>Изображение</code> слева принимает изображение (<code>ImgFileValue</code>); при изменении исходного изображения удаление запускается заново автоматически'
+  },
+  portsLi2: {
+    zh: '右侧 <code>去背景图</code> 输出端口输出透明 <b>PNG</b>（<code>ImgFileValue</code>），文件名在原名后加 <code>-nobg</code>',
+    en: 'The <code>Background Removed</code> output port on the right outputs a transparent <b>PNG</b> (<code>ImgFileValue</code>), with <code>-nobg</code> appended to the file name',
+    ja: '右側の <code>背景除去画像</code> 出力ポートは透過 <b>PNG</b>（<code>ImgFileValue</code>）を出力し、ファイル名に <code>-nobg</code> を付けます',
+    ko: '오른쪽 <code>배경 제거 이미지</code> 출력 포트는 투명 <b>PNG</b>(<code>ImgFileValue</code>)를 출력하며, 파일명에 <code>-nobg</code>를 붙입니다',
+    es: 'El puerto de salida <code>Imagen sin fondo</code> de la derecha emite un <b>PNG</b> transparente (<code>ImgFileValue</code>), añadiendo <code>-nobg</code> al nombre',
+    ar: 'يُخرج منفذ <code>الصورة منزوعة الخلفية</code> على اليمين صورة <b>PNG</b> شفافة (<code>ImgFileValue</code>) مع إضافة <code>-nobg</code> إلى اسم الملف',
+    fr: 'Le port de sortie <code>Image sans fond</code> à droite émet un <b>PNG</b> transparent (<code>ImgFileValue</code>), en ajoutant <code>-nobg</code> au nom',
+    pt: 'O porto de saída <code>Imagem sem fundo</code> à direita emite um <b>PNG</b> transparente (<code>ImgFileValue</code>), acrescentando <code>-nobg</code> ao nome',
+    ru: 'Выходной порт <code>Изображение без фона</code> справа выдаёт прозрачный <b>PNG</b> (<code>ImgFileValue</code>), добавляя <code>-nobg</code> к имени файла'
+  },
+  portsLi3: {
+    zh: '支持两种触发：拖入<b>图片节点</b>（一次性抠图），或端口接线（响应式，上游变化自动重抠）',
+    en: 'Two ways to trigger: drop in an <b>image node</b> (one-off removal) or connect the port (reactive, re-runs when upstream changes)',
+    ja: 'トリガーは2通り：<b>画像ノード</b>をドロップ（一度だけの除去）か、ポート接続（リアクティブ、上流変化で再除去）',
+    ko: '두 가지 트리거: <b>이미지 노드</b>를 끌어다 놓기(1회성 제거) 또는 포트 연결(반응형, 상위 변경 시 재실행)',
+    es: 'Dos formas de iniciarlo: soltar un <b>nodo de imagen</b> (eliminación puntual) o conectar el puerto (reactivo, se repite al cambiar el origen)',
+    ar: 'طريقتان للتشغيل: إسقاط <b>عقدة صورة</b> (إزالة لمرة واحدة) أو توصيل المنفذ (تفاعلي، يُعاد عند تغيّر المنبع)',
+    fr: 'Deux déclencheurs : déposer un <b>nœud image</b> (suppression ponctuelle) ou connecter le port (réactif, relancé au changement en amont)',
+    pt: 'Duas formas de disparar: soltar um <b>nó de imagem</b> (remoção pontual) ou conectar o porto (reativo, refaz quando a origem muda)',
+    ru: 'Два способа запуска: перетащить <b>узел изображения</b> (разовое удаление) или подключить порт (реактивно, перезапуск при изменении источника)'
+  },
+
+  // —— 处理与进度 ——
+  runTitle: {
+    zh: '处理与进度',
+    en: 'Processing & progress',
+    ja: '処理と進捗',
+    ko: '처리와 진행률',
+    es: 'Proceso y progreso',
+    ar: 'المعالجة والتقدم',
+    fr: 'Traitement et progression',
+    pt: 'Processamento e progresso',
+    ru: 'Обработка и прогресс'
+  },
+  runLi1: {
+    zh: '拖入图片节点或端口值变化后自动开始抠图，结果提交到输出端口，下游节点随即刷新',
+    en: 'Removal starts automatically after dropping an image node or when the port value changes; the result is committed to the output port and downstream nodes refresh right away',
+    ja: '画像ノードのドロップやポート値の変化で自動的に除去が始まり、結果を出力ポートに commit して下流ノードがすぐ更新されます',
+    ko: '이미지 노드를 끌어다 놓거나 포트 값이 바뀌면 자동으로 제거가 시작되고, 결과가 출력 포트에 commit되어 하위 노드가 즉시 갱신됩니다',
+    es: 'La eliminación comienza sola al soltar un nodo de imagen o al cambiar el valor del puerto; el resultado se confirma en el puerto de salida y los nodos posteriores se actualizan al momento',
+    ar: 'تبدأ الإزالة تلقائيًا عند إسقاط عقدة صورة أو تغيّر قيمة المنفذ، وتُثبَّت النتيجة في منفذ الإخراج فتتحدّث العقد اللاحقة فورًا',
+    fr: 'La suppression démarre automatiquement après le dépôt d’un nœud image ou un changement de valeur du port ; le résultat est validé sur le port de sortie et les nœuds en aval se rafraîchissent aussitôt',
+    pt: 'A remoção começa sozinha ao soltar um nó de imagem ou quando o valor do porto muda; o resultado é confirmado no porto de saída e os nós seguintes atualizam-se logo',
+    ru: 'Удаление запускается автоматически после перетаскивания узла изображения или изменения значения порта; результат отправляется в выходной порт, и последующие узлы сразу обновляются'
+  },
+  runLi2: {
+    zh: '处理期间预览区显示进度（<code>处理中 {pct}%</code>），完成后显示「背景已去除」',
+    en: 'While processing, the preview area shows progress (<code>Processing {pct}%</code>); when done it shows “Background removed”',
+    ja: '処理中はプレビュー領域に進捗（<code>処理中 {pct}%</code>）が表示され、完了すると「背景を除去しました」と表示されます',
+    ko: '처리하는 동안 미리보기 영역에 진행률(<code>처리 중 {pct}%</code>)이 표시되고, 완료되면 “배경 제거됨”이 표시됩니다',
+    es: 'Durante el proceso, la vista previa muestra el progreso (<code>Procesando {pct}%</code>); al terminar muestra «Fondo eliminado»',
+    ar: 'أثناء المعالجة تعرض منطقة المعاينة التقدّم (<code>جارٍ المعالجة {pct}%</code>)، وعند الانتهاء تظهر «تمت إزالة الخلفية»',
+    fr: 'Pendant le traitement, la zone d’aperçu affiche la progression (<code>Traitement {pct}%</code>) ; une fois terminé, « Arrière-plan supprimé » s’affiche',
+    pt: 'Durante o processamento, a área de pré-visualização mostra o progresso (<code>Processando {pct}%</code>); ao concluir, mostra «Fundo removido»',
+    ru: 'Во время обработки в области предпросмотра показывается прогресс (<code>Обработка {pct}%</code>), а по завершении — «Фон удалён»'
+  },
+  runLi3: {
+    zh: '源图未变化时会<b>跳过</b>重复抠图（按文件指纹去重）',
+    en: 'If the source image is unchanged, repeated removal is <b>skipped</b> (deduplicated by file fingerprint)',
+    ja: '元画像が変わっていない場合は重複した除去を<b>スキップ</b>します（ファイルのフィンガープリントで重複排除）',
+    ko: '원본 이미지가 바뀌지 않으면 중복 제거를 <b>건너뜁니다</b>(파일 지문으로 중복 제거)',
+    es: 'Si la imagen de origen no cambia, se <b>omite</b> la eliminación repetida (deduplicación por huella del archivo)',
+    ar: 'إذا لم تتغيّر الصورة الأصلية يتم <b>تخطي</b> الإزالة المكررة (بإزالة التكرار عبر بصمة الملف)',
+    fr: 'Si l’image source n’a pas changé, la suppression répétée est <b>ignorée</b> (déduplication par empreinte du fichier)',
+    pt: 'Se a imagem de origem não mudar, a remoção repetida é <b>ignorada</b> (deduplicação por impressão digital do arquivo)',
+    ru: 'Если исходное изображение не изменилось, повторное удаление <b>пропускается</b> (дедупликация по отпечатку файла)'
+  },
+  runLi4: {
+    zh: '处理失败时底部显示「处理失败」，可重新拖入图片节点或改动上游图片后再试',
+    en: 'On failure, the footer shows “Processing failed”; drop an image node again or change the upstream image and retry',
+    ja: '失敗すると下部に「処理に失敗しました」と表示されます。画像ノードを再ドロップするか上流の画像を変えて再試行してください',
+    ko: '실패하면 하단에 “처리 실패”가 표시됩니다. 이미지 노드를 다시 끌어다 놓거나 상위 이미지를 바꿔 다시 시도하세요',
+    es: 'Si falla, el pie muestra «Error de procesamiento»; vuelve a soltar un nodo de imagen o cambia la imagen de origen y reintenta',
+    ar: 'عند الفشل يظهر أسفل البطاقة «فشلت المعالجة»؛ أعد إسقاط عقدة صورة أو غيّر صورة المنبع ثم حاول مجددًا',
+    fr: 'En cas d’échec, le pied affiche « Échec du traitement » ; déposez à nouveau un nœud image ou modifiez l’image en amont puis réessayez',
+    pt: 'Em caso de falha, o rodapé mostra «Falha no processamento»; solte um nó de imagem novamente ou mude a imagem de origem e tente de novo',
+    ru: 'При сбое внизу показывается «Обработка не удалась»; перетащите узел изображения снова или измените исходное изображение и повторите'
+  },
+
+  // —— 结果与输出 ——
+  outputTitle: {
+    zh: '结果与输出',
+    en: 'Result & output',
+    ja: '結果と出力',
+    ko: '결과와 출력',
+    es: 'Resultado y salida',
+    ar: 'النتيجة والإخراج',
+    fr: 'Résultat et sortie',
+    pt: 'Resultado e saída',
+    ru: 'Результат и вывод'
+  },
+  outputLi1: {
+    zh: '抠图结果以透明 <b>PNG</b> 保存在输出端口，仅在内存中，<b>不会自动写入磁盘</b>',
+    en: 'The result is kept as a transparent <b>PNG</b> on the output port, in memory only — it is <b>not written to disk automatically</b>',
+    ja: '除去結果は透過 <b>PNG</b> として出力ポートに保持され、メモリ上のみで<b>ディスクには自動保存されません</b>',
+    ko: '제거 결과는 투명 <b>PNG</b>로 출력 포트에 보관되며 메모리에만 있고 <b>디스크에 자동 저장되지 않습니다</b>',
+    es: 'El resultado se guarda como <b>PNG</b> transparente en el puerto de salida, solo en memoria: <b>no se escribe en disco automáticamente</b>',
+    ar: 'تُحفظ النتيجة كصورة <b>PNG</b> شفافة في منفذ الإخراج، في الذاكرة فقط، و<b>لا تُكتب على القرص تلقائيًا</b>',
+    fr: 'Le résultat est conservé en <b>PNG</b> transparent sur le port de sortie, en mémoire uniquement — il <b>n’est pas écrit sur le disque automatiquement</b>',
+    pt: 'O resultado é mantido como <b>PNG</b> transparente no porto de saída, apenas na memória — <b>não é gravado no disco automaticamente</b>',
+    ru: 'Результат хранится как прозрачный <b>PNG</b> в выходном порту, только в памяти — <b>на диск автоматически не записывается</b>'
+  },
+  outputLi2: {
+    zh: '点「<b>生成图片文件节点</b>」会把结果写成文件，并在本节点附近新建一个图片文件节点',
+    en: 'Click <b>Create image file node</b> to write the result to a file and add an image file node near this node',
+    ja: '「<b>画像ファイルノードを生成</b>」をクリックすると、結果をファイルに書き出し、このノードの近くに画像ファイルノードを作成します',
+    ko: '“<b>이미지 파일 노드 생성</b>”을 클릭하면 결과를 파일로 저장하고 이 노드 근처에 이미지 파일 노드를 만듭니다',
+    es: 'Haz clic en <b>Crear nodo de archivo de imagen</b> para guardar el resultado en un archivo y crear un nodo de imagen cerca de este',
+    ar: 'انقر على «<b>إنشاء عقدة ملف صورة</b>» لكتابة النتيجة في ملف وإنشاء عقدة ملف صورة قرب هذه العقدة',
+    fr: 'Cliquez sur <b>Créer un nœud de fichier image</b> pour écrire le résultat dans un fichier et ajouter un nœud image près de celui-ci',
+    pt: 'Clique em <b>Criar nó de arquivo de imagem</b> para gravar o resultado num arquivo e criar um nó de imagem perto deste',
+    ru: 'Нажмите <b>Создать узел файла изображения</b>, чтобы сохранить результат в файл и добавить узел изображения рядом с этим'
+  },
+
+  // —— 注意事项 ——
+  notesTitle: {
+    zh: '注意事项',
+    en: 'Notes',
+    ja: '注意点',
+    ko: '참고 사항',
+    es: 'Notas',
+    ar: 'ملاحظات',
+    fr: 'Remarques',
+    pt: 'Observações',
+    ru: 'Примечания'
+  },
+  notesLi1: {
+    zh: '拖入图片节点属于<b>一次性</b>操作，之后源节点变化不会自动重抠；需要响应式请改用端口接线',
+    en: 'Dropping an image node is a <b>one-off</b> action; later changes to the source node won’t re-run removal automatically — connect the port instead for reactive behavior',
+    ja: '画像ノードのドロップは<b>一度だけ</b>の操作で、その後は元ノードが変わっても自動では再除去しません。リアクティブにしたい場合はポート接続を使ってください',
+    ko: '이미지 노드 드롭은 <b>1회성</b> 작업이라 이후 원본 노드가 바뀌어도 자동으로 다시 제거하지 않습니다. 반응형이 필요하면 포트 연결을 사용하세요',
+    es: 'Soltar un nodo de imagen es una acción <b>puntual</b>; los cambios posteriores del nodo de origen no vuelven a eliminar solos; para algo reactivo, conecta el puerto',
+    ar: 'إسقاط عقدة صورة إجراء <b>لمرة واحدة</b>؛ ولن تُعاد الإزالة تلقائيًا عند تغيّر العقدة المصدر لاحقًا — استخدم توصيل المنفذ للتفاعل',
+    fr: 'Déposer un nœud image est une action <b>ponctuelle</b> ; les changements ultérieurs du nœud source ne relancent pas la suppression — utilisez le port pour un comportement réactif',
+    pt: 'Soltar um nó de imagem é uma ação <b>pontual</b>; mudanças posteriores no nó de origem não refazem a remoção sozinhas — para algo reativo, use o porto',
+    ru: 'Перетаскивание узла изображения — <b>разовое</b> действие; последующие изменения исходного узла не перезапускают удаление — для реактивности подключайте порт'
+  },
+  notesLi2: {
+    zh: '抠图在应用内<b>本地</b>完成，首次使用需下载模型，耗时较长；处理期间请耐心等待',
+    en: 'Removal runs <b>locally</b> inside the app; the model is downloaded on first use, which can take a while — please wait during processing',
+    ja: '除去はアプリ内で<b>ローカル</b>に実行され、初回はモデルのダウンロードが必要で時間がかかります。処理中はお待ちください',
+    ko: '제거는 앱 내에서 <b>로컬</b>로 수행되며, 처음 사용할 때 모델을 내려받아 시간이 걸릴 수 있습니다. 처리하는 동안 기다려 주세요',
+    es: 'La eliminación se hace <b>localmente</b> dentro de la app; el modelo se descarga en el primer uso y puede tardar: espera durante el proceso',
+    ar: 'تتم الإزالة <b>محليًا</b> داخل التطبيق، ويُنزَّل النموذج عند أول استخدام وقد يستغرق وقتًا؛ يُرجى الانتظار أثناء المعالجة',
+    fr: 'La suppression s’exécute <b>localement</b> dans l’application ; le modèle est téléchargé à la première utilisation, ce qui peut être long — patientez pendant le traitement',
+    pt: 'A remoção é feita <b>localmente</b> dentro do app; o modelo é baixado no primeiro uso e pode demorar — aguarde durante o processamento',
+    ru: 'Удаление выполняется <b>локально</b> в приложении; при первом использовании загружается модель, это может занять время — подождите во время обработки'
+  },
+  notesLi3: {
+    zh: '处理状态与结果<b>不会随画布保存</b>，重新打开画布后需重新拖入图片节点或改动上游触发',
+    en: 'The processing state and result are <b>not saved with the canvas</b>; after reopening, drop an image node again or change the upstream to trigger it',
+    ja: '処理状態と結果は<b>キャンバスに保存されません</b>。再度開いた後は画像ノードを再ドロップするか上流を変えて再実行してください',
+    ko: '처리 상태와 결과는 <b>캔버스와 함께 저장되지 않습니다</b>. 다시 열면 이미지 노드를 다시 끌어다 놓거나 상위를 바꿔 실행하세요',
+    es: 'El estado de proceso y el resultado <b>no se guardan con el lienzo</b>; tras reabrirlo, vuelve a soltar un nodo de imagen o cambia el origen para activarlo',
+    ar: 'لا تُحفظ حالة المعالجة والنتيجة <b>مع اللوحة</b>؛ بعد إعادة فتحها، أعد إسقاط عقدة صورة أو غيّر المنبع للتشغيل',
+    fr: 'L’état de traitement et le résultat <b>ne sont pas enregistrés avec le canevas</b> ; après réouverture, déposez à nouveau un nœud image ou modifiez l’amont',
+    pt: 'O estado de processamento e o resultado <b>não são guardados com a tela</b>; após reabrir, solte um nó de imagem novamente ou mude a origem para disparar',
+    ru: 'Состояние обработки и результат <b>не сохраняются вместе с холстом</b>; после повторного открытия перетащите узел изображения снова или измените источник'
+  }
+} satisfies Record<string, LocalizedText>

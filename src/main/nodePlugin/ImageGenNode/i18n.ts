@@ -54,5 +54,27 @@ export const messages = {
   currentModel: {
     zh: '当前模型：{model}',
     en: 'Current model: {model}'
+  },
+  helpTitle: {
+    zh: '使用说明',
+    en: 'Help',
+    ja: '使い方',
+    ko: '사용 안내',
+    es: 'Ayuda',
+    ar: 'مساعدة',
+    fr: 'Aide',
+    pt: 'Ajuda',
+    ru: 'Справка'
+  },
+  helpDialogTitle: {
+    zh: '图片生成节点使用说明',
+    en: 'Image Generation node help',
+    ja: '画像生成ノードの使い方',
+    ko: '이미지 생성 노드 사용 안내',
+    es: 'Ayuda del nodo de generación de imágenes',
+    ar: 'مساعدة عقدة توليد الصور',
+    fr: 'Aide du nœud de génération d’images',
+    pt: 'Ajuda do nó de geração de imagens',
+    ru: 'Справка по узлу генерации изображений'
   }
 } satisfies Record<string, LocalizedText>

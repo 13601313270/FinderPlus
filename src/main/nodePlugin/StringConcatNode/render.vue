@@ -6,6 +6,8 @@ import { useNodePosition } from '@renderer/composables/useNodePosition'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
 import { messages } from './i18n'
+import HelpDialog from '@renderer/components/HelpDialog.vue'
+import StringConcatHelpDialog from './StringConcatHelpDialog.vue'
 
 /**
  * 字符串拼接节点的渲染组件（只画卡片内容）。
@@ -25,6 +27,9 @@ const nodeTitle = useNodeTitle(() => concatNode.value, '?')
 
 // 卡片内文案走节点本地的 i18n.ts（放在节点文件夹里，便于插件化替换），跟随界面语言
 const t = useLocalizedMessages(messages)
+
+// 帮助浮层开关（弹窗壳由 HelpDialog 负责）
+const showHelp = ref(false)
 
 const templateValue = ref('')
 const resultValue = ref('')
@@ -90,6 +95,13 @@ function onTextareaWheel(e: WheelEvent): void {
   <div class="node">
     <div class="node__header" @pointerdown="startDrag">
       <span class="node__handle" :title="t('dragHint')">{{ nodeTitle }}</span>
+      <button
+        class="node__help"
+        type="button"
+        :title="t('helpTitle')"
+        @pointerdown.stop
+        @click.stop="showHelp = true"
+      >?</button>
     </div>
 
     <textarea
@@ -128,6 +140,11 @@ function onTextareaWheel(e: WheelEvent): void {
 
     <div class="node__result" :title="resultValue">{{ resultValue || t('resultPlaceholder') }}</div>
   </div>
+
+  <!-- 帮助弹窗 -->
+  <HelpDialog :visible="showHelp" :title="t('helpDialogTitle')" @close="showHelp = false">
+    <StringConcatHelpDialog />
+  </HelpDialog>
 </template>
 
 <style scoped lang="less">
@@ -162,6 +179,29 @@ function onTextareaWheel(e: WheelEvent): void {
     font-size: 12px;
     color: @color-text-weak;
     padding: 2px 0;
+  }
+
+  &__help {
+    all: unset;
+    cursor: pointer;
+    margin-left: auto;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #f3f4f6;
+    color: #6b7280;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+    transition: background 0.15s, color 0.15s;
+
+    &:hover {
+      background: #dbeafe;
+      color: #2563eb;
+    }
   }
 
   &__template {

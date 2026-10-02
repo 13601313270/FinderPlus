@@ -7,6 +7,8 @@ import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
 import { messages } from './i18n'
 import { viewport } from '@renderer/canvas/viewport'
+import HelpDialog from '@renderer/components/HelpDialog.vue'
+import JsonDisplayHelpDialog from './JsonDisplayHelpDialog.vue'
 
 const props = defineProps<{ id: string }>()
 
@@ -17,6 +19,9 @@ const nodeTitle = useNodeTitle(() => displayNode.value, '?')
 
 // 卡片内文案走节点本地的 i18n.ts（放在节点文件夹里，便于插件化替换），跟随界面语言
 const t = useLocalizedMessages(messages)
+
+// 帮助浮层开关（弹窗壳由 HelpDialog 负责）
+const showHelp = ref(false)
 
 const parsed = ref<unknown>(undefined)
 const parseError = ref<string | null>(null)
@@ -194,7 +199,15 @@ function formatValue(v: unknown): string {
 
 <template>
   <div class="node">
-    <span class="node__handle" :title="t('dragHint')" @pointerdown="startDrag">{{ nodeTitle }}</span>
+    <div class="node__header">
+      <span class="node__handle" :title="t('dragHint')" @pointerdown="startDrag">{{ nodeTitle }}</span>
+      <button
+        class="node__help"
+        type="button"
+        :title="t('helpTitle')"
+        @click.stop="showHelp = true"
+      >?</button>
+    </div>
 
     <div class="render-body" @wheel="onNodeWheel">
       <!-- 还没接过输入 -->
@@ -220,6 +233,11 @@ function formatValue(v: unknown): string {
       :title="t('resizeHint')"
     />
   </div>
+
+  <!-- 帮助弹窗 -->
+  <HelpDialog :visible="showHelp" :title="t('helpDialogTitle')" @close="showHelp = false">
+    <JsonDisplayHelpDialog />
+  </HelpDialog>
 </template>
 
 <style scoped lang="less">
@@ -238,16 +256,50 @@ function formatValue(v: unknown): string {
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 
+  &__header {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px 22px;
+    border-bottom: 1px dashed #d5d9e0;
+    flex-shrink: 0;
+  }
+
   &__handle {
     cursor: grab;
     user-select: none;
     font-size: 12px;
     color: @color-text-weak;
     text-align: center;
-    padding: 2px 0;
-    border-bottom: 1px dashed #d5d9e0;
 
     &:active { cursor: grabbing; }
+  }
+
+  &__help {
+    all: unset;
+    position: absolute;
+    right: 2px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #f3f4f6;
+    color: #6b7280;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+    transition: background 0.15s, color 0.15s;
+
+    &:hover {
+      background: #dbeafe;
+      color: #2563eb;
+    }
   }
 
   &__resize-handle {

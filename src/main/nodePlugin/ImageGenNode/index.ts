@@ -6,7 +6,8 @@ export const manifest: NodePluginManifest = {
   type: ImageGenNode.TYPE,
   nodeClass: ImageGenNode,
   title: { zh: '图片生成', en: 'Image Generation' },
-  render
+  render,
+  help: () => import('./ImageGenHelpDialog.vue')
 }
 
 export default manifest

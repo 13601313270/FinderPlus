@@ -8,6 +8,8 @@ import { useNodePosition } from '@renderer/composables/useNodePosition'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
 import { messages } from './i18n'
+import HelpDialog from '@renderer/components/HelpDialog.vue'
+import BackgroundRemoveHelpDialog from './BackgroundRemoveHelpDialog.vue'
 import { removeBackground } from '@imgly/background-removal'
 
 // 卡片头部标题走插件 manifest 的多语言 title，未配当前语言时由 resolveNodeTitle 兜底
@@ -25,6 +27,9 @@ const node = computed(() => {
 
 // —— 拖拽：抠图节点自身也参与画布移动 ——
 const { startDrag } = useNodePosition(() => node.value)
+
+// —— 帮助浮层开关（弹窗壳由 HelpDialog 负责）——
+const showHelp = ref(false)
 
 // —— 抠图结果预览（objectURL）；卸载或结果变时 revoke 防泄漏 ——
 const resultUrl = ref<string | null>(null)
@@ -175,7 +180,11 @@ onUnmounted(() => {
   <div class="remove-bg-card" @pointerdown="startDrag"
     :title="t('dragHint')">
     <!-- 头部类型标签 -->
-    <div class="remove-bg-card__header">{{ nodeTitle }}</div>
+    <div class="remove-bg-card__header">
+      <span class="remove-bg-card__header-title">{{ nodeTitle }}</span>
+      <button class="remove-bg-card__help" type="button" :title="t('helpTitle')" @pointerdown.stop
+        @click.stop="showHelp = true">?</button>
+    </div>
 
     <!-- 抠图结果预览区 -->
     <div class="remove-bg-card__image-area">
@@ -217,6 +226,11 @@ onUnmounted(() => {
       </button>
     </div>
   </div>
+
+  <!-- 帮助弹窗 -->
+  <HelpDialog :visible="showHelp" :title="t('helpDialogTitle')" @close="showHelp = false">
+    <BackgroundRemoveHelpDialog />
+  </HelpDialog>
 </template>
 
 <style scoped lang="less">
@@ -240,15 +254,45 @@ onUnmounted(() => {
   &__header {
     flex-shrink: 1;
     min-height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    padding-bottom: 2px;
+    border-bottom: 1px dashed #d5d9e0;
+  }
+
+  &__header-title {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
     font-size: 11px;
     font-weight: 600;
     color: #ff8c42;
     letter-spacing: 0.5px;
-    padding-bottom: 2px;
-    border-bottom: 1px dashed #d5d9e0;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
+  }
+
+  &__help {
+    all: unset;
+    cursor: pointer;
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #f3f4f6;
+    color: #6b7280;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+    transition: background 0.15s, color 0.15s;
+
+    &:hover {
+      background: #dbeafe;
+      color: #2563eb;
+    }
   }
 
   &__image-area {

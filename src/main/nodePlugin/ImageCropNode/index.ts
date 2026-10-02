@@ -6,7 +6,8 @@ export const manifest: NodePluginManifest = {
   type: ImageCropNode.TYPE,
   nodeClass: ImageCropNode,
   title: { zh: '图片裁剪', en: 'Image Crop' },
-  render
+  render,
+  help: () => import('./ImageCropHelpDialog.vue')
 }
 
 export default manifest

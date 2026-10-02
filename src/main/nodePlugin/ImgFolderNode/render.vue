@@ -12,6 +12,8 @@ import { ImgFileNode } from '../ImgFileNode/node'
 import { inferImageMime } from '../ImgFileNode/mime'
 import { ImgFolderNode } from './node'
 import { messages } from './i18n'
+import HelpDialog from '@renderer/components/HelpDialog.vue'
+import ImgFolderHelpDialog from './ImgFolderHelpDialog.vue'
 
 // 卡片头部标题走插件 manifest 的多语言 title，未配当前语言时由 resolveNodeTitle 兜底
 const nodeTitle = useNodeTitle(ImgFolderNode.TYPE)
@@ -29,6 +31,9 @@ const node = computed(() => {
 // 图片文件夹自身是顶级节点：position 即世界坐标，拖动用 startDrag。
 // 子节点不再用 NodeShell 自由摆放——它们以统一尺寸的缩略图网格展示（见下方 thumbs）。
 const { box, startDrag } = useNodePosition(() => node.value)
+
+// 帮助浮层开关（弹窗壳由 HelpDialog 负责）
+const showHelp = ref(false)
 
 // —— 已收养的子节点 / 当前选中项：订阅 node.onChanged 刷新 ——
 const children: Ref<Node[]> = ref([])
@@ -178,6 +183,13 @@ onUnmounted(() => {
     <!-- 顶部横栏：拖动整个文件夹的唯一手柄 -->
     <div class="img-folder__bar" @pointerdown="startDrag">
       <span class="img-folder__bar__text">{{ nodeTitle }}</span>
+      <button
+        class="img-folder__help"
+        type="button"
+        :title="t('helpTitle')"
+        @pointerdown.stop
+        @click.stop="showHelp = true"
+      >?</button>
     </div>
 
     <!-- 内容区：统一尺寸的缩略图网格（超出滚动）。点一格即切换选中；
@@ -203,6 +215,11 @@ onUnmounted(() => {
     <!-- 东南角 resize 手柄 -->
     <div class="img-folder__resize" @pointerdown.stop="startResize" :title="t('resizeHint')" />
   </div>
+
+  <!-- 帮助弹窗 -->
+  <HelpDialog :visible="showHelp" :title="t('helpDialogTitle')" @close="showHelp = false">
+    <ImgFolderHelpDialog />
+  </HelpDialog>
 </template>
 
 <style scoped lang="less">
@@ -224,6 +241,7 @@ onUnmounted(() => {
     display: flex;
     align-items: center;
     padding-left: 10px;
+    padding-right: 8px;
     z-index: 2;
     cursor: grab;
     background: #f7f8fa;
@@ -239,6 +257,31 @@ onUnmounted(() => {
     font-size: 12px;
     font-weight: 600;
     color: @color-text;
+  }
+
+  // 帮助按钮沿用 code 节点的灰底圆问号外观
+  &__help {
+    all: unset;
+    margin-left: auto;
+    flex-shrink: 0;
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #f3f4f6;
+    color: #6b7280;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+    transition: background 0.15s, color 0.15s;
+
+    &:hover {
+      background: #dbeafe;
+      color: #2563eb;
+    }
   }
 
   // 缩略图网格：auto-fill 保证每格等宽等大，内容超出在框内滚动

@@ -8,6 +8,8 @@ import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
 import { messages } from './i18n'
 import GearIcon from '@renderer/components/icons/GearIcon.vue'
+import HelpDialog from '@renderer/components/HelpDialog.vue'
+import TextInputHelpDialog from './TextInputHelpDialog.vue'
 
 /**
  * 文本输入节点的渲染组件（只画卡片内容）。
@@ -40,6 +42,9 @@ const isMultiline = ref(false)
 const textValue = ref('')
 /** 自动发送开关状态（同步自节点） */
 const autoSend = ref(false)
+
+// 帮助浮层开关（弹窗壳由 HelpDialog 负责）
+const showHelp = ref(false)
 
 let offChanged: (() => void) | undefined
 
@@ -176,17 +181,26 @@ function onTextareaWheel(e: WheelEvent): void {
   <div class="node">
     <div class="node__header" @pointerdown="startDrag">
       <span class="node__handle" :title="t('dragHint')">{{ nodeTitle }}</span>
-      <button
-        v-if="inputNode"
-        ref="gearBtn"
-        class="node__gear"
-        type="button"
-        :title="t('nodeSettings')"
-        @pointerdown.stop
-        @click.stop="onGearClick"
-      >
-        <GearIcon />
-      </button>
+      <div class="node__header-actions">
+        <button
+          v-if="inputNode"
+          ref="gearBtn"
+          class="node__gear"
+          type="button"
+          :title="t('nodeSettings')"
+          @pointerdown.stop
+          @click.stop="onGearClick"
+        >
+          <GearIcon />
+        </button>
+        <button
+          class="node__help"
+          type="button"
+          :title="t('helpTitle')"
+          @pointerdown.stop
+          @click.stop="showHelp = true"
+        >?</button>
+      </div>
     </div>
     <textarea
       v-if="isMultiline"
@@ -232,6 +246,11 @@ function onTextareaWheel(e: WheelEvent): void {
       </button>
     </div>
   </div>
+
+  <!-- 帮助弹窗 -->
+  <HelpDialog :visible="showHelp" :title="t('helpDialogTitle')" @close="showHelp = false">
+    <TextInputHelpDialog />
+  </HelpDialog>
 
   <!-- 设置面板：Teleport 到 body，避免被父容器 overflow clip -->
   <Teleport to="body">
@@ -282,6 +301,38 @@ function onTextareaWheel(e: WheelEvent): void {
     font-size: 12px;
     color: @color-text-weak;
     padding: 2px 0;
+  }
+
+  // 右侧按钮组：齿轮 + 帮助，靠右对齐（head 已 space-between，auto 双保险）
+  &__header-actions {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    margin-left: auto;
+  }
+
+  &__help {
+    all: unset;
+    align-self: center;
+    flex-shrink: 0;
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #f3f4f6;
+    color: #6b7280;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+    transition: background 0.15s ease, color 0.15s ease;
+
+    &:hover {
+      background: #dbeafe;
+      color: #2563eb;
+    }
   }
 
   &__gear {

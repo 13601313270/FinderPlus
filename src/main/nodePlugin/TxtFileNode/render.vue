@@ -6,12 +6,17 @@ import { useNodePosition } from '@renderer/composables/useNodePosition'
 import { useFileDragOut } from '@renderer/composables/useFileDragOut'
 import { useFileOpenInSystem } from '@renderer/composables/useFileOpenInSystem'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
+import HelpDialog from '@renderer/components/HelpDialog.vue'
 import { messages } from './i18n'
+import TxtFileHelpDialog from './TxtFileHelpDialog.vue'
 
 const props = defineProps<{ id: string }>()
 
 // 卡片内文案走节点本地的 i18n.ts（放在节点文件夹里，便于插件化替换），跟随界面语言
 const t = useLocalizedMessages(messages)
+
+// 帮助浮层开关（弹窗壳由 HelpDialog 负责）
+const showHelp = ref(false)
 
 const fileNode = computed(() => {
   const node = workspaceScene.getNode(props.id)
@@ -132,7 +137,22 @@ onMounted(async () => {
       </span>
     </div>
 
+    <!-- 帮助入口：悬浮在卡片右上角 -->
+    <button
+      class="file-card__help"
+      type="button"
+      :title="t('helpTitle')"
+      @pointerdown.stop
+      @dblclick.stop
+      @click.stop="showHelp = true"
+    >?</button>
+
   </div>
+
+  <!-- 帮助弹窗 -->
+  <HelpDialog :visible="showHelp" :title="t('helpDialogTitle')" @close="showHelp = false">
+    <TxtFileHelpDialog />
+  </HelpDialog>
 </template>
 
 <style scoped lang="less">
@@ -150,6 +170,7 @@ onMounted(async () => {
   border: 1px solid #d5d9e0;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  position: relative; // 供右上角悬浮帮助按钮定位
   cursor: grab;
   user-select: none;
   &:active { cursor: grabbing; }
@@ -191,6 +212,31 @@ onMounted(async () => {
     display: block;
     color: @color-text-weak;
     font-size: 11px;
+  }
+
+  &__help {
+    all: unset;
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #f3f4f6;
+    color: #6b7280;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+    transition: background 0.15s, color 0.15s;
+
+    &:hover {
+      background: #dbeafe;
+      color: #2563eb;
+    }
   }
 }
 </style>

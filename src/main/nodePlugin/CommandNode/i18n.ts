@@ -82,5 +82,13 @@ export const messages = {
   save: {
     zh: '保存',
     en: 'Save'
+  },
+  helpTitle: {
+    zh: '使用说明',
+    en: 'Help'
+  },
+  helpDialogTitle: {
+    zh: '命令节点使用说明',
+    en: 'Command node help'
   }
 } satisfies Record<string, LocalizedText>

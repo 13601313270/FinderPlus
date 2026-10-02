@@ -6,7 +6,8 @@ export const manifest: NodePluginManifest = {
   type: LLMNode.TYPE,
   nodeClass: LLMNode,
   title: { zh: '大模型', en: 'LLM' },
-  render
+  render,
+  help: () => import('./LLMHelpDialog.vue')
 }
 
 export default manifest

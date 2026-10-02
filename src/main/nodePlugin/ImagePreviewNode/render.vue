@@ -9,6 +9,8 @@ import { setLastDragPath } from '@renderer/composables/useFileDragOut'
 import { viewport } from '@renderer/canvas/viewport'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
+import HelpDialog from '@renderer/components/HelpDialog.vue'
+import ImagePreviewHelpDialog from './ImagePreviewHelpDialog.vue'
 import { messages } from './i18n'
 
 // 卡片头部标题走插件 manifest 的多语言 title，未配当前语言时由 resolveNodeTitle 兜底
@@ -23,6 +25,9 @@ const node = computed(() => {
   const n = workspaceScene.getNode(props.id)
   return n instanceof ImagePreviewNode ? n : undefined
 })
+
+// 帮助浮层开关（弹窗壳由 HelpDialog 负责）
+const showHelp = ref(false)
 
 /**
  * 引擎里的 imageInput.value 是普通 TypeScript 数组属性，
@@ -211,7 +216,16 @@ onUnmounted(() => {
 <template>
   <div class="preview-card">
     <!-- 头部类型标签：与缩小图片尺寸节点区分；也可拖动移动节点 -->
-    <div class="preview-card__header" @pointerdown.stop.prevent="startPreviewDrag">{{ nodeTitle }}</div>
+    <div class="preview-card__header" @pointerdown.stop.prevent="startPreviewDrag">
+      <span class="preview-card__header-title">{{ nodeTitle }}</span>
+      <button
+        class="preview-card__help"
+        type="button"
+        :title="t('helpTitle')"
+        @pointerdown.stop
+        @click.stop="showHelp = true"
+      >?</button>
+    </div>
 
     <!-- 预览图区域：画布内拖拽 = 移动节点；越界 = writeBuffer + startDrag 导出 -->
     <div class="preview-card__image-area" @pointerdown.stop.prevent="startPreviewDrag" :title="previewFile
@@ -251,6 +265,11 @@ onUnmounted(() => {
     <!-- resize handle：右下角，拖拽改宽度（保持图片区 16:10 比例） -->
     <div class="preview-card__resize-handle" @pointerdown.stop.prevent="onResizePointerDown" :title="t('resizeHint')" />
   </div>
+
+  <!-- 帮助弹窗 -->
+  <HelpDialog :visible="showHelp" :title="t('helpDialogTitle')" @close="showHelp = false">
+    <ImagePreviewHelpDialog />
+  </HelpDialog>
 </template>
 
 <style scoped lang="less">
@@ -272,20 +291,50 @@ onUnmounted(() => {
   &__header {
     flex-shrink: 1;
     min-height: 18px;
-    font-size: 11px;
-    font-weight: 600;
-    color: #4a7cff;
-    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
     margin: 6px 6px 0 6px;
     padding-bottom: 2px;
     border-bottom: 1px dashed #d5d9e0;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
     cursor: grab;
 
     &:active {
       cursor: grabbing;
+    }
+  }
+
+  &__header-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: #4a7cff;
+    letter-spacing: 0.5px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  &__help {
+    all: unset;
+    cursor: pointer;
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #f3f4f6;
+    color: #6b7280;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+    transition: background 0.15s, color 0.15s;
+
+    &:hover {
+      background: #dbeafe;
+      color: #2563eb;
     }
   }
 

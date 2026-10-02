@@ -30,5 +30,13 @@ export const messages = {
   resultPlaceholder: {
     zh: '（结果）',
     en: '(Result)'
+  },
+  helpTitle: {
+    zh: '使用说明',
+    en: 'Help'
+  },
+  helpDialogTitle: {
+    zh: '字符串拼接节点使用说明',
+    en: 'String Concat node help'
   }
 } satisfies Record<string, LocalizedText>

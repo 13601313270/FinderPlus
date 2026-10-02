@@ -9,6 +9,8 @@ import { useLLMSettings } from '@renderer/composables/useLLMSettings'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
 import { messages } from './i18n'
 import GearIcon from '@renderer/components/icons/GearIcon.vue'
+import HelpDialog from '@renderer/components/HelpDialog.vue'
+import LLMHelpDialog from './LLMHelpDialog.vue'
 
 /**
  * LLM 节点的渲染组件：
@@ -21,6 +23,9 @@ const { openSettings, hasKey } = useLLMSettings()
 
 // 卡片内文案走节点本地的 i18n.ts（放在节点文件夹里，便于插件化替换），跟随界面语言
 const t = useLocalizedMessages(messages)
+
+// 帮助浮层开关（弹窗壳由 HelpDialog 负责）
+const showHelp = ref(false)
 
 const llmNode = shallowRef<LLMNode | undefined>(undefined)
 
@@ -91,16 +96,25 @@ function onSendClick(): void {
   <div class="node">
     <div class="node__header" @pointerdown="startDrag">
       <span class="node__handle" :title="t('dragHint')">{{ nodeTitle }}</span>
-      <button
-        v-if="llmNode"
-        class="node__gear"
-        type="button"
-        :title="hasKey() ? t('keyConfigured') : t('keyMissing')"
-        @pointerdown.stop
-        @click.stop="onGearClick"
-      >
-        <GearIcon />
-      </button>
+      <div class="node__header-actions">
+        <button
+          v-if="llmNode"
+          class="node__gear"
+          type="button"
+          :title="hasKey() ? t('keyConfigured') : t('keyMissing')"
+          @pointerdown.stop
+          @click.stop="onGearClick"
+        >
+          <GearIcon />
+        </button>
+        <button
+          class="node__help"
+          type="button"
+          :title="t('helpTitle')"
+          @pointerdown.stop
+          @click.stop="showHelp = true"
+        >?</button>
+      </div>
     </div>
 
     <!-- 输出区 -->
@@ -152,6 +166,11 @@ function onSendClick(): void {
       </button>
     </div>
   </div>
+
+  <!-- 帮助弹窗 -->
+  <HelpDialog :visible="showHelp" :title="t('helpDialogTitle')" @close="showHelp = false">
+    <LLMHelpDialog />
+  </HelpDialog>
 </template>
 
 <style scoped lang="less">
@@ -187,6 +206,36 @@ function onSendClick(): void {
     font-size: 12px;
     color: @color-text-weak;
     padding: 2px 0;
+  }
+
+  // 右侧按钮组：齿轮 + 帮助，靠右对齐（head 已 space-between，auto 双保险）
+  &__header-actions {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    margin-left: auto;
+  }
+
+  &__help {
+    all: unset;
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #f3f4f6;
+    color: #6b7280;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+    transition: background 0.15s, color 0.15s;
+
+    &:hover {
+      background: #dbeafe;
+      color: #2563eb;
+    }
   }
 
   &__gear {

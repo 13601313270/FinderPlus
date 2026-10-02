@@ -5,7 +5,9 @@ import render from './render.vue'
 export const manifest: NodePluginManifest = {
   type: TxtFileNode.TYPE,
   nodeClass: TxtFileNode,
-  render
+  title: { zh: '文本文件', en: 'Text file' },
+  render,
+  help: () => import('./TxtFileHelpDialog.vue')
 }
 
 export default manifest

@@ -6,7 +6,8 @@ export const manifest: NodePluginManifest = {
   type: ImgFolderNode.TYPE,
   nodeClass: ImgFolderNode,
   title: { zh: '图片文件夹', en: 'Image Folder' },
-  render
+  render,
+  help: () => import('./ImgFolderHelpDialog.vue')
 }
 
 export default manifest

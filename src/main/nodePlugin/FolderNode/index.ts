@@ -6,7 +6,8 @@ export const manifest: NodePluginManifest = {
   type: FolderNode.TYPE,
   nodeClass: FolderNode,
   title: { zh: '文件夹', en: 'Folder' },
-  render
+  render,
+  help: () => import('./FolderHelpDialog.vue')
 }
 
 export default manifest

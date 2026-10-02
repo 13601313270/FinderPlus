@@ -6,7 +6,8 @@ export const manifest: NodePluginManifest = {
   type: JsonDisplayNode.TYPE,
   nodeClass: JsonDisplayNode,
   title: { zh: 'JSON 展示', en: 'JSON Display' },
-  render
+  render,
+  help: () => import('./JsonDisplayHelpDialog.vue')
 }
 
 export default manifest

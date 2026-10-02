@@ -38,5 +38,27 @@ export const messages = {
   createNode: {
     zh: '生成图片文件节点',
     en: 'Create image file node'
+  },
+  helpTitle: {
+    zh: '使用说明',
+    en: 'Help',
+    ja: '使い方',
+    ko: '사용 설명',
+    es: 'Ayuda',
+    ar: 'تعليمات الاستخدام',
+    fr: 'Aide',
+    pt: 'Ajuda',
+    ru: 'Справка'
+  },
+  helpDialogTitle: {
+    zh: '图片裁剪节点使用说明',
+    en: 'Image Crop node help',
+    ja: '画像切り抜きノードの使い方',
+    ko: '이미지 자르기 노드 사용 설명',
+    es: 'Ayuda del nodo Recortar imagen',
+    ar: 'تعليمات عقدة قص الصورة',
+    fr: 'Aide du nœud Recadrage d’image',
+    pt: 'Ajuda do nó Recortar imagem',
+    ru: 'Справка по узлу «Обрезка изображения»'
   }
 } satisfies Record<string, LocalizedText>

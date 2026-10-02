@@ -231,6 +231,7 @@ function onNodeWheel(e: WheelEvent): void {
           class="node__help"
           type="button"
           :title="t('helpTitle')"
+          @pointerdown.stop
           @click.stop="showHelp = true"
         >?</button>
       </div>

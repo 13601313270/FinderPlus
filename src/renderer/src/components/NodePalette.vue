@@ -319,7 +319,7 @@ onBeforeUnmount(() => {
     </button>
 
     <transition name="palette-fade">
-      <div v-if="expanded" ref="menuEl" class="palette__menu" @wheel.stop>
+      <div v-if="expanded || true" ref="menuEl" class="palette__menu" @wheel.stop>
         <div class="palette__search">
           <svg
             class="palette__search-icon"
@@ -437,7 +437,7 @@ onBeforeUnmount(() => {
     left: 0;
     display: flex;
     flex-direction: column;
-    width: 500px;
+    width: 530px;
     // 只按视口比例限高，不再叠加固定像素上限：
     // 菜单距顶 52px，70vh 在 173px 以上的窗口都塞得下，所以不会溢出；
     // 而多出来那一截像素上限只会让本来放得下的列表白白出现滚动条。
@@ -495,7 +495,6 @@ onBeforeUnmount(() => {
     min-height: 0;
     display: flex;
     flex-direction: column;
-    flex-wrap: wrap;
     gap: 10px;
     overflow-y: auto;
     padding: 8px;
@@ -503,6 +502,12 @@ onBeforeUnmount(() => {
     .groupItem {
       display: flex;
       align-items: start;
+
+      // 组与组之间加一条淡淡的分割线，隔开相邻分类（首组不画）
+      & + .groupItem {
+        padding-top: 10px;
+        border-top: 1px solid #eef1f5;
+      }
     }
   }
 
@@ -516,7 +521,6 @@ onBeforeUnmount(() => {
 
   // 滚动时把当前分类标题钉在顶部，省得滑几屏后不知道在看哪一组
   &__group {
-    position: sticky;
     top: 0;
     width: 100px;
     height: 34px;

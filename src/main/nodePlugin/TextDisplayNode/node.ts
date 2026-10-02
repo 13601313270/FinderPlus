@@ -63,11 +63,19 @@ export class TextDisplayNode extends Node {
   }
 
   saveState(): Record<string, unknown> {
-    // displayed 是上游派生出来的，恢复时上游 commit 会自动刷回来，不用存
-    return {}
+    // displayed 是上游派生出来的，恢复时上游 commit 会自动刷回来，不用存；
+    // box（用户拖右下角调整过的大小）是本节点自己的状态，必须存。
+    return {
+      box: this.box as readonly [number, number]
+    }
   }
 
-  readState(_state: Record<string, unknown>): void {
-    // 啥也不做——派生状态等上游恢复后自然会刷新
+  readState(state: Record<string, unknown>): void {
+    // 恢复用户调整过的尺寸（老数据缺该字段时保留构造时的默认 box）
+    const box = state.box
+    if (Array.isArray(box) && box.length === 2 && box.every((v) => typeof v === 'number')) {
+      this.setBox(box[0], box[1])
+    }
+    // displayed 等上游恢复后自然会刷新
   }
 }

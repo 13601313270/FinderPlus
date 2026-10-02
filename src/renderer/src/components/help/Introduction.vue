@@ -104,7 +104,7 @@ const { t } = useI18n()
           <tr>
             <td>{{ t('intro.nodeTypes.output') }}</td>
             <td>
-              <code>text-display</code>{{ t('intro.nodeTypes.sep') }}<code>image-preview</code>{{ t('intro.nodeTypes.sep') }}<code>human-review</code>
+              <code>text-display</code>{{ t('intro.nodeTypes.sep') }}<code>number-display</code>{{ t('intro.nodeTypes.sep') }}<code>image-preview</code>{{ t('intro.nodeTypes.sep') }}<code>human-review</code>
             </td>
           </tr>
           <tr>

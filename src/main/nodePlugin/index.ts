@@ -3,6 +3,7 @@ import type { NodePluginManifest } from './manifest'
 import { FileNode } from './FileNode/node'
 import { manifest as textInputManifest } from './TextInputNode'
 import { manifest as textDisplayManifest } from './TextDisplayNode'
+import { manifest as numberDisplayManifest } from './NumberDisplayNode'
 import { manifest as numberInputManifest } from './NumberInputNode'
 import { manifest as boolInputManifest } from './BoolInputNode'
 import { manifest as txtFileManifest } from './TxtFileNode'
@@ -23,6 +24,8 @@ import { manifest as codeManifest } from './CodeNode'
 import { manifest as backgroundRemoveManifest } from './BackgroundRemoveNode'
 import { manifest as imageOverlayManifest } from './ImageOverlayNode'
 import { manifest as switchManifest } from './SwitchNode'
+import { manifest as stackManifest } from './StackNode'
+import { manifest as queueManifest } from './QueueNode'
 import { manifest as httpRequestManifest } from './HttpRequestNode'
 import { manifest as jsonDisplayManifest } from './JsonDisplayNode'
 import { manifest as imageCropManifest } from './ImageCropNode'
@@ -40,6 +43,7 @@ import { manifest as imageCropManifest } from './ImageCropNode'
 const functionalManifests: NodePluginManifest[] = [
   textInputManifest,
   textDisplayManifest,
+  numberDisplayManifest,
   numberInputManifest,
   boolInputManifest,
   fileInfoManifest,
@@ -57,6 +61,8 @@ const functionalManifests: NodePluginManifest[] = [
   commandManifest,
   codeManifest,
   switchManifest,
+  stackManifest,
+  queueManifest,
   httpRequestManifest,
   jsonDisplayManifest,
   imageCropManifest

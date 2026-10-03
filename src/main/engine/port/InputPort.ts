@@ -123,11 +123,11 @@ export class InputPort {
   }
 
   /**
-   * 接收上游送来（或重算后重发）的值，返回本次是否真的变了。
-   * 只有真的变了才置脏——上游算完发现没变，下游就不会被打扰。
+   * 接收上游送来（或重算后重发）的值，force=true 时跳过 fingerprint 比对直接通知节点。
+   * 手动触发场景（按钮/快捷键）应透传 force=true，避免两层排重卡掉"再跑一次"的语义。
    */
-  receive(edge: Edge, value: Value): void {
-    const changed = this.incoming.get(edge)?.fingerprint !== value.fingerprint
+  receive(edge: Edge, value: Value, force = false): void {
+    const changed = force || this.incoming.get(edge)?.fingerprint !== value.fingerprint
     this.incoming.set(edge, value)
     if (changed) {
       this.owner?.inputPortReceiveValue([this])

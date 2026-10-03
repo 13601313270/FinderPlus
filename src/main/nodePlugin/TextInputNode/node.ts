@@ -90,9 +90,9 @@ export class TextInputNode extends Node {
     this.notifyChanged() // 触发持久化 + render.vue 里的草稿刷新
   }
 
-  /** 把当前草稿值提交到输出端口，下游节点才会收到 */
-  commitText(): void {
-    this.textOutput.commit(new StringValue(this.content))
+  /** 把当前草稿值提交到输出端口，下游节点才会收到。手动触发传 force，绕过指纹排重 */
+  commitText(force = false): void {
+    this.textOutput.commit(new StringValue(this.content), { force })
     // commit 内部不触发 notifyChanged——提交是瞬时事件，不需要持久化
   }
 

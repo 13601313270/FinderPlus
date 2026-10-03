@@ -86,7 +86,7 @@ function onInput(e: Event): void {
 /** 发送按钮 / 快捷键 → 立刻把草稿 commit 到输出端口 */
 function onSend(): void {
   debouncedSend.cancel()
-  inputNode.value?.commitText()
+  inputNode.value?.commitText(true)
 }
 
 /** 自动发送开关 → 写回节点（关闭时取消可能已排队的自动提交） */

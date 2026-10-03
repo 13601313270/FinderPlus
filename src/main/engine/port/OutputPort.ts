@@ -118,14 +118,18 @@ export class OutputPort {
 
   /**
    * 提交一次计算结果，返回「本次是否真的变了」——按指纹比对，而不是按引用。
-   * 引擎只在返回 true 时沿 edges 向后派发，这就是整条脏传播链的起点。
+   * 引擎只在 changed 时沿 edges 向后派发，这就是整条脏传播链的起点。
+   *
+   * @param opts.force 手动触发场景传 true，绕过 fingerprint 比对直接派发。
+   *   典型：TextInputNode 点发送、BufferNode 点"出"、HumanReviewNode 点同意/拒绝。
+   *   自动计算节点（LLM、HTTP、图片处理等）一律用默认 false，靠指纹排重防连锁重算。
    */
-  commit(value: Value): boolean {
-    const changed = this.currentValue?.fingerprint !== value.fingerprint
+  commit(value: Value, opts?: { force?: boolean }): boolean {
+    const changed = opts?.force === true || this.currentValue?.fingerprint !== value.fingerprint
     this.currentValue = value
     if (changed) {
-      // 通知Edge有新的值
-      this.edges.forEach(edge => edge.transferData(value))
+      // 通知Edge有新的值；force 向下透传到 InputPort.receive，让整条链路跳过排重
+      this.edges.forEach(edge => edge.transferData(value, opts?.force === true))
     }
     return changed
   }

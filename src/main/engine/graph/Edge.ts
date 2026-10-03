@@ -21,9 +21,9 @@ export class Edge {
     this.id = id ?? `${startPort.id}→${endPort.id}-${Math.random().toString(36).slice(2, 8)}`
   }
 
-  // 把数据从startPort端口传到endPort端口
-  transferData(value: Value): void {
-    this.endPort.receive(this, value)
+  // 把数据从startPort端口传到endPort端口。force=true 时跳过 InputPort 的 fingerprint 排重
+  transferData(value: Value, force = false): void {
+    this.endPort.receive(this, value, force)
   }
 
   // 把"清空值"信号从startPort传到endPort

@@ -146,10 +146,20 @@ export abstract class Node {
     this.notifyChanged()
   }
 
-  /** 子类构造时登记自己的输出端口；运行时也可追加，会自动 notifyChanged 刷新 UI */
-  protected addOutput(port: OutputPort): void {
+  /**
+   * 子类登记输出端口；运行时也可追加，会自动 notifyChanged 刷新 UI。
+   *
+   * @param port 要登记的端口
+   * @param index 可选——指定插入位置。不传时默认 push 到末尾；
+   *   动态端口重建时用它把新端口插回原索引位置，保持 outputs 数组顺序稳定。
+   */
+  protected addOutput(port: OutputPort, index?: number): void {
     port.setOwner(this)
-    this.outputs.push(port)
+    if (index !== undefined) {
+      this.outputs.splice(index, 0, port)
+    } else {
+      this.outputs.push(port)
+    }
     this.notifyChanged()
   }
 

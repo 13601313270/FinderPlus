@@ -777,6 +777,7 @@ function onNodeWheel(e: WheelEvent): void {
   background: #f8fafc;
   outline: none;
   transition: border-color 0.15s, background 0.15s;
+  margin-top: 8px;
 
   &:focus {
     border-color: #3b82f6;
@@ -837,6 +838,7 @@ function onNodeWheel(e: WheelEvent): void {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  margin-top: 8px;
 
   &__line {
     display: flex;

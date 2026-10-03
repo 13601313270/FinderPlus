@@ -30,6 +30,7 @@ import { manifest as queueManifest } from './QueueNode'
 import { manifest as httpRequestManifest } from './HttpRequestNode'
 import { manifest as jsonDisplayManifest } from './JsonDisplayNode'
 import { manifest as imageCropManifest } from './ImageCropNode'
+import { manifest as promiseAllManifest } from './PromiseAllNode'
 
 /**
  * 插件注册表：所有节点插件的 manifest 汇总。
@@ -63,6 +64,7 @@ const functionalManifests: NodePluginManifest[] = [
   commandManifest,
   codeManifest,
   switchManifest,
+  promiseAllManifest,
   stackManifest,
   queueManifest,
   httpRequestManifest,

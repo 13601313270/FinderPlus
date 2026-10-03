@@ -42,6 +42,8 @@ const outputNameErrors = ref<Record<string, CodePortNameError>>({})
 const showHelp = ref(false)
 // 配置弹窗开关（输入端口 + 输出端口 + 代码编辑）
 const showConfig = ref(false)
+// 日志弹窗开关
+const showLog = ref(false)
 // 复制按钮的瞬时反馈：哪个刚复制了就短暂显示"已复制"
 const copyHint = ref<string>('')
 
@@ -79,6 +81,14 @@ const hasCode = computed(() => code.value.trim().length > 0)
 const running = computed(() => status.value === 'running')
 const hasInputs = computed(() => inputs.value.length > 0)
 const hasOutputs = computed(() => outputs.value.length > 0)
+
+/** 从 resultText 或 errorText 中提取最后一行，用于在卡片上显示最新输出 */
+const lastLine = computed(() => {
+  const text = errorText.value || resultText.value
+  if (!text) return ''
+  const lines = text.split('\n').filter(l => l.trim().length > 0)
+  return lines.length > 0 ? lines[lines.length - 1]! : text
+})
 
 const STATUS_KEYS = {
   idle: 'statusIdle',
@@ -206,19 +216,6 @@ function onCopyCallOutputPort(): void {
   copyHint.value = 'callOutputPort'
   setTimeout(() => { copyHint.value = '' }, 1200)
 }
-function onNodeWheel(e: WheelEvent): void {
-  const el = e.currentTarget as HTMLElement
-  const { scrollTop, scrollHeight, clientHeight } = el
-  const atTop = scrollTop <= 0
-  const atBottom = scrollTop + clientHeight >= scrollHeight
-
-  const scrollingUp = e.deltaY < 0
-  const scrollingDown = e.deltaY > 0
-
-  if ((scrollingUp && atTop) || (scrollingDown && atBottom)) return
-
-  e.stopPropagation()
-}
 </script>
 
 <template>
@@ -248,21 +245,30 @@ function onNodeWheel(e: WheelEvent): void {
 
     <!-- 结果区（常驻画布） -->
     <div
-      class="code-output"
-      @wheel="onNodeWheel"
-      :class="{
-        'code-output--empty': !resultText && !errorText && status !== 'running',
-        'code-output--error': status === 'error',
-        'code-output--running': status === 'running'
-      }"
+      class="code-output-wrapper"
     >
-      <template v-if="status === 'running'">
-        <span class="code-output__spinner" />
-        <span>{{ t('running') }}</span>
-      </template>
-      <template v-else-if="errorText">{{ errorText }}</template>
-      <template v-else-if="status === 'done'">{{ resultText }}</template>
-      <template v-else>{{ codeNode ? t('clickToRun') : t('nodeMissing') }}</template>
+      <div
+        class="code-output"
+        :class="{
+          'code-output--empty': !resultText && !errorText && status !== 'running',
+          'code-output--error': status === 'error',
+          'code-output--running': status === 'running'
+        }"
+      >
+        <template v-if="status === 'running'">
+          <span class="code-output__spinner" />
+          <span>{{ t('running') }}</span>
+        </template>
+        <template v-else-if="errorText || resultText">{{ lastLine }}</template>
+        <template v-else>{{ codeNode ? t('clickToRun') : t('nodeMissing') }}</template>
+      </div>
+      <button
+        v-if="(resultText || errorText) && status !== 'running'"
+        class="code-output__log-btn"
+        type="button"
+        :title="t('logBtnTitle')"
+        @click.stop="showLog = true"
+      >{{ t('logBtn') }}</button>
     </div>
 
     <!-- 主操作：自动执行开关 + 执行按钮 -->
@@ -459,6 +465,14 @@ function onNodeWheel(e: WheelEvent): void {
       @wheel="onEditorWheel"
       @input="onCodeInput"
     />
+  </HelpDialog>
+
+  <!-- 日志弹窗：展示完整输出 -->
+  <HelpDialog :visible="showLog" :title="t('logDialogTitle')" width="600" @close="showLog = false">
+    <div class="log-content" :class="{ 'log-content--error': errorText }">
+      <template v-if="errorText">{{ errorText }}</template>
+      <template v-else>{{ resultText }}</template>
+    </div>
   </HelpDialog>
 </template>
 
@@ -940,22 +954,30 @@ function onNodeWheel(e: WheelEvent): void {
   }
 }
 
+.code-output-wrapper {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
 .code-output {
-  padding: 8px 10px;
+  flex: 1;
+  min-width: 0;
+  padding: 6px 10px;
   border: 1px solid #d5d9e0;
   border-radius: 6px;
   font-size: 12px;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  white-space: pre-wrap;
-  word-break: break-all;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   flex-shrink: 0;
-  min-height: 48px;
+  height: 36px;
   display: flex;
   align-items: center;
   gap: 8px;
   color: #1f2937;
-  overflow: auto;
-  height: 23px;
 
   &--empty {
     color: #9aa2ad;
@@ -983,6 +1005,47 @@ function onNodeWheel(e: WheelEvent): void {
     border-radius: 50%;
     animation: spin 0.7s linear infinite;
     flex-shrink: 0;
+  }
+
+  &__log-btn {
+    all: unset;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 36px;
+    padding: 0 10px;
+    border-radius: 6px;
+    background: #f3f4f6;
+    color: #6b7280;
+    font-size: 11px;
+    font-weight: 500;
+    font-family: inherit;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: background 0.15s, color 0.15s;
+
+    &:hover {
+      background: #e5e7eb;
+      color: #374151;
+    }
+
+    &:active {
+      background: #d1d5db;
+    }
+  }
+}
+
+.log-content {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #1f2937;
+  white-space: pre-wrap;
+  word-break: break-all;
+
+  &--error {
+    color: #dc2626;
   }
 }
 

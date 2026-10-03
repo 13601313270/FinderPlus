@@ -12,9 +12,47 @@ import type { InputPort } from '../../engine/port/InputPort'
  */
 export type ColumnType = 'number' | 'string' | 'boolean'
 
+/**
+ * 业务数据类型（语义层）——决定 UI 渲染什么组件。
+ * 每个业务类型固定绑定一个存储类型（见 BUSINESS_TYPE_MAP）。
+ */
+export type BusinessType = 'text' | 'number' | 'boolean' | 'color'
+
+/** 业务类型 → 存储类型（SQLite DDL 用）的固定映射 */
+export const BUSINESS_TYPE_MAP: Record<BusinessType, ColumnType> = {
+  text: 'string',
+  number: 'number',
+  boolean: 'boolean',
+  color: 'string'
+}
+
+/** 存储类型 → 默认业务类型（老存档没 businessType 时回退用） */
+export const DEFAULT_BUSINESS_TYPE: Record<ColumnType, BusinessType> = {
+  string: 'text',
+  number: 'number',
+  boolean: 'boolean'
+}
+
 export interface ColumnDef {
+  /** SQL 列名（物理表用，不可变——改它要 ALTER TABLE RENAME） */
   name: string
+  /** SQL 存储类型（物理表用）。从 BUSINESS_TYPE_MAP[businessType] 派生，也允许显式覆盖 */
   type: ColumnType
+  /**
+   * 业务数据类型（语义层）。决定 UI 渲染什么输入组件。
+   * 省略时按 type 回退到默认值（string→'text', number→'number', boolean→'boolean'）。
+   */
+  businessType?: BusinessType
+  /**
+   * UI 显示标题（纯渲染元信息，不影响物理表）。
+   * 未设置时退回 name。
+   */
+  title?: string
+}
+
+/** 获取列的业务类型——businessType 未设置时按 type 回退 */
+export function resolveBusinessType(col: ColumnDef): BusinessType {
+  return col.businessType ?? DEFAULT_BUSINESS_TYPE[col.type]
 }
 
 export class TableNode extends Node {
@@ -78,9 +116,9 @@ export class TableNode extends Node {
 
   // —— 列定义管理（UI 调用） ——
 
-  /** 添加一列 */
-  addColumn(name: string, type: ColumnType): void {
-    this.columns.push({ name, type })
+  /** 添加一列，传 ColumnDef 对象。所有可选 UI 元信息（title 等）直接塞进去即可。 */
+  addColumn(col: ColumnDef): void {
+    this.columns.push(col)
     this.notifyChanged()
   }
 
@@ -88,6 +126,14 @@ export class TableNode extends Node {
   removeColumn(index: number): void {
     if (index >= 0 && index < this.columns.length) {
       this.columns.splice(index, 1)
+      this.notifyChanged()
+    }
+  }
+
+  /** 更新某列的 UI 元信息（title / width / align 等）。纯 node state，不碰物理表。 */
+  updateColumnMeta(index: number, meta: Partial<ColumnDef>): void {
+    if (index >= 0 && index < this.columns.length) {
+      Object.assign(this.columns[index], meta)
       this.notifyChanged()
     }
   }

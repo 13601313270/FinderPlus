@@ -1,19 +1,28 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, reactive, ref, type Component } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
-import { TableNode, type ColumnType } from './node'
+import {
+  TableNode,
+  type ColumnType,
+  type ColumnDef,
+  type BusinessType,
+  BUSINESS_TYPE_MAP,
+  resolveBusinessType
+} from './node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import HelpDialog from '@renderer/components/HelpDialog.vue'
 import StringInput from './inputs/StringInput.vue'
 import NumberInput from './inputs/NumberInput.vue'
 import BooleanInput from './inputs/BooleanInput.vue'
+import ColorInput from './inputs/ColorInput.vue'
 
-/** 类型 → 输入组件映射。新增类型（date / enum …）只需加一行 */
-const inputComponents: Record<ColumnType, Component> = {
-  string: StringInput,
+/** 业务类型 → 输入组件映射。新增业务类型只需加一行 + 对应输入组件 */
+const inputComponents: Record<BusinessType, Component> = {
+  text: StringInput,
   number: NumberInput,
-  boolean: BooleanInput
+  boolean: BooleanInput,
+  color: ColorInput
 }
 
 const props = defineProps<{ id: string }>()
@@ -48,16 +57,25 @@ const formValues = reactive<Record<string, unknown>>({})
 // —— 列设置弹窗 ——
 const showColumnDialog = ref(false)
 const newColumnName = ref('')
-const newColumnType = ref<ColumnType>('string')
+const newColumnTitle = ref('')
+const newColumnBusinessType = ref<BusinessType>('text')
 const columnError = ref('')
 
 let offChanged: (() => void) | undefined
 
-/** 缓存的列定义签名，用于 onChanged 守卫——只在列真的变化时才重建物理表 + 重读 */
+/** 缓存的列定义签名，用于 onChanged 守卫。
+ *  比对维度：name + type（SQL 层决定物理表结构） + businessType（决定渲染组件）。
+ *  title 等纯 UI 元信息不在这里——改它们不触发 ensureAndLoad，零额外 IO。 */
 let lastColumnsSig = ''
 
-function columnsSig(columns: Array<{ name: string; type: string }>): string {
-  return JSON.stringify(columns)
+function columnsSig(columns: ColumnDef[]): string {
+  return JSON.stringify(
+    columns.map((c) => ({
+      name: c.name,
+      type: c.type,
+      businessType: resolveBusinessType(c)
+    }))
+  )
 }
 
 // —— 列定义变化时刷新物理表 + 重读数据 ——
@@ -305,11 +323,14 @@ async function addColumnFromUI(): Promise<void> {
   columnError.value = ''
 
   try {
+    // businessType → 存储类型 固定派生
+    const storageType: ColumnType = BUSINESS_TYPE_MAP[newColumnBusinessType.value]
+
     // 1. 先改物理表
     // @ts-ignore
     const alterResult = await window.tableApi.addColumn({
       nodeId: node.id,
-      column: { name, type: newColumnType.value }
+      column: { name, type: storageType }
     })
 
     if (!alterResult.ok) {
@@ -318,16 +339,30 @@ async function addColumnFromUI(): Promise<void> {
     }
 
     // 2. 再改节点状态（saveState 会持久化到 nodes.params）
-    node.addColumn(name, newColumnType.value)
+    const col: ColumnDef = { name, type: storageType, businessType: newColumnBusinessType.value }
+    const title = newColumnTitle.value.trim()
+    if (title) col.title = title
+    node.addColumn(col)
 
     // 清空输入
     newColumnName.value = ''
-    newColumnType.value = 'string'
+    newColumnTitle.value = ''
+    newColumnBusinessType.value = 'text'
 
     // 列签名变了，onChanged 会触发 ensureAndLoad
   } catch (err) {
     columnError.value = err instanceof Error ? err.message : String(err)
   }
+}
+
+/**
+ * 行内修改某列的 title 显示名。
+ * 调 node.updateColumnMeta 改状态，notifyChanged 持久化到 nodes.params。
+ * columnsSig 守卫只拼 name+type，所以 title 变化不会触发 ensureAndLoad，零额外 IO。
+ */
+function updateColumnTitle(index: number, value: string): void {
+  const trimmed = value.trim()
+  tableNode.value?.updateColumnMeta(index, { title: trimmed || undefined })
 }
 
 async function removeColumnFromUI(colName: string): Promise<void> {
@@ -393,7 +428,7 @@ async function removeColumnFromUI(colName: string): Promise<void> {
               v-for="col in tableNode.columns"
               :key="col.name"
               class="tbl__th"
-            >{{ col.name }}</th>
+            >{{ col.title ?? col.name }}</th>
             <th class="tbl__th tbl__th--ops">操作</th>
           </tr>
         </thead>
@@ -410,8 +445,15 @@ async function removeColumnFromUI(colName: string): Promise<void> {
               :key="col.name"
               class="tbl__cell"
             >
-              <template v-if="col.type === 'boolean'">
+              <template v-if="resolveBusinessType(col) === 'boolean'">
                 {{ row[col.name] ? '✓' : '—' }}
+              </template>
+              <template v-else-if="resolveBusinessType(col) === 'color'">
+                <span
+                  class="tbl__color-swatch"
+                  :style="{ background: String(row[col.name] ?? '#ffffff') }"
+                />
+                {{ row[col.name] }}
               </template>
               <template v-else>{{ row[col.name] as string | number }}</template>
             </td>
@@ -468,11 +510,12 @@ async function removeColumnFromUI(colName: string): Promise<void> {
           class="tbl-form__field"
         >
           <label class="tbl-form__label">
-            {{ col.name }}
-            <span class="tbl-form__type-tag">{{ col.type }}</span>
+            {{ col.title ?? col.name }}
+            <span class="tbl-form__type-tag">{{ resolveBusinessType(col) }}</span>
+            <span v-if="col.title" class="tbl-form__name-hint">({{ col.name }})</span>
           </label>
           <component
-            :is="inputComponents[col.type]"
+            :is="inputComponents[resolveBusinessType(col)]"
             v-model="formValues[col.name]"
           />
         </div>
@@ -496,7 +539,7 @@ async function removeColumnFromUI(colName: string): Promise<void> {
     <HelpDialog
       :visible="showColumnDialog"
       title="列设置"
-      :width="480"
+      :width="550"
       @close="showColumnDialog = false"
     >
       <div v-if="tableNode" class="tbl-col-dialog">
@@ -506,9 +549,17 @@ async function removeColumnFromUI(colName: string): Promise<void> {
           <div v-if="tableNode.columns.length === 0" class="tbl-col-dialog__empty">
             暂无自定义列
           </div>
-          <div v-for="col in tableNode.columns" :key="col.name" class="tbl-col-dialog__row">
-            <span class="tbl-col-dialog__name">{{ col.name }}</span>
-            <span class="tbl-col-dialog__type-tag">{{ col.type }}</span>
+          <div v-for="(col, colIndex) in tableNode.columns" :key="col.name" class="tbl-col-dialog__row">
+            <div class="tbl-col-dialog__info">
+              <span class="tbl-col-dialog__name">{{ col.name }}</span>
+              <span class="tbl-col-dialog__type-tag">{{ resolveBusinessType(col) }}</span>
+            </div>
+            <input
+              class="tbl-form__input tbl-col-dialog__title-input"
+              :value="col.title ?? ''"
+              placeholder="显示标题（可选）"
+              @input="updateColumnTitle(colIndex, ($event.target as HTMLInputElement).value)"
+            />
             <button
               class="tbl-col-dialog__remove"
               type="button"
@@ -528,10 +579,18 @@ async function removeColumnFromUI(colName: string): Promise<void> {
               placeholder="列名（如 email）"
               @keydown.enter="addColumnFromUI"
             />
-            <select v-model="newColumnType" class="tbl-form__input tbl-col-dialog__select">
-              <option value="string">string</option>
-              <option value="number">number</option>
-              <option value="boolean">boolean</option>
+            <input
+              v-model="newColumnTitle"
+              type="text"
+              class="tbl-form__input"
+              placeholder="显示标题（可选）"
+              @keydown.enter="addColumnFromUI"
+            />
+            <select v-model="newColumnBusinessType" class="tbl-form__input tbl-col-dialog__select">
+              <option value="text">text（文本）</option>
+              <option value="color">color（颜色）</option>
+              <option value="number">number（数字）</option>
+              <option value="boolean">boolean（布尔）</option>
             </select>
             <button
               class="tbl-form__btn tbl-form__btn--confirm"
@@ -671,6 +730,16 @@ async function removeColumnFromUI(colName: string): Promise<void> {
     text-align: center;
     color: #94a3b8;
     font-size: 11px;
+  }
+
+  &__color-swatch {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    margin-right: 6px;
+    vertical-align: middle;
   }
 
   &__loading {
@@ -846,15 +915,38 @@ async function removeColumnFromUI(colName: string): Promise<void> {
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 6px 8px;
+    padding: 8px 10px;
     background: #f8fafc;
     border-radius: 6px;
+  }
+
+  &__info {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+    min-width: 130px;
   }
 
   &__name {
     font-size: 13px;
     color: #1e293b;
     font-family: monospace;
+  }
+
+  &__type-tag {
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 3px;
+    background: #e2e8f0;
+    color: #64748b;
+    font-family: monospace;
+    text-transform: uppercase;
+  }
+
+  &__title-input {
+    flex: 1;
+    min-width: 0;
   }
 
   &__remove {
@@ -878,8 +970,9 @@ async function removeColumnFromUI(colName: string): Promise<void> {
 
   &__add-form {
     display: flex;
-    gap: 6px;
+    gap: 8px;
     align-items: center;
+    flex-wrap: wrap;
   }
 
   &__select {

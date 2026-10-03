@@ -38,6 +38,12 @@ type ImageGenStatus = 'idle' | 'loading' | 'done' | 'error'
 const IMAGE_TASK_POLL_INTERVAL_MS = 2500
 const IMAGE_TASK_TIMEOUT_MS = 120_000
 
+/**
+ * 参考图文件大小上限：百炼对单次请求体有 ~10MB 限制。
+ * 7MB 原始文件 → base64 后约 9.3MB，留出 prompt / JSON 结构余量。
+ */
+const MAX_REFERENCE_IMAGE_BYTES = 7 * 1024 * 1024
+
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
@@ -90,6 +96,45 @@ export class ImageGenNode extends Node {
     }
   })
 
+  /**
+   * 参考图 1~4：按端口编号固定顺序，避免 multiple 连线顺序不稳定。
+   * 提示词里的"第一张图"对应 ref1，"第二张图"对应 ref2，依此类推。
+   * 不接就缺省跳过，模型能吃几张由 providers.ts 的 maxReferenceImages 决定，
+   * 超上限（比如 qwen-image-2.0-pro 接了 ref4）会直接报错。
+   */
+  readonly ref1Input = this.makeReferenceImagePort('ref1', 1)
+  readonly ref2Input = this.makeReferenceImagePort('ref2', 2)
+  readonly ref3Input = this.makeReferenceImagePort('ref3', 3)
+  readonly ref4Input = this.makeReferenceImagePort('ref4', 4)
+
+  private makeReferenceImagePort(id: string, index: number): InputPort {
+    const zh = `参考图 ${index}`
+    const en = `Ref ${index}`
+    return new InputPort(id, {
+      accepts: [ImgFileValue],
+      label: {
+        zh,
+        en,
+        ja: `参照画像 ${index}`,
+        ko: `참조 이미지 ${index}`,
+        es: `Referencia ${index}`,
+        ar: `المرجع ${index}`,
+        fr: `Référence ${index}`,
+        pt: `Referência ${index}`,
+        ru: `Эталон ${index}`,
+        hi: `संदर्भ ${index}`,
+        id: `Referensi ${index}`,
+        de: `Referenz ${index}`,
+        vi: `Hình tham chiếu ${index}`,
+        tr: `Referans ${index}`,
+        it: `Riferimento ${index}`
+      }
+    })
+  }
+
+  /** 所有参考图端口，按编号顺序排列；resolveReferenceImages 用它遍历 */
+  private readonly referenceImagePorts: InputPort[]
+
   /** 输出端口：生成的图片 */
   readonly imageOutput = new OutputPort('image', ImgFileValue, {
     zh: '生成图',
@@ -123,7 +168,13 @@ export class ImageGenNode extends Node {
     super(id)
     this.addInput(this.promptInput)
     this.addInput(this.sizeInput)
+    this.addInput(this.ref1Input)
+    this.addInput(this.ref2Input)
+    this.addInput(this.ref3Input)
+    this.addInput(this.ref4Input)
     this.addOutput(this.imageOutput)
+    // 所有参考图端口按编号顺序排，resolveReferenceImages 循环它拿到"第一张图→第四张图"的稳定顺序
+    this.referenceImagePorts = [this.ref1Input, this.ref2Input, this.ref3Input, this.ref4Input]
     // 内容区硬约束：头部标签 + 预览区 + 底部操作栏（尺寸下拉 + 生成按钮）
     this.setBox(300, 300)
   }
@@ -213,6 +264,32 @@ export class ImageGenNode extends Node {
     return first instanceof StringValue ? first.value : ''
   }
 
+  /**
+   * 按 ref1→ref2→ref3→ref4 的固定顺序收集参考图并转 base64。
+   * 某号端口没接就是缺省跳过，后面的端口不顶上（保持编号语义：第一张图就是 ref1）。
+   * 百炼 multmodal-generation 接口要求 base64 必须带 data URI 前缀：
+   *   data:{mime_type};base64,{base64_data}
+   * http/https URL 不需要前缀，resolveReferenceImages 这里只处理 File 对象，
+   * 所以统一拼前缀；URL 形式的参考图（如果以后支持）在 buildImageRequestBody 里判断。
+   */
+  private async resolveReferenceImages(): Promise<{
+    images?: string[]
+    tooLarge?: number
+  }> {
+    const imgs: string[] = []
+    for (const port of this.referenceImagePorts) {
+      const [first] = port.value
+      if (!(first instanceof ImgFileValue)) continue
+      if (first.file.size > MAX_REFERENCE_IMAGE_BYTES) {
+        return { tooLarge: imgs.length }
+      }
+      const bytes = new Uint8Array(await first.file.arrayBuffer())
+      const mime = first.file.type || 'image/png'
+      imgs.push(`data:${mime};base64,${bytesToBase64(bytes)}`)
+    }
+    return { images: imgs }
+  }
+
   /** 生成前的取值 + 校验；通过后发起请求 */
   private async doFetch(): Promise<void> {
     const endpoint = readImageEndpoint()
@@ -235,8 +312,58 @@ export class ImageGenNode extends Node {
       return
     }
 
+    const refResolved = await this.resolveReferenceImages()
+    // 第 N 张参考图文件过大：提示用户压缩，不发请求
+    if (refResolved.tooLarge !== undefined) {
+      const n = refResolved.tooLarge + 1
+      this.status = 'error'
+      this.errorMessage = `第 ${n} 张参考图太大（超过 7MB），请压缩后再试`
+      this.resultFile = null
+      this.notifyChanged()
+      return
+    }
+
+    // —— 端口编号连续性检查：必须从 ref1 开始、按顺序接，不能跳号 ——
+    // 提示词里的"第一张图""第二张图"依赖 ref1→ref2→ref3→ref4 的稳定顺序，
+    // 如果只接 ref2、ref3，content 数组里 ref2 会变成"第一张"——编号错位。
+    const refIndices: number[] = []
+    for (let i = 0; i < this.referenceImagePorts.length; i++) {
+      const [first] = this.referenceImagePorts[i].value
+      if (first instanceof ImgFileValue) refIndices.push(i + 1) // i+1 = 端口编号 (1~4)
+    }
+    for (let i = 0; i < refIndices.length; i++) {
+      const expected = i + 1
+      if (refIndices[i] !== expected) {
+        const missing = expected
+        const first = refIndices[0]
+        this.status = 'error'
+        this.errorMessage = `参考图端口需要从 ref1 开始连续接：您接了 ref${first}、ref${refIndices.join('/')}，请先接 ref${missing}`
+        this.resultFile = null
+        this.notifyChanged()
+        return
+      }
+    }
+
+    const refCount = refResolved.images?.length ?? 0
+    // 接了参考图但当前模型不支持：提示用户换模型，参考图也不会被静默丢弃
+    if (refCount > 0 && endpoint.maxReferenceImages === 0) {
+      this.status = 'error'
+      this.errorMessage = `当前模型 ${endpoint.model} 不支持参考图，可切换到百炼的 qwen-image-2.0-pro 或 wan2.6-t2i`
+      this.resultFile = null
+      this.notifyChanged()
+      return
+    }
+    // 参考图数量超过当前模型上限：明确报错，不静默截断
+    if (refCount > endpoint.maxReferenceImages) {
+      this.status = 'error'
+      this.errorMessage = `参考图过多：当前模型 ${endpoint.model} 最多支持 ${endpoint.maxReferenceImages} 张，您接了 ${refCount} 张`
+      this.resultFile = null
+      this.notifyChanged()
+      return
+    }
+
     const myRequestId = ++this.requestId
-    await this.fetchAndCommit(endpoint, prompt, this.displaySize, myRequestId)
+    await this.fetchAndCommit(endpoint, prompt, this.displaySize, refResolved.images, myRequestId)
   }
 
   /** 调生成接口 → 拿到图片字节 → commit 到输出端口；失败写 errorMessage */
@@ -244,6 +371,7 @@ export class ImageGenNode extends Node {
     endpoint: ResolvedImageEndpoint,
     prompt: string,
     size: string,
+    referenceImages: readonly string[] | undefined,
     myRequestId: number
   ): Promise<void> {
     this.status = 'loading'
@@ -255,7 +383,7 @@ export class ImageGenNode extends Node {
     let errMsg = ''
 
     try {
-      const outcome = await this.requestImage(endpoint, prompt, size, myRequestId)
+      const outcome = await this.requestImage(endpoint, prompt, size, referenceImages, myRequestId)
       // 轮询期间节点被销毁 / 用户又点了生成 → 整个结果丢弃，交给新请求收尾
       if (outcome.cancelled) return
       if (outcome.error) {
@@ -297,12 +425,13 @@ export class ImageGenNode extends Node {
     endpoint: ResolvedImageEndpoint,
     prompt: string,
     size: string,
+    referenceImages: readonly string[] | undefined,
     myRequestId: number
   ): Promise<{ result?: ExtractedImage; error?: string; cancelled?: boolean }> {
     const res = await fetch(endpoint.requestUrl, {
       method: 'POST',
       headers: buildImageRequestHeaders(endpoint),
-      body: JSON.stringify(buildImageRequestBody(endpoint, prompt, size))
+      body: JSON.stringify(buildImageRequestBody(endpoint, prompt, size, referenceImages))
     })
     const data = await res.json().catch(() => undefined)
 

@@ -29,6 +29,13 @@ export interface ImageModelPreset {
   readonly supportsBase64Response?: boolean
   /** 单个模型的协议覆盖：同一家下同步 / 异步混用时用（如百炼的 qwen-image 同步、万相 2.5 异步） */
   readonly shape?: ImageRequestShape
+  /**
+   * 支持的参考图（图生图 / 编辑）最大张数。
+   * 0 / 未配 = 不支持传参考图。
+   * 当前覆盖：百炼 sync 的 qwen-image-2.0-pro（上限 3）、wan2.6-t2i（上限 4）。
+   * 端口会据此做数量校验，超上限直接报错而不是静默截断。
+   */
+  readonly maxReferenceImages?: number
 }
 
 export interface ImageProviderPreset {
@@ -111,7 +118,8 @@ export const IMAGE_PROVIDERS: Readonly<Record<ImageProviderId, ImageProviderPres
       // —— 同步（multimodal-generation，messages 协议）——
       // 2.0-pro 文档默认 2048*2048，这里把 1024x1024 放首位当默认值，省额度，且仍在 512*512~2048*2048 的合法区间
       'qwen-image-2.0-pro': {
-        sizes: ['1024x1024', '1328x1328', '1536x1024', '1024x1536', '1664x928', '928x1664', '2048x2048']
+        sizes: ['1024x1024', '1328x1328', '1536x1024', '1024x1536', '1664x928', '928x1664', '2048x2048'],
+        maxReferenceImages: 4
       },
       'qwen-image': {
         sizes: ['1024x1024', '1664x928', '1472x1140', '1328x1328', '1140x1472', '928x1664']
@@ -121,7 +129,8 @@ export const IMAGE_PROVIDERS: Readonly<Record<ImageProviderId, ImageProviderPres
       },
       // 万相 2.6 走的是同一套同步接口；尺寸按官方说明取 1280*1280~1440*1440 像素区间内的常用档
       'wan2.6-t2i': {
-        sizes: ['1280x1280', '1440x1440', '1600x1280', '1280x1600']
+        sizes: ['1280x1280', '1440x1440', '1600x1280', '1280x1600'],
+        maxReferenceImages: 4
       },
       // —— 异步（提交任务 + 轮询）——
       'wan2.5-t2i-preview': {
@@ -161,6 +170,8 @@ export interface ResolvedImageEndpoint {
   sizes: readonly string[]
   defaultSize: string
   supportsBase64Response: boolean
+  /** 当前模型支持的参考图（图生图 / 编辑）最大张数；0 = 不支持 */
+  maxReferenceImages: number
 }
 
 /**
@@ -207,7 +218,8 @@ export function readImageEndpoint(): ResolvedImageEndpoint {
     model,
     sizes,
     defaultSize: sizes[0],
-    supportsBase64Response: modelPreset?.supportsBase64Response ?? false
+    supportsBase64Response: modelPreset?.supportsBase64Response ?? false,
+    maxReferenceImages: modelPreset?.maxReferenceImages ?? 0
   }
 }
 
@@ -228,11 +240,18 @@ export function buildImageRequestHeaders(endpoint: ResolvedImageEndpoint): Recor
   return headers
 }
 
-/** 按各家的协议拼请求体——字段名不一样，别用一套 body 打天下 */
+/**
+ * 按各家的协议拼请求体——字段名不一样，别用一套 body 打天下。
+ *
+ * @param referenceImages 参考图数组（每张是 base64 字符串，不含 data: 前缀；或远端 URL）。
+ *                        仅 dashscope-sync 形态会塞到 content 数组里，其余分支忽略。
+ *                        空数组 / 未传等于纯文生图，向后兼容。
+ */
 export function buildImageRequestBody(
   endpoint: ResolvedImageEndpoint,
   prompt: string,
-  size: string
+  size: string,
+  referenceImages?: readonly string[]
 ): Record<string, unknown> {
   switch (endpoint.shape) {
     case 'siliconflow':
@@ -241,11 +260,21 @@ export function buildImageRequestBody(
     case 'zhipu':
       // 智谱不支持 n，尺寸字段名就是 size
       return { model: endpoint.model, prompt, size }
-    case 'dashscope-sync':
+    case 'dashscope-sync': {
       // 同步协议（qwen-image 系列、万相 2.6）：messages 结构 + prompt_extend / watermark
+      // 多张参考图与 text 并列放在 content 数组里，百炼按数组顺序逐个识别。
+      // 注意：百炼要求 image 字段只能是以下两种之一：
+      //   ① 公网 URL：http://... 或 https://...
+      //   ② Data URI：data:{mime_type};base64,{base64_data}  ← 必须带前缀！
+      // 纯 base64 串会被百炼拒绝，所以 node.ts 的 resolveReferenceImages 里已经拼好前缀。
+      const content: Array<Record<string, string>> = [{ text: prompt }]
+      for (const ref of referenceImages ?? []) {
+        const trimmed = ref.trim()
+        if (trimmed) content.push({ image: trimmed })
+      }
       return {
         model: endpoint.model,
-        input: { messages: [{ role: 'user', content: [{ text: prompt }] }] },
+        input: { messages: [{ role: 'user', content }] },
         parameters: {
           size: toDashscopeSize(size),
           n: 1,
@@ -253,6 +282,7 @@ export function buildImageRequestBody(
           watermark: false
         }
       }
+    }
     case 'dashscope-async':
       // 异步任务协议（万相 2.5 及更早）走的是另一套 body：input.prompt，没有 messages
       return {

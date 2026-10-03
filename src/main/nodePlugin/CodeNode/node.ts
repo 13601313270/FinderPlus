@@ -498,15 +498,29 @@ export class CodeNode extends Node {
 
     let resp: ReturnType<typeof api.run>
     try {
-      resp = api.run(this.code, args, onOutput, (msg: string) => {
-        // async 函数里 throw / Promise reject → preload 侧 catch 到后回调这里
-        // 可能跟 _flushRunBuffer 竞争：如果已经有 callOutputPort 提交过值，status 可能是 done
-        // 覆盖 resultText 成错误信息，并确保 status = error
-        this.resultText = ''
-        this.errorText = msg
-        this.status = 'error'
-        this.notifyChanged()
-      })
+      resp = api.run(
+        this.code,
+        args,
+        onOutput,
+        (msg: string) => {
+          // async 函数里 throw / Promise reject → preload 侧 catch 到后回调这里
+          // 可能跟 _flushRunBuffer 竞争：如果已经有 callOutputPort 提交过值，status 可能是 done
+          // 覆盖 resultText 成错误信息，并确保 status = error
+          this.resultText = ''
+          this.errorText = msg
+          this.status = 'error'
+          this.notifyChanged()
+        },
+        () => {
+          // async 函数 resolve → preload 侧通知"函数体跑完了"
+          // 如果状态还是 running（说明既没有 callOutputPort 也没有 onError），收口为 done
+          if (this.status === 'running') {
+            this.status = 'done'
+            this.resultText = '（执行完成，无输出）'
+            this.notifyChanged()
+          }
+        }
+      )
     } catch (err) {
       resp = { ok: false, error: err instanceof Error ? err.message : String(err) }
     }
@@ -519,13 +533,12 @@ export class CodeNode extends Node {
       return
     }
 
-    // 同步执行正常结束
-    // 如果已经至少收到过一次 callOutputPort（同步阶段触发的），_flushRunBuffer 已经把状态改成 done
-    // 如果还要等异步 callOutputPort，状态保持 running，后续回调会继续更新 resultText
-    if (this._runBuffer.length === 0) {
-      this.resultText = '（执行中，等待 callOutputPort 提交值…）'
-      this.notifyChanged()
-    }
+    // 同步执行正常结束。
+    // 有 callOutputPort → _flushRunBuffer 已经把状态改成 done
+    // 无 callOutputPort 但函数是同步的（如 console.log）→ Promise 会在同一个 tick 内 resolve，
+    //   onComplete 会紧接着触发并收口状态
+    // 无 callOutputPort 但函数在 await → Promise 等 await 完才 resolve，onComplete 到时收口
+    // 这里什么都不用做，等 onComplete 或 _flushRunBuffer 来收口
   }
 
   /** 一次 run() 执行期内，所有 onOutput 回调的 commit 摘要暂存区。 */

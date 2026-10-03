@@ -86,10 +86,12 @@ const codeApi = {
   run: (
     body: string,
     args: Record<string, unknown> | undefined,
-    /** 每次 callOutputPort 触发时，即时回调 renderer 侧 commit 端口 */
-    onOutput: (name: string, value: number | string | boolean | File) => void,
+    /** 每次 callOutputPort 触发时，即时回调 renderer 侧 commit 端口；值类型校验由 renderer 侧 coerce 负责 */
+    onOutput: (name: string, value: unknown) => void,
     /** async 函数 reject 时回调（同步 throw 走返回值，不走这个） */
-    onError?: (error: string) => void
+    onError?: (error: string) => void,
+    /** async 函数 resolve 时回调——通知 renderer "函数体跑完了"，用于收口状态 */
+    onComplete?: () => void
   ): { ok: true } | { ok: false; error: string } => {
     type SyncRunResult = { ok: true } | { ok: false; error: string }
 
@@ -97,19 +99,9 @@ const codeApi = {
       const names = args ? Object.keys(args) : []
       const values = args ? Object.values(args) : []
 
-      // callOutputPort：每次触发 → 即时调 renderer 给的 onOutput 回调
+      // callOutputPort：透传给 renderer 的 onOutput，类型校验由 renderer 侧 coerce 按端口 kind 处理
       const callOutputPort = (name: string, value: unknown): void => {
-        const t = typeof value
-        if (t === 'number' || t === 'string' || t === 'boolean') {
-          onOutput(name, value as number | string | boolean)
-          return
-        }
-        if (value instanceof File) {
-          onOutput(name, value)
-          return
-        }
-        // 不支持的类型：静默忽略
-        // renderer 侧找不到端口或类型不匹配时会更新错误提示
+        onOutput(name, value)
       }
 
       // 用 AsyncFunction 构造函数体，这样用户代码里可以直接写 await，
@@ -120,12 +112,19 @@ const codeApi = {
       const result = fn(...values, callOutputPort)
 
       // 函数本身执行时抛同步错误 → 被下面外层 catch 捕获
-      // 返回 Promise：fire-and-forget，但 reject 要通知 renderer
+      // 返回 Promise：fire-and-forget，但 reject 要通知 renderer；resolve 也要通知让 renderer 收口状态
       if (result instanceof Promise) {
-        result.catch((err) => {
-          const msg = err instanceof Error ? err.message : String(err)
-          onError?.(msg)
-        })
+        result
+          .then(() => {
+            onComplete?.()
+          })
+          .catch((err) => {
+            const msg = err instanceof Error ? err.message : String(err)
+            onError?.(msg)
+          })
+      } else {
+        // 理论上 AsyncFunction 永远返回 Promise，这条分支只是防御性兜底
+        onComplete?.()
       }
 
       return { ok: true }

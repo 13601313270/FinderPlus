@@ -1,6 +1,7 @@
 import { NumberValue } from '../../engine/data/NumberValue'
 import { StringValue } from '../../engine/data/StringValue'
 import { FileValue } from '../../engine/data/FileValue'
+import { JsonValue } from '../../engine/data/JsonValue'
 import { InputPort } from '../../engine/port/InputPort'
 import { OutputPort } from '../../engine/port/OutputPort'
 import { Node } from '../../engine/node/Node'
@@ -23,7 +24,7 @@ export class HumanReviewNode extends Node {
 
   /** 输入端口：列出所有现有 Value 子类 */
   readonly input = new InputPort('input', {
-    accepts: [NumberValue, StringValue, FileValue],
+    accepts: [NumberValue, StringValue, FileValue, JsonValue],
     label: {
       zh: '输入',
       en: 'Input',
@@ -106,7 +107,6 @@ export class HumanReviewNode extends Node {
       this.notifyChanged()
       return
     }
-
     // —— 对齐输出端口 ——
     if (upstreamClass) {
       if (!this.approveOutput) {

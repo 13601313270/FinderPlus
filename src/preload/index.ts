@@ -391,7 +391,17 @@ const tableApi = {
     nodeId: string
     columnName: string
   }): Promise<{ ok: true } | { ok: false; error: string }> =>
-    ipcRenderer.invoke('table:removeColumn', args)
+    ipcRenderer.invoke('table:removeColumn', args),
+
+  /**
+   * 执行原始 SQL 查询（只允许 SELECT），返回 rows 数组。
+   * SQL 中可用 `{table}` 占位符引用本节点的物理表名。
+   */
+  executeRawSql: (args: {
+    nodeId: string
+    sql: string
+  }): Promise<{ ok: true; rows: Array<Record<string, unknown>> } | { ok: false; error: string }> =>
+    ipcRenderer.invoke('table:executeRawSql', args)
 }
 
 if (process.contextIsolated) {

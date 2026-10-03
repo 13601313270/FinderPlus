@@ -1,5 +1,8 @@
 import { Node } from '../../engine/node/Node'
-import type { InputPort } from '../../engine/port/InputPort'
+import { InputPort } from '../../engine/port/InputPort'
+import { OutputPort } from '../../engine/port/OutputPort'
+import { StringValue } from '../../engine/data/StringValue'
+import { JsonValue } from '../../engine/data/JsonValue'
 
 /**
  * 表节点：在 SQLite 里动态建一张物理表，画布上展示成可分页编辑的数据表。
@@ -98,12 +101,49 @@ export function resolveShowInList(col: ColumnDef): boolean {
 const MIN_W = 360
 const MIN_H = 240
 
+/** 动态查询端口对：一个输入（SQL 字符串）+ 一个输出（查询结果 JSON） */
+export interface QueryPortPair {
+  /** 唯一标识（如 `q_0`, `q_1`），持久化用 */
+  readonly id: string
+  /** 输入端口：接受上游 StringValue（SQL 语句） */
+  readonly input: InputPort
+  /** 输出端口：执行后 commit JsonValue（rows 数组） */
+  readonly output: OutputPort
+}
+
+let nextQuerySeq = 0
+
+function makeQueryId(): string {
+  return `q_${++nextQuerySeq}`
+}
+
+/** 给输入端口单独的 label，明确提示用户 SQL 里用 `{table}` 占位符 */
+function queryInputLabel(idx: number): { zh: string; en: string } {
+  const n = idx + 1
+  return {
+    zh: `查询${n}·SQL (FROM {table})`,
+    en: `Query ${n}·SQL (FROM {table})`
+  }
+}
+
+/** 输出端口 label */
+function queryOutputLabel(idx: number): { zh: string; en: string } {
+  const n = idx + 1
+  return {
+    zh: `查询${n}·结果 JSON`,
+    en: `Query ${n}·Result JSON`
+  }
+}
+
 export class TableNode extends Node {
   static readonly TYPE = 'table'
   readonly type = TableNode.TYPE
 
   /** 自定义列定义（不含内置自增 id 列） */
   columns: ColumnDef[] = []
+
+  /** 动态查询端口对列表，按 add 顺序排列 */
+  readonly queryPorts: QueryPortPair[] = []
 
   constructor(id: string) {
     super(id)
@@ -127,12 +167,52 @@ export class TableNode extends Node {
     // 不接收文件
   }
 
-  inputPortReceiveValue(_ports: InputPort[]): void {
-    // 第一期没有输入端口，不处理
+  /**
+   * 异步：收到输入端口值 → 找到对应端口对 → 执行 SQL → commit JsonValue 到输出端口。
+   *
+   * @ts-ignore — 同 beforeDestroy：preload API 只在 renderer 有，tsconfig.node.json 不带 Window 扩展
+   */
+  async inputPortReceiveValue(ports: InputPort[]): Promise<void> {
+    for (const port of ports) {
+      const pair = this.queryPorts.find((p) => p.input === port)
+      if (!pair) continue
+
+      const [first] = port.value
+      if (!(first instanceof StringValue)) {
+        pair.output.clear()
+        this.notifyChanged()
+        continue
+      }
+
+      const sql = first.value.trim()
+      if (!sql) {
+        pair.output.clear()
+        this.notifyChanged()
+        continue
+      }
+
+      try {
+        // @ts-ignore
+        const res = await window.tableApi.executeRawSql({ nodeId: this.id, sql })
+        if (res.ok) {
+          pair.output.commit(new JsonValue(res.rows))
+        } else {
+          pair.output.clear()
+          console.warn('[TableNode] SQL query failed:', res.error)
+        }
+      } catch (err) {
+        pair.output.clear()
+        console.warn('[TableNode] SQL query error:', err)
+      }
+    }
+    this.notifyChanged()
   }
 
   saveState(): Record<string, unknown> {
-    return { columns: this.columns }
+    return {
+      columns: this.columns,
+      queryPortIds: this.queryPorts.map((p) => p.id)
+    }
   }
 
   readState(state: Record<string, unknown>): void {
@@ -140,6 +220,15 @@ export class TableNode extends Node {
       this.columns = state.columns.filter(
         (c: unknown) => typeof c === 'object' && c !== null && typeof (c as ColumnDef).name === 'string'
       ) as ColumnDef[]
+    }
+
+    // 重建动态查询端口对（按持久化 id 顺序）
+    if (Array.isArray(state.queryPortIds)) {
+      for (const pid of state.queryPortIds) {
+        if (typeof pid === 'string') {
+          this.addQueryPort(pid)
+        }
+      }
     }
   }
 
@@ -183,5 +272,43 @@ export class TableNode extends Node {
       Object.assign(this.columns[index], meta)
       this.notifyChanged()
     }
+  }
+
+  // —— 动态查询端口对管理 ——
+
+  /**
+   * 新增一对查询端口（输入 StringValue → 输出 JsonValue）。
+   * 运行时调用或 readState 重建都走这个——传入 id 可选，不传时自动生成。
+   */
+  addQueryPort(existingId?: string): QueryPortPair {
+    const id = existingId ?? makeQueryId()
+    const idx = this.queryPorts.length
+
+    const input = new InputPort(`sql_in_${id}`, {
+      accepts: [StringValue],
+      label: queryInputLabel(idx)
+    })
+
+    const output = new OutputPort(`sql_out_${id}`, JsonValue, queryOutputLabel(idx))
+
+    // 动态端口登记：addInput push 到 inputs 末尾，addOutput 也 push 到 outputs 末尾
+    // 这样 pairs 数组的输入端口和输出端口在各自端口列表里就是对应的顺序
+    this.addInput(input)
+    this.addOutput(output)
+
+    const pair: QueryPortPair = { id, input, output }
+    this.queryPorts.push(pair)
+    this.notifyChanged()
+    return pair
+  }
+
+  /** 删除一对查询端口（自动断开所有连入/连出边） */
+  removeQueryPort(id: string): void {
+    const idx = this.queryPorts.findIndex((p) => p.id === id)
+    if (idx === -1) return
+    const pair = this.queryPorts[idx]
+    this.queryPorts.splice(idx, 1)
+    this.removeInput(pair.input)
+    this.removeOutput(pair.output)
   }
 }

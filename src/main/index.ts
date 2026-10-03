@@ -644,6 +644,54 @@ function registerIpcHandlers(): void {
     }
   })
 
+  /**
+   * 执行原始 SQL 查询（只允许 SELECT），返回 rows 数组。
+   * SQL 中的 `{table}` 占位符会被替换成该节点的物理表名。
+   * 供 TableNode 动态查询端口使用——上游 StringValue 送 SQL 进来，
+   * TableNode 执行后把 rows 包装成 JsonValue commit 给下游。
+   */
+  ipcMain.handle('table:executeRawSql', (_e, args: {
+    nodeId: string
+    sql: string
+  }): { ok: true; rows: Array<Record<string, unknown>> } | { ok: false; error: string } => {
+    if (importInProgress) return { ok: false, error: '导入中，暂不操作' }
+
+    const sql = args.sql?.trim()
+    if (!sql) return { ok: false, error: 'SQL 不能为空' }
+
+    // —— SELECT-only 守卫：正则匹配开头（允许前置空白/注释） ——
+    const trimmed = sql.replace(/^[\s;]*|[\s;]*$/g, '')
+    const selectOnly = /^SELECT\b/i.test(trimmed)
+    if (!selectOnly) {
+      return { ok: false, error: '只允许 SELECT 查询，禁止修改类语句' }
+    }
+
+    // —— 替换 {table} 占位符 ——
+    const tableName = sanitizeTableName(args.nodeId)
+    const finalSql = trimmed.replace(/\{table\}/g, tableName)
+
+    try {
+      const db = getDatabase()
+      const result = db.exec(finalSql)
+
+      const rows: Array<Record<string, unknown>> = []
+      if (result.length > 0 && result[0].values.length > 0) {
+        const cols = result[0].columns
+        for (const row of result[0].values) {
+          const obj: Record<string, unknown> = {}
+          cols.forEach((name: string, i: number) => {
+            obj[name] = row[i]
+          })
+          rows.push(obj)
+        }
+      }
+
+      return { ok: true, rows }
+    } catch (err) {
+      return { ok: false, error: err instanceof Error ? err.message : String(err) }
+    }
+  })
+
   /** 插入一行。values 是 { colName: value }，会按 columns 定义过滤 + 类型转换 */
   ipcMain.handle('table:insertRow', (_e, args: {
     nodeId: string

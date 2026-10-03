@@ -180,7 +180,7 @@ onUnmounted(() => {
         {{ fileName }}
       </span>
       <span v-else class="file-card__name file-card__name--empty">{{ t('emptyFile') }}</span>
-      <div style="display: flex;flex-direction: row;align-items: center;justify-content: center;">
+      <div class="info">
         <span v-if="fileSize || true" class="file-card__size">
           {{ formatSize(fileSize) }}
         </span>
@@ -273,6 +273,13 @@ onUnmounted(() => {
     line-height: 1.3;
     min-height: 14px;
     padding: 0 4px 4px;
+
+    .info {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+    }
   }
 
   &__name {
@@ -292,6 +299,7 @@ onUnmounted(() => {
 
   &__size {
     display: block;
+    flex-shrink: 0;
     color: @color-text-weak;
     font-size: 11px;
   }
@@ -299,6 +307,7 @@ onUnmounted(() => {
   &__meta {
     display: block;
     color: #9aa1ad;
+    flex-shrink: 0;
     font-size: 10px;
   }
 

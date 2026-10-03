@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, reactive, ref, watch, type Component } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { viewport } from '@renderer/canvas/viewport'
+
+const { t } = useI18n()
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import {
   TableNode,
@@ -24,6 +27,7 @@ import BooleanInput from './columnTypes/boolean/Input.vue'
 import BooleanCell from './columnTypes/boolean/Cell.vue'
 import ColorInput from './columnTypes/color/Input.vue'
 import ColorCell from './columnTypes/color/Cell.vue'
+import TableHelpDialog from './TableHelpDialog.vue'
 
 /** 业务类型 → 输入组件映射（表单里用） */
 const inputComponents: Record<BusinessType, Component> = {
@@ -50,7 +54,7 @@ const tableNode = computed(() => {
   return node instanceof TableNode ? node : undefined
 })
 
-const nodeTitle = useNodeTitle(() => tableNode.value, '表')
+const nodeTitle = useNodeTitle(() => tableNode.value, t('table.nodeFallback'))
 const { box, startDrag } = useNodePosition(() => tableNode.value)
 
 /**
@@ -137,6 +141,9 @@ const newColumnCanUpdate = ref(true)
 const newColumnCanSort = ref(false)
 const columnError = ref('')
 
+// —— 帮助弹窗 ——
+const showHelp = ref(false)
+
 // businessType 切换时，defaultValue 重置成该类型的初始值，避免脏值串类型
 watch(newColumnBusinessType, (bt) => {
   const storageType = BUSINESS_TYPE_MAP[bt]
@@ -222,7 +229,7 @@ async function ensureAndLoad(): Promise<void> {
   errorMsg.value = ''
 
   // 1. 确保物理表存在（CREATE TABLE IF NOT EXISTS）
-  const colNames = node.columns.map((c) => c.name).join(', ') || '(无自定义列)'
+  const colNames = node.columns.map((c) => c.name).join(', ') || t('table.noCustomColumns')
   console.log(`[TableNode] ensure table for ${node.id}, columns: ${colNames}`)
 
   // @ts-ignore — 只在 renderer 里有 window.tableApi
@@ -400,7 +407,7 @@ async function submitDialog(): Promise<void> {
         await loadPage()
       }
     } else {
-      errorMsg.value = result.error ?? '操作失败'
+      errorMsg.value = result.error ?? t('table.submitFailed')
     }
   } catch (err) {
     errorMsg.value = err instanceof Error ? err.message : String(err)
@@ -412,7 +419,7 @@ async function deleteRow(row: Row): Promise<void> {
   const node = tableNode.value
   if (!node) return
 
-  const ok = confirm(`确定删除第 ${row.id} 行吗？`)
+  const ok = confirm(t('table.confirmDeleteRow', { id: row.id }))
   if (!ok) return
 
   try {
@@ -430,7 +437,7 @@ async function deleteRow(row: Row): Promise<void> {
       }
       await loadPage()
     } else {
-      errorMsg.value = result.error ?? '删除失败'
+      errorMsg.value = result.error ?? t('table.deleteFailed')
     }
   } catch (err) {
     errorMsg.value = err instanceof Error ? err.message : String(err)
@@ -456,18 +463,18 @@ async function addColumnFromUI(): Promise<void> {
 
   const name = newColumnName.value.trim()
   if (!name) {
-    columnError.value = '请输入列名'
+    columnError.value = t('table.errorEmptyName')
     return
   }
 
   // 校验（和主进程保持一致）
   if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(name)) {
-    columnError.value = '列名只能以字母/下划线开头，后跟字母/数字/下划线'
+    columnError.value = t('table.errorInvalidName')
     return
   }
 
   if (node.columns.some((c) => c.name === name)) {
-    columnError.value = `列名 "${name}" 已存在`
+    columnError.value = t('table.errorDuplicateName', { name })
     return
   }
 
@@ -575,7 +582,7 @@ async function removeColumnFromUI(colName: string): Promise<void> {
   const node = tableNode.value
   if (!node) return
 
-  const ok = confirm(`确定删除列 "${colName}" 吗？该列所有数据将被永久删除。`)
+  const ok = confirm(t('table.confirmDeleteColumn', { name: colName }))
   if (!ok) return
 
   try {
@@ -614,12 +621,23 @@ async function removeColumnFromUI(colName: string): Promise<void> {
           class="tbl__add-btn tbl__add-btn--column"
           type="button"
           @click="showColumnDialog = true"
-        >列设置</button>
+        >{{ $t('table.columnSettings') }}</button>
+        <button
+          class="tbl__add-btn tbl__add-btn--column"
+          type="button"
+          @click="tableNode?.addQueryPort()"
+          :title="$t('table.sqlPortTitle')"
+        >{{ $t('table.sqlPort') }}</button>
         <button
           class="tbl__add-btn"
           type="button"
           @click="openAddDialog"
-        >＋ 新增</button>
+        >{{ $t('table.addRow') }}</button>
+        <button
+          class="tbl__help-btn"
+          type="button"
+          @click.stop="showHelp = true"
+        >?</button>
       </div>
     </div>
 
@@ -637,8 +655,8 @@ async function removeColumnFromUI(colName: string): Promise<void> {
           class="tbl__search-input"
         />
       </div>
-      <button class="tbl__search-btn" type="button" @click="page = 1; loadPage()">搜索</button>
-      <button class="tbl__search-btn tbl__search-btn--reset" type="button" @click="resetSearch">重置</button>
+      <button class="tbl__search-btn" type="button" @click="page = 1; loadPage()">{{ $t('table.search') }}</button>
+      <button class="tbl__search-btn tbl__search-btn--reset" type="button" @click="resetSearch">{{ $t('table.reset') }}</button>
     </div>
 
     <!-- 错误提示 -->
@@ -649,7 +667,7 @@ async function removeColumnFromUI(colName: string): Promise<void> {
       <table v-if="tableNode" class="tbl__table">
         <thead>
           <tr>
-            <th class="tbl__th tbl__th--id">ID</th>
+            <th class="tbl__th tbl__th--id">{{ $t('table.rowId') }}</th>
             <th
               v-for="col in listColumns"
               :key="col.name"
@@ -667,13 +685,13 @@ async function removeColumnFromUI(colName: string): Promise<void> {
                 <span class="tbl__sort-arrow tbl__sort-arrow--desc">▼</span>
               </span>
             </th>
-            <th class="tbl__th tbl__th--ops">操作</th>
+            <th class="tbl__th tbl__th--ops">{{ $t('table.headerOperations') }}</th>
           </tr>
         </thead>
         <tbody>
           <tr v-if="rows.length === 0 && !loading" class="tbl__empty">
             <td :colspan="tableNode.columns.length + 2" class="tbl__empty-cell">
-              暂无数据，点右上角「＋ 新增」添加第一行
+              {{ $t('table.emptyHint') }}
             </td>
           </tr>
           <tr v-for="row in rows" :key="row.id" class="tbl__row">
@@ -693,23 +711,23 @@ async function removeColumnFromUI(colName: string): Promise<void> {
                 class="tbl__op-btn"
                 type="button"
                 @click="openEditDialog(row)"
-              >修改</button>
+              >{{ $t('table.edit') }}</button>
               <button
                 class="tbl__op-btn tbl__op-btn--danger"
                 type="button"
                 @click="deleteRow(row)"
-              >删除</button>
+              >{{ $t('table.delete') }}</button>
             </td>
           </tr>
         </tbody>
       </table>
 
-      <div v-if="loading" class="tbl__loading">加载中…</div>
+      <div v-if="loading" class="tbl__loading">{{ $t('table.loading') }}</div>
     </div>
 
     <!-- 底部分页器 -->
     <div class="tbl__footer">
-      <span class="tbl__total">共 {{ total }} 条</span>
+      <span class="tbl__total">{{ $t('table.totalRows', { total }) }}</span>
       <div class="tbl__pager">
         <button
           class="tbl__page-btn"
@@ -730,7 +748,7 @@ async function removeColumnFromUI(colName: string): Promise<void> {
     <!-- 新增/编辑弹窗 -->
     <HelpDialog
       :visible="showDialog"
-      :title="dialogMode === 'add' ? '新增' : '修改'"
+      :title="dialogMode === 'add' ? $t('table.dialogTitleAdd') : $t('table.dialogTitleEdit')"
       :width="420"
       @close="showDialog = false"
     >
@@ -757,12 +775,12 @@ async function removeColumnFromUI(colName: string): Promise<void> {
             class="tbl-form__btn tbl-form__btn--cancel"
             type="button"
             @click="showDialog = false"
-          >取消</button>
+          >{{ $t('table.dialogCancel') }}</button>
           <button
             class="tbl-form__btn tbl-form__btn--confirm"
             type="button"
             @click="submitDialog"
-          >确定</button>
+          >{{ $t('table.dialogConfirm') }}</button>
         </div>
       </div>
     </HelpDialog>
@@ -770,42 +788,42 @@ async function removeColumnFromUI(colName: string): Promise<void> {
     <!-- 列设置弹窗 -->
     <HelpDialog
       :visible="showColumnDialog"
-      title="列设置"
+      :title="$t('table.columnSettings')"
       :width="720"
       @close="showColumnDialog = false"
     >
       <div v-if="tableNode" class="tbl-col-dialog">
         <!-- 现有列列表 -->
         <div class="tbl-col-dialog__section">
-          <div class="tbl-col-dialog__section-title">当前列</div>
+          <div class="tbl-col-dialog__section-title">{{ $t('table.colSectionTitle') }}</div>
           <div v-if="tableNode.columns.length === 0" class="tbl-col-dialog__empty">
-            暂无自定义列
+            {{ $t('table.colEmpty') }}
           </div>
           <table v-else class="tbl-col-dialog__table">
             <thead>
               <tr>
-                <th>名称</th>
-                <th>类型</th>
-                <th>标题</th>
-                <th>默认值</th>
-                <th>列表</th>
-                <th>搜索</th>
-                <th>可改</th>
-                <th>排序</th>
-                <th>操作</th>
+                <th>{{ $t('table.colHeaderName') }}</th>
+                <th>{{ $t('table.colHeaderType') }}</th>
+                <th>{{ $t('table.colHeaderTitle') }}</th>
+                <th>{{ $t('table.colHeaderDefault') }}</th>
+                <th>{{ $t('table.colHeaderList') }}</th>
+                <th>{{ $t('table.colHeaderSearch') }}</th>
+                <th>{{ $t('table.colHeaderCanUpdate') }}</th>
+                <th>{{ $t('table.colHeaderCanSort') }}</th>
+                <th>{{ $t('table.colHeaderOperations') }}</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="(col, colIndex) in formColumns" :key="col.name" class="tbl-col-dialog__row">
                 <td class="tbl-col-dialog__name-cell">{{ col.name }}</td>
                 <td>
-                  <span class="tbl-col-dialog__type-tag">{{ resolveBusinessType(col) }}</span>
+                  <span class="tbl-col-dialog__type-tag">{{ $t('table.businessType.' + resolveBusinessType(col)) }}</span>
                 </td>
                 <td>
                   <input
                     class="tbl-form__input tbl-col-dialog__title-input"
                     :value="col.title ?? ''"
-                    placeholder="可选"
+                    :placeholder="$t('table.titlePlaceholder')"
                     @input="updateColumnTitle(colIndex, ($event.target as HTMLInputElement).value)"
                   />
                 </td>
@@ -818,7 +836,7 @@ async function removeColumnFromUI(colName: string): Promise<void> {
                   />
                 </td>
                 <td class="tbl-col-dialog__toggle-cell">
-                  <label class="tbl-col-dialog__toggle" :title="resolveShowInList(col) ? '表格可见' : '表格隐藏'">
+                  <label class="tbl-col-dialog__toggle" :title="resolveShowInList(col) ? $t('table.colVisible') : $t('table.colHidden')">
                     <input
                       type="checkbox"
                       :checked="resolveShowInList(col)"
@@ -827,7 +845,7 @@ async function removeColumnFromUI(colName: string): Promise<void> {
                   </label>
                 </td>
                 <td class="tbl-col-dialog__toggle-cell">
-                  <label class="tbl-col-dialog__toggle" :title="col.showInSearch ? '搜索栏可见' : '搜索栏隐藏'">
+                  <label class="tbl-col-dialog__toggle" :title="col.showInSearch ? $t('table.searchVisible') : $t('table.searchHidden')">
                     <input
                       type="checkbox"
                       :checked="col.showInSearch === true"
@@ -836,7 +854,7 @@ async function removeColumnFromUI(colName: string): Promise<void> {
                   </label>
                 </td>
                 <td class="tbl-col-dialog__toggle-cell">
-                  <label class="tbl-col-dialog__toggle" :title="col.canUpdate === false ? '修改弹窗禁用' : '修改弹窗可编辑'">
+                  <label class="tbl-col-dialog__toggle" :title="col.canUpdate === false ? $t('table.canEditDisabled') : $t('table.canEditEnabled')">
                     <input
                       type="checkbox"
                       :checked="col.canUpdate !== false"
@@ -845,7 +863,7 @@ async function removeColumnFromUI(colName: string): Promise<void> {
                   </label>
                 </td>
                 <td class="tbl-col-dialog__toggle-cell">
-                  <label class="tbl-col-dialog__toggle" :title="col.canSort ? '表头可点击排序' : '表头不可排序'">
+                  <label class="tbl-col-dialog__toggle" :title="col.canSort ? $t('table.sortEnabled') : $t('table.sortDisabled')">
                     <input
                       type="checkbox"
                       :checked="col.canSort === true"
@@ -858,7 +876,7 @@ async function removeColumnFromUI(colName: string): Promise<void> {
                     class="tbl-col-dialog__remove"
                     type="button"
                     @click="removeColumnFromUI(col.name)"
-                  >删除</button>
+                  >{{ $t('table.delete') }}</button>
                 </td>
               </tr>
             </tbody>
@@ -873,7 +891,7 @@ async function removeColumnFromUI(colName: string): Promise<void> {
             class="tbl-col-dialog__add-trigger"
             type="button"
             @click="openAddColumnDialog"
-          >＋ 添加新列</button>
+          >{{ $t('table.addColumnTrigger') }}</button>
         </div>
 
         <div class="tbl-form__actions">
@@ -881,7 +899,7 @@ async function removeColumnFromUI(colName: string): Promise<void> {
             class="tbl-form__btn tbl-form__btn--cancel"
             type="button"
             @click="showColumnDialog = false; columnError = ''"
-          >关闭</button>
+          >{{ $t('table.close') }}</button>
         </div>
       </div>
     </HelpDialog>
@@ -889,46 +907,46 @@ async function removeColumnFromUI(colName: string): Promise<void> {
     <!-- 添加列弹窗 -->
     <HelpDialog
       :visible="showAddColumnDialog"
-      title="添加新列"
+      :title="$t('table.addColTitle')"
       :width="440"
       @close="closeAddColumnDialog"
     >
       <div class="tbl-add-col">
         <div class="tbl-form__field">
-          <label class="tbl-form__label">列名（SQL 物理名）</label>
+          <label class="tbl-form__label">{{ $t('table.addColNameLabel') }}</label>
           <input
             v-model="newColumnName"
             type="text"
             class="tbl-form__input"
-            placeholder="如 email"
+            :placeholder="$t('table.addColNamePlaceholder')"
             @keydown.enter="addColumnFromUI"
           />
         </div>
 
         <div class="tbl-form__field">
-          <label class="tbl-form__label">显示标题</label>
+          <label class="tbl-form__label">{{ $t('table.addColTitleLabel') }}</label>
           <input
             v-model="newColumnTitle"
             type="text"
             class="tbl-form__input"
-            placeholder="可选，留空用列名"
+            :placeholder="$t('table.addColTitlePlaceholder')"
             @keydown.enter="addColumnFromUI"
           />
         </div>
 
         <div class="tbl-form__field">
-          <label class="tbl-form__label">业务类型</label>
+          <label class="tbl-form__label">{{ $t('table.addColBusinessTypeLabel') }}</label>
           <select v-model="newColumnBusinessType" class="tbl-form__input tbl-col-dialog__select">
-            <option value="text">text（文本）</option>
-            <option value="textarea">textarea（长字符串）</option>
-            <option value="color">color（颜色）</option>
-            <option value="number">number（数字）</option>
-            <option value="boolean">boolean（布尔）</option>
+            <option value="text">text（{{ $t('table.businessType.text') }}）</option>
+            <option value="textarea">textarea（{{ $t('table.businessType.textarea') }}）</option>
+            <option value="color">color（{{ $t('table.businessType.color') }}）</option>
+            <option value="number">number（{{ $t('table.businessType.number') }}）</option>
+            <option value="boolean">boolean（{{ $t('table.businessType.boolean') }}）</option>
           </select>
         </div>
 
         <div class="tbl-form__field">
-          <label class="tbl-form__label">默认值</label>
+          <label class="tbl-form__label">{{ $t('table.addColDefaultLabel') }}</label>
           <component
             :is="inputComponents[newColumnBusinessType]"
             v-model="newColumnDefaultValue"
@@ -936,21 +954,21 @@ async function removeColumnFromUI(colName: string): Promise<void> {
         </div>
 
         <div class="tbl-add-col__toggles">
-          <label class="tbl-col-dialog__toggle" title="表格是否显示该列">
+          <label class="tbl-col-dialog__toggle" :title="$t('table.addColShowInListTitle')">
             <input type="checkbox" v-model="newColumnShowInList" />
-            <span>展示在列表</span>
+            <span>{{ $t('table.addColShowInListLabel') }}</span>
           </label>
-          <label class="tbl-col-dialog__toggle" title="搜索栏是否显示该列">
+          <label class="tbl-col-dialog__toggle" :title="$t('table.addColShowInSearchTitle')">
             <input type="checkbox" v-model="newColumnShowInSearch" />
-            <span>支持搜索</span>
+            <span>{{ $t('table.addColShowInSearchLabel') }}</span>
           </label>
-          <label class="tbl-col-dialog__toggle" title="修改弹窗是否可编辑">
+          <label class="tbl-col-dialog__toggle" :title="$t('table.addColCanUpdateTitle')">
             <input type="checkbox" v-model="newColumnCanUpdate" />
-            <span>可修改</span>
+            <span>{{ $t('table.addColCanUpdateLabel') }}</span>
           </label>
-          <label class="tbl-col-dialog__toggle" title="表头是否可点击排序">
+          <label class="tbl-col-dialog__toggle" :title="$t('table.addColCanSortTitle')">
             <input type="checkbox" v-model="newColumnCanSort" />
-            <span>可排序</span>
+            <span>{{ $t('table.addColCanSortLabel') }}</span>
           </label>
         </div>
 
@@ -961,18 +979,28 @@ async function removeColumnFromUI(colName: string): Promise<void> {
             class="tbl-form__btn tbl-form__btn--cancel"
             type="button"
             @click="closeAddColumnDialog"
-          >取消</button>
+          >{{ $t('table.addColCancel') }}</button>
           <button
             class="tbl-form__btn tbl-form__btn--confirm"
             type="button"
             @click="addColumnFromUI"
-          >添加</button>
+          >{{ $t('table.addColConfirm') }}</button>
         </div>
       </div>
     </HelpDialog>
 
+    <!-- 帮助弹窗 -->
+    <HelpDialog
+      :visible="showHelp"
+      :title="nodeTitle"
+      :width="520"
+      @close="showHelp = false"
+    >
+      <TableHelpDialog />
+    </HelpDialog>
+
     <!-- 东南角 resize 手柄 -->
-    <div class="tbl__resize" @pointerdown.stop="startResize" title="拖拽调整大小" />
+    <div class="tbl__resize" @pointerdown.stop="startResize" :title="$t('table.resizeTooltip')" />
   </div>
 </template>
 
@@ -1081,6 +1109,29 @@ async function removeColumnFromUI(colName: string): Promise<void> {
       color: #475569;
 
       &:hover { background: #e2e8f0; opacity: 1; }
+    }
+  }
+
+  &__help-btn {
+    all: unset;
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #f3f4f6;
+    color: #6b7280;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+    flex-shrink: 0;
+    transition: background 0.15s, color 0.15s;
+
+    &:hover {
+      background: #dbeafe;
+      color: #2563eb;
     }
   }
 

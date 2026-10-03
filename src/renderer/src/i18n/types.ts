@@ -222,4 +222,106 @@ export type Language = {
       start: string
     }
   }
+  /** 数据表（TableNode）组件的所有 UI 文案 */
+  table: {
+    /** 头部按钮 */
+    columnSettings: string
+    sqlPort: string
+    sqlPortTitle: string
+    addRow: string
+
+    /** 搜索栏 */
+    search: string
+    reset: string
+
+    /** 表格 */
+    headerOperations: string
+    emptyHint: string
+    loading: string
+    /** 分页总数，占位符 {total} */
+    totalRows: string
+    rowId: string
+
+    /** 行操作 */
+    edit: string
+    delete: string
+    submitFailed: string
+    deleteFailed: string
+    /** 确认删除行，占位符 {id} */
+    confirmDeleteRow: string
+    /** 确认删除列，占位符 {name} */
+    confirmDeleteColumn: string
+
+    /** 业务类型的中文描述（<option> 里 "type（描述）" 的括号部分） */
+    businessType: {
+      text: string
+      textarea: string
+      number: string
+      boolean: string
+      color: string
+    }
+
+    /** 新增/编辑弹窗 */
+    dialogTitleAdd: string
+    dialogTitleEdit: string
+    dialogCancel: string
+    dialogConfirm: string
+
+    /** 列设置弹窗 */
+    colSectionTitle: string
+    colEmpty: string
+    colHeaderName: string
+    colHeaderType: string
+    colHeaderTitle: string
+    colHeaderDefault: string
+    colHeaderList: string
+    colHeaderSearch: string
+    colHeaderCanUpdate: string
+    colHeaderCanSort: string
+    colHeaderOperations: string
+    titlePlaceholder: string
+    colVisible: string
+    colHidden: string
+    searchVisible: string
+    searchHidden: string
+    canEditEnabled: string
+    canEditDisabled: string
+    sortEnabled: string
+    sortDisabled: string
+    addColumnTrigger: string
+    close: string
+    /** 列表视图里没有自定义列时的提示（确保物理表时用） */
+    noCustomColumns: string
+
+    /** 添加列弹窗 */
+    addColTitle: string
+    addColNameLabel: string
+    addColNamePlaceholder: string
+    addColTitleLabel: string
+    addColTitlePlaceholder: string
+    addColBusinessTypeLabel: string
+    addColDefaultLabel: string
+    addColShowInListLabel: string
+    addColShowInListTitle: string
+    addColShowInSearchLabel: string
+    addColShowInSearchTitle: string
+    addColCanUpdateLabel: string
+    addColCanUpdateTitle: string
+    addColCanSortLabel: string
+    addColCanSortTitle: string
+    addColCancel: string
+    addColConfirm: string
+
+    /** 列名校验错误 */
+    errorEmptyName: string
+    errorInvalidName: string
+    /** 占位符 {name} */
+    errorDuplicateName: string
+
+    /** resize 手柄 tooltip */
+    resizeTooltip: string
+
+    /** 节点标题 fallback（新建时还没取到 manifest） */
+    nodeFallback: string
+  }
 }

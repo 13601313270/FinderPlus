@@ -12,6 +12,11 @@ import {
   useLLMSettings,
   type LLMProvider
 } from '@renderer/composables/useLLMSettings'
+import {
+  IMAGE_PROVIDERS,
+  type ImageProviderId
+} from '../../../main/nodePlugin/ImageGenNode/providers'
+import { useImageSettings } from '@renderer/composables/useImageSettings'
 import SelectMenu from './SelectMenu.vue'
 
 /**
@@ -30,13 +35,23 @@ const {
   saveProviderKey: saveLLMProviderKey,
   clearKey: clearLLMKey
 } = useLLMSettings()
+const {
+  initDraft: initImageDraft,
+  draftKeys: imageDraftKeys,
+  saveProviderKey: saveImageProviderKey,
+  clearKey: clearImageKey
+} = useImageSettings()
 
-/** SettingsDialog 打开时同步初始化 LLM draft */
+/** SettingsDialog 打开时同步初始化 LLM + Image draft */
 watch(visible, (v) => {
-  if (v) initLLMDraft()
+  if (v) {
+    initLLMDraft()
+    initImageDraft()
+  }
 })
 
 const llmProviders = Object.entries(LLM_PROVIDERS) as [LLMProvider, typeof LLM_PROVIDERS[LLMProvider]][]
+const imageProviders = Object.entries(IMAGE_PROVIDERS) as [ImageProviderId, typeof IMAGE_PROVIDERS[ImageProviderId]][]
 
 /** 重置新手引导：清除 seen 标记并立即弹出 */
 function onRestartOnboarding(): void {
@@ -215,6 +230,7 @@ onUnmounted(() => {
 // —— LLM 保存反馈 ——
 /** 正在显示"已保存"反馈的 provider 集合 */
 const savedProviders = ref<Set<LLMProvider>>(new Set())
+const savedImageProviders = ref<Set<ImageProviderId>>(new Set())
 
 function onSaveProviderKey(provider: LLMProvider): void {
   saveLLMProviderKey(provider)
@@ -222,6 +238,14 @@ function onSaveProviderKey(provider: LLMProvider): void {
   savedProviders.value.add(provider)
   setTimeout(() => {
     savedProviders.value.delete(provider)
+  }, 1500)
+}
+
+function onSaveImageProviderKey(provider: ImageProviderId): void {
+  saveImageProviderKey(provider)
+  savedImageProviders.value.add(provider)
+  setTimeout(() => {
+    savedImageProviders.value.delete(provider)
   }, 1500)
 }
 </script>
@@ -294,6 +318,48 @@ function onSaveProviderKey(provider: LLMProvider): void {
                     type="button"
                     @click="onSaveProviderKey(key)"
                   >{{ savedProviders.has(key) ? '已保存' : '保存' }}</button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- 文生图 API Key 配置（每个服务商单独一行） -->
+          <section class="gs-section">
+            <h4 class="gs-section__title">文生图 API Key</h4>
+            <p class="gs-section__hint">
+              在此配置图像生成服务商的 API Key。每个文生图节点可独立选择使用哪个服务商和模型。
+            </p>
+
+            <div class="gs-llm__key-list">
+              <div
+                v-for="[key, preset] in imageProviders"
+                :key="key"
+                class="gs-llm__key-row"
+              >
+                <div class="gs-llm__key-header">
+                  <span class="gs-llm__key-label">{{ preset.label }}</span>
+                </div>
+                <div class="gs-llm__key-input-row">
+                  <input
+                    v-model="imageDraftKeys[key]"
+                    class="gs-llm__input"
+                    type="password"
+                    :placeholder="`${preset.label} API Key`"
+                    autocomplete="off"
+                    spellcheck="false"
+                  />
+                  <button
+                    class="gs-btn gs-btn--ghost gs-btn--clear-sm"
+                    type="button"
+                    :disabled="!imageDraftKeys[key]"
+                    @click="clearImageKey(key)"
+                  >清除</button>
+                  <button
+                    class="gs-btn gs-btn--primary gs-btn--save-sm"
+                    :class="{ 'gs-btn--saved': savedImageProviders.has(key) }"
+                    type="button"
+                    @click="onSaveImageProviderKey(key)"
+                  >{{ savedImageProviders.has(key) ? '已保存' : '保存' }}</button>
                 </div>
               </div>
             </div>

@@ -148,15 +148,80 @@ export const IMAGE_PROVIDERS: Readonly<Record<ImageProviderId, ImageProviderPres
 /** 未知模型（预设已下线 / 存量脏数据）时的兜底尺寸 */
 export const FALLBACK_IMAGE_SIZES: readonly string[] = ['1024x1024']
 
-/** 图像配置的 localStorage 键（渲染层设置弹窗与本文件共用） */
+/**
+ * 图像配置的 localStorage 键。
+ * 格式（对齐 LLM 全局配置）：
+ *   { providers: { siliconflow: { key: "..." }, openai: { key: "" }, ... } }
+ * 只存各 provider 的 API Key；provider / model 选择在节点级配置里。
+ */
 export const IMAGE_CONFIG_KEY = 'canvasdesk.image.config'
 
-interface StoredImageConfig {
-  provider: ImageProviderId
-  providers: Record<string, { key: string; model: string }>
+/** 各 provider key 的全局存储结构（对外导出，供渲染层 useImageSettings 共用） */
+export interface ImageGlobalConfig {
+  providers: Record<ImageProviderId, { key: string }>
 }
 
-/** 当前生效的图像端点配置；key、模型、尺寸集合、请求协议都在这一个对象里 */
+/**
+ * 旧格式（v1）→ 新格式（v2）的一次性迁移，幂等。
+ *
+ * 旧格式：{ provider, providers: { siliconflow: { key, model }, ... } }
+ * 新格式：{ providers: { siliconflow: { key }, ... } }
+ *
+ * 判定依据：旧格式 providers[*] 里有 model 字段；新格式只有 key。
+ * 迁移完把旧格式备份到 canvasdesk.image.config.backup，覆盖 IMAGE_CONFIG_KEY。
+ */
+function migrateLegacyImageConfig(): void {
+  const raw = localStorage.getItem(IMAGE_CONFIG_KEY)
+  if (!raw) return
+  try {
+    const parsed = JSON.parse(raw) as Record<string, unknown>
+    const providers = parsed.providers
+    if (!providers || typeof providers !== 'object') return
+    const firstChild = Object.values(providers)[0] as Record<string, unknown> | undefined
+    // 有 model 字段 → 旧格式；或者存在顶层 provider 字段 → 旧格式
+    const hasModel = firstChild && typeof firstChild === 'object' && 'model' in firstChild
+    if (!hasModel && !('provider' in parsed)) return // 已经是新格式
+    // 备份旧内容
+    localStorage.setItem(`${IMAGE_CONFIG_KEY}.backup`, raw)
+    // 构造新格式
+    const base: ImageGlobalConfig = defaultImageGlobalConfig()
+    const oldProviders = providers as Record<string, { key?: string }>
+    for (const p of Object.keys(IMAGE_PROVIDERS) as ImageProviderId[]) {
+      base.providers[p].key = typeof oldProviders[p]?.key === 'string' ? oldProviders[p]!.key! : ''
+    }
+    localStorage.setItem(IMAGE_CONFIG_KEY, JSON.stringify(base))
+  } catch {
+    // 解析失败 → 不动，后续用空配置兜底
+  }
+}
+
+/** 新格式默认配置：每家 provider 一个空 key 槽位 */
+function defaultImageGlobalConfig(): ImageGlobalConfig {
+  const providers = {} as Record<ImageProviderId, { key: string }>
+  for (const p of Object.keys(IMAGE_PROVIDERS) as ImageProviderId[]) {
+    providers[p] = { key: '' }
+  }
+  return { providers }
+}
+
+/** 按 provider 从全局配置取 API Key（引擎层调用） */
+export function readImageProviderKey(providerId: ImageProviderId): string {
+  try {
+    migrateLegacyImageConfig()
+    const raw = localStorage.getItem(IMAGE_CONFIG_KEY)
+    if (raw) {
+      const cfg = JSON.parse(raw) as Partial<ImageGlobalConfig>
+      return cfg.providers?.[providerId]?.key ?? ''
+    }
+  } catch {
+    // fall through
+  }
+  return ''
+}
+
+/**
+ * 当前生效的图像端点配置；由节点级 (provider, model) + 全局 key + 预设元信息拼出来。
+ */
 export interface ResolvedImageEndpoint {
   provider: ImageProviderId
   label: string
@@ -175,33 +240,20 @@ export interface ResolvedImageEndpoint {
 }
 
 /**
- * 从 localStorage 读当前生效的图像端点配置。
- * 配置缺失 / 解析失败 / provider 不认时整体回落到默认 provider 的默认模型。
+ * 组装图像端点配置：
+ * @param providerId  节点级选的 provider
+ * @param modelOverride 节点级选的模型（空串或不认时回落到该 provider 的 defaultModel）
  */
-export function readImageEndpoint(): ResolvedImageEndpoint {
-  let providerId: ImageProviderId = 'siliconflow'
-  let key = ''
-  let modelOverride = ''
-
-  try {
-    const raw = localStorage.getItem(IMAGE_CONFIG_KEY)
-    if (raw) {
-      const cfg = JSON.parse(raw) as Partial<StoredImageConfig>
-      if (cfg.provider && Object.prototype.hasOwnProperty.call(IMAGE_PROVIDERS, cfg.provider)) {
-        providerId = cfg.provider
-      }
-      const providerCfg = cfg.providers?.[providerId]
-      if (providerCfg) {
-        key = typeof providerCfg.key === 'string' ? providerCfg.key : ''
-        modelOverride = typeof providerCfg.model === 'string' ? providerCfg.model : ''
-      }
-    }
-  } catch {
-    // 解析失败走默认 provider
-  }
-
-  const preset = IMAGE_PROVIDERS[providerId]
-  const model = modelOverride.trim() || preset.defaultModel
+export function readImageEndpoint(
+  providerId: ImageProviderId,
+  modelOverride = ''
+): ResolvedImageEndpoint {
+  // provider 不认时回落默认
+  const preset = IMAGE_PROVIDERS[providerId] ?? IMAGE_PROVIDERS.siliconflow
+  const key = readImageProviderKey(providerId)
+  const model = (modelOverride?.trim() && preset.models[modelOverride.trim()])
+    ? modelOverride.trim()
+    : preset.defaultModel
   const modelPreset = preset.models[model]
   const sizes = modelPreset?.sizes ?? FALLBACK_IMAGE_SIZES
   // 模型级协议优先（同一家下同步 / 异步混用，如百炼的 qwen-image 与万相 2.5）

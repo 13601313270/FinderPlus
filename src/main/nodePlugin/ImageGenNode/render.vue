@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, shallowRef } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { ImageGenNode } from './node'
+import { IMAGE_PROVIDERS, type ImageModelPreset, type ImageProviderId } from './providers'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
+import { useGlobalSettings } from '@renderer/composables/useGlobalSettings'
 import { useImageSettings } from '@renderer/composables/useImageSettings'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
@@ -19,6 +21,7 @@ const t = useLocalizedMessages(messages)
 
 /**
  * 文生图节点的渲染组件：
+ * - 节点配置行：provider 下拉 + model 下拉（对齐 LLMNode）
  * - 预览区：生成中显示 spinner，生成完直接内联缩略图，失败显示错误文案
  * - 底部操作栏：尺寸下拉（上游接了尺寸线时置灰，以端口值为准）+ 生成按钮
  *
@@ -26,10 +29,17 @@ const t = useLocalizedMessages(messages)
  */
 const props = defineProps<{ id: string }>()
 
-const { config, hasKey, openSettings } = useImageSettings()
+const { openSettings: openGlobalSettings } = useGlobalSettings()
+const { hasKey } = useImageSettings()
+
+const providers = Object.entries(IMAGE_PROVIDERS) as [ImageProviderId, typeof IMAGE_PROVIDERS[ImageProviderId]][]
 
 const node = shallowRef<ImageGenNode | undefined>(undefined)
 const status = ref<'idle' | 'loading' | 'done' | 'error'>('idle')
+
+// 节点级配置（从 ImageGenNode 实例读写）
+const provider = ref<ImageProviderId>('siliconflow')
+const model = ref('')
 
 // 帮助浮层开关（弹窗壳由 HelpDialog 负责）
 const showHelp = ref(false)
@@ -68,6 +78,8 @@ function syncFromNode(): void {
   sizeOptions.value = n.displaySizeOptions
   size.value = n.displaySize
   modelLabel.value = n.displayModelLabel
+  if (n.displayProvider !== provider.value) provider.value = n.displayProvider
+  if (n.displayModel !== model.value) model.value = n.displayModel
 
   const file = n.displayFile ?? null
   if (file !== lastFile) {
@@ -88,9 +100,18 @@ const sizeChoices = computed<readonly string[]>(() => {
   return list
 })
 
+/** 当前 provider 的模型选项列表 */
+const currentPreset = computed(() => IMAGE_PROVIDERS[provider.value])
+const modelOptions = computed(
+  () => Object.entries(currentPreset.value.models) as [string, ImageModelPreset][]
+)
+
+/** 当前 provider 是否已配全局 Key —— 决定齿轮 tooltip */
+const currentProviderKeyOk = computed(() => hasKey(provider.value))
+
 const placeholder = computed(() => {
   if (!node.value) return t('nodeMissing')
-  if (!hasKey()) return t('needApiKey')
+  if (!currentProviderKeyOk.value) return t('needApiKey')
   if (!promptConnected.value) return t('needPrompt')
   return t('ready')
 })
@@ -99,13 +120,12 @@ onMounted(() => {
   const found = workspaceScene.getNode(props.id)
   if (found instanceof ImageGenNode) {
     node.value = found
+    provider.value = found.displayProvider
+    model.value = found.displayModel
     syncFromNode()
     unsubscribe = found.onChanged(() => syncFromNode())
   }
 })
-
-// 设置里换了 Provider / 模型 → 尺寸选项和默认值都会变，重新同步一次
-watch(config, () => syncFromNode(), { deep: true })
 
 onUnmounted(() => {
   unsubscribe?.()
@@ -114,7 +134,17 @@ onUnmounted(() => {
 
 function onGearClick(e: MouseEvent): void {
   e.stopPropagation()
-  openSettings()
+  openGlobalSettings()
+}
+
+function onProviderChange(val: ImageProviderId): void {
+  provider.value = val
+  node.value?.setProvider(val)
+}
+
+function onModelChange(val: string): void {
+  model.value = val
+  node.value?.setModel(val)
 }
 
 function onSizeChange(e: Event): void {
@@ -131,16 +161,16 @@ function onGenClick(): void {
     <div class="node__header" @pointerdown="startDrag">
       <span class="node__handle" :title="t('dragHint')">{{ nodeTitle }}</span>
       <div class="node__header-actions">
-        <button
+        <!-- <button
           v-if="node"
           class="node__gear"
           type="button"
-          :title="hasKey() ? t('gearConfigured') : t('gearConfigure')"
+          :title="currentProviderKeyOk ? t('gearConfigured') : t('gearConfigure')"
           @pointerdown.stop
           @click.stop="onGearClick"
         >
           <GearIcon />
-        </button>
+        </button> -->
         <button
           class="node__help"
           type="button"
@@ -149,6 +179,32 @@ function onGenClick(): void {
           @click.stop="showHelp = true"
         >?</button>
       </div>
+    </div>
+
+    <!-- 节点级配置行：provider + model（对齐 LLMNode） -->
+    <div v-if="node" class="node__config-row">
+      <select
+        class="node__provider-select"
+        :value="provider"
+        @change="(e) => onProviderChange((e.target as HTMLSelectElement).value as ImageProviderId)"
+      >
+        <option v-for="[key, preset] in providers" :key="key" :value="key">
+          {{ preset.label }}
+        </option>
+      </select>
+      <select
+        class="node__model-select"
+        :value="model"
+        :title="model || `默认: ${currentPreset.defaultModel}`"
+        @change="(e) => onModelChange((e.target as HTMLSelectElement).value)"
+      >
+        <option value="">{{ currentPreset.defaultModel }}（预设默认）</option>
+        <option
+          v-for="[id, preset] in modelOptions"
+          :key="id"
+          :value="id"
+        >{{ id }}{{ preset.shape === 'dashscope-async' ? ' · 异步（较慢）' : '' }}</option>
+      </select>
     </div>
 
     <!-- 预览区 -->
@@ -248,6 +304,40 @@ function onGenClick(): void {
     align-items: center;
     gap: 2px;
     margin-left: auto;
+  }
+
+  // —— 节点配置行 ——
+  &__config-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  &__provider-select,
+  &__model-select {
+    font-size: 11px;
+    padding: 3px 6px;
+    border: 1px solid #d5d9e0;
+    border-radius: 4px;
+    background: #fff;
+    color: #374151;
+    outline: none;
+    cursor: pointer;
+
+    &:focus {
+      border-color: #3b82f6;
+    }
+  }
+
+  &__provider-select {
+    width: 100px;
+    flex-shrink: 0;
+  }
+
+  &__model-select {
+    flex: 1;
+    min-width: 0;
   }
 
   &__help {

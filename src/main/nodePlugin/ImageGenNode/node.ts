@@ -13,7 +13,10 @@ import {
   extractTaskId,
   extractTaskStatus,
   readImageEndpoint,
+  readImageProviderKey,
+  IMAGE_PROVIDERS,
   type ExtractedImage,
+  type ImageProviderId,
   type ResolvedImageEndpoint
 } from './providers'
 
@@ -154,6 +157,10 @@ export class ImageGenNode extends Node {
     it: 'Immagine generata'
   })
 
+  // —— 节点级配置 ——
+  private provider: ImageProviderId = 'siliconflow'
+  private model = ''   // 空串表示用 IMAGE_PROVIDERS[provider].defaultModel
+
   /** 本地选择的尺寸（sizeInput 未接线时用）。空串 = 跟随当前模型默认尺寸 */
   private localSize = ''
 
@@ -180,6 +187,30 @@ export class ImageGenNode extends Node {
   }
 
   // —— UI 只读视图 ——
+
+  /** 节点级 getter / setter：provider 选择 */
+  get displayProvider(): ImageProviderId { return this.provider }
+  setProvider(v: ImageProviderId): void {
+    if (this.provider === v) return
+    this.provider = v
+    // 换 provider 后，旧的 model 在新 provider 下可能不认（下拉里没这个选项），重置为空让 UI 显示预设默认
+    this.model = ''
+    this.localSize = ''
+    this.notifyChanged()
+  }
+
+  /** 节点级 getter / setter：模型（空串 = 预设默认） */
+  get displayModel(): string { return this.model }
+  setModel(v: string): void {
+    if (this.model === v) return
+    this.model = v
+    this.notifyChanged()
+  }
+
+  /** 当前 provider 是否已配全局 Key —— UI 读它决定是否显示警告 */
+  get hasProviderKey(): boolean {
+    return readImageProviderKey(this.provider).length > 0
+  }
 
   /** 当前状态 —— UI 读它决定显示 spinner / 缩略图 / 错误样式 */
   get displayStatus(): ImageGenStatus {
@@ -208,12 +239,12 @@ export class ImageGenNode extends Node {
 
   /** 当前模型支持的尺寸选项（给节点内下拉用） */
   get displaySizeOptions(): readonly string[] {
-    return readImageEndpoint().sizes
+    return readImageEndpoint(this.provider, this.model).sizes
   }
 
   /** 当前生效尺寸：上游端口值 > 本地选择（须在当前模型支持列表内）> 当前模型默认尺寸 */
   get displaySize(): string {
-    const endpoint = readImageEndpoint()
+    const endpoint = readImageEndpoint(this.provider, this.model)
     if (this.sizeInput.incomingEdgeCount > 0) {
       const [first] = this.sizeInput.value
       if (first instanceof StringValue && first.value.trim()) {
@@ -228,7 +259,7 @@ export class ImageGenNode extends Node {
 
   /** 当前 Provider / 模型文案，UI 提示用 */
   get displayModelLabel(): string {
-    const endpoint = readImageEndpoint()
+    const endpoint = readImageEndpoint(this.provider, this.model)
     return `${endpoint.label} / ${endpoint.model}`
   }
 
@@ -292,11 +323,12 @@ export class ImageGenNode extends Node {
 
   /** 生成前的取值 + 校验；通过后发起请求 */
   private async doFetch(): Promise<void> {
-    const endpoint = readImageEndpoint()
+    const endpoint = readImageEndpoint(this.provider, this.model)
 
     if (!endpoint.key) {
       this.status = 'error'
-      this.errorMessage = '请先点击右上角齿轮配置图像 API Key'
+      const label = IMAGE_PROVIDERS[this.provider].label
+      this.errorMessage = `请在全局设置中为 ${label} 配置 API Key`
       this.resultFile = null
       this.notifyChanged()
       return
@@ -521,10 +553,20 @@ export class ImageGenNode extends Node {
   }
 
   saveState(): Record<string, unknown> {
-    return { localSize: this.localSize }
+    return {
+      provider: this.provider,
+      model: this.model,
+      localSize: this.localSize
+    }
   }
 
   readState(state: Record<string, unknown>): void {
+    if (typeof state.provider === 'string' && IMAGE_PROVIDERS[state.provider as ImageProviderId]) {
+      this.provider = state.provider as ImageProviderId
+    }
+    if (typeof state.model === 'string') {
+      this.model = state.model
+    }
     // localSize 是普通字符串，只有确实存了才恢复（空串表示跟随模型默认值）
     if (typeof state.localSize === 'string') {
       this.localSize = state.localSize

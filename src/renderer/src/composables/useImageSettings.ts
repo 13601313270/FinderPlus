@@ -2,70 +2,68 @@ import { ref } from 'vue'
 import {
   IMAGE_CONFIG_KEY,
   IMAGE_PROVIDERS,
+  readImageProviderKey,
+  type ImageGlobalConfig,
   type ImageProviderId
 } from '../../../main/nodePlugin/ImageGenNode/providers'
 
 /**
- * 图像生成设置：与 LLM 设置完全独立的一套配置（独立 localStorage 键 canvasdesk.image.config），
- * 图像 Key 和文本 Key 各存各的，互不覆盖。
+ * 图像生成全局配置（对齐 useLLMSettings 模式）：
+ * 只管每个 provider 的 API Key；provider / model 选择由节点自己保存。
  *
- * 模型不在弹窗里拉取，而是走 providers.ts 的预设列表——因为**尺寸选项由模型决定**，
- * 模型和尺寸表必须成对维护，随便填个未知模型就拿不到合法尺寸了。
+ * 存储格式：{ providers: { siliconflow: { key: "" }, openai: { key: "" }, ... } }
  */
 
-interface ImageProviderConfig {
-  key: string
-  model: string
-}
-
-interface ImageConfig {
-  provider: ImageProviderId
-  providers: Record<ImageProviderId, ImageProviderConfig>
-}
-
-function providerIds(): ImageProviderId[] {
-  return Object.keys(IMAGE_PROVIDERS) as ImageProviderId[]
-}
-
-function allProviders(): Record<ImageProviderId, ImageProviderConfig> {
-  const o = {} as Record<ImageProviderId, ImageProviderConfig>
-  for (const p of providerIds()) {
-    o[p] = { key: '', model: '' }
-  }
-  return o
-}
-
-function emptyStringRecord(): Record<ImageProviderId, string> {
+function emptyKeyRecord(): Record<ImageProviderId, string> {
   const o = {} as Record<ImageProviderId, string>
-  for (const p of providerIds()) {
+  for (const p of Object.keys(IMAGE_PROVIDERS) as ImageProviderId[]) {
     o[p] = ''
   }
   return o
 }
 
-function defaultConfig(): ImageConfig {
-  return {
-    provider: 'siliconflow',
-    providers: allProviders()
+function defaultGlobalConfig(): ImageGlobalConfig {
+  const providers = {} as Record<ImageProviderId, { key: string }>
+  for (const p of Object.keys(IMAGE_PROVIDERS) as ImageProviderId[]) {
+    providers[p] = { key: '' }
+  }
+  return { providers }
+}
+
+/** 渲染层也做一遍旧格式迁移（双保险）：v1 { provider, providers: { id: { key, model } } } → v2 只留 key */
+function migrateIfNeeded(): void {
+  const raw = localStorage.getItem(IMAGE_CONFIG_KEY)
+  if (!raw) return
+  try {
+    const parsed = JSON.parse(raw) as Record<string, unknown>
+    const providers = parsed.providers
+    if (!providers || typeof providers !== 'object') return
+    const firstChild = Object.values(providers)[0] as Record<string, unknown> | undefined
+    const hasModel = firstChild && typeof firstChild === 'object' && 'model' in firstChild
+    if (!hasModel && !('provider' in parsed)) return
+    const base = defaultGlobalConfig()
+    const oldProviders = providers as Record<string, { key?: string }>
+    for (const p of Object.keys(IMAGE_PROVIDERS) as ImageProviderId[]) {
+      base.providers[p].key = typeof oldProviders[p]?.key === 'string' ? oldProviders[p]!.key! : ''
+    }
+    localStorage.setItem(IMAGE_CONFIG_KEY, JSON.stringify(base))
+  } catch {
+    // 不动
   }
 }
 
-/** 以默认配置为底逐个 merge，保证新增 Provider 的 slot 一定存在 */
-function loadConfig(): ImageConfig {
-  const base = defaultConfig()
+/** 从 localStorage 加载全局配置，带旧版迁移 */
+function loadGlobalConfig(): ImageGlobalConfig {
+  migrateIfNeeded()
+  const base = defaultGlobalConfig()
   try {
     const raw = localStorage.getItem(IMAGE_CONFIG_KEY)
-    if (!raw) return base
-    const parsed = JSON.parse(raw) as Partial<ImageConfig>
-    if (parsed?.provider && providerIds().includes(parsed.provider)) {
-      base.provider = parsed.provider
-    }
-    if (parsed?.providers) {
-      for (const p of providerIds()) {
-        const pc = parsed.providers[p]
+    if (raw) {
+      const parsed = JSON.parse(raw) as Partial<ImageGlobalConfig>
+      for (const p of Object.keys(IMAGE_PROVIDERS) as ImageProviderId[]) {
+        const pc = parsed.providers?.[p]
         if (pc && typeof pc === 'object') {
           base.providers[p].key = typeof pc.key === 'string' ? pc.key : ''
-          base.providers[p].model = typeof pc.model === 'string' ? pc.model : ''
         }
       }
     }
@@ -75,84 +73,79 @@ function loadConfig(): ImageConfig {
   return base
 }
 
-function saveConfig(cfg: ImageConfig): void {
+function saveGlobalConfig(cfg: ImageGlobalConfig): void {
   localStorage.setItem(IMAGE_CONFIG_KEY, JSON.stringify(cfg))
 }
 
 // —— 全局单例 ref，module 级别 ——
-// ⚠️ 必须 module 级：节点 render.vue 与设置弹窗都调 useImageSettings()，只有 module 级才能共享同一份状态
-const config = ref<ImageConfig>(loadConfig())
-const visible = ref(false)
-const draftProvider = ref<ImageProviderId>('siliconflow')
-const draftKeys = ref<Record<ImageProviderId, string>>(emptyStringRecord())
-const draftModels = ref<Record<ImageProviderId, string>>(emptyStringRecord())
+// ⚠️ 必须 module 级：多个组件调用 useImageSettings() 拿到的是同一份状态
+const globalConfig = ref<ImageGlobalConfig>(loadGlobalConfig())
+const draftKeys = ref<Record<ImageProviderId, string>>(emptyKeyRecord())
 
-// 弹窗内的临时草稿（深拷贝，避免直接改全局）
-let draftClone: ImageConfig | null = null
+/**
+ * 给引擎层（node.ts）用：按 provider 取 API Key。
+ * 直接读 localStorage 绕过 ref（引擎层不走 Vue 响应式）。
+ */
+export function getImageProviderKey(provider: ImageProviderId): string {
+  return readImageProviderKey(provider)
+}
 
 export function useImageSettings() {
-  function openSettings(): void {
-    const clone = JSON.parse(JSON.stringify(config.value)) as ImageConfig
-    draftClone = clone
-    draftProvider.value = clone.provider
-    // 构造完整新对象再一次性赋值——Vue 3 ref 不追踪嵌套属性赋值，必须触发顶层 .value 变更
-    const newKeys = emptyStringRecord()
-    const newModels = emptyStringRecord()
-    for (const p of providerIds()) {
-      newKeys[p] = clone.providers[p]?.key ?? ''
-      newModels[p] = clone.providers[p]?.model ?? ''
+  /** SettingsDialog 打开时调用：把当前所有 key 装进 draftKeys */
+  function initDraft(): void {
+    const fresh = emptyKeyRecord()
+    for (const p of Object.keys(IMAGE_PROVIDERS) as ImageProviderId[]) {
+      fresh[p] = globalConfig.value.providers[p]?.key ?? ''
     }
-    draftKeys.value = newKeys
-    draftModels.value = newModels
-    visible.value = true
+    draftKeys.value = fresh
   }
 
-  function closeSettings(): void {
-    visible.value = false
-    draftClone = null
-  }
-
+  /** 保存所有 provider 的 key 到全局配置 */
   function saveSettings(): void {
-    if (!draftClone) return
-    draftClone.provider = draftProvider.value
-    for (const p of providerIds()) {
-      draftClone.providers[p].key = draftKeys.value[p].trim()
-      draftClone.providers[p].model = draftModels.value[p].trim()
+    const providers = {} as Record<ImageProviderId, { key: string }>
+    for (const p of Object.keys(IMAGE_PROVIDERS) as ImageProviderId[]) {
+      providers[p] = { key: draftKeys.value[p].trim() }
     }
-    config.value = draftClone
-    saveConfig(draftClone)
-    visible.value = false
-    draftClone = null
+    const newCfg: ImageGlobalConfig = { providers }
+    globalConfig.value = newCfg
+    saveGlobalConfig(newCfg)
+  }
+
+  /** 只保存指定 provider 的 key，其他 provider 保持不变 */
+  function saveProviderKey(provider: ImageProviderId): void {
+    const providers = {} as Record<ImageProviderId, { key: string }>
+    for (const p of Object.keys(IMAGE_PROVIDERS) as ImageProviderId[]) {
+      if (p === provider) {
+        providers[p] = { key: draftKeys.value[p].trim() }
+      } else {
+        providers[p] = { key: globalConfig.value.providers[p]?.key ?? '' }
+      }
+    }
+    const newCfg: ImageGlobalConfig = { providers }
+    globalConfig.value = newCfg
+    saveGlobalConfig(newCfg)
   }
 
   function clearKey(provider: ImageProviderId): void {
-    if (!draftClone) return
-    // 顶层 .value 赋值才会触发 Vue 响应式
     draftKeys.value = { ...draftKeys.value, [provider]: '' }
-    draftClone.providers[provider].key = ''
   }
 
-  function hasKey(): boolean {
-    return config.value.providers[config.value.provider].key.length > 0
+  /** 某个 provider 是否配了 key */
+  function hasKey(provider: ImageProviderId): boolean {
+    return (globalConfig.value.providers[provider]?.key ?? '').length > 0
   }
-
-  /** 当前选中 Provider 的显示 label */
-  const currentProviderLabel = (): string => IMAGE_PROVIDERS[config.value.provider].label
 
   return {
-    // 全局状态（渲染层只读；节点 render.vue 靠 watch 它感知模型/尺寸变化）
-    config,
-    visible,
-    // 草稿（弹窗内编辑）
-    draftProvider,
+    // 全局配置（只读）
+    globalConfig,
+    // 草稿
     draftKeys,
-    draftModels,
     // 操作
-    openSettings,
-    closeSettings,
+    initDraft,
     saveSettings,
+    saveProviderKey,
     clearKey,
     hasKey,
-    currentProviderLabel
+    getProviderKey: getImageProviderKey
   }
 }

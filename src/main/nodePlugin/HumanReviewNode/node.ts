@@ -95,10 +95,11 @@ export class HumanReviewNode extends Node {
 
   inputPortReceiveValue(_ports: InputPort[]): void {
     const values = this.input.value
+    const hasEdges = this.input.incomingEdgeCount > 0
     const upstreamClass = this.resolveUpstreamValueClass()
 
-    if (values.length === 0) {
-      // 上游断开 → 清队列 + 删输出端口
+    if (!hasEdges) {
+      // 上游完全断开 → 清队列 + 删输出端口
       this.queue.length = 0
       this.current = undefined
       if (this.approveOutput) {
@@ -107,13 +108,20 @@ export class HumanReviewNode extends Node {
       this.notifyChanged()
       return
     }
-    // —— 对齐输出端口 ——
+
+    // —— 对齐输出端口：类型从 Edge 推算，不依赖 value 是否到达 ——
     if (upstreamClass) {
       if (!this.approveOutput) {
         this.createOutputPorts(upstreamClass)
       } else if (this.approveOutput.valueClass !== upstreamClass) {
         this.rebuildOutputPorts(upstreamClass)
       }
+    }
+
+    // 有连线但还没值 → 只对齐端口，不入队
+    if (values.length === 0) {
+      this.notifyChanged()
+      return
     }
 
     // —— 入队 ——
@@ -127,12 +135,10 @@ export class HumanReviewNode extends Node {
     this.notifyChanged()
   }
 
-  /** 从 incoming 边里取第一条有值的上游 valueClass */
+  /** 从 incoming 边推算上游 OutputPort 的类型（不要求值已到达） */
   private resolveUpstreamValueClass(): OutputPort['valueClass'] | undefined {
-    for (const [edge, val] of this.input.incoming) {
-      if (val !== undefined) {
-        return edge.startPort.valueClass
-      }
+    for (const edge of this.input.incoming.keys()) {
+      return edge.startPort.valueClass
     }
     return undefined
   }

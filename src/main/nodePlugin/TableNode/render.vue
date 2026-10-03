@@ -14,6 +14,8 @@ import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import HelpDialog from '@renderer/components/HelpDialog.vue'
 import TextInput from './columnTypes/text/Input.vue'
 import TextCell from './columnTypes/text/Cell.vue'
+import TextareaInput from './columnTypes/textarea/Input.vue'
+import TextareaCell from './columnTypes/textarea/Cell.vue'
 import NumberInput from './columnTypes/number/Input.vue'
 import NumberCell from './columnTypes/number/Cell.vue'
 import BooleanInput from './columnTypes/boolean/Input.vue'
@@ -24,6 +26,7 @@ import ColorCell from './columnTypes/color/Cell.vue'
 /** 业务类型 → 输入组件映射（表单里用） */
 const inputComponents: Record<BusinessType, Component> = {
   text: TextInput,
+  textarea: TextareaInput,
   number: NumberInput,
   boolean: BooleanInput,
   color: ColorInput
@@ -32,6 +35,7 @@ const inputComponents: Record<BusinessType, Component> = {
 /** 业务类型 → 单元格展示组件（表格里用） */
 const cellComponents: Record<BusinessType, Component> = {
   text: TextCell,
+  textarea: TextareaCell,
   number: NumberCell,
   boolean: BooleanCell,
   color: ColorCell
@@ -593,6 +597,7 @@ async function removeColumnFromUI(colName: string): Promise<void> {
             />
             <select v-model="newColumnBusinessType" class="tbl-form__input tbl-col-dialog__select">
               <option value="text">text（文本）</option>
+              <option value="textarea">textarea（长字符串）</option>
               <option value="color">color（颜色）</option>
               <option value="number">number（数字）</option>
               <option value="boolean">boolean（布尔）</option>

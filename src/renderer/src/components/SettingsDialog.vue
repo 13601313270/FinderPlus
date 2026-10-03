@@ -27,7 +27,7 @@ const { restart: restartOnboarding } = useOnboarding()
 const {
   initDraft: initLLMDraft,
   draftKeys: llmDraftKeys,
-  saveSettings: saveLLMSettings,
+  saveProviderKey: saveLLMProviderKey,
   clearKey: clearLLMKey
 } = useLLMSettings()
 
@@ -37,10 +37,6 @@ watch(visible, (v) => {
 })
 
 const llmProviders = Object.entries(LLM_PROVIDERS) as [LLMProvider, typeof LLM_PROVIDERS[LLMProvider]][]
-
-function onSaveLLM(): void {
-  saveLLMSettings()
-}
 
 /** 重置新手引导：清除 seen 标记并立即弹出 */
 function onRestartOnboarding(): void {
@@ -215,6 +211,19 @@ onUnmounted(() => {
   document.removeEventListener('keydown', onKeyDown)
   disposeMenuListener?.()
 })
+
+// —— LLM 保存反馈 ——
+/** 正在显示"已保存"反馈的 provider 集合 */
+const savedProviders = ref<Set<LLMProvider>>(new Set())
+
+function onSaveProviderKey(provider: LLMProvider): void {
+  saveLLMProviderKey(provider)
+  // 短暂显示反馈
+  savedProviders.value.add(provider)
+  setTimeout(() => {
+    savedProviders.value.delete(provider)
+  }, 1500)
+}
 </script>
 
 <template>
@@ -259,10 +268,10 @@ onUnmounted(() => {
               >
                 <div class="gs-llm__key-header">
                   <span class="gs-llm__key-label">{{ preset.label }}</span>
-                  <span
+                  <!-- <span
                     class="gs-llm__key-status"
                     :class="{ 'gs-llm__key-status--set': llmDraftKeys[key].length > 0 }"
-                  >{{ llmDraftKeys[key].length > 0 ? '已配置' : '未配置' }}</span>
+                  >{{ llmDraftKeys[key].length > 0 ? '已配置' : '未配置' }}</span> -->
                 </div>
                 <div class="gs-llm__key-input-row">
                   <input
@@ -279,12 +288,14 @@ onUnmounted(() => {
                     :disabled="!llmDraftKeys[key]"
                     @click="clearLLMKey(key)"
                   >清除</button>
+                  <button
+                    class="gs-btn gs-btn--primary gs-btn--save-sm"
+                    :class="{ 'gs-btn--saved': savedProviders.has(key) }"
+                    type="button"
+                    @click="onSaveProviderKey(key)"
+                  >{{ savedProviders.has(key) ? '已保存' : '保存' }}</button>
                 </div>
               </div>
-            </div>
-
-            <div class="gs-llm__actions">
-              <button class="gs-btn gs-btn--primary" type="button" @click="onSaveLLM">保存所有 Key</button>
             </div>
           </section>
 
@@ -404,7 +415,7 @@ onUnmounted(() => {
 
   &__title {
     margin: 0 0 4px;
-    font-size: 13px;
+    font-size: 16px;
     font-weight: 600;
     color: #374151;
   }
@@ -482,7 +493,7 @@ onUnmounted(() => {
 // —— LLM 设置分区样式 ——
 .gs-llm {
   &__input {
-    width: 100%;
+    flex: 1;
     padding: 8px 10px;
     font-size: 13px;
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
@@ -555,11 +566,18 @@ onUnmounted(() => {
   }
 }
 
-.gs-btn--clear-sm {
+.gs-btn--clear-sm,
+.gs-btn--save-sm {
   padding: 4px 10px;
   font-size: 11px;
   white-space: nowrap;
   flex-shrink: 0;
+}
+
+.gs-btn--saved {
+  background: #16a34a !important;
+  border-color: #16a34a !important;
+  color: #fff;
 }
 
 @keyframes gsFadeIn {

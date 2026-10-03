@@ -205,6 +205,21 @@ export function useLLMSettings() {
     saveGlobalConfig(newCfg)
   }
 
+  /** 只保存指定 provider 的 key，其他 provider 保持不变 */
+  function saveProviderKey(provider: LLMProvider): void {
+    const providers = {} as Record<LLMProvider, { key: string }>
+    for (const p of Object.keys(LLM_PROVIDERS) as LLMProvider[]) {
+      if (p === provider) {
+        providers[p] = { key: draftKeys.value[p].trim() }
+      } else {
+        providers[p] = { key: globalConfig.value.providers[p]?.key ?? '' }
+      }
+    }
+    const newCfg: LLMGlobalConfig = { providers }
+    globalConfig.value = newCfg
+    saveGlobalConfig(newCfg)
+  }
+
   function clearKey(provider: LLMProvider): void {
     draftKeys.value = { ...draftKeys.value, [provider]: '' }
   }
@@ -256,6 +271,7 @@ export function useLLMSettings() {
     // 操作
     initDraft,
     saveSettings,
+    saveProviderKey,
     clearKey,
     hasKey,
     fetchModels

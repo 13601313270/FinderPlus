@@ -9,7 +9,8 @@ import type {
   WasmApi,
   AppMenuApi,
   DialogApi,
-  TransferApi
+  TransferApi,
+  TableApi
 } from './index'
 
 declare global {
@@ -25,5 +26,6 @@ declare global {
     appMenuApi: AppMenuApi
     dialogApi: DialogApi
     transferApi: TransferApi
+    tableApi: TableApi
   }
 }

@@ -322,6 +322,76 @@ const transferApi = {
     ipcRenderer.invoke('app:importData', { zipPath })
 }
 
+/**
+ * 表节点 API：动态建表 + 行级 CRUD。
+ *
+ * 所有操作都透传到主进程 sql.js 实例。主进程负责：
+ * - 表名/列名校验（防 SQL 注入）
+ * - 类型映射（number→REAL, string→TEXT, boolean→INTEGER）
+ * - persist() 落盘
+ */
+const tableApi = {
+  /** 确保物理表存在（CREATE TABLE IF NOT EXISTS）。新建节点和恢复都会调 */
+  ensure: (args: {
+    nodeId: string
+    columns: Array<{ name: string; type: string }>
+  }): Promise<{ ok: true; tableName: string } | { ok: false; error: string }> =>
+    ipcRenderer.invoke('table:ensure', args),
+
+  /** 删除物理表（节点被删时调用） */
+  drop: (args: {
+    nodeId: string
+  }): Promise<{ ok: true } | { ok: false; error: string }> =>
+    ipcRenderer.invoke('table:drop', args),
+
+  /** 分页查询。返回 rows + total。pageSize 默认 50 */
+  queryPage: (args: {
+    nodeId: string
+    columns: Array<{ name: string; type: string }>
+    page: number
+    pageSize?: number
+  }): Promise<{ ok: true; rows: Array<Record<string, unknown>>; total: number } | { ok: false; error: string }> =>
+    ipcRenderer.invoke('table:queryPage', args),
+
+  /** 插入一行。values 是 { colName: value } */
+  insertRow: (args: {
+    nodeId: string
+    columns: Array<{ name: string; type: string }>
+    values: Record<string, unknown>
+  }): Promise<{ ok: true; newId: number } | { ok: false; error: string }> =>
+    ipcRenderer.invoke('table:insertRow', args),
+
+  /** 更新一行。rowId 指定 id */
+  updateRow: (args: {
+    nodeId: string
+    columns: Array<{ name: string; type: string }>
+    rowId: number
+    values: Record<string, unknown>
+  }): Promise<{ ok: true } | { ok: false; error: string }> =>
+    ipcRenderer.invoke('table:updateRow', args),
+
+  /** 删除一行 */
+  deleteRow: (args: {
+    nodeId: string
+    rowId: number
+  }): Promise<{ ok: true } | { ok: false; error: string }> =>
+    ipcRenderer.invoke('table:deleteRow', args),
+
+  /** 给物理表加一列（ALTER TABLE ADD COLUMN） */
+  addColumn: (args: {
+    nodeId: string
+    column: { name: string; type: string }
+  }): Promise<{ ok: true } | { ok: false; error: string }> =>
+    ipcRenderer.invoke('table:addColumn', args),
+
+  /** 从物理表删一列（ALTER TABLE DROP COLUMN） */
+  removeColumn: (args: {
+    nodeId: string
+    columnName: string
+  }): Promise<{ ok: true } | { ok: false; error: string }> =>
+    ipcRenderer.invoke('table:removeColumn', args)
+}
+
 if (process.contextIsolated) {
   try {
     // 主进程推送的日志 → 转发到渲染进程 Console
@@ -344,6 +414,7 @@ if (process.contextIsolated) {
     contextBridge.exposeInMainWorld('appMenuApi', appMenuApi)
     contextBridge.exposeInMainWorld('dialogApi', dialogApi)
     contextBridge.exposeInMainWorld('transferApi', transferApi)
+    contextBridge.exposeInMainWorld('tableApi', tableApi)
   } catch (error) {
     console.error(error)
   }
@@ -370,6 +441,8 @@ if (process.contextIsolated) {
   window.dialogApi = dialogApi
   // @ts-ignore (define in dts)
   window.transferApi = transferApi
+  // @ts-ignore (define in dts)
+  window.tableApi = tableApi
 }
 
 export type ExposedApi = typeof api
@@ -382,3 +455,4 @@ export type WasmApi = typeof wasmApi
 export type AppMenuApi = typeof appMenuApi
 export type DialogApi = typeof dialogApi
 export type TransferApi = typeof transferApi
+export type TableApi = typeof tableApi

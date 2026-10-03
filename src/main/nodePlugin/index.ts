@@ -31,6 +31,7 @@ import { manifest as httpRequestManifest } from './HttpRequestNode'
 import { manifest as jsonDisplayManifest } from './JsonDisplayNode'
 import { manifest as imageCropManifest } from './ImageCropNode'
 import { manifest as promiseAllManifest } from './PromiseAllNode'
+import { manifest as tableManifest } from './TableNode'
 
 /**
  * 插件注册表：所有节点插件的 manifest 汇总。
@@ -69,7 +70,8 @@ const functionalManifests: NodePluginManifest[] = [
   queueManifest,
   httpRequestManifest,
   jsonDisplayManifest,
-  imageCropManifest
+  imageCropManifest,
+  tableManifest
 ]
 
 const fileManifests: NodePluginManifest[] = [

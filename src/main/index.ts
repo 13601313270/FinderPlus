@@ -465,6 +465,329 @@ function registerIpcHandlers(): void {
     })
   })
 
+  // —— 表节点：动态建表 + 行 CRUD ——
+
+  /** 合法列名正则：字母/下划线开头，后跟字母/数字/下划线 */
+  const COLUMN_NAME_RE = /^[a-zA-Z_][a-zA-Z0-9_]*$/
+
+  /** 第一期支持的三种列类型 → SQLite 类型映射 */
+  const COLUMN_TYPE_MAP: Record<string, string> = {
+    number: 'REAL',
+    string: 'TEXT',
+    boolean: 'INTEGER'
+  }
+
+  /** 把节点 id 清洗成合法的 SQLite 表名 */
+  function sanitizeTableName(nodeId: string): string {
+    // 把非字母数字下划线的字符替换成下划线
+    const safe = nodeId.replace(/[^a-zA-Z0-9_]/g, '_')
+    return `tbl_${safe}`
+  }
+
+  /** 校验列定义，返回 { ok, error?, columns } */
+  function validateColumns(cols: Array<{ name: string; type: string }>):
+    { ok: true; columns: Array<{ name: string; sqlType: string }> }
+    | { ok: false; error: string } {
+    if (!Array.isArray(cols)) return { ok: false, error: 'columns 必须是数组' }
+    if (cols.length === 0) return { ok: false, error: '至少需要一个自定义列' }
+
+    const seen = new Set<string>()
+    const validated: Array<{ name: string; sqlType: string }> = []
+
+    for (const c of cols) {
+      if (typeof c.name !== 'string' || !COLUMN_NAME_RE.test(c.name)) {
+        return { ok: false, error: `列名 "${c.name}" 不合法：只能以字母或下划线开头，后跟字母/数字/下划线` }
+      }
+      if (seen.has(c.name)) {
+        return { ok: false, error: `列名 "${c.name}" 重复` }
+      }
+      seen.add(c.name)
+
+      const sqlType = COLUMN_TYPE_MAP[c.type]
+      if (!sqlType) {
+        return { ok: false, error: `不支持的列类型 "${c.type}"，只支持 number / string / boolean` }
+      }
+      validated.push({ name: c.name, sqlType })
+    }
+
+    return { ok: true, columns: validated }
+  }
+
+  /**
+   * 确保物理表存在（CREATE TABLE IF NOT EXISTS）。
+   * 新建节点和从备份恢复都会走这个——IF NOT EXISTS 天然幂等。
+   */
+  ipcMain.handle('table:ensure', (_e, args: {
+    nodeId: string
+    columns: Array<{ name: string; type: string }>
+  }): { ok: true; tableName: string } | { ok: false; error: string } => {
+    if (importInProgress) return { ok: false, error: '导入中，暂不操作' }
+
+    const tableName = sanitizeTableName(args.nodeId)
+    const v = validateColumns(args.columns)
+    if (!v.ok) return { ok: false, error: v.error }
+
+    const colDefs = v.columns.map((c) => `  ${c.name} ${c.sqlType}`).join(',\n')
+    const sql = `CREATE TABLE IF NOT EXISTS ${tableName} (\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\n${colDefs}\n)`
+
+    try {
+      const db = getDatabase()
+      db.run(sql)
+      persist()
+      return { ok: true, tableName }
+    } catch (err) {
+      return { ok: false, error: err instanceof Error ? err.message : String(err) }
+    }
+  })
+
+  /** 删除物理表（节点被删时调用） */
+  ipcMain.handle('table:drop', (_e, args: {
+    nodeId: string
+  }): { ok: true } | { ok: false; error: string } => {
+    if (importInProgress) return { ok: false, error: '导入中，暂不操作' }
+
+    const tableName = sanitizeTableName(args.nodeId)
+    try {
+      const db = getDatabase()
+      db.run(`DROP TABLE IF EXISTS ${tableName}`)
+      persist()
+      return { ok: true }
+    } catch (err) {
+      return { ok: false, error: err instanceof Error ? err.message : String(err) }
+    }
+  })
+
+  /** 分页查询：返回 rows + total。pageSize 默认 50 */
+  ipcMain.handle('table:queryPage', (_e, args: {
+    nodeId: string
+    columns: Array<{ name: string; type: string }>
+    page: number
+    pageSize?: number
+  }): { ok: true; rows: Array<Record<string, unknown>>; total: number } | { ok: false; error: string } => {
+    const tableName = sanitizeTableName(args.nodeId)
+    const v = validateColumns(args.columns)
+    if (!v.ok) return { ok: false, error: v.error }
+
+    const page = Math.max(1, args.page ?? 1)
+    const pageSize = Math.min(200, Math.max(1, args.pageSize ?? 50))
+    const offset = (page - 1) * pageSize
+
+    try {
+      const db = getDatabase()
+
+      // 总数
+      const totalRows = db.exec(`SELECT COUNT(*) as cnt FROM ${tableName}`)
+      const total = totalRows.length > 0 && totalRows[0].values.length > 0
+        ? Number(totalRows[0].values[0][0])
+        : 0
+
+      // 分页数据
+      const colNames = ['id', ...v.columns.map((c) => c.name)]
+      const sql = `SELECT ${colNames.join(', ')} FROM ${tableName} ORDER BY id LIMIT ${pageSize} OFFSET ${offset}`
+      const result = db.exec(sql)
+
+      const rows: Array<Record<string, unknown>> = []
+      if (result.length > 0 && result[0].values.length > 0) {
+        for (const row of result[0].values) {
+          const obj: Record<string, unknown> = {}
+          colNames.forEach((name, i) => {
+            let val: unknown = row[i]
+            // boolean 列：SQLite 存 INTEGER (0/1)，转成 true/false
+            const colDef = v.columns.find((c) => c.name === name)
+            if (colDef && colDef.sqlType === 'INTEGER' && name !== 'id') {
+              val = val === 1
+            }
+            obj[name] = val
+          })
+          rows.push(obj)
+        }
+      }
+
+      return { ok: true, rows, total }
+    } catch (err) {
+      return { ok: false, error: err instanceof Error ? err.message : String(err) }
+    }
+  })
+
+  /** 插入一行。values 是 { colName: value }，会按 columns 定义过滤 + 类型转换 */
+  ipcMain.handle('table:insertRow', (_e, args: {
+    nodeId: string
+    columns: Array<{ name: string; type: string }>
+    values: Record<string, unknown>
+  }): { ok: true; newId: number } | { ok: false; error: string } => {
+    if (importInProgress) return { ok: false, error: '导入中，暂不操作' }
+
+    const tableName = sanitizeTableName(args.nodeId)
+    const v = validateColumns(args.columns)
+    if (!v.ok) return { ok: false, error: v.error }
+
+    try {
+      const db = getDatabase()
+      const cols: string[] = []
+      const placeholders: string[] = []
+      const params: unknown[] = []
+
+      for (const c of v.columns) {
+        cols.push(c.name)
+        placeholders.push('?')
+        let raw = args.values?.[c.name]
+
+        // 类型转换
+        if (c.sqlType === 'INTEGER') {
+          // boolean
+          raw = raw ? 1 : 0
+        } else if (c.sqlType === 'REAL') {
+          // number — 转数字，NaN 兜底 0
+          const n = Number(raw)
+          raw = Number.isFinite(n) ? n : 0
+        } else if (c.sqlType === 'TEXT') {
+          // string — 强制转字符串，null/undefined 转空串
+          raw = raw == null ? '' : String(raw)
+        }
+
+        params.push(raw)
+      }
+
+      const sql = `INSERT INTO ${tableName} (${cols.join(', ')}) VALUES (${placeholders.join(', ')})`
+      db.run(sql, params)
+
+      // 取最后插入的 id — sql.js 没有 lastInsertRowid，用 SELECT last_insert_rowid()
+      const idResult = db.exec('SELECT last_insert_rowid() as id')
+      const newId = idResult.length > 0 && idResult[0].values.length > 0
+        ? Number(idResult[0].values[0][0])
+        : 0
+
+      persist()
+      return { ok: true, newId }
+    } catch (err) {
+      return { ok: false, error: err instanceof Error ? err.message : String(err) }
+    }
+  })
+
+  /** 更新一行。rowId 指定 id，values 是要更新的字段 */
+  ipcMain.handle('table:updateRow', (_e, args: {
+    nodeId: string
+    columns: Array<{ name: string; type: string }>
+    rowId: number
+    values: Record<string, unknown>
+  }): { ok: true } | { ok: false; error: string } => {
+    if (importInProgress) return { ok: false, error: '导入中，暂不操作' }
+
+    const tableName = sanitizeTableName(args.nodeId)
+    const v = validateColumns(args.columns)
+    if (!v.ok) return { ok: false, error: v.error }
+
+    try {
+      const db = getDatabase()
+      const setClauses: string[] = []
+      const params: unknown[] = []
+
+      for (const c of v.columns) {
+        if (!(c.name in args.values)) continue
+        setClauses.push(`${c.name} = ?`)
+        let raw = args.values[c.name]
+
+        if (c.sqlType === 'INTEGER') {
+          raw = raw ? 1 : 0
+        } else if (c.sqlType === 'REAL') {
+          const n = Number(raw)
+          raw = Number.isFinite(n) ? n : 0
+        } else if (c.sqlType === 'TEXT') {
+          raw = raw == null ? '' : String(raw)
+        }
+
+        params.push(raw)
+      }
+
+      if (setClauses.length === 0) {
+        return { ok: false, error: '没有可更新的字段' }
+      }
+
+      params.push(args.rowId)
+      const sql = `UPDATE ${tableName} SET ${setClauses.join(', ')} WHERE id = ?`
+      db.run(sql, params)
+      persist()
+      return { ok: true }
+    } catch (err) {
+      return { ok: false, error: err instanceof Error ? err.message : String(err) }
+    }
+  })
+
+  /** 删除一行 */
+  ipcMain.handle('table:deleteRow', (_e, args: {
+    nodeId: string
+    rowId: number
+  }): { ok: true } | { ok: false; error: string } => {
+    if (importInProgress) return { ok: false, error: '导入中，暂不操作' }
+
+    const tableName = sanitizeTableName(args.nodeId)
+    try {
+      const db = getDatabase()
+      db.run(`DELETE FROM ${tableName} WHERE id = ?`, [args.rowId])
+      persist()
+      return { ok: true }
+    } catch (err) {
+      return { ok: false, error: err instanceof Error ? err.message : String(err) }
+    }
+  })
+
+  /** 给物理表加一列（ALTER TABLE ADD COLUMN）。用于用户在 UI 里新增列 */
+  ipcMain.handle('table:addColumn', (_e, args: {
+    nodeId: string
+    column: { name: string; type: string }
+  }): { ok: true } | { ok: false; error: string } => {
+    if (importInProgress) return { ok: false, error: '导入中，暂不操作' }
+
+    const tableName = sanitizeTableName(args.nodeId)
+    const col = args.column
+
+    // 校验列名和类型（复用已有的校验逻辑）
+    if (!COLUMN_NAME_RE.test(col.name)) {
+      return { ok: false, error: `列名 "${col.name}" 不合法` }
+    }
+    const sqlType = COLUMN_TYPE_MAP[col.type]
+    if (!sqlType) {
+      return { ok: false, error: `不支持的列类型 "${col.type}"` }
+    }
+
+    // DEFAULT 值 — SQLite ALTER TABLE ADD COLUMN 要求新列有默认值
+    const defaults: Record<string, string> = { REAL: '0', TEXT: "''", INTEGER: '0' }
+    const defaultVal = defaults[sqlType] ?? "''"
+
+    try {
+      const db = getDatabase()
+      const sql = `ALTER TABLE ${tableName} ADD COLUMN ${col.name} ${sqlType} DEFAULT ${defaultVal}`
+      db.run(sql)
+      persist()
+      return { ok: true }
+    } catch (err) {
+      return { ok: false, error: err instanceof Error ? err.message : String(err) }
+    }
+  })
+
+  /** 从物理表删一列（ALTER TABLE DROP COLUMN）。SQLite 3.35.0+ 支持 */
+  ipcMain.handle('table:removeColumn', (_e, args: {
+    nodeId: string
+    columnName: string
+  }): { ok: true } | { ok: false; error: string } => {
+    if (importInProgress) return { ok: false, error: '导入中，暂不操作' }
+
+    const tableName = sanitizeTableName(args.nodeId)
+
+    if (!COLUMN_NAME_RE.test(args.columnName)) {
+      return { ok: false, error: `列名 "${args.columnName}" 不合法` }
+    }
+
+    try {
+      const db = getDatabase()
+      db.run(`ALTER TABLE ${tableName} DROP COLUMN ${args.columnName}`)
+      persist()
+      return { ok: true }
+    } catch (err) {
+      return { ok: false, error: err instanceof Error ? err.message : String(err) }
+    }
+  })
+
   // code:run handler 已移除——代码节点的执行现在在 preload 侧完成，
   // preload 是 Node 环境 + 与 renderer 共享进程内存，new Function 可用且 File 对象无需 IPC 序列化。
 

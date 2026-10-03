@@ -49,12 +49,54 @@ export interface ColumnDef {
    * 未设置时退回 name。
    */
   title?: string
+  /**
+   * 是否在表格（列表视图）里显示这一列。默认 true。
+   * false 时表格不渲染该列的 th/td，但表单（新增/编辑弹窗）仍然显示。
+   * 适合宽表场景下把次要字段藏到表单里。
+   */
+  showInList?: boolean
+  /**
+   * 新增行时表单的默认回填值。纯 UI 元信息，不影响物理表 DDL。
+   * 类型不限——string/number/boolean 都行，但要和列的 type 兼容：
+   * - string 列：默认值应该是 string
+   * - number 列：默认值应该可 Number() 转
+   * - boolean 列：默认值应该是 boolean 或 truthy/falsy
+   * 未设置时按 type 给硬编码兜底（'' / 0 / false）。
+   */
+  defaultValue?: unknown
+  /**
+   * 是否在表格搜索栏出现对应的搜索输入。默认 false。
+   * true 时表格上方会出现该列业务类型对应的搜索组件（下拉筛选 / LIKE / 精确匹配）。
+   * 搜索逻辑由主进程 table:queryPage 的 where 参数化查询承接。
+   */
+  showInSearch?: boolean
+  /**
+   * 新增后该行是否可以修改。默认 true。
+   * false 时新增弹窗里可以填写，但修改弹窗里该列会禁用（disabled）。
+   * 典型场景：创建时间、创建人、编号等"一旦落库就不该变"的字段。
+   */
+  canUpdate?: boolean
+  /**
+   * 是否可以用来排序。默认 false。
+   * true 时表头可点击，三态循环：无排序 → 正序 → 逆序 → 无排序。
+   * 排序由主进程 table:queryPage 的 ORDER BY 承接，列名走 sanitize 防注入。
+   */
+  canSort?: boolean
 }
 
 /** 获取列的业务类型——businessType 未设置时按 type 回退 */
 export function resolveBusinessType(col: ColumnDef): BusinessType {
   return col.businessType ?? DEFAULT_BUSINESS_TYPE[col.type]
 }
+
+/** 获取列是否在列表视图显示——未设置时默认 true */
+export function resolveShowInList(col: ColumnDef): boolean {
+  return col.showInList !== false
+}
+
+/** 表格节点最小宽高，resize 时钳制 */
+const MIN_W = 360
+const MIN_H = 240
 
 export class TableNode extends Node {
   static readonly TYPE = 'table'
@@ -69,6 +111,10 @@ export class TableNode extends Node {
     this.columns = [{ name: 'name', type: 'string' }]
     // 内容区宽 480px，高 320px（不含端口列）
     this.setBox(480, 320)
+  }
+
+  override setBox(width: number, height: number): void {
+    super.setBox(Math.max(MIN_W, Math.round(width)), Math.max(MIN_H, Math.round(height)))
   }
 
   // —— Node 基类抽象方法 ——

@@ -5,7 +5,7 @@
  * 对外接口统一：modelValue + update:modelValue。
  * 内部做一次 normalize：空串 / 非数字 → 0，和 submitDialog 里的 Number.isFinite 逻辑对齐。
  */
-const props = defineProps<{ modelValue: unknown }>()
+const props = defineProps<{ modelValue: unknown; disabled?: boolean }>()
 const emit = defineEmits<{ 'update:modelValue': [value: unknown] }>()
 
 function toNumber(raw: unknown): number {
@@ -24,6 +24,7 @@ function onInput(e: Event): void {
     type="number"
     class="tbl-form__input"
     :value="toNumber(props.modelValue)"
+    :disabled="props.disabled"
     @input="onInput"
   />
 </template>

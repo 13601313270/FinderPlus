@@ -4,7 +4,7 @@ const props = defineProps<{ value: unknown }>()
 </script>
 
 <template>
-  <span class="bool-cell">{{ props.value ? '✓' : '—' }}</span>
+  <span class="bool-cell">{{ props.value ? '✓' : '' }}</span>
 </template>
 
 <style scoped>

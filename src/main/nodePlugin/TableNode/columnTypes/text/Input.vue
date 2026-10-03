@@ -6,7 +6,7 @@
  * 内部只做 type 匹配（任何值都 toString 成 '' 兜底），
  * 真正的 coerce 在 submitDialog 里统一调（主进程 insertRow/updateRow 会再处理一次）。
  */
-const props = defineProps<{ modelValue: unknown }>()
+const props = defineProps<{ modelValue: unknown; disabled?: boolean }>()
 const emit = defineEmits<{ 'update:modelValue': [value: unknown] }>()
 
 function onInput(e: Event): void {
@@ -20,6 +20,7 @@ function onInput(e: Event): void {
     type="text"
     class="tbl-form__input"
     :value="String(props.modelValue ?? '')"
+    :disabled="props.disabled"
     @input="onInput"
   />
 </template>

@@ -484,6 +484,11 @@ function registerIpcHandlers(): void {
     return `tbl_${safe}`
   }
 
+  /** 校验列名只含字母数字下划线（SQL 列名安全） */
+  function sanitizeColumnName(name: string): string {
+    return name.replace(/[^a-zA-Z0-9_]/g, '_')
+  }
+
   /** 校验列定义，返回 { ok, error?, columns } */
   function validateColumns(cols: Array<{ name: string; type: string }>):
     { ok: true; columns: Array<{ name: string; sqlType: string }> }
@@ -563,6 +568,10 @@ function registerIpcHandlers(): void {
     columns: Array<{ name: string; type: string }>
     page: number
     pageSize?: number
+    /** 搜索条件：多个条件 AND 组合。值走参数化绑定防注入 */
+    where?: Array<{ column: string; op: '=' | 'LIKE'; value: unknown }>
+    /** 排序：列名必须在 columns 白名单里，order 限定 'ASC' | 'DESC' */
+    sort?: { column: string; order: 'ASC' | 'DESC' } | null
   }): { ok: true; rows: Array<Record<string, unknown>>; total: number } | { ok: false; error: string } => {
     const tableName = sanitizeTableName(args.nodeId)
     const v = validateColumns(args.columns)
@@ -572,19 +581,45 @@ function registerIpcHandlers(): void {
     const pageSize = Math.min(200, Math.max(1, args.pageSize ?? 50))
     const offset = (page - 1) * pageSize
 
+    // —— 构造 WHERE 子句（参数化，防 SQL 注入）——
+    const whereClauses: string[] = []
+    const whereParams: unknown[] = []
+    if (args.where && args.where.length > 0) {
+      for (const cond of args.where) {
+        // 列名必须在 columns 白名单里，op 也在限定集合里
+        const colDef = args.columns.find((c) => c.name === cond.column)
+        if (!colDef) continue
+        const op = cond.op === 'LIKE' ? 'LIKE' : '='
+        whereClauses.push(`${sanitizeColumnName(cond.column)} ${op} ?`)
+        // LIKE 需要前后加 %
+        whereParams.push(op === 'LIKE' ? `%${String(cond.value ?? '')}%` : cond.value)
+      }
+    }
+    const whereSQL = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : ''
+
+    // —— 排序（列名白名单校验 + sanitize，order 限定枚举）——
+    let orderSQL = 'ORDER BY id'
+    if (args.sort && typeof args.sort === 'object') {
+      const sortColDef = args.columns.find((c) => c.name === args.sort!.column)
+      if (sortColDef && (args.sort.order === 'ASC' || args.sort.order === 'DESC')) {
+        orderSQL = `ORDER BY ${sanitizeColumnName(args.sort.column)} ${args.sort.order}, id`
+      }
+    }
+
     try {
       const db = getDatabase()
 
       // 总数
-      const totalRows = db.exec(`SELECT COUNT(*) as cnt FROM ${tableName}`)
+      const totalSql = `SELECT COUNT(*) as cnt FROM ${tableName} ${whereSQL}`
+      const totalRows = db.exec(totalSql, whereParams)
       const total = totalRows.length > 0 && totalRows[0].values.length > 0
         ? Number(totalRows[0].values[0][0])
         : 0
 
       // 分页数据
       const colNames = ['id', ...v.columns.map((c) => c.name)]
-      const sql = `SELECT ${colNames.join(', ')} FROM ${tableName} ORDER BY id LIMIT ${pageSize} OFFSET ${offset}`
-      const result = db.exec(sql)
+      const sql = `SELECT ${colNames.join(', ')} FROM ${tableName} ${whereSQL} ${orderSQL} LIMIT ${pageSize} OFFSET ${offset}`
+      const result = db.exec(sql, whereParams)
 
       const rows: Array<Record<string, unknown>> = []
       if (result.length > 0 && result[0].values.length > 0) {

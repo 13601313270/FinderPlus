@@ -344,12 +344,14 @@ const tableApi = {
   }): Promise<{ ok: true } | { ok: false; error: string }> =>
     ipcRenderer.invoke('table:drop', args),
 
-  /** 分页查询。返回 rows + total。pageSize 默认 50 */
+  /** 分页查询。返回 rows + total。pageSize 默认 50。where 多条件 AND 组合，值走参数化绑定；sort 排序白名单校验 */
   queryPage: (args: {
     nodeId: string
     columns: Array<{ name: string; type: string }>
     page: number
     pageSize?: number
+    where?: Array<{ column: string; op: '=' | 'LIKE'; value: unknown }>
+    sort?: { column: string; order: 'ASC' | 'DESC' } | null
   }): Promise<{ ok: true; rows: Array<Record<string, unknown>>; total: number } | { ok: false; error: string }> =>
     ipcRenderer.invoke('table:queryPage', args),
 

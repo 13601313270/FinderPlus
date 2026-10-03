@@ -5,7 +5,7 @@
  * emit 的值始终是 '#rrggbb' 字符串，天然兼容 string 存储类型。
  * modelValue 可以是任意值：非字符串 / 非法 hex → fallback '#ffffff'。
  */
-const props = defineProps<{ modelValue: unknown }>()
+const props = defineProps<{ modelValue: unknown; disabled?: boolean }>()
 const emit = defineEmits<{ 'update:modelValue': [value: unknown] }>()
 
 const HEX_RE = /^#[0-9a-fA-F]{6}$/
@@ -33,12 +33,14 @@ function onTextInput(e: Event): void {
       type="color"
       class="color-input__picker"
       :value="toHex(props.modelValue)"
+      :disabled="props.disabled"
       @input="onColorInput"
     />
     <input
       type="text"
       class="color-input__text"
       :value="toHex(props.modelValue)"
+      :disabled="props.disabled"
       maxlength="7"
       @input="onTextInput"
     />
@@ -49,10 +51,11 @@ function onTextInput(e: Event): void {
 .color-input {
   display: flex;
   align-items: center;
+  width: 150px;
   gap: 6px;
 
-  &__picker {
-    width: 32px;
+  .color-input__picker {
+    width: 48px;
     height: 28px;
     padding: 0;
     border: 1px solid #cbd5e1;
@@ -65,8 +68,8 @@ function onTextInput(e: Event): void {
     &::-webkit-color-swatch { border: none; border-radius: 3px; }
   }
 
-  &__text {
-    flex: 1;
+  .color-input__text {
+    width: 95px;
     min-width: 0;
     height: 28px;
     padding: 0 8px;

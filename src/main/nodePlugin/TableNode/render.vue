@@ -12,17 +12,29 @@ import {
 import { useNodePosition } from '@renderer/composables/useNodePosition'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import HelpDialog from '@renderer/components/HelpDialog.vue'
-import StringInput from './inputs/StringInput.vue'
-import NumberInput from './inputs/NumberInput.vue'
-import BooleanInput from './inputs/BooleanInput.vue'
-import ColorInput from './inputs/ColorInput.vue'
+import TextInput from './columnTypes/text/Input.vue'
+import TextCell from './columnTypes/text/Cell.vue'
+import NumberInput from './columnTypes/number/Input.vue'
+import NumberCell from './columnTypes/number/Cell.vue'
+import BooleanInput from './columnTypes/boolean/Input.vue'
+import BooleanCell from './columnTypes/boolean/Cell.vue'
+import ColorInput from './columnTypes/color/Input.vue'
+import ColorCell from './columnTypes/color/Cell.vue'
 
-/** 业务类型 → 输入组件映射。新增业务类型只需加一行 + 对应输入组件 */
+/** 业务类型 → 输入组件映射（表单里用） */
 const inputComponents: Record<BusinessType, Component> = {
-  text: StringInput,
+  text: TextInput,
   number: NumberInput,
   boolean: BooleanInput,
   color: ColorInput
+}
+
+/** 业务类型 → 单元格展示组件（表格里用） */
+const cellComponents: Record<BusinessType, Component> = {
+  text: TextCell,
+  number: NumberCell,
+  boolean: BooleanCell,
+  color: ColorCell
 }
 
 const props = defineProps<{ id: string }>()
@@ -445,17 +457,10 @@ async function removeColumnFromUI(colName: string): Promise<void> {
               :key="col.name"
               class="tbl__cell"
             >
-              <template v-if="resolveBusinessType(col) === 'boolean'">
-                {{ row[col.name] ? '✓' : '—' }}
-              </template>
-              <template v-else-if="resolveBusinessType(col) === 'color'">
-                <span
-                  class="tbl__color-swatch"
-                  :style="{ background: String(row[col.name] ?? '#ffffff') }"
-                />
-                {{ row[col.name] }}
-              </template>
-              <template v-else>{{ row[col.name] as string | number }}</template>
+              <component
+                :is="cellComponents[resolveBusinessType(col)]"
+                :value="row[col.name]"
+              />
             </td>
             <td class="tbl__cell tbl__cell--ops">
               <button
@@ -730,16 +735,6 @@ async function removeColumnFromUI(colName: string): Promise<void> {
     text-align: center;
     color: #94a3b8;
     font-size: 11px;
-  }
-
-  &__color-swatch {
-    display: inline-block;
-    width: 14px;
-    height: 14px;
-    border-radius: 3px;
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    margin-right: 6px;
-    vertical-align: middle;
   }
 
   &__loading {

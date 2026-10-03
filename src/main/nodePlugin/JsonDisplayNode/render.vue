@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref, shallowRef, defineComponent, h } from 'vue'
+import { computed, onMounted, onUnmounted, ref, shallowRef } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { JsonDisplayNode } from './node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
@@ -9,6 +9,7 @@ import { messages } from './i18n'
 import { viewport } from '@renderer/canvas/viewport'
 import HelpDialog from '@renderer/components/HelpDialog.vue'
 import JsonDisplayHelpDialog from './JsonDisplayHelpDialog.vue'
+import JsonTreeNode from '@renderer/components/JsonTreeNode.vue'
 
 const props = defineProps<{ id: string }>()
 
@@ -99,102 +100,9 @@ function onResizePointerDown(e: PointerEvent): void {
   window.addEventListener('pointerup', end)
 }
 
-// —— JSON 类型判断 ——
-function isPlainObject(v: unknown): v is Record<string, unknown> {
-  return typeof v === 'object' && v !== null && !Array.isArray(v)
-}
-function isArray(v: unknown): v is unknown[] {
-  return Array.isArray(v)
-}
-
-// —— 递归 JSON 节点组件 ——
-const JsonTreeNode = defineComponent({
-  name: 'JsonTreeNode',
-  props: {
-    nodeKey: { type: [String, Number], default: null },
-    value: { type: undefined as unknown as () => unknown, required: true },
-    defaultExpanded: { type: Boolean, default: true },
-    depth: { type: Number, default: 0 }
-  },
-  setup(props) {
-    const expanded = ref(props.defaultExpanded)
-    function toggle() { expanded.value = !expanded.value }
-
-    return () => {
-      const isObj = isPlainObject(props.value)
-      const isArr = isArray(props.value)
-      const isContainer = isObj || isArr
-
-      const entries: [string | number, unknown][] = isObj
-        ? Object.entries(props.value as Record<string, unknown>)
-        : isArr
-          ? (props.value as unknown[]).map((v, i) => [i, v])
-          : []
-      const count = entries.length
-
-      const nodeKey = props.nodeKey
-      const showKey = nodeKey !== null
-
-      // —— jt-head：总是有的首行（单行 nowrap）——
-      const head: any[] = []
-      if (showKey) {
-        head.push(h('span', { class: 'jt-key' }, String(nodeKey)))
-        head.push(h('span', { class: 'jt-colon' }, ': '))
-      }
-
-      if (isContainer) {
-        head.push(h('span', {
-          class: 'jt-toggle',
-          onClick: toggle,
-          title: expanded.value ? t('collapse') : t('expand')
-        }, expanded.value ? '▼' : '▶'))
-        head.push(h('span', { class: 'jt-bracket' }, isObj ? '{' : '['))
-
-        if (!expanded.value || count === 0) {
-          if (!expanded.value) {
-            head.push(h('span', { class: 'jt-summary' }, ` ${count} ${isObj ? 'keys' : 'items'} `))
-          }
-          head.push(h('span', { class: 'jt-bracket' }, isObj ? '}' : ']'))
-        }
-      } else {
-        head.push(h('span', { class: valueClass(props.value) }, formatValue(props.value)))
-      }
-
-      const result: any[] = [h('div', { class: 'jt-head' }, head)]
-
-      if (isContainer && expanded.value && count > 0) {
-        // 子节点 depth + 1，每个节点自己管理缩进 padding
-        const childNodes = entries.map(([k, v]) =>
-          h(JsonTreeNode, { nodeKey: k, value: v, defaultExpanded: false, depth: props.depth + 1 })
-        )
-        result.push(h('div', { class: 'jt-body' }, childNodes))
-        result.push(h('div', { class: 'jt-close' }, [
-          h('span', { class: 'jt-bracket' }, isObj ? '}' : ']')
-        ]))
-      }
-
-      // 缩进：每个节点根元素直接用 inline style 设置 padding-left
-      return h('div', {
-        class: 'jt-node',
-        style: { paddingLeft: `${props.depth * 16}px` }
-      }, result)
-    }
-  }
-})
-
-function valueClass(v: unknown): string {
-  if (v === null) return 'jt-null'
-  if (typeof v === 'string') return 'jt-string'
-  if (typeof v === 'number') return 'jt-number'
-  if (typeof v === 'boolean') return 'jt-bool'
-  return ''
-}
-
-function formatValue(v: unknown): string {
-  if (v === null) return 'null'
-  if (typeof v === 'string') return `"${v}"`
-  return String(v)
-}
+// collapse / expand hover 提示（来自 i18n）
+const collapseTitle = computed(() => t('collapse'))
+const expandTitle = computed(() => t('expand'))
 </script>
 
 <template>
@@ -223,7 +131,13 @@ function formatValue(v: unknown): string {
       <div v-else-if="parsed === undefined" class="render-empty">{{ t('emptyInput') }}</div>
 
       <!-- 解析成功 → 折叠树 -->
-      <JsonTreeNode v-else :value="parsed" :default-expanded="true" />
+      <JsonTreeNode
+        v-else
+        :value="parsed"
+        :default-expanded="true"
+        :collapse-title="collapseTitle"
+        :expand-title="expandTitle"
+      />
     </div>
 
     <div
@@ -344,54 +258,4 @@ function formatValue(v: unknown): string {
     word-break: break-all;
   }
 }
-
-// —— JSON 树节点样式 ——
-.jt-node {
-  // 缩进由 inline style 的 paddingLeft 控制（depth * 16px），这里不需要再设
-}
-
-.jt-head {
-  white-space: nowrap;
-}
-
-.jt-body {
-  // 纯容器：子节点自己有 paddingLeft 管理缩进，这里不加任何 padding/margin
-}
-
-.jt-close {
-  // 闭合括号：跟 jt-head 同级，同样由 inline style 控制缩进
-}
-
-.jt-key {
-  color: #8b5cf6;
-}
-
-.jt-colon {
-  color: #6b7280;
-}
-
-.jt-toggle {
-  display: inline-block;
-  width: 14px;
-  cursor: pointer;
-  color: #6b7280;
-  user-select: none;
-
-  &:hover { color: #374151; }
-}
-
-.jt-bracket {
-  color: #374151;
-  font-weight: 600;
-}
-
-.jt-summary {
-  color: #9aa2ad;
-  font-size: 12px;
-}
-
-.jt-string { color: #16a34a; }
-.jt-number { color: #2563eb; }
-.jt-bool   { color: #ea580c; }
-.jt-null   { color: #9aa2ad; font-style: italic; }
 </style>

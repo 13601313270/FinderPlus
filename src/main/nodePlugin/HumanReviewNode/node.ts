@@ -7,7 +7,7 @@ import { OutputPort } from '../../engine/port/OutputPort'
 import { Node } from '../../engine/node/Node'
 import type { Value } from '../../engine/data/Value'
 
-const NODE_HEIGHT = 150
+const NODE_HEIGHT = 220
 
 /**
  * 人工审核节点：接受所有现有 Value 子类，进入 FIFO 队列等待人工审核。
@@ -84,6 +84,11 @@ export class HumanReviewNode extends Node {
   /** 是否有项正在审核（用于按钮 enable/disable） */
   get hasCurrent(): boolean {
     return this.current !== undefined
+  }
+
+  /** 当前正在审核的值实例（render.vue 用来判断 instanceof JsonValue 等） */
+  get currentValue(): Value | undefined {
+    return this.current
   }
 
   /** 是否已有输出端口（渲染层用来显示/隐藏右侧端口列） */

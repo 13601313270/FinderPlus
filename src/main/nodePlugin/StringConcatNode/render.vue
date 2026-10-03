@@ -31,6 +31,8 @@ const t = useLocalizedMessages(messages)
 
 // 帮助浮层开关（弹窗壳由 HelpDialog 负责）
 const showHelp = ref(false)
+// 查看完整拼接结果的覆层开关
+const showFullResult = ref(false)
 
 const templateValue = ref('')
 const resultValue = ref('')
@@ -174,7 +176,16 @@ function onResizePointerDown(e: PointerEvent): void {
       </div>
     </div>
 
-    <div class="node__result" :title="resultValue">{{ resultValue || t('resultPlaceholder') }}</div>
+    <div class="node__result">
+      <div class="node__result-text" :title="resultValue">{{ resultValue || t('resultPlaceholder') }}</div>
+      <button
+        v-if="resultValue"
+        class="node__result-expand"
+        type="button"
+        :title="t('expandResult')"
+        @click.stop="showFullResult = true"
+      >⤢</button>
+    </div>
 
     <div
       v-if="concatNode"
@@ -187,6 +198,16 @@ function onResizePointerDown(e: PointerEvent): void {
   <!-- 帮助弹窗 -->
   <HelpDialog :visible="showHelp" :title="t('helpDialogTitle')" @close="showHelp = false">
     <StringConcatHelpDialog />
+  </HelpDialog>
+
+  <!-- 完整结果覆层 -->
+  <HelpDialog
+    :visible="showFullResult"
+    :title="t('fullResultDialogTitle')"
+    width="80vw"
+    @close="showFullResult = false"
+  >
+    <pre class="full-result">{{ resultValue }}</pre>
   </HelpDialog>
 </template>
 
@@ -306,16 +327,46 @@ function onResizePointerDown(e: PointerEvent): void {
 
   &__result {
     flex-shrink: 0;
+    position: relative;
     padding: 6px 8px;
+    padding-right: 28px; // 给右上角展开按钮留空间
     border: 1px solid #e5e8ee;
     border-radius: 6px;
     background: #f7f8fa;
     font-size: 12px;
     color: @color-text;
+    overflow: hidden;
+    flex-grow: 1;
+  }
+
+  &__result-text {
     white-space: pre-wrap;
     word-break: break-all;
     overflow: hidden;
-    flex-grow: 1;
+  }
+
+  &__result-expand {
+    all: unset;
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    cursor: pointer;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    font-size: 20px;
+    line-height: 1;
+    color: #9ca3af;
+    border: solid 1px;
+    transition: background 0.15s, color 0.15s;
+
+    &:hover {
+      background: #dbeafe;
+      color: #2563eb;
+    }
   }
 
   &__resize-handle {
@@ -330,5 +381,22 @@ function onResizePointerDown(e: PointerEvent): void {
     border-bottom: 2px solid #b0b7c3;
     border-bottom-right-radius: 4px;
   }
+}
+
+/* 完整结果弹窗内的 pre（scoped + Teleport 仍可匹配，因为 data-v 属性跟元素走） */
+.full-result {
+  margin: 0;
+  padding: 12px 16px;
+  max-height: 70vh;
+  overflow: auto;
+  font-size: 13px;
+  line-height: 1.6;
+  font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+  white-space: pre-wrap;
+  word-break: break-all;
+  background: #f7f8fa;
+  border-radius: 8px;
+  color: #1f2937;
+  user-select: text;
 }
 </style>

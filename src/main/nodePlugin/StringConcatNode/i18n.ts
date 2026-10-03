@@ -159,5 +159,39 @@ export const messages = {
     vi: 'Trợ giúp nút Ghép chuỗi',
     tr: 'Dize Birleştirme düğümü yardımı',
     it: 'Guida al nodo Concatenazione stringhe'
+  },
+  expandResult: {
+    zh: '查看完整结果',
+    en: 'View full result',
+    ja: '結果を全て表示',
+    ko: '전체 결과 보기',
+    es: 'Ver resultado completo',
+    ar: 'عرض النتيجة الكاملة',
+    fr: 'Voir le résultat complet',
+    pt: 'Ver resultado completo',
+    ru: 'Посмотреть полный результат',
+    hi: 'पूरा परिणाम देखें',
+    id: 'Lihat hasil lengkap',
+    de: 'Vollständiges Ergebnis anzeigen',
+    vi: 'Xem kết quả đầy đủ',
+    tr: 'Tam sonucu gör',
+    it: 'Visualizza risultato completo'
+  },
+  fullResultDialogTitle: {
+    zh: '拼接结果',
+    en: 'Concatenation result',
+    ja: '連結結果',
+    ko: '연결 결과',
+    es: 'Resultado de la concatenación',
+    ar: 'نتيجة الدمج',
+    fr: 'Résultat de la concaténation',
+    pt: 'Resultado da concatenação',
+    ru: 'Результат конкатенации',
+    hi: 'संयोजन परिणाम',
+    id: 'Hasil gabungan',
+    de: 'Verkettungsergebnis',
+    vi: 'Kết quả ghép chuỗi',
+    tr: 'Birleştirme sonucu',
+    it: 'Risultato della concatenazione'
   }
 } satisfies Record<string, LocalizedText>

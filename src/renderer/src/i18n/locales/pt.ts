@@ -205,7 +205,8 @@ const pt: Language = {
       number: 'Number',
       boolean: 'Boolean',
       color: 'Color',
-      time: 'Data'
+      time: 'Data',
+      date: 'Data'
     },
     dialogTitleAdd: 'Add',
     dialogTitleEdit: 'Edit',

@@ -205,7 +205,8 @@ const ja: Language = {
       number: 'Number',
       boolean: 'Boolean',
       color: 'Color',
-      time: '日時'
+      time: '日時',
+      date: '日付'
     },
     dialogTitleAdd: 'Add',
     dialogTitleEdit: 'Edit',

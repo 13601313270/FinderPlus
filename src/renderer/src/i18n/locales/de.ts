@@ -205,7 +205,8 @@ const de: Language = {
       number: 'Number',
       boolean: 'Boolean',
       color: 'Color',
-      time: 'Datum'
+      time: 'Datum',
+      date: 'Datum'
     },
     dialogTitleAdd: 'Add',
     dialogTitleEdit: 'Edit',

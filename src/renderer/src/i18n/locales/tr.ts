@@ -205,7 +205,8 @@ const tr: Language = {
       number: 'Number',
       boolean: 'Boolean',
       color: 'Color',
-      time: 'Tarih'
+      time: 'Tarih',
+      date: 'Tarih'
     },
     dialogTitleAdd: 'Add',
     dialogTitleEdit: 'Edit',

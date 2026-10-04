@@ -203,7 +203,8 @@ const en: Language = {
       number: 'Number',
       boolean: 'Boolean',
       color: 'Color',
-      time: 'Time'
+      time: 'Time',
+      date: 'Date'
     },
     dialogTitleAdd: 'Add',
     dialogTitleEdit: 'Edit',

@@ -205,7 +205,8 @@ const ko: Language = {
       number: 'Number',
       boolean: 'Boolean',
       color: 'Color',
-      time: '시간'
+      time: '시간',
+      date: '날짜'
     },
     dialogTitleAdd: 'Add',
     dialogTitleEdit: 'Edit',

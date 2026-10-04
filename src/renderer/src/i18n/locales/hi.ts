@@ -205,7 +205,8 @@ const hi: Language = {
       number: 'Number',
       boolean: 'Boolean',
       color: 'Color',
-      time: 'समय'
+      time: 'समय',
+      date: 'दिनांक'
     },
     dialogTitleAdd: 'Add',
     dialogTitleEdit: 'Edit',

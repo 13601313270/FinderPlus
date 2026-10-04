@@ -205,7 +205,8 @@ const ar: Language = {
       number: 'Number',
       boolean: 'Boolean',
       color: 'Color',
-      time: 'وقت'
+      time: 'وقت',
+      date: 'تاريخ'
     },
     dialogTitleAdd: 'Add',
     dialogTitleEdit: 'Edit',

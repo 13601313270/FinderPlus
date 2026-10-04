@@ -209,7 +209,8 @@ const zh: Language = {
       number: '数字',
       boolean: '布尔',
       color: '颜色',
-      time: '时间'
+      time: '时间',
+      date: '日期'
     },
     dialogTitleAdd: '新增',
     dialogTitleEdit: '修改',

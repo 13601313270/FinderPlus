@@ -205,7 +205,8 @@ const fr: Language = {
       number: 'Number',
       boolean: 'Boolean',
       color: 'Color',
-      time: 'Date'
+      time: 'Date',
+      date: 'Date'
     },
     dialogTitleAdd: 'Add',
     dialogTitleEdit: 'Edit',

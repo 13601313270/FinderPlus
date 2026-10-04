@@ -205,7 +205,8 @@ const id: Language = {
       number: 'Number',
       boolean: 'Boolean',
       color: 'Color',
-      time: 'Waktu'
+      time: 'Waktu',
+      date: 'Tanggal'
     },
     dialogTitleAdd: 'Add',
     dialogTitleEdit: 'Edit',

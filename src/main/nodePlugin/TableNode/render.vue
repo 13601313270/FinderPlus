@@ -29,6 +29,8 @@ import ColorInput from './columnTypes/color/Input.vue'
 import ColorCell from './columnTypes/color/Cell.vue'
 import TimeInput from './columnTypes/time/Input.vue'
 import TimeCell from './columnTypes/time/Cell.vue'
+import DateInput from './columnTypes/date/Input.vue'
+import DateCell from './columnTypes/date/Cell.vue'
 import TableHelpDialog from './TableHelpDialog.vue'
 
 /** 业务类型 → 输入组件映射（表单里用） */
@@ -38,7 +40,8 @@ const inputComponents: Record<BusinessType, Component> = {
   number: NumberInput,
   boolean: BooleanInput,
   color: ColorInput,
-  time: TimeInput
+  time: TimeInput,
+  date: DateInput
 }
 
 /** 业务类型 → 单元格展示组件（表格里用） */
@@ -48,7 +51,8 @@ const cellComponents: Record<BusinessType, Component> = {
   number: NumberCell,
   boolean: BooleanCell,
   color: ColorCell,
-  time: TimeCell
+  time: TimeCell,
+  date: DateCell
 }
 
 const props = defineProps<{ id: string }>()
@@ -947,6 +951,7 @@ async function removeColumnFromUI(colName: string): Promise<void> {
             <option value="textarea">textarea（{{ $t('table.businessType.textarea') }}）</option>
             <option value="color">color（{{ $t('table.businessType.color') }}）</option>
             <option value="time">time（{{ $t('table.businessType.time') }}）</option>
+            <option value="date">date（{{ $t('table.businessType.date') }}）</option>
             <option value="number">number（{{ $t('table.businessType.number') }}）</option>
             <option value="boolean">boolean（{{ $t('table.businessType.boolean') }}）</option>
           </select>

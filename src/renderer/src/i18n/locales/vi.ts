@@ -205,7 +205,8 @@ const vi: Language = {
       number: 'Number',
       boolean: 'Boolean',
       color: 'Color',
-      time: 'Thời gian'
+      time: 'Thời gian',
+      date: 'Ngày'
     },
     dialogTitleAdd: 'Add',
     dialogTitleEdit: 'Edit',

@@ -205,7 +205,8 @@ const ru: Language = {
       number: 'Number',
       boolean: 'Boolean',
       color: 'Color',
-      time: 'Дата'
+      time: 'Дата',
+      date: 'Дата'
     },
     dialogTitleAdd: 'Add',
     dialogTitleEdit: 'Edit',

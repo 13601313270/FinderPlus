@@ -27,6 +27,8 @@ import BooleanInput from './columnTypes/boolean/Input.vue'
 import BooleanCell from './columnTypes/boolean/Cell.vue'
 import ColorInput from './columnTypes/color/Input.vue'
 import ColorCell from './columnTypes/color/Cell.vue'
+import TimeInput from './columnTypes/time/Input.vue'
+import TimeCell from './columnTypes/time/Cell.vue'
 import TableHelpDialog from './TableHelpDialog.vue'
 
 /** 业务类型 → 输入组件映射（表单里用） */
@@ -35,7 +37,8 @@ const inputComponents: Record<BusinessType, Component> = {
   textarea: TextareaInput,
   number: NumberInput,
   boolean: BooleanInput,
-  color: ColorInput
+  color: ColorInput,
+  time: TimeInput
 }
 
 /** 业务类型 → 单元格展示组件（表格里用） */
@@ -44,7 +47,8 @@ const cellComponents: Record<BusinessType, Component> = {
   textarea: TextareaCell,
   number: NumberCell,
   boolean: BooleanCell,
-  color: ColorCell
+  color: ColorCell,
+  time: TimeCell
 }
 
 const props = defineProps<{ id: string }>()
@@ -629,11 +633,6 @@ async function removeColumnFromUI(colName: string): Promise<void> {
           :title="$t('table.sqlPortTitle')"
         >{{ $t('table.sqlPort') }}</button>
         <button
-          class="tbl__add-btn"
-          type="button"
-          @click="openAddDialog"
-        >{{ $t('table.addRow') }}</button>
-        <button
           class="tbl__help-btn"
           type="button"
           @click.stop="showHelp = true"
@@ -641,22 +640,29 @@ async function removeColumnFromUI(colName: string): Promise<void> {
       </div>
     </div>
 
-    <!-- 搜索栏（只有 showInSearch 列 > 0 时出现） -->
-    <div v-if="searchColumns.length > 0" class="tbl__search">
-      <div
-        v-for="col in searchColumns"
-        :key="col.name"
-        class="tbl__search-field"
-      >
-        <span class="tbl__search-label">{{ col.title ?? col.name }}</span>
-        <component
-          :is="inputComponents[resolveBusinessType(col)]"
-          v-model="searchValues[col.name]"
-          class="tbl__search-input"
-        />
-      </div>
-      <button class="tbl__search-btn" type="button" @click="page = 1; loadPage()">{{ $t('table.search') }}</button>
-      <button class="tbl__search-btn tbl__search-btn--reset" type="button" @click="resetSearch">{{ $t('table.reset') }}</button>
+    <!-- 工具栏：左侧搜索（可选），右侧新增（始终可见） -->
+    <div class="tbl__search">
+      <template v-if="searchColumns.length > 0">
+        <div
+          v-for="col in searchColumns"
+          :key="col.name"
+          class="tbl__search-field"
+        >
+          <span class="tbl__search-label">{{ col.title ?? col.name }}</span>
+          <component
+            :is="inputComponents[resolveBusinessType(col)]"
+            v-model="searchValues[col.name]"
+            class="tbl__search-input"
+          />
+        </div>
+        <button class="tbl__search-btn" type="button" @click="page = 1; loadPage()">{{ $t('table.search') }}</button>
+        <button class="tbl__search-btn tbl__search-btn--reset" type="button" @click="resetSearch">{{ $t('table.reset') }}</button>
+      </template>
+      <button
+        class="tbl__add-btn tbl__add-btn--search"
+        type="button"
+        @click="openAddDialog"
+      >{{ $t('table.addRow') }}</button>
     </div>
 
     <!-- 错误提示 -->
@@ -940,6 +946,7 @@ async function removeColumnFromUI(colName: string): Promise<void> {
             <option value="text">text（{{ $t('table.businessType.text') }}）</option>
             <option value="textarea">textarea（{{ $t('table.businessType.textarea') }}）</option>
             <option value="color">color（{{ $t('table.businessType.color') }}）</option>
+            <option value="time">time（{{ $t('table.businessType.time') }}）</option>
             <option value="number">number（{{ $t('table.businessType.number') }}）</option>
             <option value="boolean">boolean（{{ $t('table.businessType.boolean') }}）</option>
           </select>
@@ -1109,6 +1116,11 @@ async function removeColumnFromUI(colName: string): Promise<void> {
       color: #475569;
 
       &:hover { background: #e2e8f0; opacity: 1; }
+    }
+
+    &--search {
+      /* 在搜索栏（flex）里自动靠右 */
+      margin-left: auto;
     }
   }
 

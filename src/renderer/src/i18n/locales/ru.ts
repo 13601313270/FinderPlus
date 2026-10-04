@@ -204,7 +204,8 @@ const ru: Language = {
       textarea: 'Long text',
       number: 'Number',
       boolean: 'Boolean',
-      color: 'Color'
+      color: 'Color',
+      time: 'Дата'
     },
     dialogTitleAdd: 'Add',
     dialogTitleEdit: 'Edit',

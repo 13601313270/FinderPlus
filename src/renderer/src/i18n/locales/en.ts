@@ -202,7 +202,8 @@ const en: Language = {
       textarea: 'Long text',
       number: 'Number',
       boolean: 'Boolean',
-      color: 'Color'
+      color: 'Color',
+      time: 'Time'
     },
     dialogTitleAdd: 'Add',
     dialogTitleEdit: 'Edit',

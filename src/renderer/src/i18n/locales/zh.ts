@@ -208,7 +208,8 @@ const zh: Language = {
       textarea: '长字符串',
       number: '数字',
       boolean: '布尔',
-      color: '颜色'
+      color: '颜色',
+      time: '时间'
     },
     dialogTitleAdd: '新增',
     dialogTitleEdit: '修改',

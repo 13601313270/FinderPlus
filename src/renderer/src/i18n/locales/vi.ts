@@ -204,7 +204,8 @@ const vi: Language = {
       textarea: 'Long text',
       number: 'Number',
       boolean: 'Boolean',
-      color: 'Color'
+      color: 'Color',
+      time: 'Thời gian'
     },
     dialogTitleAdd: 'Add',
     dialogTitleEdit: 'Edit',

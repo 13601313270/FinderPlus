@@ -204,7 +204,8 @@ const ko: Language = {
       textarea: 'Long text',
       number: 'Number',
       boolean: 'Boolean',
-      color: 'Color'
+      color: 'Color',
+      time: '시간'
     },
     dialogTitleAdd: 'Add',
     dialogTitleEdit: 'Edit',

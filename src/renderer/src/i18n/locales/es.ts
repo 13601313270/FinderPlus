@@ -204,7 +204,8 @@ const es: Language = {
       textarea: 'Long text',
       number: 'Number',
       boolean: 'Boolean',
-      color: 'Color'
+      color: 'Color',
+      time: 'Fecha'
     },
     dialogTitleAdd: 'Add',
     dialogTitleEdit: 'Edit',

@@ -322,6 +322,7 @@ export class LLMNode extends Node {
     prompt: string,
     myRequestId: number
   ): Promise<void> {
+    this.beginRun()
     this.status = 'loading'
     this.errorMessage = ''
     this.notifyChanged()
@@ -377,10 +378,12 @@ export class LLMNode extends Node {
       this.response = resultText
       this.status = 'done'
       this.textOutput.commit(new StringValue(resultText))
+      this.completeRun() // 成功产出 → stable
     } else {
       this.response = ''
       this.errorMessage = errMsg
       this.status = 'error'
+      this.failRun() // 失败 → running 兜底回到 dirty
     }
     this.notifyChanged()
   }

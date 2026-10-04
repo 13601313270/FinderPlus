@@ -177,6 +177,7 @@ export class CommandNode extends Node {
     // 上一次还没跑完就不重复触发（按钮此时也是禁用的，双保险）
     if (this.status === 'running') return
 
+    this.beginRun()
     this.status = 'running'
     this.stdout = ''
     this.stderr = ''
@@ -196,6 +197,7 @@ export class CommandNode extends Node {
     // 成功发 stdout，失败发 stderr，下游拿到的是这次执行的文本结果
     const text = result.code === 0 ? result.stdout : result.stderr
     this.textOutput.commit(new StringValue(text))
+    this.completeRun() // 无论成功失败都 commit 了值 → stable
     this.status = result.code === 0 ? 'done' : 'error'
     this.notifyChanged()
   }

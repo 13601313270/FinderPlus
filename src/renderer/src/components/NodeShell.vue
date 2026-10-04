@@ -34,7 +34,7 @@ const emit = defineEmits<{
   (e: 'contextmenu', nodeId: string, clientX: number, clientY: number): void
 }>()
 
-const { position, box, accepted } = useNodePosition(() => props.node)
+const { position, box, accepted, nodeState } = useNodePosition(() => props.node)
 
 // 外壳根元素登记进测量注册表
 const shellEl = nodeElementRef(props.node.id)
@@ -43,6 +43,22 @@ const shellEl = nodeElementRef(props.node.id)
 // Node.setNodeDropAccepted → notifyChanged → apply() 里会读到最新值写进 accepted.value，
 // Vue computed 能追踪它，DOM 才会更新
 const acceptedForDrop = computed(() => accepted.value)
+
+/** node.state 对应的外壳 class（node-shell--stable 已省略，是默认） */
+const stateClass = computed(() => {
+  if (nodeState.value === 'dirty') return 'node-shell--dirty'
+  if (nodeState.value === 'running') return 'node-shell--running'
+  return ''
+})
+
+/** 鼠标悬停时显示的状态说明文案 */
+const stateTooltip = computed(() => {
+  switch (nodeState.value) {
+    case 'dirty': return '节点输入已变化，但输出还未更新'
+    case 'running': return '节点正在异步重算中…'
+    default: return ''
+  }
+})
 
 // 内容区硬约束：box 双轴里 >0 的那一维把 .node-content 定死宽/高（0 维不约束）。
 // render.vue 在框内自适应填满，超出被 .node-content 的 overflow 裁剪。
@@ -65,12 +81,16 @@ function onContextMenu(e: MouseEvent): void {
   <div
     :ref="shellEl"
     class="node-shell"
-    :class="{
-      'node-shell--floating': floating,
-      'node-shell--accepted': acceptedForDrop
-    }"
+    :class="[
+      stateClass,
+      {
+        'node-shell--floating': floating,
+        'node-shell--accepted': acceptedForDrop
+      }
+    ]"
     :data-node-id="node.id"
     :data-node-type="node.type"
+    :title="stateTooltip"
     :style="{ left: `${position[0]}px`, top: `${position[1]}px` }"
     @contextmenu="onContextMenu"
   >
@@ -79,6 +99,10 @@ function onContextMenu(e: MouseEvent): void {
     </div>
     <div class="node-content" :style="contentStyle">
       <component :is="render" :id="node.id" />
+      <!-- running 状态的 loading 覆层 -->
+      <div v-if="nodeState === 'running'" class="node-loading" aria-hidden="true">
+        <div class="node-loading__spinner" />
+      </div>
     </div>
     <div class="ports-col ports-col--right">
       <NodePorts :node-id="node.id" :node="node" side="out" />
@@ -100,6 +124,16 @@ function onContextMenu(e: MouseEvent): void {
   &--accepted {
     // 正被某个接收节点（如文件夹）悬停命中，即将被收养——视觉上变淡提示"松手后就没了"
     opacity: 0.35;
+  }
+
+  // —— 引擎层因果状态的外壳视觉提示 ——
+  // 都直接写在 .node-content 自身上，用 outline / box-shadow，
+  // 因为伪元素负偏移会被 .node-content 已有的 overflow:hidden 裁掉。
+
+  // dirty：输入变了但输出没跟上 → 橙色虚线外圈（outline 不受 overflow:hidden 裁剪）
+  &--dirty .node-content {
+    outline: 2px dashed #f0a020;
+    outline-offset: 2px;
   }
 }
 
@@ -137,5 +171,30 @@ function onContextMenu(e: MouseEvent): void {
   overflow: hidden; // 硬约束：内容超出 box 被裁，render.vue 不会溢出
   box-sizing: border-box; // box 是内容区外包壳宽，border+padding 算在 box 内
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  position: relative; // loading 覆层绝对定位的参照
+}
+
+// —— running 状态的 loading 覆层 ——
+.node-loading {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10; // 盖在 render.vue 之上
+
+  &__spinner {
+    width: 22px;
+    height: 22px;
+    border: 2.5px solid rgba(59, 124, 255, 0.2);
+    border-top-color: @color-primary;
+    border-radius: 50%;
+    animation: node-spin 0.8s linear infinite;
+  }
+}
+
+@keyframes node-spin {
+  to { transform: rotate(360deg); }
 }
 </style>

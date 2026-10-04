@@ -128,8 +128,11 @@ export class OutputPort {
     const changed = opts?.force === true || this.currentValue?.fingerprint !== value.fingerprint
     this.currentValue = value
     if (changed) {
-      // 通知Edge有新的值；force 向下透传到 InputPort.receive，让整条链路跳过排重
+      // 通知 Edge 有新的值；force 向下透传到 InputPort.receive，让整条链路跳过排重
       this.edges.forEach(edge => edge.transferData(value, opts?.force === true))
+      // 注意：**不在此处回 stable**——节点可能有多个 OutputPort，也可能在 running 期间多次 commit
+      // （如 CodeNode 在用户代码的 Promise.then/setTimeout 里不断 callOutputPort）。
+      // 何时从 running 回到 stable，由子类自己在 run 结束时显式调 completeRun()。
     }
     return changed
   }

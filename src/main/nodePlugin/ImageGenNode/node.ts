@@ -406,6 +406,7 @@ export class ImageGenNode extends Node {
     referenceImages: readonly string[] | undefined,
     myRequestId: number
   ): Promise<void> {
+    this.beginRun()
     this.status = 'loading'
     this.errorMessage = ''
     this.notifyChanged()
@@ -441,10 +442,12 @@ export class ImageGenNode extends Node {
       this.status = 'done'
       this.resultFile = file
       this.imageOutput.commit(new ImgFileValue(file, hash))
+      this.completeRun() // 成功产出 → stable
     } else {
       this.status = 'error'
       this.errorMessage = errMsg || '生成失败'
       this.resultFile = null
+      this.failRun() // 失败 → running 兜底回到 dirty
     }
     this.notifyChanged()
   }

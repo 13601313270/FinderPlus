@@ -1,6 +1,8 @@
 import { computed, watch, ref, type Ref } from 'vue'
 import { viewport } from '@renderer/canvas/viewport'
 
+import type { NodeState } from '../../../main/engine/node/Node'
+
 /**
  * 本逻辑只依赖节点这几个可见成员。
  * 不直接用 `Node` 做参数类型：Node 基类带 private 字段，在 vue-tsc 跨编译单元解析
@@ -13,6 +15,8 @@ export interface NodeLike {
   readonly type: string
   readonly position: readonly [number, number]
   readonly box: readonly [number, number]
+  /** 引擎层因果状态：stable = 输出匹配输入，dirty = 输入变了输出没跟上，running = 正在异步重算 */
+  readonly state: NodeState
   setPosition(x: number, y: number): void
   onChanged(fn: () => void): () => void
   /** 被拖节点视觉态：正被某个可接收节点悬停命中时变 true */
@@ -100,6 +104,8 @@ export interface NodePositionView {
   readonly box: Ref<readonly [number, number]>
   /** 被某个接收节点悬停命中时变 true（即将被收养），NodeShell 据此给透明 */
   readonly accepted: Ref<boolean>
+  /** 引擎层因果状态：stable / dirty / running，NodeShell 据此画外壳视觉提示 */
+  readonly nodeState: Ref<NodeState>
   /** 接到拖拽手柄的 pointerdown 上 */
   startDrag(e: PointerEvent): void
 }
@@ -122,6 +128,7 @@ export function useNodePosition(
   const position = ref<readonly [number, number]>([0, 0])
   const box = ref<readonly [number, number]>([0, 0])
   const accepted = ref<boolean>(false)
+  const nodeState = ref<NodeState>('stable')
 
   let lastNode: NodeLike | undefined
   let unsubscribe: (() => void) | undefined
@@ -143,6 +150,7 @@ export function useNodePosition(
       position.value = lastNode.position
       box.value = lastNode.box
       accepted.value = !!lastNode.nodeDropAcceptedValue
+      nodeState.value = lastNode.state
     }
   }
 
@@ -229,5 +237,5 @@ export function useNodePosition(
     window.addEventListener('pointerup', end)
   }
 
-  return { position, box, accepted, startDrag }
+  return { position, box, accepted, nodeState, startDrag }
 }

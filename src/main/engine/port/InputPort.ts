@@ -130,7 +130,8 @@ export class InputPort {
     const changed = force || this.incoming.get(edge)?.fingerprint !== value.fingerprint
     this.incoming.set(edge, value)
     if (changed) {
-      this.owner?.inputPortReceiveValue([this])
+      // 值变了 → 交给 Node 统一处理脏标记 + 通知子类
+      this.owner?._onInputPortChanged([this])
     }
   }
 
@@ -146,7 +147,8 @@ export class InputPort {
     const hadValue = this.incoming.get(edge) !== undefined
     this.incoming.set(edge, undefined)
     if (hadValue) {
-      this.owner?.inputPortReceiveValue([this])
+      // 值从有变无 → 也是一种"输入变了"
+      this.owner?._onInputPortChanged([this])
     }
   }
 
@@ -186,7 +188,8 @@ export class InputPort {
   /** 绑定Edge，设置值为undefined */
   bindEdge(edge: Edge) {
     this.incoming.set(edge, undefined)
-    this.owner?.inputPortReceiveValue([this])
+    // 新连线接入 → 输入端口形状变了，节点输出必然不再匹配
+    this.owner?._onInputPortChanged([this])
     this.notifyEdgeBinding('bind', edge)
   }
 
@@ -196,7 +199,8 @@ export class InputPort {
       return { result: false, message: 'edge not bound to this port' }
     }
     this.incoming.delete(edge)
-    this.owner?.inputPortReceiveValue([this])
+    // 断边 → 输入端口形状变了，节点输出必然不再匹配
+    this.owner?._onInputPortChanged([this])
     this.notifyEdgeBinding('unbind', edge)
     return { result: true };
   }

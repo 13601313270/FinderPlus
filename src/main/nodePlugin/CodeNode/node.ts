@@ -455,6 +455,7 @@ export class CodeNode extends Node {
     if (!body) return
     if (this.status === 'running') return
 
+    this.beginRun()
     this.status = 'running'
     this.errorText = ''
     this.resultText = ''
@@ -509,6 +510,7 @@ export class CodeNode extends Node {
           this.resultText = ''
           this.errorText = msg
           this.status = 'error'
+          this.failRun()
           this.notifyChanged()
         },
         () => {
@@ -517,8 +519,10 @@ export class CodeNode extends Node {
           if (this.status === 'running') {
             this.status = 'done'
             this.resultText = '（执行完成，无输出）'
-            this.notifyChanged()
           }
+          // 不管 status 是什么，执行到这里 = run 结束 → completeRun
+          this.completeRun()
+          this.notifyChanged()
         }
       )
     } catch (err) {
@@ -529,6 +533,7 @@ export class CodeNode extends Node {
       this.resultText = ''
       this.errorText = resp.error ?? '执行失败'
       this.status = 'error'
+      this.failRun() // 同步执行期的 API 层错误，run 没开始就结束了
       this.notifyChanged()
       return
     }

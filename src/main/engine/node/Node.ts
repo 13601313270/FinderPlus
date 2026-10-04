@@ -3,6 +3,29 @@ import type { OutputPort } from '../port/OutputPort'
 import type { Scene } from '../graph/Scene'
 
 /**
+ * 节点运行状态三态：
+ *
+ * - **stable**：节点的输出端口值与输入端口值匹配。不管中间经历了什么，
+ *   现在 OutputPort.commit 里的值，就是用当前 InputPort 里的值算出来的。
+ * - **dirty**：输入端口值变了（上游推送 / 断边 / 新连线），但输出端口
+ *   还是旧值。典型场景：手动节点（ImageGenNode）收到新 prompt 但还没点生成；
+ *   CommandNode 的 resolvedCommand 已重算但 textOutput 还没 commit。
+ * - **running**：节点正在异步重算（如 LLM fetch、图片生成 API 调用中），
+ *   期间输入再变不会打断；子类在 run 结束时显式调 completeRun()（成功）
+ *   或 failRun()（失败/无产出）。多输出节点（CodeNode）在最后一个回调收口。
+ *
+ * 状态转换由两类驱动者协作：
+ *   InputPort  → _onInputPortChanged  → markDirty       （值变了就标）
+ *   子类       → beginRun / completeRun / failRun         （run 生命周期）
+ *
+ * 这不是「运行时错误/加载中/空闲」那种一次性 status 字段——
+ * 那是子类自己的 UI 内部状态（status: 'loading' | 'done' | 'error'），
+ * 而 nodeState 是**引擎层的因果关系描述**，渲染层可以据此画出 dirty 标记、
+ * running 动画等视觉提示。
+ */
+export type NodeState = 'stable' | 'dirty' | 'running'
+
+/**
  * 节点右键菜单项描述符。run 必填——所有操作的执行函数都由节点自己声明，
  * 避免 App.vue 维护一个按 id 分发的 handler Map（节点种类一多就无限膨胀）。
  *
@@ -56,6 +79,86 @@ export abstract class Node {
 
   /** 变化订阅者。UI 靠它把引擎里的普通字段同步成 Vue 响应式状态 */
   private readonly listeners = new Set<() => void>()
+
+  /**
+   * 引擎层因果状态：stable = 输出匹配当前输入，dirty = 输入变了但输出没跟上，
+   * running = 正在异步重算。具体转换时机见 markDirty / beginRun / markStable。
+   */
+  private nodeState: NodeState = 'stable'
+
+  /** 对外只读的节点运行状态 */
+  get state(): NodeState {
+    return this.nodeState
+  }
+
+  /**
+   * 标为 dirty：内部方法，只允许 _onInputPortChanged 和 failRun 调。
+   * 外部（InputPort / 子类）不应直接调——脏标记的完整事务由基类统一收口。
+   */
+  private markDirty(): void {
+    if (this.nodeState === 'dirty') return
+    this.nodeState = 'dirty'
+    console.log('markDirty', this.type, this.nodeState)
+    this.notifyChanged()
+  }
+
+  /**
+   * 标为 running：子类开始异步重算前调（比如发 LLM 请求、调图片生成 API）。
+   * 必须成对——结束后调 completeRun()（成功产出）或 failRun()（失败/无产出）。
+   * 同步重算（CommandNode.inputPortReceiveValue 里的 recompute）不需要调，
+   * 因为它没有异步间隙。
+   *
+   * 从 stable 或 dirty 都可以进 running（语义分别是"开始算之前的"和"开始算新的"）。
+   */
+  protected beginRun(): void {
+    if (this.nodeState === 'running') return
+    this.nodeState = 'running'
+    this.notifyChanged()
+  }
+
+  /**
+   * 成功结束异步 run：running → stable。
+   *
+   * 子类在 run 完成（包括所有 OutputPort.commit 都已提交）时调用。
+   * 多输出节点（CodeNode）在最后一个回调（onComplete/onError）里调，
+   * 而不是每个 commit 之后——因为 commit 可能被异步触发多次。
+   *
+   * 如果 running 期间输入又变了（InputPort 会 markDirty），
+   * 这里回的 stable 会被后续的 dirty 覆盖——这是预期行为。
+   */
+  protected completeRun(): void {
+    if (this.nodeState === 'running') {
+      this.nodeState = 'stable'
+      this.notifyChanged()
+    }
+  }
+
+  /**
+   * 失败结束异步 run：running → dirty。
+   *
+   * commit 没成功（API 报错 / Stale-call 守卫丢弃 / 用户取消）时调。
+   * 语义：刚才那次尝试没产出新值，输出端口还是旧快照，
+   * 所以节点回到 dirty（输入可能已变，也可能没变；保守标 dirty 让用户决定要不要再跑）。
+   */
+  protected failRun(): void {
+    if (this.nodeState === 'running') {
+      this.markDirty()
+    }
+  }
+
+  /**
+   * 输入端口变化的统一入口：脏标记 + 通知子类，一个事务，外部只调这一个。
+   *
+   * InputPort 的四个入口（receive / receiveClear / bindEdge / unbindEdge）
+   * 都走这里——"输入变了 = 节点脏了 + 子类要知道"是不可分割的业务语义，
+   * 拆成两个独立调用方容易漏调其中一个。
+   *
+   * @param ports 触发本次变化的端口列表（通常只有一个）。
+   */
+  _onInputPortChanged(ports: InputPort[]): void {
+    this.markDirty()
+    this.inputPortReceiveValue(ports)
+  }
 
   /** 所属 Scene 引用，由 Scene.addNode 时注入。右键菜单的通用操作（如删除）、
    * 以及容器节点（FolderNode）的收养/释放都需要它 */

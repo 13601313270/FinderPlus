@@ -86,9 +86,37 @@ export abstract class Node {
    */
   private nodeState: NodeState = 'stable'
 
+  /** @ts-expect-error 先写入不读取——后续 _onInputPortChanged 的 fingerprint 比对会用到 */
+  private stableInputFingerprint: string | null = null
+
+  /**
+   * 当前脏的输入端口 id 集合——Node 处于 dirty 状态时，这里就是"哪些输入变了导致脏"。
+   * running 期间端口被锁住，变化先缓冲在 InputPort.pendingNotify，completeRun/failRun
+   * 解锁 flush 时才把这些端口加进来。
+   * 成功 completeRun 且无 flush 变化时清空——所有端口值都被"消化"了。
+   */
+  private readonly dirtyInputs = new Set<string>()
+
+  private computeInputFingerprint(): string {
+    return this.inputPorts
+      .map(p => {
+        const fps = p.value.map(v => v.fingerprint).join('|')
+        return `${p.id}:${fps}`
+      })
+      .join('::')
+  }
+
   /** 对外只读的节点运行状态 */
   get state(): NodeState {
     return this.nodeState
+  }
+
+  /**
+   * 查询脏的输入端口 id 集合。渲染层据此给端口加视觉标记。
+   * 返回的是只读快照（new Set 包装），防止外部修改内部状态。
+   */
+  getDirtyInputPortIds(): ReadonlySet<string> {
+    return new Set(this.dirtyInputs)
   }
 
   /**
@@ -98,7 +126,6 @@ export abstract class Node {
   private markDirty(): void {
     if (this.nodeState === 'dirty') return
     this.nodeState = 'dirty'
-    console.log('markDirty', this.type, this.nodeState)
     this.notifyChanged()
   }
 
@@ -112,38 +139,65 @@ export abstract class Node {
    */
   protected beginRun(): void {
     if (this.nodeState === 'running') return
+    // 锁住所有输入端口——running 期间上游变化被缓冲，解锁时统一 flush
+    this.inputs.forEach(p => p.lock())
     this.nodeState = 'running'
     this.notifyChanged()
   }
 
   /**
-   * 成功结束异步 run：running → stable。
-   *
-   * 子类在 run 完成（包括所有 OutputPort.commit 都已提交）时调用。
-   * 多输出节点（CodeNode）在最后一个回调（onComplete/onError）里调，
-   * 而不是每个 commit 之后——因为 commit 可能被异步触发多次。
-   *
-   * 如果 running 期间输入又变了（InputPort 会 markDirty），
-   * 这里回的 stable 会被后续的 dirty 覆盖——这是预期行为。
+   * 成功结束异步 run：running → stable（如果期间输入没变）或 dirty（如果变了）。
+   * 解锁所有输入端口，把锁定期间缓冲的变化一次性派发。
    */
   protected completeRun(): void {
     if (this.nodeState === 'running') {
-      this.nodeState = 'stable'
+      // 先解锁端口，收集期间缓冲的变化
+      const dirtyPorts = this.flushLockedInputPorts()
+      this.stableInputFingerprint = this.computeInputFingerprint()
+      if (dirtyPorts.length === 0) {
+        // 消化完毕，期间没变 → stable，清空脏集合
+        this.dirtyInputs.clear()
+        this.nodeState = 'stable'
+      } else {
+        // 期间有变 → dirty，把 flush 出来的也加进脏集合
+        dirtyPorts.forEach(p => this.dirtyInputs.add(p.id))
+        this.nodeState = 'dirty'
+      }
       this.notifyChanged()
+      if (dirtyPorts.length > 0) {
+        this.inputPortReceiveValue(dirtyPorts)
+      }
     }
   }
 
   /**
    * 失败结束异步 run：running → dirty。
-   *
-   * commit 没成功（API 报错 / Stale-call 守卫丢弃 / 用户取消）时调。
-   * 语义：刚才那次尝试没产出新值，输出端口还是旧快照，
-   * 所以节点回到 dirty（输入可能已变，也可能没变；保守标 dirty 让用户决定要不要再跑）。
+   * 解锁所有输入端口，flush 期间缓冲的变化。
+   * 不管期间有没有变化，run 失败 = 输出还是旧快照 = dirty。
    */
   protected failRun(): void {
     if (this.nodeState === 'running') {
-      this.markDirty()
+      const dirtyPorts = this.flushLockedInputPorts()
+      // run 失败 → 之前的脏 + 期间变的都还是脏
+      dirtyPorts.forEach(p => this.dirtyInputs.add(p.id))
+      this.nodeState = 'dirty'
+      this.notifyChanged()
+      if (dirtyPorts.length > 0) {
+        this.inputPortReceiveValue(dirtyPorts)
+      }
     }
+  }
+
+  /**
+   * 解锁所有输入端口，收集锁定期间有变化的端口。
+   * 每个端口调 unlockAndFlush() → 返回 true 表示有 pending 变化。
+   */
+  private flushLockedInputPorts(): InputPort[] {
+    const dirty: InputPort[] = []
+    this.inputs.forEach(p => {
+      if (p.unlockAndFlush()) dirty.push(p)
+    })
+    return dirty
   }
 
   /**
@@ -156,6 +210,7 @@ export abstract class Node {
    * @param ports 触发本次变化的端口列表（通常只有一个）。
    */
   _onInputPortChanged(ports: InputPort[]): void {
+    ports.forEach(p => this.dirtyInputs.add(p.id))
     this.markDirty()
     this.inputPortReceiveValue(ports)
   }

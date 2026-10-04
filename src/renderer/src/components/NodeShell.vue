@@ -34,7 +34,7 @@ const emit = defineEmits<{
   (e: 'contextmenu', nodeId: string, clientX: number, clientY: number): void
 }>()
 
-const { position, box, accepted, nodeState } = useNodePosition(() => props.node)
+const { position, box, accepted, nodeState, dirtyInputPortIds } = useNodePosition(() => props.node)
 
 // 外壳根元素登记进测量注册表
 const shellEl = nodeElementRef(props.node.id)
@@ -95,7 +95,7 @@ function onContextMenu(e: MouseEvent): void {
     @contextmenu="onContextMenu"
   >
     <div class="ports-col ports-col--left">
-      <NodePorts :node-id="node.id" :node="node" side="in" />
+      <NodePorts :node-id="node.id" :node="node" side="in" :dirty-ids="dirtyInputPortIds" />
     </div>
     <div class="node-content" :style="contentStyle">
       <component :is="render" :id="node.id" />

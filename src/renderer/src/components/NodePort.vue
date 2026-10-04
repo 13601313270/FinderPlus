@@ -16,6 +16,8 @@ const props = defineProps<{
   side: PortSide
   /** 端口显示文案：由父组件 NodePorts 按当前语言解析后下传（label 是引擎普通对象，子组件 watch 不到） */
   label: string
+  /** 输入端口才会是 true：当前属于脏状态（值变了但节点还没消化） */
+  isDirty?: boolean
 }>()
 
 const isIn = props.side === 'in'
@@ -121,7 +123,8 @@ function highlightOf(port: PortLike): string {
       :class="[
         isIn ? 'port--in' : 'port--out',
         highlightOf(port),
-        showDefaultCapsule ? 'port--default' : ''
+        showDefaultCapsule ? 'port--default' : '',
+        isDirty && isIn ? 'port--dirty' : ''
       ]"
       :data-port-id="port.id"
       :title="titleOf(port, isIn ? '输入' : '输出')"
@@ -198,6 +201,13 @@ function highlightOf(port: PortLike): string {
   &--invalid {
     border-color: @color-danger;
     box-shadow: 0 0 0 4px rgba(217, 75, 75, 0.2);
+  }
+
+  // 脏输入端口：橙色外圈 + 内部橙色圆点填充，跟节点外壳的脏边框同色系
+  &--dirty {
+    border-color: #f0a020;
+    background: #f0a020;
+    box-shadow: 0 0 0 3px rgba(240, 160, 32, 0.25);
   }
 
   // 默认值胶囊形状：小圆变扁胶囊，中间容纳文本

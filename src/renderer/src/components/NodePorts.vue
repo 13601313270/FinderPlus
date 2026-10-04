@@ -24,6 +24,8 @@ const props = defineProps<{
     onChanged(fn: () => void): () => void
   } | undefined
   side: PortSide
+  /** 输入端口侧才需要：脏的输入端口 id 集合 */
+  dirtyIds?: ReadonlySet<string>
 }>()
 
 /**
@@ -71,5 +73,6 @@ const { language } = useLanguageSettings()
     :label="resolveLocalizedText(port.label, language, port.id)"
     :port="port"
     :side="side"
+    :is-dirty="side === 'in' ? (dirtyIds?.has(port.id) ?? false) : false"
   />
 </template>

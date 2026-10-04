@@ -54,6 +54,46 @@ export class InputPort {
   /** 端口多语言标签（可运行时修改，NodeShell 画布上的端口名显示用它） */
   private labelValue: LocalizedText | undefined
 
+  /**
+   * 锁定态：所属 Node 进入 running 时由 Node.beginRun 调用 lock() 置 true。
+   * 锁定期间 incoming 照常更新（值是实时的），但不立即通知 Node——
+   * 等 Node.completeRun/failRun 调 unlockAndFlush() 时统一派发。
+   */
+  private locked: boolean = false
+
+  /**
+   * 锁定期间是否有变化发生（receive / receiveClear / bindEdge / unbindEdge）。
+   * 解锁时 Node 根据它决定要不要把本端口加进 _onInputPortChanged 的参数列表。
+   */
+  private pendingNotify: boolean = false
+
+  /** 只读：当前是否处于锁定态（渲染层可能需要知道） */
+  get isLocked(): boolean {
+    return this.locked
+  }
+
+  /** 是否有解锁后待通知的变化（Node.unlockInputPorts 遍历用） */
+  hasPendingChange(): boolean {
+    return this.pendingNotify
+  }
+
+  /** Node.beginRun 调 — 锁定本端口，开始缓冲输入变化 */
+  lock(): void {
+    this.locked = true
+    this.pendingNotify = false
+  }
+
+  /**
+   * Node.completeRun / failRun 调 — 解锁本端口。
+   * 返回 true 表示锁定期间有变化，Node 应把本端口纳入 flush 列表。
+   */
+  unlockAndFlush(): boolean {
+    this.locked = false
+    const hadPending = this.pendingNotify
+    this.pendingNotify = false
+    return hadPending
+  }
+
   constructor(
     readonly id: string,
     private readonly options: InputPortOptions
@@ -130,25 +170,23 @@ export class InputPort {
     const changed = force || this.incoming.get(edge)?.fingerprint !== value.fingerprint
     this.incoming.set(edge, value)
     if (changed) {
-      // 值变了 → 交给 Node 统一处理脏标记 + 通知子类
-      this.owner?._onInputPortChanged([this])
+      if (this.locked) {
+        this.pendingNotify = true
+      } else {
+        this.owner?._onInputPortChanged([this])
+      }
     }
   }
 
-  /**
-   * 接收上游发来的"清空值"信号。
-   * 与 unbindEdge（断边时整条边关系一起删掉）不同——receiveClear 只清值、
-   * 保留边本身。场景：中间节点的 OutputPort.clear() 沿 edges 派发清空，
-   * 下游的边还在（连线没断），只是上游这次不再产出任何值。
-   *
-   * 只有这条边之前**确实有值**时才触发 inputPortReceiveValue——否则重复清没意义。
-   */
   receiveClear(edge: Edge): void {
     const hadValue = this.incoming.get(edge) !== undefined
     this.incoming.set(edge, undefined)
     if (hadValue) {
-      // 值从有变无 → 也是一种"输入变了"
-      this.owner?._onInputPortChanged([this])
+      if (this.locked) {
+        this.pendingNotify = true
+      } else {
+        this.owner?._onInputPortChanged([this])
+      }
     }
   }
 
@@ -188,8 +226,11 @@ export class InputPort {
   /** 绑定Edge，设置值为undefined */
   bindEdge(edge: Edge) {
     this.incoming.set(edge, undefined)
-    // 新连线接入 → 输入端口形状变了，节点输出必然不再匹配
-    this.owner?._onInputPortChanged([this])
+    if (this.locked) {
+      this.pendingNotify = true
+    } else {
+      this.owner?._onInputPortChanged([this])
+    }
     this.notifyEdgeBinding('bind', edge)
   }
 
@@ -199,8 +240,11 @@ export class InputPort {
       return { result: false, message: 'edge not bound to this port' }
     }
     this.incoming.delete(edge)
-    // 断边 → 输入端口形状变了，节点输出必然不再匹配
-    this.owner?._onInputPortChanged([this])
+    if (this.locked) {
+      this.pendingNotify = true
+    } else {
+      this.owner?._onInputPortChanged([this])
+    }
     this.notifyEdgeBinding('unbind', edge)
     return { result: true };
   }

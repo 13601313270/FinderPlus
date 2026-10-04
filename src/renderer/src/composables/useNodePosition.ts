@@ -17,6 +17,8 @@ export interface NodeLike {
   readonly box: readonly [number, number]
   /** 引擎层因果状态：stable = 输出匹配输入，dirty = 输入变了输出没跟上，running = 正在异步重算 */
   readonly state: NodeState
+  /** 当前脏的输入端口 id 集合，渲染层给对应端口加视觉标记 */
+  readonly getDirtyInputPortIds?: () => ReadonlySet<string>
   setPosition(x: number, y: number): void
   onChanged(fn: () => void): () => void
   /** 被拖节点视觉态：正被某个可接收节点悬停命中时变 true */
@@ -106,6 +108,8 @@ export interface NodePositionView {
   readonly accepted: Ref<boolean>
   /** 引擎层因果状态：stable / dirty / running，NodeShell 据此画外壳视觉提示 */
   readonly nodeState: Ref<NodeState>
+  /** 脏的输入端口 id 集合，NodePorts / NodePort 据此画端口级视觉标记 */
+  readonly dirtyInputPortIds: Ref<ReadonlySet<string>>
   /** 接到拖拽手柄的 pointerdown 上 */
   startDrag(e: PointerEvent): void
 }
@@ -129,6 +133,7 @@ export function useNodePosition(
   const box = ref<readonly [number, number]>([0, 0])
   const accepted = ref<boolean>(false)
   const nodeState = ref<NodeState>('stable')
+  const dirtyInputPortIds = ref<ReadonlySet<string>>(new Set())
 
   let lastNode: NodeLike | undefined
   let unsubscribe: (() => void) | undefined
@@ -151,6 +156,7 @@ export function useNodePosition(
       box.value = lastNode.box
       accepted.value = !!lastNode.nodeDropAcceptedValue
       nodeState.value = lastNode.state
+      dirtyInputPortIds.value = lastNode.getDirtyInputPortIds?.() ?? new Set()
     }
   }
 
@@ -237,5 +243,5 @@ export function useNodePosition(
     window.addEventListener('pointerup', end)
   }
 
-  return { position, box, accepted, nodeState, startDrag }
+  return { position, box, accepted, nodeState, dirtyInputPortIds, startDrag }
 }

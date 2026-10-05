@@ -36,6 +36,9 @@ const showHelp = ref(false)
 /** 当前端口对数量 */
 const portCount = ref(2)
 
+/** 当前已就绪端口数量 */
+const readyCount = ref(0)
+
 /** 每个端口对的就绪状态快照 */
 const portStates = ref<boolean[]>([])
 
@@ -64,12 +67,14 @@ function syncFromEngine(): void {
   const node = promiseNode.value
   if (!node) {
     portCount.value = 2
+    readyCount.value = 0
     portStates.value = []
     triggering.value = false
     return
   }
   const count = node.displayPortCount
   portCount.value = count
+  readyCount.value = node.readyCount
   const snapshot: boolean[] = new Array(count)
   for (let i = 0; i < count; i++) {
     snapshot[i] = node.isPortReady(i)
@@ -155,6 +160,24 @@ function onAdd(): void {
 function onRemove(): void {
   promiseNode.value?.removePortPairAt(portCount.value - 1)
 }
+
+/** 手动触发按钮可用条件：有就绪的、但还没全部就绪、且不在动画中 */
+const canForce = computed(() =>
+  !triggering.value && readyCount.value > 0 && readyCount.value < portCount.value
+)
+
+function onForceTrigger(): void {
+  const missing = portCount.value - readyCount.value
+  const confirmed = window.confirm(
+    t('forceTriggerConfirm', {
+      ready: readyCount.value,
+      total: portCount.value,
+      missing
+    })
+  )
+  if (!confirmed) return
+  promiseNode.value?.forceTrigger()
+}
 </script>
 
 <template>
@@ -234,7 +257,7 @@ function onRemove(): void {
       >?</button>
     </div>
 
-    <!-- actions：底部浮层 -->
+    <!-- actions：底部浮层，只留 +/− -->
     <div class="node__actions" @pointerdown.stop>
       <button
         class="node__btn"
@@ -250,6 +273,16 @@ function onRemove(): void {
         @click="onAdd"
       >+</button>
     </div>
+
+    <!-- 中央强制推送按钮：独立层，居中显示，条件满足才出现 -->
+    <button
+      v-if="canForce"
+      class="node__center-btn"
+      type="button"
+      :title="t('forceTrigger')"
+      @pointerdown.stop
+      @click="onForceTrigger"
+    >▶</button>
   </div>
 
   <!-- 帮助弹窗 -->
@@ -438,6 +471,42 @@ function onRemove(): void {
     &:disabled {
       opacity: 0.3;
       cursor: not-allowed;
+    }
+  }
+
+  // —— 中央强制推送按钮 ——
+
+  &__center-btn {
+    all: unset;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    cursor: pointer;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #dbeafe;
+    color: #2563eb;
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1;
+    pointer-events: auto;
+    z-index: 8; // 在 rows/SVG 之上、header(10) 之下
+    transition: background 0.15s, color 0.15s, transform 0.1s;
+    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
+
+    &:hover {
+      background: #dcfce7;
+      color: #16a34a;
+    }
+
+    &:active {
+      background: #bbf7d0;
+      transform: translate(-50%, -50%) scale(0.9);
     }
   }
 }

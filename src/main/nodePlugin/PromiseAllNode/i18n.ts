@@ -125,5 +125,41 @@ export const messages = {
     vi: 'Tối thiểu 2 cặp',
     tr: 'En az 2 çift',
     it: 'Minimo 2 coppie'
+  },
+  // 手动触发按钮 tooltip
+  forceTrigger: {
+    zh: '强制推送当前就绪数据',
+    en: 'Force push ready data',
+    ja: '準備完了データを強制送信',
+    ko: '준비된 데이터 강제 전송',
+    es: 'Forzar datos listos',
+    ar: 'إجبار البيانات الجاهزة',
+    fr: 'Forcer les données prêtes',
+    pt: 'Forçar dados prontos',
+    ru: 'Принудительная отправка готовых',
+    hi: 'तैयार डेटा ज़बरदस्ती भेजें',
+    id: 'Paksa data siap',
+    de: 'Bereite Daten erzwingen',
+    vi: 'Ép dữ liệu đã sẵn sàng',
+    tr: 'Hazır veriyi zorla gönder',
+    it: 'Forza dati pronti'
+  },
+  // 二次确认文案，占位符 {ready} {total} {missing} 渲染层替换
+  forceTriggerConfirm: {
+    zh: '当前 {ready} / {total} 已就绪，{missing} 个端口未就绪，手动触发将跳过它们继续推送。\n是否确认执行？',
+    en: '{ready} / {total} ready, {missing} port(s) not ready. Force pushing will skip them.\nAre you sure?',
+    ja: '{ready} / {total} 準備完了、{missing} ポートが未準備です。強制送信は未準備ポートをスキップします。\n実行しますか？',
+    ko: '{ready} / {total} 준비됨, {missing} 포트 미준비. 강제 전송은 미준비 포트를 건너뜁니다.\n실행하시겠습니까?',
+    es: '{ready} / {total} listo, {missing} puerto(s) no listo. Forzar saltará los no listos.\n¿Confirmar?',
+    ar: '{ready} / {total} جاهز، {missing} منفذ غير جاهز. الإجبار سيتجاهل غير الجاهز.\nهل تؤكد؟',
+    fr: '{ready} / {total} prêt, {missing} port(s) non prêt. Forcer sautera les non prêts.\nConfirmer ?',
+    pt: '{ready} / {total} pronto, {missing} porta(s) não pronta. Forçar pulará as não prontas.\nConfirmar?',
+    ru: '{ready} / {total} готово, {missing} порт(ов) не готово. Принудительная отправка пропустит неготовые.\nПодтвердить?',
+    hi: '{ready} / {total} तैयार, {missing} पोर्ट तैयार नहीं। ज़बरदस्ती भेजने से तैयार नहीं पोर्ट छूट जाएंगे।\nपुष्टि करें?',
+    id: '{ready} / {total} siap, {missing} port belum siap. Paksa akan melewati yang belum siap.\nKonfirmasi?',
+    de: '{ready} / {total} bereit, {missing} Port(s) nicht bereit. Erzwingen überspringt nicht bereit.\nBestätigen?',
+    vi: '{ready} / {total} sẵn sàng, {missing} cổng chưa sẵn sàng. Ép sẽ bỏ qua cổng chưa sẵn sàng.\nXác nhận?',
+    tr: '{ready} / {total} hazır, {missing} port hazır değil. Zorla göndermek hazır olmayanları atlar.\nOnaylıyor musun?',
+    it: '{ready} / {total} pronto, {missing} porte non pronte. Forzare saltando le non pronte.\nConfermi?'
   }
 } satisfies Record<string, LocalizedText>

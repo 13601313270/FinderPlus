@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, shallowRef } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, shallowRef } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { ImageGenNode } from './node'
 import { IMAGE_PROVIDERS, type ImageModelPreset, type ImageProviderId } from './providers'
@@ -116,6 +116,27 @@ const placeholder = computed(() => {
   return t('ready')
 })
 
+// —— 自定义 model 下拉 ——
+const modelDropdownOpen = ref(false)
+const modelSelectRef = ref<HTMLElement | null>(null)
+
+function toggleModelDropdown(e: MouseEvent): void {
+  e.stopPropagation()
+  modelDropdownOpen.value = !modelDropdownOpen.value
+}
+
+function selectModel(id: string): void {
+  modelDropdownOpen.value = false
+  onModelChange(id)
+}
+
+function onDocPointerDown(e: PointerEvent): void {
+  if (!modelDropdownOpen.value) return
+  if (modelSelectRef.value && !modelSelectRef.value.contains(e.target as Node)) {
+    modelDropdownOpen.value = false
+  }
+}
+
 onMounted(() => {
   const found = workspaceScene.getNode(props.id)
   if (found instanceof ImageGenNode) {
@@ -125,11 +146,13 @@ onMounted(() => {
     syncFromNode()
     unsubscribe = found.onChanged(() => syncFromNode())
   }
+  document.addEventListener('pointerdown', onDocPointerDown, true)
 })
 
-onUnmounted(() => {
+onBeforeUnmount(() => {
   unsubscribe?.()
   clearImage()
+  document.removeEventListener('pointerdown', onDocPointerDown, true)
 })
 
 function onGearClick(e: MouseEvent): void {
@@ -192,19 +215,43 @@ function onGenClick(): void {
           {{ preset.label }}
         </option>
       </select>
-      <select
-        class="node__model-select"
-        :value="model"
-        :title="model || `默认: ${currentPreset.defaultModel}`"
-        @change="(e) => onModelChange((e.target as HTMLSelectElement).value)"
-      >
-        <option value="">{{ currentPreset.defaultModel }}（预设默认）</option>
-        <option
-          v-for="[id, preset] in modelOptions"
-          :key="id"
-          :value="id"
-        >{{ id }}{{ preset.shape === 'dashscope-async' ? ' · 异步（较慢）' : '' }}</option>
-      </select>
+      <div ref="modelSelectRef" class="node__model-select" :title="model || `默认: ${currentPreset.defaultModel}`">
+        <button
+          type="button"
+          class="node__model-trigger"
+          @click="toggleModelDropdown"
+        >
+          <span class="node__model-label">{{ model || `${currentPreset.defaultModel}（预设默认）` }}</span>
+          <span class="node__model-caret" :class="{ 'is-open': modelDropdownOpen }">▾</span>
+        </button>
+        <div
+          v-if="modelDropdownOpen"
+          class="node__model-menu"
+          @click.stop
+        >
+          <div
+            class="node__model-option"
+            :class="{ 'is-active': !model }"
+            @click="selectModel('')"
+          >
+            <span class="node__model-option-name">{{ currentPreset.defaultModel }}（预设默认）</span>
+            <span class="node__model-option-ref">-</span>
+          </div>
+          <div
+            v-for="[id, preset] in modelOptions"
+            :key="id"
+            class="node__model-option"
+            :class="{ 'is-active': model === id }"
+            @click="selectModel(id)"
+          >
+            <span class="node__model-option-name">
+              {{ id }}{{ preset.shape === 'dashscope-async' ? ' · 异步（较慢）' : '' }}
+            </span>
+            <span v-if="preset.maxReferenceImages" class="node__model-option-ref">参考图 × {{ preset.maxReferenceImages }}</span>
+            <span v-else class="node__model-option-ref">-</span>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- 预览区 -->
@@ -268,7 +315,7 @@ function onGenClick(): void {
   box-sizing: border-box;
   width: 100%;
   height: 100%;
-  overflow: auto;
+  overflow: visible;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -314,8 +361,7 @@ function onGenClick(): void {
     flex-shrink: 0;
   }
 
-  &__provider-select,
-  &__model-select {
+  &__provider-select {
     font-size: 11px;
     padding: 3px 6px;
     border: 1px solid #d5d9e0;
@@ -324,20 +370,118 @@ function onGenClick(): void {
     color: #374151;
     outline: none;
     cursor: pointer;
+    width: 100px;
+    flex-shrink: 0;
 
     &:focus {
       border-color: #3b82f6;
     }
   }
 
-  &__provider-select {
-    width: 100px;
-    flex-shrink: 0;
-  }
-
   &__model-select {
     flex: 1;
     min-width: 0;
+    position: relative;
+  }
+
+  &__model-trigger {
+    all: unset;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    font-size: 11px;
+    padding: 3px 6px;
+    border: 1px solid #d5d9e0;
+    border-radius: 4px;
+    background: #fff;
+    color: #374151;
+    cursor: pointer;
+    box-sizing: border-box;
+    gap: 4px;
+
+    &:hover {
+      border-color: #9ca3af;
+    }
+
+    &:active,
+    &:focus {
+      border-color: #3b82f6;
+    }
+  }
+
+  &__model-label {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: left;
+  }
+
+  &__model-caret {
+    font-size: 9px;
+    color: #9ca3af;
+    flex-shrink: 0;
+    transition: transform 0.15s;
+
+    &.is-open {
+      transform: rotate(180deg);
+    }
+  }
+
+  &__model-menu {
+    position: absolute;
+    top: calc(100% + 2px);
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    max-height: 240px;
+    overflow-y: auto;
+    background: #fff;
+    border: 1px solid #d5d9e0;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    padding: 4px;
+    box-sizing: border-box;
+  }
+
+  &__model-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 5px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 11px;
+
+    &:hover,
+    &.is-active {
+      background: #eff6ff;
+    }
+
+    &.is-active {
+      color: #1d4ed8;
+    }
+  }
+
+  &__model-option-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__model-option-ref {
+    flex-shrink: 0;
+    font-size: 10px;
+    color: #6b7280;
+    background: #f3f4f6;
+    padding: 1px 6px;
+    border-radius: 3px;
+    white-space: nowrap;
   }
 
   &__help {

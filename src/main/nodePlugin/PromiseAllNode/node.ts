@@ -242,42 +242,58 @@ export class PromiseAllNode extends Node {
 
     // —— 第三步：齐了！先 commit（下游立刻拿到值），再等动画播完才清 receivedSet ——
     if (!this.triggering) {
-      // 正在上一轮动画中时，齐了的判定直接忽略——动画期间 receivedSet 没清，
-      // 下一个上游的新值会先 receivedSet.add，但动画还没结束；动画结束后统一清
-      for (let i = 0; i < this.portCount; i++) {
-        const inPort = this.inputPortsList[i]
-        const outPort = this.outputPortsList[i]
-        const [value] = inPort.value
-        if (value === undefined) continue
-        outPort.commit(value)
-      }
-
-      // 输出已全部 commit → 输入已被消化，清除 dirty 状态
-      this.completeRun()
-
-      this.triggering = true
-      this.notifyChanged() // 渲染层读到 triggering=true → 开始播 SVG 动画
-
-      // 动画时长到了才清——给渲染层足够时间把"从左飞到右"的动画播完，
-      // 最后才把绿点归灰，用户能看到清晰的触发反馈
-      setTimeout(() => {
-        this.receivedSet.clear()
-        this.triggering = false
-        this.notifyChanged()
-      }, ANIMATION_MS)
+      this.triggerAllAvailable(false)
     } else {
       // 正在上一轮动画中——收到新值也 commit，下游值已经是最新的，
       // 但不重复触发动画（上一轮还没结束），receivedSet 也不清
-      for (let i = 0; i < this.portCount; i++) {
-        const inPort = this.inputPortsList[i]
-        const outPort = this.outputPortsList[i]
-        const [value] = inPort.value
-        if (value === undefined) continue
-        outPort.commit(value)
-      }
-      // 动画期间新值也已 commit → 清除 dirty
+      this.commitAllAvailable(false)
       this.completeRun()
     }
+  }
+
+  /**
+   * 手动触发：不等全部就绪，把当前已有值的端口立刻 commit 下去。
+   * 点击前 UI 已做 window.confirm 二次确认——告知用户"跳过 N 个未就绪端口"的风险。
+   *
+   * 用 { force: true } 绕过指纹排重——同一个值在上一轮 commit 过也能再推一次。
+   * 未就绪端口（value === undefined）静默跳过，不发 null。
+   */
+  forceTrigger(): void {
+    if (this.triggering) return
+    this.triggerAllAvailable(true)
+  }
+
+  /**
+   * 把所有已有值的输入端口 commit 到对应输出端口。
+   * @param force true 时传 { force: true } 绕过 fingerprint 排重（手动触发场景）
+   */
+  private commitAllAvailable(force: boolean): void {
+    for (let i = 0; i < this.portCount; i++) {
+      const inPort = this.inputPortsList[i]
+      const outPort = this.outputPortsList[i]
+      const [value] = inPort.value
+      if (value === undefined) continue
+      outPort.commit(value, force ? { force: true } : undefined)
+    }
+  }
+
+  /**
+   * commit + 播动画 + 动画结束后清 receivedSet。自动触发和手动触发共用。
+   */
+  private triggerAllAvailable(force: boolean): void {
+    this.commitAllAvailable(force)
+    this.completeRun()
+
+    this.triggering = true
+    this.notifyChanged() // 渲染层读到 triggering=true → 开始播 SVG 动画
+
+    // 动画时长到了才清——给渲染层足够时间把"从左飞到右"的动画播完，
+    // 最后才把绿点归灰，用户能看到清晰的触发反馈
+    setTimeout(() => {
+      this.receivedSet.clear()
+      this.triggering = false
+      this.notifyChanged()
+    }, ANIMATION_MS)
   }
 
   /**

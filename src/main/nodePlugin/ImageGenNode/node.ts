@@ -380,7 +380,7 @@ export class ImageGenNode extends Node {
     // 接了参考图但当前模型不支持：提示用户换模型，参考图也不会被静默丢弃
     if (refCount > 0 && endpoint.maxReferenceImages === 0) {
       this.status = 'error'
-      this.errorMessage = `当前模型 ${endpoint.model} 不支持参考图，可切换到百炼的 qwen-image-2.0-pro 或 wan2.6-t2i`
+      this.errorMessage = `当前模型 ${endpoint.model} 不支持参考图，可切换到百炼的 qwen-image-2.0-2in1 / qwen-image-2.0-pro 或 wan2.6-image`
       this.resultFile = null
       this.notifyChanged()
       return

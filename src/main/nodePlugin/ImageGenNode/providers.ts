@@ -32,10 +32,18 @@ export interface ImageModelPreset {
   /**
    * 支持的参考图（图生图 / 编辑）最大张数。
    * 0 / 未配 = 不支持传参考图。
-   * 当前覆盖：百炼 sync 的 qwen-image-2.0-pro（上限 3）、wan2.6-t2i（上限 4）。
+   * 当前覆盖：百炼 sync 的 qwen-image-2.0-pro/2in1/2.0（上限 3）、wan2.6-image（上限 4）。
    * 端口会据此做数量校验，超上限直接报错而不是静默截断。
    */
   readonly maxReferenceImages?: number
+  /**
+   * 百炼 Wan2.6 特有的 enable_interleave 参数控制：
+   * - 'edit'      → 有参考图时设 enable_interleave=false（图像编辑模式，1~4 张图）
+   *                 无参考图时不会走到这个分支（接口要求编辑模式必须带图）
+   * - 'interleave' → enable_interleave=true（文图交错 / 纯文生图，0~1 张图）
+   * 未配时不发送该参数（qwen-image 系列不需要）。
+   */
+  readonly dashscopeEnableInterleave?: 'edit' | 'interleave'
 }
 
 export interface ImageProviderPreset {
@@ -119,7 +127,17 @@ export const IMAGE_PROVIDERS: Readonly<Record<ImageProviderId, ImageProviderPres
       // 2.0-pro 文档默认 2048*2048，这里把 1024x1024 放首位当默认值，省额度，且仍在 512*512~2048*2048 的合法区间
       'qwen-image-2.0-pro': {
         sizes: ['1024x1024', '1328x1328', '1536x1024', '1024x1536', '1664x928', '928x1664', '2048x2048'],
-        maxReferenceImages: 4
+        maxReferenceImages: 3
+      },
+      // 2in1 = 文生图 + 图生图一体版本；尺寸与 pro 一致，参考图上限 3
+      'qwen-image-2.0-2in1': {
+        sizes: ['1024x1024', '1328x1328', '1536x1024', '1024x1536', '1664x928', '928x1664', '2048x2048'],
+        maxReferenceImages: 3
+      },
+      // 2.0 加速版，也支持图生图/编辑
+      'qwen-image-2.0': {
+        sizes: ['1024x1024', '1328x1328', '1536x1024', '1024x1536', '1664x928', '928x1664', '2048x2048'],
+        maxReferenceImages: 3
       },
       'qwen-image': {
         sizes: ['1024x1024', '1664x928', '1472x1140', '1328x1328', '1140x1472', '928x1664']
@@ -127,10 +145,17 @@ export const IMAGE_PROVIDERS: Readonly<Record<ImageProviderId, ImageProviderPres
       'qwen-image-max': {
         sizes: ['1024x1024', '1664x928', '1472x1140', '1328x1328', '1140x1472', '928x1664']
       },
-      // 万相 2.6 走的是同一套同步接口；尺寸按官方说明取 1280*1280~1440*1440 像素区间内的常用档
-      'wan2.6-t2i': {
+      // Wan2.6 图生图/编辑模型：支持 1~4 张参考图（编辑模式）或纯文生图（交错模式）
+      // 百炼强制要求：编辑模式必须带图、enable_interleave=false；纯文生图/交错输出时 enable_interleave=true
+      'wan2.6-image': {
         sizes: ['1280x1280', '1440x1440', '1600x1280', '1280x1600'],
-        maxReferenceImages: 4
+        maxReferenceImages: 4,
+        dashscopeEnableInterleave: 'edit'
+      },
+      // Wan2.6 纯文生图（t2i = text to image）：走 messages 协议但不允许 image 内容项
+      // 百炼报错 "For t2i model, the last message should not contain any image content items"
+      'wan2.6-t2i': {
+        sizes: ['1280x1280', '1440x1440', '1600x1280', '1280x1600']
       },
       // —— 异步（提交任务 + 轮询）——
       'wan2.5-t2i-preview': {
@@ -237,6 +262,8 @@ export interface ResolvedImageEndpoint {
   supportsBase64Response: boolean
   /** 当前模型支持的参考图（图生图 / 编辑）最大张数；0 = 不支持 */
   maxReferenceImages: number
+  /** Wan2.6 特有的 enable_interleave 控制；undefined = 不发送该参数 */
+  dashscopeEnableInterleave?: 'edit' | 'interleave'
 }
 
 /**
@@ -271,7 +298,8 @@ export function readImageEndpoint(
     sizes,
     defaultSize: sizes[0],
     supportsBase64Response: modelPreset?.supportsBase64Response ?? false,
-    maxReferenceImages: modelPreset?.maxReferenceImages ?? 0
+    maxReferenceImages: modelPreset?.maxReferenceImages ?? 0,
+    dashscopeEnableInterleave: modelPreset?.dashscopeEnableInterleave
   }
 }
 
@@ -313,7 +341,7 @@ export function buildImageRequestBody(
       // 智谱不支持 n，尺寸字段名就是 size
       return { model: endpoint.model, prompt, size }
     case 'dashscope-sync': {
-      // 同步协议（qwen-image 系列、万相 2.6）：messages 结构 + prompt_extend / watermark
+      // 同步协议（qwen-image 系列、Wan2.6）：messages 结构 + prompt_extend / watermark / enable_interleave
       // 多张参考图与 text 并列放在 content 数组里，百炼按数组顺序逐个识别。
       // 注意：百炼要求 image 字段只能是以下两种之一：
       //   ① 公网 URL：http://... 或 https://...
@@ -324,15 +352,33 @@ export function buildImageRequestBody(
         const trimmed = ref.trim()
         if (trimmed) content.push({ image: trimmed })
       }
+
+      // Wan2.6 特有的 enable_interleave：
+      // - 'edit' 模式 → enable_interleave=false（有参考图即图像编辑；接口要求编辑模式必须带图，
+      //   node.ts 在 maxReferenceImages 检查阶段已拦截"无图选了 edit"的情况）
+      // - 'interleave' 模式 → enable_interleave=true（纯文生图 / 文图交错输出，0~1 张图）
+      // 未配时（qwen-image 系列）不传该参数
+      const refCount = referenceImages?.filter(r => r.trim()).length ?? 0
+      let enableInterleave: boolean | undefined
+      if (endpoint.dashscopeEnableInterleave === 'edit') {
+        // 编辑模式：有参考图 → false（编辑），无参考图 → true（退回文图交错/纯文生图）
+        enableInterleave = refCount === 0
+      } else if (endpoint.dashscopeEnableInterleave === 'interleave') {
+        enableInterleave = true
+      }
+
+      const parameters: Record<string, unknown> = {
+        size: toDashscopeSize(size),
+        n: 1,
+        prompt_extend: true,
+        watermark: false
+      }
+      if (enableInterleave !== undefined) parameters.enable_interleave = enableInterleave
+
       return {
         model: endpoint.model,
         input: { messages: [{ role: 'user', content }] },
-        parameters: {
-          size: toDashscopeSize(size),
-          n: 1,
-          prompt_extend: true,
-          watermark: false
-        }
+        parameters
       }
     }
     case 'dashscope-async':

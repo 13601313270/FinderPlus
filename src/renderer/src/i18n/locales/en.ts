@@ -30,7 +30,23 @@ const en: Language = {
     clearConfirmTitle: 'Clear the canvas?',
     clearConfirmBody: 'This will remove all nodes and edges from the canvas and cannot be undone. Files in the canvas directory will NOT be deleted. Continue?',
     clearSuccess: 'Canvas cleared.',
-    clearAlreadyEmpty: 'The canvas is already empty'
+    clearAlreadyEmpty: 'The canvas is already empty',
+
+    // Sidebar groups
+    groupGeneral: 'General',
+    groupLLM: 'LLM Settings',
+    groupImage: 'Image Generation',
+
+    // LLM / Image section titles and hints (previously hardcoded)
+    llmTitle: 'LLM API Key',
+    llmHint: 'Configure API keys for each provider here. Each LLM node can independently choose which provider and model to use.',
+    imageTitle: 'Image Generation API Key',
+    imageHint: 'Configure API keys for each image generation provider. Each image node can independently choose which provider and model to use.',
+
+    // Buttons (previously hardcoded)
+    save: 'Save',
+    clear: 'Clear',
+    saved: 'Saved'
   },
   helpCenter: {
     title: 'Help Center',

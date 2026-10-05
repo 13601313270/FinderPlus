@@ -35,7 +35,23 @@ const zh: Language = {
     clearConfirmTitle: '确定清空画布？',
     clearConfirmBody: '这将移除画布上的所有节点和连线，且无法撤销。画布目录下的文件不会被删除。继续？',
     clearSuccess: '画布已清空。',
-    clearAlreadyEmpty: '画布已经是空的了'
+    clearAlreadyEmpty: '画布已经是空的了',
+
+    // 侧边栏分类
+    groupGeneral: '通用',
+    groupLLM: '大语言模型设置',
+    groupImage: '生图模型',
+
+    // LLM / 文生图 section 标题与提示（原硬编码）
+    llmTitle: '大语言模型 API Key',
+    llmHint: '在此配置各服务商的 API Key。每个 LLM 节点可独立选择使用哪个服务商和模型。',
+    imageTitle: '文生图 API Key',
+    imageHint: '在此配置图像生成服务商的 API Key。每个文生图节点可独立选择使用哪个服务商和模型。',
+
+    // 按钮（原硬编码）
+    save: '保存',
+    clear: '清除',
+    saved: '已保存'
   },
   helpCenter: {
     title: '帮助中心',

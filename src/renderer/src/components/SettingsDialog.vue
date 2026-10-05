@@ -22,10 +22,8 @@ import { workspaceScene } from '../../../main/engine/graph/SceneRegistry'
 import { viewport } from '@renderer/canvas/viewport'
 
 /**
- * 全局设置弹窗（机制版）：
- * - 自带弹窗壳（Teleport + mask + dialog + header + body + Esc 关闭）
- * - 状态来自 useGlobalSettings（module 级单例），工具栏按钮和系统应用菜单共享
- * - 具体设置项按分区往 body 里加，当前已有「语言」和「数据迁移」
+ * 全局设置弹窗：左侧分类栏 + 右侧滚动内容。
+ * 三个分组（sidebar nav）：通用 | 大语言模型设置 | 生图模型
  */
 const { t } = useI18n()
 const { visible, openSettings, closeSettings } = useGlobalSettings()
@@ -44,11 +42,26 @@ const {
   clearKey: clearImageKey
 } = useImageSettings()
 
-/** SettingsDialog 打开时同步初始化 LLM + Image draft */
+/** 左侧选中的分类 */
+type SectionKey = 'general' | 'llm' | 'image'
+const activeSection = ref<SectionKey>('general')
+
+const SECTION_ORDER: SectionKey[] = ['general', 'llm', 'image']
+
+function sectionLabel(key: SectionKey): string {
+  switch (key) {
+    case 'general': return t('settingsDialog.groupGeneral')
+    case 'llm':     return t('settingsDialog.groupLLM')
+    case 'image':   return t('settingsDialog.groupImage')
+  }
+}
+
+/** SettingsDialog 打开时同步初始化 LLM + Image draft，并切回第一个分类 */
 watch(visible, (v) => {
   if (v) {
     initLLMDraft()
     initImageDraft()
+    activeSection.value = 'general'
   }
 })
 
@@ -308,154 +321,166 @@ async function handleClearCanvas(): Promise<void> {
         </div>
 
         <div class="gs-dialog__body">
-          <!-- 设置分区：后续每类全局设置在这里加一块 -->
-          <section class="gs-section">
-            <h4 class="gs-section__title">{{ t('settingsDialog.language') }}</h4>
-            <p class="gs-section__hint">{{ t('settingsDialog.languageHint') }}</p>
-            <SelectMenu
-              :model-value="language"
-              :options="languageSelectOptions"
-              :aria-label="t('settingsDialog.language')"
-              @update:model-value="onLanguageChange"
-            />
-          </section>
+          <!-- 左侧分类栏 -->
+          <nav class="gs-sidebar">
+            <button
+              v-for="key in SECTION_ORDER"
+              :key="key"
+              class="gs-sidebar__item"
+              :class="{ 'gs-sidebar__item--active': activeSection === key }"
+              type="button"
+              @click="activeSection = key"
+            >
+              {{ sectionLabel(key) }}
+            </button>
+          </nav>
 
-          <!-- LLM API Key 配置（每个服务商单独一行） -->
-          <section class="gs-section">
-            <h4 class="gs-section__title">大语言模型 API Key</h4>
-            <p class="gs-section__hint">
-              在此配置各服务商的 API Key。每个 LLM 节点可独立选择使用哪个服务商和模型。
-            </p>
+          <!-- 右侧内容区 -->
+          <div class="gs-content">
+            <!-- ========== 通用 ========== -->
+            <template v-if="activeSection === 'general'">
+              <section class="gs-section">
+                <h4 class="gs-section__title">{{ t('settingsDialog.language') }}</h4>
+                <p class="gs-section__hint">{{ t('settingsDialog.languageHint') }}</p>
+                <SelectMenu
+                  :model-value="language"
+                  :options="languageSelectOptions"
+                  :aria-label="t('settingsDialog.language')"
+                  @update:model-value="onLanguageChange"
+                />
+              </section>
 
-            <div class="gs-llm__key-list">
-              <div
-                v-for="[key, preset] in llmProviders"
-                :key="key"
-                class="gs-llm__key-row"
-              >
-                <div class="gs-llm__key-header">
-                  <span class="gs-llm__key-label">{{ preset.label }}</span>
-                  <!-- <span
-                    class="gs-llm__key-status"
-                    :class="{ 'gs-llm__key-status--set': llmDraftKeys[key].length > 0 }"
-                  >{{ llmDraftKeys[key].length > 0 ? '已配置' : '未配置' }}</span> -->
-                </div>
-                <div class="gs-llm__key-input-row">
-                  <input
-                    v-model="llmDraftKeys[key]"
-                    class="gs-llm__input"
-                    type="password"
-                    :placeholder="`${preset.label} API Key`"
-                    autocomplete="off"
-                    spellcheck="false"
-                  />
+              <section class="gs-section">
+                <h4 class="gs-section__title">{{ t('settingsDialog.transferTitle') }}</h4>
+                <p class="gs-section__hint">{{ t('settingsDialog.transferHint') }}</p>
+                <p class="gs-section__hint gs-section__hint--warn">{{ t('settingsDialog.exportKeyHint') }}</p>
+                <div class="gs-transfer__actions">
                   <button
-                    class="gs-btn gs-btn--ghost gs-btn--clear-sm"
+                    class="gs-btn gs-btn--primary"
                     type="button"
-                    :disabled="!llmDraftKeys[key]"
-                    @click="clearLLMKey(key)"
-                  >清除</button>
+                    :disabled="transferBusy"
+                    @click="handleExport"
+                  >{{ t('settingsDialog.export') }}</button>
                   <button
-                    class="gs-btn gs-btn--primary gs-btn--save-sm"
-                    :class="{ 'gs-btn--saved': savedProviders.has(key) }"
+                    class="gs-btn"
                     type="button"
-                    @click="onSaveProviderKey(key)"
-                  >{{ savedProviders.has(key) ? '已保存' : '保存' }}</button>
+                    :disabled="transferBusy"
+                    @click="handleImport"
+                  >{{ t('settingsDialog.import') }}</button>
                 </div>
-              </div>
-            </div>
-          </section>
+              </section>
 
-          <!-- 文生图 API Key 配置（每个服务商单独一行） -->
-          <section class="gs-section">
-            <h4 class="gs-section__title">文生图 API Key</h4>
-            <p class="gs-section__hint">
-              在此配置图像生成服务商的 API Key。每个文生图节点可独立选择使用哪个服务商和模型。
-            </p>
-
-            <div class="gs-llm__key-list">
-              <div
-                v-for="[key, preset] in imageProviders"
-                :key="key"
-                class="gs-llm__key-row"
-              >
-                <div class="gs-llm__key-header">
-                  <span class="gs-llm__key-label">{{ preset.label }}</span>
-                </div>
-                <div class="gs-llm__key-input-row">
-                  <input
-                    v-model="imageDraftKeys[key]"
-                    class="gs-llm__input"
-                    type="password"
-                    :placeholder="`${preset.label} API Key`"
-                    autocomplete="off"
-                    spellcheck="false"
-                  />
+              <section class="gs-section">
+                <h4 class="gs-section__title">{{ t('settingsDialog.onboardingSection') }}</h4>
+                <p class="gs-section__hint">{{ t('settingsDialog.onboardingHint') }}</p>
+                <div class="gs-transfer__actions">
                   <button
-                    class="gs-btn gs-btn--ghost gs-btn--clear-sm"
+                    class="gs-btn"
                     type="button"
-                    :disabled="!imageDraftKeys[key]"
-                    @click="clearImageKey(key)"
-                  >清除</button>
-                  <button
-                    class="gs-btn gs-btn--primary gs-btn--save-sm"
-                    :class="{ 'gs-btn--saved': savedImageProviders.has(key) }"
-                    type="button"
-                    @click="onSaveImageProviderKey(key)"
-                  >{{ savedImageProviders.has(key) ? '已保存' : '保存' }}</button>
+                    @click="onRestartOnboarding"
+                  >{{ t('settingsDialog.onboardingRestart') }}</button>
                 </div>
-              </div>
-            </div>
-          </section>
+              </section>
 
-          <!-- 数据迁移 -->
-          <section class="gs-section">
-            <h4 class="gs-section__title">{{ t('settingsDialog.transferTitle') }}</h4>
-            <p class="gs-section__hint">{{ t('settingsDialog.transferHint') }}</p>
-            <p class="gs-section__hint gs-section__hint--warn">{{ t('settingsDialog.exportKeyHint') }}</p>
-            <div class="gs-transfer__actions">
-              <button
-                class="gs-btn gs-btn--primary"
-                type="button"
-                :disabled="transferBusy"
-                @click="handleExport"
-              >{{ t('settingsDialog.export') }}</button>
-              <button
-                class="gs-btn"
-                type="button"
-                :disabled="transferBusy"
-                @click="handleImport"
-              >{{ t('settingsDialog.import') }}</button>
-            </div>
-          </section>
+              <section class="gs-section">
+                <h4 class="gs-section__title">{{ t('settingsDialog.clearSection') }}</h4>
+                <p class="gs-section__hint">{{ t('settingsDialog.clearHint') }}</p>
+                <div class="gs-transfer__actions">
+                  <button
+                    class="gs-btn"
+                    type="button"
+                    :disabled="clearBusy || canvasIsEmpty"
+                    @click="handleClearCanvas"
+                  >{{ t('settingsDialog.clearButton') }}</button>
+                  <span v-if="canvasIsEmpty" class="gs-clear__empty">{{ t('settingsDialog.clearAlreadyEmpty') }}</span>
+                </div>
+              </section>
+            </template>
 
-          <!-- 新手引导 -->
-          <section class="gs-section">
-            <h4 class="gs-section__title">{{ t('settingsDialog.onboardingSection') }}</h4>
-            <p class="gs-section__hint">{{ t('settingsDialog.onboardingHint') }}</p>
-            <div class="gs-transfer__actions">
-              <button
-                class="gs-btn"
-                type="button"
-                @click="onRestartOnboarding"
-              >{{ t('settingsDialog.onboardingRestart') }}</button>
-            </div>
-          </section>
+            <!-- ========== 大语言模型设置 ========== -->
+            <template v-if="activeSection === 'llm'">
+              <section class="gs-section">
+                <h4 class="gs-section__title">{{ t('settingsDialog.llmTitle') }}</h4>
+                <p class="gs-section__hint">{{ t('settingsDialog.llmHint') }}</p>
 
-          <!-- 清空画布 -->
-          <section class="gs-section">
-            <h4 class="gs-section__title">{{ t('settingsDialog.clearSection') }}</h4>
-            <p class="gs-section__hint">{{ t('settingsDialog.clearHint') }}</p>
-            <div class="gs-transfer__actions">
-              <button
-                class="gs-btn"
-                type="button"
-                :disabled="clearBusy || canvasIsEmpty"
-                @click="handleClearCanvas"
-              >{{ t('settingsDialog.clearButton') }}</button>
-              <span v-if="canvasIsEmpty" class="gs-clear__empty">{{ t('settingsDialog.clearAlreadyEmpty') }}</span>
-            </div>
-          </section>
+                <div class="gs-llm__key-list">
+                  <div
+                    v-for="[key, preset] in llmProviders"
+                    :key="key"
+                    class="gs-llm__key-row"
+                  >
+                    <div class="gs-llm__key-header">
+                      <span class="gs-llm__key-label">{{ preset.label }}</span>
+                    </div>
+                    <div class="gs-llm__key-input-row">
+                      <input
+                        v-model="llmDraftKeys[key]"
+                        class="gs-llm__input"
+                        type="password"
+                        :placeholder="`${preset.label} API Key`"
+                        autocomplete="off"
+                        spellcheck="false"
+                      />
+                      <button
+                        class="gs-btn gs-btn--ghost gs-btn--clear-sm"
+                        type="button"
+                        :disabled="!llmDraftKeys[key]"
+                        @click="clearLLMKey(key)"
+                      >{{ t('settingsDialog.clear') }}</button>
+                      <button
+                        class="gs-btn gs-btn--primary gs-btn--save-sm"
+                        :class="{ 'gs-btn--saved': savedProviders.has(key) }"
+                        type="button"
+                        @click="onSaveProviderKey(key)"
+                      >{{ savedProviders.has(key) ? t('settingsDialog.saved') : t('settingsDialog.save') }}</button>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            </template>
+
+            <!-- ========== 生图模型 ========== -->
+            <template v-if="activeSection === 'image'">
+              <section class="gs-section">
+                <h4 class="gs-section__title">{{ t('settingsDialog.imageTitle') }}</h4>
+                <p class="gs-section__hint">{{ t('settingsDialog.imageHint') }}</p>
+
+                <div class="gs-llm__key-list">
+                  <div
+                    v-for="[key, preset] in imageProviders"
+                    :key="key"
+                    class="gs-llm__key-row"
+                  >
+                    <div class="gs-llm__key-header">
+                      <span class="gs-llm__key-label">{{ preset.label }}</span>
+                    </div>
+                    <div class="gs-llm__key-input-row">
+                      <input
+                        v-model="imageDraftKeys[key]"
+                        class="gs-llm__input"
+                        type="password"
+                        :placeholder="`${preset.label} API Key`"
+                        autocomplete="off"
+                        spellcheck="false"
+                      />
+                      <button
+                        class="gs-btn gs-btn--ghost gs-btn--clear-sm"
+                        type="button"
+                        :disabled="!imageDraftKeys[key]"
+                        @click="clearImageKey(key)"
+                      >{{ t('settingsDialog.clear') }}</button>
+                      <button
+                        class="gs-btn gs-btn--primary gs-btn--save-sm"
+                        :class="{ 'gs-btn--saved': savedImageProviders.has(key) }"
+                        type="button"
+                        @click="onSaveImageProviderKey(key)"
+                      >{{ savedImageProviders.has(key) ? t('settingsDialog.saved') : t('settingsDialog.save') }}</button>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            </template>
+          </div>
         </div>
       </div>
     </div>
@@ -475,7 +500,7 @@ async function handleClearCanvas(): Promise<void> {
 }
 
 .gs-dialog {
-  width: 520px;
+  width: 700px;
   max-height: 80vh;
   background: #fff;
   border-radius: 12px;
@@ -525,9 +550,50 @@ async function handleClearCanvas(): Promise<void> {
 
   &__body {
     flex: 1;
-    overflow-y: auto;
-    padding: 16px 20px;
+    min-height: 0;
+    display: flex;
   }
+}
+
+// —— 左侧分类栏 ——
+.gs-sidebar {
+  flex-shrink: 0;
+  width: 160px;
+  padding: 12px 0;
+  border-right: 1px solid #e5e7eb;
+  background: #f9fafb;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  &__item {
+    all: unset;
+    cursor: pointer;
+    padding: 8px 16px;
+    font-size: 13px;
+    color: #374151;
+    transition: background 0.15s, color 0.15s;
+    border-left: 2px solid transparent;
+
+    &:hover {
+      background: #eef2ff;
+    }
+
+    &--active {
+      background: #eff6ff;
+      color: #2563eb;
+      font-weight: 600;
+      border-left-color: #2563eb;
+    }
+  }
+}
+
+// —— 右侧内容区 ——
+.gs-content {
+  flex: 1;
+  min-width: 0;
+  padding: 16px 20px;
+  overflow-y: auto;
 }
 
 .gs-section {

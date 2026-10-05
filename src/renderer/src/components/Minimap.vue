@@ -223,7 +223,7 @@ const layout = computed<MinimapLayout | null>(() => {
       d: bezierPath(
         { x: toX(geom.from.x), y: toY(geom.from.y) },
         { x: toX(geom.to.x), y: toY(geom.to.y) },
-        8
+        5
       )
     })),
     frameRect: {

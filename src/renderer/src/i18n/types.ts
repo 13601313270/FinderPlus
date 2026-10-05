@@ -48,6 +48,19 @@ export type Language = {
     clearConfirmBody: string
     clearSuccess: string
     clearAlreadyEmpty: string
+    /** 侧边栏分类（三栏） */
+    groupGeneral: string
+    groupLLM: string
+    groupImage: string
+    /** LLM / 文生图 section 标题与提示（原硬编码） */
+    llmTitle: string
+    llmHint: string
+    imageTitle: string
+    imageHint: string
+    /** 按钮（原硬编码） */
+    save: string
+    clear: string
+    saved: string
   }
   helpCenter: {
     title: string

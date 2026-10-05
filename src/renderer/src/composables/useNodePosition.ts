@@ -106,7 +106,7 @@ export interface NodePositionView {
   readonly box: Ref<readonly [number, number]>
   /** 被某个接收节点悬停命中时变 true（即将被收养），NodeShell 据此给透明 */
   readonly accepted: Ref<boolean>
-  /** 引擎层因果状态：stable / dirty / running，NodeShell 据此画外壳视觉提示 */
+  /** 引擎层因果状态：stable / dirty / running / error，NodeShell 据此画外壳视觉提示 */
   readonly nodeState: Ref<NodeState>
   /** 脏的输入端口 id 集合，NodePorts / NodePort 据此画端口级视觉标记 */
   readonly dirtyInputPortIds: Ref<ReadonlySet<string>>

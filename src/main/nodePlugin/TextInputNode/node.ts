@@ -1,4 +1,5 @@
 import { StringValue } from '../../engine/data/StringValue'
+import type { Edge } from '../../engine/graph/Edge'
 import { OutputPort } from '../../engine/port/OutputPort'
 import { Node } from '../../engine/node/Node'
 import type { InputPort } from '../../engine/port/InputPort'
@@ -105,7 +106,17 @@ export class TextInputNode extends Node {
   }
 
   /** 没有输入端口，永远收不到通知 */
-  inputPortReceiveValue(_ports: InputPort[]): void {}
+  inputPortReceiveValue(_ports: InputPort[], _source: 'receive' | 'receiveClear' | 'bindEdge' | 'unbindEdge'): void {}
+
+  /**
+   * 新连线接上时：auto-send 开启则立即 commit 当前草稿值给所有边（force=true 跳过排重，
+   * 确保新连线能收到）；关闭则什么都不做，等用户手动点发送——覆盖基类默认的"有值就补送"。
+   */
+  onOutputPortBind(_outputPort: OutputPort, _edge: Edge): void {
+    if (this.autoSend) {
+      this.commitText(true)
+    }
+  }
 
   saveState(): Record<string, unknown> {
     const [w, h] = this.box

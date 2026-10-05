@@ -60,6 +60,8 @@ export class TextDisplayNode extends Node {
     const [first] = this.textInput.value
     this.displayed = first instanceof StringValue ? first.value : ''
     this.notifyChanged()
+    // 同步节点：展示出来就算消化完输入 → 回 stable
+    this.completeRun()
   }
 
   saveState(): Record<string, unknown> {

@@ -111,6 +111,8 @@ export class HumanReviewNode extends Node {
         this.deleteOutputPorts()
       }
       this.notifyChanged()
+      // 同步节点：队列空了 → stable
+      this.completeRun()
       return
     }
 
@@ -126,6 +128,8 @@ export class HumanReviewNode extends Node {
     // 有连线但还没值 → 只对齐端口，不入队
     if (values.length === 0) {
       this.notifyChanged()
+      // 同步节点：没有待审核项 → stable
+      this.completeRun()
       return
     }
 
@@ -138,6 +142,7 @@ export class HumanReviewNode extends Node {
       this.queue.push(value)
     }
     this.notifyChanged()
+    // 入队后保持 dirty——队列非空 = 有未处理的审核项，等 approve/reject 清空后 stable
   }
 
   /** 从 incoming 边推算上游 OutputPort 的类型（不要求值已到达） */
@@ -228,6 +233,10 @@ export class HumanReviewNode extends Node {
   private advance(): void {
     this.current = this.queue.shift()
     this.notifyChanged()
+    // 队列清空 → 所有项都审核完了 → stable
+    if (this.current === undefined) {
+      this.completeRun()
+    }
   }
 
   // —— 持久化 ——

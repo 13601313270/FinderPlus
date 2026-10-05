@@ -118,6 +118,8 @@ export class StringConcatNode extends Node {
   inputPortReceiveValue(_ports: InputPort[]): void {
     this.recompute()
     this.notifyChanged()
+    // 同步节点：重算 + commit 输出就算消化完输入 → 回 stable
+    this.completeRun()
   }
 
   /**

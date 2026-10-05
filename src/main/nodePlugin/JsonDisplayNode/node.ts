@@ -120,6 +120,8 @@ export class JsonDisplayNode extends Node {
       this.jsonOutput.clear()
     }
     this.notifyChanged()
+    // 同步节点：解析 + commit 输出就算消化完输入 → 回 stable
+    this.completeRun()
   }
 
   saveState(): Record<string, unknown> {

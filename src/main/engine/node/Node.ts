@@ -1,9 +1,10 @@
 import type { InputPort } from '../port/InputPort'
 import type { OutputPort } from '../port/OutputPort'
 import type { Scene } from '../graph/Scene'
+import type { Edge } from '../graph/Edge'
 
 /**
- * 节点运行状态三态：
+ * 节点运行状态四态：
  *
  * - **stable**：节点的输出端口值与输入端口值匹配。不管中间经历了什么，
  *   现在 OutputPort.commit 里的值，就是用当前 InputPort 里的值算出来的。
@@ -13,17 +14,24 @@ import type { Scene } from '../graph/Scene'
  * - **running**：节点正在异步重算（如 LLM fetch、图片生成 API 调用中），
  *   期间输入再变不会打断；子类在 run 结束时显式调 completeRun()（成功）
  *   或 failRun()（失败/无产出）。多输出节点（CodeNode）在最后一个回调收口。
+ * - **error**：异步 run 结束但没有产出（计算报错、API 挂了、脚本抛异常）。
+ *   输入没变、输出也没变——不是「输入→输出」的因果链断了，而是「计算」环节挂了。
+ *   error 期间上游再推值，会先转为 dirty（输入真的变了）；子类也可以直接 beginRun
+ *   从 error 再跑一次。
  *
  * 状态转换由两类驱动者协作：
- *   InputPort  → _onInputPortChanged  → markDirty       （值变了就标）
- *   子类       → beginRun / completeRun / failRun         （run 生命周期）
+ *   InputPort  → _onInputPortChanged  → markDirty / error→dirty
+ *   子类       → beginRun / completeRun / failRun
  *
  * 这不是「运行时错误/加载中/空闲」那种一次性 status 字段——
  * 那是子类自己的 UI 内部状态（status: 'loading' | 'done' | 'error'），
  * 而 nodeState 是**引擎层的因果关系描述**，渲染层可以据此画出 dirty 标记、
- * running 动画等视觉提示。
+ * running 动画、error 红框等视觉提示。
  */
-export type NodeState = 'stable' | 'dirty' | 'running'
+export type NodeState = 'stable' | 'dirty' | 'running' | 'error'
+
+/** InputPort 触发 _onInputPortChanged 的四种来源，与 InputPort 的四个入口一一对应 */
+export type InputPortChangeSource = 'receive' | 'receiveClear' | 'bindEdge' | 'unbindEdge'
 
 /**
  * 节点右键菜单项描述符。run 必填——所有操作的执行函数都由节点自己声明，
@@ -120,13 +128,32 @@ export abstract class Node {
   }
 
   /**
-   * 标为 dirty：内部方法，只允许 _onInputPortChanged 和 failRun 调。
-   * 外部（InputPort / 子类）不应直接调——脏标记的完整事务由基类统一收口。
+   * 输入端口变化的统一入口：脏标记 + 通知子类，一个事务，外部只调这一个。
+   *
+   * InputPort 的四个入口（receive / receiveClear / bindEdge / unbindEdge）
+   * 都走这里——"输入变了 → 子类要知道"是不可分割的业务语义，
+   * 拆成两个独立调用方容易漏调其中一个。
+   *
+   * 默认行为会做脏标记（dirtyInputs + nodeState → dirty + notifyChanged）。
+   * 子类可以 override 跳过脏标记——典型如 BufferNode/QueueNode/StackNode，
+   * 它们是状态容器（入队/出队），输入≠计算输出，没有"脏"这个概念。
+   * 源头节点（无输入端口）不会被调到这里，不需要 override。
+   *
+   * @param ports 触发本次变化的端口列表（通常只有一个）。
+   * @param source 触发来源：上游推值 / 上游清空 / 新连线 / 断边。
    */
-  private markDirty(): void {
-    if (this.nodeState === 'dirty') return
-    this.nodeState = 'dirty'
-    this.notifyChanged()
+  _onInputPortChanged(ports: InputPort[], source: InputPortChangeSource): void {
+    // bindEdge 只是新连线建立，源头节点可能不补送值（如 TextInputNode 的 auto-send: false）。
+    // 此时输入端口只是多了一个 undefined 占位，没有实际值变化——跳过脏标记，等真正 receive 再说。
+    if (source !== 'bindEdge') {
+      ports.forEach(p => this.dirtyInputs.add(p.id))
+      if (this.nodeState !== 'dirty') {
+        // error 态收到新输入 → 真的"输入变了"，从 error 进 dirty
+        this.nodeState = 'dirty'
+        this.notifyChanged()
+      }
+    }
+    this.inputPortReceiveValue(ports, source)
   }
 
   /**
@@ -135,7 +162,8 @@ export abstract class Node {
    * 同步重算（CommandNode.inputPortReceiveValue 里的 recompute）不需要调，
    * 因为它没有异步间隙。
    *
-   * 从 stable 或 dirty 都可以进 running（语义分别是"开始算之前的"和"开始算新的"）。
+   * 从 stable / dirty / error 都可以进 running（语义分别是"开始算之前的"、
+   * "开始算新的"和"失败后重试"）。
    */
   protected beginRun(): void {
     if (this.nodeState === 'running') return
@@ -146,44 +174,58 @@ export abstract class Node {
   }
 
   /**
-   * 成功结束异步 run：running → stable（如果期间输入没变）或 dirty（如果变了）。
+   * 成功结束 run（或同步消化完输入）→ stable（如果期间输入没变）或 dirty（如果变了）。
+   *
+   * 不管之前是 running（异步节点成功收口）、dirty（同步节点消化完输入），
+   * 还是 error（失败后手动重试成功），调 completeRun 都意味着
+   * "输入已被消化、输出（或 UI 展示）已更新"。
+   *
    * 解锁所有输入端口，把锁定期间缓冲的变化一次性派发。
+   * 同步节点（展示/CommandNode 的同步 recompute）不需要调 beginRun 直接调这个。
    */
   protected completeRun(): void {
-    if (this.nodeState === 'running') {
-      // 先解锁端口，收集期间缓冲的变化
-      const dirtyPorts = this.flushLockedInputPorts()
-      this.stableInputFingerprint = this.computeInputFingerprint()
-      if (dirtyPorts.length === 0) {
-        // 消化完毕，期间没变 → stable，清空脏集合
-        this.dirtyInputs.clear()
-        this.nodeState = 'stable'
-      } else {
-        // 期间有变 → dirty，把 flush 出来的也加进脏集合
-        dirtyPorts.forEach(p => this.dirtyInputs.add(p.id))
-        this.nodeState = 'dirty'
-      }
-      this.notifyChanged()
-      if (dirtyPorts.length > 0) {
-        this.inputPortReceiveValue(dirtyPorts)
-      }
+    // 先解锁端口，收集期间缓冲的变化（同步节点从未 lock 过，flush 回来是空数组）
+    const dirtyPorts = this.flushLockedInputPorts()
+    this.stableInputFingerprint = this.computeInputFingerprint()
+    if (dirtyPorts.length === 0) {
+      // 消化完毕、期间没新变化 → stable，清空脏集合
+      this.dirtyInputs.clear()
+      this.nodeState = 'stable'
+    } else {
+      // 刚消化完又有新变化进来了 → dirty，把 flush 出来的也加进脏集合
+      dirtyPorts.forEach(p => this.dirtyInputs.add(p.id))
+      this.nodeState = 'dirty'
+    }
+    this.notifyChanged()
+    if (dirtyPorts.length > 0) {
+      // 解锁出来的新变化 → 再通知子类消化一次（递归到稳定或再变 dirty）
+      this.inputPortReceiveValue(dirtyPorts, 'receive')
     }
   }
 
   /**
-   * 失败结束异步 run：running → dirty。
-   * 解锁所有输入端口，flush 期间缓冲的变化。
-   * 不管期间有没有变化，run 失败 = 输出还是旧快照 = dirty。
+   * 结束 run 但没产出 → error。
+   * 典型场景：CodeNode 脚本抛异常、LLMNode API 返回错误、ImageGenNode 生成失败。
+   * 输入没变，所以不该进 dirty；进 error 让渲染层画红框提示。
+   * 同步节点也能用——比如尝试解析失败了。
+   *
+   * error 期间上游再推值，会在 _onInputPortChanged 里自动转 dirty（输入真的变了）；
+   * 子类也可以 beginRun 从 error 再跑一次。
    */
   protected failRun(): void {
-    if (this.nodeState === 'running') {
+    if (this.nodeState !== 'stable') {
       const dirtyPorts = this.flushLockedInputPorts()
-      // run 失败 → 之前的脏 + 期间变的都还是脏
       dirtyPorts.forEach(p => this.dirtyInputs.add(p.id))
-      this.nodeState = 'dirty'
+      if (dirtyPorts.length === 0) {
+        // 计算挂了，但期间没有新输入 → error
+        this.nodeState = 'error'
+      } else {
+        // 计算挂了 + 期间上游推了新值 → dirty（输入真的变了）
+        this.nodeState = 'dirty'
+      }
       this.notifyChanged()
       if (dirtyPorts.length > 0) {
-        this.inputPortReceiveValue(dirtyPorts)
+        this.inputPortReceiveValue(dirtyPorts, 'receive')
       }
     }
   }
@@ -198,21 +240,6 @@ export abstract class Node {
       if (p.unlockAndFlush()) dirty.push(p)
     })
     return dirty
-  }
-
-  /**
-   * 输入端口变化的统一入口：脏标记 + 通知子类，一个事务，外部只调这一个。
-   *
-   * InputPort 的四个入口（receive / receiveClear / bindEdge / unbindEdge）
-   * 都走这里——"输入变了 = 节点脏了 + 子类要知道"是不可分割的业务语义，
-   * 拆成两个独立调用方容易漏调其中一个。
-   *
-   * @param ports 触发本次变化的端口列表（通常只有一个）。
-   */
-  _onInputPortChanged(ports: InputPort[]): void {
-    ports.forEach(p => this.dirtyInputs.add(p.id))
-    this.markDirty()
-    this.inputPortReceiveValue(ports)
   }
 
   /** 所属 Scene 引用，由 Scene.addNode 时注入。右键菜单的通用操作（如删除）、
@@ -471,6 +498,22 @@ export abstract class Node {
   }
 
   /**
+   * 本节点的某个输出端口刚被连上一条新边。
+   * EdgeBinder.connect 完成绑定时调用——边两端都已挂好，端口里有值的话子类按需补送。
+   *
+   * 默认行为：如果该输出端口当前有值，就 transferData 给下游。
+   * 子类可以 override 关掉这个自动补送（比如 TextInputNode 的 auto-send: false 模式），
+   * 或者加额外逻辑（比如手动节点连上就自动 commit 一次当前暂存值）。
+   *
+   * 这是通知钩子，不强制返回值——要不要发、发什么，由子类自己决定。
+   */
+  onOutputPortBind(outputPort: OutputPort, edge: Edge): void {
+    if (outputPort.value !== undefined) {
+      edge.transferData(outputPort.value)
+    }
+  }
+
+  /**
    * 输入端口的通知入口：有新值送来、或连线增删时被端口调用。
    *
    * 基类不给默认实现——收到通知之后做什么、要不要做，各节点差别太大：
@@ -479,10 +522,13 @@ export abstract class Node {
    *
    * @param ports 触发本次通知的端口列表（通常只有一个；未来需要多个端口联动判定
    *              时可以一次传多个，比如"图片+尺寸两个端口都齐了才算就绪"）。
+   * @param source 触发来源：上游推值 / 上游清空 / 新连线 / 断边。
+   *              子类可据不同来源做差异化处理——比如 bindEdge 时只对齐端口类型，
+   *              不立即重算；receive 时才触发完整计算。
    *
    * 可以返回 Promise——需要异步 IPC（如落盘）的节点 await 即可，基类不强同步。
    */
-  abstract inputPortReceiveValue(ports: InputPort[]): Promise<void> | void
+  abstract inputPortReceiveValue(ports: InputPort[], source: InputPortChangeSource): Promise<void> | void
 
   /**
    * 把节点的**内部运行状态**序列化成一个 plain object。

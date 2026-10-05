@@ -90,6 +90,8 @@ export class ImagePreviewNode extends Node {
       this.imageOutput.clear()
     }
     this.notifyChanged()
+    // 同步节点：commit 输出就算消化完输入 → 回 stable
+    this.completeRun()
   }
 
   saveState(): Record<string, unknown> {

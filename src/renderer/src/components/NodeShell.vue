@@ -48,6 +48,7 @@ const acceptedForDrop = computed(() => accepted.value)
 const stateClass = computed(() => {
   if (nodeState.value === 'dirty') return 'node-shell--dirty'
   if (nodeState.value === 'running') return 'node-shell--running'
+  if (nodeState.value === 'error') return 'node-shell--error'
   return ''
 })
 
@@ -56,6 +57,7 @@ const stateTooltip = computed(() => {
   switch (nodeState.value) {
     case 'dirty': return '节点输入已变化，但输出还未更新'
     case 'running': return '节点正在异步重算中…'
+    case 'error': return '节点运行出错，点击查看详情'
     default: return ''
   }
 })
@@ -133,6 +135,11 @@ function onContextMenu(e: MouseEvent): void {
   // dirty：输入变了但输出没跟上 → 橙色虚线外圈（outline 不受 overflow:hidden 裁剪）
   &--dirty .node-content {
     outline: 2px dashed #f0a020;
+    outline-offset: 2px;
+  }
+
+  &--error .node-content {
+    outline: 4px dashed #e01c1c;
     outline-offset: 2px;
   }
 }

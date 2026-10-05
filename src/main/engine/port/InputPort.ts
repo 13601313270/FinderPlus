@@ -173,7 +173,7 @@ export class InputPort {
       if (this.locked) {
         this.pendingNotify = true
       } else {
-        this.owner?._onInputPortChanged([this])
+        this.owner?._onInputPortChanged([this], 'receive')
       }
     }
   }
@@ -185,7 +185,7 @@ export class InputPort {
       if (this.locked) {
         this.pendingNotify = true
       } else {
-        this.owner?._onInputPortChanged([this])
+        this.owner?._onInputPortChanged([this], 'receiveClear')
       }
     }
   }
@@ -229,7 +229,7 @@ export class InputPort {
     if (this.locked) {
       this.pendingNotify = true
     } else {
-      this.owner?._onInputPortChanged([this])
+      this.owner?._onInputPortChanged([this], 'bindEdge')
     }
     this.notifyEdgeBinding('bind', edge)
   }
@@ -243,7 +243,7 @@ export class InputPort {
     if (this.locked) {
       this.pendingNotify = true
     } else {
-      this.owner?._onInputPortChanged([this])
+      this.owner?._onInputPortChanged([this], 'unbindEdge')
     }
     this.notifyEdgeBinding('unbind', edge)
     return { result: true };

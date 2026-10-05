@@ -6,6 +6,7 @@ import { NumberValue } from '../../engine/data/NumberValue'
 import { StringValue } from '../../engine/data/StringValue'
 import type { Value } from '../../engine/data/Value'
 import { InputPort } from '../../engine/port/InputPort'
+import type { InputPortChangeSource } from '../../engine/node/Node'
 import { OutputPort } from '../../engine/port/OutputPort'
 import { Node } from '../../engine/node/Node'
 import { inLabel, outLabel } from './i18n'
@@ -124,7 +125,15 @@ export abstract class BufferNode extends Node {
 
   // —— 输入：自动入缓冲区 ——
 
-  inputPortReceiveValue(_ports: InputPort[]): void {
+  /**
+   * 跳过脏标记——BufferNode 是状态容器（入队/出队），不是"输入→计算→输出"的节点。
+   * 上游推值进队列 ≠ 输出应该跟着变（输出是用户点"出"才取的），所以没有 dirty 语义。
+   */
+  _onInputPortChanged(ports: InputPort[], source: InputPortChangeSource): void {
+    this.inputPortReceiveValue(ports, source)
+  }
+
+  inputPortReceiveValue(_ports: InputPort[], _source: InputPortChangeSource): void {
     const [value] = this.inputPort.value
     if (value === undefined) {
       // 上游断开 / 清空：允许同一个值再次送进来时重新入缓冲区

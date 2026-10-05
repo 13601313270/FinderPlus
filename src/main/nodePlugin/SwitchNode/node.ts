@@ -117,32 +117,37 @@ export class SwitchNode extends Node {
 
   /** 任一输入变化 → 确保输出端口类型对齐 → 清两边 → 只 commit 命中的一路 */
   inputPortReceiveValue(_ports: InputPort[]): void {
-    const [cond] = this.conditionInput.value
-    const [data] = this.dataInput.value
-    const ok = cond instanceof BoolValue
+    try {
+      const [cond] = this.conditionInput.value
+      const [data] = this.dataInput.value
+      const ok = cond instanceof BoolValue
 
-    // 先把两边都清掉，不管有没有值要发——防止旧值残留（stale-call 问题的分流变体）
-    this.passOutput?.clear()
-    this.failOutput?.clear()
+      // 先把两边都清掉，不管有没有值要发——防止旧值残留（stale-call 问题的分流变体）
+      this.passOutput?.clear()
+      this.failOutput?.clear()
 
-    if (!ok || data === undefined) {
-      // 条件没到 / 数据没到 → 两边都空，等下次
-      this.lastCondition = undefined
+      if (!ok || data === undefined) {
+        // 条件没到 / 数据没到 → 两边都空，等下次
+        this.lastCondition = undefined
+        this.notifyChanged()
+        return
+      }
+
+      // 确保输出端口的 valueClass 跟本次数据的具体类型对齐
+      this.ensureOutputsMatch(data)
+
+      // 两边都到齐 → 只 commit 命中的一路
+      if (cond.value) {
+        this.passOutput!.commit(data)
+      } else {
+        this.failOutput!.commit(data)
+      }
+      this.lastCondition = cond.value
       this.notifyChanged()
-      return
+    } finally {
+      // 同步节点：不管 commit 了还是条件不满足 → 消化完输入 → 回 stable
+      this.completeRun()
     }
-
-    // 确保输出端口的 valueClass 跟本次数据的具体类型对齐
-    this.ensureOutputsMatch(data)
-
-    // 两边都到齐 → 只 commit 命中的一路
-    if (cond.value) {
-      this.passOutput!.commit(data)
-    } else {
-      this.failOutput!.commit(data)
-    }
-    this.lastCondition = cond.value
-    this.notifyChanged()
   }
 
   /**

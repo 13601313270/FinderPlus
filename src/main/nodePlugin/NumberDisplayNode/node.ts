@@ -79,6 +79,8 @@ export class NumberDisplayNode extends Node {
     const [first] = this.numberInput.value
     this.displayed = first instanceof NumberValue ? first.value : null
     this.notifyChanged()
+    // 同步节点：展示出来就算消化完输入 → 回 stable
+    this.completeRun()
   }
 
   saveState(): Record<string, unknown> {

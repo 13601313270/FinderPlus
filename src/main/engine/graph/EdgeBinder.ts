@@ -42,11 +42,8 @@ export class EdgeBinder {
     startPort.addEdge(edge)
     endPort.bindEdge(edge)
 
-    // 连上时上游可能已经算过值，同步补送一次，让下游的输入值立刻与图结构一致。
-    // 只补「值」，不触发「算」——重算由调度层按自己的节奏来。
-    if (startPort.value !== undefined) {
-      edge.transferData(startPort.value)
-    }
+    // 新边连上了，通知起点节点——要不要把当前值补送给下游由它自己决定。
+    startPort.getOwner()?.onOutputPortBind(startPort, edge)
     return { ok: true, edge }
   }
 

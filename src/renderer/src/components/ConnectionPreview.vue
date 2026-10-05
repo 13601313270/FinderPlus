@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { connectionDrag } from '@renderer/canvas/connectionDrag'
+import { bezierPath } from '@renderer/canvas/edges'
 
 /**
  * 连线拖拽的预览线：从按下的 OutputPort 圆点，牵到指针（或吸附到候选 InputPort 圆点）。
@@ -20,11 +21,11 @@ const line = computed(() => {
   const rect = rootEl.value?.getBoundingClientRect()
   if (!rect) return null
 
+  const from = { x: connectionDrag.fromClient.x - rect.left, y: connectionDrag.fromClient.y - rect.top }
+  const to = { x: connectionDrag.toClient.x - rect.left, y: connectionDrag.toClient.y - rect.top }
+
   return {
-    x1: connectionDrag.fromClient.x - rect.left,
-    y1: connectionDrag.fromClient.y - rect.top,
-    x2: connectionDrag.toClient.x - rect.left,
-    y2: connectionDrag.toClient.y - rect.top
+    d: bezierPath(from, to)
   }
 })
 
@@ -34,13 +35,10 @@ const invalid = computed(() => connectionDrag.targetKey !== null && !connectionD
 <template>
   <div ref="rootEl" class="connect-preview" aria-hidden="true">
     <svg v-if="line" class="connect-preview__svg">
-      <line
+      <path
         class="connect-preview__line"
         :class="{ 'connect-preview__line--invalid': invalid }"
-        :x1="line.x1"
-        :y1="line.y1"
-        :x2="line.x2"
-        :y2="line.y2"
+        :d="line.d"
       />
     </svg>
   </div>
@@ -61,6 +59,7 @@ const invalid = computed(() => connectionDrag.targetKey !== null && !connectionD
   }
 
   &__line {
+    fill: none;
     stroke: @color-primary;
     stroke-width: 2;
     stroke-linecap: round;

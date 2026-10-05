@@ -23,8 +23,44 @@ export interface EdgeGeometry {
   readonly from: Vec2
   /** 终点：下游输入端口圆点的中心 */
   readonly to: Vec2
-  /** 连线正中央，删除按钮落在这里 */
+  /** 连线正中央（三次贝塞尔曲线 t=0.5），删除按钮落在这里 */
   readonly mid: Vec2
+}
+
+/** 主画布贝塞尔的水平控制距离下限：节点挨太近时曲线也能看出弧度 */
+const BEZIER_HANDLE_MIN = 40
+
+/**
+ * 算三次贝塞尔曲线的两个控制点（输出端向右，输入端向左，水平延伸）。
+ * @param minHandle 控制点的最小水平距离（默认 40）。小地图等缩小场景传 0 或小值，避免控制点比连线还长。
+ */
+export function bezierControls(
+  from: Vec2,
+  to: Vec2,
+  minHandle: number = BEZIER_HANDLE_MIN
+): { c1: Vec2; c2: Vec2 } {
+  const dx = Math.abs(to.x - from.x)
+  const offset = Math.max(dx * 0.5, minHandle)
+  return {
+    c1: { x: from.x + offset, y: from.y },
+    c2: { x: to.x - offset, y: to.y }
+  }
+}
+
+/** 生成三次贝塞尔曲线的 SVG d 属性 */
+export function bezierPath(from: Vec2, to: Vec2, minHandle?: number): string {
+  const { c1, c2 } = bezierControls(from, to, minHandle)
+  return `M ${from.x} ${from.y} C ${c1.x} ${c1.y}, ${c2.x} ${c2.y}, ${to.x} ${to.y}`
+}
+
+/** 三次贝塞尔曲线的中点（参数 t=0.5） */
+export function bezierMid(from: Vec2, to: Vec2, minHandle?: number): Vec2 {
+  const { c1, c2 } = bezierControls(from, to, minHandle)
+  // t=0.5 时：P = 0.125*from + 0.375*c1 + 0.375*c2 + 0.125*to
+  return {
+    x: 0.125 * from.x + 0.375 * c1.x + 0.375 * c2.x + 0.125 * to.x,
+    y: 0.125 * from.y + 0.375 * c1.y + 0.375 * c2.y + 0.125 * to.y
+  }
 }
 
 function ownsPort(node: Node, port: OutputPort | InputPort): boolean {
@@ -63,7 +99,7 @@ export function edgeGeometry(scene: Scene, edge: Edge): EdgeGeometry | undefined
     edge,
     from,
     to,
-    mid: { x: (from.x + to.x) / 2, y: (from.y + to.y) / 2 }
+    mid: bezierMid(from, to)
   }
 }
 

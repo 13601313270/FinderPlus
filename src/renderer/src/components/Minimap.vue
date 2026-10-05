@@ -2,6 +2,7 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { workspaceScene } from '../../../main/engine/graph/SceneRegistry'
+import type { NodeState } from '../../../main/engine/node/Node'
 import {
   viewport,
   centerViewportOn,
@@ -9,7 +10,7 @@ import {
   resetViewport
 } from '@renderer/canvas/viewport'
 import { canvasLayoutVersion, measureNodeBox } from '@renderer/canvas/elements'
-import { edgeGeometry, isEdgeGeometry } from '@renderer/canvas/edges'
+import { edgeGeometry, isEdgeGeometry, bezierPath } from '@renderer/canvas/edges'
 
 /**
  * 小地图面板（画布右下角浮层，屏幕层、不吃世界缩放），自上而下三段：
@@ -113,13 +114,12 @@ interface MapRect {
   readonly y: number
   readonly width: number
   readonly height: number
+  /** 节点运行状态：决定小方块的边框颜色；视口框没有状态 */
+  readonly state?: NodeState
 }
 
 interface MapLine {
-  readonly x1: number
-  readonly y1: number
-  readonly x2: number
-  readonly y2: number
+  readonly d: string
 }
 
 interface MinimapLayout {
@@ -153,9 +153,10 @@ const layout = computed<MinimapLayout | null>(() => {
   // 小地图只展示顶层节点：被文件夹收养的子节点不出现在小地图上，
   // 文件夹自身已经以大块表示了内部节点的范围，再画子节点会让地图乱糟糟。
   const topLevelNodes = workspaceScene.allNodes.filter((n) => !n.containerNode)
-  const nodeBoxes = topLevelNodes.map((node) =>
-    measureNodeBox(node.id, node.worldPosition, node.box)
-  )
+  const nodeBoxes = topLevelNodes.map((node) => ({
+    box: measureNodeBox(node.id, node.worldPosition, node.box),
+    state: node.state
+  }))
 
   // 连线也只保留两端都是顶层节点的——夹在「顶层 → 文件夹内子节点」
   // 或「文件夹内子节点 → 顶层」的边从简化地图里省略，避免跨方块横穿
@@ -182,7 +183,7 @@ const layout = computed<MinimapLayout | null>(() => {
   let minY = frame.y
   let maxX = frame.x + frame.width
   let maxY = frame.y + frame.height
-  for (const box of nodeBoxes) {
+  for (const { box } of nodeBoxes) {
     minX = Math.min(minX, box.x)
     minY = Math.min(minY, box.y)
     maxX = Math.max(maxX, box.x + box.width)
@@ -211,17 +212,19 @@ const layout = computed<MinimapLayout | null>(() => {
     offsetY,
     worldMinX: minX,
     worldMinY: minY,
-    nodeRects: nodeBoxes.map((box) => ({
+    nodeRects: nodeBoxes.map(({ box, state }) => ({
       x: toX(box.x),
       y: toY(box.y),
       width: toW(box.width),
-      height: toW(box.height)
+      height: toW(box.height),
+      state
     })),
     lines: edgeGeoms.map((geom) => ({
-      x1: toX(geom.from.x),
-      y1: toY(geom.from.y),
-      x2: toX(geom.to.x),
-      y2: toY(geom.to.y)
+      d: bezierPath(
+        { x: toX(geom.from.x), y: toY(geom.from.y) },
+        { x: toX(geom.to.x), y: toY(geom.to.y) },
+        8
+      )
     })),
     frameRect: {
       x: toX(frame.x),
@@ -379,19 +382,17 @@ onUnmounted(() => {
       class="minimap__svg"
       @pointerdown="onNavigateDown"
     >
-      <line
+      <path
         v-for="(line, index) in layout?.lines ?? []"
         :key="`mini-edge-${index}`"
         class="minimap__edge"
-        :x1="line.x1"
-        :y1="line.y1"
-        :x2="line.x2"
-        :y2="line.y2"
+        :d="line.d"
       />
       <rect
         v-for="(rect, index) in layout?.nodeRects ?? []"
         :key="`mini-node-${index}`"
         class="minimap__node"
+        :class="`minimap__node--${rect.state}`"
         :x="rect.x"
         :y="rect.y"
         :width="rect.width"
@@ -497,6 +498,7 @@ onUnmounted(() => {
   }
 
   &__edge {
+    fill: none;
     stroke: @color-edge;
     stroke-width: 1;
   }
@@ -505,6 +507,31 @@ onUnmounted(() => {
     fill: rgba(64, 120, 220, 0.28);
     stroke: @color-primary;
     stroke-width: 1;
+
+    &--dirty {
+      stroke: #f0a020;
+      stroke-dasharray: 4 2;
+      fill: rgba(240, 160, 32, 0.18);
+    }
+
+    &--error {
+      stroke: #e01c1c;
+      stroke-dasharray: 4 2;
+      stroke-width: 1.5;
+      fill: rgba(224, 28, 28, 0.15);
+    }
+
+    &--running {
+      stroke: #3b82f6;
+      stroke-width: 1.5;
+      fill: rgba(59, 130, 246, 0.35);
+      animation: minimap-node-pulse 1s ease-in-out infinite;
+    }
+  }
+
+  @keyframes minimap-node-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.55; }
   }
 
   &__frame {

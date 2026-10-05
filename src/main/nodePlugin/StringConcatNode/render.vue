@@ -157,7 +157,6 @@ function onResizePointerDown(e: PointerEvent): void {
         :value="templateValue"
         :disabled="!concatNode"
         :placeholder="t('templatePlaceholder')"
-        @wheel="onTextareaWheel"
         @input="onInput"
       />
       <button
@@ -338,14 +337,15 @@ function onResizePointerDown(e: PointerEvent): void {
     top: 4px;
     right: 4px;
     cursor: pointer;
-    width: 20px;
-    height: 20px;
+    width: 30px;
+    height: 30px;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 4px;
     background: #f3f4f6;
     color: #6b7280;
+    border: solid 1px;
     transition: background 0.15s, color 0.15s;
 
     svg {

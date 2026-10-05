@@ -4,7 +4,7 @@ import { workspaceScene } from '../../../main/engine/graph/SceneRegistry'
 import type { Edge } from '../../../main/engine/graph/Edge'
 import { viewport } from '@renderer/canvas/viewport'
 import { canvasLayoutVersion } from '@renderer/canvas/elements'
-import { edgeGeometry, isEdgeGeometry, type EdgeGeometry } from '@renderer/canvas/edges'
+import { edgeGeometry, isEdgeGeometry, bezierPath, type EdgeGeometry } from '@renderer/canvas/edges'
 
 /**
  * 连线层：把 Scene 里的每条 Edge 画成一根线，并在线的正中央放一个删除按钮。
@@ -108,14 +108,11 @@ function removeEdge(edge: Edge): void {
     pointer-events: none 让线不挡平移和节点拖拽——只有删除按钮可点。
   -->
   <svg class="edges" width="1" height="1" aria-hidden="true">
-    <line
+    <path
       v-for="line in lines"
       :key="`line-${keyOf(line.edge)}`"
       class="edges__line"
-      :x1="line.from.x"
-      :y1="line.from.y"
-      :x2="line.to.x"
-      :y2="line.to.y"
+      :d="bezierPath(line.from, line.to)"
     />
   </svg>
 
@@ -153,6 +150,7 @@ function removeEdge(edge: Edge): void {
   pointer-events: none;
 
   &__line {
+    fill: none;
     stroke: @color-edge;
     stroke-width: 2;
     stroke-linecap: round;

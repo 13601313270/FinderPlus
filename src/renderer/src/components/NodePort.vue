@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, type CSSProperties } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   portElementRef,
@@ -25,7 +25,13 @@ const isIn = props.side === 'in'
 const { t, te } = useI18n()
 
 // 每个组件实例只管自己这一个端口的 ref，不需要 Map 缓存
-const portRef: CanvasElementRef = portElementRef(props.nodeId, props.side, props.port)
+// portRef 包装 portElementRef 以同时满足注册表登记 + tooltip 取原始 DOM
+const portDom = ref<HTMLElement | null>(null)
+const _originalPortRef = portElementRef(props.nodeId, props.side, props.port)
+const portRef: CanvasElementRef = (el) => {
+  _originalPortRef(el)
+  portDom.value = el instanceof HTMLElement ? el : null
+}
 
 // 跟踪当前有没有接边：初始从 incomingEdgeCount 取，后续靠 onEdgeBinding 事件更新
 const hasConnection = ref(false)
@@ -95,6 +101,146 @@ function highlightOf(port: PortLike): string {
   if (key !== connectionDrag.targetKey) return ''
   return connectionDrag.targetOk ? 'port--target' : 'port--invalid'
 }
+
+// ── tooltip ──────────────────────────────────────────────
+
+const PORTAL_GAP = 6       // 气泡与圆点间距
+const PORTAL_MARGIN = 8    // 气泡距视口边缘留白
+const TOOLTIP_DELAY = 500 // hover 停顿 0.5 秒才弹出（毫秒）
+
+const tooltipVisible = ref(false)
+const tooltipStyle = ref<CSSProperties>({})
+const tooltipFlipped = ref(false)  // true 表示气泡在圆点下方（翻转方向）
+const tooltipEl = ref<HTMLElement | null>(null)   // 用来量真实尺寸
+
+let showTimer: ReturnType<typeof setTimeout> | null = null
+
+/** tooltip 展示的图片预览 URL 列表（hover 时 createObjectURL，hide 时 revoke） */
+const imageUrls = ref<{ url: string; name: string }[]>([])
+
+/** hover 期间累积的 objectURL，hide 时统一 revoke 防内存泄漏 */
+let pendingRevoke: string[] = []
+function revokeAllUrls(): void {
+  for (const u of pendingRevoke) URL.revokeObjectURL(u)
+  pendingRevoke = []
+  imageUrls.value = []
+}
+
+/** tooltip 展示内容：有缓存值时列出标签，否则显示"暂无数据" */
+const tooltipLines = computed(() => {
+  if (isIn) {
+    const values = props.port.currentValues
+    if (values && values.length > 0) return values
+    // 上游空但有 defaultValueLabel（单值场景）也展示
+    if (props.port.defaultValueLabel) return [props.port.defaultValueLabel]
+    return []
+  } else {
+    const v = props.port.currentValueLabel
+    return v ? [v] : []
+  }
+})
+
+/** hover 时收集图片 File，返回 File[] */
+function collectImageFiles(): readonly File[] {
+  if (isIn) {
+    const files = props.port.currentValueFiles
+    if (!files?.length) return []
+    return files.filter(f => f.type.startsWith('image/'))
+  } else {
+    const f = props.port.currentValueFile
+    return f && f.type.startsWith('image/') ? [f] : []
+  }
+}
+
+function clearShowTimer(): void {
+  if (showTimer !== null) {
+    clearTimeout(showTimer)
+    showTimer = null
+  }
+}
+
+function showTooltip(): void {
+  // 拖拽连线时不弹 tooltip，免得视觉干扰
+  if (connectionDrag.active) return
+
+  clearShowTimer()
+  showTimer = setTimeout(() => {
+    showTimer = null
+
+    // 图片预览：hover 时才 createObjectURL，避免常驻内存
+    const imgs = collectImageFiles()
+    revokeAllUrls()  // 先清掉上一轮的，防止同端口重复 hover 时残留
+    for (const f of imgs) {
+      const url = URL.createObjectURL(f)
+      imageUrls.value.push({ url, name: f.name })
+      pendingRevoke.push(url)
+    }
+
+    // 先让它渲染出来（随便放个初始位置），渲染完再量真实尺寸精确定位
+    tooltipStyle.value = { left: '0px', top: '0px' }
+    tooltipVisible.value = true
+    nextTick(() => {
+      updateTooltipPosition()
+    })
+  }, TOOLTIP_DELAY)
+}
+
+function hideTooltip(): void {
+  clearShowTimer()
+  tooltipVisible.value = false
+  revokeAllUrls()
+}
+
+onUnmounted(() => {
+  clearShowTimer()
+  revokeAllUrls()
+})
+
+/**
+ * 用 tooltip 自己的**真实 DOM 尺寸**算 fixed 定位。
+ * —— 之前的硬编码 estimatedHeight + translateY(-100%) 有两个 bug：
+ *    1) 估不准（图片加载后撑大）；2) translateY 本身已经向上移了 tooltipHeight，
+ *       top 又提前减了一次 estimatedHeight → 减两遍，气泡飞到完全不相关的位置。
+ * —— 现在先渲染，再量，一次算对。
+ */
+function updateTooltipPosition(): void {
+  const port = portDom.value
+  const tip = tooltipEl.value
+  if (!port || !tip) return
+
+  // 强制 layout：图片可能还在加载中，没加载完时先按现有内容量一版，
+  // 图片 @load 时会再调一次本函数
+  tip.offsetWidth // 触发 layout
+
+  const portRect = port.getBoundingClientRect()
+  const tipRect = tip.getBoundingClientRect()
+  const cx = portRect.left + portRect.width / 2
+
+  // 先算水平：以端口中心为锚点，左右不越界
+  let left = cx - tipRect.width / 2
+  if (left < PORTAL_MARGIN) left = PORTAL_MARGIN
+  if (left + tipRect.width > window.innerWidth - PORTAL_MARGIN) {
+    left = window.innerWidth - PORTAL_MARGIN - tipRect.width
+  }
+
+  // 垂直：先假设放在圆点上方，算剩余空间
+  const height = tipRect.height
+  const spaceAbove = portRect.top - PORTAL_GAP - height - PORTAL_MARGIN
+  const spaceBelow = window.innerHeight - portRect.bottom - PORTAL_GAP - height - PORTAL_MARGIN
+  const flip = spaceAbove < 0 && spaceBelow > spaceAbove
+
+  tooltipFlipped.value = flip
+
+  const top = flip
+    ? portRect.bottom + PORTAL_GAP                       // 底部对齐
+    : portRect.top - PORTAL_GAP - height                 // 顶部对齐到圆点上方
+
+  tooltipStyle.value = {
+    left: `${left}px`,
+    top: `${top}px`
+    // 不再用 transform，固定 top/left 就是最终位置
+  }
+}
 </script>
 
 <template>
@@ -129,6 +275,8 @@ function highlightOf(port: PortLike): string {
       :data-port-id="port.id"
       :title="titleOf(port, isIn ? '输入' : '输出')"
       @pointerdown="!isIn && onOutputPointerDown(port, $event)"
+      @mouseenter="showTooltip"
+      @mouseleave="hideTooltip"
     >
       <template v-if="showDefaultCapsule">{{ port.defaultValueLabel }}</template>
     </span>
@@ -145,6 +293,48 @@ function highlightOf(port: PortLike): string {
       </div>
     </div>
   </div>
+
+  <!--  tooltip：Teleport 到 body，fixed 定位，避免被节点卡片 overflow 裁剪  -->
+  <Teleport to="body">
+    <div
+      v-if="tooltipVisible"
+      ref="tooltipEl"
+      class="port-tooltip"
+      :class="{ 'port-tooltip--flipped': tooltipFlipped }"
+      :style="tooltipStyle"
+      @mouseenter="hideTooltip"
+    >
+      <div class="port-tooltip__header">
+        <span class="port-tooltip__side">{{ isIn ? '输入' : '输出' }}</span>
+        <span class="port-tooltip__name">{{ label }}</span>
+      </div>
+
+      <!--  图片预览网格：hover 时 createObjectURL，单图大图，多图 2 列  -->
+      <div v-if="imageUrls.length > 0" class="port-tooltip__images"
+           :class="{ 'port-tooltip__images--single': imageUrls.length === 1 }">
+        <div
+          v-for="(img, i) in imageUrls"
+          :key="i"
+          class="port-tooltip__thumb"
+        >
+          <img :src="img.url" :alt="img.name" @load="updateTooltipPosition" />
+          <span class="port-tooltip__thumb-name">{{ img.name }}</span>
+        </div>
+      </div>
+
+      <!--  文本标签行（图片端口也会显示文件名字段对应的 displayLabel）  -->
+      <div v-if="tooltipLines.length > 0" class="port-tooltip__values">
+        <div
+          v-for="(line, i) in tooltipLines"
+          :key="i"
+          class="port-tooltip__value"
+        >{{ line }}</div>
+      </div>
+
+      <div v-if="imageUrls.length === 0 && tooltipLines.length === 0"
+           class="port-tooltip__empty">暂无数据</div>
+    </div>
+  </Teleport>
 </template>
 
 <style scoped lang="less">
@@ -265,6 +455,135 @@ function highlightOf(port: PortLike): string {
     text-transform: lowercase;
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     white-space: nowrap;
+  }
+}
+
+// ── port tooltip（Teleport 到 body，scoped 在 Vue3 下仍生效） ──
+.port-tooltip {
+  position: fixed;
+  z-index: 3000;
+  min-width: 120px;
+  max-width: 240px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: #1f2937;
+  color: #f3f4f6;
+  font-size: 11px;
+  line-height: 1.5;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  pointer-events: none;  // 鼠标不会卡在气泡上，移出圆点立即消失
+  user-select: none;
+
+  // 气泡上方的小三角（默认气泡在圆点上方）
+  &::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    bottom: -4px;
+    transform: translateX(-50%);
+    border-width: 4px 4px 0;
+    border-style: solid;
+    border-color: #1f2937 transparent transparent transparent;
+  }
+
+  // 翻转后三角到上方
+  &--flipped::after {
+    top: -4px;
+    bottom: auto;
+    border-width: 0 4px 4px;
+    border-color: transparent transparent #1f2937 transparent;
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  }
+
+  &__side {
+    font-size: 9px;
+    padding: 1px 4px;
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.18);
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 500;
+    line-height: 1.4;
+  }
+
+  &__name {
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__values {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  &__value {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 10px;
+    color: #e5e7eb;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__empty {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.5);
+    font-style: italic;
+  }
+
+  // 图片预览网格：多值端口 2 列小图，单值端口 1 张大图
+  &__images {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+    margin-bottom: 4px;
+
+    &--single {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  &__thumb {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    align-items: center;
+
+    img {
+      width: 100%;
+      height: 80px;
+      object-fit: cover;
+      border-radius: 4px;
+      background: #111827;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      display: block;
+
+      .port-tooltip__images--single & {
+        height: 120px;
+      }
+    }
+  }
+
+  &__thumb-name {
+    font-size: 9px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    color: rgba(255, 255, 255, 0.6);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    text-align: center;
   }
 }
 </style>

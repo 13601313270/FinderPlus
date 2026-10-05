@@ -68,6 +68,22 @@ export class OutputPort {
     return this.currentValue
   }
 
+  /**
+   * 渲染层 tooltip 展示用：当前产出值的 displayLabel。
+   * 没有产出过值（节点没跑过 / clear 过）时返回 undefined。
+   */
+  get currentValueLabel(): string | undefined {
+    return this.currentValue?.displayLabel
+  }
+
+  /**
+   * 渲染层 tooltip 图片预览用：如果当前产出值是 FileValue 子类，返回它携带的 File 对象。
+   * 非文件值 / 还没产出值时均为 undefined。
+   */
+  get currentValueFile(): File | undefined {
+    return (this.currentValue as { file?: File | undefined } | undefined)?.file
+  }
+
   /** 认领：由 Node 登记端口时调用。让端口能反查所属节点（Edge 存 DB 时需要 start_node_id） */
   setOwner(owner: Node): void {
     this.owner = owner

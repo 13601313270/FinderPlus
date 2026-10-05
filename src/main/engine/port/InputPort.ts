@@ -133,6 +133,28 @@ export class InputPort {
     return this.incoming.size
   }
 
+  /**
+   * 渲染层 tooltip 展示用：当前生效值的 displayLabel 列表。
+   * 上游有值就上游（incomeValue 的 displayLabel 数组），
+   * 上游空就 defaultValue，都没有返回空数组。
+   */
+  get currentValues(): readonly string[] {
+    return this.value.map(v => v.displayLabel)
+  }
+
+  /**
+   * 渲染层 tooltip 图片预览用：当前生效值里所有 FileValue 子类携带的 File 对象。
+   * 无文件值返回空数组；不区分图片/文本，renderer 自己按 mimeType 过滤。
+   */
+  get currentValueFiles(): readonly File[] {
+    const out: File[] = []
+    for (const v of this.value) {
+      const f = (v as { file?: File | undefined }).file
+      if (f) out.push(f)
+    }
+    return out
+  }
+
   /** 端口多语言标签；渲染层按当前语言解析，未配置时由渲染层回退到 id */
   get label(): LocalizedText | undefined {
     return this.labelValue

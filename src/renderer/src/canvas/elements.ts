@@ -72,6 +72,25 @@ export interface PortLike {
    * 输入端口才有：当前接入的边数量。渲染层用来初始化连接状态。
    */
   readonly incomingEdgeCount?: number
+  /**
+   * 输入端口才有：缓存的输入值标签列表，按端口 value getter 顺序。
+   * 渲染层 tooltip 用它展示端口上当前挂着的数据。
+   */
+  readonly currentValues?: readonly string[]
+  /**
+   * 输出端口才有：缓存的输出值标签。
+   * 渲染层 tooltip 用它展示节点产出了什么。
+   */
+  readonly currentValueLabel?: string
+  /**
+   * 输入端口才有：当前生效值里所有 FileValue 子类携带的 File 对象（无文件值时空数组）。
+   * 渲染层 tooltip 按 mimeType 过滤出图片，用 createObjectURL 做预览。
+   */
+  readonly currentValueFiles?: readonly File[]
+  /**
+   * 输出端口才有：当前产出值若为 FileValue 子类则返回其 File，否则 undefined。
+   */
+  readonly currentValueFile?: File | undefined
 }
 
 /** 能提供端口的节点（Node 基类的最小结构子集），NodePorts 用它枚举两侧端口 */

@@ -128,14 +128,14 @@ export class StringConcatNode extends Node {
    * `$$` 为转义，替换成字面量 `$`（如 `$$1` → `$` + 第 1 个端口值）。
    */
   private recompute(): void {
-    const text = this.template.replace(/\$\$|\$(\d+)/g, (_match, digits?: string) => {
+    const text = this.template.replace(/\$\$|\$(\d+)/g, (_match, digits: string | undefined) => {
       // 命中 $$：输出字面量 $
       if (digits === undefined) return '$'
       const index = Number(digits) - 1
       const port = this.inputPorts[index]
       if (!port) return ''
       const [first] = port.value
-      return first instanceof StringValue ? first.value : ''
+      return first instanceof StringValue && !first.isNull ? first.value! : ''
     })
     this.result = text
     this.textOutput.commit(new StringValue(text))

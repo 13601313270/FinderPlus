@@ -77,7 +77,7 @@ export class NumberDisplayNode extends Node {
   /** 收到通知就刷新展示，这是它唯一要做的事 */
   inputPortReceiveValue(_ports: InputPort[]): void {
     const [first] = this.numberInput.value
-    this.displayed = first instanceof NumberValue ? first.value : null
+    this.displayed = first instanceof NumberValue && !first.isNull ? first.value! : null
     this.notifyChanged()
     // 同步节点：展示出来就算消化完输入 → 回 stable
     this.completeRun()

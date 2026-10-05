@@ -250,6 +250,9 @@ export class PromiseAllNode extends Node {
         outPort.commit(value)
       }
 
+      // 输出已全部 commit → 输入已被消化，清除 dirty 状态
+      this.completeRun()
+
       this.triggering = true
       this.notifyChanged() // 渲染层读到 triggering=true → 开始播 SVG 动画
 
@@ -270,6 +273,8 @@ export class PromiseAllNode extends Node {
         if (value === undefined) continue
         outPort.commit(value)
       }
+      // 动画期间新值也已 commit → 清除 dirty
+      this.completeRun()
     }
   }
 

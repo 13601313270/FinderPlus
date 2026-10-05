@@ -450,7 +450,11 @@ export class CodeNode extends Node {
    * 3. 同步执行 codeApi.run —— 返回值只表示"函数能不能构造、同步阶段有没有 throw"
    *    真正的端口 commit 由 onOutput 在任意时刻异步触发
    */
-  run(): void {
+  /**
+   * @param forceManual true 表示用户手动点了"执行"按钮，commit 时忽略指纹排重强推到下游。
+   *                    默认 false（自动运行场景），走正常指纹比对。
+   */
+  run(forceManual: boolean = false): void {
     const body = this.code.trim()
     if (!body) return
     if (this.status === 'running') return
@@ -484,9 +488,16 @@ export class CodeNode extends Node {
         return
       }
       try {
-        const v = this.coerce(raw, found.meta.kind)
-        found.port.commit(v)
-        this._runBuffer.push(`${name}=${v.displayLabel}`)
+        if (raw === null || raw === undefined) {
+          // null / undefined → commit 该类型的 null Value（单通道信号，沿 edges 正常派发）
+          const nullVal = this.coerceNull(found.meta.kind)
+          found.port.commit(nullVal, { force: forceManual })
+          this._runBuffer.push(`${name} = （null）`)
+        } else {
+          const v = this.coerce(raw, found.meta.kind)
+          found.port.commit(v, { force: forceManual })
+          this._runBuffer.push(`${name}=${v.displayLabel}`)
+        }
       } catch (err) {
         this._runBuffer.push(`⚠ ${name}: ${err instanceof Error ? err.message : String(err)}`)
       }
@@ -615,6 +626,23 @@ export class CodeNode extends Node {
       case 'string':
       default:
         return new StringValue(String(raw))
+    }
+  }
+
+  /**
+   * 按端口 kind 构造对应的 null Value（isNull=true）。
+   * 所有子类构造函数不传参即为 null 状态（value === undefined → super(value === undefined) → isNull=true）。
+   * 单通道模型：null 值和正常值都走 commit，不再需要 clear 旁路。
+   */
+  private coerceNull(kind: CodePortKind): Value {
+    switch (kind) {
+      case 'number':  return new NumberValue()
+      case 'bool':    return new BoolValue()
+      case 'json':    return new JsonValue()
+      case 'file':    return new FileValue()
+      case 'imgfile': return new ImgFileValue()
+      case 'string':
+      default:        return new StringValue()
     }
   }
 

@@ -139,8 +139,8 @@ export abstract class FileNode extends Node {
     const input = this.fileInputPort
     if (!input || !ports.includes(input)) return
     const [value] = input.value
-    if (value instanceof FileValue) {
-      void this.replaceFile(value.file)
+    if (value instanceof FileValue && !value.isNull) {
+      void this.replaceFile(value.file!)
     }
   }
 

@@ -275,13 +275,13 @@ export class LLMNode extends Node {
    */
   private resolveInputs(): { system: string; prompt: string } {
     const [sysFirst] = this.systemInput.value
-    const system = sysFirst instanceof StringValue ? sysFirst.value : ''
+    const system = sysFirst instanceof StringValue && !sysFirst.isNull ? sysFirst.value! : ''
 
     let prompt = this.localPrompt
     if (this.promptInput.incomingEdgeCount > 0) {
       const [promptFirst] = this.promptInput.value
-      if (promptFirst instanceof StringValue) {
-        prompt = promptFirst.value
+      if (promptFirst instanceof StringValue && !promptFirst.isNull) {
+        prompt = promptFirst.value!
       }
     }
     return { system, prompt }

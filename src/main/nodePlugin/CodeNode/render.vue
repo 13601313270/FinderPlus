@@ -107,7 +107,7 @@ function onCodeInput(e: Event): void {
 }
 
 function onRun(): void {
-  codeNode.value?.run()
+  codeNode.value?.run(true)
 }
 
 /** 切换自动执行开关 */

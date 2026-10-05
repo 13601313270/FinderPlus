@@ -290,13 +290,13 @@ export class HttpRequestNode extends Node {
    * 缺值 / 无对应端口时该占位符替换为空串；$$ 转义成字面量 $。
    */
   private replacePlaceholders(text: string): string {
-    return text.replace(/\$\$|\$(\d+)/g, (_match, digits?: string) => {
+    return text.replace(/\$\$|\$(\d+)/g, (_match, digits: string | undefined) => {
       if (digits === undefined) return '$'
       const index = Number(digits) - 1
       const port = this.inputPorts[index]
       if (!port) return ''
       const [first] = port.value
-      return first instanceof StringValue ? first.value : ''
+      return first instanceof StringValue && !first.isNull ? first.value! : ''
     })
   }
 

@@ -58,7 +58,7 @@ export class TextDisplayNode extends Node {
   /** 收到通知就刷新展示，这是它唯一要做的事 */
   inputPortReceiveValue(_ports: InputPort[]): void {
     const [first] = this.textInput.value
-    this.displayed = first instanceof StringValue ? first.value : ''
+    this.displayed = first instanceof StringValue && !first.isNull ? first.value! : ''
     this.notifyChanged()
     // 同步节点：展示出来就算消化完输入 → 回 stable
     this.completeRun()

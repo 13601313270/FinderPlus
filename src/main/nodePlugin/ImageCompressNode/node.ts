@@ -174,14 +174,14 @@ export class ImageCompressNode extends Node {
     if (source) {
       const port = source.outputPorts.find((p) => p.valueClass === ImgFileValue)
       const value = port?.value
-      if (value instanceof ImgFileValue) {
-        return { file: value.file, fingerprint: value.fingerprint }
+      if (value instanceof ImgFileValue && !value.isNull) {
+        return { file: value.file!, fingerprint: value.fingerprint }
       }
     }
     // 回退到端口（响应式）
     const [first] = this.imageInput.value
-    if (first instanceof ImgFileValue) {
-      return { file: first.file, fingerprint: first.fingerprint }
+    if (first instanceof ImgFileValue && !first.isNull) {
+      return { file: first.file!, fingerprint: first.fingerprint }
     }
     return null
   }
@@ -226,8 +226,8 @@ export class ImageCompressNode extends Node {
    */
   get targetSize(): number {
     const [first] = this.sizeInput.value
-    if (first instanceof NumberValue) {
-      const v = Math.round(first.value)
+    if (first instanceof NumberValue && !first.isNull) {
+      const v = Math.round(first.value!)
       if (Number.isFinite(v) && v > 0) return v
     }
     return 800 // 兜底，理论上 effectiveValue 总会命中 defaultValue

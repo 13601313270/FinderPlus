@@ -9,23 +9,28 @@ import { Value, type ValueKind } from './Value'
  *
  * 调用方责任：构造 FileValue 之前必须已读取文件字节并计算好内容 hash
  * （如 SHA-256 或更快的 djb2/xxhash 等）。
+ *
+ * null 值：file 不传即为 isNull=true，contentHash 也不必传。
  */
 export class FileValue extends Value {
   static override readonly VALUE_NAME: ValueKind = 'file'
 
-  /** 内容 hash 指纹：文件内容相同则 hash 相同 */
+  /** 内容 hash 指纹：文件内容相同则 hash 相同；isNull 时为固定标记 */
   readonly fingerprint: string
 
+  /**
+   * @param file        不传即为 null 值（isNull=true）；其他参数也不必传
+   * @param contentHash 调用方预先算好的文件内容 hash；isNull=true 时忽略
+   */
   constructor(
-    readonly file: File,
-    /** 调用方预先算好的文件内容 hash；设为必填是为了杜绝 name/type/size 三元组的不严谨兜底 */
-    contentHash: string
+    readonly file?: File,
+    contentHash?: string
   ) {
-    super()
-    this.fingerprint = `file:${contentHash}`
+    super(file === undefined)
+    this.fingerprint = file === undefined ? 'file:null' : `file:${contentHash}`
   }
 
   override get displayLabel(): string {
-    return this.file.name
+    return this.isNull ? '(null)' : this.file?.name ?? '(null)'
   }
 }

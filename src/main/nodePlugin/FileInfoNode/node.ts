@@ -117,10 +117,10 @@ export class FileInfoNode extends Node {
   /** 收到通知就刷新展示，并把文件大小（KB）派发到输出端口 */
   inputPortReceiveValue(_ports: InputPort[]): void {
     const [first] = this.fileInput.value
-    if (first instanceof FileValue) {
-      this.fileName = first.file.name
-      this.fileSize = first.file.size
-      this.fileType = first.file.type
+    if (first instanceof FileValue && !first.isNull) {
+      this.fileName = first.file!.name
+      this.fileSize = first.file!.size
+      this.fileType = first.file!.type
     } else {
       this.fileName = ''
       this.fileSize = 0

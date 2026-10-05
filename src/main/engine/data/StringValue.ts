@@ -6,12 +6,13 @@ export class StringValue extends Value {
 
   readonly fingerprint: string
 
-  constructor(readonly value: string) {
-    super()
-    this.fingerprint = `string:${value}`
+  /** @param value 不传即为 null 值（isNull=true）；传空串则 isNull=false、value="" */
+  constructor(readonly value?: string) {
+    super(value === undefined)
+    this.fingerprint = value === undefined ? 'string:null' : `string:${value}`
   }
 
   override get displayLabel(): string {
-    return this.value
+    return this.isNull ? '(null)' : this.value ?? ''
   }
 }

@@ -43,6 +43,17 @@ export abstract class Value {
   static readonly VALUE_NAME: ValueKind = ''
 
   /**
+   * 是否为 null 值：上游显式 commit 的"这个类型下的空"。
+   *
+   * 与 port.value = []（端口没收到任何值）的 undefined 区分开——
+   * null = 上游主动说"我传的是空"，undefined = 上游根本没传。
+   *
+   * 子类约定：构造函数 value 参数为可选，value 不传 → isNull 自动为 true。
+   * 基类构造函数不传参，子类内部 super(value === undefined) 自动推导。
+   */
+  readonly isNull: boolean
+
+  /**
    * 内容指纹：构造时算好的不可变字段，内容相同则指纹相同。
    * 上游靠它判断「我这次重算后到底有没有变」，端口靠它决定要不要往派发；
    * 同时它也是执行缓存键的一部分。
@@ -54,6 +65,14 @@ export abstract class Value {
   /**
    * 渲染层可读的默认值标签。
    * 每个 Value 子类必须自己实现，把内部值转成人类可读的短文本。
+   * isNull 状态下统一显示 "(null)"。
    */
   abstract get displayLabel(): string
+
+  /**
+   * @param isNull 由子类内部根据"value 是否 undefined"传入，外部不要直接用。
+   */
+  constructor(isNull: boolean) {
+    this.isNull = isNull
+  }
 }

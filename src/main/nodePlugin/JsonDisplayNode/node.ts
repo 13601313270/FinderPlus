@@ -92,12 +92,12 @@ export class JsonDisplayNode extends Node {
     const [first] = this.jsonInput.value
     this.hasValue = true
 
-    if (first instanceof JsonValue) {
+    if (first instanceof JsonValue && !first.isNull) {
       this.parsed = first.value
       this.error = null
       this.jsonOutput.commit(first)
-    } else if (first instanceof StringValue) {
-      const raw = first.value
+    } else if (first instanceof StringValue && !first.isNull) {
+      const raw = first.value!
       if (!raw.trim()) {
         this.parsed = undefined
         this.error = null

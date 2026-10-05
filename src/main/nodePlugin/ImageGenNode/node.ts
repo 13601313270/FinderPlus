@@ -247,8 +247,8 @@ export class ImageGenNode extends Node {
     const endpoint = readImageEndpoint(this.provider, this.model)
     if (this.sizeInput.incomingEdgeCount > 0) {
       const [first] = this.sizeInput.value
-      if (first instanceof StringValue && first.value.trim()) {
-        return first.value.trim()
+      if (first instanceof StringValue && !first.isNull && first.value!.trim()) {
+        return first.value!.trim()
       }
     }
     if (this.localSize && endpoint.sizes.includes(this.localSize)) {
@@ -292,7 +292,7 @@ export class ImageGenNode extends Node {
   /** 取上游提示词：promptInput 里第一个 StringValue */
   private resolvePrompt(): string {
     const [first] = this.promptInput.value
-    return first instanceof StringValue ? first.value : ''
+    return first instanceof StringValue && !first.isNull ? first.value! : ''
   }
 
   /**
@@ -310,12 +310,12 @@ export class ImageGenNode extends Node {
     const imgs: string[] = []
     for (const port of this.referenceImagePorts) {
       const [first] = port.value
-      if (!(first instanceof ImgFileValue)) continue
-      if (first.file.size > MAX_REFERENCE_IMAGE_BYTES) {
+      if (!(first instanceof ImgFileValue) || first.isNull) continue
+      if (first.file!.size > MAX_REFERENCE_IMAGE_BYTES) {
         return { tooLarge: imgs.length }
       }
-      const bytes = new Uint8Array(await first.file.arrayBuffer())
-      const mime = first.file.type || 'image/png'
+      const bytes = new Uint8Array(await first.file!.arrayBuffer())
+      const mime = first.file!.type || 'image/png'
       imgs.push(`data:${mime};base64,${bytesToBase64(bytes)}`)
     }
     return { images: imgs }

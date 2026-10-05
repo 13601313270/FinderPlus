@@ -159,14 +159,14 @@ export class CommandNode extends Node {
    * `$$` 为转义，替换成字面量 `$`（如 `$$1` → `$` + 第 1 个端口值）。
    */
   private recompute(): void {
-    this.resolvedCommand = this.template.replace(/\$\$|\$(\d+)/g, (_match, digits?: string) => {
+    this.resolvedCommand = this.template.replace(/\$\$|\$(\d+)/g, (_match, digits: string | undefined) => {
       // 命中 $$：输出字面量 $
       if (digits === undefined) return '$'
       const index = Number(digits) - 1
       const port = this.inputPorts[index]
       if (!port) return ''
       const [first] = port.value
-      return first instanceof StringValue ? first.value : ''
+      return first instanceof StringValue && !first.isNull ? first.value! : ''
     })
   }
 

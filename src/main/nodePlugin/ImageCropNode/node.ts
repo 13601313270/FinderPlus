@@ -138,13 +138,13 @@ export class ImageCropNode extends Node {
     if (source) {
       const port = source.outputPorts.find((p) => p.valueClass === ImgFileValue)
       const value = port?.value
-      if (value instanceof ImgFileValue) {
-        return { file: value.file, fingerprint: value.fingerprint }
+      if (value instanceof ImgFileValue && !value.isNull) {
+        return { file: value.file!, fingerprint: value.fingerprint }
       }
     }
     const [first] = this.imageInput.value
-    if (first instanceof ImgFileValue) {
-      return { file: first.file, fingerprint: first.fingerprint }
+    if (first instanceof ImgFileValue && !first.isNull) {
+      return { file: first.file!, fingerprint: first.fingerprint }
     }
     return null
   }

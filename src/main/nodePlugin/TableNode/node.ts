@@ -180,13 +180,13 @@ export class TableNode extends Node {
       if (!pair) continue
 
       const [first] = port.value
-      if (!(first instanceof StringValue)) {
+      if (!(first instanceof StringValue) || first.isNull) {
         pair.output.clear()
         this.notifyChanged()
         continue
       }
 
-      const sql = first.value.trim()
+      const sql = first.value!.trim()
       if (!sql) {
         pair.output.clear()
         this.notifyChanged()

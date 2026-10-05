@@ -131,8 +131,8 @@ export class TxtFileNode extends FileNode {
     // 新增逻辑：contentInput 收到字符串 → 更新内容并落盘
     if (ports.includes(this.contentInput)) {
       const [value] = this.contentInput.value
-      if (value instanceof StringValue) {
-        void this.applyContent(value.value)
+      if (value instanceof StringValue && !value.isNull) {
+        void this.applyContent(value.value!)
       }
     }
   }

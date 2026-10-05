@@ -10,7 +10,9 @@ import type {
   AppMenuApi,
   DialogApi,
   TransferApi,
-  TableApi
+  TableApi,
+  CanvasApi,
+  GetCurrentCanvasId
 } from './index'
 
 declare global {
@@ -27,5 +29,9 @@ declare global {
     dialogApi: DialogApi
     transferApi: TransferApi
     tableApi: TableApi
+    /** 画布管理 API：list / create / rename / delete / openNewWindow */
+    canvasApi: CanvasApi
+    /** 返回当前窗口绑定的 canvasId（从 URL query 读，默认 'default'） */
+    getCurrentCanvasId: GetCurrentCanvasId
   }
 }

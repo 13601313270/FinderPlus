@@ -85,9 +85,11 @@ onMounted(async () => {
     } catch { /* 文件可能已被用户删了，静默忽略 */ }
   }
 
-  // 订阅文件变化：fileName 匹配时重读 + setContent
-  // setContent 内部会自动 commit contentOutput 和 fileOutput → 下游自动收到
-  unsubscribeFile = window.fileApi.onChanged(async (changedName) => {
+  // 订阅文件变化：canvasId + fileName 都匹配时才重读
+  // 多窗口并行时，窗口 A 的文件变化不会误触发窗口 B 的节点
+  unsubscribeFile = window.fileApi.onChanged(async ({ canvasId: changedCanvasId, fileName: changedName }) => {
+    // 跨画布变化不关心
+    if (changedCanvasId !== window.getCurrentCanvasId()) return
     const current = fileNode.value
     if (!current || current.fileName !== changedName) return
     try {

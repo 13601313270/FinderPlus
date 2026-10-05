@@ -13,20 +13,25 @@ import type { NodeStorage } from '../../../main/engine/storage/NodeStorage'
  * 注意：所有方法都是同步签名（符合 NodeStorage interface），但内部 IPC 是异步的。
  * 主进程 SqliteStorage 每次持久化调完 persist() 再 resolve，
  * 所以返回 true 时磁盘上已经更新好了。Scene 不关心这个时序——它只是触发保存。
+ *
+ * canvasId 在构造时绑定，实例化后不可变。默认 'default' 保持向后兼容。
  */
 export class IpcStorage implements NodeStorage {
+  constructor(private readonly canvasId: string = 'default') {}
+
   saveNode(node: Node): void {
     window.canvasDeskDb.saveNode({
       id: node.id,
       type: node.type,
       posX: node.position[0],
       posY: node.position[1],
-      paramsJson: JSON.stringify(node.saveState())
+      paramsJson: JSON.stringify(node.saveState()),
+      canvasId: this.canvasId
     })
   }
 
   deleteNode(nodeId: string): void {
-    window.canvasDeskDb.deleteNode(nodeId)
+    window.canvasDeskDb.deleteNode({ nodeId, canvasId: this.canvasId })
   }
 
   saveEdge(params: {
@@ -41,19 +46,20 @@ export class IpcStorage implements NodeStorage {
       startNodeId: params.startNodeId,
       startPortId: params.startPortId,
       endNodeId: params.endNodeId,
-      endPortId: params.endPortId
+      endPortId: params.endPortId,
+      canvasId: this.canvasId
     })
   }
 
   deleteEdge(edge: Edge): void {
-    window.canvasDeskDb.deleteEdge(edge.id)
+    window.canvasDeskDb.deleteEdge({ edgeId: edge.id, canvasId: this.canvasId })
   }
 
   saveViewport(x: number, y: number, scale: number): void {
-    window.canvasDeskDb.saveViewport({ x, y, scale })
+    window.canvasDeskDb.saveViewport({ x, y, scale, canvasId: this.canvasId })
   }
 
   clearAll(): void {
-    window.canvasDeskDb.clearCanvas()
+    window.canvasDeskDb.clearCanvas({ canvasId: this.canvasId })
   }
 }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { Node } from '../../main/engine/node/Node'
 import { workspaceScene } from '../../main/engine/graph/SceneRegistry'
@@ -659,6 +659,96 @@ function onWindowPointerMove(e: PointerEvent): void {
   draggedNode.setNodeDropAccepted(anyAccepted)
 }
 
+// —— 当前窗口绑定的画布 ID。主进程 createWindow 通过 URL query 传入，
+// 渲染进程所有 DB / 文件操作都带上这个 id，保证多窗口间各自独立。
+const boundCanvasId = window.getCurrentCanvasId()
+
+// —— 画布选择器状态 ——
+const currentCanvasName = ref('默认画布')
+const showCanvasMenu = ref(false)
+const canvasMenuRef = ref<HTMLElement | null>(null)
+interface CanvasInfo {
+  id: string
+  name: string
+  updatedAt: number
+}
+const canvasList = ref<CanvasInfo[]>([])
+
+// 内联"新建画布"输入框状态（替代 window.prompt，Electron 禁了后者）
+const showNewCanvasInput = ref(false)
+const newCanvasNameInput = ref('')
+const newCanvasInputRef = ref<HTMLInputElement | null>(null)
+
+async function refreshCanvasList(): Promise<void> {
+  try {
+    const list = await window.canvasApi.list()
+    canvasList.value = list
+    const current = list.find((c) => c.id === boundCanvasId)
+    if (current) currentCanvasName.value = current.name
+  } catch (err) {
+    console.warn('[canvas] 加载画布列表失败：', err)
+  }
+}
+
+function toggleCanvasMenu(): void {
+  showCanvasMenu.value = !showCanvasMenu.value
+  if (showCanvasMenu.value) {
+    void refreshCanvasList()
+  } else {
+    cancelNewCanvas()
+  }
+}
+
+async function confirmNewCanvas(): Promise<void> {
+  const name = newCanvasNameInput.value.trim()
+  if (!name) return
+  try {
+    const result = await window.canvasApi.create(name)
+    await window.canvasApi.openNewWindow(result.id)
+  } catch (err) {
+    console.warn('[canvas] 新建画布失败：', err)
+  }
+  // 收起新建状态 + 下拉
+  showCanvasMenu.value = false
+  cancelNewCanvas()
+}
+
+function cancelNewCanvas(): void {
+  showNewCanvasInput.value = false
+  newCanvasNameInput.value = ''
+}
+
+async function openCanvas(id: string): Promise<void> {
+  if (id === boundCanvasId) return // 已经在这个画布上
+  try {
+    await window.canvasApi.openNewWindow(id)
+  } catch (err) {
+    console.warn('[canvas] 打开画布失败：', err)
+  }
+  showCanvasMenu.value = false
+  cancelNewCanvas()
+}
+
+/** 点击画布选择器外部时关闭下拉 */
+function onCanvasMenuDocClick(e: MouseEvent): void {
+  const target = e.target as unknown as HTMLElement
+  if (!canvasMenuRef.value) return
+  if (!canvasMenuRef.value.contains(target)) {
+    showCanvasMenu.value = false
+    cancelNewCanvas()
+  }
+}
+
+// 立即读一次当前画布名
+void refreshCanvasList()
+
+// 进入"新建画布"输入态后自动聚焦 input
+watch(showNewCanvasInput, async (v) => {
+  if (!v) return
+  await nextTick()
+  newCanvasInputRef.value?.focus()
+})
+
 // —— 启动：从主进程 DB 读数据 → 重建 Scene → attachStorage 自动持久化后续变化 ——
 // 这个函数在 App 初始化阶段同步执行，比 onMounted 更早——节点必须在渲染组件挂载前就绪，
 // 否则 render.vue 里 workspaceScene.getNode(id) 会拿到 undefined。
@@ -668,7 +758,7 @@ let viewportPersistTimer: ReturnType<typeof setTimeout> | undefined
 async function bootstrapScene(): Promise<void> {
   let data: Awaited<ReturnType<typeof window.canvasDeskDb.loadCanvas>> | undefined
   try {
-    data = await window.canvasDeskDb.loadCanvas()
+    data = await window.canvasDeskDb.loadCanvas({ canvasId: boundCanvasId })
   } catch (err) {
     console.warn('[bootstrap] loadCanvas 失败，从空白画布开始：', err)
   }
@@ -724,7 +814,7 @@ async function bootstrapScene(): Promise<void> {
 
   // 重建完成后才 attachStorage——期间 addNode/connect 里的 storage?.xxx() 都是空转，
   // 不然会把刚从 DB 读出来的东西再写回去（重复且浪费 IO）
-  workspaceScene.attachStorage(new IpcStorage())
+  workspaceScene.attachStorage(new IpcStorage(boundCanvasId))
 }
 
 // —— 视口持久化：debounce 500ms，拖拽/缩放停下来再写 DB ——
@@ -740,8 +830,11 @@ watch(
 
 // 立即启动 bootstrap（不在 onMounted 里——要早于子组件挂载）
 // 完成后再启动新手引导：避免 bootstrap 恢复历史边时误触发连线完成检测
+// 非 default 画布跳过引导——引导只在首次启动（default 画布）时跑一次
 void bootstrapScene().then(() => {
-  onboarding.start()
+  if (boundCanvasId === 'default') {
+    onboarding.start()
+  }
 })
 
 onMounted(() => {
@@ -763,6 +856,8 @@ onMounted(() => {
   document.addEventListener('drop', onGlobalDrop)
   unsubscribeScene = workspaceScene.onChanged(onSceneChanged)
   unsubscribeOnboardingCheck = workspaceScene.onChanged(onSceneChangedForOnboarding)
+  // 画布下拉菜单的外部点击关闭
+  document.addEventListener('mousedown', onCanvasMenuDocClick, true)
 })
 
 onUnmounted(() => {
@@ -773,6 +868,7 @@ onUnmounted(() => {
   document.removeEventListener('contextmenu', onDocumentContextMenu, true)
   document.removeEventListener('dragover', onGlobalDragOver)
   document.removeEventListener('drop', onGlobalDrop)
+  document.removeEventListener('mousedown', onCanvasMenuDocClick, true)
   unsubscribeScene?.()
   unsubscribeOnboardingCheck?.()
   document.body.style.cursor = ''
@@ -785,18 +881,73 @@ onUnmounted(() => {
     <!-- 顶部拖动条：macOS 窗口标题栏已隐藏（titleBarStyle: 'hiddenInset'），
          左侧大部分区域可拖动窗口，右侧按钮区域故意不设 drag，保持可点击。 -->
     <header class="stage__dragbar">
-      <!-- drag 只设在这一块（不覆盖按钮），按钮自然可点 -->
-      <span class="stage__dragbar-drag-area">
-        Finder+
-      </span>
-      <button class="stage__settings-btn" type="button" :title="t('app.settings')" @click="openSettings">
-        <GearIcon :size="14" />
-        <span>{{ t('app.settings') }}</span>
-      </button>
-      <button class="stage__help-btn" type="button" :title="t('helpCenter.title')" @click="openHelpCenter">
-        <HelpIcon :size="14" />
-        <span>{{ t('app.help') }}</span>
-      </button>
+      <div class="left">
+        <!-- 画布选择器：显示当前画布名 + 下拉箭头。no-drag，嵌在中间 -->
+        <div ref="canvasMenuRef" class="stage__canvas-selector">
+          <button
+            class="stage__canvas-btn"
+            type="button"
+            :class="{ 'stage__canvas-btn--open': showCanvasMenu }"
+            @click.stop="toggleCanvasMenu"
+          >
+            <span class="stage__canvas-btn-name">{{ currentCanvasName }}</span>
+            <svg class="stage__canvas-btn-arrow" width="10" height="10" viewBox="0 0 10 10" fill="none">
+              <path d="M2 3L5 6L8 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </button>
+          <!-- 下拉菜单 + 内联新建输入框 -->
+          <transition name="stage__canvas-fade">
+            <ul v-if="showCanvasMenu" class="stage__canvas-menu">
+              <!-- 新建画布：展开成 input + 确定/取消，替代 window.prompt() -->
+              <li v-if="!showNewCanvasInput" class="stage__canvas-item stage__canvas-item--new" @click="showNewCanvasInput = true">
+                <span class="stage__canvas-item-icon">＋</span>
+                <span>新建画布…</span>
+              </li>
+              <li v-else class="stage__canvas-item stage__canvas-item--input">
+                <input
+                  ref="newCanvasInputRef"
+                  v-model="newCanvasNameInput"
+                  class="stage__canvas-input"
+                  type="text"
+                  placeholder="画布名称"
+                  maxlength="40"
+                  @keydown.enter="confirmNewCanvas"
+                  @keydown.esc="cancelNewCanvas"
+                  @click.stop
+                  @mousedown.stop
+                />
+                <button class="stage__canvas-input-ok" type="button" @click.stop="confirmNewCanvas">确定</button>
+                <button class="stage__canvas-input-cancel" type="button" @click.stop="cancelNewCanvas">✕</button>
+              </li>
+              <li v-if="showNewCanvasInput" class="stage__canvas-separator" />
+              <li v-if="canvasList.length > 0" class="stage__canvas-separator" />
+              <li
+                v-for="c in canvasList"
+                :key="c.id"
+                class="stage__canvas-item"
+                :class="{ 'stage__canvas-item--current': c.id === boundCanvasId }"
+                @click="openCanvas(c.id)"
+              >
+                <span class="stage__canvas-item-icon">📋</span>
+                <span class="stage__canvas-item-name">{{ c.name }}</span>
+                <span v-if="c.id === boundCanvasId" class="stage__canvas-item-check">✓</span>
+              </li>
+            </ul>
+          </transition>
+        </div>
+      </div>
+      <!-- 右侧可拖动区（stretch 撑满） -->
+      <span class="stage__dragbar-drag-area stage__dragbar-drag-area--right" />
+      <div>
+        <button class="stage__settings-btn" type="button" :title="t('app.settings')" @click="openSettings">
+          <GearIcon :size="14" />
+          <span>{{ t('app.settings') }}</span>
+        </button>
+        <button class="stage__help-btn" type="button" :title="t('helpCenter.title')" @click="openHelpCenter">
+          <HelpIcon :size="14" />
+          <span>{{ t('app.help') }}</span>
+        </button>
+      </div>
     </header>
 
     <!-- 节点用 position 绝对定位在世界层内，世界层整体 transform 承载平移 + 缩放 -->
@@ -853,7 +1004,7 @@ onUnmounted(() => {
   height: 100vh;
 
   &__dragbar {
-    height: 30px;
+    height: 34px;
     flex-shrink: 0;
     display: flex;
     align-items: center;
@@ -863,21 +1014,31 @@ onUnmounted(() => {
     background: #e9edf3;
     user-select: none;
     cursor: default;
+
     // drag 属性只设在 drag-area 子元素上，按钮自然不继承
+    .left {
+      display: flex;
+      padding-left: 66px;
+    }
   }
 
   &__dragbar-drag-area {
+    // 两个 drag-area stretch 撑满：左边从交通灯到画布选择器，右边从选择器到按钮
+    // 这样画布选择器 + 右侧按钮周围的整块都能拖动窗口
     flex: 1;
-    text-align: center;
-    color: @color-text-weak;
-    font-size: 12px;
-    // —— 仅这块区域可拖动窗口 ——
+    min-width: 0;
+    height: 100%;
+    // —— 仅这两块区域可拖动窗口 ——
     -webkit-app-region: drag;
+
+    &--right {
+      flex-grow: 1;
+    }
   }
 
   &__help-btn,
   &__settings-btn {
-    // 父级 dragbar 不再带 drag，不需要 no-drag
+    // dragbar 本身不带 drag，按钮自然不可拖动
     all: unset;
     cursor: pointer;
     display: inline-flex;
@@ -894,6 +1055,187 @@ onUnmounted(() => {
       background: rgba(0, 0, 0, 0.08);
       color: @color-primary;
     }
+  }
+
+  // —— 画布选择器 ——
+
+  &__canvas-selector {
+    position: relative;
+    // 在 dragbar 内部但不可拖动——dragbar 本身无 drag，设 no-drag 以防万一
+    -webkit-app-region: no-drag;
+    flex-shrink: 0;
+  }
+
+  &__canvas-btn {
+    all: unset;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.55);
+    color: @color-text;
+    font-size: 12px;
+    font-weight: 500;
+    max-width: 220px;
+    transition: background 0.15s ease, box-shadow 0.15s ease;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.85);
+    }
+
+    &--open {
+      background: rgba(255, 255, 255, 0.95);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+    }
+  }
+
+  &__canvas-btn-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 180px;
+  }
+
+  &__canvas-btn-arrow {
+    flex-shrink: 0;
+    opacity: 0.55;
+  }
+
+  &__canvas-menu {
+    position: absolute;
+    top: calc(100% + 4px);
+    min-width: 200px;
+    max-height: 320px;
+    overflow-y: auto;
+    margin: 0;
+    padding: 4px;
+    list-style: none;
+    background: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12), 0 1px 3px rgba(0, 0, 0, 0.08);
+    z-index: 9999;
+  }
+
+  &__canvas-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 12px;
+    color: @color-text;
+    transition: background 0.1s ease;
+
+    &:hover {
+      background: rgba(0, 0, 0, 0.06);
+    }
+
+    &--current {
+      background: rgba(0, 0, 0, 0.04);
+      color: @color-primary;
+    }
+
+    &--new {
+      color: @color-primary;
+      font-weight: 500;
+    }
+
+    // 内联新建输入框这一行
+    &--input {
+      padding: 6px;
+      gap: 4px;
+      cursor: default;
+      background: rgba(0, 0, 0, 0.02);
+
+      &:hover {
+        background: rgba(0, 0, 0, 0.02);
+      }
+    }
+  }
+
+  &__canvas-input {
+    flex: 1;
+    min-width: 0;
+    padding: 4px 6px;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    border-radius: 4px;
+    font-size: 12px;
+    color: @color-text;
+    background: #fff;
+    outline: none;
+    transition: border-color 0.1s ease;
+
+    &:focus {
+      border-color: @color-primary;
+    }
+  }
+
+  &__canvas-input-ok,
+  &__canvas-input-cancel {
+    all: unset;
+    cursor: pointer;
+    padding: 3px 7px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500;
+    flex-shrink: 0;
+    transition: background 0.1s ease;
+  }
+
+  &__canvas-input-ok {
+    background: @color-primary;
+    color: #fff;
+
+    &:hover {
+      opacity: 0.88;
+    }
+  }
+
+  &__canvas-input-cancel {
+    color: @color-text-weak;
+
+    &:hover {
+      background: rgba(0, 0, 0, 0.08);
+    }
+  }
+
+  &__canvas-item-icon {
+    flex-shrink: 0;
+    width: 14px;
+    text-align: center;
+    font-size: 12px;
+  }
+
+  &__canvas-item-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__canvas-item-check {
+    flex-shrink: 0;
+    font-size: 11px;
+    opacity: 0.7;
+  }
+
+  &__canvas-separator {
+    height: 1px;
+    margin: 4px 8px;
+    background: rgba(0, 0, 0, 0.08);
+  }
+
+  &__canvas-fade-enter-active,
+  &__canvas-fade-leave-active {
+    transition: opacity 0.12s ease, transform 0.12s ease;
+  }
+  &__canvas-fade-enter-from,
+  &__canvas-fade-leave-to {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-4px);
   }
 
   &__notice {

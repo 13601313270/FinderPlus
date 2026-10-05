@@ -1,5 +1,5 @@
 import { app, shell, BrowserWindow, ipcMain, Menu, dialog } from 'electron'
-import { join, basename, extname } from 'node:path'
+import { join, basename, extname, parse } from 'node:path'
 import { copyFileSync, existsSync, readFileSync, readdirSync, rmSync, mkdirSync, unlinkSync, watch, writeFileSync } from 'node:fs'
 import { exec } from 'node:child_process'
 import http from 'node:http'
@@ -10,8 +10,13 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { openDatabase, closeDatabase, getDatabase, persist } from './db/database'
 import { SCHEMA_VERSION } from './db/schema'
 import { SqliteStorage } from './db/SqliteStorage'
-import { ensureCanvasDir, getCanvasDir } from './paths'
+import { ensureCanvasDir, getCanvasDir, getCanvasRootDir, migrateLegacyRootFiles } from './paths'
 import type { MenuLabels } from '../preload'
+
+/** canvasId 安全校验：只允许字母数字下划线、中划线、中文，防路径穿越和 SQL 注入 */
+const SAFE_CANVAS_ID = /^[a-zA-Z0-9_\-\u4e00-\u9fa5]+$/
+
+const NOW = () => Date.now()
 
 /**
  * 应用显示名固定为产品名 Finder+。
@@ -35,54 +40,18 @@ let canvasWatcher: ReturnType<typeof watch> | null = null
 /** 导入进行中时置 true，阻止渲染进程的自动保存 IPC 写入已关闭的 DB */
 let importInProgress = false
 
-/**
- * 启动画布目录文件监听。
- * 监听整个画布目录（文稿/CanvasDesk/我的画布），任何文件变化（修改/新增/删除）
- * 都会 debounce 300ms 后通过 webContents.send('file:changed', fileName) 推送给 renderer，
- * 让 TxtFileNode / ImgFileNode 等文件节点重新读取并 commit 输出端口。
- *
- * fs.watch 在不同平台有差异：
- * - macOS 默认只给 change 事件（目录级），文件名要从 filename 参数拿
- * - 某些编辑器原子保存（写临时文件 + rename）会连续触发多次，debounce 搞定
- *
- * 只启动一个 watcher（整个进程一个画布目录），跟随 BrowserWindow 生命周期——
- * 窗口全关就停掉 watcher，避免进程后台挂着监听。
- */
-function startCanvasWatcher(): void {
-  if (canvasWatcher) return
-  canvasWatcher = watch(getCanvasDir(), { encoding: 'utf-8' }, (_event, fileName) => {
-    if (!fileName) return
-    debouncePushChange(fileName)
-  })
-  console.log('[main] 画布目录文件监听已启动：', getCanvasDir())
+/** 从用户输入生成合法 canvasId：小写 + 连字符，长度限制 */
+function slugify(name: string): string {
+  return name
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_]+/g, '-')
+    .replace(/[^a-z0-9\-]/g, '')
+    .replace(/-+/g, '-')
+    .slice(0, 64) || `canvas-${Date.now()}`
 }
 
-/** 防止短时间内对同一个文件重复推送（编辑器保存连发事件） */
-const pendingPushes = new Map<string, NodeJS.Timeout>()
-function debouncePushChange(fileName: string): void {
-  const existing = pendingPushes.get(fileName)
-  if (existing) clearTimeout(existing)
-  const timer = setTimeout(() => {
-    pendingPushes.delete(fileName)
-    // 推送给所有窗口（目前只有一个，但多窗口扩展时自然生效）
-    for (const win of BrowserWindow.getAllWindows()) {
-      win.webContents.send('file:changed', fileName)
-    }
-  }, 300)
-  pendingPushes.set(fileName, timer)
-}
-
-function stopCanvasWatcher(): void {
-  if (canvasWatcher) {
-    canvasWatcher.close()
-    canvasWatcher = null
-    pendingPushes.forEach(t => clearTimeout(t))
-    pendingPushes.clear()
-    console.log('[main] 画布目录文件监听已停止')
-  }
-}
-
-function createWindow(): void {
+function createWindow(canvasId: string = 'default'): BrowserWindow {
   const mainWindow = new BrowserWindow({
     width: 1280,
     height: 800,
@@ -107,10 +76,75 @@ function createWindow(): void {
     return { action: 'deny' }
   })
 
+  // 加载时把 canvasId 拼进 URL query。reload 不丢、dev/prod 都兼容
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
+    const url = new URL(process.env['ELECTRON_RENDERER_URL'])
+    url.searchParams.set('canvasId', canvasId)
+    mainWindow.loadURL(url.toString())
   } else {
-    mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
+    mainWindow.loadFile(join(__dirname, '../renderer/index.html'), {
+      query: { canvasId }
+    })
+  }
+
+  return mainWindow
+}
+
+/**
+ * 启动画布目录文件监听。
+ * 监听整个画布根目录（文稿/CanvasDesk/我的画布）及所有子目录（每个画布一个子目录），
+ * 任何文件变化（修改/新增/删除）都会 debounce 300ms 后通过
+ * webContents.send('file:changed', { canvasId, fileName }) 推送给 renderer。
+ *
+ * fs.watch 在不同平台有差异：
+ * - macOS 默认只给 change 事件（目录级），文件名要从 filename 参数拿
+ * - recursive: true 在 macOS 上需要 Node 14+
+ * - 某些编辑器原子保存（写临时文件 + rename）会连续触发多次，debounce 搞定
+ *
+ * watch 回调拿到的 fileName 是相对根目录的路径（如 'default/a.txt'、'my-flow/b.txt'），
+ * debouncePushChange 会拆成 canvasId + fileName 再推送。
+ */
+function startCanvasWatcher(): void {
+  if (canvasWatcher) return
+  const root = getCanvasRootDir()
+  canvasWatcher = watch(root, { encoding: 'utf-8', recursive: true }, (_event, relPath) => {
+    if (!relPath) return
+    // 子目录里的临时文件（.swp、~开头等）跳过，不推给 renderer
+    const { base } = parse(relPath)
+    if (base.startsWith('.') || base.startsWith('~') || base.endsWith('.swp') || base.endsWith('.tmp')) return
+    debouncePushChange(relPath)
+  })
+  console.log('[main] 画布目录文件监听已启动：', root)
+}
+
+/** 防止短时间内对同一个文件重复推送（编辑器保存连发事件） */
+const pendingPushes = new Map<string, NodeJS.Timeout>()
+function debouncePushChange(relPath: string): void {
+  const existing = pendingPushes.get(relPath)
+  if (existing) clearTimeout(existing)
+  const timer = setTimeout(() => {
+    pendingPushes.delete(relPath)
+    // 拆分相对路径：第一段是 canvasId，后面的是实际文件名
+    //  'default/a.txt'  → { canvasId: 'default', fileName: 'a.txt' }
+    //  'my-flow/sub/b.txt' → { canvasId: 'my-flow', fileName: 'sub/b.txt' }
+    const parts = relPath.split('/')
+    const canvasId = parts[0]
+    const fileName = parts.slice(1).join('/')
+    // 推送给所有窗口（目前只有一个，但多窗口扩展时自然生效）
+    for (const win of BrowserWindow.getAllWindows()) {
+      win.webContents.send('file:changed', { canvasId, fileName })
+    }
+  }, 300)
+  pendingPushes.set(relPath, timer)
+}
+
+function stopCanvasWatcher(): void {
+  if (canvasWatcher) {
+    canvasWatcher.close()
+    canvasWatcher = null
+    pendingPushes.forEach(t => clearTimeout(t))
+    pendingPushes.clear()
+    console.log('[main] 画布目录文件监听已停止')
   }
 }
 
@@ -196,6 +230,108 @@ function registerIpcHandlers(): void {
     buildApplicationMenu()
   })
 
+  // —— 画布管理 IPC：CRUD + 开新窗口 ——
+
+  /** 列出所有画布：从 canvases 表读，按 updated_at 倒序。
+   *  保证 default 一定存在（用户可能清空过 canvases 表但数据还在） */
+  ipcMain.handle('canvas:list', () => {
+    const db = getDatabase()
+    // 保证 default 行存在——首次启动或用户误删时兜底
+    db.run(
+      `INSERT OR IGNORE INTO canvases (id, name, viewport_x, viewport_y, viewport_scale, updated_at)
+       VALUES ('default', '默认画布', 0, 0, 1, ?)`,
+      [NOW()]
+    )
+    persist()
+    const rows = db.exec('SELECT id, name, updated_at FROM canvases ORDER BY updated_at DESC')
+    if (!rows.length) return []
+    return rows[0].values.map((row) => ({
+      id: String(row[0]),
+      name: String(row[1]),
+      updatedAt: Number(row[2])
+    }))
+  })
+
+  /**
+   * 新建画布：INSERT canvases 表 + mkdir 子目录。
+   * 返回 { id, name }。name 冲突时自动加后缀。
+   */
+  ipcMain.handle('canvas:create', (_e, args: { name?: string }): { id: string; name: string } => {
+    const db = getDatabase()
+    const rawName = args.name?.trim() || '未命名'
+    let name = rawName
+    let id = slugify(rawName)
+
+    // canvasId 冲突处理：加 -2, -3 后缀
+    let counter = 2
+    while (db.exec('SELECT 1 FROM canvases WHERE id = ?', [id]).length > 0) {
+      id = `${slugify(rawName)}-${counter}`
+      name = `${rawName} (${counter})`
+      counter++
+    }
+
+    if (!SAFE_CANVAS_ID.test(id)) {
+      throw new Error(`画布名称不合法：${rawName}`)
+    }
+
+    const now = NOW()
+    db.run(
+      `INSERT INTO canvases (id, name, viewport_x, viewport_y, viewport_scale, updated_at)
+       VALUES (?, ?, 0, 0, 1, ?)`,
+      [id, name, now]
+    )
+    ensureCanvasDir(id)
+    persist()
+    return { id, name }
+  })
+
+  /** 重命名画布 */
+  ipcMain.handle('canvas:rename', (_e, args: { id: string; name: string }): { ok: true } | { ok: false; error: string } => {
+    if (!SAFE_CANVAS_ID.test(args.id)) return { ok: false, error: '画布 ID 不合法' }
+    const db = getDatabase()
+    db.run('UPDATE canvases SET name = ?, updated_at = ? WHERE id = ?', [args.name, NOW(), args.id])
+    persist()
+    return { ok: true }
+  })
+
+  /**
+   * 删除画布：删 nodes + edges（ON DELETE CASCADE）+ canvases 行 + 子目录文件。
+   * 不能删 'default'——至少保留一张画布。
+   */
+  ipcMain.handle('canvas:delete', (_e, args: { id: string }): { ok: true } | { ok: false; error: string } => {
+    if (args.id === 'default') return { ok: false, error: '默认画布不能删除' }
+    if (!SAFE_CANVAS_ID.test(args.id)) return { ok: false, error: '画布 ID 不合法' }
+    const db = getDatabase()
+    db.run('DELETE FROM canvases WHERE id = ?', [args.id])
+    persist()
+    // 删子目录文件
+    try {
+      const dir = getCanvasDir(args.id)
+      if (existsSync(dir)) rmSync(dir, { recursive: true, force: true })
+    } catch (err) {
+      console.warn('[canvas:delete] 删除文件目录失败：', args.id, err)
+    }
+    // 如果有窗口绑定这个画布，关掉它
+    for (const win of BrowserWindow.getAllWindows()) {
+      try {
+        const url = win.webContents.getURL()
+        if (url.includes(`canvasId=${args.id}`)) win.close()
+      } catch { /* 忽略关闭失败 */ }
+    }
+    return { ok: true }
+  })
+
+  /** 打开指定画布到新窗口 */
+  ipcMain.handle('canvas:openNewWindow', (_e, args: { id: string }): { ok: true } | { ok: false; error: string } => {
+    if (!SAFE_CANVAS_ID.test(args.id)) return { ok: false, error: '画布 ID 不合法' }
+    // 确认画布存在
+    const db = getDatabase()
+    const rows = db.exec('SELECT 1 FROM canvases WHERE id = ?', [args.id])
+    if (!rows.length) return { ok: false, error: `画布不存在：${args.id}` }
+    createWindow(args.id)
+    return { ok: true }
+  })
+
   // —— 持久化写操作：由渲染进程 Scene 里的 IpcStorage 通过 preload 调用 ——
   ipcMain.handle('db:saveNode', (_e, args: {
     id: string
@@ -203,28 +339,29 @@ function registerIpcHandlers(): void {
     posX: number
     posY: number
     paramsJson: string
+    canvasId?: string
   }) => {
     if (importInProgress) return false
-    // saveNode 在 SqliteStorage 里会直接 INSERT / UPDATE + persist
-    // 但它收的是 Node 实例，不是 plain object。这里用 db.run 直接做 SQL
+    const canvasId = args.canvasId ?? 'default'
     const db = getDatabase()
     const now = Date.now()
     db.run(
       `INSERT INTO nodes (id, canvas_id, type, pos_x, pos_y, params, created_at, updated_at)
-       VALUES (?, 'default', ?, ?, ?, ?, ?, ?)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(id) DO UPDATE SET
          pos_x = excluded.pos_x,
          pos_y = excluded.pos_y,
          params = excluded.params,
          updated_at = excluded.updated_at`,
-      [args.id, args.type, args.posX, args.posY, args.paramsJson, now, now]
+      [args.id, canvasId, args.type, args.posX, args.posY, args.paramsJson, now, now]
     )
     persist()
     return true
   })
 
-  ipcMain.handle('db:deleteNode', (_e, nodeId: string) => {
+  ipcMain.handle('db:deleteNode', (_e, args: { nodeId: string; canvasId?: string }) => {
     if (importInProgress) return false
+    const nodeId = args.nodeId
     const db = getDatabase()
     db.run('DELETE FROM nodes WHERE id = ?', [nodeId])
     persist()
@@ -237,54 +374,58 @@ function registerIpcHandlers(): void {
     startPortId: string
     endNodeId: string
     endPortId: string
+    canvasId?: string
   }) => {
     if (importInProgress) return false
+    const canvasId = args.canvasId ?? 'default'
     const db = getDatabase()
     db.run(
       `INSERT INTO edges (id, canvas_id, start_node_id, start_port_id, end_node_id, end_port_id)
-       VALUES (?, 'default', ?, ?, ?, ?)
+       VALUES (?, ?, ?, ?, ?, ?)
        ON CONFLICT(id) DO UPDATE SET
          start_node_id = excluded.start_node_id,
          start_port_id = excluded.start_port_id,
          end_node_id = excluded.end_node_id,
          end_port_id = excluded.end_port_id`,
-      [args.id, args.startNodeId, args.startPortId, args.endNodeId, args.endPortId]
+      [args.id, canvasId, args.startNodeId, args.startPortId, args.endNodeId, args.endPortId]
     )
     persist()
     return true
   })
 
-  ipcMain.handle('db:deleteEdge', (_e, edgeId: string) => {
+  ipcMain.handle('db:deleteEdge', (_e, args: { edgeId: string; canvasId?: string }) => {
     if (importInProgress) return false
     const db = getDatabase()
-    db.run('DELETE FROM edges WHERE id = ?', [edgeId])
+    db.run('DELETE FROM edges WHERE id = ?', [args.edgeId])
     persist()
     return true
   })
 
-  ipcMain.handle('db:saveViewport', (_e, args: { x: number; y: number; scale: number }) => {
+  ipcMain.handle('db:saveViewport', (_e, args: { x: number; y: number; scale: number; canvasId?: string }) => {
     if (importInProgress) return false
+    const canvasId = args.canvasId ?? 'default'
     const db = getDatabase()
     const now = Date.now()
     db.run(
       `INSERT INTO canvases (id, name, viewport_x, viewport_y, viewport_scale, updated_at)
-       VALUES ('default', '未命名', ?, ?, ?, ?)
+       VALUES (?, '未命名', ?, ?, ?, ?)
        ON CONFLICT(id) DO UPDATE SET
          viewport_x = excluded.viewport_x,
          viewport_y = excluded.viewport_y,
          viewport_scale = excluded.viewport_scale,
          updated_at = excluded.updated_at`,
-      [args.x, args.y, args.scale, now]
+      [canvasId, args.x, args.y, args.scale, now]
     )
     persist()
     return true
   })
 
-  ipcMain.handle('db:clearCanvas', () => {
+  ipcMain.handle('db:clearCanvas', (_e, args: { canvasId?: string } = {}) => {
     if (importInProgress) return false
+    const canvasId = args.canvasId ?? 'default'
     const db = getDatabase()
-    db.run('DELETE FROM edges WHERE canvas_id = ?', ['default'])
-    db.run('DELETE FROM nodes WHERE canvas_id = ?', ['default'])
+    db.run('DELETE FROM edges WHERE canvas_id = ?', [canvasId])
+    db.run('DELETE FROM nodes WHERE canvas_id = ?', [canvasId])
     persist()
     return true
   })
@@ -305,26 +446,26 @@ function registerIpcHandlers(): void {
   })
 
   // —— 读取：渲染进程启动时调一次，重建 Scene ——
-  ipcMain.handle('db:loadCanvas', () => {
+  ipcMain.handle('db:loadCanvas', (_e, args: { canvasId?: string } = {}) => {
     if (!storage) throw new Error('[db] storage 尚未初始化')
     return {
-      nodes: storage.loadNodes(),
-      edges: storage.loadEdges(),
-      viewport: storage.loadViewport()
+      nodes: storage.loadNodes(args.canvasId),
+      edges: storage.loadEdges(args.canvasId),
+      viewport: storage.loadViewport(args.canvasId)
     }
   })
 
   // —— 文件操作：给文件节点用 ——
 
   // 读画布目录下的文本文件内容（给 TxtFileNode 用）
-  ipcMain.handle('file:readText', (_e, fileName: string): string => {
-    const targetPath = join(getCanvasDir(), fileName)
+  ipcMain.handle('file:readText', (_e, args: { fileName: string; canvasId?: string }): string => {
+    const targetPath = join(getCanvasDir(args.canvasId), args.fileName)
     return readFileSync(targetPath, 'utf-8')
   })
 
   // 读画布目录下的任意文件，返回 base64 编码（给通用文件节点用）
-  ipcMain.handle('file:readBinary', (_e, fileName: string): string => {
-    const targetPath = join(getCanvasDir(), fileName)
+  ipcMain.handle('file:readBinary', (_e, args: { fileName: string; canvasId?: string }): string => {
+    const targetPath = join(getCanvasDir(args.canvasId), args.fileName)
     return readFileSync(targetPath, 'base64')
   })
 
@@ -335,9 +476,10 @@ function registerIpcHandlers(): void {
    */
   ipcMain.handle('file:copyPath', (_e, args: {
     sourcePath: string
+    canvasId?: string
   }): { fileName: string; size: number } => {
-    const canvasDir = getCanvasDir()
-    ensureCanvasDir()
+    const canvasDir = getCanvasDir(args.canvasId)
+    ensureCanvasDir(args.canvasId)
     const targetName = resolveNonCollidingName(canvasDir, basename(args.sourcePath))
     const targetPath = join(canvasDir, targetName)
     copyFileSync(args.sourcePath, targetPath)
@@ -356,9 +498,10 @@ function registerIpcHandlers(): void {
     fileName: string
     base64: string
     overwrite?: boolean
+    canvasId?: string
   }): { fileName: string; size: number } => {
-    const canvasDir = getCanvasDir()
-    ensureCanvasDir()
+    const canvasDir = getCanvasDir(args.canvasId)
+    ensureCanvasDir(args.canvasId)
     const targetName = args.overwrite
       ? args.fileName
       : resolveNonCollidingName(canvasDir, args.fileName)
@@ -369,14 +512,14 @@ function registerIpcHandlers(): void {
   })
 
   // 删除画布目录下的文件。用于文件节点清空、重新选择时清理旧副本
-  ipcMain.handle('file:delete', (_e, fileName: string): void => {
-    const targetPath = join(getCanvasDir(), fileName)
+  ipcMain.handle('file:delete', (_e, args: { fileName: string; canvasId?: string }): void => {
+    const targetPath = join(getCanvasDir(args.canvasId), args.fileName)
     try {
       unlinkSync(targetPath)
     } catch (err: unknown) {
       // 文件不存在或已被外部删除时静默忽略，其他情况打 warn
       if ((err as NodeJS.ErrnoException)?.code !== 'ENOENT') {
-        console.warn('[file:delete] 删除失败：', fileName, err)
+        console.warn('[file:delete] 删除失败：', args.fileName, err)
       }
     }
   })
@@ -389,8 +532,8 @@ function registerIpcHandlers(): void {
    * 意外 drop"和"Finder 等外部拖进来的文件"：App.vue 的 onCanvasDrop 会对比
    * dataTransfer.files 的 path 和这个 fullPath，命中则跳过，避免创建重复节点。
    */
-  ipcMain.handle('file:startDrag', async (_e, args: { fileName: string }): Promise<string | null> => {
-    const fullPath = join(getCanvasDir(), args.fileName)
+  ipcMain.handle('file:startDrag', async (_e, args: { fileName: string; canvasId?: string }): Promise<string | null> => {
+    const fullPath = join(getCanvasDir(args.canvasId), args.fileName)
     if (!existsSync(fullPath)) {
       console.warn(`[file:startDrag] 文件不存在：${fullPath}`)
       return null
@@ -406,8 +549,8 @@ function registerIpcHandlers(): void {
   })
 
   /** 检查画布目录下文件是否还存在（外部拖拽结束后判断节点要不要删） */
-  ipcMain.handle('file:exists', (_e, fileName: string): boolean => {
-    return existsSync(join(getCanvasDir(), fileName))
+  ipcMain.handle('file:exists', (_e, args: { fileName: string; canvasId?: string }): boolean => {
+    return existsSync(join(getCanvasDir(args.canvasId), args.fileName))
   })
 
   /**
@@ -415,8 +558,8 @@ function registerIpcHandlers(): void {
    * 给文件节点的「路径」输出端口用——渲染进程拿不到真实磁盘路径
    * （Electron 在 contextIsolation 下会剥离 File.path），只能回主进程拼。
    */
-  ipcMain.handle('file:getFullPath', (_e, fileName: string): string => {
-    return join(getCanvasDir(), fileName)
+  ipcMain.handle('file:getFullPath', (_e, args: { fileName: string; canvasId?: string }): string => {
+    return join(getCanvasDir(args.canvasId), args.fileName)
   })
 
   /**
@@ -426,8 +569,8 @@ function registerIpcHandlers(): void {
    * 返回 { ok } 表示成功；{ ok: false, error } 带失败原因。
    * shell.openPath 在目标文件不存在或关联应用被卸载时会返回非空错误信息。
    */
-  ipcMain.handle('file:openInSystem', async (_e, fileName: string): Promise<{ ok: boolean; error?: string }> => {
-    const fullPath = join(getCanvasDir(), fileName)
+  ipcMain.handle('file:openInSystem', async (_e, args: { fileName: string; canvasId?: string }): Promise<{ ok: boolean; error?: string }> => {
+    const fullPath = join(getCanvasDir(args.canvasId), args.fileName)
     if (!existsSync(fullPath)) {
       return { ok: false, error: '文件不存在' }
     }
@@ -1320,8 +1463,10 @@ ipcMain.handle('dialog:showOpen', async (_e, args: {
 app.whenReady().then(async () => {
   electronApp.setAppUserModelId('com.canvasdesk.app')
 
-  // 画布文件目录：文稿/CanvasDesk/我的画布（不存在则递归创建）
-  ensureCanvasDir()
+  // 画布文件目录：文稿/CanvasDesk/我的画布/{canvasId}/
+  // 先做旧版根目录文件迁移（v1 → v2），再确保 default 子目录存在
+  migrateLegacyRootFiles()
+  ensureCanvasDir('default')
 
   // 数据库：启动时打开（读磁盘 / 新建 + 建表）
   const db = await openDatabase()

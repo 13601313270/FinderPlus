@@ -24,9 +24,11 @@ const canvasDeskDb = {
     posX: number
     posY: number
     paramsJson: string
+    canvasId?: string
   }): Promise<boolean> => ipcRenderer.invoke('db:saveNode', args),
 
-  deleteNode: (nodeId: string): Promise<boolean> => ipcRenderer.invoke('db:deleteNode', nodeId),
+  deleteNode: (args: { nodeId: string; canvasId?: string }): Promise<boolean> =>
+    ipcRenderer.invoke('db:deleteNode', args),
 
   saveEdge: (args: {
     id: string
@@ -34,17 +36,20 @@ const canvasDeskDb = {
     startPortId: string
     endNodeId: string
     endPortId: string
+    canvasId?: string
   }): Promise<boolean> => ipcRenderer.invoke('db:saveEdge', args),
 
-  deleteEdge: (edgeId: string): Promise<boolean> => ipcRenderer.invoke('db:deleteEdge', edgeId),
+  deleteEdge: (args: { edgeId: string; canvasId?: string }): Promise<boolean> =>
+    ipcRenderer.invoke('db:deleteEdge', args),
 
-  saveViewport: (args: { x: number; y: number; scale: number }): Promise<boolean> =>
+  saveViewport: (args: { x: number; y: number; scale: number; canvasId?: string }): Promise<boolean> =>
     ipcRenderer.invoke('db:saveViewport', args),
 
   /** 批量清空画布：一次调用清 nodes + edges 表，省 IPC 次数 */
-  clearCanvas: (): Promise<boolean> => ipcRenderer.invoke('db:clearCanvas'),
+  clearCanvas: (args?: { canvasId?: string }): Promise<boolean> =>
+    ipcRenderer.invoke('db:clearCanvas', args ?? {}),
 
-  loadCanvas: (): Promise<{
+  loadCanvas: (args?: { canvasId?: string }): Promise<{
     nodes: Array<{ id: string; type: string; posX: number; posY: number; paramsJson: string }>
     edges: Array<{
       id: string
@@ -54,7 +59,7 @@ const canvasDeskDb = {
       endPortId: string
     }>
     viewport: { x: number; y: number; scale: number }
-  }> => ipcRenderer.invoke('db:loadCanvas')
+  }> => ipcRenderer.invoke('db:loadCanvas', args ?? {})
 }
 
 /**
@@ -173,6 +178,14 @@ const wasmApi = {
   readCompressor: (): Promise<string> => ipcRenderer.invoke('wasm:readImageCompressor')
 }
 
+// —— 当前窗口绑定的 canvasId（启动时 URL query 里已拼好）——
+// fileApi / canvasDeskDb 所有方法的 canvasId 参数可选，
+// 渲染进程（节点内部、drop handler 等）经常忘了传，这里自动兜底成当前窗口绑定的画布。
+// 这样上层代码 32 处 fileApi 调用全不用改，每窗口自然走自己的目录。
+function fillCanvasId(canvasId: string | undefined): string {
+  return canvasId ?? getCurrentCanvasId()
+}
+
 const fileApi = {
   /**
    * 从拖拽事件的 File 对象反查文件系统绝对路径。
@@ -181,63 +194,71 @@ const fileApi = {
    * 渲染进程直接拿不到——所以这里用 preload 特权 API webUtils.getPathForFile，
    * 它接受 File 对象（File 可以安全穿过 contextBridge，内部是原生引用），
    * 返回真实磁盘路径，然后再走主进程 copyPath IPC 复制到画布目录。
+   * 注意：这个方法不涉及画布，不需要 canvasId。
    */
   getPathForFile: (file: File): string => webUtils.getPathForFile(file),
 
   /**
    * 把磁盘上已有的文件直接复制到画布目录（不弹窗）。
    * 配合 getPathForFile 用：renderer 拿 File → 调 getPathForFile 拿绝对路径 → 调本方法复制。
+   * canvasId 可选，默认当前窗口绑定的画布。
    */
-  copyPath: (sourcePath: string): Promise<{ fileName: string; size: number }> =>
-    ipcRenderer.invoke('file:copyPath', { sourcePath }),
+  copyPath: (sourcePath: string, canvasId?: string): Promise<{ fileName: string; size: number }> =>
+    ipcRenderer.invoke('file:copyPath', { sourcePath, canvasId: fillCanvasId(canvasId) }),
 
   /**
    * 把内存 buffer（base64）写入画布目录。
    * 给 ImagePreviewNode 等场景用：端口拿到内存中的 File 对象，需要落盘后才能 startDrag 或生成文件节点。
+   * canvasId 可选，默认当前窗口绑定的画布。
    */
-  writeBuffer: (fileName: string, base64: string, overwrite?: boolean): Promise<{ fileName: string; size: number }> =>
-    ipcRenderer.invoke('file:writeBuffer', { fileName, base64, overwrite }),
+  writeBuffer: (fileName: string, base64: string, overwrite?: boolean, canvasId?: string): Promise<{ fileName: string; size: number }> =>
+    ipcRenderer.invoke('file:writeBuffer', { fileName, base64, overwrite, canvasId: fillCanvasId(canvasId) }),
 
   /** 读取画布目录下指定文件的文本内容（给文本类文件节点用） */
-  readText: (fileName: string): Promise<string> => ipcRenderer.invoke('file:readText', fileName),
+  readText: (fileName: string, canvasId?: string): Promise<string> =>
+    ipcRenderer.invoke('file:readText', { fileName, canvasId: fillCanvasId(canvasId) }),
 
   /** 读取画布目录下指定文件的二进制内容，返回 base64 字符串（给通用文件节点用） */
-  readBinary: (fileName: string): Promise<string> => ipcRenderer.invoke('file:readBinary', fileName),
+  readBinary: (fileName: string, canvasId?: string): Promise<string> =>
+    ipcRenderer.invoke('file:readBinary', { fileName, canvasId: fillCanvasId(canvasId) }),
 
   /** 删除画布目录下指定文件（文件节点清空或重新选择时清理旧副本） */
-  delete: (fileName: string): Promise<void> => ipcRenderer.invoke('file:delete', fileName),
+  delete: (fileName: string, canvasId?: string): Promise<void> =>
+    ipcRenderer.invoke('file:delete', { fileName, canvasId: fillCanvasId(canvasId) }),
 
   /**
    * 启动 OS 级文件拖拽（拖出画布到桌面/系统文件夹）。
    * 返回主进程实际 startDrag 用的 fullPath（或 null）——renderer 用它区分
-   * "自己 startDrag 引发的意外 drop"和"外部拖进来的文件"。
+   * "自己 startDrag 引发的意外 drop"和"Finder 等外部拖进来的文件"。
    */
-  startDrag: (fileName: string): Promise<string | null> =>
-    ipcRenderer.invoke('file:startDrag', { fileName }),
+  startDrag: (fileName: string, canvasId?: string): Promise<string | null> =>
+    ipcRenderer.invoke('file:startDrag', { fileName, canvasId: fillCanvasId(canvasId) }),
 
   /** 检查画布目录下文件是否还存在（外部拖拽结束后判断节点要不要删） */
-  exists: (fileName: string): Promise<boolean> => ipcRenderer.invoke('file:exists', fileName),
+  exists: (fileName: string, canvasId?: string): Promise<boolean> =>
+    ipcRenderer.invoke('file:exists', { fileName, canvasId: fillCanvasId(canvasId) }),
 
   /** 把画布目录下的文件名解析成磁盘绝对路径（文件节点的「路径」输出端口用） */
-  getFullPath: (fileName: string): Promise<string> =>
-    ipcRenderer.invoke('file:getFullPath', fileName),
+  getFullPath: (fileName: string, canvasId?: string): Promise<string> =>
+    ipcRenderer.invoke('file:getFullPath', { fileName, canvasId: fillCanvasId(canvasId) }),
 
   /**
    * 用系统默认应用打开画布目录下的文件。
    * shell.openPath 的返回值（成功空串 / 失败错误信息）被主进程包装成 { ok, error } 返回。
    */
-  openInSystem: (fileName: string): Promise<{ ok: boolean; error?: string }> =>
-    ipcRenderer.invoke('file:openInSystem', fileName),
+  openInSystem: (fileName: string, canvasId?: string): Promise<{ ok: boolean; error?: string }> =>
+    ipcRenderer.invoke('file:openInSystem', { fileName, canvasId: fillCanvasId(canvasId) }),
 
   /**
    * 监听画布目录下文件变化。
-   * 主进程 fs.watch 监听到变化后 debounce 300ms 推送 fileName（相对画布目录的短名，如 'a.txt'），
-   * renderer 里的文件节点用这个事件触发重读 + commit 输出端口。
+   * 主进程 fs.watch 监听到变化后 debounce 300ms 推送 { canvasId, fileName }。
+   * fileName 是相对于**该画布子目录**的纯文件名（如 'notes.txt'），
+   * canvasId 告诉你这个变化属于哪个画布——渲染进程只匹配自己画布的节点。
    *
    * 返回取消订阅函数。
    */
-  onChanged: (callback: (fileName: string) => void): (() => void) => {
-    const handler = (_e: Electron.IpcRendererEvent, fileName: string) => callback(fileName)
+  onChanged: (callback: (payload: { canvasId: string; fileName: string }) => void): (() => void) => {
+    const handler = (_e: Electron.IpcRendererEvent, payload: { canvasId: string; fileName: string }) => callback(payload)
     ipcRenderer.on('file:changed', handler)
     return () => ipcRenderer.removeListener('file:changed', handler)
   }
@@ -407,6 +428,42 @@ const tableApi = {
     ipcRenderer.invoke('table:executeRawSql', args)
 }
 
+/**
+ * 画布管理 API：画布列表 / 新建 / 重命名 / 删除 / 开新窗口。
+ * 每窗口绑定一个 canvasId（通过 URL query 传入），多画布通过多窗口并行。
+ */
+const canvasApi = {
+  /** 列出所有画布（保证 default 一定存在） */
+  list: (): Promise<Array<{ id: string; name: string; updatedAt: number }>> =>
+    ipcRenderer.invoke('canvas:list'),
+
+  /** 新建画布，返回 { id, name } */
+  create: (name?: string): Promise<{ id: string; name: string }> =>
+    ipcRenderer.invoke('canvas:create', { name }),
+
+  /** 重命名画布 */
+  rename: (id: string, name: string): Promise<{ ok: true } | { ok: false; error: string }> =>
+    ipcRenderer.invoke('canvas:rename', { id, name }),
+
+  /** 删除画布（不能删 default） */
+  delete: (id: string): Promise<{ ok: true } | { ok: false; error: string }> =>
+    ipcRenderer.invoke('canvas:delete', { id }),
+
+  /** 把指定画布开到新窗口 */
+  openNewWindow: (id: string): Promise<{ ok: true } | { ok: false; error: string }> =>
+    ipcRenderer.invoke('canvas:openNewWindow', { id })
+}
+
+/**
+ * 画布 ID getter：从 URL query 里取 canvasId。
+ * 主进程 createWindow 时通过 loadFile({ query }) 或 URL searchParams 设置。
+ * 渲染进程每窗口绑定一个 canvasId，所有 DB / 文件操作都带上它。
+ */
+const getCurrentCanvasId = (): string => {
+  const params = new URLSearchParams(window.location.search)
+  return params.get('canvasId') || 'default'
+}
+
 if (process.contextIsolated) {
   try {
     // 主进程推送的日志 → 转发到渲染进程 Console
@@ -430,6 +487,8 @@ if (process.contextIsolated) {
     contextBridge.exposeInMainWorld('dialogApi', dialogApi)
     contextBridge.exposeInMainWorld('transferApi', transferApi)
     contextBridge.exposeInMainWorld('tableApi', tableApi)
+    contextBridge.exposeInMainWorld('canvasApi', canvasApi)
+    contextBridge.exposeInMainWorld('getCurrentCanvasId', getCurrentCanvasId)
   } catch (error) {
     console.error(error)
   }
@@ -458,6 +517,10 @@ if (process.contextIsolated) {
   window.transferApi = transferApi
   // @ts-ignore (define in dts)
   window.tableApi = tableApi
+  // @ts-ignore (define in dts)
+  window.canvasApi = canvasApi
+  // @ts-ignore (define in dts)
+  window.getCurrentCanvasId = getCurrentCanvasId
 }
 
 export type ExposedApi = typeof api
@@ -471,3 +534,5 @@ export type AppMenuApi = typeof appMenuApi
 export type DialogApi = typeof dialogApi
 export type TransferApi = typeof transferApi
 export type TableApi = typeof tableApi
+export type CanvasApi = typeof canvasApi
+export type GetCurrentCanvasId = typeof getCurrentCanvasId

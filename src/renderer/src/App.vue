@@ -11,6 +11,7 @@ import { viewport, panViewport, zoomViewportAt, screenToWorld, setCanvasContaine
 import { measureNodeBox } from '@renderer/canvas/elements'
 import EdgeLayer from './components/EdgeLayer.vue'
 import NodeShell from './components/NodeShell.vue'
+import NodeWire from './components/NodeWire.vue'
 import ConnectionPreview from './components/ConnectionPreview.vue'
 import Minimap from './components/Minimap.vue'
 import NodePalette from './components/NodePalette.vue'
@@ -788,21 +789,11 @@ onUnmounted(() => {
       <span class="stage__dragbar-drag-area">
         Finder+
       </span>
-      <button
-        class="stage__settings-btn"
-        type="button"
-        :title="t('app.settings')"
-        @click="openSettings"
-      >
+      <button class="stage__settings-btn" type="button" :title="t('app.settings')" @click="openSettings">
         <GearIcon :size="14" />
         <span>{{ t('app.settings') }}</span>
       </button>
-      <button
-        class="stage__help-btn"
-        type="button"
-        :title="t('helpCenter.title')"
-        @click="openHelpCenter"
-      >
+      <button class="stage__help-btn" type="button" :title="t('helpCenter.title')" @click="openHelpCenter">
         <HelpIcon :size="14" />
         <span>{{ t('app.help') }}</span>
       </button>
@@ -825,8 +816,12 @@ onUnmounted(() => {
         <EdgeLayer />
         <!-- 每个节点 = 外壳（定位 + 端口，通用）+ 内容（render.vue，节点自定义）
              nodes 来自 Scene，新增节点加进 Scene 后会自动出现在这里 -->
-        <NodeShell v-for="node in nodes" :key="node.id" :node="node" :render="manifestFor(node)?.render"
-          :floating="trackingNode?.id === node.id" />
+        <template v-for="node in nodes" :key="node.id">
+          <NodeWire :node="node" v-if="node.type==='wire'" :render="manifestFor(node)?.render"
+            :floating="trackingNode?.id === node.id" />
+          <NodeShell v-else :node="node" :render="manifestFor(node)?.render"
+            :floating="trackingNode?.id === node.id" />
+        </template>
       </div>
 
       <!-- 连线拖拽的预览线画在屏幕层（世界层之外）：不吃缩放，线宽恒定，且压在节点之上 -->

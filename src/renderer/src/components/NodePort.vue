@@ -18,6 +18,7 @@ const props = defineProps<{
   label: string
   /** 输入端口才会是 true：当前属于脏状态（值变了但节点还没消化） */
   isDirty?: boolean
+  hideLabel?: boolean
 }>()
 
 const isIn = props.side === 'in'
@@ -252,7 +253,7 @@ function updateTooltipPosition(): void {
   -->
   <div class="port-item" :class="{ 'port-item--left': isIn, 'port-item--right': !isIn }">
     <!-- 左列：label 在圆点左边，文本右对齐（靠近圆点） -->
-    <div v-if="isIn" class="port-label port-label--right-edge">
+    <div v-if="isIn && !hideLabel" class="port-label port-label--right-edge">
       <span class="port-label__main">{{ label }}</span>
       <div v-if="displayKinds(port).length" class="port-label__kinds">
         <span
@@ -282,7 +283,7 @@ function updateTooltipPosition(): void {
     </span>
 
     <!-- 右列：label 在圆点右边，文本左对齐（靠近圆点） -->
-    <div v-if="!isIn" class="port-label port-label--left-edge">
+    <div v-if="!isIn && !hideLabel" class="port-label port-label--left-edge">
       <span class="port-label__main">{{ label }}</span>
       <div v-if="displayKinds(port).length" class="port-label__kinds">
         <span

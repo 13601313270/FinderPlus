@@ -280,6 +280,15 @@ function registerIpcHandlers(): void {
     return true
   })
 
+  ipcMain.handle('db:clearCanvas', () => {
+    if (importInProgress) return false
+    const db = getDatabase()
+    db.run('DELETE FROM edges WHERE canvas_id = ?', ['default'])
+    db.run('DELETE FROM nodes WHERE canvas_id = ?', ['default'])
+    persist()
+    return true
+  })
+
   /**
    * 读取 img-compressor-wasm 的 wasm 二进制，返回 base64（给质量调整节点用）。
    *

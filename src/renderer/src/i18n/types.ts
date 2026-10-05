@@ -40,6 +40,14 @@ export type Language = {
     onboardingSection: string
     onboardingHint: string
     onboardingRestart: string
+    /** 清空画布 section（危险操作） */
+    clearSection: string
+    clearHint: string
+    clearButton: string
+    clearConfirmTitle: string
+    clearConfirmBody: string
+    clearSuccess: string
+    clearAlreadyEmpty: string
   }
   helpCenter: {
     title: string

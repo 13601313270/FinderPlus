@@ -29,4 +29,7 @@ export interface NodeStorage {
 
   /** 保存视口（平移 + 缩放） */
   saveViewport(x: number, y: number, scale: number): void
+
+  /** 批量清空画布的所有节点和边（一次调用，DB 层自己做事务） */
+  clearAll?(): void
 }

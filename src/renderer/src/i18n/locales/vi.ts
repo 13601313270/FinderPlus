@@ -23,7 +23,14 @@ const vi: Language = {
     importConfirmBody: 'Importing will overwrite your current canvas, files and settings with the backup. This cannot be undone. Continue?',
     onboardingSection: 'Onboarding tutorial',
     onboardingHint: 'Watch the Finder+ quick start again: drag in a file and connect nodes.',
-    onboardingRestart: 'Show tutorial again'
+    onboardingRestart: 'Show tutorial again',
+    clearSection: 'Canvas',
+    clearHint: 'Remove all nodes and edges from the canvas. Files in the canvas directory will NOT be deleted.',
+    clearButton: 'Clear Canvas',
+    clearConfirmTitle: 'Clear the canvas?',
+    clearConfirmBody: 'This will remove all nodes and edges from the canvas and cannot be undone. Files in the canvas directory will NOT be deleted. Continue?',
+    clearSuccess: 'Canvas cleared.',
+    clearAlreadyEmpty: 'The canvas is already empty'
   },
   helpCenter: {
     title: 'Trung tâm trợ giúp',

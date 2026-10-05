@@ -139,6 +139,38 @@ export class Scene {
     return [...this.edges]
   }
 
+  /**
+   * 清空画布：所有节点 + 边全部移除，DB 里对应记录一并删除。
+   * - 对每个节点调 beforeDestroy（TableNode 会 drop 物理表等）；
+   * - 内部集合、persist 定时器/登记全部清掉；
+   * - 最后调 storage.clearAll() 做一次批量 SQL，避免逐节点 IPC；
+   * - 画布目录里的文件不动——那是用户自己的数据，删了救不回来。
+   */
+  async clearAll(): Promise<void> {
+    // 先对每个节点跑 beforeDestroy（可能 throw，但语义上清画布就是要兜底）
+    for (const node of [...this.nodesById.values()]) {
+      try {
+        await node.beforeDestroy()
+      } catch (err) {
+        console.warn('[Scene.clearAll] beforeDestroy 失败，仍继续清理：', node.id, err)
+      }
+    }
+    // 断开所有边（内部会调 EdgeBinder.disconnect 释放端口绑定）
+    for (const edge of [...this.edges]) {
+      this.edgesBinder.disconnect(edge)
+    }
+    // 清内部集合
+    this.nodesById.clear()
+    this.edges.clear()
+    // 清所有 persist 定时器和登记
+    for (const timer of this.persistTimers.values()) clearTimeout(timer)
+    this.persistTimers.clear()
+    this.persistRegistered.clear()
+    // 批量落库清 DB（一次 SQL 搞定，省 IPC 次数）
+    this.storage?.clearAll?.()
+    this.notifyChanged()
+  }
+
   /** 保存视口：平移 + 缩放 */
   saveViewport(x: number, y: number, scale: number): void {
     this.storage?.saveViewport(x, y, scale)

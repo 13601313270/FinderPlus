@@ -28,7 +28,14 @@ const zh: Language = {
     importConfirmBody: '导入将用备份覆盖当前画板、文件和设置，且无法撤销。确定继续？',
     onboardingSection: '新手引导',
     onboardingHint: '再看一遍 Finder+ 的基本操作流程：拖入文件、连接节点。',
-    onboardingRestart: '重新观看新手引导'
+    onboardingRestart: '重新观看新手引导',
+    clearSection: '画布操作',
+    clearHint: '一键清空画布上所有节点和连线。画布目录下的文件不会被删除。',
+    clearButton: '清空画布',
+    clearConfirmTitle: '确定清空画布？',
+    clearConfirmBody: '这将移除画布上的所有节点和连线，且无法撤销。画布目录下的文件不会被删除。继续？',
+    clearSuccess: '画布已清空。',
+    clearAlreadyEmpty: '画布已经是空的了'
   },
   helpCenter: {
     title: '帮助中心',

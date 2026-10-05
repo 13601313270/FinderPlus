@@ -87,6 +87,14 @@ export class SqliteStorage implements NodeStorage {
     persist()
   }
 
+  clearAll(): void {
+    // edges 有 ON DELETE CASCADE（nodes → edges），所以只删 nodes 就够。
+    // 但显式先删 edges 再删 nodes，更稳妥（避免未来 schema 改了外键方向搞炸）。
+    this.db.run('DELETE FROM edges WHERE canvas_id = ?', [CANVAS_ID])
+    this.db.run('DELETE FROM nodes WHERE canvas_id = ?', [CANVAS_ID])
+    persist()
+  }
+
   // —— 启动时读取：不在 NodeStorage 接口里，主进程 IPC handler（db:loadCanvas）会调 ——
 
   /** 读 nodes 表，返回纯数据 */

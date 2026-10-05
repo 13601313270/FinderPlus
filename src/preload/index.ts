@@ -41,6 +41,9 @@ const canvasDeskDb = {
   saveViewport: (args: { x: number; y: number; scale: number }): Promise<boolean> =>
     ipcRenderer.invoke('db:saveViewport', args),
 
+  /** 批量清空画布：一次调用清 nodes + edges 表，省 IPC 次数 */
+  clearCanvas: (): Promise<boolean> => ipcRenderer.invoke('db:clearCanvas'),
+
   loadCanvas: (): Promise<{
     nodes: Array<{ id: string; type: string; posX: number; posY: number; paramsJson: string }>
     edges: Array<{

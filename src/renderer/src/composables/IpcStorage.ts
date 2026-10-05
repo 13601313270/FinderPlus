@@ -52,4 +52,8 @@ export class IpcStorage implements NodeStorage {
   saveViewport(x: number, y: number, scale: number): void {
     window.canvasDeskDb.saveViewport({ x, y, scale })
   }
+
+  clearAll(): void {
+    window.canvasDeskDb.clearCanvas()
+  }
 }

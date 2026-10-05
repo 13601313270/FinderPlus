@@ -18,6 +18,8 @@ import {
 } from '../../../main/nodePlugin/ImageGenNode/providers'
 import { useImageSettings } from '@renderer/composables/useImageSettings'
 import SelectMenu from './SelectMenu.vue'
+import { workspaceScene } from '../../../main/engine/graph/SceneRegistry'
+import { viewport } from '@renderer/canvas/viewport'
 
 /**
  * 全局设置弹窗（机制版）：
@@ -220,11 +222,14 @@ onMounted(() => {
   document.addEventListener('keydown', onKeyDown)
   // 系统应用菜单（macOS 顶部菜单栏「设置…」）触发的入口 → 打开同一个弹窗
   disposeMenuListener = window.appMenuApi?.onOpenSettings(openSettings)
+  // 订阅 Scene 变化，让 canvasIsEmpty computed 能实时响应
+  unsubscribeSceneSettings = workspaceScene.onChanged(onSceneTickForSettings)
 })
 
 onUnmounted(() => {
   document.removeEventListener('keydown', onKeyDown)
   disposeMenuListener?.()
+  unsubscribeSceneSettings?.()
 })
 
 // —— LLM 保存反馈 ——
@@ -247,6 +252,44 @@ function onSaveImageProviderKey(provider: ImageProviderId): void {
   setTimeout(() => {
     savedImageProviders.value.delete(provider)
   }, 1500)
+}
+
+// —— 清空画布 ——
+/** 让 computed 响应 Scene 结构变化的 tick */
+const sceneTick = ref(0)
+let unsubscribeSceneSettings: (() => void) | undefined
+
+function onSceneTickForSettings(): void {
+  sceneTick.value++
+}
+
+/** 画布是否已经是空的（无节点无边） */
+const canvasIsEmpty = computed(() => {
+  sceneTick.value // 只做依赖登记
+  return workspaceScene.allNodes.length === 0 && workspaceScene.allEdges.length === 0
+})
+
+const clearBusy = ref(false)
+
+async function handleClearCanvas(): Promise<void> {
+  const ok = window.confirm(
+    `${t('settingsDialog.clearConfirmTitle')}\n\n${t('settingsDialog.clearConfirmBody')}`
+  )
+  if (!ok) return
+  clearBusy.value = true
+  try {
+    await workspaceScene.clearAll()
+    // 顺便把视口也复位
+    viewport.x = 0
+    viewport.y = 0
+    viewport.scale = 1
+    closeSettings()
+    alert(t('settingsDialog.clearSuccess'))
+  } catch (err) {
+    alert(`Clear failed: ${err instanceof Error ? err.message : String(err)}`)
+  } finally {
+    clearBusy.value = false
+  }
 }
 </script>
 
@@ -396,6 +439,21 @@ function onSaveImageProviderKey(provider: ImageProviderId): void {
                 type="button"
                 @click="onRestartOnboarding"
               >{{ t('settingsDialog.onboardingRestart') }}</button>
+            </div>
+          </section>
+
+          <!-- 清空画布 -->
+          <section class="gs-section">
+            <h4 class="gs-section__title">{{ t('settingsDialog.clearSection') }}</h4>
+            <p class="gs-section__hint">{{ t('settingsDialog.clearHint') }}</p>
+            <div class="gs-transfer__actions">
+              <button
+                class="gs-btn"
+                type="button"
+                :disabled="clearBusy || canvasIsEmpty"
+                @click="handleClearCanvas"
+              >{{ t('settingsDialog.clearButton') }}</button>
+              <span v-if="canvasIsEmpty" class="gs-clear__empty">{{ t('settingsDialog.clearAlreadyEmpty') }}</span>
             </div>
           </section>
         </div>

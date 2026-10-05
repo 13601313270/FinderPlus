@@ -30,6 +30,7 @@ const { hasKey } = useLLMSettings()
 
 const t = useLocalizedMessages(messages)
 const showHelp = ref(false)
+const showFullResponse = ref(false)
 const llmNode = shallowRef<LLMNode | undefined>(undefined)
 
 const nodeTitle = useNodeTitle(() => llmNode.value, '?')
@@ -203,6 +204,15 @@ function onSendClick(): void {
       <template v-else>
         {{ llmNode ? (promptConnected ? t('waitingUpstream') : t('promptHint')) : t('nodeMissing') }}
       </template>
+
+      <button
+        v-if="response"
+        class="llm-output__expand"
+        type="button"
+        :title="t('expandResult')"
+        @pointerdown.stop
+        @click.stop="showFullResponse = true"
+      >⤢</button>
     </div>
 
     <!-- 底部操作栏：无连线时左 textarea + 右按钮；有连线时左自动开关 + 右按钮 -->
@@ -237,6 +247,16 @@ function onSendClick(): void {
   <!-- 帮助弹窗 -->
   <HelpDialog :visible="showHelp" :title="t('helpDialogTitle')" @close="showHelp = false">
     <LLMHelpDialog />
+  </HelpDialog>
+
+  <!-- 完整响应覆层 -->
+  <HelpDialog
+    :visible="showFullResponse"
+    :title="t('fullResponseDialogTitle')"
+    width="80vw"
+    @close="showFullResponse = false"
+  >
+    <pre class="full-response">{{ response }}</pre>
   </HelpDialog>
 </template>
 
@@ -511,6 +531,7 @@ function onSendClick(): void {
 
 .llm-output {
   padding: 10px;
+  padding-right: 32px; // 给右上角展开按钮留空间
   border: 1px solid #d5d9e0;
   border-radius: 6px;
   font-size: 13px;
@@ -523,6 +544,7 @@ function onSendClick(): void {
   gap: 8px;
   color: #1f2937;
   overflow: auto;
+  position: relative; // 展开按钮的绝对定位锚点
 
   &--empty {
     color: #9aa2ad;
@@ -553,6 +575,48 @@ function onSendClick(): void {
   &__loading-text {
     font-size: 12px;
   }
+
+  &__expand {
+    all: unset;
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    cursor: pointer;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    font-size: 18px;
+    line-height: 1;
+    color: #9ca3af;
+    border: solid 1px transparent;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+
+    &:hover {
+      background: #dbeafe;
+      color: #2563eb;
+      border-color: #bfdbfe;
+    }
+  }
+}
+
+/* 完整响应弹窗内的 pre */
+.full-response {
+  margin: 0;
+  padding: 12px 16px;
+  max-height: 70vh;
+  overflow: auto;
+  font-size: 13px;
+  line-height: 1.6;
+  font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+  white-space: pre-wrap;
+  word-break: break-all;
+  background: #f7f8fa;
+  border-radius: 8px;
+  color: #1f2937;
+  user-select: text;
 }
 
 @keyframes spin {

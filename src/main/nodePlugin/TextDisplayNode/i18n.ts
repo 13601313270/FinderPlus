@@ -108,5 +108,39 @@ export const messages = {
     vi: 'Trợ giúp nút Hiển thị văn bản',
     tr: 'Metin Görüntüleme düğümü yardımı',
     it: 'Guida del nodo Visualizzazione testo'
+  },
+  previewHint: {
+    zh: '全屏预览',
+    en: 'Fullscreen preview',
+    ja: 'フルスクリーンプレビュー',
+    ko: '전체 화면 미리보기',
+    es: 'Vista previa a pantalla completa',
+    ar: 'معاينة ملء الشاشة',
+    fr: 'Aperçu plein écran',
+    pt: 'Pré-visualização em tela cheia',
+    ru: 'Полноэкранный просмотр',
+    hi: 'फुलस्क्रीन पूर्वावलोकन',
+    id: 'Pratinjau layar penuh',
+    de: 'Vollbild-Vorschau',
+    vi: 'Xem trước toàn màn hình',
+    tr: 'Tam ekran önizleme',
+    it: 'Anteprima a schermo intero'
+  },
+  previewDialogTitle: {
+    zh: '文本预览',
+    en: 'Text preview',
+    ja: 'テキストプレビュー',
+    ko: '텍스트 미리보기',
+    es: 'Vista previa de texto',
+    ar: 'معاينة النص',
+    fr: 'Aperçu du texte',
+    pt: 'Pré-visualização de texto',
+    ru: 'Просмотр текста',
+    hi: 'पाठ पूर्वावलोकन',
+    id: 'Pratinjau teks',
+    de: 'Textvorschau',
+    vi: 'Xem trước văn bản',
+    tr: 'Metin önizleme',
+    it: 'Anteprima testo'
   }
 } satisfies Record<string, LocalizedText>

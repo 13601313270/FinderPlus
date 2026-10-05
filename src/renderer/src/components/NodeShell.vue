@@ -117,6 +117,7 @@ function onContextMenu(e: MouseEvent): void {
   position: absolute;
   display: flex;
   align-items: stretch; // 两侧 ports-col 高度跟随 content
+  z-index: 2;
 
   &--floating {
     pointer-events: none;

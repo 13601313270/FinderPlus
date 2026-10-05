@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { StringConcatNode } from './node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
@@ -33,6 +33,14 @@ const t = useLocalizedMessages(messages)
 const showHelp = ref(false)
 // 查看完整拼接结果的覆层开关
 const showFullResult = ref(false)
+// 大窗口模板编辑弹窗开关
+const showEditTemplate = ref(false)
+
+const editTemplateRef = ref<HTMLTextAreaElement | null>(null)
+watch(showEditTemplate, (val) => {
+  if (!val) return
+  nextTick(() => editTemplateRef.value?.focus())
+})
 
 const templateValue = ref('')
 const resultValue = ref('')
@@ -142,15 +150,29 @@ function onResizePointerDown(e: PointerEvent): void {
       >?</button>
     </div>
 
-    <textarea
-      class="node__template"
-      rows="3"
-      :value="templateValue"
-      :disabled="!concatNode"
-      :placeholder="t('templatePlaceholder')"
-      @wheel="onTextareaWheel"
-      @input="onInput"
-    />
+    <div class="node__template-wrap">
+      <textarea
+        class="node__template"
+        rows="3"
+        :value="templateValue"
+        :disabled="!concatNode"
+        :placeholder="t('templatePlaceholder')"
+        @wheel="onTextareaWheel"
+        @input="onInput"
+      />
+      <button
+        class="node__template-edit"
+        type="button"
+        :title="t('editTemplateHint')"
+        @pointerdown.stop
+        @click.stop="showEditTemplate = true"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+        </svg>
+      </button>
+    </div>
 
     <div class="node__ports">
       <span class="node__ports-count">{{ t('portsCount', { n: inputCount }) }}</span>
@@ -209,6 +231,23 @@ function onResizePointerDown(e: PointerEvent): void {
   >
     <pre class="full-result">{{ resultValue }}</pre>
   </HelpDialog>
+
+  <!-- 大窗口模板编辑 -->
+  <HelpDialog
+    :visible="showEditTemplate"
+    :title="t('editTemplateDialogTitle')"
+    width="90vw"
+    @close="showEditTemplate = false"
+  >
+    <textarea
+      ref="editTemplateRef"
+      class="template-edit-textarea"
+      :value="templateValue"
+      :disabled="!concatNode"
+      :placeholder="t('templatePlaceholder')"
+      @input="onInput"
+    />
+  </HelpDialog>
 </template>
 
 <style scoped lang="less">
@@ -216,7 +255,6 @@ function onResizePointerDown(e: PointerEvent): void {
   box-sizing: border-box;
   width: 100%;
   height: 100%;
-  overflow: auto;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -272,8 +310,11 @@ function onResizePointerDown(e: PointerEvent): void {
 
   &__template {
     width: 100%;
+    height: 80px;
+    overflow: hidden;
     box-sizing: border-box;
     padding: 6px 8px;
+    padding-right: 28px; // 给右上角编辑按钮留空间
     border: 1px solid #d5d9e0;
     border-radius: 6px;
     font-size: 13px;
@@ -283,6 +324,38 @@ function onResizePointerDown(e: PointerEvent): void {
 
     &:disabled {
       opacity: 0.5;
+    }
+  }
+
+  &__template-wrap {
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  &__template-edit {
+    all: unset;
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    cursor: pointer;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    background: #f3f4f6;
+    color: #6b7280;
+    transition: background 0.15s, color 0.15s;
+
+    svg {
+      width: 12px;
+      height: 12px;
+    }
+
+    &:hover {
+      background: #dbeafe;
+      color: #2563eb;
     }
   }
 
@@ -398,5 +471,32 @@ function onResizePointerDown(e: PointerEvent): void {
   border-radius: 8px;
   color: #1f2937;
   user-select: text;
+}
+
+/* 大窗口模板编辑弹窗内的 textarea */
+.template-edit-textarea {
+  display: block;
+  width: 100%;
+  height: 65vh;
+  box-sizing: border-box;
+  padding: 12px 14px;
+  border: 1px solid #d5d9e0;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1.6;
+  font-family: inherit;
+  resize: none;
+  white-space: pre-wrap;
+  word-break: break-all;
+  overflow-y: auto;
+
+  &:focus {
+    outline: none;
+    border-color: #2563eb;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+  }
 }
 </style>

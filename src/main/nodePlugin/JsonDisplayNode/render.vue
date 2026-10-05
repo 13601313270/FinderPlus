@@ -117,7 +117,7 @@ const expandTitle = computed(() => t('expand'))
       >?</button>
     </div>
 
-    <div class="render-body" @wheel="onNodeWheel">
+    <div class="render-body">
       <!-- 还没接过输入 -->
       <div v-if="!hasInput" class="render-empty">{{ t('noInput') }}</div>
 

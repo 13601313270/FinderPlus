@@ -193,5 +193,39 @@ export const messages = {
     vi: 'Kết quả ghép chuỗi',
     tr: 'Birleştirme sonucu',
     it: 'Risultato della concatenazione'
+  },
+  editTemplateHint: {
+    zh: '在大窗口中编辑模板',
+    en: 'Edit template in large window',
+    ja: '大きなウィンドウでテンプレートを編集',
+    ko: '큰 창에서 템플릿 편집',
+    es: 'Editar plantilla en ventana grande',
+    ar: 'تحرير القالب في نافذة كبيرة',
+    fr: 'Modifier le modèle dans une grande fenêtre',
+    pt: 'Editar modelo em janela grande',
+    ru: 'Редактировать шаблон в большом окне',
+    hi: 'बड़ी विंडो में टेम्पलेट संपादित करें',
+    id: 'Edit templat di jendela besar',
+    de: 'Vorlage in großem Fenster bearbeiten',
+    vi: 'Chỉnh sửa mẫu trong cửa sổ lớn',
+    tr: 'Şablonu büyük pencerede düzenle',
+    it: 'Modifica modello in finestra grande'
+  },
+  editTemplateDialogTitle: {
+    zh: '模板编辑',
+    en: 'Template editor',
+    ja: 'テンプレートエディタ',
+    ko: '템플릿 편집기',
+    es: 'Editor de plantilla',
+    ar: 'محرر القالب',
+    fr: 'Éditeur de modèle',
+    pt: 'Editor de modelo',
+    ru: 'Редактор шаблона',
+    hi: 'टेम्पलेट संपादक',
+    id: 'Editor templat',
+    de: 'Vorlageneditor',
+    vi: 'Trình soạn thảo mẫu',
+    tr: 'Şablon düzenleyici',
+    it: 'Editor di modello'
   }
 } satisfies Record<string, LocalizedText>

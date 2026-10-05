@@ -187,7 +187,6 @@ function onSendClick(): void {
     <!-- 输出区 -->
     <div
       class="llm-output"
-      @wheel.stop
       :class="{
         'llm-output--empty': !response && status !== 'loading',
         'llm-output--error': status === 'error',

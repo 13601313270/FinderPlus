@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { debounce } from 'lodash-es'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { TextInputNode } from './node'
@@ -47,6 +47,92 @@ const autoSend = ref(false)
 // 帮助浮层开关（弹窗壳由 HelpDialog 负责）
 const showHelp = ref(false)
 
+// 大窗口编辑弹窗开关
+const showEdit = ref(false)
+
+// —— 虚拟滚动条相关状态 ——
+const textareaRef = ref<HTMLTextAreaElement | null>(null)
+const contentScrollTop = ref(0)
+const contentScrollHeight = ref(0)
+const contentClientHeight = ref(0)
+
+/** 内容是否可滚动（有溢出才显示滚动条） */
+const isScrollable = () => contentScrollHeight.value > contentClientHeight.value + 1
+
+/** 刷新滚动指标：scrollTop/scrollHeight/clientHeight */
+function updateScrollMetrics(): void {
+  const el = textareaRef.value
+  if (!el) return
+  contentScrollTop.value = el.scrollTop
+  contentScrollHeight.value = el.scrollHeight
+  contentClientHeight.value = el.clientHeight
+}
+
+// —— ResizeObserver：尺寸变化时更新滚动指标 ——
+let resizeObserver: ResizeObserver | undefined
+
+// —— 虚拟滚动条拖动 ——
+let scrollDragActive = false
+let scrollDragStartY = 0
+let scrollDragStartTop = 0
+
+function onThumbPointerDown(e: PointerEvent): void {
+  e.stopPropagation()
+  e.preventDefault()
+  if (!textareaRef.value) return
+
+  scrollDragActive = true
+  scrollDragStartY = e.clientY
+  scrollDragStartTop = textareaRef.value.scrollTop
+
+  window.addEventListener('pointermove', onScrollThumbMove)
+  window.addEventListener('pointerup', onScrollThumbEnd)
+}
+
+/** track 的实际高度（留出上下各 2px 的呼吸空间） */
+function trackHeightPx(): number {
+  return Math.max(0, contentClientHeight.value - 4)
+}
+
+function onScrollThumbMove(e: PointerEvent): void {
+  if (!scrollDragActive || !textareaRef.value) return
+  const el = textareaRef.value
+
+  const scale = viewport.scale || 1
+  const fullScroll = contentScrollHeight.value - contentClientHeight.value
+  const thumbHeightPx = thumbHeight()
+
+  const trackUsable = trackHeightPx() - thumbHeightPx
+  if (trackUsable <= 0) return
+  const ratio = fullScroll / trackUsable
+
+  const delta = (e.clientY - scrollDragStartY) / scale
+  el.scrollTop = Math.max(0, Math.min(fullScroll, scrollDragStartTop + delta * ratio))
+  updateScrollMetrics()
+}
+
+function onScrollThumbEnd(): void {
+  scrollDragActive = false
+  window.removeEventListener('pointermove', onScrollThumbMove)
+  window.removeEventListener('pointerup', onScrollThumbEnd)
+}
+
+/** 滚动条 thumb 的像素高度（映射到 track 高度） */
+function thumbHeight(): number {
+  if (contentScrollHeight.value <= 0 || contentClientHeight.value <= 0) return 0
+  const ratio = contentClientHeight.value / contentScrollHeight.value
+  const min = 20
+  return Math.max(min, trackHeightPx() * ratio)
+}
+
+/** 滚动条 thumb 的 top 偏移（映射滚动比例） */
+function thumbTop(): number {
+  const fullScroll = contentScrollHeight.value - contentClientHeight.value
+  if (fullScroll <= 0) return 0
+  const trackUsable = trackHeightPx() - thumbHeight()
+  return (contentScrollTop.value / fullScroll) * trackUsable
+}
+
 let offChanged: (() => void) | undefined
 
 /**
@@ -66,11 +152,29 @@ onMounted(() => {
     textValue.value = node.text
     autoSend.value = node.isAutoSend
   })
+
+  // 虚拟滚动条：绑定 scroll 监听 + ResizeObserver，刷新滚动指标
+  nextTick(() => {
+    const el = textareaRef.value
+    if (!el) return
+    el.addEventListener('scroll', updateScrollMetrics, { passive: true })
+    resizeObserver = new ResizeObserver(updateScrollMetrics)
+    resizeObserver.observe(el)
+    updateScrollMetrics()
+  })
+})
+
+// 文本变了（内容变长/变短）也要刷新滚动指标
+watch(textValue, () => {
+  nextTick(updateScrollMetrics)
 })
 
 onUnmounted(() => {
   offChanged?.()
   debouncedSend.cancel()
+  resizeObserver?.disconnect()
+  textareaRef.value?.removeEventListener('scroll', updateScrollMetrics)
+  onScrollThumbEnd()
 })
 
 // 只要拖拽（落点写回 node.position）；位置本身由外壳跟随 node.position 展示。
@@ -105,23 +209,29 @@ function onKeydown(e: KeyboardEvent): void {
   }
 }
 
-/**
- * 滚动接力：textarea 还能往当前方向滚时才 stop 事件，
- * 滚到顶/底了就放行让画布接管平移。
- */
-function onTextareaWheel(e: WheelEvent): void {
-  const el = e.currentTarget as HTMLTextAreaElement
-  const { scrollTop, scrollHeight, clientHeight } = el
-  const atTop = scrollTop <= 0
-  const atBottom = scrollTop + clientHeight >= scrollHeight
+// —— 大窗口编辑弹窗相关 ——
+const editTextareaRef = ref<HTMLTextAreaElement | null>(null)
 
-  const scrollingUp = e.deltaY < 0
-  const scrollingDown = e.deltaY > 0
-
-  if ((scrollingUp && atTop) || (scrollingDown && atBottom)) return
-
-  e.stopPropagation()
+/** 弹窗里的 textarea 快捷键：Ctrl/Cmd+Enter 发送并关闭 */
+function onEditKeydown(e: KeyboardEvent): void {
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+    e.preventDefault()
+    onSend()
+    showEdit.value = false
+  }
 }
+
+/** 弹窗底部发送按钮：发送后关闭弹窗 */
+function onSendAndClose(): void {
+  onSend()
+  showEdit.value = false
+}
+
+/** 弹窗打开后自动 focus textarea，方便立刻输入 */
+watch(showEdit, (val) => {
+  if (!val) return
+  nextTick(() => editTextareaRef.value?.focus())
+})
 
 // —— 右下角拖拽调整尺寸 ——
 let resizing = false
@@ -168,21 +278,46 @@ function onResizeEnd(): void {
         <button
           class="node__help"
           type="button"
+          :title="t('editHint')"
+          @pointerdown.stop
+          @click.stop="showEdit = true"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+          </svg>
+        </button>
+        <button
+          class="node__help"
+          type="button"
           :title="t('helpTitle')"
           @pointerdown.stop
           @click.stop="showHelp = true"
         >?</button>
       </div>
     </div>
-    <textarea
-      class="render-input"
-      :value="textValue"
-      :disabled="!inputNode"
-      :placeholder="inputNode ? t('placeholderMultiline') : t('nodeMissing')"
-      @wheel="onTextareaWheel"
-      @input="onInput"
-      @keydown="onKeydown"
-    />
+    <div class="render-input-container">
+      <textarea
+        ref="textareaRef"
+        class="render-input"
+        :value="textValue"
+        :disabled="!inputNode"
+        :placeholder="inputNode ? t('placeholderMultiline') : t('nodeMissing')"
+        @input="onInput"
+        @keydown="onKeydown"
+      />
+      <!-- 虚拟滚动条：只在有溢出时显示，thumb 可拖动 -->
+      <div
+        v-if="isScrollable()"
+        class="virtual-scroll-track"
+      >
+        <div
+          class="virtual-scroll-thumb"
+          :style="{ height: thumbHeight() + 'px', transform: 'translateY(' + thumbTop() + 'px)' }"
+          @pointerdown.stop.prevent="onThumbPointerDown"
+        />
+      </div>
+    </div>
     <div class="node__footer">
       <label class="node__switch" :title="autoSend ? t('autoSendOn') : t('autoSendOff')">
         <span class="node__switch-label">{{ t('autoSend') }}</span>
@@ -218,6 +353,31 @@ function onResizeEnd(): void {
   <HelpDialog :visible="showHelp" :title="t('helpDialogTitle')" @close="showHelp = false">
     <TextInputHelpDialog />
   </HelpDialog>
+
+  <!-- 大窗口编辑：width 90vw，内部 textarea 原生可滚 -->
+  <HelpDialog :visible="showEdit" :title="t('editDialogTitle')" width="90vw" @close="showEdit = false">
+    <div class="edit-dialog-body">
+      <textarea
+        class="edit-textarea"
+        :value="textValue"
+        :disabled="!inputNode"
+        :placeholder="inputNode ? t('placeholderMultiline') : t('nodeMissing')"
+        @input="onInput"
+        @keydown="onEditKeydown"
+        ref="editTextareaRef"
+      />
+      <div class="edit-dialog-footer">
+        <span class="edit-dialog-hint">Ctrl/Cmd + Enter 发送并关闭</span>
+        <button
+          class="node__send"
+          type="button"
+          :disabled="!inputNode || autoSend"
+          :title="autoSend ? t('autoSendDisabled') : t('sendHint')"
+          @click="onSendAndClose"
+        >{{ t('send') }}</button>
+      </div>
+    </div>
+  </HelpDialog>
 </template>
 
 <style scoped lang="less">
@@ -225,7 +385,7 @@ function onResizeEnd(): void {
   box-sizing: border-box; // box 是内容区外包壳宽，border+padding 算在 box 内
   width: 100%; // 填满 NodeShell 的 .node-content（由 node.box 硬约束定宽高）
   height: 100%;
-  overflow: auto; // 内容超出 box 时可滚
+  overflow: hidden; // 外层不滚，滚动能力在内部 textarea 里
   position: relative; // 给 resize handle 当定位锚点
   display: flex;
   flex-direction: column;
@@ -280,6 +440,11 @@ function onResizeEnd(): void {
     font-weight: 600;
     line-height: 1;
     transition: background 0.15s ease, color 0.15s ease;
+
+    svg {
+      width: 12px;
+      height: 12px;
+    }
 
     &:hover {
       background: #dbeafe;
@@ -382,20 +547,74 @@ function onResizeEnd(): void {
   opacity: 0.5;
 }
 
+// 外层容器：position relative 用来锚定绝对定位的虚拟滚动条
+.render-input-container {
+  position: relative;
+  flex: 1;
+  min-height: 0; // flex 子项允许收缩，否则 overflow 不生效
+}
+
 .render-input {
   width: 100%;
+  height: 100%;
   box-sizing: border-box;
   padding: 8px 10px;
+  padding-right: 12px; // 给滚动条留一点呼吸空间
   border: 1px solid #d5d9e0;
   border-radius: 6px;
   font-size: 14px;
-  flex-shrink: 1;
-  flex-grow: 1;
   resize: none; // 原生 resize 关掉，由右下角 handle 统一管理
   font-family: inherit;
+  overflow-y: hidden;
+  // 隐藏原生滚动条，保留滚动功能
+  scrollbar-width: none;          // Firefox
+  &::-webkit-scrollbar {          // Chrome / Safari / Electron
+    display: none;
+  }
+
+  &:focus {
+    outline: none;
+    border-color: #2563eb;
+  }
 
   &:disabled {
     opacity: 0.5;
+  }
+}
+
+// 虚拟滚动条轨道：绝对定位贴在右侧
+.virtual-scroll-track {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  bottom: 2px;
+  width: 6px;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.12);
+  pointer-events: none; // 轨道本身不吃事件，只让 thumb 可点
+  opacity: 1;
+  transition: background 0.15s;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.18);
+  }
+}
+
+.virtual-scroll-thumb {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.32);
+  cursor: pointer;
+  pointer-events: auto;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.48);
+  }
+
+  &:active {
+    background: rgba(0, 0, 0, 0.6);
   }
 }
 
@@ -437,5 +656,50 @@ function onResizeEnd(): void {
       transparent 65%
     );
   }
+}
+
+// —— 大窗口编辑弹窗 ——
+.edit-dialog-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: 70vh; // 让 textarea 撑满 dialog body 的可用空间
+}
+
+.edit-textarea {
+  flex: 1;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px 14px;
+  border: 1px solid #d5d9e0;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1.6;
+  font-family: inherit;
+  resize: none;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+
+  &:focus {
+    outline: none;
+    border-color: #2563eb;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+  }
+}
+
+.edit-dialog-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.edit-dialog-hint {
+  font-size: 12px;
+  color: #9aa2ad;
 }
 </style>

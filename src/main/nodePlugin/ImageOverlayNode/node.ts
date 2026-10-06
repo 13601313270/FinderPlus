@@ -24,10 +24,13 @@ export interface LayerState {
   /** 是否已用真实 natural 尺寸初始化过（false = 占位值，允许自动覆盖；
    *  true = 用户可能已手动调整，不再自动覆盖） */
   initialized: boolean
-  /** 文本图层专用：默认字体 24px sans-serif，黑色 */
+  /** 文本图层专用：默认字体 48px sans-serif，黑色，左对齐，无背景 */
   fontSize?: number
   fontFamily?: string
   color?: string
+  textAlign?: 'left' | 'center' | 'right'
+  /** 文本图层背景色，undefined 表示透明（不画背景矩形） */
+  backgroundColor?: string
 }
 
 /**
@@ -187,10 +190,28 @@ export class ImageOverlayNode extends Node {
         this.layerStates.set(port.id, {
           kind,
           x: 0, y: 0, width: 0, height: 0, initialized: false,
-          fontSize: kind === 'text' ? 24 : undefined,
+          fontSize: kind === 'text' ? 48 : undefined,
           fontFamily: kind === 'text' ? 'sans-serif' : undefined,
-          color: kind === 'text' ? '#000000' : undefined
+          color: kind === 'text' ? '#000000' : undefined,
+          textAlign: kind === 'text' ? 'left' : undefined,
+          backgroundColor: undefined
         })
+      } else {
+        // 端口之前已存在 state，但如果 value 类型变了（image↔text），同步更新 kind
+        const existing = this.layerStates.get(port.id)!
+        if (existing.kind !== kind) {
+          this.layerStates.set(port.id, {
+            ...existing,
+            kind,
+            // 切类型时清理不属于新类型的字段，同时让 refreshLayers 重新测尺寸
+            initialized: false,
+            fontSize: kind === 'text' ? (existing.fontSize ?? 48) : undefined,
+            fontFamily: kind === 'text' ? (existing.fontFamily ?? 'sans-serif') : undefined,
+            color: kind === 'text' ? (existing.color ?? '#000000') : undefined,
+            textAlign: kind === 'text' ? (existing.textAlign ?? 'left') : undefined,
+            backgroundColor: kind === 'text' ? existing.backgroundColor : undefined
+          })
+        }
       }
     }
 
@@ -217,7 +238,9 @@ export class ImageOverlayNode extends Node {
       && updated.kind === existing.kind
       && updated.fontSize === existing.fontSize
       && updated.fontFamily === existing.fontFamily
-      && updated.color === existing.color) {
+      && updated.color === existing.color
+      && updated.textAlign === existing.textAlign
+      && updated.backgroundColor === existing.backgroundColor) {
       return
     }
     this.layerStates.set(portId, updated)
@@ -321,9 +344,12 @@ export class ImageOverlayNode extends Node {
     const parts: string[] = [`canvas:${this.canvasWidth},${this.canvasHeight}`]
     for (const o of orders) {
       const s = o.state
-      let layerPart = `${o.portId}:${s.kind}:${o.value.fingerprint}:${s.x},${s.y},${s.width},${s.height}`
-      if (s.kind === 'text') {
-        layerPart += `,fs:${s.fontSize ?? 24},ff:${s.fontFamily ?? 'sans-serif'},c:${s.color ?? '#000000'}`
+      // kind 从 value 类型推导（不用 s.kind，它可能过时——比如端口先连图片后换文字但 state 没更新）
+      const isText = o.value instanceof StringValue
+      const kind = isText ? 'text' : 'image'
+      let layerPart = `${o.portId}:${kind}:${o.value.fingerprint}:${s.x},${s.y},${s.width},${s.height}`
+      if (isText) {
+        layerPart += `,fs:${s.fontSize ?? 48},ff:${s.fontFamily ?? 'sans-serif'},c:${s.color ?? '#000000'},ta:${s.textAlign ?? 'left'},bg:${s.backgroundColor ?? '-'}`
       }
       parts.push(layerPart)
     }
@@ -405,7 +431,9 @@ export class ImageOverlayNode extends Node {
         initialized: v.initialized ?? false,
         fontSize: v.fontSize,
         fontFamily: v.fontFamily,
-        color: v.color
+        color: v.color,
+        textAlign: v.textAlign,
+        backgroundColor: v.backgroundColor
       })
     }
   }

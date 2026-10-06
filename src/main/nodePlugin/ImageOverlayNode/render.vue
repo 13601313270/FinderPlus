@@ -99,6 +99,7 @@ const selectedPortId = ref<string | null>(null)
 // —— 防抖合成计时器 ——
 let compositeTimer: ReturnType<typeof setTimeout> | null = null
 let compositing = false
+let pendingComposite = false  // 合成进行中又来了新请求，记下来等当前跑完再合成一次
 
 // —— 各端口 id → 加载好的 HTMLImageElement ——
 const loadedImages = new Map<string, HTMLImageElement>()
@@ -110,6 +111,9 @@ const previewAreaRef = ref<HTMLElement | null>(null)
 const fitScale = ref(1)      // 容器自适应算出的基础缩放
 const zoomFactor = ref(1)    // 用户在预览区里额外设置的缩放倍数
 const canvasSize = ref({ width: 1, height: 1 })
+
+/** 合成后的 dataURL，预览区直接显示这张图，所见即所得 */
+const compositeDataUrl = ref<string | null>(null)
 
 const ZOOM_STEP = 1.2
 const ZOOM_MIN_FACTOR = 0.1
@@ -125,8 +129,10 @@ const zoomPercent = computed(() => Math.round(previewScale.value * 100))
 function zoomBy(factor: number): void {
   const n = node.value
   if (!n) return
-  const next = n.zoomFactor * factor
-  n.setZoomFactor(Math.min(ZOOM_MAX_FACTOR, Math.max(ZOOM_MIN_FACTOR, next)))
+  // 只允许缩小或等比，不允许放大到超过容器
+  const maxFactor = Math.min(ZOOM_MAX_FACTOR, 1)
+  const next = Math.max(ZOOM_MIN_FACTOR, Math.min(maxFactor, n.zoomFactor * factor))
+  n.setZoomFactor(next)
 }
 
 function resetZoom(): void {
@@ -319,9 +325,9 @@ function refreshLayers(): void {
         text: textContent
       })
 
-      // 用离屏 canvas 测文字尺寸
-      if (!state.initialized || shouldResetDims) {
-        const fontSize = state.fontSize ?? 24
+      // 首次初始化时测一次文字尺寸，之后无论内容怎么变都不自动重算
+      if (!state.initialized) {
+        const fontSize = state.fontSize ?? 48
         const fontFamily = state.fontFamily ?? 'sans-serif'
         const { width, height } = measureText(textContent, fontSize, fontFamily)
         n.updateLayerTransform(port.id, {
@@ -532,12 +538,15 @@ function scheduleComposite(): void {
 }
 
 async function doComposite(): Promise<void> {
-  if (compositing) return
+  if (compositing) {
+    pendingComposite = true
+    return
+  }
   const n = node.value
   if (!n) return
 
   const key = n.compositeKey
-  if (key === null) { n.imageOutput.clear(); return }
+  if (key === null) { n.imageOutput.clear(); compositeDataUrl.value = null; return }
   if (key === n.lastCompositeK) return
 
   compositing = true
@@ -547,9 +556,11 @@ async function doComposite(): Promise<void> {
     if (orders.length === 0) { n.imageOutput.clear(); return }
 
     // 图片图层：优先复用 loadedImages 缓存，缺失则异步加载
+    // orders 正序是 layer-0→layer-N，但图层一要在最顶层，所以倒序画（先画的在下面）
+    const drawOrders = orders.slice().reverse()
     const images: (HTMLImageElement | null)[] = []
     const pending: { idx: number; file: File }[] = []
-    orders.forEach((o, idx) => {
+    drawOrders.forEach((o, idx) => {
       if (o.value instanceof ImgFileValue) {
         const cached = loadedImages.get(o.portId)
         if (cached) images[idx] = cached
@@ -566,7 +577,7 @@ async function doComposite(): Promise<void> {
         urls.push(url)
         return loadImageFromUrl(url).then((img) => {
           images[p.idx] = img
-          loadedImages.set(orders[p.idx].portId, img)
+          loadedImages.set(drawOrders[p.idx].portId, img)
         }).catch(() => {})
       })
       await Promise.all(tasks)
@@ -579,25 +590,41 @@ async function doComposite(): Promise<void> {
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    for (let i = 0; i < orders.length; i++) {
-      const o = orders[i]
+    for (let i = 0; i < drawOrders.length; i++) {
+      const o = drawOrders[i]
+      // 每一轮都从 node 读最新 state，确保样式变更（字号/颜色/对齐/背景）都能生效
+      const s = n.getLayerState(o.portId) ?? o.state
       if (o.value instanceof ImgFileValue) {
         const img = images[i]
         if (!img) continue
-        ctx.drawImage(img, o.state.x, o.state.y, o.state.width, o.state.height)
+        ctx.drawImage(img, s.x, s.y, s.width, s.height)
       } else if (o.value instanceof StringValue) {
         const text = o.value.isNull ? '' : (o.value.value ?? '')
-        const fontSize = o.state.fontSize ?? 24
-        const fontFamily = o.state.fontFamily ?? 'sans-serif'
-        const color = o.state.color ?? '#000000'
+        const fontSize = s.fontSize ?? 48
+        const fontFamily = s.fontFamily ?? 'sans-serif'
+        const color = s.color ?? '#000000'
+        const align = s.textAlign ?? 'left'
+        const bg = s.backgroundColor
+        // 先画背景矩形（如果设了背景色）
+        if (bg) {
+          ctx.fillStyle = bg
+          ctx.fillRect(s.x, s.y, s.width, s.height)
+        }
         ctx.font = `${fontSize}px ${fontFamily}`
         ctx.fillStyle = color
         ctx.textBaseline = 'top'
-        ctx.fillText(text, o.state.x, o.state.y)
+        ctx.textAlign = align
+        // 根据对齐方式计算起始 x
+        let x = s.x
+        if (align === 'center') x = s.x + s.width / 2
+        else if (align === 'right') x = s.x + s.width
+        ctx.fillText(text, x, s.y)
       }
     }
 
     const dataUrl = canvas.toDataURL('image/png')
+    // 预览和输出共用这同一张 canvas——所见即所得
+    compositeDataUrl.value = dataUrl
     const comma = dataUrl.indexOf(',')
     const base64 = comma >= 0 ? dataUrl.slice(comma + 1) : dataUrl
     const fileName = `overlay-${Date.now()}.png`
@@ -607,6 +634,11 @@ async function doComposite(): Promise<void> {
     // 静默
   } finally {
     compositing = false
+    // 合成期间又来了新请求——再合成一次，确保最终状态一致
+    if (pendingComposite) {
+      pendingComposite = false
+      scheduleComposite()
+    }
   }
 }
 
@@ -695,6 +727,19 @@ function onRemoveLayer(e: PointerEvent, portId: string): void {
   if (selectedPortId.value === portId) selectedPortId.value = null
   n.removeLayerPort(portId) // 基类 removeInput 内部已 notifyChanged → refreshLayers 自动触发
 }
+
+// —— 当前选中的文字图层（用于显示文字工具栏）——
+const selectedTextLayer = computed(() => {
+  if (!selectedPortId.value) return null
+  const layer = layers.value.find((l) => l.portId === selectedPortId.value)
+  if (layer && layer.connected && layer.kind === 'text') return layer
+  return null
+})
+
+function updateTextStyle(portId: string, partial: Partial<{ fontSize: number; color: string; textAlign: 'left' | 'center' | 'right'; backgroundColor: string | undefined }>): void {
+  node.value?.updateLayerTransform(portId, partial)
+  scheduleComposite()
+}
 </script>
 
 <template>
@@ -779,13 +824,139 @@ function onRemoveLayer(e: PointerEvent, portId: string): void {
 
       <!-- 右面板：画布预览 + 层内拖拽缩放 -->
       <div ref="previewAreaRef" class="overlay-card__preview" @pointerdown.stop="selectedPortId = null">
-        <!-- 预览缩放控件 -->
+        <!-- 顶部工具条：文字样式工具栏 + 缩放控件 -->
         <div
           v-if="layers.some(l => l.connected)"
-          class="overlay-card__preview-zoom"
+          class="overlay-card__preview-topbar"
           @pointerdown.stop
           @wheel.stop
         >
+          <!-- 文字样式工具栏（选中文字图层时显示，横向） -->
+          <div
+            v-if="selectedTextLayer"
+            class="overlay-card__text-toolbar"
+          >
+            <!-- 字号 -->
+            <label class="overlay-card__tb-row">
+              <span class="overlay-card__tb-label">字号</span>
+              <input
+                type="number"
+                min="8"
+                max="200"
+                :value="selectedTextLayer.state?.fontSize ?? 48"
+                @input="updateTextStyle(selectedTextLayer!.portId, { fontSize: Number(($event.target as HTMLInputElement).value) })"
+              >
+              <span class="overlay-card__tb-unit">px</span>
+            </label>
+
+            <!-- 颜色 -->
+            <label class="overlay-card__tb-row">
+              <span class="overlay-card__tb-label">颜色</span>
+              <input
+                type="color"
+                :value="selectedTextLayer.state?.color ?? '#000000'"
+                @input="updateTextStyle(selectedTextLayer!.portId, { color: ($event.target as HTMLInputElement).value })"
+              >
+            </label>
+
+            <!-- 背景 -->
+            <label class="overlay-card__tb-row">
+              <span class="overlay-card__tb-label">背景</span>
+              <input
+                type="color"
+                :value="selectedTextLayer.state?.backgroundColor ?? '#ffffff'"
+                :style="{ opacity: selectedTextLayer.state?.backgroundColor ? 1 : 0.4 }"
+                @input="updateTextStyle(selectedTextLayer!.portId, { backgroundColor: ($event.target as HTMLInputElement).value })"
+              >
+              <button
+                v-if="selectedTextLayer.state?.backgroundColor"
+                class="overlay-card__tb-clear-bg"
+                type="button"
+                title="清除背景"
+                @click="updateTextStyle(selectedTextLayer!.portId, { backgroundColor: undefined })"
+              >×</button>
+            </label>
+
+            <!-- 对齐 -->
+            <div class="overlay-card__tb-row">
+              <span class="overlay-card__tb-label">对齐</span>
+              <div class="overlay-card__tb-align">
+                <button
+                  class="overlay-card__tb-align-btn"
+                  :class="{ 'is-active': (selectedTextLayer.state?.textAlign ?? 'left') === 'left' }"
+                  type="button"
+                  title="左对齐"
+                  @click="updateTextStyle(selectedTextLayer!.portId, { textAlign: 'left' })"
+                >
+                  <svg viewBox="0 0 16 16" width="12" height="12"><path d="M2 3h12M2 6h8M2 9h12M2 12h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/></svg>
+                </button>
+                <button
+                  class="overlay-card__tb-align-btn"
+                  :class="{ 'is-active': (selectedTextLayer.state?.textAlign ?? 'left') === 'center' }"
+                  type="button"
+                  title="居中"
+                  @click="updateTextStyle(selectedTextLayer!.portId, { textAlign: 'center' })"
+                >
+                  <svg viewBox="0 0 16 16" width="12" height="12"><path d="M2 3h12M4 6h8M2 9h12M4 12h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/></svg>
+                </button>
+                <button
+                  class="overlay-card__tb-align-btn"
+                  :class="{ 'is-active': (selectedTextLayer.state?.textAlign ?? 'left') === 'right' }"
+                  type="button"
+                  title="右对齐"
+                  @click="updateTextStyle(selectedTextLayer!.portId, { textAlign: 'right' })"
+                >
+                  <svg viewBox="0 0 16 16" width="12" height="12"><path d="M2 3h12M6 6h8M2 9h12M6 12h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div style="flex: 1"></div>
+        </div>
+
+        <div
+          v-if="layers.some(l => l.connected) || compositeDataUrl"
+          class="overlay-card__preview-canvas"
+          :style="{
+            width: canvasToDom(canvasSize.width) + 'px',
+            height: canvasToDom(canvasSize.height) + 'px'
+          }"
+        >
+          <!-- 底层：合成后的完整图片——预览和输出共用同一张 canvas，所见即所得 -->
+          <img
+            v-if="compositeDataUrl"
+            class="overlay-card__preview-composite"
+            :src="compositeDataUrl"
+            :width="canvasSize.width"
+            :height="canvasSize.height"
+            draggable="false"
+          />
+          <!-- 上层：交互壳子——只负责选中态 outline + resize handle，不渲染图层内容 -->
+          <div
+            v-for="layer in layers.filter(l => l.connected).slice().reverse()"
+            :key="layer.portId"
+            class="overlay-card__preview-layer"
+            :class="{ 'is-selected': selectedPortId === layer.portId }"
+            :style="{
+              left: canvasToDom(layer.state!.x) + 'px',
+              top: canvasToDom(layer.state!.y) + 'px',
+              width: canvasToDom(layer.state!.width) + 'px',
+              height: canvasToDom(layer.state!.height) + 'px'
+            }"
+            @pointerdown.stop="onCanvasLayerPointerDown($event, layer.portId)"
+          >
+            <template v-if="selectedPortId === layer.portId">
+              <div class="resize-handle resize-handle--tl" @pointerdown.stop="onResizeHandlePointerDown($event, layer.portId, 'tl')"></div>
+              <div class="resize-handle resize-handle--tr" @pointerdown.stop="onResizeHandlePointerDown($event, layer.portId, 'tr')"></div>
+              <div class="resize-handle resize-handle--bl" @pointerdown.stop="onResizeHandlePointerDown($event, layer.portId, 'bl')"></div>
+              <div class="resize-handle resize-handle--br" @pointerdown.stop="onResizeHandlePointerDown($event, layer.portId, 'br')"></div>
+            </template>
+          </div>
+        </div>
+        <div v-else class="overlay-card__empty-hint">{{ t('emptyHint') }}</div>
+        <!-- 缩放控件 -->
+        <div class="overlay-card__preview-zoom">
           <button
             class="overlay-card__preview-zoom-btn"
             type="button"
@@ -805,53 +976,6 @@ function onRemoveLayer(e: PointerEvent, portId: string): void {
             @click="zoomBy(ZOOM_STEP)"
           >＋</button>
         </div>
-
-        <div
-          v-if="layers.some(l => l.connected)"
-          class="overlay-card__preview-canvas"
-          :style="{
-            width: canvasToDom(canvasSize.width) + 'px',
-            height: canvasToDom(canvasSize.height) + 'px'
-          }"
-        >
-          <div
-            v-for="layer in layers.filter(l => l.connected).slice().reverse()"
-            :key="layer.portId"
-            class="overlay-card__preview-layer"
-            :class="{ 'is-selected': selectedPortId === layer.portId }"
-            :style="{
-              left: canvasToDom(layer.state!.x) + 'px',
-              top: canvasToDom(layer.state!.y) + 'px',
-              width: canvasToDom(layer.state!.width) + 'px',
-              height: canvasToDom(layer.state!.height) + 'px'
-            }"
-            @pointerdown.stop="onCanvasLayerPointerDown($event, layer.portId)"
-          >
-            <img
-              v-if="layer.kind === 'image'"
-              :src="layer.thumbnailUrl"
-              :alt="layer.fileName"
-              draggable="false"
-            />
-            <div
-              v-else
-              class="overlay-card__preview-text"
-              :style="{
-                fontSize: (layer.state!.fontSize ?? 24) + 'px',
-                fontFamily: layer.state!.fontFamily ?? 'sans-serif',
-                color: layer.state!.color ?? '#000000'
-              }"
-            >{{ layer.text }}</div>
-
-            <template v-if="selectedPortId === layer.portId">
-              <div class="resize-handle resize-handle--tl" @pointerdown.stop="onResizeHandlePointerDown($event, layer.portId, 'tl')"></div>
-              <div class="resize-handle resize-handle--tr" @pointerdown.stop="onResizeHandlePointerDown($event, layer.portId, 'tr')"></div>
-              <div class="resize-handle resize-handle--bl" @pointerdown.stop="onResizeHandlePointerDown($event, layer.portId, 'bl')"></div>
-              <div class="resize-handle resize-handle--br" @pointerdown.stop="onResizeHandlePointerDown($event, layer.portId, 'br')"></div>
-            </template>
-          </div>
-        </div>
-        <div v-else class="overlay-card__empty-hint">{{ t('emptyHint') }}</div>
       </div>
     </div>
 
@@ -1014,6 +1138,81 @@ function onRemoveLayer(e: PointerEvent, portId: string): void {
     &:active { transform: translateY(1px); }
   }
 
+  // 预览顶部工具条
+  &__preview-topbar {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    right: 2px;
+    z-index: 20;
+    display: flex; align-items: center; gap: 8px;
+    padding: 2px 6px;
+    border: 1px solid #d5d9e0; border-radius: 6px;
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  }
+
+  // 文字样式工具栏（横向，放在预览顶部）
+  &__text-toolbar {
+    flex-shrink: 0;
+    display: flex; align-items: center; gap: 8px;
+    padding: 0;
+    border: none; border-radius: 0;
+    background: transparent;
+  }
+
+  &__tb-row {
+    display: flex; align-items: center; gap: 4px;
+  }
+  &__tb-label {
+    font-size: 10px; color: #7a828f;
+    flex-shrink: 0;
+  }
+  &__tb-row input[type="number"] {
+    width: 40px; padding: 2px 3px;
+    font-size: 11px; color: #3d4551;
+    border: 1px solid #d5d9e0; border-radius: 3px;
+    outline: none;
+    transition: border-color 0.15s ease;
+    &:focus { border-color: #4a7cff; }
+  }
+  &__tb-unit {
+    font-size: 9px; color: #9aa1ad; flex-shrink: 0;
+  }
+  &__tb-row input[type="color"] {
+    width: 26px; height: 18px; padding: 0;
+    border: 1px solid #d5d9e0; border-radius: 3px;
+    background: transparent; cursor: pointer;
+    &::-webkit-color-swatch-wrapper { padding: 1px; }
+    &::-webkit-color-swatch { border: none; border-radius: 2px; }
+  }
+  &__tb-clear-bg {
+    width: 16px; height: 16px;
+    border: none; border-radius: 3px;
+    background: transparent; color: #b5bac4;
+    font-size: 12px; line-height: 1; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    padding: 0; flex-shrink: 0;
+    transition: background 0.15s ease, color 0.15s ease;
+    &:hover { background: #fee2e2; color: #ef4444; }
+  }
+  &__tb-align {
+    display: flex; gap: 1px;
+  }
+  &__tb-align-btn {
+    width: 20px; height: 18px;
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid #e5e7eb;
+    background: #f8f9fa; color: #7a828f;
+    border-radius: 3px; cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    &:hover { background: #eef2ff; color: #4a7cff; border-color: #c5d4ff; }
+    &.is-active {
+      background: #4a7cff; color: #fff; border-color: #4a7cff;
+      &:hover { background: #3d6ce0; border-color: #3d6ce0; }
+    }
+  }
+
   &__port-thumb {
     width: 100%; height: 36px; border-radius: 3px;
     overflow: hidden; flex-shrink: 0;
@@ -1043,12 +1242,20 @@ function onRemoveLayer(e: PointerEvent, portId: string): void {
     position: relative;
   }
 
-  // 预览缩放控件：固定在预览区右上角
+  // 预览缩放控件：现在放在 topbar 里，不再单独 absolute
   &__preview-zoom {
-    position: absolute; top: 6px; right: 6px; z-index: 20;
-    display: flex; align-items: center; gap: 2px;
-    padding: 2px;
-    border: 1px solid #d5d9e0; border-radius: 6px;
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 0;
+    border: none; border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    flex-shrink: 0;
+    border-radius: 6px;
     background: rgba(255, 255, 255, 0.92);
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
   }
@@ -1075,18 +1282,15 @@ function onRemoveLayer(e: PointerEvent, portId: string): void {
     position: relative; background: #fff;
     box-shadow: 0 0 0 1px #c5cbd4;
   }
+  &__preview-composite {
+    position: absolute; top: 0; left: 0;
+    width: 100%; height: 100%;
+    display: block; pointer-events: none; user-select: none;
+  }
   &__preview-layer {
     position: absolute; cursor: move;
-    img { width: 100%; height: 100%; object-fit: fill; display: block; pointer-events: none; }
+    background: transparent;
     &.is-selected { outline: 2px solid #4a7cff; }
-  }
-  &__preview-text {
-    width: 100%; height: 100%;
-    white-space: pre;
-    line-height: 1;
-    overflow: hidden;
-    pointer-events: none;
-    user-select: none;
   }
   &__empty-hint { font-size: 12px; color: #9aa1ad; text-align: center; line-height: 1.6; font-style: italic; }
 

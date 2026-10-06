@@ -392,7 +392,7 @@ function onResizeEnd(): void {
   gap: 6px;
   padding: 8px;
   background: @color-surface;
-  border: 1px solid #d5d9e0;
+  border: 1px solid @node-border-color;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 
@@ -402,7 +402,7 @@ function onResizeEnd(): void {
     justify-content: space-between;
     cursor: grab;
     user-select: none;
-    border-bottom: 1px dashed #d5d9e0;
+    border-bottom: 1px dashed @node-border-color;
     padding-bottom: 4px;
 
     &:active {
@@ -560,7 +560,7 @@ function onResizeEnd(): void {
   box-sizing: border-box;
   padding: 8px 10px;
   padding-right: 12px; // 给滚动条留一点呼吸空间
-  border: 1px solid #d5d9e0;
+  border: 1px solid @node-border-color;
   border-radius: 6px;
   font-size: 14px;
   resize: none; // 原生 resize 关掉，由右下角 handle 统一管理
@@ -671,7 +671,7 @@ function onResizeEnd(): void {
   width: 100%;
   box-sizing: border-box;
   padding: 12px 14px;
-  border: 1px solid #d5d9e0;
+  border: 1px solid @node-border-color;
   border-radius: 8px;
   font-size: 14px;
   line-height: 1.6;

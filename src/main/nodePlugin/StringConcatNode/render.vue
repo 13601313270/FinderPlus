@@ -259,7 +259,7 @@ function onResizePointerDown(e: PointerEvent): void {
   gap: 6px;
   padding: 8px;
   background: @color-surface;
-  border: 1px solid #d5d9e0;
+  border: 1px solid @node-border-color;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   position: relative; // resize handle 绝对定位锚点
@@ -270,7 +270,7 @@ function onResizePointerDown(e: PointerEvent): void {
     align-items: center;
     cursor: grab;
     user-select: none;
-    border-bottom: 1px dashed #d5d9e0;
+    border-bottom: 1px dashed @node-border-color;
     padding-bottom: 4px;
 
     &:active {
@@ -314,7 +314,7 @@ function onResizePointerDown(e: PointerEvent): void {
     box-sizing: border-box;
     padding: 6px 8px;
     padding-right: 28px; // 给右上角编辑按钮留空间
-    border: 1px solid #d5d9e0;
+    border: 1px solid @node-border-color;
     border-radius: 6px;
     font-size: 13px;
     font-family: inherit;
@@ -381,7 +381,7 @@ function onResizePointerDown(e: PointerEvent): void {
     justify-content: center;
     width: 22px;
     height: 22px;
-    border: 1px solid #d5d9e0;
+    border: 1px solid @node-border-color;
     border-radius: 4px;
     font-size: 13px;
     line-height: 1;
@@ -480,7 +480,7 @@ function onResizePointerDown(e: PointerEvent): void {
   height: 65vh;
   box-sizing: border-box;
   padding: 12px 14px;
-  border: 1px solid #d5d9e0;
+  border: 1px solid @node-border-color;
   border-radius: 8px;
   font-size: 14px;
   line-height: 1.6;

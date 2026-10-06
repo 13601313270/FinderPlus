@@ -1099,14 +1099,14 @@ function updateTextStyle(portId: string, partial: Partial<{ fontSize: number; co
   position: relative;
   display: flex; flex-direction: column;
   background: @color-surface;
-  border: 1px solid #d5d9e0; border-radius: 8px;
+  border: 1px solid @node-border-color; border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   user-select: none;
   padding: 8px; gap: 6px;
 
   &__header {
     display: flex; align-items: baseline; gap: 6px;
-    padding-bottom: 4px; border-bottom: 1px dashed #d5d9e0;
+    padding-bottom: 4px; border-bottom: 1px dashed @node-border-color;
   }
   &__title { font-size: 12px; font-weight: 600; color: #4a7cff; letter-spacing: 0.5px; }
   &__sub { font-size: 11px; color: #9aa1ad; }
@@ -1147,7 +1147,7 @@ function updateTextStyle(portId: string, partial: Partial<{ fontSize: number; co
     display: flex; flex-direction: column; gap: 3px;
     overflow-y: auto; padding-right: 2px;
     &::-webkit-scrollbar { width: 3px; }
-    &::-webkit-scrollbar-thumb { background: #d5d9e0; border-radius: 2px; }
+    &::-webkit-scrollbar-thumb { background: @node-border-color; border-radius: 2px; }
   }
 
   &__port-item {
@@ -1200,7 +1200,7 @@ function updateTextStyle(portId: string, partial: Partial<{ fontSize: number; co
     z-index: 20;
     display: flex; align-items: center; gap: 8px;
     padding: 2px 6px;
-    border: 1px solid #d5d9e0; border-radius: 6px;
+    border: 1px solid @node-border-color; border-radius: 6px;
     background: rgba(255, 255, 255, 0.92);
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
   }
@@ -1224,7 +1224,7 @@ function updateTextStyle(portId: string, partial: Partial<{ fontSize: number; co
   &__tb-row input[type="number"] {
     width: 40px; padding: 2px 3px;
     font-size: 11px; color: #3d4551;
-    border: 1px solid #d5d9e0; border-radius: 3px;
+    border: 1px solid @node-border-color; border-radius: 3px;
     outline: none;
     transition: border-color 0.15s ease;
     &:focus { border-color: #4a7cff; }
@@ -1234,7 +1234,7 @@ function updateTextStyle(portId: string, partial: Partial<{ fontSize: number; co
   }
   &__tb-row input[type="color"] {
     width: 26px; height: 18px; padding: 0;
-    border: 1px solid #d5d9e0; border-radius: 3px;
+    border: 1px solid @node-border-color; border-radius: 3px;
     background: transparent; cursor: pointer;
     &::-webkit-color-swatch-wrapper { padding: 1px; }
     &::-webkit-color-swatch { border: none; border-radius: 2px; }
@@ -1424,7 +1424,7 @@ function updateTextStyle(portId: string, partial: Partial<{ fontSize: number; co
   position: relative;
   z-index: 1;
   background: #fff;
-  border: 1px solid #d5d9e0;
+  border: 1px solid @node-border-color;
   border-radius: 8px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
   padding: 14px 16px;
@@ -1484,7 +1484,7 @@ function updateTextStyle(portId: string, partial: Partial<{ fontSize: number; co
     width: 80px;
     padding: 4px 6px;
     font-size: 12px;
-    border: 1px solid #d5d9e0;
+    border: 1px solid @node-border-color;
     border-radius: 4px;
     outline: none;
     transition: border-color 0.15s ease;
@@ -1508,7 +1508,7 @@ function updateTextStyle(portId: string, partial: Partial<{ fontSize: number; co
 
   &--ghost {
     background: transparent;
-    border: 1px solid #d5d9e0;
+    border: 1px solid @node-border-color;
     color: #3d4551;
     &:hover { background: #f4f5f7; border-color: #c5cbd4; }
   }

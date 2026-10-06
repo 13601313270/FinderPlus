@@ -239,7 +239,7 @@ onUnmounted(() => {
   gap: 6px;
   padding: 10px;
   background: @color-surface;
-  border: 1px solid #d5d9e0;
+  border: 1px solid @node-border-color;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   user-select: none;
@@ -252,7 +252,7 @@ onUnmounted(() => {
     justify-content: space-between;
     gap: 6px;
     padding-bottom: 2px;
-    border-bottom: 1px dashed #d5d9e0;
+    border-bottom: 1px dashed @node-border-color;
   }
 
   &__header-title {

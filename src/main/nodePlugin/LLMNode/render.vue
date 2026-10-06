@@ -271,7 +271,7 @@ function onSendClick(): void {
   gap: 6px;
   padding: 10px;
   background: @color-surface;
-  border: 1px solid #d5d9e0;
+  border: 1px solid @node-border-color;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 
@@ -279,7 +279,7 @@ function onSendClick(): void {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    border-bottom: 1px dashed #d5d9e0;
+    border-bottom: 1px dashed @node-border-color;
     padding-bottom: 4px;
     cursor: grab;
     user-select: none;
@@ -313,7 +313,7 @@ function onSendClick(): void {
   &__provider-select {
     font-size: 11px;
     padding: 3px 6px;
-    border: 1px solid #d5d9e0;
+    border: 1px solid @node-border-color;
     border-radius: 4px;
     background: #fff;
     color: #374151;
@@ -330,7 +330,7 @@ function onSendClick(): void {
     min-width: 0;
     font-size: 11px;
     padding: 3px 6px;
-    border: 1px solid #d5d9e0;
+    border: 1px solid @node-border-color;
     border-radius: 4px;
     background: #fff;
     color: #374151;
@@ -482,7 +482,7 @@ function onSendClick(): void {
     padding: 6px 8px;
     font-size: 12px;
     font-family: inherit;
-    border: 1px solid #d5d9e0;
+    border: 1px solid @node-border-color;
     border-radius: 6px;
     outline: none;
     line-height: 1.5;
@@ -532,7 +532,7 @@ function onSendClick(): void {
 .llm-output {
   padding: 10px;
   padding-right: 32px; // 给右上角展开按钮留空间
-  border: 1px solid #d5d9e0;
+  border: 1px solid @node-border-color;
   border-radius: 6px;
   font-size: 13px;
   white-space: pre-wrap;

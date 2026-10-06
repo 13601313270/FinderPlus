@@ -1027,7 +1027,7 @@ async function removeColumnFromUI(colName: string): Promise<void> {
   padding: 8px;
   gap: 4px;
   background: @color-surface;
-  border: 1px solid #d5d9e0;
+  border: 1px solid @node-border-color;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   overflow: visible;
@@ -1037,7 +1037,7 @@ async function removeColumnFromUI(colName: string): Promise<void> {
     align-items: center;
     justify-content: space-between;
     padding: 2px 4px 4px;
-    border-bottom: 1px dashed #d5d9e0;
+    border-bottom: 1px dashed @node-border-color;
     flex-shrink: 0;
 
     &-actions {

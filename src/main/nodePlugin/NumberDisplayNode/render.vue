@@ -272,7 +272,7 @@ function onResizePointerDown(e: PointerEvent): void {
   padding: 8px;
   padding-top: 0;
   background: @color-surface;
-  border: 1px solid #d5d9e0;
+  border: 1px solid @node-border-color;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 
@@ -282,7 +282,7 @@ function onResizePointerDown(e: PointerEvent): void {
     align-items: center;
     justify-content: space-between;
     padding: 6px 0;
-    border-bottom: 1px dashed #d5d9e0;
+    border-bottom: 1px dashed @node-border-color;
     flex-shrink: 0;
   }
 
@@ -413,7 +413,7 @@ function onResizePointerDown(e: PointerEvent): void {
     width: 28px;
     height: 20px;
     padding: 0;
-    border: 1px solid #d5d9e0;
+    border: 1px solid @node-border-color;
     border-radius: 4px;
     background: none;
     cursor: pointer;
@@ -436,7 +436,7 @@ function onResizePointerDown(e: PointerEvent): void {
 .render-display {
   position: relative;
   padding: 8px 10px;
-  border: 1px solid #d5d9e0;
+  border: 1px solid @node-border-color;
   border-radius: 6px;
   flex: 1;
   overflow: hidden;

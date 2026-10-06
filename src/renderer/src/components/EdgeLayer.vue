@@ -167,7 +167,7 @@ function removeEdge(edge: Edge): void {
     // 让圆心落在连线中点上（世界坐标）。这里只做居中，不再乘 1/scale 补偿缩放
     transform: translate(-50%, -50%);
     padding: 0;
-    border: 1px solid #d5d9e0;
+    border: 1px solid @node-border-color;
     border-radius: 50%;
     background: @color-surface;
     color: @color-text-weak;

@@ -321,7 +321,7 @@ function onGenClick(): void {
   gap: 8px;
   padding: 10px;
   background: @color-surface;
-  border: 1px solid #d5d9e0;
+  border: 1px solid @node-border-color;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 
@@ -329,7 +329,7 @@ function onGenClick(): void {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    border-bottom: 1px dashed #d5d9e0;
+    border-bottom: 1px dashed @node-border-color;
     padding-bottom: 4px;
     cursor: grab;
     user-select: none;
@@ -364,7 +364,7 @@ function onGenClick(): void {
   &__provider-select {
     font-size: 11px;
     padding: 3px 6px;
-    border: 1px solid #d5d9e0;
+    border: 1px solid @node-border-color;
     border-radius: 4px;
     background: #fff;
     color: #374151;
@@ -392,7 +392,7 @@ function onGenClick(): void {
     width: 100%;
     font-size: 11px;
     padding: 3px 6px;
-    border: 1px solid #d5d9e0;
+    border: 1px solid @node-border-color;
     border-radius: 4px;
     background: #fff;
     color: #374151;
@@ -439,7 +439,7 @@ function onGenClick(): void {
     max-height: 240px;
     overflow-y: auto;
     background: #fff;
-    border: 1px solid #d5d9e0;
+    border: 1px solid @node-border-color;
     border-radius: 6px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
     padding: 4px;
@@ -574,7 +574,7 @@ function onGenClick(): void {
   font-size: 12px;
   font-family: inherit;
   color: #1f2937;
-  border: 1px solid #d5d9e0;
+  border: 1px solid @node-border-color;
   border-radius: 6px;
   outline: none;
   background: #fff;
@@ -593,7 +593,7 @@ function onGenClick(): void {
 
 .igen-preview {
   padding: 6px;
-  border: 1px solid #d5d9e0;
+  border: 1px solid @node-border-color;
   border-radius: 6px;
   font-size: 12px;
   flex: 1;

@@ -233,7 +233,7 @@ onUnmounted(() => {
   overflow: hidden;
   user-select: none;
   background: @color-surface;
-  border: 1px solid #d5d9e0;
+  border: 1px solid @node-border-color;
   border-radius: @radius-md;
 
   &__bar {

@@ -317,7 +317,7 @@ function onSave(): void {
   padding: 8px;
   padding-top: 0;
   background: @color-surface;
-  border: 1px solid #d5d9e0;
+  border: 1px solid @node-border-color;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 
@@ -325,7 +325,7 @@ function onSave(): void {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    border-bottom: 1px dashed #d5d9e0;
+    border-bottom: 1px dashed @node-border-color;
     padding: 4px 0;
     cursor: grab;
     user-select: none;
@@ -441,7 +441,7 @@ function onSave(): void {
   transition: border-color 0.15s, background 0.15s;
 
   &:hover {
-    border-color: #d5d9e0;
+    border-color: @node-border-color;
   }
 
   &:focus {
@@ -487,7 +487,7 @@ function onSave(): void {
     justify-content: center;
     width: 22px;
     height: 22px;
-    border: 1px solid #d5d9e0;
+    border: 1px solid @node-border-color;
     border-radius: 4px;
     font-size: 13px;
     line-height: 1;
@@ -509,7 +509,7 @@ function onSave(): void {
 .cmd-saved {
   flex-shrink: 0;
   padding: 7px 9px;
-  border: 1px solid #d5d9e0;
+  border: 1px solid @node-border-color;
   border-radius: 6px;
   background: #f8fafc;
   font-size: 12px;
@@ -534,7 +534,7 @@ function onSave(): void {
 
 .cmd-output {
   padding: 10px;
-  border: 1px solid #d5d9e0;
+  border: 1px solid @node-border-color;
   border-radius: 6px;
   font-size: 12px;
   margin-top: 4px;
@@ -609,7 +609,7 @@ function onSave(): void {
     font-size: 12px;
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     line-height: 1.5;
-    border: 1px solid #d5d9e0;
+    border: 1px solid @node-border-color;
     border-radius: 6px;
     outline: none;
 

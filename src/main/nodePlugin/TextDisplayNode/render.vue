@@ -277,7 +277,7 @@ function onResizePointerDown(e: PointerEvent): void {
   padding: 8px;
   padding-top: 0;
   background: @color-surface;
-  border: 1px solid #d5d9e0;
+  border: 1px solid @node-border-color;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 
@@ -287,7 +287,7 @@ function onResizePointerDown(e: PointerEvent): void {
     align-items: center;
     justify-content: space-between;
     padding: 6px 0;
-    border-bottom: 1px dashed #d5d9e0;
+    border-bottom: 1px dashed @node-border-color;
     flex-shrink: 0;
   }
 
@@ -361,7 +361,7 @@ function onResizePointerDown(e: PointerEvent): void {
   height: 100%;
   padding: 8px 10px;
   padding-right: 12px; // 给滚动条留一点呼吸空间（滚动条覆盖在最右，不需要真正占位）
-  border: 1px solid #d5d9e0;
+  border: 1px solid @node-border-color;
   border-radius: 6px;
   font-size: 14px;
   white-space: pre-wrap;

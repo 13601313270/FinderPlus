@@ -111,7 +111,7 @@ onUnmounted(() => {
   gap: 6px;
   padding: 8px;
   background: @color-surface;
-  border: 1px solid #d5d9e0;
+  border: 1px solid @node-border-color;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 
@@ -121,7 +121,7 @@ onUnmounted(() => {
     align-items: center;
     justify-content: center;
     padding: 2px 22px;
-    border-bottom: 1px dashed #d5d9e0;
+    border-bottom: 1px dashed @node-border-color;
     flex-shrink: 0;
   }
 
@@ -169,7 +169,7 @@ onUnmounted(() => {
   flex-direction: column;
   gap: 4px;
   padding: 6px 8px;
-  border: 1px solid #d5d9e0;
+  border: 1px solid @node-border-color;
   border-radius: 6px;
   font-size: 13px;
   flex-grow: 1;

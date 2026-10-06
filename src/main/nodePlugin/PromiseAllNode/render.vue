@@ -300,7 +300,7 @@ async function onForceTrigger(): Promise<void> {
   height: 100%;
   overflow: hidden;
   background: @color-surface;
-  border: 1px solid #d5d9e0;
+  border: 1px solid @node-border-color;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 

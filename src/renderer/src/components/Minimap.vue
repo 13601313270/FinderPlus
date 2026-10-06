@@ -423,7 +423,7 @@ onUnmounted(() => {
   // 挂载量到初始落点前先藏起来，避免从左上角闪一下
   opacity: 0;
   width: 196px;
-  border: 1px solid #d5d9e0;
+  border: 1px solid @node-border-color;
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.94);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
@@ -553,7 +553,7 @@ onUnmounted(() => {
     width: 26px;
     height: 26px;
     padding: 0;
-    border: 1px solid #d5d9e0;
+    border: 1px solid @node-border-color;
     border-radius: 6px;
     background: @color-surface;
     color: @color-text;
@@ -578,7 +578,7 @@ onUnmounted(() => {
     margin-left: auto;
     height: 26px;
     padding: 0 8px;
-    border: 1px solid #d5d9e0;
+    border: 1px solid @node-border-color;
     border-radius: 6px;
     background: @color-surface;
     color: @color-text;

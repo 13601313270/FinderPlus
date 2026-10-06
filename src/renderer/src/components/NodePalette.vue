@@ -413,7 +413,7 @@ onBeforeUnmount(() => {
     width: 34px;
     height: 34px;
     padding: 0;
-    border: 1px solid #d5d9e0;
+    border: 1px solid @node-border-color;
     border-radius: 8px;
     background: @color-surface;
     color: @color-text;
@@ -586,7 +586,7 @@ onBeforeUnmount(() => {
     width: 17px;
     height: 17px;
     padding: 0;
-    border: 1px solid #d5d9e0;
+    border: 1px solid @node-border-color;
     border-radius: 50%;
     background: @color-surface;
     color: #8a919c;

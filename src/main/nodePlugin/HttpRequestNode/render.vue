@@ -406,7 +406,7 @@ onUnmounted(() => { unsubscribe?.() })
   gap: 6px;
   padding: 8px;
   background: @color-surface;
-  border: 1px solid #d5d9e0;
+  border: 1px solid @node-border-color;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 
@@ -414,7 +414,7 @@ onUnmounted(() => { unsubscribe?.() })
     display: flex;
     align-items: center;
     justify-content: space-between;
-    border-bottom: 1px dashed #d5d9e0;
+    border-bottom: 1px dashed @node-border-color;
     padding-bottom: 3px;
     cursor: grab;
     user-select: none;
@@ -500,7 +500,7 @@ onUnmounted(() => { unsubscribe?.() })
 .http-preview {
   flex-shrink: 0;
   padding: 5px 7px;
-  border: 1px solid #d5d9e0;
+  border: 1px solid @node-border-color;
   border-radius: 6px;
   background: #f8fafc;
   font-size: 12px;
@@ -552,7 +552,7 @@ onUnmounted(() => { unsubscribe?.() })
   flex-shrink: 0;
   width: 84px;
   padding: 3px 6px;
-  border: 1px solid #d5d9e0;
+  border: 1px solid @node-border-color;
   border-radius: 6px;
   background: #fff;
   font-size: 12px;
@@ -569,7 +569,7 @@ onUnmounted(() => { unsubscribe?.() })
   min-width: 0;
   box-sizing: border-box;
   padding: 4px 7px;
-  border: 1px solid #d5d9e0;
+  border: 1px solid @node-border-color;
   border-radius: 6px;
   font-size: 12px;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -581,7 +581,7 @@ onUnmounted(() => { unsubscribe?.() })
 .http-timeout {
   width: 90px;
   padding: 3px 6px;
-  border: 1px solid #d5d9e0;
+  border: 1px solid @node-border-color;
   border-radius: 6px;
   font-size: 12px;
   text-align: right;
@@ -616,7 +616,7 @@ onUnmounted(() => { unsubscribe?.() })
     min-width: 0;
     box-sizing: border-box;
     padding: 3px 6px;
-    border: 1px solid #d5d9e0;
+    border: 1px solid @node-border-color;
     border-radius: 5px;
     font-size: 11px;
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -637,7 +637,7 @@ onUnmounted(() => { unsubscribe?.() })
     min-width: 0;
     box-sizing: border-box;
     padding: 3px 6px;
-    border: 1px solid #d5d9e0;
+    border: 1px solid @node-border-color;
     border-radius: 5px;
     font-size: 11px;
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -655,7 +655,7 @@ onUnmounted(() => { unsubscribe?.() })
     justify-content: center;
     width: 20px;
     height: 20px;
-    border: 1px solid #d5d9e0;
+    border: 1px solid @node-border-color;
     border-radius: 4px;
     font-size: 13px;
     line-height: 1;
@@ -670,7 +670,7 @@ onUnmounted(() => { unsubscribe?.() })
     align-self: flex-start;
     margin-top: 2px;
     padding: 3px 8px;
-    border: 1px dashed #d5d9e0;
+    border: 1px dashed @node-border-color;
     border-radius: 5px;
     font-size: 11px;
     color: #6b7280;
@@ -689,7 +689,7 @@ onUnmounted(() => { unsubscribe?.() })
   box-sizing: border-box;
   resize: vertical;
   padding: 5px 7px;
-  border: 1px solid #d5d9e0;
+  border: 1px solid @node-border-color;
   border-radius: 6px;
   font-size: 12px;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -731,7 +731,7 @@ onUnmounted(() => { unsubscribe?.() })
     justify-content: center;
     width: 22px;
     height: 22px;
-    border: 1px solid #d5d9e0;
+    border: 1px solid @node-border-color;
     border-radius: 4px;
     font-size: 13px;
     line-height: 1;
@@ -748,7 +748,7 @@ onUnmounted(() => { unsubscribe?.() })
 // —— 结果区 ——
 .http-result {
   padding: 6px 8px;
-  border: 1px solid #d5d9e0;
+  border: 1px solid @node-border-color;
   border-radius: 6px;
   font-size: 11px;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;

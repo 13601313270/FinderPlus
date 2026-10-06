@@ -91,7 +91,7 @@ function onDelayInput(e: Event): void {
   display: flex;
   flex-direction: column;
   background: @color-surface;
-  border: 1px solid #d5d9e0;
+  border: 1px solid @node-border-color;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   overflow: hidden;
@@ -107,7 +107,7 @@ function onDelayInput(e: Event): void {
     align-items: center;
     justify-content: center;
     padding: 4px 0;
-    border-bottom: 1px dashed #d5d9e0;
+    border-bottom: 1px dashed @node-border-color;
     flex-shrink: 0;
   }
 

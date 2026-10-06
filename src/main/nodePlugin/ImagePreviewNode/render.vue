@@ -283,7 +283,7 @@ onUnmounted(() => {
   flex-direction: column;
   align-items: stretch;
   background: @color-surface;
-  border: 1px solid #d5d9e0;
+  border: 1px solid @node-border-color;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   user-select: none;
@@ -294,7 +294,7 @@ onUnmounted(() => {
     align-items: center;
     justify-content: space-between;
     padding: 4px;
-    border-bottom: 1px dashed #d5d9e0;
+    border-bottom: 1px dashed @node-border-color;
 
     &:active {
       cursor: grabbing;

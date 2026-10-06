@@ -53,7 +53,7 @@ const { startDrag } = useNodePosition(() => wireNode.value)
   gap: 4px;
   padding: 0 8px;
   background: @color-surface;
-  border: 1px solid #d5d9e0;
+  border: 1px solid @node-border-color;
   border-radius: 20px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   overflow: hidden;

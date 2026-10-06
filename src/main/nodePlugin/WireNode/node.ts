@@ -100,7 +100,7 @@ export class WireNode extends Node {
         this.notifyChanged()
         return
       }
-      this.outputPort!.commit(value)
+      this.outputPort!.commit(value, { force: true })
       this.notifyChanged()
     } finally {
       this.completeRun()

@@ -147,7 +147,7 @@ export class DelayNode extends Node {
 
     if (this.delayMs <= 0) {
       // 延时为 0 → 直接 commit（跳过 setTimeout，省去异步间隙）
-      this.outputPort!.commit(value)
+      this.outputPort!.commit(value, { force: true })
       this.notifyChanged()
       this.completeRun()
       return
@@ -164,7 +164,7 @@ export class DelayNode extends Node {
       // commit 用"当时快照的值"——上游这期间又推了新值的话，clearPendingTimer
       // 会在 inputPortReceiveValue 里先调过了，这里走到就是最后一个 timer
       if (this.outputPort) {
-        this.outputPort.commit(value)
+        this.outputPort.commit(value, { force: true })
       }
       this.notifyChanged()
       this.completeRun()

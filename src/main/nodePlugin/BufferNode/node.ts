@@ -126,7 +126,7 @@ export abstract class BufferNode extends Node {
     if (this.items.length === 0) return
     const [value] = this.items.splice(this.takeIndex(), 1)
     if (value !== undefined) {
-      this.outputPort.commit(value)
+      this.outputPort.commit(value, { force: true })
     }
     this.notifyChanged()
   }

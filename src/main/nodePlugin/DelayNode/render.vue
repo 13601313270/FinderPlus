@@ -61,8 +61,8 @@ function onDelayInput(e: Event): void {
 </script>
 
 <template>
-  <div class="node" :class="{ 'node--pending': pending }">
-    <div class="node__header" @pointerdown="startDrag">
+  <div class="node" :class="{ 'node--pending': pending }" @pointerdown="startDrag">
+    <div class="node__header">
       <span class="node__handle">{{ nodeTitle }}</span>
     </div>
     <div class="delay-body">
@@ -75,6 +75,7 @@ function onDelayInput(e: Event): void {
         :value="delayMs"
         :disabled="!delayNode"
         @input="onDelayInput"
+        @pointerdown.stop
       />
       <span class="delay-body__unit">ms</span>
       <span v-if="typeName" class="delay-body__type">{{ typeName }}</span>

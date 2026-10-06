@@ -400,20 +400,18 @@ async function onDeleteCanvas(id: string, name: string): Promise<void> {
   // 只有一个画布 → 不清空 canvases 表（会导致 list() 无数据），只清 nodes/edges
   const list = await window.canvasApi.list()
   if (list.length <= 1) {
-    return;
-    // const ok = await window.showConfirm(
-    //   '只剩这一个画布了',
-    //   `不能删除最后一个画布，改为清空所有内容？\n\n画布：${name}`
-    // )
-    // if (!ok) return
-    // await window.canvasDeskDb.clearCanvas({ canvasId: id })
-    // // 通知当前窗口 reload Scene（因为 clear 不是 broadcast 出来的事件）
-    // // 简单起见直接 reload —— 当前 App.vue 的 onChanged 订阅收到 canvas:changed 会自动 refreshCanvasList，
-    // // 但 clear 不会触发这个事件，所以这里也手动触发一下
-    // await refreshCanvasRows()
-    // // 触发当前窗口 Scene reload
-    // location.reload()
-    // return
+    const ok = await window.showConfirm(
+      '只剩这一个画布了',
+      `不能删除最后一个画布，改为清空所有内容？\n\n画布：${name}`
+    )
+    if (!ok) return
+    await workspaceScene.clearAll()
+    // 顺便把视口也复位
+    viewport.x = 0
+    viewport.y = 0
+    viewport.scale = 1
+    closeSettings()
+    return
   }
 
   // 多个画布 → 正常删除

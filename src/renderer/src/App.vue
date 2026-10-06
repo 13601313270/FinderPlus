@@ -953,7 +953,7 @@ onUnmounted(() => {
         <!-- 每个节点 = 外壳（定位 + 端口，通用）+ 内容（render.vue，节点自定义）
              nodes 来自 Scene，新增节点加进 Scene 后会自动出现在这里 -->
         <template v-for="node in nodes" :key="node.id">
-          <NodeWire :node="node" v-if="node.type==='wire'" :render="manifestFor(node)?.render"
+          <NodeWire :node="node" v-if="node.type === 'wire' || node.type === 'delay'" :render="manifestFor(node)?.render"
             :floating="trackingNode?.id === node.id" />
           <NodeShell v-else :node="node" :render="manifestFor(node)?.render"
             :floating="trackingNode?.id === node.id" />

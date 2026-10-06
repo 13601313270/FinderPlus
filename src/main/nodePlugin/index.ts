@@ -26,6 +26,7 @@ import { manifest as backgroundRemoveManifest } from './BackgroundRemoveNode'
 import { manifest as imageOverlayManifest } from './ImageOverlayNode'
 import { manifest as switchManifest } from './SwitchNode'
 import { manifest as wireManifest } from './WireNode'
+import { manifest as delayManifest } from './DelayNode'
 import { manifest as stackManifest } from './StackNode'
 import { manifest as queueManifest } from './QueueNode'
 import { manifest as httpRequestManifest } from './HttpRequestNode'
@@ -67,6 +68,7 @@ const functionalManifests: NodePluginManifest[] = [
   codeManifest,
   switchManifest,
   wireManifest,
+  delayManifest,
   promiseAllManifest,
   stackManifest,
   queueManifest,

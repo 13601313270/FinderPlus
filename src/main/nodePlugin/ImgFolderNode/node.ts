@@ -2,6 +2,7 @@ import type { Node } from '../../engine/node/Node'
 import type { InputPort } from '../../engine/port/InputPort'
 import type { Scene } from '../../engine/graph/Scene'
 import { ImgFileValue } from '../../engine/data/ImgFileValue'
+import { MethodPort } from '../../engine/port/MethodPort'
 import { OutputPort } from '../../engine/port/OutputPort'
 import { FolderNode } from '../FolderNode/node'
 import { ImgFileNode } from '../ImgFileNode/node'
@@ -49,6 +50,27 @@ export class ImgFolderNode extends FolderNode {
     it: 'Immagine selezionata'
   })
 
+  /** 方法端口：外部连线触发清空全部子图片 */
+  private readonly clearPort = new MethodPort('clear', {
+    label: {
+      zh: '清空',
+      en: 'Clear',
+      ja: 'クリア',
+      ko: '비우기',
+      es: 'Limpiar',
+      ar: 'مسح',
+      fr: 'Vider',
+      pt: 'Limpar',
+      ru: 'Очистить',
+      hi: 'साफ़ करें',
+      id: 'Hapus',
+      de: 'Leeren',
+      vi: 'Xóa',
+      tr: 'Temizle',
+      it: 'Cancella'
+    }
+  })
+
   /** 当前选中的子节点 id；空串表示未选中 */
   private selectedChildIdValue = ''
 
@@ -61,6 +83,8 @@ export class ImgFolderNode extends FolderNode {
   constructor(id: string) {
     super(id)
     this.addOutput(this.imageOutput)
+    this.addMethod(this.clearPort)
+    this.clearPort.onTrigger(() => this.clearAll())
   }
 
   /** 当前选中的子节点 id；空串表示未选中 */
@@ -147,6 +171,30 @@ export class ImgFolderNode extends FolderNode {
       this.imageOutput.clear()
       this.notifyChanged()
     }
+  }
+
+  // —— 清空 ——
+
+  /**
+   * 清空全部子图片节点（彻底 destroy，不是释放回画布）。
+   * 选中态、输出值、fingerprint 映射一并清理。
+   */
+  clearAll(): void {
+    const scene = this.sceneRef
+    if (!scene || this.children.length === 0) return
+    // 用副本遍历，因为 scene.removeNode → removeChild 会 splice children
+    const snapshot = [...this.children]
+    for (const child of snapshot) {
+      void scene.removeNode(child)
+    }
+    this.selectedChildIdValue = ''
+    this.resubscribeSelected(undefined)
+    this.imageOutput.clear()
+    // 清 fingerprint 映射（父类的属性子类直接访问）
+    // @ts-ignore — fingerprintToChild 是 FolderNode private，这里用下标签名绕过
+    const fpMap: Map<string, Node> = (this as unknown as { fingerprintToChild: Map<string, Node> }).fingerprintToChild
+    fpMap.clear()
+    this.notifyChanged()
   }
 
   // —— 持久化 ——

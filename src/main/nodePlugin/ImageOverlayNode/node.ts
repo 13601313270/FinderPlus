@@ -1,16 +1,22 @@
 import { base64ToBytes } from '../../engine/data/base64'
 import { djb2 } from '../../engine/data/hash'
 import { ImgFileValue } from '../../engine/data/ImgFileValue'
+import { StringValue } from '../../engine/data/StringValue'
 import { InputPort } from '../../engine/port/InputPort'
 import { OutputPort } from '../../engine/port/OutputPort'
 import { Node } from '../../engine/node/Node'
 import type { Edge } from '../../engine/graph/Edge'
+
+/** 引擎侧能接受的图层值类型联合 */
+export type LayerValue = ImgFileValue | StringValue
 
 /**
  * 单层变换状态：key 是 InputPort.id（'layer-0', 'layer-1', ...）。
  * 坐标系是最终合成画布的像素坐标系，(0, 0) 为画布左上角。
  */
 export interface LayerState {
+  /** 图层种类：图片 | 文本 */
+  kind: 'image' | 'text'
   x: number
   y: number
   width: number
@@ -18,6 +24,10 @@ export interface LayerState {
   /** 是否已用真实 natural 尺寸初始化过（false = 占位值，允许自动覆盖；
    *  true = 用户可能已手动调整，不再自动覆盖） */
   initialized: boolean
+  /** 文本图层专用：默认字体 24px sans-serif，黑色 */
+  fontSize?: number
+  fontFamily?: string
+  color?: string
 }
 
 /**
@@ -80,7 +90,7 @@ export class ImageOverlayNode extends Node {
   /** 创建并登记一个新的图层输入端口 */
   private addLayerPort(index: number): InputPort {
     const port = new InputPort(`layer-${index}`, {
-      accepts: [ImgFileValue],
+      accepts: [ImgFileValue, StringValue],
       multiple: false,
       label: {
         zh: `图层 ${index + 1}`,
@@ -160,10 +170,17 @@ export class ImageOverlayNode extends Node {
       const edge = port.incoming.keys().next().value as Edge | undefined
       if (!edge) continue
       const value = port.incoming.get(edge)
-      if (!(value instanceof ImgFileValue)) continue
+      let kind: 'image' | 'text'
+      if (value instanceof StringValue) kind = 'text'
+      else if (value instanceof ImgFileValue) kind = 'image'
+      else continue
       if (!this.layerStates.has(port.id)) {
         this.layerStates.set(port.id, {
-          x: 0, y: 0, width: 0, height: 0, initialized: false
+          kind,
+          x: 0, y: 0, width: 0, height: 0, initialized: false,
+          fontSize: kind === 'text' ? 24 : undefined,
+          fontFamily: kind === 'text' ? 'sans-serif' : undefined,
+          color: kind === 'text' ? '#000000' : undefined
         })
       }
     }
@@ -226,15 +243,15 @@ export class ImageOverlayNode extends Node {
   get layerDrawOrders(): ReadonlyArray<{
     portId: string
     state: LayerState
-    value: ImgFileValue
+    value: LayerValue
   }> {
-    const result: { portId: string; state: LayerState; value: ImgFileValue }[] = []
+    const result: { portId: string; state: LayerState; value: LayerValue }[] = []
     for (const port of this.inputPorts) {
       const edge = port.incoming.keys().next().value as Edge | undefined
       if (!edge) continue
       const value = port.incoming.get(edge)
       const state = this.layerStates.get(port.id)
-      if (value instanceof ImgFileValue && state) {
+      if ((value instanceof ImgFileValue || value instanceof StringValue) && state) {
         result.push({ portId: port.id, state, value })
       }
     }
@@ -261,13 +278,18 @@ export class ImageOverlayNode extends Node {
     return { width: Math.max(1, maxRight), height: Math.max(1, maxBottom) }
   }
 
-  /** 合成去重用的 compositeKey：画布尺寸 + 各端口值 fingerprint + 变换参数 */
+  /** 合成去重用的 compositeKey：画布尺寸 + 各端口值 fingerprint + 变换参数 + 文本样式 */
   get compositeKey(): string | null {
     const orders = this.layerDrawOrders
     if (orders.length === 0) return null
     const parts: string[] = [`canvas:${this.canvasWidth},${this.canvasHeight}`]
     for (const o of orders) {
-      parts.push(`${o.portId}:${o.value.fingerprint}:${o.state.x},${o.state.y},${o.state.width},${o.state.height}`)
+      const s = o.state
+      let layerPart = `${o.portId}:${s.kind}:${o.value.fingerprint}:${s.x},${s.y},${s.width},${s.height}`
+      if (s.kind === 'text') {
+        layerPart += `,fs:${s.fontSize ?? 24},ff:${s.fontFamily ?? 'sans-serif'},c:${s.color ?? '#000000'}`
+      }
+      parts.push(layerPart)
     }
     return parts.join('|')
   }
@@ -291,7 +313,9 @@ export class ImageOverlayNode extends Node {
   saveState(): Record<string, unknown> {
     const states: Record<string, LayerState> = {}
     this.layerStates.forEach((v, k) => { states[k] = { ...v } })
+    const [w, h] = this.box
     return {
+      box: [w, h],
       portCount: this.inputPorts.length,
       layerStates: states,
       canvasWidth: this.canvasWidth,
@@ -301,12 +325,18 @@ export class ImageOverlayNode extends Node {
 
   readState(state: Record<string, unknown>): void {
     const savedCount = typeof state.portCount === 'number' ? state.portCount : 2
-    const savedStates = (state.layerStates as Record<string, LayerState>) ?? {}
+    const rawStates = (state.layerStates as Record<string, Partial<LayerState>>) ?? {}
     const savedCW = typeof state.canvasWidth === 'number' ? state.canvasWidth : -1
     const savedCH = typeof state.canvasHeight === 'number' ? state.canvasHeight : -1
+    const savedBox = state.box as [number, number] | undefined
 
     this.canvasWidth = savedCW
     this.canvasHeight = savedCH
+
+    // 恢复节点整体 box（render.vue 右下角 resize 手柄调整的内容区大小）
+    if (Array.isArray(savedBox) && savedBox.length === 2) {
+      this.setBox(savedBox[0], savedBox[1])
+    }
 
     // 清掉构造时创建的默认端口，按保存的数量重建
     const existing = [...this.inputPorts]
@@ -317,10 +347,21 @@ export class ImageOverlayNode extends Node {
       this.addLayerPort(i)
     }
 
-    // 恢复 LayerState
+    // 恢复 LayerState（老数据没有 kind 字段，默认当作 image）
     this.layerStates.clear()
-    for (const [k, v] of Object.entries(savedStates)) {
-      this.layerStates.set(k, { ...v })
+    for (const [k, v] of Object.entries(rawStates)) {
+      const kind = v.kind ?? 'image'
+      this.layerStates.set(k, {
+        kind,
+        x: v.x ?? 0,
+        y: v.y ?? 0,
+        width: v.width ?? 0,
+        height: v.height ?? 0,
+        initialized: v.initialized ?? false,
+        fontSize: v.fontSize,
+        fontFamily: v.fontFamily,
+        color: v.color
+      })
     }
   }
 }

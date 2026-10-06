@@ -2,7 +2,8 @@
 import { computed, ref, watch, onUnmounted, reactive, nextTick } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { ImgFileValue } from '../../engine/data/ImgFileValue'
-import { ImageOverlayNode, type LayerState } from './node'
+import { StringValue } from '../../engine/data/StringValue'
+import { ImageOverlayNode, type LayerState, type LayerValue } from './node'
 import { ImgFileNode } from '../ImgFileNode/node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
 import type { Edge } from '../../engine/graph/Edge'
@@ -172,10 +173,14 @@ interface LayerItem {
   portId: string
   portIndex: number
   connected: boolean
+  kind: 'image' | 'text'
   fingerprint: string     // 连接后才有
   state: LayerState | null  // 连接后才有
-  fileName: string        // 连接后才有
-  thumbnailUrl: string    // 连接后才有
+  // 图片图层专用
+  fileName: string
+  thumbnailUrl: string
+  // 文本图层专用
+  text: string
 }
 const layers = ref<LayerItem[]>([])
 const thumbnailRevoke = new Map<string, () => void>()
@@ -185,12 +190,24 @@ function clearThumbnails(): void {
   thumbnailRevoke.clear()
 }
 
-/** 从端口取当前连接的 Edge 和 ImgFileValue，没有则返回 null */
-function getPortValue(port: { incoming: Map<Edge, unknown> }): { edge: Edge; value: ImgFileValue } | null {
+/** 从端口取当前连接的 Edge 和值，没有则返回 null */
+function getPortValue(port: { incoming: Map<Edge, unknown> }): { edge: Edge; value: LayerValue } | null {
   for (const [edge, v] of port.incoming) {
-    if (v instanceof ImgFileValue) return { edge, value: v }
+    if (v instanceof ImgFileValue || v instanceof StringValue) return { edge, value: v }
   }
   return null
+}
+
+/** 用离屏 canvas 测一段文本的尺寸（像素） */
+function measureText(text: string, fontSize: number, fontFamily: string): { width: number; height: number } {
+  const canvas = document.createElement('canvas')
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return { width: fontSize * text.length * 0.6, height: fontSize * 1.2 }
+  ctx.font = `${fontSize}px ${fontFamily}`
+  const metrics = ctx.measureText(text)
+  const width = Math.ceil(metrics.width)
+  const height = Math.ceil(metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent) || Math.ceil(fontSize * 1.2)
+  return { width, height }
 }
 
 function refreshLayers(): void {
@@ -215,65 +232,119 @@ function refreshLayers(): void {
         portId: port.id,
         portIndex: idx,
         connected: false,
+        kind: 'image',
         fingerprint: '',
         state: null,
         fileName: '',
-        thumbnailUrl: ''
+        thumbnailUrl: '',
+        text: ''
       })
       return
     }
 
     // 已连接
     const { value } = conn
+    const isImage = value instanceof ImgFileValue
+    const kind: 'image' | 'text' = isImage ? 'image' : 'text'
     const state = n.getLayerState(port.id)
-    if (!state) return // state 还没初始化过（syncLayerRegistry 可能还没跑），跳过这一轮
+    if (!state) return // state 还没初始化过，跳过这一轮
 
     const newFp = value.fingerprint
     const prevLayer = layers.value.find((l) => l.portId === port.id)
     const fpChanged = prevLayer && prevLayer.fingerprint !== newFp
+    const prevKind = prevLayer?.kind
+    const kindChanged = prevKind !== undefined && prevKind !== kind
+    // 只有前一次连接也是有效值时，fpChanged 才算"真的换了文件"（覆盖自然尺寸）。
+    // 重启场景下 ImgFileNode commit 异步，会出现 prevLayer.fingerprint='' → 有值 的过渡，
+    // 那不是文件内容变化，只是值晚到了，此时必须尊重 initialized 保留用户的手动尺寸。
+    const prevConnected = prevLayer?.connected === true
+    const shouldResetDims = (fpChanged && prevConnected) || kindChanged
 
-    // 缩略图：fingerprint 变了 → revoke 旧 URL + 重建
-    let thumbUrl: string
-    if (fpChanged) {
-      const oldRevoke = thumbnailRevoke.get(port.id)
-      if (oldRevoke) { oldRevoke(); thumbnailRevoke.delete(port.id) }
-      const newUrl = URL.createObjectURL(value.file)
-      thumbUrl = newUrl
-      thumbnailRevoke.set(port.id, () => URL.revokeObjectURL(newUrl))
-    } else if (thumbnailRevoke.has(port.id)) {
-      thumbUrl = prevLayer?.thumbnailUrl ?? ''
-    } else {
-      const newUrl = URL.createObjectURL(value.file)
-      thumbUrl = newUrl
-      thumbnailRevoke.set(port.id, () => URL.revokeObjectURL(newUrl))
-    }
+    if (isImage) {
+      // —— 图片图层：走原有 thumbnail + 预加载逻辑 ——
+      const imgValue = value as ImgFileValue
+      const file = imgValue.file!
 
-    newLayers.push({
-      portId: port.id,
-      portIndex: idx,
-      connected: true,
-      fingerprint: newFp,
-      state: { ...state },
-      fileName: value.file.name,
-      thumbnailUrl: thumbUrl
-    })
+      // 缩略图：fingerprint 或 kind 变了 → revoke 旧 URL + 重建
+      let thumbUrl: string
+      if (fpChanged || kindChanged) {
+        const oldRevoke = thumbnailRevoke.get(port.id)
+        if (oldRevoke) { oldRevoke(); thumbnailRevoke.delete(port.id) }
+        const newUrl = URL.createObjectURL(file)
+        thumbUrl = newUrl
+        thumbnailRevoke.set(port.id, () => URL.revokeObjectURL(newUrl))
+      } else if (thumbnailRevoke.has(port.id)) {
+        thumbUrl = prevLayer?.thumbnailUrl ?? ''
+      } else {
+        const newUrl = URL.createObjectURL(file)
+        thumbUrl = newUrl
+        thumbnailRevoke.set(port.id, () => URL.revokeObjectURL(newUrl))
+      }
 
-    // 预加载 natural 尺寸：fingerprint 变了 或 首次
-    if (fpChanged || !loadedImages.has(port.id)) {
-      loadedImages.delete(port.id)
-      loadImageFromFile(value.file).then((img) => {
-        loadedImages.set(port.id, img)
-        const s = n.getLayerState(port.id)
-        if (s) {
-          if (!s.initialized || fpChanged) {
-            n.updateLayerTransform(port.id, {
-              width: img.naturalWidth,
-              height: img.naturalHeight,
-              initialized: true
-            })
+      newLayers.push({
+        portId: port.id,
+        portIndex: idx,
+        connected: true,
+        kind: 'image',
+        fingerprint: newFp,
+        state: { ...state },
+        fileName: file.name,
+        thumbnailUrl: thumbUrl,
+        text: ''
+      })
+
+      // 预加载 natural 尺寸
+      if (shouldResetDims || !loadedImages.has(port.id)) {
+        loadedImages.delete(port.id)
+        loadImageFromFile(file).then((img) => {
+          loadedImages.set(port.id, img)
+          const s = n.getLayerState(port.id)
+          if (s) {
+            if (!s.initialized || shouldResetDims) {
+              n.updateLayerTransform(port.id, {
+                width: img.naturalWidth,
+                height: img.naturalHeight,
+                initialized: true
+              })
+            }
           }
-        }
-      }).catch(() => {})
+        }).catch(() => {})
+      }
+    } else {
+      // —— 文本图层：清理旧 thumbnail（如果之前是图片图层）+ 测文字尺寸 ——
+      const textValue = value as StringValue
+      const textContent = textValue.isNull ? '' : (textValue.value ?? '')
+
+      // 如果之前是图片图层，清理旧的 thumbnail
+      if (prevLayer && prevLayer.kind === 'image') {
+        const oldRevoke = thumbnailRevoke.get(port.id)
+        if (oldRevoke) { oldRevoke(); thumbnailRevoke.delete(port.id) }
+      }
+      loadedImages.delete(port.id)
+
+      newLayers.push({
+        portId: port.id,
+        portIndex: idx,
+        connected: true,
+        kind: 'text',
+        fingerprint: newFp,
+        state: { ...state },
+        fileName: '',
+        thumbnailUrl: '',
+        text: textContent
+      })
+
+      // 用离屏 canvas 测文字尺寸
+      if (!state.initialized || shouldResetDims) {
+        const fontSize = state.fontSize ?? 24
+        const fontFamily = state.fontFamily ?? 'sans-serif'
+        const { width, height } = measureText(textContent, fontSize, fontFamily)
+        n.updateLayerTransform(port.id, {
+          width,
+          height,
+          initialized: true
+        })
+      }
     }
   })
 
@@ -490,13 +561,17 @@ async function doComposite(): Promise<void> {
     const canvasSize = n.compositeCanvasSize
     if (orders.length === 0) { n.imageOutput.clear(); return }
 
-    // 优先复用 loadedImages 缓存
+    // 图片图层：优先复用 loadedImages 缓存，缺失则异步加载
     const images: (HTMLImageElement | null)[] = []
     const pending: { idx: number; file: File }[] = []
     orders.forEach((o, idx) => {
-      const cached = loadedImages.get(o.portId)
-      if (cached) images[idx] = cached
-      else { images[idx] = null; pending.push({ idx, file: o.value.file }) }
+      if (o.value instanceof ImgFileValue) {
+        const cached = loadedImages.get(o.portId)
+        if (cached) images[idx] = cached
+        else { images[idx] = null; pending.push({ idx, file: o.value.file! }) }
+      } else {
+        images[idx] = null // 文本图层占位
+      }
     })
 
     if (pending.length > 0) {
@@ -520,10 +595,21 @@ async function doComposite(): Promise<void> {
     if (!ctx) return
 
     for (let i = 0; i < orders.length; i++) {
-      const img = images[i]
-      if (!img) continue
       const o = orders[i]
-      ctx.drawImage(img, o.state.x, o.state.y, o.state.width, o.state.height)
+      if (o.value instanceof ImgFileValue) {
+        const img = images[i]
+        if (!img) continue
+        ctx.drawImage(img, o.state.x, o.state.y, o.state.width, o.state.height)
+      } else if (o.value instanceof StringValue) {
+        const text = o.value.isNull ? '' : (o.value.value ?? '')
+        const fontSize = o.state.fontSize ?? 24
+        const fontFamily = o.state.fontFamily ?? 'sans-serif'
+        const color = o.state.color ?? '#000000'
+        ctx.font = `${fontSize}px ${fontFamily}`
+        ctx.fillStyle = color
+        ctx.textBaseline = 'top'
+        ctx.fillText(text, o.state.x, o.state.y)
+      }
     }
 
     const dataUrl = canvas.toDataURL('image/png')
@@ -676,13 +762,19 @@ function onRemoveLayer(e: PointerEvent, portId: string): void {
             >×</button>
           </div>
           <div class="overlay-card__port-thumb">
-            <img v-if="layer.connected" :src="layer.thumbnailUrl" :alt="layer.fileName" draggable="false" />
+            <img v-if="layer.connected && layer.kind === 'image'" :src="layer.thumbnailUrl" :alt="layer.fileName" draggable="false" />
+            <div v-else-if="layer.connected && layer.kind === 'text'" class="overlay-card__port-text-thumb">
+              {{ layer.text.slice(0, 12) || '(空文字)' }}
+            </div>
             <div v-else class="overlay-card__port-empty-svg">
               <svg viewBox="0 0 16 16"><rect x="2" y="2" width="12" height="12" rx="2" fill="none" stroke="#c5cbd4" stroke-width="1"/><path d="M5 12L7 9L8 10L11 6L13 12H5Z" fill="#c5d4ff" stroke="#4a7cff" stroke-width="0.8" stroke-linejoin="round"/><circle cx="10.5" cy="5" r="1" fill="#4a7cff"/></svg>
             </div>
           </div>
           <div v-if="layer.connected" class="overlay-card__port-info">
-            <div class="overlay-card__port-name" :title="layer.fileName">{{ layer.fileName }}</div>
+            <div
+              class="overlay-card__port-name"
+              :title="layer.kind === 'image' ? layer.fileName : layer.text"
+            >{{ layer.kind === 'image' ? layer.fileName : (layer.text.slice(0, 16) || '(空文字)') }}</div>
             <div class="overlay-card__port-size">{{ layer.state?.width }}×{{ layer.state?.height }}</div>
           </div>
           <div v-else class="overlay-card__port-info">
@@ -738,7 +830,7 @@ function onRemoveLayer(e: PointerEvent, portId: string): void {
           }"
         >
           <div
-            v-for="layer in layers.filter(l => l.connected)"
+            v-for="layer in layers.filter(l => l.connected).slice().reverse()"
             :key="layer.portId"
             class="overlay-card__preview-layer"
             :class="{ 'is-selected': selectedPortId === layer.portId }"
@@ -750,7 +842,21 @@ function onRemoveLayer(e: PointerEvent, portId: string): void {
             }"
             @pointerdown.stop="onCanvasLayerPointerDown($event, layer.portId)"
           >
-            <img :src="layer.thumbnailUrl" :alt="layer.fileName" draggable="false" />
+            <img
+              v-if="layer.kind === 'image'"
+              :src="layer.thumbnailUrl"
+              :alt="layer.fileName"
+              draggable="false"
+            />
+            <div
+              v-else
+              class="overlay-card__preview-text"
+              :style="{
+                fontSize: (layer.state!.fontSize ?? 24) + 'px',
+                fontFamily: layer.state!.fontFamily ?? 'sans-serif',
+                color: layer.state!.color ?? '#000000'
+              }"
+            >{{ layer.text }}</div>
 
             <template v-if="selectedPortId === layer.portId">
               <div class="resize-handle resize-handle--tl" @pointerdown.stop="onResizeHandlePointerDown($event, layer.portId, 'tl')"></div>
@@ -944,6 +1050,12 @@ function onRemoveLayer(e: PointerEvent, portId: string): void {
     display: flex; align-items: center; justify-content: center;
     img { max-width: 100%; max-height: 100%; object-fit: contain; display: block; pointer-events: none; }
   }
+  &__port-text-thumb {
+    max-width: 100%; font-size: 10px; color: #3d4551;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    padding: 2px 4px; line-height: 1.2;
+    background: #fff; border-radius: 2px;
+  }
   &__port-empty-svg { width: 18px; height: 18px; display: flex; }
 
   &__port-info { overflow: hidden; }
@@ -996,6 +1108,14 @@ function onRemoveLayer(e: PointerEvent, portId: string): void {
     position: absolute; cursor: move;
     img { width: 100%; height: 100%; object-fit: fill; display: block; pointer-events: none; }
     &.is-selected { outline: 2px solid #4a7cff; }
+  }
+  &__preview-text {
+    width: 100%; height: 100%;
+    white-space: pre;
+    line-height: 1;
+    overflow: hidden;
+    pointer-events: none;
+    user-select: none;
   }
   &__empty-hint { font-size: 12px; color: #9aa1ad; text-align: center; line-height: 1.6; font-style: italic; }
 

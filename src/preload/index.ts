@@ -484,6 +484,18 @@ const getCurrentCanvasId = (): string => {
   return params.get('canvasId') || 'default'
 }
 
+/**
+ * 启动模式：从 URL query 里取 mode。
+ * - 'picker'  → 画布选择器窗口（多个画布时弹欢迎窗口）
+ * - undefined → 正常画布窗口
+ */
+const getStartupMode = (): string | null => {
+  const params = new URLSearchParams(window.location.search)
+  return params.get('mode')
+}
+
+export type GetStartupMode = typeof getStartupMode
+
 if (process.contextIsolated) {
   try {
     // 主进程推送的日志 → 转发到渲染进程 Console
@@ -509,6 +521,7 @@ if (process.contextIsolated) {
     contextBridge.exposeInMainWorld('tableApi', tableApi)
     contextBridge.exposeInMainWorld('canvasApi', canvasApi)
     contextBridge.exposeInMainWorld('getCurrentCanvasId', getCurrentCanvasId)
+    contextBridge.exposeInMainWorld('getStartupMode', getStartupMode)
   } catch (error) {
     console.error(error)
   }
@@ -541,6 +554,8 @@ if (process.contextIsolated) {
   window.canvasApi = canvasApi
   // @ts-ignore (define in dts)
   window.getCurrentCanvasId = getCurrentCanvasId
+  // @ts-ignore (define in dts)
+  window.getStartupMode = getStartupMode
 }
 
 export type ExposedApi = typeof api

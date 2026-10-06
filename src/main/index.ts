@@ -108,6 +108,60 @@ function createWindow(canvasId: string = 'default'): BrowserWindow {
   return mainWindow
 }
 
+/** 查 canvases 表行数。主进程启动时用，决定是直接开窗还是弹选择器 */
+function getCanvasCount(): number {
+  const db = getDatabase()
+  const rows = db.exec('SELECT COUNT(*) FROM canvases')
+  return rows.length ? Number(rows[0].values[0][0]) : 0
+}
+
+/** 创建画布选择器窗口（小尺寸、居中），通过 URL query 传 mode=picker 让 renderer 进入选择模式 */
+function createPickerWindow(): BrowserWindow {
+  const picker = new BrowserWindow({
+    width: 480,
+    height: 440,
+    resizable: false,
+    maximizable: false,
+    fullscreenable: false,
+    show: false,
+    autoHideMenuBar: true,
+    titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
+    backgroundColor: '#f5f6f8',
+    webPreferences: {
+      preload: join(__dirname, '../preload/index.js'),
+      sandbox: false
+    }
+  })
+
+  picker.center()
+
+  picker.on('ready-to-show', () => {
+    picker.show()
+  })
+
+  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
+    const url = new URL(process.env['ELECTRON_RENDERER_URL'])
+    url.searchParams.set('mode', 'picker')
+    picker.loadURL(url.toString())
+  } else {
+    picker.loadFile(join(__dirname, '../renderer/index.html'), {
+      query: { mode: 'picker' }
+    })
+  }
+
+  return picker
+}
+
+/** 根据画布数量决定是直接打开还是弹选择器 */
+function createAppropriateWindow(): void {
+  const count = getCanvasCount()
+  if (count <= 1) {
+    createWindow()
+  } else {
+    createPickerWindow()
+  }
+}
+
 /**
  * 启动画布目录文件监听。
  * 监听整个画布根目录（文稿/CanvasDesk/我的画布）及所有子目录（每个画布一个子目录），
@@ -1542,14 +1596,14 @@ app.whenReady().then(async () => {
     optimizer.watchWindowShortcuts(window)
   })
 
-  createWindow()
+  createAppropriateWindow()
   startCanvasWatcher()
   // 构建系统应用菜单（含「设置」入口，macOS 显示在屏幕顶部菜单栏）
   // 此时用的是英文兜底文案，渲染进程就绪后会推来当前语言的文案并触发重建
   buildApplicationMenu()
 
   app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow()
+    if (BrowserWindow.getAllWindows().length === 0) createAppropriateWindow()
   })
 })
 

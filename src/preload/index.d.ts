@@ -12,7 +12,8 @@ import type {
   TransferApi,
   TableApi,
   CanvasApi,
-  GetCurrentCanvasId
+  GetCurrentCanvasId,
+  GetStartupMode
 } from './index'
 
 declare global {
@@ -33,5 +34,7 @@ declare global {
     canvasApi: CanvasApi
     /** 返回当前窗口绑定的 canvasId（从 URL query 读，默认 'default'） */
     getCurrentCanvasId: GetCurrentCanvasId
+    /** 返回启动模式：'picker'=画布选择器窗口，null=正常画布窗口 */
+    getStartupMode: GetStartupMode
   }
 }

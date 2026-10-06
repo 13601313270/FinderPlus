@@ -22,6 +22,7 @@ import HelpCenter from './components/HelpCenter.vue'
 import OnboardingGuide from './components/OnboardingGuide.vue'
 import SettingsDialog from './components/SettingsDialog.vue'
 import PromptDialog from './components/PromptDialog.vue'
+import CanvasPicker from './components/CanvasPicker.vue'
 import HelpIcon from './components/icons/HelpIcon.vue'
 import GearIcon from './components/icons/GearIcon.vue'
 import { useHelpCenter } from '@renderer/composables/useHelpCenter'
@@ -664,6 +665,9 @@ function onWindowPointerMove(e: PointerEvent): void {
 // 渲染进程所有 DB / 文件操作都带上这个 id，保证多窗口间各自独立。
 const boundCanvasId = window.getCurrentCanvasId()
 
+// —— 启动模式：picker 模式是画布选择器窗口，只渲染 CanvasPicker 组件，跳过所有画布逻辑
+const isPickerMode = window.getStartupMode() === 'picker'
+
 // —— 画布选择器状态 ——
 const currentCanvasName = ref('默认画布')
 const showCanvasMenu = ref(false)
@@ -820,33 +824,38 @@ watch(
 // 立即启动 bootstrap（不在 onMounted 里——要早于子组件挂载）
 // 完成后再启动新手引导：避免 bootstrap 恢复历史边时误触发连线完成检测
 // 非 default 画布跳过引导——引导只在首次启动（default 画布）时跑一次
-void bootstrapScene().then(() => {
-  if (boundCanvasId === 'default') {
-    onboarding.start()
-  }
-})
+// picker 模式不加载任何画布数据，CanvasPicker 组件会自己处理
+if (!isPickerMode) {
+  void bootstrapScene().then(() => {
+    if (boundCanvasId === 'default') {
+      onboarding.start()
+    }
+  })
+}
 
 onMounted(() => {
-  setCanvasContainer(canvasEl.value)
-  canvasEl.value?.addEventListener('wheel', onWheel, { passive: false })
-  // 全局监听 pointermove：
-  // 1. 持续缓存鼠标位置（供下次 palette 选择时用）
-  // 2. 放置模式下让节点跟随（不要求鼠标按下）
-  window.addEventListener('pointermove', onWindowPointerMove)
-  // 节点投放结算：常驻监听 pointerup（先于 useNodePosition 拖拽时临时注册的 handler 执行）
-  window.addEventListener('pointerup', onGlobalPointerUp)
-  // 全局 mousedown：点击菜单外部时关闭右键菜单
-  document.addEventListener('mousedown', onDocumentMouseDown)
-  // 全局 contextmenu：capture 阶段捕获所有层级的节点右键（含文件夹内嵌套节点）
-  document.addEventListener('contextmenu', onDocumentContextMenu, true)
-  // 全局拖拽兜底：文件拖到画布外区域（顶部 dragbar 等）时阻止 Electron 默认打开文件导致白屏
-  // 画布上的业务逻辑仍由 stage__canvas 的 @dragover / @drop 处理
-  document.addEventListener('dragover', onGlobalDragOver)
-  document.addEventListener('drop', onGlobalDrop)
-  unsubscribeScene = workspaceScene.onChanged(onSceneChanged)
-  unsubscribeOnboardingCheck = workspaceScene.onChanged(onSceneChangedForOnboarding)
-  // 画布下拉菜单的外部点击关闭
-  document.addEventListener('mousedown', onCanvasMenuDocClick, true)
+  if (!isPickerMode) {
+    setCanvasContainer(canvasEl.value)
+    canvasEl.value?.addEventListener('wheel', onWheel, { passive: false })
+    // 全局监听 pointermove：
+    // 1. 持续缓存鼠标位置（供下次 palette 选择时用）
+    // 2. 放置模式下让节点跟随（不要求鼠标按下）
+    window.addEventListener('pointermove', onWindowPointerMove)
+    // 节点投放结算：常驻监听 pointerup（先于 useNodePosition 拖拽时临时注册的 handler 执行）
+    window.addEventListener('pointerup', onGlobalPointerUp)
+    // 全局 mousedown：点击菜单外部时关闭右键菜单
+    document.addEventListener('mousedown', onDocumentMouseDown)
+    // 全局 contextmenu：capture 阶段捕获所有层级的节点右键（含文件夹内嵌套节点）
+    document.addEventListener('contextmenu', onDocumentContextMenu, true)
+    // 全局拖拽兜底：文件拖到画布外区域（顶部 dragbar 等）时阻止 Electron 默认打开文件导致白屏
+    // 画布上的业务逻辑仍由 stage__canvas 的 @dragover / @drop 处理
+    document.addEventListener('dragover', onGlobalDragOver)
+    document.addEventListener('drop', onGlobalDrop)
+    unsubscribeScene = workspaceScene.onChanged(onSceneChanged)
+    unsubscribeOnboardingCheck = workspaceScene.onChanged(onSceneChangedForOnboarding)
+    // 画布下拉菜单的外部点击关闭
+    document.addEventListener('mousedown', onCanvasMenuDocClick, true)
+  }
 })
 
 onUnmounted(() => {
@@ -866,7 +875,11 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <section class="stage">
+  <!-- 画布选择器模式：多个画布时的欢迎窗口 -->
+  <CanvasPicker v-if="isPickerMode" />
+
+  <!-- 正常画布模式 -->
+  <section v-else class="stage">
     <!-- 顶部拖动条：macOS 窗口标题栏已隐藏（titleBarStyle: 'hiddenInset'），
          左侧大部分区域可拖动窗口，右侧按钮区域故意不设 drag，保持可点击。 -->
     <header class="stage__dragbar">

@@ -21,6 +21,7 @@ import { canvasNotice } from '@renderer/canvas/notice'
 import HelpCenter from './components/HelpCenter.vue'
 import OnboardingGuide from './components/OnboardingGuide.vue'
 import SettingsDialog from './components/SettingsDialog.vue'
+import PromptDialog from './components/PromptDialog.vue'
 import HelpIcon from './components/icons/HelpIcon.vue'
 import GearIcon from './components/icons/GearIcon.vue'
 import { useHelpCenter } from '@renderer/composables/useHelpCenter'
@@ -674,11 +675,6 @@ interface CanvasInfo {
 }
 const canvasList = ref<CanvasInfo[]>([])
 
-// 内联"新建画布"输入框状态（替代 window.prompt，Electron 禁了后者）
-const showNewCanvasInput = ref(false)
-const newCanvasNameInput = ref('')
-const newCanvasInputRef = ref<HTMLInputElement | null>(null)
-
 async function refreshCanvasList(): Promise<void> {
   try {
     const list = await window.canvasApi.list()
@@ -692,30 +688,19 @@ async function refreshCanvasList(): Promise<void> {
 
 function toggleCanvasMenu(): void {
   showCanvasMenu.value = !showCanvasMenu.value
-  if (showCanvasMenu.value) {
-    void refreshCanvasList()
-  } else {
-    cancelNewCanvas()
-  }
+  if (showCanvasMenu.value) void refreshCanvasList()
 }
 
-async function confirmNewCanvas(): Promise<void> {
-  const name = newCanvasNameInput.value.trim()
-  if (!name) return
+async function handleCreateCanvas(): Promise<void> {
+  const name = await window.showPrompt('新建画布', '', { placeholder: '画布名称' })
+  if (!name || !name.trim()) return
+  showCanvasMenu.value = false
   try {
-    const result = await window.canvasApi.create(name)
+    const result = await window.canvasApi.create(name.trim())
     await window.canvasApi.openNewWindow(result.id)
   } catch (err) {
     console.warn('[canvas] 新建画布失败：', err)
   }
-  // 收起新建状态 + 下拉
-  showCanvasMenu.value = false
-  cancelNewCanvas()
-}
-
-function cancelNewCanvas(): void {
-  showNewCanvasInput.value = false
-  newCanvasNameInput.value = ''
 }
 
 async function openCanvas(id: string): Promise<void> {
@@ -726,7 +711,6 @@ async function openCanvas(id: string): Promise<void> {
     console.warn('[canvas] 打开画布失败：', err)
   }
   showCanvasMenu.value = false
-  cancelNewCanvas()
 }
 
 /** 点击画布选择器外部时关闭下拉 */
@@ -735,7 +719,6 @@ function onCanvasMenuDocClick(e: MouseEvent): void {
   if (!canvasMenuRef.value) return
   if (!canvasMenuRef.value.contains(target)) {
     showCanvasMenu.value = false
-    cancelNewCanvas()
   }
 }
 
@@ -754,12 +737,6 @@ onUnmounted(() => {
   unsubscribeCanvasChanged?.()
 })
 
-// 进入"新建画布"输入态后自动聚焦 input
-watch(showNewCanvasInput, async (v) => {
-  if (!v) return
-  await nextTick()
-  newCanvasInputRef.value?.focus()
-})
 
 // —— 启动：从主进程 DB 读数据 → 重建 Scene → attachStorage 自动持久化后续变化 ——
 // 这个函数在 App 初始化阶段同步执行，比 onMounted 更早——节点必须在渲染组件挂载前就绪，
@@ -907,31 +884,14 @@ onUnmounted(() => {
               <path d="M2 3L5 6L8 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
             </svg>
           </button>
-          <!-- 下拉菜单 + 内联新建输入框 -->
+          <!-- 下拉菜单 -->
           <transition name="stage__canvas-fade">
             <ul v-if="showCanvasMenu" class="stage__canvas-menu">
-              <!-- 新建画布：展开成 input + 确定/取消，替代 window.prompt() -->
-              <li v-if="!showNewCanvasInput" class="stage__canvas-item stage__canvas-item--new" @click="showNewCanvasInput = true">
+              <!-- 新建画布：用全局 PromptDialog -->
+              <li class="stage__canvas-item stage__canvas-item--new" @click="handleCreateCanvas">
                 <span class="stage__canvas-item-icon">＋</span>
                 <span>新建画布…</span>
               </li>
-              <li v-else class="stage__canvas-item stage__canvas-item--input">
-                <input
-                  ref="newCanvasInputRef"
-                  v-model="newCanvasNameInput"
-                  class="stage__canvas-input"
-                  type="text"
-                  placeholder="画布名称"
-                  maxlength="40"
-                  @keydown.enter="confirmNewCanvas"
-                  @keydown.esc="cancelNewCanvas"
-                  @click.stop
-                  @mousedown.stop
-                />
-                <button class="stage__canvas-input-ok" type="button" @click.stop="confirmNewCanvas">确定</button>
-                <button class="stage__canvas-input-cancel" type="button" @click.stop="cancelNewCanvas">✕</button>
-              </li>
-              <li v-if="showNewCanvasInput" class="stage__canvas-separator" />
               <li v-if="canvasList.length > 0" class="stage__canvas-separator" />
               <li
                 v-for="c in canvasList"
@@ -1003,6 +963,9 @@ onUnmounted(() => {
 
     <!-- 全局设置弹窗：顶部栏「设置」按钮和系统应用菜单「设置…」共享它 -->
     <SettingsDialog />
+
+    <!-- 全局 prompt / confirm / alert 替代组件，挂载后自动接管 imperative API -->
+    <PromptDialog />
 
     <!-- 首次启动新手引导：全屏覆盖层 + 步骤卡片，pointer-events: none 不阻断画布交互 -->
     <OnboardingGuide />

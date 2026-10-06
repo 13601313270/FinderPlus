@@ -453,6 +453,14 @@ const canvasApi = {
   openNewWindow: (id: string): Promise<{ ok: true } | { ok: false; error: string }> =>
     ipcRenderer.invoke('canvas:openNewWindow', { id }),
 
+  /** 在 Finder/Explorer 里打开指定画布的文件目录 */
+  openFolder: (id: string): Promise<{ ok: true } | { ok: false; error: string }> =>
+    ipcRenderer.invoke('canvas:openFolder', { id }),
+
+  /** 批量查画布详情（节点数、边数、文件数）。ids 为空数组时返回空对象 */
+  details: (ids: string[]): Promise<Record<string, { nodeCount: number; edgeCount: number; fileCount: number }>> =>
+    ipcRenderer.invoke('canvas:details', { ids }),
+
   /**
    * 订阅画布列表变更。
    * 主进程在 create / rename / delete 成功后 broadcast 到所有窗口。

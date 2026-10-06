@@ -166,9 +166,10 @@ const canForce = computed(() =>
   !triggering.value && readyCount.value > 0 && readyCount.value < portCount.value
 )
 
-function onForceTrigger(): void {
+async function onForceTrigger(): Promise<void> {
   const missing = portCount.value - readyCount.value
-  const confirmed = window.confirm(
+  const confirmed = await window.showConfirm(
+    '强制触发？',
     t('forceTriggerConfirm', {
       ready: readyCount.value,
       total: portCount.value,

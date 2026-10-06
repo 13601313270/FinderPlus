@@ -1,6 +1,6 @@
 import { app, shell, BrowserWindow, ipcMain, Menu, dialog } from 'electron'
 import { join, basename, extname, parse } from 'node:path'
-import { copyFileSync, existsSync, readFileSync, readdirSync, rmSync, mkdirSync, unlinkSync, watch, writeFileSync } from 'node:fs'
+import { copyFileSync, existsSync, readFileSync, readdirSync, rmSync, mkdirSync, statSync, unlinkSync, watch, writeFileSync } from 'node:fs'
 import { exec } from 'node:child_process'
 import http from 'node:http'
 import https from 'node:https'
@@ -51,7 +51,19 @@ function slugify(name: string): string {
     .slice(0, 64) || `canvas-${Date.now()}`
 }
 
+// canvasId → BrowserWindow 映射，保证同一画布只开一个窗口
+const canvasWindows = new Map<string, BrowserWindow>()
+
 function createWindow(canvasId: string = 'default'): BrowserWindow {
+  // 已开就 focus + show，不再新建
+  const existing = canvasWindows.get(canvasId)
+  if (existing && !existing.isDestroyed()) {
+    if (existing.isMinimized()) existing.restore()
+    existing.focus()
+    existing.show()
+    return existing
+  }
+
   const mainWindow = new BrowserWindow({
     width: 1280,
     height: 800,
@@ -86,6 +98,12 @@ function createWindow(canvasId: string = 'default'): BrowserWindow {
       query: { canvasId }
     })
   }
+
+  // 注册到映射表，关闭时自动清理
+  canvasWindows.set(canvasId, mainWindow)
+  mainWindow.on('closed', () => {
+    if (canvasWindows.get(canvasId) === mainWindow) canvasWindows.delete(canvasId)
+  })
 
   return mainWindow
 }
@@ -340,6 +358,42 @@ function registerIpcHandlers(): void {
     if (!rows.length) return { ok: false, error: `画布不存在：${args.id}` }
     createWindow(args.id)
     return { ok: true }
+  })
+
+  /** 在 Finder/Explorer 里打开某画布的文件目录 */
+  ipcMain.handle('canvas:openFolder', (_e, args: { id: string }): { ok: false; error: string } | { ok: true } => {
+    if (!SAFE_CANVAS_ID.test(args.id)) return { ok: false, error: '画布 ID 不合法' }
+    const dir = getCanvasDir(args.id)
+    if (!existsSync(dir)) {
+      ensureCanvasDir(args.id) // 目录不存在就建一个再打开
+    }
+    shell.showItemInFolder(dir)
+    return { ok: true }
+  })
+
+  /** 批量查画布详情：节点数、边数、文件数。给设置页【我的画布】列表展示用 */
+  ipcMain.handle('canvas:details', (_e, args: { ids: string[] }): Record<string, { nodeCount: number; edgeCount: number; fileCount: number }> => {
+    const db = getDatabase()
+    const result: Record<string, { nodeCount: number; edgeCount: number; fileCount: number }> = {}
+    for (const id of args.ids) {
+      if (!SAFE_CANVAS_ID.test(id)) continue
+      const nodeQ = db.exec('SELECT COUNT(*) FROM nodes WHERE canvas_id = ?', [id])
+      const edgeQ = db.exec('SELECT COUNT(*) FROM edges WHERE canvas_id = ?', [id])
+      const nodeCount = nodeQ.length ? Number(nodeQ[0].values[0][0]) : 0
+      const edgeCount = edgeQ.length ? Number(edgeQ[0].values[0][0]) : 0
+      let fileCount = 0
+      try {
+        const dir = getCanvasDir(id)
+        if (existsSync(dir)) {
+          const entries = readdirSync(dir)
+          fileCount = entries.filter((name) => {
+            try { return statSync(join(dir, name)).isFile() } catch { return false }
+          }).length
+        }
+      } catch { /* 目录读不到就当 0 */ }
+      result[id] = { nodeCount, edgeCount, fileCount }
+    }
+    return result
   })
 
   // —— 持久化写操作：由渲染进程 Scene 里的 IpcStorage 通过 preload 调用 ——

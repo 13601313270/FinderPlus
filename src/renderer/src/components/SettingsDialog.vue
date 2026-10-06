@@ -43,16 +43,17 @@ const {
 } = useImageSettings()
 
 /** 左侧选中的分类 */
-type SectionKey = 'general' | 'llm' | 'image'
+type SectionKey = 'general' | 'llm' | 'image' | 'canvases'
 const activeSection = ref<SectionKey>('general')
 
-const SECTION_ORDER: SectionKey[] = ['general', 'llm', 'image']
+const SECTION_ORDER: SectionKey[] = ['general', 'llm', 'image', 'canvases']
 
 function sectionLabel(key: SectionKey): string {
   switch (key) {
-    case 'general': return t('settingsDialog.groupGeneral')
-    case 'llm':     return t('settingsDialog.groupLLM')
-    case 'image':   return t('settingsDialog.groupImage')
+    case 'general':   return '通用'
+    case 'llm':       return '大语言模型设置'
+    case 'image':     return '生图模型'
+    case 'canvases':  return '我的画布'
   }
 }
 
@@ -165,12 +166,12 @@ async function handleExport(): Promise<void> {
     // 3. 调主进程打包
     const result = await window.transferApi?.exportData(savePath, configJson)
     if (result?.ok) {
-      alert(t('settingsDialog.exportSuccess'))
+      await window.showAlert(t('settingsDialog.exportSuccess'))
     } else {
-      alert(`Export failed: ${result?.error ?? 'Unknown error'}`)
+      await window.showAlert(`Export failed: ${result?.error ?? 'Unknown error'}`)
     }
   } catch (err) {
-    alert(`Export failed: ${err instanceof Error ? err.message : String(err)}`)
+    await window.showAlert(`Export failed: ${err instanceof Error ? err.message : String(err)}`)
   } finally {
     transferBusy.value = false
   }
@@ -179,7 +180,8 @@ async function handleExport(): Promise<void> {
 /** 导入按钮点击 */
 async function handleImport(): Promise<void> {
   // 1. 确认弹窗
-  if (!window.confirm(t('settingsDialog.importConfirmBody'))) return
+  const confirmed = await window.showConfirm(t('settingsDialog.importConfirmTitle'), t('settingsDialog.importConfirmBody'))
+  if (!confirmed) return
 
   transferBusy.value = true
   try {
@@ -203,14 +205,14 @@ async function handleImport(): Promise<void> {
         // config.json 解析失败就跳过——DB 和文件已经恢复了
       }
       // 5. 自动刷新页面以加载新 DB 数据和节点图
-      alert(t('settingsDialog.importSuccess'))
+      await window.showAlert(t('settingsDialog.importSuccess'))
       window.location.reload()
       return
     } else {
-      alert(`Import failed: ${result?.error ?? 'Unknown error'}`)
+      await window.showAlert(`Import failed: ${result?.error ?? 'Unknown error'}`)
     }
   } catch (err) {
-    alert(`Import failed: ${err instanceof Error ? err.message : String(err)}`)
+    await window.showAlert(`Import failed: ${err instanceof Error ? err.message : String(err)}`)
   } finally {
     transferBusy.value = false
   }
@@ -285,8 +287,9 @@ const canvasIsEmpty = computed(() => {
 const clearBusy = ref(false)
 
 async function handleClearCanvas(): Promise<void> {
-  const ok = window.confirm(
-    `${t('settingsDialog.clearConfirmTitle')}\n\n${t('settingsDialog.clearConfirmBody')}`
+  const ok = await window.showConfirm(
+    t('settingsDialog.clearConfirmTitle'),
+    t('settingsDialog.clearConfirmBody')
   )
   if (!ok) return
   clearBusy.value = true
@@ -297,12 +300,110 @@ async function handleClearCanvas(): Promise<void> {
     viewport.y = 0
     viewport.scale = 1
     closeSettings()
-    alert(t('settingsDialog.clearSuccess'))
+    await window.showAlert(t('settingsDialog.clearSuccess'))
   } catch (err) {
-    alert(`Clear failed: ${err instanceof Error ? err.message : String(err)}`)
+    await window.showAlert(`Clear failed: ${err instanceof Error ? err.message : String(err)}`)
   } finally {
     clearBusy.value = false
   }
+}
+
+// —— 我的画布 tab ——
+interface CanvasRow {
+  id: string
+  name: string
+  updatedAt: number
+  nodeCount: number
+  edgeCount: number
+  fileCount: number
+}
+const canvasRows = ref<CanvasRow[]>([])
+const canvasLoading = ref(false)
+const currentCanvasId = window.getCurrentCanvasId()
+
+async function refreshCanvasRows(): Promise<void> {
+  canvasLoading.value = true
+  try {
+    const list = await window.canvasApi.list()
+    const ids = list.map((c) => c.id)
+    const details = await window.canvasApi.details(ids)
+    canvasRows.value = list.map((c) => {
+      const d = details[c.id] ?? { nodeCount: 0, edgeCount: 0, fileCount: 0 }
+      return { ...c, ...d }
+    })
+  } catch (err) {
+    console.warn('[settings] 加载画布列表失败', err)
+  } finally {
+    canvasLoading.value = false
+  }
+}
+
+// 打开设置弹窗时刷新画布列表
+watch(activeSection, (key) => {
+  if (key === 'canvases') void refreshCanvasRows()
+})
+watch(visible, (v) => {
+  if (v && activeSection.value === 'canvases') void refreshCanvasRows()
+})
+
+function formatTime(ts: number): string {
+  const d = new Date(ts)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+// 给卡片左侧缩略图随机一个渐变背景——基于 canvasId 哈希保证稳定
+const THUMB_GRADIENTS = [
+  'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',
+  'linear-gradient(135deg,#f093fb 0%,#f5576c 100%)',
+  'linear-gradient(135deg,#4facfe 0%,#00f2fe 100%)',
+  'linear-gradient(135deg,#43e97b 0%,#38f9d7 100%)',
+  'linear-gradient(135deg,#fa709a 0%,#fee140 100%)',
+  'linear-gradient(135deg,#a8edea 0%,#fed6e3 100%)',
+  'linear-gradient(135deg,#ff9a9e 0%,#fad0c4 100%)',
+  'linear-gradient(135deg,#ffecd2 0%,#fcb69f 100%)',
+]
+function canvasThumbBg(row: CanvasRow): { background: string } {
+  let h = 0
+  for (let i = 0; i < row.id.length; i++) h = ((h << 5) - h + row.id.charCodeAt(i)) | 0
+  return { background: THUMB_GRADIENTS[Math.abs(h) % THUMB_GRADIENTS.length] }
+}
+
+async function onOpenCanvas(id: string): Promise<void> {
+  await window.canvasApi.openNewWindow(id)
+}
+
+async function onOpenCanvasFolder(id: string): Promise<void> {
+  await window.canvasApi.openFolder(id)
+}
+
+async function onRenameCanvas(id: string, currentName: string): Promise<void> {
+  const input = await window.showPrompt('重命名画布：', currentName)
+  if (!input || !input.trim() || input === currentName) return
+  const result = await window.canvasApi.rename(id, input.trim())
+  if (!result.ok) {
+    await window.showAlert(result.error ?? '重命名失败')
+    return
+  }
+  await refreshCanvasRows()
+}
+
+async function onDeleteCanvas(id: string, name: string): Promise<void> {
+  if (id === 'default') {
+    await window.showAlert('默认画布不能删除')
+    return
+  }
+  const ok = await window.showConfirm(
+    '确定要删除画布吗？',
+    `画布中的节点、连线和文件都会被删除，且无法恢复。\n\n画布：${name}`
+  )
+  if (!ok) return
+  const result = await window.canvasApi.delete(id)
+  if (!result.ok) {
+    await window.showAlert(result.error ?? '删除失败')
+    return
+  }
+  await refreshCanvasRows()
 }
 </script>
 
@@ -475,6 +576,69 @@ async function handleClearCanvas(): Promise<void> {
                         type="button"
                         @click="onSaveImageProviderKey(key)"
                       >{{ savedImageProviders.has(key) ? t('settingsDialog.saved') : t('settingsDialog.save') }}</button>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            </template>
+
+            <!-- ========== 我的画布 ========== -->
+            <template v-if="activeSection === 'canvases'">
+              <section class="gs-section">
+                <h4 class="gs-section__title">我的画布</h4>
+                <p class="gs-section__hint">这里列出了所有画布及其基本信息。点击「打开」会在新窗口中打开该画布，多个窗口可以并行操作。</p>
+
+                <div v-if="canvasLoading" class="gs-canvases__loading">加载中…</div>
+
+                <div v-else-if="canvasRows.length === 0" class="gs-canvases__empty">
+                  还没有画布。使用顶部画布选择器的「新建画布…」来创建。
+                </div>
+
+                <div v-else class="gs-canvases__grid">
+                  <div
+                    v-for="row in canvasRows"
+                    :key="row.id"
+                    class="gs-canvas-card"
+                    :class="{ 'gs-canvas-card--active': row.id === currentCanvasId }"
+                  >
+                    <!-- 第一行：缩略图 + 信息 -->
+                    <div class="gs-canvas-card__row">
+                      <div class="gs-canvas-card__thumb" :style="canvasThumbBg(row)">
+                        <svg viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <circle cx="18" cy="22" r="7" fill="#fff" fill-opacity="0.9"/>
+                          <circle cx="42" cy="22" r="7" fill="#fff" fill-opacity="0.9"/>
+                          <circle cx="30" cy="42" r="7" fill="#fff" fill-opacity="0.9"/>
+                          <path d="M25 22 H35" stroke="#fff" stroke-opacity="0.7" stroke-width="2"/>
+                          <path d="M20 28 L28 36" stroke="#fff" stroke-opacity="0.7" stroke-width="2"/>
+                          <path d="M40 28 L32 36" stroke="#fff" stroke-opacity="0.7" stroke-width="2"/>
+                        </svg>
+                      </div>
+                      <div class="gs-canvas-card__info">
+                        <div class="gs-canvas-card__name-row">
+                          <span class="gs-canvas-card__name">{{ row.name }}</span>
+                          <span v-if="row.id === 'default'" class="gs-canvas-card__badge">默认</span>
+                          <span v-if="row.id === currentCanvasId" class="gs-canvas-card__badge gs-canvas-card__badge--active">当前画布</span>
+                        </div>
+                        <div class="gs-canvas-card__stats">
+                          <span class="gs-canvas-card__stat"><b>{{ row.nodeCount }}</b> 节点</span>
+                          <span class="gs-canvas-card__stat"><b>{{ row.edgeCount }}</b> 连线</span>
+                          <span class="gs-canvas-card__stat"><b>{{ row.fileCount }}</b> 文件</span>
+                          <span class="gs-canvas-card__time">最后修改：{{ formatTime(row.updatedAt) }}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- 第二行：操作按钮 -->
+                    <div class="gs-canvas-card__actions">
+                      <button class="gs-canvas-card__btn gs-canvas-card__btn--primary" type="button" @click="onOpenCanvas(row.id)">打开</button>
+                      <button class="gs-canvas-card__btn" type="button" @click="onOpenCanvasFolder(row.id)">打开文件夹</button>
+                      <button class="gs-canvas-card__btn" type="button" @click="onRenameCanvas(row.id, row.name)">重命名</button>
+                      <button
+                        v-if="row.id !== 'default'"
+                        class="gs-canvas-card__btn gs-canvas-card__btn--danger"
+                        type="button"
+                        @click="onDeleteCanvas(row.id, row.name)"
+                      >删除</button>
                     </div>
                   </div>
                 </div>
@@ -768,6 +932,187 @@ async function handleClearCanvas(): Promise<void> {
   background: #16a34a !important;
   border-color: #16a34a !important;
   color: #fff;
+}
+
+.gs-btn--saved {
+  background: #16a34a !important;
+  border-color: #16a34a !important;
+  color: #fff;
+}
+
+// —— 我的画布 tab 样式（卡片） ——
+.gs-canvases {
+  &__loading,
+  &__empty {
+    padding: 28px;
+    text-align: center;
+    color: #9ca3af;
+    font-size: 13px;
+    border: 1px dashed #d1d5db;
+    border-radius: 10px;
+    background: #fafafa;
+  }
+
+  &__grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+}
+
+.gs-canvas-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 16px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+
+  &:hover {
+    border-color: #c7d2fe;
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.08);
+  }
+
+  &--active {
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.15);
+
+    .gs-canvas-card__thumb {
+      box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.4);
+    }
+  }
+
+  // 第一行：缩略图 + 信息（横向）
+  &__row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  // 缩略图
+  &__thumb {
+    flex-shrink: 0;
+    width: 52px;
+    height: 52px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+
+    svg {
+      width: 36px;
+      height: 36px;
+    }
+  }
+
+  // 中间信息
+  &__info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  &__name-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  &__name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1f2937;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__badge {
+    flex-shrink: 0;
+    padding: 1px 7px;
+    font-size: 10px;
+    font-weight: 500;
+    color: #2563eb;
+    background: #eff6ff;
+    border-radius: 4px;
+
+    &--active {
+      color: #fff;
+      background: #4f46e5;
+    }
+  }
+
+  &__stats {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    font-size: 12px;
+    color: #6b7280;
+
+    b {
+      color: #374151;
+      font-weight: 600;
+      margin-right: 2px;
+    }
+  }
+
+  &__time {
+    color: #9ca3af;
+    font-variant-numeric: tabular-nums;
+  }
+
+  // 第二行：按钮（左对齐）
+  &__actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-top: 10px;
+    border-top: 1px solid #f3f4f6;
+  }
+
+  &__btn {
+    all: unset;
+    cursor: pointer;
+    padding: 6px 14px;
+    font-size: 12px;
+    border-radius: 6px;
+    color: #4b5563;
+    background: #f9fafb;
+    border: 1px solid transparent;
+    transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+
+    &:hover {
+      background: #eef2ff;
+      color: #4f46e5;
+      border-color: #c7d2fe;
+    }
+
+    &--primary {
+      background: #4f46e5;
+      color: #fff;
+      border-color: #4f46e5;
+
+      &:hover {
+        background: #4338ca;
+        color: #fff;
+        border-color: #4338ca;
+      }
+    }
+
+    &--danger {
+      color: #dc2626;
+      &:hover {
+        background: #fef2f2;
+        color: #b91c1c;
+        border-color: #fecaca;
+      }
+    }
+  }
 }
 
 @keyframes gsFadeIn {

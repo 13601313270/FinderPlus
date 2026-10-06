@@ -1,4 +1,5 @@
 import { StringValue } from '../../engine/data/StringValue'
+import { JsonValue } from '../../engine/data/JsonValue'
 import { InputPort } from '../../engine/port/InputPort'
 import { OutputPort } from '../../engine/port/OutputPort'
 import { Node } from '../../engine/node/Node'
@@ -72,6 +73,25 @@ function resolveEndpoint(
   }
 }
 
+/** 输出端口的多语言标签（JSON / String 共用） */
+const OUTPUT_PORT_LABEL = {
+  zh: '回复',
+  en: 'Reply',
+  ja: '返信',
+  ko: '응답',
+  es: 'Respuesta',
+  ar: 'رد',
+  fr: 'Réponse',
+  pt: 'Resposta',
+  ru: 'Ответ',
+  hi: 'उत्तर',
+  id: 'Balasan',
+  de: 'Antwort',
+  vi: 'Trả lời',
+  tr: 'Yanıt',
+  it: 'Risposta'
+} as const
+
 export class LLMNode extends Node {
   static readonly TYPE = 'llm'
   readonly type = LLMNode.TYPE
@@ -125,24 +145,8 @@ export class LLMNode extends Node {
     }
   })
 
-  /** 输出端口：模型回复 */
-  readonly textOutput = new OutputPort('text', StringValue, {
-    zh: '回复',
-    en: 'Reply',
-    ja: '返信',
-    ko: '응답',
-    es: 'Respuesta',
-    ar: 'رد',
-    fr: 'Réponse',
-    pt: 'Resposta',
-    ru: 'Ответ',
-    hi: 'उत्तर',
-    id: 'Balasan',
-    de: 'Antwort',
-    vi: 'Trả lời',
-    tr: 'Yanıt',
-    it: 'Risposta'
-  })
+  /** 输出端口：模型回复（类型随 jsonMode 切换：StringValue ↔ JsonValue） */
+  private textOutput!: OutputPort
 
   /** 内部 prompt 文本（仅 promptInput 未接边时使用） */
   private localPrompt = ''
@@ -162,10 +166,16 @@ export class LLMNode extends Node {
 
   constructor(id: string) {
     super(id)
+    this.textOutput = this.buildOutputPort(this.jsonMode)
     this.addInput(this.systemInput)
     this.addInput(this.promptInput)
     this.addOutput(this.textOutput)
     this.setBox(320, 280)
+  }
+
+  /** 按 jsonMode 构建对应 Value 类型的输出端口 */
+  private buildOutputPort(json: boolean): OutputPort {
+    return new OutputPort('text', json ? JsonValue : StringValue, OUTPUT_PORT_LABEL)
   }
 
   // —— 节点级配置的 getter / setter ——
@@ -188,6 +198,10 @@ export class LLMNode extends Node {
   setJsonMode(v: boolean): void {
     if (this.jsonMode === v) return
     this.jsonMode = v
+    this.removeOutput(this.textOutput) // 自动断开旧边
+    this.textOutput = this.buildOutputPort(v)
+    this.addOutput(this.textOutput)
+    this.response = ''
     this.notifyChanged()
   }
 
@@ -377,7 +391,17 @@ export class LLMNode extends Node {
     if (ok) {
       this.response = resultText
       this.status = 'done'
-      this.textOutput.commit(new StringValue(resultText))
+      if (this.jsonMode) {
+        try {
+          const parsed = JSON.parse(resultText)
+          this.textOutput.commit(new JsonValue(parsed))
+        } catch {
+          // 模型没按 JSON 格式返回，降级为字符串
+          this.textOutput.commit(new StringValue(resultText))
+        }
+      } else {
+        this.textOutput.commit(new StringValue(resultText))
+      }
       this.completeRun() // 成功产出 → stable
     } else {
       this.response = ''
@@ -405,8 +429,11 @@ export class LLMNode extends Node {
     if (typeof state.model === 'string') {
       this.model = state.model
     }
-    if (typeof state.jsonMode === 'boolean') {
+    if (typeof state.jsonMode === 'boolean' && state.jsonMode !== this.jsonMode) {
       this.jsonMode = state.jsonMode
+      this.removeOutput(this.textOutput)
+      this.textOutput = this.buildOutputPort(state.jsonMode)
+      this.addOutput(this.textOutput)
     }
     if (typeof state.autoCall === 'boolean') {
       this.autoCall = state.autoCall

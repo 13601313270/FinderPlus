@@ -112,7 +112,7 @@ function removeEdge(edge: Edge): void {
       v-for="line in lines"
       :key="`line-${keyOf(line.edge)}`"
       class="edges__line"
-      :d="bezierPath(line.from, line.to)"
+      :d="bezierPath(line.from, line.to, { fromSide: line.fromSide, toSide: line.toSide })"
     />
   </svg>
 

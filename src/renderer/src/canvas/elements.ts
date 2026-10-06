@@ -218,6 +218,8 @@ export interface PortHit {
   readonly key: string
   readonly nodeId: string
   readonly portId: string
+  /** 命中的端口属于哪一侧 */
+  readonly side: PortSide
   /** 圆心屏幕坐标（client 坐标系） */
   readonly clientX: number
   readonly clientY: number
@@ -253,6 +255,7 @@ export function findPortNear(
       key,
       nodeId: registered.nodeId,
       portId: registered.portId,
+      side: registered.side,
       clientX: centerX,
       clientY: centerY
     }

@@ -26,37 +26,74 @@ export interface EdgeGeometry {
   readonly to: Vec2
   /** 连线正中央（三次贝塞尔曲线 t=0.5），删除按钮落在这里 */
   readonly mid: Vec2
+  /** 起点端口 side（用于画曲线时决定控制点方向） */
+  readonly fromSide: PortSide
+  /** 终点端口 side（用于画曲线时决定控制点方向） */
+  readonly toSide: PortSide
 }
 
-/** 主画布贝塞尔的水平控制距离下限：节点挨太近时曲线也能看出弧度 */
+/** 主画布贝塞尔的控制距离下限：节点挨太近时曲线也能看出弧度 */
 const BEZIER_HANDLE_MIN = 40
 
 /**
- * 算三次贝塞尔曲线的两个控制点（输出端向右，输入端向左，水平延伸）。
- * @param minHandle 控制点的最小水平距离（默认 40）。小地图等缩小场景传 0 或小值，避免控制点比连线还长。
+ * 每个端口 side 对应的控制点延伸方向向量：
+ * - out（右侧输出端口）：向右 → (1, 0)
+ * - in（左侧输入端口）：向左 → (-1, 0)
+ * - method（底部方法端口）：向上 → (0, -1)
+ *
+ * 控制点 = 端口锚点 + handleLength * direction
+ */
+const SIDE_DIRECTION: Record<PortSide, { dx: number; dy: number }> = {
+  out: { dx: 1, dy: 0 },
+  in: { dx: -1, dy: 0 },
+  method: { dx: 0, dy: 1 }
+}
+
+/**
+ * 算三次贝塞尔曲线的两个控制点。
+ * 每个端点的控制点沿该端口 side 的方向向量延伸 handleLength。
+ *
+ * @param fromSide 起点端口 side（默认 'out'）
+ * @param toSide   终点端口 side（默认 'in'）
+ * @param minHandle 控制点的最小延伸距离（默认 40）
  */
 export function bezierControls(
   from: Vec2,
   to: Vec2,
-  minHandle: number = BEZIER_HANDLE_MIN
+  opts?: {
+    fromSide?: PortSide
+    toSide?: PortSide
+    minHandle?: number
+  }
 ): { c1: Vec2; c2: Vec2 } {
-  const dx = Math.abs(to.x - from.x)
-  const offset = Math.max(dx * 0.5, minHandle)
+  const fromSide = opts?.fromSide ?? 'out'
+  const toSide = opts?.toSide ?? 'in'
+  const minHandle = opts?.minHandle ?? BEZIER_HANDLE_MIN
+
+  // 控制距离：两端点欧氏距离的 30%，下限 minHandle
+  // 不按 dx 或 dy 单独算——因为端口方向可能不同（右 + 上），
+  // 用总距离的比例更统一，曲线形状自然
+  const dist = Math.hypot(to.x - from.x, to.y - from.y)
+  const handleLength = Math.max(dist * 0.3, minHandle)
+
+  const dFrom = SIDE_DIRECTION[fromSide]
+  const dTo = SIDE_DIRECTION[toSide]
+
   return {
-    c1: { x: from.x + offset, y: from.y },
-    c2: { x: to.x - offset, y: to.y }
+    c1: { x: from.x + dFrom.dx * handleLength, y: from.y + dFrom.dy * handleLength },
+    c2: { x: to.x + dTo.dx * handleLength,       y: to.y + dTo.dy * handleLength }
   }
 }
 
 /** 生成三次贝塞尔曲线的 SVG d 属性 */
-export function bezierPath(from: Vec2, to: Vec2, minHandle?: number): string {
-  const { c1, c2 } = bezierControls(from, to, minHandle)
+export function bezierPath(from: Vec2, to: Vec2, opts?: { fromSide?: PortSide; toSide?: PortSide; minHandle?: number }): string {
+  const { c1, c2 } = bezierControls(from, to, opts)
   return `M ${from.x} ${from.y} C ${c1.x} ${c1.y}, ${c2.x} ${c2.y}, ${to.x} ${to.y}`
 }
 
 /** 三次贝塞尔曲线的中点（参数 t=0.5） */
-export function bezierMid(from: Vec2, to: Vec2, minHandle?: number): Vec2 {
-  const { c1, c2 } = bezierControls(from, to, minHandle)
+export function bezierMid(from: Vec2, to: Vec2, opts?: { fromSide?: PortSide; toSide?: PortSide; minHandle?: number }): Vec2 {
+  const { c1, c2 } = bezierControls(from, to, opts)
   // t=0.5 时：P = 0.125*from + 0.375*c1 + 0.375*c2 + 0.125*to
   return {
     x: 0.125 * from.x + 0.375 * c1.x + 0.375 * c2.x + 0.125 * to.x,
@@ -113,16 +150,19 @@ export function edgeGeometry(scene: Scene, edge: Edge): EdgeGeometry | undefined
   const endNode = ownerOfPort(scene, edge.endPort)
   if (!startNode || !endNode) return undefined
 
-  const from = portAnchor(startNode, edge.startPort, 'out')
-  // endPort 可能是 InputPort（'in'）或 MethodPort（'method'）——动态判断
+  const fromSide: PortSide = 'out'
   const endSide = sideOfPort(edge.endPort)
+
+  const from = portAnchor(startNode, edge.startPort, fromSide)
   const to = portAnchor(endNode, edge.endPort, endSide)
 
   return {
     edge,
     from,
     to,
-    mid: bezierMid(from, to)
+    mid: bezierMid(from, to, { fromSide, toSide: endSide }),
+    fromSide,
+    toSide: endSide
   }
 }
 

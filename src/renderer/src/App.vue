@@ -787,7 +787,7 @@ async function bootstrapScene(): Promise<void> {
     const endNode = workspaceScene.getNode(row.endNodeId)
     if (!startNode || !endNode) continue
     const startPort = startNode.outputPorts.find((p) => p.id === row.startPortId)
-    const endPort = endNode.inputPorts.find((p) => p.id === row.endPortId)
+    const endPort = endNode.findInputLikePort(row.endPortId)
     if (!startPort || !endPort) continue
     workspaceScene.connect(startPort, endPort, row.id)
   }

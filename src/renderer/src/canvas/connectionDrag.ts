@@ -32,6 +32,8 @@ export const connectionDrag = reactive({
   sourceKey: null as string | null,
   /** 指针下面的候选输入端口（注册键），null 表示悬空 */
   targetKey: null as string | null,
+  /** 候选端口的 side（命中时才有；悬空或没命中端口时默认 'in'） */
+  targetSide: 'in' as 'in' | 'method',
   /** 候选端口接不接得上（引擎的判定结果），接不上时预览线画成红的 */
   targetOk: false
 })
@@ -145,12 +147,14 @@ function moveTo(clientX: number, clientY: number): void {
 
   if (hit) {
     connectionDrag.targetKey = hit.key
+    connectionDrag.targetSide = hit.side as 'in' | 'method'
     connectionDrag.targetOk = isConnectable(hit)
     connectionDrag.toClient = { x: hit.clientX, y: hit.clientY }
     return
   }
 
   connectionDrag.targetKey = null
+  connectionDrag.targetSide = 'in'
   connectionDrag.targetOk = false
   connectionDrag.toClient = { x: clientX, y: clientY }
 }
@@ -195,8 +199,5 @@ function resolveOutputPort(nodeId: string, portId: string): OutputPort | undefin
 
 function resolveInputPort(nodeId: string, portId: string): InputPort | undefined {
   const node = workspaceScene.getNode(nodeId)
-  if (!node) return undefined
-  // 先搜普通输入端口，再搜方法端口（方法端口不在 inputPorts 数组里）
-  return node.inputPorts.find((port) => port.id === portId)
-    ?? (node.methodPorts as readonly InputPort[] | undefined)?.find((port) => port.id === portId)
+  return node?.findInputLikePort(portId)
 }

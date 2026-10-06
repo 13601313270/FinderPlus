@@ -330,6 +330,15 @@ export abstract class Node {
     return this.methods
   }
 
+  /**
+   * 按 id 找一个「终点类端口」——普通输入端口或方法端口。
+   * 边的 endPort 既可能是 InputPort 也可能是 MethodPort，调用方不用关心它混在哪个数组里。
+   * 找不到返回 undefined。
+   */
+  findInputLikePort(portId: string): InputPort | undefined {
+    return this.inputs.find(p => p.id === portId) ?? this.methods.find(p => p.id === portId)
+  }
+
   /** 子类构造时登记自己的输入端口；运行时也可追加，会自动 notifyChanged 刷新 UI */
   protected addInput(port: InputPort): void {
     port.setOwner(this)

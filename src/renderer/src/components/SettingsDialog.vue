@@ -50,10 +50,10 @@ const SECTION_ORDER: SectionKey[] = ['general', 'llm', 'image', 'canvases']
 
 function sectionLabel(key: SectionKey): string {
   switch (key) {
-    case 'general':   return '通用'
-    case 'llm':       return '大语言模型设置'
-    case 'image':     return '生图模型'
-    case 'canvases':  return '我的画布'
+    case 'general':   return t('settingsDialog.groupGeneral')
+    case 'llm':       return t('settingsDialog.groupLLM')
+    case 'image':     return t('settingsDialog.groupImage')
+    case 'canvases':  return t('settingsDialog.groupCanvases')
   }
 }
 
@@ -386,11 +386,11 @@ async function onOpenCanvasFolder(id: string): Promise<void> {
 }
 
 async function onRenameCanvas(id: string, currentName: string): Promise<void> {
-  const input = await window.showPrompt('重命名画布：', currentName)
+  const input = await window.showPrompt(t('settingsDialog.canvasRenamePrompt'), currentName)
   if (!input || !input.trim() || input === currentName) return
   const result = await window.canvasApi.rename(id, input.trim())
   if (!result.ok) {
-    await window.showAlert(result.error ?? '重命名失败')
+    await window.showAlert(result.error ?? t('settingsDialog.canvasRenameFailed'))
     return
   }
   await refreshCanvasRows()
@@ -401,8 +401,8 @@ async function onDeleteCanvas(id: string, name: string): Promise<void> {
   const list = await window.canvasApi.list()
   if (list.length <= 1) {
     const ok = await window.showConfirm(
-      '只剩这一个画布了',
-      `不能删除最后一个画布，改为清空所有内容？\n\n画布：${name}`
+      t('settingsDialog.canvasOnlyOneTitle'),
+      t('settingsDialog.canvasOnlyOneBody', { name })
     )
     if (!ok) return
     await workspaceScene.clearAll()
@@ -416,13 +416,13 @@ async function onDeleteCanvas(id: string, name: string): Promise<void> {
 
   // 多个画布 → 正常删除
   const ok = await window.showConfirm(
-    '确定要删除画布吗？',
-    `画布中的节点、连线和文件都会被删除，且无法恢复。\n\n画布：${name}`
+    t('settingsDialog.canvasDeleteConfirmTitle'),
+    t('settingsDialog.canvasDeleteConfirmBody', { name })
   )
   if (!ok) return
   const result = await window.canvasApi.delete(id)
   if (!result.ok) {
-    await window.showAlert(result.error ?? '删除失败')
+    await window.showAlert(result.error ?? t('settingsDialog.canvasDeleteFailed'))
     return
   }
   await refreshCanvasRows()
@@ -607,13 +607,13 @@ async function onDeleteCanvas(id: string, name: string): Promise<void> {
             <!-- ========== 我的画布 ========== -->
             <template v-if="activeSection === 'canvases'">
               <section class="gs-section">
-                <h4 class="gs-section__title">我的画布</h4>
-                <p class="gs-section__hint">这里列出了所有画布及其基本信息。点击「打开」会在新窗口中打开该画布，多个窗口可以并行操作。</p>
+                <h4 class="gs-section__title">{{ t('settingsDialog.canvasesTitle') }}</h4>
+                <p class="gs-section__hint">{{ t('settingsDialog.canvasesHint') }}</p>
 
-                <div v-if="canvasLoading" class="gs-canvases__loading">加载中…</div>
+                <div v-if="canvasLoading" class="gs-canvases__loading">{{ t('settingsDialog.canvasesLoading') }}</div>
 
                 <div v-else-if="canvasRows.length === 0" class="gs-canvases__empty">
-                  还没有画布。使用顶部画布选择器的「新建画布…」来创建。
+                  {{ t('settingsDialog.canvasesEmpty') }}
                 </div>
 
                 <div v-else class="gs-canvases__grid">
@@ -638,28 +638,28 @@ async function onDeleteCanvas(id: string, name: string): Promise<void> {
                       <div class="gs-canvas-card__info">
                         <div class="gs-canvas-card__name-row">
                           <span class="gs-canvas-card__name">{{ row.name }}</span>
-                          <span v-if="row.id === 'default'" class="gs-canvas-card__badge">默认</span>
-                          <span v-if="row.id === currentCanvasId" class="gs-canvas-card__badge gs-canvas-card__badge--active">当前画布</span>
+                          <span v-if="row.id === 'default'" class="gs-canvas-card__badge">{{ t('settingsDialog.canvasBadgeDefault') }}</span>
+                          <span v-if="row.id === currentCanvasId" class="gs-canvas-card__badge gs-canvas-card__badge--active">{{ t('settingsDialog.canvasBadgeCurrent') }}</span>
                         </div>
                         <div class="gs-canvas-card__stats">
-                          <span class="gs-canvas-card__stat"><b>{{ row.nodeCount }}</b> 节点</span>
-                          <span class="gs-canvas-card__stat"><b>{{ row.edgeCount }}</b> 连线</span>
-                          <span class="gs-canvas-card__stat"><b>{{ row.fileCount }}</b> 文件</span>
-                          <span class="gs-canvas-card__time">最后修改：{{ formatTime(row.updatedAt) }}</span>
+                          <span class="gs-canvas-card__stat"><b>{{ row.nodeCount }}</b> {{ t('settingsDialog.canvasNodeStat') }}</span>
+                          <span class="gs-canvas-card__stat"><b>{{ row.edgeCount }}</b> {{ t('settingsDialog.canvasEdgeStat') }}</span>
+                          <span class="gs-canvas-card__stat"><b>{{ row.fileCount }}</b> {{ t('settingsDialog.canvasFileStat') }}</span>
+                          <span class="gs-canvas-card__time">{{ t('settingsDialog.canvasLastModified') }}: {{ formatTime(row.updatedAt) }}</span>
                         </div>
                       </div>
                     </div>
 
                     <!-- 第二行：操作按钮 -->
                     <div class="gs-canvas-card__actions">
-                      <button class="gs-canvas-card__btn gs-canvas-card__btn--primary" type="button" @click="onOpenCanvas(row.id)">打开</button>
-                      <button class="gs-canvas-card__btn" type="button" @click="onOpenCanvasFolder(row.id)">打开文件夹</button>
-                      <button class="gs-canvas-card__btn" type="button" @click="onRenameCanvas(row.id, row.name)">重命名</button>
+                      <button class="gs-canvas-card__btn gs-canvas-card__btn--primary" type="button" @click="onOpenCanvas(row.id)">{{ t('settingsDialog.canvasBtnOpen') }}</button>
+                      <button class="gs-canvas-card__btn" type="button" @click="onOpenCanvasFolder(row.id)">{{ t('settingsDialog.canvasBtnOpenFolder') }}</button>
+                      <button class="gs-canvas-card__btn" type="button" @click="onRenameCanvas(row.id, row.name)">{{ t('settingsDialog.canvasBtnRename') }}</button>
                       <button
                         class="gs-canvas-card__btn gs-canvas-card__btn--danger"
                         type="button"
                         @click="onDeleteCanvas(row.id, row.name)"
-                      >删除</button>
+                      >{{ t('settingsDialog.canvasBtnDelete') }}</button>
                     </div>
                   </div>
                 </div>
@@ -686,7 +686,7 @@ async function onDeleteCanvas(id: string, name: string): Promise<void> {
 
 .gs-dialog {
   width: 700px;
-  max-height: 80vh;
+  height: 80vh;
   background: #fff;
   border-radius: 12px;
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.2);

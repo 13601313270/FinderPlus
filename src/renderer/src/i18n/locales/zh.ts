@@ -42,6 +42,8 @@ const zh: Language = {
     groupLLM: '大语言模型设置',
     groupImage: '生图模型',
 
+    groupCanvases: "我的画布",
+
     // LLM / 文生图 section 标题与提示（原硬编码）
     llmTitle: '大语言模型 API Key',
     llmHint: '在此配置各服务商的 API Key。每个 LLM 节点可独立选择使用哪个服务商和模型。',
@@ -51,7 +53,28 @@ const zh: Language = {
     // 按钮（原硬编码）
     save: '保存',
     clear: '清除',
-    saved: '已保存'
+    saved: '已保存',
+    canvasesTitle: "我的画布",
+    canvasesHint: "这里列出了所有画布及其基本信息。点击「打开」会在新窗口中打开该画布，多个窗口可以并行操作。",
+    canvasesLoading: "加载中…",
+    canvasesEmpty: "还没有画布。使用顶部画布选择器的「新建画布…」来创建。",
+    canvasBadgeDefault: "默认",
+    canvasBadgeCurrent: "当前画布",
+    canvasNodeStat: "节点",
+    canvasEdgeStat: "连线",
+    canvasFileStat: "文件",
+    canvasLastModified: "最后修改",
+    canvasBtnOpen: "打开",
+    canvasBtnOpenFolder: "打开文件夹",
+    canvasBtnRename: "重命名",
+    canvasBtnDelete: "删除",
+    canvasRenamePrompt: "重命名画布：",
+    canvasRenameFailed: "重命名失败",
+    canvasOnlyOneTitle: "只剩这一个画布了",
+    canvasOnlyOneBody: "不能删除最后一个画布，改为清空所有内容？\n\n画布：{name}",
+    canvasDeleteConfirmTitle: "确定要删除画布吗？",
+    canvasDeleteConfirmBody: "画布中的节点、连线和文件都会被删除，且无法恢复。\n\n画布：{name}",
+    canvasDeleteFailed: "删除失败",
   },
   helpCenter: {
     title: '帮助中心',

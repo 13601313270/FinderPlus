@@ -37,6 +37,8 @@ const en: Language = {
     groupLLM: 'LLM Settings',
     groupImage: 'Image Generation',
 
+    groupCanvases: "My Canvases",
+
     // LLM / Image section titles and hints (previously hardcoded)
     llmTitle: 'LLM API Key',
     llmHint: 'Configure API keys for each provider here. Each LLM node can independently choose which provider and model to use.',
@@ -46,7 +48,28 @@ const en: Language = {
     // Buttons (previously hardcoded)
     save: 'Save',
     clear: 'Clear',
-    saved: 'Saved'
+    saved: 'Saved',
+    canvasesTitle: "My Canvases",
+    canvasesHint: "All canvases and their basic info are listed here. Click \"Open\" to open a canvas in a new window; multiple windows can run in parallel.",
+    canvasesLoading: "Loading…",
+    canvasesEmpty: "No canvases yet. Use the canvas selector at the top to create one.",
+    canvasBadgeDefault: "Default",
+    canvasBadgeCurrent: "Current",
+    canvasNodeStat: "nodes",
+    canvasEdgeStat: "edges",
+    canvasFileStat: "files",
+    canvasLastModified: "Last modified",
+    canvasBtnOpen: "Open",
+    canvasBtnOpenFolder: "Open Folder",
+    canvasBtnRename: "Rename",
+    canvasBtnDelete: "Delete",
+    canvasRenamePrompt: "Rename canvas:",
+    canvasRenameFailed: "Rename failed",
+    canvasOnlyOneTitle: "This is the only canvas",
+    canvasOnlyOneBody: "The last canvas cannot be deleted. Clear all content instead?\n\nCanvas: {name}",
+    canvasDeleteConfirmTitle: "Delete canvas?",
+    canvasDeleteConfirmBody: "Nodes, edges, and files in the canvas will all be deleted and cannot be recovered.\n\nCanvas: {name}",
+    canvasDeleteFailed: "Delete failed",
   },
   helpCenter: {
     title: 'Help Center',

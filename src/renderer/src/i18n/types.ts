@@ -48,10 +48,11 @@ export type Language = {
     clearConfirmBody: string
     clearSuccess: string
     clearAlreadyEmpty: string
-    /** 侧边栏分类（三栏） */
+    /** 侧边栏分类 */
     groupGeneral: string
     groupLLM: string
     groupImage: string
+    groupCanvases: string
     /** LLM / 文生图 section 标题与提示（原硬编码） */
     llmTitle: string
     llmHint: string
@@ -61,6 +62,28 @@ export type Language = {
     save: string
     clear: string
     saved: string
+    /** 我的画布 section */
+    canvasesTitle: string
+    canvasesHint: string
+    canvasesLoading: string
+    canvasesEmpty: string
+    canvasBadgeDefault: string
+    canvasBadgeCurrent: string
+    canvasNodeStat: string
+    canvasEdgeStat: string
+    canvasFileStat: string
+    canvasLastModified: string
+    canvasBtnOpen: string
+    canvasBtnOpenFolder: string
+    canvasBtnRename: string
+    canvasBtnDelete: string
+    canvasRenamePrompt: string
+    canvasRenameFailed: string
+    canvasOnlyOneTitle: string
+    canvasOnlyOneBody: string
+    canvasDeleteConfirmTitle: string
+    canvasDeleteConfirmBody: string
+    canvasDeleteFailed: string
   }
   helpCenter: {
     title: string

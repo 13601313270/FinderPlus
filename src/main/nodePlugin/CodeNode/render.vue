@@ -1,5 +1,12 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, shallowRef } from 'vue'
+import { Codemirror } from 'vue-codemirror'
+import { javascript } from '@codemirror/lang-javascript'
+import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
+import { bracketMatching, foldGutter, foldKeymap, indentOnInput } from '@codemirror/language'
+import { lineNumbers, highlightActiveLineGutter, highlightSpecialChars, drawSelection, dropCursor, rectangularSelection, crosshairCursor, highlightActiveLine } from '@codemirror/view'
+import { highlightSelectionMatches } from '@codemirror/search'
+import { keymap } from '@codemirror/view'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { CodeNode, type CodeInputKind, type CodeInputMeta, type CodePortKind, type CodeOutputMeta, type CodePortNameError } from './node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
@@ -8,6 +15,29 @@ import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages
 import HelpDialog from '@renderer/components/HelpDialog.vue'
 import CodeHelpDialog from './CodeHelpDialog.vue'
 import { messages } from './i18n'
+
+/** CodeMirror basic setup：行号 + 历史 + 括号匹配 + 折叠等 */
+const cmExtensions = [
+  lineNumbers(),
+  highlightActiveLineGutter(),
+  highlightSpecialChars(),
+  history(),
+  foldGutter(),
+  drawSelection(),
+  dropCursor(),
+  indentOnInput(),
+  bracketMatching(),
+  rectangularSelection(),
+  crosshairCursor(),
+  highlightActiveLine(),
+  highlightSelectionMatches(),
+  keymap.of([
+    ...defaultKeymap,
+    ...historyKeymap,
+    ...foldKeymap
+  ]),
+  javascript()
+]
 
 /**
  * 代码节点的渲染组件。
@@ -99,9 +129,8 @@ const STATUS_KEYS = {
 
 const statusLabel = computed(() => t(STATUS_KEYS[status.value]))
 
-/** 编辑区 input：实时写回节点（不执行） */
-function onCodeInput(e: Event): void {
-  const value = (e.target as HTMLTextAreaElement).value
+/** CodeMirror 内容变更：实时写回节点（不执行） */
+function onCodeUpdate(value: string): void {
   code.value = value
   codeNode.value?.setCode(value)
 }
@@ -195,10 +224,13 @@ function onOutputKindChange(id: string, e: Event): void {
 /**
  * 滚动接力：编辑区还能往当前方向滚时才 stop 事件，
  * 滚到顶/底了就放行让画布接管平移。
+ * CodeMirror 的滚动 DOM 是 .cm-scroller
  */
 function onEditorWheel(e: WheelEvent): void {
-  const el = e.currentTarget as HTMLTextAreaElement
-  const { scrollTop, scrollHeight, clientHeight } = el
+  const target = e.target as HTMLElement
+  const scroller = target.closest('.cm-scroller') as HTMLElement | null
+  if (!scroller) return
+  const { scrollTop, scrollHeight, clientHeight } = scroller
   const atTop = scrollTop <= 0
   const atBottom = scrollTop + clientHeight >= scrollHeight
 
@@ -302,7 +334,7 @@ function onCopyCallOutputPort(): void {
   </HelpDialog>
 
   <!-- 配置弹窗：输入端口 + 输出端口 + 用法提示 + 代码编辑 -->
-  <HelpDialog :visible="showConfig" :title="t('configDialogTitle')" width="680" @close="showConfig = false">
+  <HelpDialog :visible="showConfig" :title="t('configDialogTitle')" :width="800" @close="showConfig = false">
 
     <!-- 输入端口管理区 -->
     <div class="inputs">
@@ -456,15 +488,14 @@ function onCopyCallOutputPort(): void {
     </div>
 
     <!-- 代码编辑区 -->
-    <textarea
-      class="code-editor"
-      spellcheck="false"
-      :value="code"
-      :disabled="!codeNode"
-      :placeholder="hasInputs ? t('editorPlaceholderWithInputs') : t('editorPlaceholderWithoutInputs')"
-      @wheel="onEditorWheel"
-      @input="onCodeInput"
-    />
+    <div class="code-editor-wrapper" @wheel.passive="onEditorWheel">
+      <Codemirror
+        :model-value="code"
+        :disabled="!codeNode"
+        :extensions="cmExtensions"
+        @update:model-value="onCodeUpdate"
+      />
+    </div>
   </HelpDialog>
 
   <!-- 日志弹窗：展示完整输出 -->
@@ -775,35 +806,84 @@ function onCopyCallOutputPort(): void {
   }
 }
 
-.code-editor {
+.code-editor-wrapper {
   width: 100%;
   box-sizing: border-box;
   flex: 1;
-  min-height: 96px;
-  resize: vertical;
-  padding: 8px 10px;
-  font-size: 12px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  line-height: 1.5;
-  color: #1f2937;
+  min-height: 200px;
+  margin-top: 8px;
   border: 1px solid #d5d9e0;
   border-radius: 6px;
   background: #f8fafc;
-  outline: none;
-  transition: border-color 0.15s, background 0.15s;
-  margin-top: 8px;
+  overflow: hidden;
 
-  &:focus {
+  &:focus-within {
     border-color: #3b82f6;
-    background: @color-surface;
   }
 
-  &:disabled {
-    opacity: 0.5;
+  /* CodeMirror 内部样式覆盖 —— 浅色主题，与项目风格统一 */
+  :deep(.cm-editor) {
+    height: auto;
+    font-size: 12px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    background: transparent;
+
+    &.cm-focused {
+      outline: none;
+    }
   }
 
-  &::placeholder {
+  :deep(.cm-scroller) {
+    font-family: inherit;
+    line-height: 1.5;
+    max-height: 400px;
+    overflow: auto;
+  }
+
+  :deep(.cm-content) {
+    padding: 8px 0;
+  }
+
+  :deep(.cm-gutters) {
+    background: transparent;
+    border-right: 1px solid #e5e7eb;
     color: #9aa2ad;
+    user-select: none;
+  }
+
+  :deep(.cm-activeLineGutter) {
+    background: transparent;
+    color: #374151;
+  }
+
+  :deep(.cm-activeLine) {
+    background: #f0f4ff;
+  }
+
+  :deep(.cm-cursor) {
+    border-left-color: #1f2937;
+  }
+
+  /* JS 语法高亮 —— 简单的浅色配色 */
+  :deep(.cm-keyword) { color: #b91c1c; }
+  :deep(.cm-string) { color: #047857; }
+  :deep(.cm-number) { color: #7c3aed; }
+  :deep(.cm-comment) { color: #9aa2ad; font-style: italic; }
+  :deep(.cm-def) { color: #1d4ed8; }
+  :deep(.cm-variable) { color: #1f2937; }
+  :deep(.cm-property) { color: #0369a1; }
+  :deep(.cm-operator) { color: #6b7280; }
+  :deep(.cm-punctuation) { color: #6b7280; }
+  :deep(.cm-bracket) { color: #6b7280; }
+  :deep(.cm-tag) { color: #b91c1c; }
+  :deep(.cm-attribute) { color: #7c3aed; }
+  :deep(.cm-atom) { color: #7c3aed; }
+  :deep(.cm-meta) { color: #9aa2ad; }
+
+  /* 禁用态 */
+  :deep(.cm-editor.cm-disabled) {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 }
 

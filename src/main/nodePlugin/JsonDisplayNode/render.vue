@@ -24,9 +24,25 @@ const t = useLocalizedMessages(messages)
 // 帮助浮层开关（弹窗壳由 HelpDialog 负责）
 const showHelp = ref(false)
 
+// JSON 全屏预览弹窗开关
+const showPreview = ref(false)
+
 const parsed = ref<unknown>(undefined)
 const parseError = ref<string | null>(null)
 const hasInput = ref(false)
+
+// 是否有可预览的 JSON（解析成功且 parsed 不是 undefined）
+const canPreview = computed(() => hasInput.value && !parseError.value && parsed.value !== undefined)
+
+// 格式化后的 JSON 字符串，供弹窗 <pre> 直接展示
+const formattedJson = computed(() => {
+  if (!canPreview.value) return t('previewEmpty')
+  try {
+    return JSON.stringify(parsed.value, null, 2)
+  } catch {
+    return String(parsed.value)
+  }
+})
 
 let unsubscribe: (() => void) | undefined
 
@@ -109,12 +125,29 @@ const expandTitle = computed(() => t('expand'))
   <div class="node">
     <div class="node__header" @pointerdown="startDrag">
       <span class="node__handle" :title="t('dragHint')">{{ nodeTitle }}</span>
-      <button
-        class="node__help"
-        type="button"
-        :title="t('helpTitle')"
-        @click.stop="showHelp = true"
-      >?</button>
+      <div class="node__actions">
+        <button
+          class="node__help"
+          type="button"
+          :title="t('previewHint')"
+          :disabled="!canPreview"
+          @pointerdown.stop
+          @click.stop="showPreview = true"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M15 3h6v6" />
+            <path d="M9 21H3v-6" />
+            <path d="M21 3l-7 7" />
+            <path d="M3 21l7-7" />
+          </svg>
+        </button>
+        <button
+          class="node__help"
+          type="button"
+          :title="t('helpTitle')"
+          @click.stop="showHelp = true"
+        >?</button>
+      </div>
     </div>
 
     <div class="render-body">
@@ -151,6 +184,11 @@ const expandTitle = computed(() => t('expand'))
   <!-- 帮助弹窗 -->
   <HelpDialog :visible="showHelp" :title="t('helpDialogTitle')" @close="showHelp = false">
     <JsonDisplayHelpDialog />
+  </HelpDialog>
+
+  <!-- JSON 全屏预览 -->
+  <HelpDialog :visible="showPreview" :title="t('previewDialogTitle')" width="90vw" @close="showPreview = false">
+    <pre class="preview-content">{{ formattedJson }}</pre>
   </HelpDialog>
 </template>
 
@@ -190,12 +228,18 @@ const expandTitle = computed(() => t('expand'))
     &:active { cursor: grabbing; }
   }
 
-  &__help {
-    all: unset;
+  &__actions {
     position: absolute;
     right: 2px;
     top: 50%;
     transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  &__help {
+    all: unset;
     cursor: pointer;
     width: 18px;
     height: 18px;
@@ -210,9 +254,19 @@ const expandTitle = computed(() => t('expand'))
     line-height: 1;
     transition: background 0.15s, color 0.15s;
 
-    &:hover {
+    svg {
+      width: 12px;
+      height: 12px;
+    }
+
+    &:hover:not(:disabled) {
       background: #dbeafe;
       color: #2563eb;
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.4;
     }
   }
 
@@ -257,5 +311,14 @@ const expandTitle = computed(() => t('expand'))
     font-size: 12px;
     word-break: break-all;
   }
+}
+
+.preview-content {
+  margin: 0;
+  font-size: 13px;
+  font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-all;
 }
 </style>

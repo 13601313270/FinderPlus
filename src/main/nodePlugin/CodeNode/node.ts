@@ -575,7 +575,7 @@ export class CodeNode extends Node {
     this.notifyChanged()
     if (this.autoRunEnabled) {
       setTimeout(() => {
-        void this.run()
+        void this.run(true)
       }, 0)
     }
   }

@@ -93,6 +93,7 @@ function kindLabel(kind: string): string {
 }
 
 function onOutputPointerDown(port: PortLike, event: PointerEvent): void {
+  hideTooltip()
   startConnectDrag(props.nodeId, port.id, event)
 }
 

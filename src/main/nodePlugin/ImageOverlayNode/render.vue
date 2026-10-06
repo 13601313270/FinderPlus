@@ -34,47 +34,29 @@ const showHelp = ref(false)
 
 // —— 画布尺寸设置弹窗 ——
 const showSizeDialog = ref(false)
-const dialogW = ref(800)
-const dialogH = ref(600)
-const dialogAuto = ref(true)
+const dialogW = ref(1920)
+const dialogH = ref(1080)
 
 watch(showSizeDialog, (open) => {
   if (!open) return
   const n = node.value
   if (!n) return
-  const cw = n.configuredCanvasWidth
-  const ch = n.configuredCanvasHeight
-  if (cw > 0 && ch > 0) {
-    dialogAuto.value = false
-    dialogW.value = cw
-    dialogH.value = ch
-  } else {
-    dialogAuto.value = true
-    const sz = n.compositeCanvasSize
-    dialogW.value = sz.width
-    dialogH.value = sz.height
-  }
+  dialogW.value = n.configuredCanvasWidth
+  dialogH.value = n.configuredCanvasHeight
 })
 
 function applyCanvasSize(): void {
   const n = node.value
   if (!n) return
-  if (dialogAuto.value) {
-    n.resetCanvasSize()
-  } else {
-    n.setCanvasSize(dialogW.value, dialogH.value)
-  }
+  n.setCanvasSize(dialogW.value, dialogH.value)
   showSizeDialog.value = false
   scheduleComposite()
 }
 
 function resetCanvasSize(): void {
-  dialogAuto.value = true
-  const n = node.value
-  if (!n) return
-  const sz = n.compositeCanvasSize
-  dialogW.value = sz.width
-  dialogH.value = sz.height
+  // 恢复默认固定画布尺寸，不再有"自动"模式
+  dialogW.value = 1920
+  dialogH.value = 1080
 }
 
 // —— 节点整体大小 resize ——
@@ -141,12 +123,14 @@ const previewScale = computed(() => {
 const zoomPercent = computed(() => Math.round(previewScale.value * 100))
 
 function zoomBy(factor: number): void {
-  const next = zoomFactor.value * factor
-  zoomFactor.value = Math.min(ZOOM_MAX_FACTOR, Math.max(ZOOM_MIN_FACTOR, next))
+  const n = node.value
+  if (!n) return
+  const next = n.zoomFactor * factor
+  n.setZoomFactor(Math.min(ZOOM_MAX_FACTOR, Math.max(ZOOM_MIN_FACTOR, next)))
 }
 
 function resetZoom(): void {
-  zoomFactor.value = 1
+  node.value?.setZoomFactor(1)
 }
 
 function loadImageFromFile(file: File): Promise<HTMLImageElement> {
@@ -207,7 +191,7 @@ function measureText(text: string, fontSize: number, fontFamily: string): { widt
   const metrics = ctx.measureText(text)
   const width = Math.ceil(metrics.width)
   const height = Math.ceil(metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent) || Math.ceil(fontSize * 1.2)
-  return { width, height }
+  return { width: Math.max(width, 300), height: Math.max(height, 80) }
 }
 
 function refreshLayers(): void {
@@ -219,6 +203,7 @@ function refreshLayers(): void {
   }
 
   canvasSize.value = n.compositeCanvasSize
+  zoomFactor.value = n.zoomFactor
 
   const newLayers: LayerItem[] = []
   const seenPortIds = new Set<string>()
@@ -892,34 +877,20 @@ function onRemoveLayer(e: PointerEvent, portId: string): void {
       <div class="overlay-dialog__panel">
         <div class="overlay-dialog__title">{{ t('canvasSizeDialogTitle') }}</div>
 
-        <label class="overlay-dialog__row">
-          <span class="overlay-dialog__label">{{ t('modeLabel') }}</span>
-          <div class="overlay-dialog__radios">
-            <label class="overlay-dialog__radio">
-              <input type="radio" v-model="dialogAuto" :value="true">
-              <span>{{ t('modeAuto') }}</span>
-            </label>
-            <label class="overlay-dialog__radio">
-              <input type="radio" v-model="dialogAuto" :value="false">
-              <span>{{ t('modeFixed') }}</span>
-            </label>
-          </div>
-        </label>
-
-        <div class="overlay-dialog__inputs" :class="{ 'is-disabled': dialogAuto }">
+        <div class="overlay-dialog__inputs">
           <label class="overlay-dialog__input-group">
             <span>{{ t('widthLabel') }}</span>
-            <input type="number" min="1" v-model.number="dialogW" :disabled="dialogAuto">
+            <input type="number" min="1" v-model.number="dialogW">
           </label>
           <label class="overlay-dialog__input-group">
             <span>{{ t('heightLabel') }}</span>
-            <input type="number" min="1" v-model.number="dialogH" :disabled="dialogAuto">
+            <input type="number" min="1" v-model.number="dialogH">
           </label>
         </div>
 
         <div class="overlay-dialog__footer">
           <button class="overlay-dialog__btn overlay-dialog__btn--ghost" type="button"
-            @click="resetCanvasSize">{{ t('resetAuto') }}</button>
+            @click="resetCanvasSize">1920×1080</button>
           <div style="flex:1"></div>
           <button class="overlay-dialog__btn overlay-dialog__btn--ghost" type="button"
             @click="showSizeDialog = false">{{ t('cancel') }}</button>

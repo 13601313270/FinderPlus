@@ -77,6 +77,12 @@ export class ImageOverlayNode extends Node {
   private canvasWidth: number = -1
   private canvasHeight: number = -1
 
+  /**
+   * 预览区的额外缩放倍数（1 = 100% = 不额外缩放，由 fitScale 自适应）。
+   * 只有用户通过 - / + / 百分比按钮主动调整时才改，不随 box 尺寸自动算。
+   */
+  private previewZoomFactor: number = 1
+
   constructor(id: string) {
     super(id)
     // 初始 2 个端口，后续按需自动扩
@@ -85,6 +91,9 @@ export class ImageOverlayNode extends Node {
     this.addOutput(this.imageOutput)
     // 内容区硬约束：大尺寸节点，左右双面板布局
     this.setBox(520, 380)
+    // 默认固定画布尺寸 1920×1080（1080p），不再有"按图层边界自动撑大"模式
+    this.canvasWidth = 1920
+    this.canvasHeight = 1080
   }
 
   /** 创建并登记一个新的图层输入端口 */
@@ -197,6 +206,20 @@ export class ImageOverlayNode extends Node {
     const updated: LayerState = { ...existing, ...partial }
     if (updated.width < 1) updated.width = 1
     if (updated.height < 1) updated.height = 1
+    // 值没真变就不 notify——防止 refreshLayers 的 sync watcher 死循环：
+    // 同端口换值 → shouldResetDims=true → updateLayerTransform → notifyChanged →
+    // 递归 refreshLayers 读到旧 layers.value → shouldResetDims 依然 true → 循环。
+    if (updated.width === existing.width
+      && updated.height === existing.height
+      && updated.x === existing.x
+      && updated.y === existing.y
+      && updated.initialized === existing.initialized
+      && updated.kind === existing.kind
+      && updated.fontSize === existing.fontSize
+      && updated.fontFamily === existing.fontFamily
+      && updated.color === existing.color) {
+      return
+    }
     this.layerStates.set(portId, updated)
     this.notifyChanged()
   }
@@ -223,6 +246,19 @@ export class ImageOverlayNode extends Node {
     if (this.canvasWidth === -1 && this.canvasHeight === -1) return
     this.canvasWidth = -1
     this.canvasHeight = -1
+    this.notifyChanged()
+  }
+
+  // —— 预览区缩放 ——
+
+  /** 预览区额外缩放倍数（1 = 纯自适应，不额外放大缩小） */
+  get zoomFactor(): number { return this.previewZoomFactor }
+
+  /** 调整预览区额外缩放倍数。会 notifyChanged → debounce 落库。 */
+  setZoomFactor(factor: number): void {
+    const f = Math.max(0.1, Math.min(8, factor))
+    if (Math.abs(f - this.previewZoomFactor) < 0.001) return
+    this.previewZoomFactor = f
     this.notifyChanged()
   }
 
@@ -316,6 +352,7 @@ export class ImageOverlayNode extends Node {
     const [w, h] = this.box
     return {
       box: [w, h],
+      zoomFactor: this.previewZoomFactor,
       portCount: this.inputPorts.length,
       layerStates: states,
       canvasWidth: this.canvasWidth,
@@ -326,9 +363,12 @@ export class ImageOverlayNode extends Node {
   readState(state: Record<string, unknown>): void {
     const savedCount = typeof state.portCount === 'number' ? state.portCount : 2
     const rawStates = (state.layerStates as Record<string, Partial<LayerState>>) ?? {}
-    const savedCW = typeof state.canvasWidth === 'number' ? state.canvasWidth : -1
-    const savedCH = typeof state.canvasHeight === 'number' ? state.canvasHeight : -1
+    const savedCW = typeof state.canvasWidth === 'number' && state.canvasWidth > 0
+      ? state.canvasWidth : 1920
+    const savedCH = typeof state.canvasHeight === 'number' && state.canvasHeight > 0
+      ? state.canvasHeight : 1080
     const savedBox = state.box as [number, number] | undefined
+    const savedZoom = typeof state.zoomFactor === 'number' ? state.zoomFactor : undefined
 
     this.canvasWidth = savedCW
     this.canvasHeight = savedCH
@@ -336,6 +376,11 @@ export class ImageOverlayNode extends Node {
     // 恢复节点整体 box（render.vue 右下角 resize 手柄调整的内容区大小）
     if (Array.isArray(savedBox) && savedBox.length === 2) {
       this.setBox(savedBox[0], savedBox[1])
+    }
+
+    // 恢复预览区额外缩放（老数据没有就保持默认 1）
+    if (savedZoom !== undefined) {
+      this.previewZoomFactor = Math.max(0.1, Math.min(8, savedZoom))
     }
 
     // 清掉构造时创建的默认端口，按保存的数量重建

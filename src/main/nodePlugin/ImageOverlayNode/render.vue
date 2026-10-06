@@ -200,6 +200,51 @@ function measureText(text: string, fontSize: number, fontFamily: string): { widt
   return { width: Math.max(width, 300), height: Math.max(height, 80) }
 }
 
+/**
+ * 按给定最大宽度把文本拆成多行（支持 \n 硬换行 + 自动软换行）。
+ * 优先按单词边界（空格）切，切不开再按字符切（适配中文）。
+ */
+function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
+  if (!text) return ['']
+  // 按硬换行符先拆
+  const paragraphs = text.split(/\r?\n/)
+  const result: string[] = []
+  for (const para of paragraphs) {
+    if (para === '') { result.push(''); continue }
+    // 单词边界切（中文段落没有空格 → words 只有一个元素 → 自然落到底下逐字拆分支）
+    const words = para.split(/(\s+)/)
+    let line = ''
+    for (const word of words) {
+      const testLine = line + word
+      const fits = ctx.measureText(testLine).width <= maxWidth
+      if (fits) {
+        line = testLine
+      } else {
+        // 当前 line 装不下 word，先提交 line（如果 line 有内容）
+        if (line) result.push(line.trimEnd())
+        // word 本身就超宽（比如中文长串或长 URL）→ 按字符拆
+        if (ctx.measureText(word).width > maxWidth) {
+          let charLine = ''
+          for (const ch of word) {
+            const test = charLine + ch
+            if (ctx.measureText(test).width <= maxWidth || charLine === '') {
+              charLine = test
+            } else {
+              result.push(charLine)
+              charLine = ch
+            }
+          }
+          line = charLine
+        } else {
+          line = word
+        }
+      }
+    }
+    if (line) result.push(line.trimEnd())
+  }
+  return result
+}
+
 function refreshLayers(): void {
   const n = node.value
   if (!n) {
@@ -614,11 +659,16 @@ async function doComposite(): Promise<void> {
         ctx.fillStyle = color
         ctx.textBaseline = 'top'
         ctx.textAlign = align
-        // 根据对齐方式计算起始 x
-        let x = s.x
-        if (align === 'center') x = s.x + s.width / 2
-        else if (align === 'right') x = s.x + s.width
-        ctx.fillText(text, x, s.y)
+        // 多行自动换行绘制
+        const lineHeight = Math.ceil(fontSize * 1.2)
+        const lines = wrapText(ctx, text, s.width)
+        for (let li = 0; li < lines.length; li++) {
+          if (li * lineHeight > s.height) break  // 超出图层高度停止绘制
+          let x = s.x
+          if (align === 'center') x = s.x + s.width / 2
+          else if (align === 'right') x = s.x + s.width
+          ctx.fillText(lines[li], x, s.y + li * lineHeight)
+        }
       }
     }
 

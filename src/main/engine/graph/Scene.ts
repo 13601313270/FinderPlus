@@ -184,7 +184,8 @@ export class Scene {
 
   /** 断开与某节点端口相连的所有边。节点移除前必须做，避免悬空引用 */
   private disconnectNodeEdges(node: Node): void {
-    const portSet = new Set([...node.outputPorts, ...node.inputPorts])
+    // MethodPort 不在 inputPorts 数组里，需要额外加进来
+    const portSet = new Set([...node.outputPorts, ...node.inputPorts, ...(node.methodPorts ?? [])])
     const toRemove = [...this.edges].filter(
       (edge) => portSet.has(edge.startPort) || portSet.has(edge.endPort)
     )

@@ -2,7 +2,8 @@ import type { Scene } from '../../../main/engine/graph/Scene'
 import type { Edge } from '../../../main/engine/graph/Edge'
 import type { Node } from '../../../main/engine/node/Node'
 import type { InputPort } from '../../../main/engine/port/InputPort'
-import type { OutputPort } from '../../../main/engine/port/OutputPort'
+import { MethodPort } from '../../../main/engine/port/MethodPort'
+import { OutputPort } from '../../../main/engine/port/OutputPort'
 import { measureNodeBox, measurePortCenter, type PortSide, type Vec2 } from './elements'
 
 /**
@@ -64,12 +65,27 @@ export function bezierMid(from: Vec2, to: Vec2, minHandle?: number): Vec2 {
 }
 
 function ownsPort(node: Node, port: OutputPort | InputPort): boolean {
-  return [...node.outputPorts, ...node.inputPorts].some((candidate) => candidate === port)
+  // MethodPort 不在 inputPorts 数组里，需要额外检查
+  const allInputLike = [...node.inputPorts, ...(node.methodPorts ?? [])]
+  return [...node.outputPorts, ...allInputLike].some((candidate) => candidate === port)
 }
 
 /** 端口 -> 所属节点。节点已被移出场景时返回 undefined，调用方自然跳过这条边 */
 function ownerOfPort(scene: Scene, port: OutputPort | InputPort): Node | undefined {
   return scene.allNodes.find((node) => ownsPort(node, port))
+}
+
+/**
+ * 判断端口属于哪一侧：
+ * - OutputPort → 'out'（右侧）
+ * - MethodPort → 'method'（底部）
+ * - 其他 InputPort → 'in'（左侧）
+ */
+function sideOfPort(port: OutputPort | InputPort): PortSide {
+  // 必须先判 MethodPort——它继承 InputPort，instanceof 对 TypeScript 类型收窄有效
+  if (port instanceof MethodPort) return 'method'
+  if (port instanceof OutputPort) return 'out'
+  return 'in'
 }
 
 /**
@@ -81,9 +97,14 @@ function portAnchor(node: Node, port: OutputPort | InputPort, side: PortSide): V
   if (measured) return measured
 
   const box = measureNodeBox(node.id, node.worldPosition, node.box)
-  return side === 'out'
-    ? { x: box.x + box.width, y: box.y + box.height / 2 }
-    : { x: box.x, y: box.y + box.height / 2 }
+  if (side === 'out') {
+    return { x: box.x + box.width, y: box.y + box.height / 2 }
+  } else if (side === 'method') {
+    // 底部方法端口兜底：卡片底部中点
+    return { x: box.x + box.width / 2, y: box.y + box.height }
+  } else {
+    return { x: box.x, y: box.y + box.height / 2 }
+  }
 }
 
 /** 算一条边的画布几何；任一端查不到节点（比如节点已被移除）时返回 undefined */
@@ -93,7 +114,9 @@ export function edgeGeometry(scene: Scene, edge: Edge): EdgeGeometry | undefined
   if (!startNode || !endNode) return undefined
 
   const from = portAnchor(startNode, edge.startPort, 'out')
-  const to = portAnchor(endNode, edge.endPort, 'in')
+  // endPort 可能是 InputPort（'in'）或 MethodPort（'method'）——动态判断
+  const endSide = sideOfPort(edge.endPort)
+  const to = portAnchor(endNode, edge.endPort, endSide)
 
   return {
     edge,

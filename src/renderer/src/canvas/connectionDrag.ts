@@ -49,6 +49,9 @@ const REASON_KEY: Record<string, string> = {
 /** 端口命中半径（屏幕像素）：圆点才 12px，给点容错 */
 const PORT_HIT_RADIUS = 24
 
+/** 合法的连接目标侧：输入端口 + 方法端口 */
+const TARGET_SIDES = ['in', 'method'] as const
+
 // 拖拽期间要用的「源」，不属于展示状态，留在模块里即可
 let sourceNodeId: string | null = null
 let sourcePort: OutputPort | null = null
@@ -102,7 +105,12 @@ function onPointerMove(event: PointerEvent): void {
 function onPointerUp(event: PointerEvent): void {
   const from = sourcePort
   const fromNode = sourceNodeId
-  const hit = findPortNear(event.clientX, event.clientY, 'in', PORT_HIT_RADIUS)
+  // 搜索所有侧的合法目标（'in' + 'method'）
+  let hit: import('@renderer/canvas/elements').PortHit | null = null
+  for (const side of TARGET_SIDES) {
+    hit = findPortNear(event.clientX, event.clientY, side, PORT_HIT_RADIUS)
+    if (hit) break
+  }
   endDrag()
 
   if (!from || !fromNode || !hit) return // 松在空白处：什么都不做，等于取消
@@ -128,7 +136,12 @@ function onPointerUp(event: PointerEvent): void {
 
 /** 指针下面的候选端口 + 预览线终点（吸附到圆心）。拖拽过程中反复调用 */
 function moveTo(clientX: number, clientY: number): void {
-  const hit = findPortNear(clientX, clientY, 'in', PORT_HIT_RADIUS)
+  // 搜索所有侧的合法目标（'in' + 'method'）
+  let hit: import('@renderer/canvas/elements').PortHit | null = null
+  for (const side of TARGET_SIDES) {
+    hit = findPortNear(clientX, clientY, side, PORT_HIT_RADIUS)
+    if (hit) break
+  }
 
   if (hit) {
     connectionDrag.targetKey = hit.key
@@ -182,5 +195,8 @@ function resolveOutputPort(nodeId: string, portId: string): OutputPort | undefin
 
 function resolveInputPort(nodeId: string, portId: string): InputPort | undefined {
   const node = workspaceScene.getNode(nodeId)
-  return node?.inputPorts.find((port) => port.id === portId)
+  if (!node) return undefined
+  // 先搜普通输入端口，再搜方法端口（方法端口不在 inputPorts 数组里）
+  return node.inputPorts.find((port) => port.id === portId)
+    ?? (node.methodPorts as readonly InputPort[] | undefined)?.find((port) => port.id === portId)
 }

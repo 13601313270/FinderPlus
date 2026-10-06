@@ -1,4 +1,5 @@
 import type { InputPort } from '../port/InputPort'
+import type { MethodPort } from '../port/MethodPort'
 import type { OutputPort } from '../port/OutputPort'
 import type { Scene } from '../graph/Scene'
 import type { Edge } from '../graph/Edge'
@@ -67,6 +68,7 @@ export abstract class Node {
 
   private readonly inputs: InputPort[] = []
   private readonly outputs: OutputPort[] = []
+  private readonly methods: MethodPort[] = []
 
   /**
    * 节点在画布上的坐标，语义是**相对直接父容器的局部坐标**：
@@ -324,6 +326,10 @@ export abstract class Node {
     return this.outputs
   }
 
+  get methodPorts(): readonly MethodPort[] {
+    return this.methods
+  }
+
   /** 子类构造时登记自己的输入端口；运行时也可追加，会自动 notifyChanged 刷新 UI */
   protected addInput(port: InputPort): void {
     port.setOwner(this)
@@ -345,6 +351,32 @@ export abstract class Node {
     } else {
       this.outputs.push(port)
     }
+    this.notifyChanged()
+  }
+
+  /**
+   * 子类登记方法端口；运行时也可追加，会自动 notifyChanged 刷新 UI。
+   *
+   * 方法端口**不**加入 inputs 数组——它在渲染层位于底部而非左侧，
+   * 断边逻辑由 Scene.disconnectNodeEdges 额外覆盖 methodPorts 来保证。
+   */
+  protected addMethod(port: MethodPort): void {
+    port.setOwner(this)
+    this.methods.push(port)
+    this.notifyChanged()
+  }
+
+  /**
+   * 运行时移除方法端口。自动断开所有 incoming 边（通过 Scene.removeEdge）。
+   */
+  protected removeMethod(port: MethodPort): void {
+    const idx = this.methods.indexOf(port)
+    if (idx === -1) return
+
+    this.methods.splice(idx, 1)
+
+    // 断边：MethodPort 继承 InputPort，也有 incoming Map
+    this.disconnectPortEdges(port.incoming.keys())
     this.notifyChanged()
   }
 

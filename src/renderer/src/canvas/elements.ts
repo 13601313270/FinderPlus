@@ -95,10 +95,11 @@ export interface PortsOwnerLike {
   readonly id: string
   readonly inputPorts: readonly PortLike[]
   readonly outputPorts: readonly PortLike[]
+  readonly methodPorts?: readonly PortLike[]
 }
 
 /** 端口长在卡片哪一侧 */
-export type PortSide = 'in' | 'out'
+export type PortSide = 'in' | 'out' | 'method'
 
 const nodeElements = new Map<string, HTMLElement>()
 
@@ -227,18 +228,20 @@ export interface PortHit {
  *
  * 半径按**屏幕像素**算，不折算世界坐标：缩到 20% 时圆点只有两三个像素，
  * 但落点手感不该跟着变小，仍然留同样的容错。
+ *
+ * @param side 可选——只搜索指定侧的端口。传 undefined 时搜索所有侧。
  */
 export function findPortNear(
   clientX: number,
   clientY: number,
-  side: PortSide,
+  side: PortSide | undefined,
   radius: number
 ): PortHit | null {
   let best: PortHit | null = null
   let bestDistance = radius
 
   portElements.forEach((registered, key) => {
-    if (registered.side !== side) return
+    if (side !== undefined && registered.side !== side) return
     const rect = registered.el.getBoundingClientRect()
     const centerX = rect.left + rect.width / 2
     const centerY = rect.top + rect.height / 2
@@ -332,10 +335,22 @@ export function measurePortCenter(
   // 垂直方向取圆点中心；水平方向固定取「靠近 content 那侧的边缘往里 7px」——
   // 这样无论端口是 12px 圆还是胶囊，连线锚点都钉死在 content 侧线上，
   // 不会随端口 DOM 宽度变化而漂移
-  const screenOffsetY = dotRect.top + dotRect.height / 2 - shellRect.top
-  const screenOffsetX = side === 'in'
-    ? dotRect.right - 7 - shellRect.left   // 输入端口：端口右边缘往左 7px
-    : dotRect.left + 7 - shellRect.left    // 输出端口：端口左边缘往右 7px
+  let screenOffsetX: number
+  let screenOffsetY: number
+
+  if (side === 'method') {
+    // 底部方法端口（三角形朝上）：锚点在三角形顶部尖端
+    // 水平：三角形水平中心
+    // 垂直：三角形顶部边缘往下 7px（靠近 content 那侧）
+    screenOffsetX = dotRect.left + dotRect.width / 2 - shellRect.left
+    screenOffsetY = dotRect.top + 7 - shellRect.top
+  } else {
+    // 输入 / 输出端口（圆点）
+    screenOffsetY = dotRect.top + dotRect.height / 2 - shellRect.top
+    screenOffsetX = side === 'in'
+      ? dotRect.right - 7 - shellRect.left   // 输入端口：端口右边缘往左 7px
+      : dotRect.left + 7 - shellRect.left    // 输出端口：端口左边缘往右 7px
+  }
 
   // 把屏幕偏移换算成**世界**偏移：
   //   shellRect.width  = shell.offsetWidth × viewport.scale

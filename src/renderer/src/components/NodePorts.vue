@@ -21,6 +21,7 @@ const props = defineProps<{
   node: {
     readonly inputPorts: readonly PortLike[]
     readonly outputPorts: readonly PortLike[]
+    readonly methodPorts?: readonly PortLike[]
     onChanged(fn: () => void): () => void
   } | undefined
   side: PortSide
@@ -44,7 +45,11 @@ function sync(): void {
     portList.value = []
     return
   }
-  portList.value = props.side === 'in' ? [...props.node.inputPorts] : [...props.node.outputPorts]
+  if (props.side === 'method') {
+    portList.value = [...(props.node.methodPorts ?? [])]
+  } else {
+    portList.value = props.side === 'in' ? [...props.node.inputPorts] : [...props.node.outputPorts]
+  }
 }
 
 onMounted(() => {

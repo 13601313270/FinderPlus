@@ -35,7 +35,7 @@ export interface InputPortOptions {
 /** 输入端口：节点接收值的入口 */
 export class InputPort {
   /** 所属节点，由 Node 登记端口时注入；没人认领时，通知就没人接 */
-  private owner: Node | undefined
+  protected owner: Node | undefined
 
   /**
    * 边绑定/解绑事件的订阅者集合。外部通过 onEdgeBinding 订阅，返回的解绑函数成对使用
@@ -52,20 +52,24 @@ export class InputPort {
   readonly incoming = new Map<Edge, Value | undefined>()
 
   /** 端口多语言标签（可运行时修改，NodeShell 画布上的端口名显示用它） */
-  private labelValue: LocalizedText | undefined
+  protected labelValue: LocalizedText | undefined
 
   /**
    * 锁定态：所属 Node 进入 running 时由 Node.beginRun 调用 lock() 置 true。
    * 锁定期间 incoming 照常更新（值是实时的），但不立即通知 Node——
    * 等 Node.completeRun/failRun 调 unlockAndFlush() 时统一派发。
+   *
+   * protected 以便 MethodPort 等子类能绕过 fingerprint 去重重写 receive。
    */
-  private locked: boolean = false
+  protected locked: boolean = false
 
   /**
    * 锁定期间是否有变化发生（receive / receiveClear / bindEdge / unbindEdge）。
    * 解锁时 Node 根据它决定要不要把本端口加进 _onInputPortChanged 的参数列表。
+   *
+   * protected 以便 MethodPort 等子类能绕过 fingerprint 去重重写 receive。
    */
-  private pendingNotify: boolean = false
+  protected pendingNotify: boolean = false
 
   /** 只读：当前是否处于锁定态（渲染层可能需要知道） */
   get isLocked(): boolean {

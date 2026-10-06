@@ -6,6 +6,7 @@ import { NumberValue } from '../../engine/data/NumberValue'
 import { StringValue } from '../../engine/data/StringValue'
 import type { Value } from '../../engine/data/Value'
 import { InputPort } from '../../engine/port/InputPort'
+import { MethodPort } from '../../engine/port/MethodPort'
 import type { InputPortChangeSource } from '../../engine/node/Node'
 import { OutputPort } from '../../engine/port/OutputPort'
 import { Node } from '../../engine/node/Node'
@@ -54,6 +55,9 @@ export abstract class BufferNode extends Node {
   /** 输出端口：「出」操作把取出的值 commit 到这里 */
   private outputPort: OutputPort
 
+  /** 方法端口：外部连线触发 take() 操作 */
+  private methodPort: MethodPort
+
   /** 已进入缓冲区的数据，按进入顺序排列 */
   private readonly items: Value[] = []
 
@@ -68,8 +72,12 @@ export abstract class BufferNode extends Node {
     super(id)
     this.inputPort = this.buildInputPort(this.kindValue)
     this.outputPort = this.buildOutputPort(this.kindValue)
+    this.methodPort = new MethodPort('take', { label: outLabel })
     this.addInput(this.inputPort)
     this.addOutput(this.outputPort)
+    this.addMethod(this.methodPort)
+    // 方法端口被触发 → 执行 take()
+    this.methodPort.onTrigger(() => this.take())
     this.setBox(NODE_WIDTH, NODE_HEIGHT)
   }
 

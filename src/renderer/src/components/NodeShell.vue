@@ -99,11 +99,17 @@ function onContextMenu(e: MouseEvent): void {
     <div class="ports-col ports-col--left">
       <NodePorts :node-id="node.id" :node="node" side="in" :dirty-ids="dirtyInputPortIds" />
     </div>
-    <div class="node-content" :style="contentStyle">
-      <component :is="render" :id="node.id" />
-      <!-- running 状态的 loading 覆层 -->
-      <div v-if="nodeState === 'running'" class="node-loading" aria-hidden="true">
-        <div class="node-loading__spinner" />
+    <div class="node-body">
+      <div class="node-content" :style="contentStyle">
+        <component :is="render" :id="node.id" />
+        <!-- running 状态的 loading 覆层 -->
+        <div v-if="nodeState === 'running'" class="node-loading" aria-hidden="true">
+          <div class="node-loading__spinner" />
+        </div>
+      </div>
+      <!-- 底部方法端口行：只有存在方法端口时才渲染 -->
+      <div v-if="node.methodPorts && node.methodPorts.length > 0" class="ports-row ports-row--bottom">
+        <NodePorts :node-id="node.id" :node="node" side="method" />
       </div>
     </div>
     <div class="ports-col ports-col--right">
@@ -145,6 +151,13 @@ function onContextMenu(e: MouseEvent): void {
   }
 }
 
+// node-body 包裹 node-content + 底部 ports-row，让 content 和底部方法端口垂直排列
+.node-body {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 auto; // 不让 body 被两侧挤扁
+}
+
 .ports-col {
   // 绝对定位钉在 shell 两侧，不占 flex 流——这样 shell 的自然宽度只由 content 决定，
   // 胶囊再宽也推不动 content；负 margin 探出 content 边缘的逻辑完全不变
@@ -171,6 +184,30 @@ function onContextMenu(e: MouseEvent): void {
     // 锚在 shell 右边缘的外侧：ports-col 的左边 = shell 的右边
     left: 100%;
     right: auto;
+  }
+}
+
+// 底部方法端口行：横向排列，居中对齐
+.ports-row {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+
+  &--bottom {
+    // 锚在 node-content 底部：ports-row 在 node-body 的 flex 底部
+    padding-top: 6px;
+    pointer-events: none; // 容器空白区域穿透
+
+    :deep(.port) {
+      pointer-events: auto; // 只有端口三角形恢复捕获
+    }
+
+    // NodePorts 在 method side 时改横向排列
+    :deep(.port-item) {
+      flex-direction: column;
+      justify-content: center;
+      min-height: 0;
+    }
   }
 }
 

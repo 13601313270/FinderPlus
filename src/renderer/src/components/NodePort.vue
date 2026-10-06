@@ -22,6 +22,7 @@ const props = defineProps<{
 }>()
 
 const isIn = props.side === 'in'
+const isMethod = props.side === 'method'
 
 const { t, te } = useI18n()
 
@@ -48,8 +49,8 @@ onMounted(() => {
   // 初始化连接状态——组件挂载时可能已经连着边了
   hasConnection.value = (props.port.incomingEdgeCount ?? 0) > 0
 
-  // 输入端口才有 onEdgeBinding 方法，OutputPort 侧暂时没有对应订阅需求
-  if (isIn && props.port.onEdgeBinding) {
+  // 输入端口和方法端口都有 incoming 边，需要订阅 onEdgeBinding 追踪连接状态
+  if ((isIn || isMethod) && props.port.onEdgeBinding) {
     unsubEdgeBinding = props.port.onEdgeBinding((event) => {
       hasConnection.value = event.kind === 'bind'
         ? true
@@ -245,13 +246,24 @@ function updateTooltipPosition(): void {
 </script>
 
 <template>
-  <!--
-    每个端口项占一个 flex item：圆点 + label 水平排列。
-    左列：圆点在右（紧贴 content 那侧），label 在左；
-    右列：圆点在左（紧贴 content 那侧），label 在右。
-    这样圆点探出 ports-col 边缘正好落在 content 侧线上。
-  -->
-  <div class="port-item" :class="{ 'port-item--left': isIn, 'port-item--right': !isIn }">
+  <!-- method 侧：三角形朝上，label 在下方 -->
+  <div v-if="isMethod" class="port-item port-item--bottom">
+    <span
+      :ref="portRef"
+      class="port port--method"
+      :class="[highlightOf(port)]"
+      :data-port-id="port.id"
+      :title="`方法端口 ${label}`"
+      @mouseenter="showTooltip"
+      @mouseleave="hideTooltip"
+    />
+    <div v-if="!hideLabel" class="port-label port-label--bottom-edge">
+      <span class="port-label__main">{{ label }}</span>
+    </div>
+  </div>
+
+  <!-- in/out 侧：圆点 + 左右 label -->
+  <div v-else class="port-item" :class="{ 'port-item--left': isIn, 'port-item--right': !isIn }">
     <!-- 左列：label 在圆点左边，文本右对齐（靠近圆点） -->
     <div v-if="isIn && !hideLabel" class="port-label port-label--right-edge">
       <span class="port-label__main">{{ label }}</span>
@@ -353,6 +365,15 @@ function updateTooltipPosition(): void {
   &--right {
     justify-content: flex-start;
   }
+
+  // 底部方法端口项：垂直排列（三角形在上，label 在下）
+  &--bottom {
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 2px;
+    min-height: 0;
+  }
 }
 
 .port {
@@ -376,6 +397,42 @@ function updateTooltipPosition(): void {
 
   &--out {
     margin-left: -6px;
+  }
+
+  // —— 方法端口：三角形朝上，区别于输入/输出的圆点 ——
+  &--method {
+    // 用 CSS border 技巧画三角形：顶朝上、底朝下
+    width: 0;
+    height: 0;
+    border-radius: 0;
+    border: none;
+    background: transparent;
+    border-left: 7px solid transparent;
+    border-right: 7px solid transparent;
+    border-bottom: 12px solid @color-primary;
+    cursor: crosshair; // 可以从方法端口开始反向拖？不，方法端口是连接目标
+    // 三角形顶部对齐端口锚点（measurePortCenter 算的是顶部往下 7px）
+    // 三角形顶点在最上方，所以不需要负 margin
+  }
+
+  // 方法端口的高亮状态——改变三角形颜色
+  &--method.port--source,
+  &--method.port--target,
+  &--method.port--invalid {
+    border-bottom-color: @color-primary;
+    // box-shadow 对三角形无效（元素是 0x0），所以用 outline 代替
+    outline: 3px solid rgba(59, 124, 255, 0.3);
+    outline-offset: 2px;
+  }
+
+  &--method.port--target {
+    border-bottom-color: @color-ok;
+    outline-color: rgba(46, 174, 103, 0.4);
+  }
+
+  &--method.port--invalid {
+    border-bottom-color: @color-danger;
+    outline-color: rgba(217, 75, 75, 0.3);
   }
 
   &--source,
@@ -433,6 +490,13 @@ function updateTooltipPosition(): void {
     align-items: flex-start; // 右列：文字左对齐，靠圆点那侧
     text-align: left;
     margin-left: 4px;
+  }
+
+  // 底部方法端口的 label：居中、在三角形下方
+  &--bottom-edge {
+    align-items: center;
+    text-align: center;
+    margin: 0;
   }
 
   &__main {

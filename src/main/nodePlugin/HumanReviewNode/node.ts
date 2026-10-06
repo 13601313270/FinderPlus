@@ -261,12 +261,20 @@ export class HumanReviewNode extends Node {
 
   // —— 持久化 ——
 
-  /** 队列不持久化，恢复时上游重新 commit 自动重建；输出端口动态重建 */
+  /**
+   * 持久化 box 尺寸（用户拖拽右下角 resize handle 调整过的宽高）。
+   * 队列不持久化，恢复时上游重新 commit 自动重建；输出端口动态重建。
+   */
   saveState(): Record<string, unknown> {
-    return {}
+    return { box: [...this.box] }
   }
 
-  readState(_state: Record<string, unknown>): void {
+  readState(state: Record<string, unknown>): void {
+    // 恢复用户保存的 box 尺寸；老版本数据没有 box 字段，跳过即可（构造函数已设了默认值）
+    const box = state.box as unknown
+    if (Array.isArray(box) && box.length === 2 && typeof box[0] === 'number' && typeof box[1] === 'number') {
+      this.setBox(box[0], box[1])
+    }
     // 队列和输出端口都由上游重新 commit 时自动重建
   }
 }

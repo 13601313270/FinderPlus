@@ -18,6 +18,7 @@ export const NODE_CATEGORIES = [
   'ai',
   'file',
   'flow',
+  'tool',
   'other'
 ] as const
 
@@ -132,6 +133,23 @@ export const CATEGORY_LABELS: Record<NodeCategory, LocalizedText> = {
     vi: 'Luồng',
     tr: 'Akış',
     it: 'Flusso',
+  },
+  tool: {
+    zh: '工具',
+    en: 'Tools',
+    ja: 'ツール',
+    ko: '도구',
+    es: 'Herramientas',
+    ar: 'أدوات',
+    fr: 'Outils',
+    pt: 'Ferramentas',
+    ru: 'Инструменты',
+    hi: 'टूल्स',
+    id: 'Alat',
+    de: 'Werkzeuge',
+    vi: 'Công cụ',
+    tr: 'Araçlar',
+    it: 'Strumenti',
   },
   other: {
     zh: '其他',

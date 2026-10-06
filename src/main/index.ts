@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, ipcMain, Menu, dialog } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, Menu, dialog, Notification } from 'electron'
 import { join, basename, extname, parse } from 'node:path'
 import { copyFileSync, existsSync, readFileSync, readdirSync, rmSync, mkdirSync, statSync, unlinkSync, watch, writeFileSync } from 'node:fs'
 import { exec } from 'node:child_process'
@@ -1576,6 +1576,73 @@ ipcMain.handle('dialog:showOpen', async (_e, args: {
   })
   if (result.canceled || result.filePaths.length === 0) return null
   return result.filePaths[0]
+})
+
+// —— 系统通知代理 ——
+// 渲染进程（如 HumanReviewNode 入队时）通过 preload 调此 handler，
+// 由主进程用 Electron Notification 模块发 macOS / Windows 系统级通知。
+// 不走 renderer 的 Web Notification API：保持和项目其他 IPC 代理风格一致，
+// 未来可在此集中控制「前台窗口不打扰」、「多个待审核项合并成一条」等策略。
+ipcMain.handle('notification:show', (_e, args: {
+  title: string
+  body: string
+  /** 可选：点击通知时 focus 这个画布窗口并把该节点居中 */
+  canvasId?: string
+  /** 可选：和 canvasId 配合，通知点击时 renderer 把该节点滚到画布中心 */
+  nodeId?: string
+}): { ok: true } | { ok: false; error: string } => {
+  try {
+    const title = String(args.title ?? '')
+    const body = String(args.body ?? '')
+    if (!title) return { ok: false, error: 'title 不能为空' }
+
+    // 前台窗口 focused 时不弹——用户正在看界面，系统通知反而打扰
+    const focused = BrowserWindow.getFocusedWindow()
+    if (focused && !focused.isMinimized()) {
+      return { ok: true }
+    }
+
+    if (!Notification.isSupported()) {
+      return { ok: false, error: '当前平台不支持系统通知' }
+    }
+
+    const n = new Notification({ title, body, silent: false })
+
+    const targetCanvasId = args.canvasId
+    const targetNodeId = args.nodeId
+
+    // 点击通知 → focus 对应画布窗口 + 推事件让 renderer 把节点滚到中心
+    n.on('click', () => {
+      if (targetCanvasId) {
+        const win = canvasWindows.get(targetCanvasId)
+        if (win && !win.isDestroyed()) {
+          if (win.isMinimized()) win.restore()
+          win.show()
+          win.focus()
+          // 告诉 renderer 把这个节点滚到中心
+          if (targetNodeId) {
+            win.webContents.send('app:focusNode', { nodeId: targetNodeId })
+          }
+        } else {
+          // 窗口还没开（多画布场景），开一个
+          createWindow(targetCanvasId)
+          // 新开窗口会重建 Scene，on('ready-to-show') 时 renderer 还没准备好，
+          // 延迟一下再推，让窗口先 load + 完成初始渲染
+          setTimeout(() => {
+            const w = canvasWindows.get(targetCanvasId)
+            if (w && !w.isDestroyed() && targetNodeId) {
+              w.webContents.send('app:focusNode', { nodeId: targetNodeId })
+            }
+          }, 1500)
+        }
+      }
+    })
+
+    n.show()
+    return { ok: true }
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : String(err) }
+  }
 })
 
 app.whenReady().then(async () => {

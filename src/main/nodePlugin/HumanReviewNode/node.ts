@@ -136,12 +136,32 @@ export class HumanReviewNode extends Node {
     // —— 入队 ——
     const value = values[0] // multiple: false，取第一个
 
-    if (this.current === undefined) {
+    const wasEmpty = this.current === undefined
+    if (wasEmpty) {
       this.current = value
     } else {
       this.queue.push(value)
     }
     this.notifyChanged()
+
+    // 首次入队（队列为空 → 有了第一项）时发系统通知，避免队列积压连弹 N 条
+    if (wasEmpty) {
+      const label = value.displayLabel || '待审核项'
+      // bracket 访问绕过 node tsconfig 的 Window 类型差异（web tsconfig 正常）
+      const w = window as unknown as {
+        notificationApi?: { show: (t: string, b?: string, m?: Record<string, unknown>) => Promise<unknown> }
+        getCurrentCanvasId?: () => string
+      }
+      if (w.notificationApi) {
+        const canvasId = w.getCurrentCanvasId?.()
+        // fire-and-forget：通知发丢了不影响节点逻辑
+        w.notificationApi.show('人工审核待处理', label, {
+          ...(canvasId ? { canvasId } : {}),
+          nodeId: this.id
+        }).catch(() => { /* noop */ })
+      }
+    }
+
     // 入队后保持 dirty——队列非空 = 有未处理的审核项，等 approve/reject 清空后 stable
   }
 

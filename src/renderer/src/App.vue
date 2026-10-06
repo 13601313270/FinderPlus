@@ -7,7 +7,7 @@ import { manifestFor, getNodeManifest, resolveByExtension } from '../../main/nod
 import { FileNode } from '../../main/nodePlugin/FileNode/node'
 import { FileInfoNode } from '../../main/nodePlugin/FileInfoNode/node'
 import { FolderNode } from '../../main/nodePlugin/FolderNode/node'
-import { viewport, panViewport, zoomViewportAt, screenToWorld, setCanvasContainer } from '@renderer/canvas/viewport'
+import { viewport, panViewport, zoomViewportAt, screenToWorld, setCanvasContainer, centerViewportOn, getCanvasContainer } from '@renderer/canvas/viewport'
 import { measureNodeBox } from '@renderer/canvas/elements'
 import EdgeLayer from './components/EdgeLayer.vue'
 import NodeShell from './components/NodeShell.vue'
@@ -76,6 +76,25 @@ function onSceneChanged(): void {
 
 // —— 新手引导：Scene 变更订阅 ——
 let unsubscribeOnboardingCheck: (() => void) | undefined
+
+// —— 系统通知点击 → 节点居中 ——
+let unsubscribeFocusNode: (() => void) | undefined
+
+/**
+ * 主进程推来「点击通知，把节点滚到中心」事件：
+ * 从 workspaceScene 找节点 → 用它的世界坐标 centerViewportOn。
+ * 找不到（可能节点已被删）就静默忽略。
+ */
+function focusNodeById(payload: { nodeId: string }): void {
+  const node = workspaceScene.getNode(payload.nodeId)
+  if (!node) return
+  const canvasEl = getCanvasContainer()
+  if (!canvasEl) return
+  const [nx, ny] = node.position
+  const [bw, bh] = node.box
+  // 把节点中心（position + box/2）滚到画布中心，而非左上角
+  centerViewportOn(nx + bw / 2, ny + bh / 2, canvasEl.clientWidth, canvasEl.clientHeight)
+}
 
 /** 画布上是否已经有 FileInfoNode（用户从调色板加到画布） */
 /**
@@ -853,6 +872,8 @@ onMounted(() => {
     document.addEventListener('drop', onGlobalDrop)
     unsubscribeScene = workspaceScene.onChanged(onSceneChanged)
     unsubscribeOnboardingCheck = workspaceScene.onChanged(onSceneChangedForOnboarding)
+    // 系统通知点击 → 把触发通知的节点滚到画布中心
+    unsubscribeFocusNode = window.notificationApi.onFocusNode(focusNodeById)
     // 画布下拉菜单的外部点击关闭
     document.addEventListener('mousedown', onCanvasMenuDocClick, true)
   }
@@ -869,6 +890,7 @@ onUnmounted(() => {
   document.removeEventListener('mousedown', onCanvasMenuDocClick, true)
   unsubscribeScene?.()
   unsubscribeOnboardingCheck?.()
+  unsubscribeFocusNode?.()
   document.body.style.cursor = ''
   clearTimeout(viewportPersistTimer)
 })

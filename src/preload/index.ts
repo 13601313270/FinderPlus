@@ -347,6 +347,34 @@ const transferApi = {
 }
 
 /**
+ * 系统通知 API：由主进程用 Electron Notification 模块发 macOS / Windows 系统级通知。
+ * 前台窗口 focused 时主进程自动跳过（避免打扰）。
+ *
+ * 可选 meta：canvasId + nodeId —— 点击通知时主进程会 focus 该画布窗口，
+ * 并推送 'app:focusNode' 事件让 renderer 把该节点滚到画布中央。
+ */
+const notificationApi = {
+  /** 发一条系统通知。title 必填，body 可选。meta 可省略。 */
+  show: (
+    title: string,
+    body = '',
+    meta?: { canvasId?: string; nodeId?: string }
+  ): Promise<{ ok: true } | { ok: false; error: string }> =>
+    ipcRenderer.invoke('notification:show', { title, body, ...(meta ?? {}) }),
+
+  /**
+   * 监听「点击系统通知，把节点滚到中心」事件。
+   * 主进程在用户点击通知后推送给对应 canvasId 的窗口。
+   * 返回取消订阅函数。
+   */
+  onFocusNode: (callback: (payload: { nodeId: string }) => void): (() => void) => {
+    const handler = (_e: Electron.IpcRendererEvent, payload: { nodeId: string }) => callback(payload)
+    ipcRenderer.on('app:focusNode', handler)
+    return () => ipcRenderer.removeListener('app:focusNode', handler)
+  }
+}
+
+/**
  * 表节点 API：动态建表 + 行级 CRUD。
  *
  * 所有操作都透传到主进程 sql.js 实例。主进程负责：
@@ -518,6 +546,7 @@ if (process.contextIsolated) {
     contextBridge.exposeInMainWorld('appMenuApi', appMenuApi)
     contextBridge.exposeInMainWorld('dialogApi', dialogApi)
     contextBridge.exposeInMainWorld('transferApi', transferApi)
+    contextBridge.exposeInMainWorld('notificationApi', notificationApi)
     contextBridge.exposeInMainWorld('tableApi', tableApi)
     contextBridge.exposeInMainWorld('canvasApi', canvasApi)
     contextBridge.exposeInMainWorld('getCurrentCanvasId', getCurrentCanvasId)
@@ -549,6 +578,8 @@ if (process.contextIsolated) {
   // @ts-ignore (define in dts)
   window.transferApi = transferApi
   // @ts-ignore (define in dts)
+  window.notificationApi = notificationApi
+  // @ts-ignore (define in dts)
   window.tableApi = tableApi
   // @ts-ignore (define in dts)
   window.canvasApi = canvasApi
@@ -568,6 +599,7 @@ export type WasmApi = typeof wasmApi
 export type AppMenuApi = typeof appMenuApi
 export type DialogApi = typeof dialogApi
 export type TransferApi = typeof transferApi
+export type NotificationApi = typeof notificationApi
 export type TableApi = typeof tableApi
 export type CanvasApi = typeof canvasApi
 export type GetCurrentCanvasId = typeof getCurrentCanvasId

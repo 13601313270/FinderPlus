@@ -10,6 +10,7 @@ import type {
   AppMenuApi,
   DialogApi,
   TransferApi,
+  NotificationApi,
   TableApi,
   CanvasApi,
   GetCurrentCanvasId,
@@ -29,6 +30,8 @@ declare global {
     appMenuApi: AppMenuApi
     dialogApi: DialogApi
     transferApi: TransferApi
+    /** 系统通知 API：发 macOS / Windows 系统级通知 */
+    notificationApi: NotificationApi
     tableApi: TableApi
     /** 画布管理 API：list / create / rename / delete / openNewWindow */
     canvasApi: CanvasApi

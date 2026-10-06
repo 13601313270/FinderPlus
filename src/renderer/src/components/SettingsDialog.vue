@@ -220,6 +220,8 @@ async function handleImport(): Promise<void> {
 
 /** 系统应用菜单「设置…」触发的取消订阅句柄 */
 let disposeMenuListener: (() => void) | undefined
+/** canvas:changed 广播订阅（主进程在其他窗口 create/rename/delete 后 broadcast） */
+let unsubscribeCanvasChanged: (() => void) | undefined
 
 function onMaskClick(): void {
   closeSettings()
@@ -239,12 +241,18 @@ onMounted(() => {
   disposeMenuListener = window.appMenuApi?.onOpenSettings(openSettings)
   // 订阅 Scene 变化，让 canvasIsEmpty computed 能实时响应
   unsubscribeSceneSettings = workspaceScene.onChanged(onSceneTickForSettings)
+  // 订阅画布 CRUD 广播，跨窗口同步"我的画布"列表
+  unsubscribeCanvasChanged = window.canvasApi.onChanged(() => {
+    // 不管当前 section 是什么，收到广播就拉一次—— canvases section 以外也只是空跑一次，不浪费
+    void refreshCanvasRows()
+  })
 })
 
 onUnmounted(() => {
   document.removeEventListener('keydown', onKeyDown)
   disposeMenuListener?.()
   unsubscribeSceneSettings?.()
+  unsubscribeCanvasChanged?.()
 })
 
 // —— LLM 保存反馈 ——
@@ -389,10 +397,26 @@ async function onRenameCanvas(id: string, currentName: string): Promise<void> {
 }
 
 async function onDeleteCanvas(id: string, name: string): Promise<void> {
-  if (id === 'default') {
-    await window.showAlert('默认画布不能删除')
-    return
+  // 只有一个画布 → 不清空 canvases 表（会导致 list() 无数据），只清 nodes/edges
+  const list = await window.canvasApi.list()
+  if (list.length <= 1) {
+    return;
+    // const ok = await window.showConfirm(
+    //   '只剩这一个画布了',
+    //   `不能删除最后一个画布，改为清空所有内容？\n\n画布：${name}`
+    // )
+    // if (!ok) return
+    // await window.canvasDeskDb.clearCanvas({ canvasId: id })
+    // // 通知当前窗口 reload Scene（因为 clear 不是 broadcast 出来的事件）
+    // // 简单起见直接 reload —— 当前 App.vue 的 onChanged 订阅收到 canvas:changed 会自动 refreshCanvasList，
+    // // 但 clear 不会触发这个事件，所以这里也手动触发一下
+    // await refreshCanvasRows()
+    // // 触发当前窗口 Scene reload
+    // location.reload()
+    // return
   }
+
+  // 多个画布 → 正常删除
   const ok = await window.showConfirm(
     '确定要删除画布吗？',
     `画布中的节点、连线和文件都会被删除，且无法恢复。\n\n画布：${name}`
@@ -634,7 +658,6 @@ async function onDeleteCanvas(id: string, name: string): Promise<void> {
                       <button class="gs-canvas-card__btn" type="button" @click="onOpenCanvasFolder(row.id)">打开文件夹</button>
                       <button class="gs-canvas-card__btn" type="button" @click="onRenameCanvas(row.id, row.name)">重命名</button>
                       <button
-                        v-if="row.id !== 'default'"
                         class="gs-canvas-card__btn gs-canvas-card__btn--danger"
                         type="button"
                         @click="onDeleteCanvas(row.id, row.name)"

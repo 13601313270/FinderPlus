@@ -242,11 +242,11 @@ export class PromiseAllNode extends Node {
 
     // —— 第三步：齐了！先 commit（下游立刻拿到值），再等动画播完才清 receivedSet ——
     if (!this.triggering) {
-      this.triggerAllAvailable(false)
+      this.triggerAllAvailable(true)
     } else {
       // 正在上一轮动画中——收到新值也 commit，下游值已经是最新的，
       // 但不重复触发动画（上一轮还没结束），receivedSet 也不清
-      this.commitAllAvailable(false)
+      this.commitAllAvailable(true)
       this.completeRun()
     }
   }

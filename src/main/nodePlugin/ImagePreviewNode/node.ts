@@ -95,10 +95,15 @@ export class ImagePreviewNode extends Node {
   }
 
   saveState(): Record<string, unknown> {
-    return {}
+    return {
+      box: this.box
+    }
   }
 
-  readState(_state: Record<string, unknown>): void {
-    // 啥也不做——上游恢复后自然会 commit
+  readState(state: Record<string, unknown>): void {
+    const box = state.box as [number, number] | undefined
+    if (box !== undefined) {
+      this.setBox(Math.round(box[0]), Math.round(box[1]))
+    }
   }
 }

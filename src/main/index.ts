@@ -232,6 +232,13 @@ function registerIpcHandlers(): void {
 
   // —— 画布管理 IPC：CRUD + 开新窗口 ——
 
+  /** 画布 CRUD 成功后广播事件，通知所有窗口刷新 canvasList */
+  function broadcastCanvasChanged(): void {
+    for (const win of BrowserWindow.getAllWindows()) {
+      win.webContents.send('canvas:changed')
+    }
+  }
+
   /** 列出所有画布：从 canvases 表读，按 updated_at 倒序。
    *  保证 default 一定存在（用户可能清空过 canvases 表但数据还在） */
   ipcMain.handle('canvas:list', () => {
@@ -244,12 +251,12 @@ function registerIpcHandlers(): void {
     )
     persist()
     const rows = db.exec('SELECT id, name, updated_at FROM canvases ORDER BY updated_at DESC')
-    if (!rows.length) return []
-    return rows[0].values.map((row) => ({
+    const result = (!rows.length) ? [] : rows[0].values.map((row) => ({
       id: String(row[0]),
       name: String(row[1]),
       updatedAt: Number(row[2])
     }))
+    return result
   })
 
   /**
@@ -282,6 +289,7 @@ function registerIpcHandlers(): void {
     )
     ensureCanvasDir(id)
     persist()
+    broadcastCanvasChanged()
     return { id, name }
   })
 
@@ -291,6 +299,7 @@ function registerIpcHandlers(): void {
     const db = getDatabase()
     db.run('UPDATE canvases SET name = ?, updated_at = ? WHERE id = ?', [args.name, NOW(), args.id])
     persist()
+    broadcastCanvasChanged()
     return { ok: true }
   })
 
@@ -318,6 +327,7 @@ function registerIpcHandlers(): void {
         if (url.includes(`canvasId=${args.id}`)) win.close()
       } catch { /* 忽略关闭失败 */ }
     }
+    broadcastCanvasChanged()
     return { ok: true }
   })
 

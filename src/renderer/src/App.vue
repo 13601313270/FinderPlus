@@ -742,6 +742,18 @@ function onCanvasMenuDocClick(e: MouseEvent): void {
 // 立即读一次当前画布名
 void refreshCanvasList()
 
+// 订阅画布列表变更：主进程在其他窗口 create/rename/delete 后 broadcast
+// 收到后刷新本地 canvasList + 当前画布名
+let unsubscribeCanvasChanged: (() => void) | undefined
+onMounted(() => {
+  unsubscribeCanvasChanged = window.canvasApi.onChanged(() => {
+    void refreshCanvasList()
+  })
+})
+onUnmounted(() => {
+  unsubscribeCanvasChanged?.()
+})
+
 // 进入"新建画布"输入态后自动聚焦 input
 watch(showNewCanvasInput, async (v) => {
   if (!v) return

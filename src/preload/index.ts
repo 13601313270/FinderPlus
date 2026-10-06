@@ -451,7 +451,19 @@ const canvasApi = {
 
   /** 把指定画布开到新窗口 */
   openNewWindow: (id: string): Promise<{ ok: true } | { ok: false; error: string }> =>
-    ipcRenderer.invoke('canvas:openNewWindow', { id })
+    ipcRenderer.invoke('canvas:openNewWindow', { id }),
+
+  /**
+   * 订阅画布列表变更。
+   * 主进程在 create / rename / delete 成功后 broadcast 到所有窗口。
+   * 渲染进程收到后重新调 canvasApi.list() 刷新本地状态。
+   * 返回取消订阅函数。
+   */
+  onChanged: (callback: () => void): (() => void) => {
+    const handler = (): void => callback()
+    ipcRenderer.on('canvas:changed', handler)
+    return () => ipcRenderer.removeListener('canvas:changed', handler)
+  }
 }
 
 /**

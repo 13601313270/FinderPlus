@@ -650,6 +650,7 @@ async function doComposite(): Promise<void> {
         const color = s.color ?? '#000000'
         const align = s.textAlign ?? 'left'
         const bg = s.backgroundColor
+        const TEXT_PADDING = 8
         // 先画背景矩形（如果设了背景色）
         if (bg) {
           ctx.fillStyle = bg
@@ -659,15 +660,17 @@ async function doComposite(): Promise<void> {
         ctx.fillStyle = color
         ctx.textBaseline = 'top'
         ctx.textAlign = align
-        // 多行自动换行绘制
+        // 多行自动换行绘制——文字内部缩进 TEXT_PADDING px
         const lineHeight = Math.ceil(fontSize * 1.2)
-        const lines = wrapText(ctx, text, s.width)
+        const availWidth = Math.max(1, s.width - TEXT_PADDING * 2)
+        const availHeight = Math.max(1, s.height - TEXT_PADDING * 2)
+        const lines = wrapText(ctx, text, availWidth)
         for (let li = 0; li < lines.length; li++) {
-          if (li * lineHeight > s.height) break  // 超出图层高度停止绘制
-          let x = s.x
+          if (li * lineHeight > availHeight) break  // 超出可用高度停止绘制
+          let x = s.x + TEXT_PADDING
           if (align === 'center') x = s.x + s.width / 2
-          else if (align === 'right') x = s.x + s.width
-          ctx.fillText(lines[li], x, s.y + li * lineHeight)
+          else if (align === 'right') x = s.x + s.width - TEXT_PADDING
+          ctx.fillText(lines[li], x, s.y + TEXT_PADDING + li * lineHeight)
         }
       }
     }

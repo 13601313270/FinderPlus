@@ -48,7 +48,7 @@ function refreshResult(n: BackgroundRemoveNode | undefined): void {
   clearResult()
   if (!n) return
   const value = n.imageOutput.value
-  if (value instanceof ImgFileValue) {
+  if (value instanceof ImgFileValue && value.file) {
     const url = URL.createObjectURL(value.file)
     resultUrl.value = url
     revokeUrl = () => URL.revokeObjectURL(url)

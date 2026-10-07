@@ -4,12 +4,10 @@ import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { ImageGenNode } from './node'
 import { IMAGE_PROVIDERS, type ImageModelPreset, type ImageProviderId } from './providers'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
-import { useGlobalSettings } from '@renderer/composables/useGlobalSettings'
 import { useImageSettings } from '@renderer/composables/useImageSettings'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
 import { messages } from './i18n'
-import GearIcon from '@renderer/components/icons/GearIcon.vue'
 import HelpDialog from '@renderer/components/HelpDialog.vue'
 import ImageGenHelpDialog from './ImageGenHelpDialog.vue'
 
@@ -29,7 +27,6 @@ const t = useLocalizedMessages(messages)
  */
 const props = defineProps<{ id: string }>()
 
-const { openSettings: openGlobalSettings } = useGlobalSettings()
 const { hasKey } = useImageSettings()
 
 const providers = Object.entries(IMAGE_PROVIDERS) as [ImageProviderId, typeof IMAGE_PROVIDERS[ImageProviderId]][]
@@ -154,11 +151,6 @@ onBeforeUnmount(() => {
   clearImage()
   document.removeEventListener('pointerdown', onDocPointerDown, true)
 })
-
-function onGearClick(e: MouseEvent): void {
-  e.stopPropagation()
-  openGlobalSettings()
-}
 
 function onProviderChange(val: ImageProviderId): void {
   provider.value = val

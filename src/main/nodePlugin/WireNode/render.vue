@@ -3,13 +3,10 @@ import { onMounted, onUnmounted, ref, shallowRef } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { WireNode } from './node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
-import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 
 const props = defineProps<{ id: string }>()
 
 const wireNode = shallowRef<WireNode | undefined>(undefined)
-
-const nodeTitle = useNodeTitle(() => wireNode.value, '?')
 
 /** 当前输出端口的类型标签（ui 显示）；无输出时为空串 */
 const typeName = ref('')

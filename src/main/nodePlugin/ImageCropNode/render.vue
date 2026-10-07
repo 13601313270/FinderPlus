@@ -58,7 +58,7 @@ function refreshResult(n: ImageCropNode | undefined): void {
   clearResult()
   if (!n) return
   const value = n.imageOutput.value
-  if (value instanceof ImgFileValue) {
+  if (value instanceof ImgFileValue && value.file) {
     const url = URL.createObjectURL(value.file)
     resultUrl.value = url
     revokeResultUrl = () => URL.revokeObjectURL(url)
@@ -347,7 +347,7 @@ function runCrop(): Promise<File | null> {
         n.markCropped(src.fingerprint, rectHash)
         refreshResult(n)
         const value = n.imageOutput.value
-        resolve(value instanceof ImgFileValue ? value.file : null)
+        resolve(value instanceof ImgFileValue && value.file ? value.file : null)
       } finally {
         cropping = false
       }

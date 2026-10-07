@@ -23,7 +23,6 @@ const t = useLocalizedMessages(helpMessages)
       <ul class="help-list">
         <li v-html="t('configLi1')"></li>
         <li v-html="t('configLi2')"></li>
-        <li v-html="t('configLi3')"></li>
       </ul>
     </section>
 

@@ -38,9 +38,6 @@ const state = ref<DialogState>({
 })
 
 const inputRef = ref<HTMLInputElement | null>(null)
-let restorePrompt: (() => void) | null = null
-let restoreConfirm: (() => void) | null = null
-let restoreAlert: (() => void) | null = null
 
 function show(
   mode: DialogMode,
@@ -133,7 +130,6 @@ window.showAlert = (title: string, body?: string, opts?: { confirmText?: string 
 
 // 暴露给模板
 const isPrompt = () => state.value.mode === 'prompt'
-const isConfirm = () => state.value.mode === 'confirm'
 const isAlert = () => state.value.mode === 'alert'
 </script>
 

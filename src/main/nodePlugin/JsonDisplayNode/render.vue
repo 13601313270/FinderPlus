@@ -67,20 +67,6 @@ onUnmounted(() => {
   unsubscribe?.()
 })
 
-function onNodeWheel(e: WheelEvent): void {
-  const el = e.currentTarget as HTMLElement
-  const { scrollTop, scrollHeight, clientHeight } = el
-  const atTop = scrollTop <= 0
-  const atBottom = scrollTop + clientHeight >= scrollHeight
-
-  const scrollingUp = e.deltaY < 0
-  const scrollingDown = e.deltaY > 0
-
-  if ((scrollingUp && atTop) || (scrollingDown && atBottom)) return
-
-  e.stopPropagation()
-}
-
 // —— resize handle 拖拽 ——
 const MIN_WIDTH = 200
 const MAX_WIDTH = 800

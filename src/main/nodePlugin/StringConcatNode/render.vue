@@ -84,23 +84,6 @@ function onRemovePort(): void {
   concatNode.value?.removeLastInputPort()
 }
 
-/**
- * 滚动接力：textarea 还能往当前方向滚时才 stop，
- * 滚到顶/底了就放行让画布接管平移。
- */
-function onTextareaWheel(e: WheelEvent): void {
-  const el = e.currentTarget as HTMLTextAreaElement
-  const { scrollTop, scrollHeight, clientHeight } = el
-  const atTop = scrollTop <= 0
-  const atBottom = scrollTop + clientHeight >= scrollHeight
-
-  const scrollingUp = e.deltaY < 0
-  const scrollingDown = e.deltaY > 0
-
-  if ((scrollingUp && atTop) || (scrollingDown && atBottom)) return
-  e.stopPropagation()
-}
-
 // —— resize handle 拖拽：右下角双向自由调整宽高，不锁比例 ——
 const MIN_WIDTH = 220
 const MAX_WIDTH = 800

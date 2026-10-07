@@ -1,3 +1,4 @@
+import { NumberValue } from '../../engine/data/NumberValue'
 import { StringValue } from '../../engine/data/StringValue'
 import { InputPort } from '../../engine/port/InputPort'
 import { OutputPort } from '../../engine/port/OutputPort'
@@ -96,7 +97,7 @@ export class StringConcatNode extends Node {
   addInputPort(): void {
     this.portSeq += 1
     const port = new InputPort(`p${this.portSeq}`, {
-      accepts: [StringValue],
+      accepts: [StringValue, NumberValue],
       label: { zh: `$${this.inputPorts.length + 1}`, en: `$${this.inputPorts.length + 1}` }
     })
     // addInput 内部会 notifyChanged，端口列表据此刷新
@@ -135,7 +136,10 @@ export class StringConcatNode extends Node {
       const port = this.inputPorts[index]
       if (!port) return ''
       const [first] = port.value
-      return first instanceof StringValue && !first.isNull ? first.value! : ''
+      if (!first || first.isNull) return ''
+      if (first instanceof StringValue) return first.value!
+      if (first instanceof NumberValue) return String(first.value)
+      return ''
     })
     this.result = text
     this.textOutput.commit(new StringValue(text))

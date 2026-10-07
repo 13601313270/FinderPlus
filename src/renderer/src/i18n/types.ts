@@ -309,6 +309,8 @@ export type Language = {
       number: string
       boolean: string
       color: string
+      time: string
+      date: string
     }
 
     /** 新增/编辑弹窗 */

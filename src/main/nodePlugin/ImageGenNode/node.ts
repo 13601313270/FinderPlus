@@ -3,8 +3,9 @@ import { djb2 } from '../../engine/data/hash'
 import { ImgFileValue } from '../../engine/data/ImgFileValue'
 import { StringValue } from '../../engine/data/StringValue'
 import { InputPort } from '../../engine/port/InputPort'
+import { MethodPort } from '../../engine/port/MethodPort'
 import { OutputPort } from '../../engine/port/OutputPort'
-import { Node } from '../../engine/node/Node'
+import { Node, type InputPortChangeSource } from '../../engine/node/Node'
 import {
   buildImageRequestBody,
   buildImageRequestHeaders,
@@ -157,6 +158,27 @@ export class ImageGenNode extends Node {
     it: 'Immagine generata'
   })
 
+  /** 方法端口：外部连线触发一次生成（等同点「生成」按钮） */
+  readonly generateMethod = new MethodPort('generate', {
+    label: {
+      zh: '触发生成',
+      en: 'Trigger Generate',
+      ja: '生成実行',
+      ko: '생성 트리거',
+      es: 'Activar generación',
+      ar: 'تشغيل التوليد',
+      fr: 'Déclencher la génération',
+      pt: 'Acionar geração',
+      ru: 'Запустить генерацию',
+      hi: 'जनरेट ट्रिगर',
+      id: 'Picu Generasi',
+      de: 'Generierung auslösen',
+      vi: 'Kích hoạt tạo',
+      tr: 'Üretimi tetikle',
+      it: 'Attiva generazione'
+    }
+  })
+
   // —— 节点级配置 ——
   private provider: ImageProviderId = 'siliconflow'
   private model = ''   // 空串表示用 IMAGE_PROVIDERS[provider].defaultModel
@@ -180,6 +202,9 @@ export class ImageGenNode extends Node {
     this.addInput(this.ref3Input)
     this.addInput(this.ref4Input)
     this.addOutput(this.imageOutput)
+    this.addMethod(this.generateMethod)
+    // 方法端口被触发 → 等同 UI 点「生成」按钮
+    this.generateMethod.onTrigger(() => this.manualTrigger())
     // 所有参考图端口按编号顺序排，resolveReferenceImages 循环它拿到"第一张图→第四张图"的稳定顺序
     this.referenceImagePorts = [this.ref1Input, this.ref2Input, this.ref3Input, this.ref4Input]
     // 内容区硬约束：头部标签 + 预览区 + 底部操作栏（尺寸下拉 + 生成按钮）
@@ -284,8 +309,18 @@ export class ImageGenNode extends Node {
     // 本节点不接收文件，不处理
   }
 
+  /**
+   * 跳过脏标记——文生图节点是手动触发型：
+   * - prompt/size/ref 输入变化只刷新 UI 占位，不自动生成
+   * - generate MethodPort 触发由 onTrigger 回调独立处理
+   * 两种情况都不需要 engine 层的 dirty 语义，统一只走 inputPortReceiveValue 刷新 UI。
+   */
+  override _onInputPortChanged(ports: InputPort[], source: InputPortChangeSource): void {
+    this.inputPortReceiveValue(ports, source)
+  }
+
   /** 输入端口有变化（值到达 / 连线增删）时只刷新 UI，不自动生成——生成按张计费，等用户点按钮 */
-  inputPortReceiveValue(_ports: InputPort[]): void {
+  inputPortReceiveValue(_ports: InputPort[], _source: InputPortChangeSource): void {
     this.notifyChanged()
   }
 

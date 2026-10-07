@@ -3,7 +3,6 @@ import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { debounce } from 'lodash-es'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { TextInputNode } from './node'
-import { useNodePosition } from '@renderer/composables/useNodePosition'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
 import { viewport } from '@renderer/canvas/viewport'
@@ -178,8 +177,6 @@ onUnmounted(() => {
   onScrollThumbEnd()
 })
 
-// 只要拖拽（落点写回 node.position）；位置本身由外壳跟随 node.position 展示。
-const { startDrag } = useNodePosition(() => inputNode.value)
 
 /** 输入框敲字 → 更新草稿；开着自动发送时排一次防抖提交 */
 function onInput(e: Event): void {
@@ -273,7 +270,7 @@ function onResizeEnd(): void {
 
 <template>
   <div class="node">
-    <NodeHeader :title="nodeTitle" :title-hint="t('dragHint')" :drag-handler="startDrag" :help-title="t('helpTitle')" @help="showHelp = true">
+    <NodeHeader :title="nodeTitle" @help="showHelp = true">
       <template #actions>
         <button
           class="node__edit-btn"

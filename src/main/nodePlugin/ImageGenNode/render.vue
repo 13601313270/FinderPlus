@@ -3,7 +3,6 @@ import { computed, onBeforeUnmount, onMounted, ref, shallowRef } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { ImageGenNode } from './node'
 import { IMAGE_PROVIDERS, type ImageModelPreset, type ImageProviderId } from './providers'
-import { useNodePosition } from '@renderer/composables/useNodePosition'
 import { useImageSettings } from '@renderer/composables/useImageSettings'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
@@ -48,7 +47,6 @@ const sizeOptions = ref<readonly string[]>([])
 const size = ref('')
 const modelLabel = ref('')
 
-const { startDrag } = useNodePosition(() => node.value)
 
 let unsubscribe: (() => void) | undefined
 
@@ -174,7 +172,7 @@ function onGenClick(): void {
 
 <template>
   <div class="node">
-    <NodeHeader :title="nodeTitle" :title-hint="t('dragHint')" :drag-handler="startDrag" :help-title="t('helpTitle')" @help="showHelp = true" />
+    <NodeHeader :title="nodeTitle" @help="showHelp = true" />
 
     <!-- 节点级配置行：provider + model（对齐 LLMNode） -->
     <div v-if="node" class="node__config-row">

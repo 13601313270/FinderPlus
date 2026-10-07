@@ -79,6 +79,10 @@ const vi: Language = {
     title: 'Hướng dẫn',
     close: 'Đóng (Esc)'
   },
+  nodeHeader: {
+    dragHint: 'Drag node',
+    helpTitle: 'Help'
+  },
   minimap: {
     dragToMove: 'Kéo để di chuyển bản đồ nhỏ',
     expand: 'Mở rộng bản đồ nhỏ',

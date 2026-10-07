@@ -6,23 +6,6 @@ import type { LocalizedText } from '../../../shared/language'
  * 放在节点自己的文件夹里，跟随节点一起搬运；已按 LANGUAGE_CODES 全量配置。
  */
 export const messages = {
-  dragHint: {
-    zh: '拖动节点',
-    en: 'Drag node',
-    ja: 'ノードをドラッグ',
-    ko: '노드 드래그',
-    es: 'Arrastrar nodo',
-    ar: 'اسحب العقدة',
-    fr: 'Glisser le nœud',
-    pt: 'Arrastar nó',
-    ru: 'Перетащить узел',
-    hi: "नोड खींचें",
-    id: "Seret node",
-    de: "Knoten ziehen",
-    vi: "Kéo nút",
-    tr: "Düğümü sürükle",
-    it: "Trascina nodo",
-  },
   nodeMissing: {
     zh: '节点不存在',
     en: 'Node not found',
@@ -141,23 +124,6 @@ export const messages = {
     vi: "Gửi",
     tr: "Gönder",
     it: "Invia",
-  },
-  helpTitle: {
-    zh: '使用说明',
-    en: 'Help',
-    ja: '使い方',
-    ko: '사용 설명',
-    es: 'Ayuda',
-    ar: 'تعليمات',
-    fr: 'Aide',
-    pt: 'Ajuda',
-    ru: 'Справка',
-    hi: "सहायता",
-    id: "Bantuan",
-    de: "Hilfe",
-    vi: "Trợ giúp",
-    tr: "Yardım",
-    it: "Aiuto",
   },
   placeholderMultiline: {
     zh: '在此输入...',

@@ -98,6 +98,13 @@ export type Language = {
     title: string
     close: string
   }
+  /** 节点卡片通用头部（NodeHeader.vue）的固定文案 */
+  nodeHeader: {
+    /** 标题 hover 提示：所有节点统一的"拖动节点" */
+    dragHint: string
+    /** help 按钮 hover 提示：所有节点统一的"使用说明" */
+    helpTitle: string
+  }
   minimap: {
     dragToMove: string
     expand: string

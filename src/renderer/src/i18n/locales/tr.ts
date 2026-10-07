@@ -79,6 +79,10 @@ const tr: Language = {
     title: 'Talimatlar',
     close: 'Kapat (Esc)'
   },
+  nodeHeader: {
+    dragHint: 'Drag node',
+    helpTitle: 'Help'
+  },
   minimap: {
     dragToMove: 'Mini haritayı taşımak için sürükleyin',
     expand: 'Mini haritayı genişlet',

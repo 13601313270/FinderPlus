@@ -79,6 +79,10 @@ const ja: Language = {
     title: '使い方',
     close: '閉じる（Esc）'
   },
+  nodeHeader: {
+    dragHint: 'ノードをドラッグ',
+    helpTitle: '使い方'
+  },
   minimap: {
     dragToMove: 'ドラッグしてミニマップを移動',
     expand: 'ミニマップを展開',

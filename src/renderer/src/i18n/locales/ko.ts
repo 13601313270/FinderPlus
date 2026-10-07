@@ -79,6 +79,10 @@ const ko: Language = {
     title: '사용 설명',
     close: '닫기(Esc)'
   },
+  nodeHeader: {
+    dragHint: 'Drag node',
+    helpTitle: 'Help'
+  },
   minimap: {
     dragToMove: '드래그하여 미니맵 이동',
     expand: '미니맵 펼치기',

@@ -7,23 +7,6 @@ import type { LocalizedText } from '../../../shared/language'
  * 若将来新增语言码未补齐，仍由 useLocalizedMessages → resolveLocalizedText 兜底到英语。
  */
 export const messages = {
-  dragHint: {
-    zh: '拖动节点（整个头部可拖）',
-    en: 'Drag node (the whole header is draggable)',
-    ja: 'ノードをドラッグ（ヘッダー全体がドラッグ可能）',
-    ko: '노드 드래그 (헤더 전체를 드래그 가능)',
-    es: 'Arrastrar nodo (toda la cabecera es arrastrable)',
-    ar: 'اسحب العقدة (الترويسة بأكملها قابلة للسحب)',
-    fr: 'Glisser le nœud (tout l’en-tête est déplaçable)',
-    pt: 'Arrastar nó (o cabeçalho inteiro é arrastável)',
-    ru: 'Перетащить узел (перетаскивается весь заголовок)',
-    hi: 'नोड खींचें (पूरा हेडर खींचा जा सकता है)',
-    id: 'Seret node (seluruh header dapat diseret)',
-    de: 'Knoten ziehen (der gesamte Kopfbereich ist ziehbar)',
-    vi: 'Kéo nút (toàn bộ phần đầu có thể kéo được)',
-    tr: 'Düğümü sürükle (başlığın tamamı sürüklenebilir)',
-    it: 'Trascina il nodo (l’intera intestazione è trascinabile)'
-  },
   editCommand: {
     zh: '编辑命令',
     en: 'Edit command',
@@ -329,23 +312,6 @@ export const messages = {
     vi: 'Lưu',
     tr: 'Kaydet',
     it: 'Salva'
-  },
-  helpTitle: {
-    zh: '使用说明',
-    en: 'Help',
-    ja: '使い方',
-    ko: '사용 설명',
-    es: 'Ayuda',
-    ar: 'تعليمات',
-    fr: 'Aide',
-    pt: 'Ajuda',
-    ru: 'Справка',
-    hi: 'सहायता',
-    id: 'Bantuan',
-    de: 'Hilfe',
-    vi: 'Trợ giúp',
-    tr: 'Yardım',
-    it: 'Guida'
   },
   helpDialogTitle: {
     zh: '命令节点使用说明',

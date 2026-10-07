@@ -3,7 +3,6 @@ import { debounce } from 'lodash-es'
 import { computed, onMounted, onUnmounted, ref, shallowRef } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { LLMNode } from './node'
-import { useNodePosition } from '@renderer/composables/useNodePosition'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import { useGlobalSettings } from '@renderer/composables/useGlobalSettings'
 import {
@@ -48,7 +47,6 @@ const jsonMode = ref(false)
 
 let unsubscribe: (() => void) | undefined
 
-const { startDrag } = useNodePosition(() => llmNode.value)
 
 const providers = Object.entries(LLM_PROVIDERS) as [LLMProvider, typeof LLM_PROVIDERS[LLMProvider]][]
 
@@ -134,7 +132,7 @@ function onSendClick(): void {
 
 <template>
   <div class="node">
-    <NodeHeader :title="nodeTitle" :title-hint="t('dragHint')" :drag-handler="startDrag" :help-title="t('helpTitle')" @help="showHelp = true">
+    <NodeHeader :title="nodeTitle" @help="showHelp = true">
       <template #actions>
         <button
           v-if="llmNode"

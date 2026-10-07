@@ -2,7 +2,6 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { BoolInputNode } from './node'
-import { useNodePosition } from '@renderer/composables/useNodePosition'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
 import { messages } from './i18n'
@@ -54,8 +53,6 @@ onUnmounted(() => {
   offChanged?.()
 })
 
-// 只要拖拽（落点写回 node.position）；位置本身由外壳跟随 node.position 展示。
-const { startDrag } = useNodePosition(() => boolNode.value)
 
 /** 点击开关 → 翻转并提交到输出端口 */
 function onToggle(): void {
@@ -65,7 +62,7 @@ function onToggle(): void {
 
 <template>
   <div class="node">
-    <NodeHeader :title="nodeTitle" :title-hint="t('dragHint')" :drag-handler="startDrag" :help-title="t('helpTitle')" @help="showHelp = true" />
+    <NodeHeader :title="nodeTitle" @help="showHelp = true" />
     <div class="node__row">
       <button
         class="node__switch"

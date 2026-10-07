@@ -79,6 +79,10 @@ const ru: Language = {
     title: 'Инструкция',
     close: 'Закрыть (Esc)'
   },
+  nodeHeader: {
+    dragHint: 'Drag node',
+    helpTitle: 'Help'
+  },
   minimap: {
     dragToMove: 'Перетащите, чтобы переместить миникарту',
     expand: 'Развернуть миникарту',

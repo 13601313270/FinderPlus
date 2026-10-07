@@ -79,6 +79,10 @@ const id: Language = {
     title: 'Petunjuk',
     close: 'Tutup (Esc)'
   },
+  nodeHeader: {
+    dragHint: 'Drag node',
+    helpTitle: 'Help'
+  },
   minimap: {
     dragToMove: 'Seret untuk memindahkan minimap',
     expand: 'Perluas minimap',

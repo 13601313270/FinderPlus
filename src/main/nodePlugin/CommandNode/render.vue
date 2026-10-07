@@ -2,7 +2,6 @@
 import { computed, nextTick, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { CommandNode } from './node'
-import { useNodePosition } from '@renderer/composables/useNodePosition'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
 import { messages } from './i18n'
@@ -45,7 +44,6 @@ const status = ref<'idle' | 'running' | 'done' | 'error'>('idle')
 
 let unsubscribe: (() => void) | undefined
 
-const { startDrag } = useNodePosition(() => commandNode.value)
 
 /** 把节点里的状态同步到本地 ref */
 function syncFromNode(node: CommandNode): void {
@@ -177,7 +175,7 @@ function onSave(): void {
 
 <template>
   <div ref="rootEl" class="node">
-    <NodeHeader :title="nodeTitle" :title-hint="t('dragHint')" :drag-handler="startDrag" :help-title="t('helpTitle')" @help="showHelp = true">
+    <NodeHeader :title="nodeTitle" @help="showHelp = true">
       <template #actions>
         <button
           v-if="commandNode"

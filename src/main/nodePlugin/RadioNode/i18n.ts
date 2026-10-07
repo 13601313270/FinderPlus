@@ -7,40 +7,6 @@ import type { LocalizedText } from '../../../shared/language'
  * 若将来新增语言码未补齐，仍由 useLocalizedMessages → resolveLocalizedText 兜底到英语。
  */
 export const messages = {
-  dragHint: {
-    zh: '拖动节点',
-    en: 'Drag node',
-    ja: 'ノードをドラッグ',
-    ko: '노드 드래그',
-    es: 'Arrastrar nodo',
-    ar: 'اسحب العقدة',
-    fr: 'Glisser le nœud',
-    pt: 'Arrastar nó',
-    ru: 'Перетащить узел',
-    hi: 'नोड खींचें',
-    id: 'Seret node',
-    de: 'Knoten ziehen',
-    vi: 'Kéo nút',
-    tr: 'Düğümü sürükle',
-    it: 'Trascina nodo'
-  },
-  helpTitle: {
-    zh: '使用说明',
-    en: 'Help',
-    ja: '使い方',
-    ko: '사용 안내',
-    es: 'Ayuda',
-    ar: 'مساعدة',
-    fr: 'Aide',
-    pt: 'Ajuda',
-    ru: 'Справка',
-    hi: 'सहायता',
-    id: 'Bantuan',
-    de: 'Hilfe',
-    vi: 'Trợ giúp',
-    tr: 'Yardım',
-    it: 'Guida'
-  },
   helpDialogTitle: {
     zh: '单选节点使用说明',
     en: 'Radio node help',

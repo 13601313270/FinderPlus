@@ -78,6 +78,10 @@ const fr: Language = {
     title: 'Instructions',
     close: 'Fermer (Échap)'
   },
+  nodeHeader: {
+    dragHint: 'Drag node',
+    helpTitle: 'Help'
+  },
   minimap: {
     dragToMove: 'Faire glisser pour déplacer la mini-carte',
     expand: 'Développer la mini-carte',

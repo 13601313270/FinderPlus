@@ -4,23 +4,6 @@ import type { LocalizedText } from '../../../shared/language'
  * PromiseAll 节点卡片内的全部文案。
  */
 export const messages = {
-  dragHint: {
-    zh: '拖动节点',
-    en: 'Drag node',
-    ja: 'ノードをドラッグ',
-    ko: '노드 드래그',
-    es: 'Arrastrar nodo',
-    ar: 'اسحب العقدة',
-    fr: 'Glisser le nœud',
-    pt: 'Arrastar nó',
-    ru: 'Перетащить узел',
-    hi: 'नोड खींचें',
-    id: 'Seret node',
-    de: 'Knoten ziehen',
-    vi: 'Kéo nút',
-    tr: 'Düğümü sürükle',
-    it: 'Trascina nodo'
-  },
   // 状态行："3 / 5 已就绪"
   statusTemplate: {
     // 占位符 {ready} 和 {total} 在渲染层替换
@@ -74,23 +57,6 @@ export const messages = {
     vi: 'Xóa cổng',
     tr: 'Port çiftini kaldır',
     it: 'Rimuovi coppia di porte'
-  },
-  helpTitle: {
-    zh: '查看帮助',
-    en: 'Show help',
-    ja: 'ヘルプを表示',
-    ko: '도움말 보기',
-    es: 'Ver ayuda',
-    ar: 'عرض المساعدة',
-    fr: 'Afficher l’aide',
-    pt: 'Mostrar ajuda',
-    ru: 'Показать справку',
-    hi: 'सहायता दिखाएँ',
-    id: 'Tampilkan bantuan',
-    de: 'Hilfe anzeigen',
-    vi: 'Xem trợ giúp',
-    tr: 'Yardımı göster',
-    it: 'Mostra aiuto'
   },
   helpDialogTitle: {
     zh: '汇合等待就绪',

@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref, shallowRef } from 'vue'
+import { inject, onMounted, onUnmounted, ref, shallowRef, type Ref } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { viewport } from '@renderer/canvas/viewport'
 import { ScheduleNode } from './node'
-import { useNodePosition } from '@renderer/composables/useNodePosition'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import NodeHeader from '@renderer/components/NodeHeader.vue'
 
@@ -13,7 +12,7 @@ const scheduleNode = shallowRef<ScheduleNode | undefined>(undefined)
 
 const nodeTitle = useNodeTitle(() => scheduleNode.value, '?')
 
-const { startDrag, box } = useNodePosition(() => scheduleNode.value)
+const box = inject<Ref<readonly [number, number]>>('nodeBox')!
 
 /**
  * 时间表的本地编辑副本。
@@ -77,7 +76,6 @@ function startResize(e: PointerEvent): void {
   resizing = true
   startClientX = e.clientX
   startClientY = e.clientY
-  // box ref 来自 useNodePosition，实时跟随 node.onChanged
   startBox = [box.value[0], box.value[1]]
   window.addEventListener('pointermove', onResizeMove)
   window.addEventListener('pointerup', onResizeEnd)
@@ -122,8 +120,8 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="node" :class="{ 'node--disabled': !enabled }" @pointerdown="startDrag">
-    <NodeHeader :title="nodeTitle">
+  <div class="node" :class="{ 'node--disabled': !enabled }">
+    <NodeHeader :title="nodeTitle" :hide-help="true">
       <template #actions>
         <span v-if="running && enabled" class="node__dot" title="定时器运行中"></span>
       </template>

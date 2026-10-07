@@ -79,6 +79,10 @@ const hi: Language = {
     title: 'निर्देश',
     close: 'बंद करें (Esc)'
   },
+  nodeHeader: {
+    dragHint: 'Drag node',
+    helpTitle: 'Help'
+  },
   minimap: {
     dragToMove: 'मिनीमैप ले जाने के लिए खींचें',
     expand: 'मिनीमैप फैलाएँ',

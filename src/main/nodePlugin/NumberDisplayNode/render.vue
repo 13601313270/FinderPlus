@@ -2,7 +2,6 @@
 import { nextTick, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { NumberDisplayNode } from './node'
-import { useNodePosition } from '@renderer/composables/useNodePosition'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
 import { viewport } from '@renderer/canvas/viewport'
@@ -100,8 +99,6 @@ let resizeObserver: ResizeObserver | undefined
 
 let unsubscribe: (() => void) | undefined
 
-// 只要拖拽（落点写回 node.position）；位置本身由外壳跟随 node.position 展示。
-const { startDrag } = useNodePosition(() => displayNode.value)
 
 onMounted(() => {
   const found = workspaceScene.getNode(props.id)
@@ -170,8 +167,8 @@ function onResizePointerDown(e: PointerEvent): void {
 </script>
 
 <template>
-  <div class="node" @pointerdown="startDrag">
-    <NodeHeader :title="nodeTitle" :title-hint="t('dragHint')" :help-title="t('helpTitle')" @help="showHelp = true">
+  <div class="node">
+    <NodeHeader :title="nodeTitle" @help="showHelp = true">
       <template #actions>
         <button
           class="node__icon-btn"
@@ -268,10 +265,6 @@ function onResizePointerDown(e: PointerEvent): void {
   border: 1px solid @node-border-color;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-
-  :deep(.node-header__handle) {
-    text-align: center;
-  }
 
   &__icon-btn {
     all: unset;

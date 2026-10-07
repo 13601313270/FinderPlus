@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, type Component } from 'vue'
+import { computed, provide, type Component } from 'vue'
 import { useNodePosition, type NodeLike } from '@renderer/composables/useNodePosition'
 import { nodeElementRef, type PortsOwnerLike } from '@renderer/canvas/elements'
 import NodePorts from './NodePorts.vue'
@@ -34,7 +34,11 @@ const emit = defineEmits<{
   (e: 'contextmenu', nodeId: string, clientX: number, clientY: number): void
 }>()
 
-const { position, box, accepted, nodeState, dirtyInputPortIds } = useNodePosition(() => props.node)
+const { position, box, accepted, nodeState, dirtyInputPortIds, startDrag } = useNodePosition(() => props.node)
+
+// 把 startDrag + box 传给 NodeHeader（render.vue 里不用再各自调 useNodePosition）
+provide('nodeStartDrag', startDrag)
+provide('nodeBox', box)
 
 // 外壳根元素登记进测量注册表
 const shellEl = nodeElementRef(props.node.id)

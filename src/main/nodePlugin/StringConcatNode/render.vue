@@ -2,7 +2,6 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { StringConcatNode } from './node'
-import { useNodePosition } from '@renderer/composables/useNodePosition'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
 import { useNodeDetail } from '@renderer/composables/useNodeDetail'
@@ -55,8 +54,6 @@ onUnmounted(() => {
   offChanged?.()
 })
 
-// 拖拽（落点写回 node.position）；位置本身由外壳跟随 node.position 展示。
-const { startDrag } = useNodePosition(() => concatNode.value)
 
 // —— resize handle 拖拽：右下角双向自由调整宽高，不锁比例 ——
 const MIN_WIDTH = 220
@@ -96,7 +93,7 @@ function onResizePointerDown(e: PointerEvent): void {
 
 <template>
   <div class="node">
-    <NodeHeader :title="nodeTitle" :title-hint="t('dragHint')" :drag-handler="startDrag" :help-title="t('helpTitle')" @help="showHelp = true">
+    <NodeHeader :title="nodeTitle" @help="showHelp = true">
       <template #actions>
         <button
           class="node__edit"

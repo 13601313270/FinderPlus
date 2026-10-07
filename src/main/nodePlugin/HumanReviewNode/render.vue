@@ -10,7 +10,6 @@ import { StringValue } from '../../engine/data/StringValue'
 import { NumberValue } from '../../engine/data/NumberValue'
 import { BoolValue } from '../../engine/data/BoolValue'
 import { viewport } from '@renderer/canvas/viewport'
-import { useNodePosition } from '@renderer/composables/useNodePosition'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
 import { messages } from './i18n'
@@ -93,7 +92,6 @@ function readFileAsText(file: File): Promise<string> {
 const labelText = computed(() => (hasCurrent.value ? currentLabel.value : t('awaitingInput')))
 
 let unsubscribe: (() => void) | undefined
-const { startDrag } = useNodePosition(() => reviewNode.value)
 
 function syncCurrent() {
   const n = reviewNode.value
@@ -279,9 +277,6 @@ function onResizePointerDown(e: PointerEvent): void {
   <div class="node">
     <NodeHeader
       :title="nodeTitle"
-      :title-hint="t('dragHint')"
-      :drag-handler="startDrag"
-      :help-title="t('helpTitle')"
       @help="showHelp = true"
     >
       <template #actions>

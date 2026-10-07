@@ -79,6 +79,10 @@ const it: Language = {
     title: 'Istruzioni',
     close: 'Chiudi (Esc)'
   },
+  nodeHeader: {
+    dragHint: 'Drag node',
+    helpTitle: 'Help'
+  },
   minimap: {
     dragToMove: 'Trascina per spostare la mini-mappa',
     expand: 'Espandi mini-mappa',

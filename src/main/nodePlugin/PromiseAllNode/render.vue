@@ -2,7 +2,6 @@
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { PromiseAllNode } from './node'
-import { useNodePosition } from '@renderer/composables/useNodePosition'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
 import { messages } from './i18n'
@@ -101,7 +100,6 @@ watch(promiseNode, (node, prev) => {
   }
 })
 
-const { startDrag } = useNodePosition(() => promiseNode.value)
 
 /** 「-」按钮是否可用 */
 const canRemove = computed(() => portCount.value > 2)
@@ -249,9 +247,6 @@ async function onForceTrigger(): Promise<void> {
     <!-- header：顶部浮层 -->
     <NodeHeader
       :title="nodeTitle"
-      :title-hint="t('dragHint')"
-      :drag-handler="startDrag"
-      :help-title="t('helpTitle')"
       @help="showHelp = true"
     />
 
@@ -374,10 +369,6 @@ async function onForceTrigger(): Promise<void> {
   // —— header（NodeHeader 浮层覆盖）——
   :deep(.node-header) {
     border-bottom: none; // 原浮层 header 无分割线
-  }
-
-  :deep(.node-header__handle) {
-    text-align: center;
   }
 
   // —— actions ——

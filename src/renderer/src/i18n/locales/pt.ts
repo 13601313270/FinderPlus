@@ -79,6 +79,10 @@ const pt: Language = {
     title: 'Instruções',
     close: 'Fechar (Esc)'
   },
+  nodeHeader: {
+    dragHint: 'Drag node',
+    helpTitle: 'Help'
+  },
   minimap: {
     dragToMove: 'Arraste para mover o minimapa',
     expand: 'Expandir minimapa',

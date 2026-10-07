@@ -3,7 +3,6 @@ import { onMounted, onUnmounted, ref, shallowRef } from 'vue'
 import { debounce } from 'lodash-es'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { DelayNode } from './node'
-import { useNodePosition } from '@renderer/composables/useNodePosition'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import NodeHeader from '@renderer/components/NodeHeader.vue'
 
@@ -14,7 +13,6 @@ const delayNode = shallowRef<DelayNode | undefined>(undefined)
 // 卡片标题走插件 manifest 的多语言 title
 const nodeTitle = useNodeTitle(() => delayNode.value, '?')
 
-const { startDrag } = useNodePosition(() => delayNode.value)
 
 /** 输出端口类型标签（UI 显示） */
 const typeName = ref('')
@@ -62,7 +60,7 @@ function onDelayInput(e: Event): void {
 </script>
 
 <template>
-  <div class="node" :class="{ 'node--pending': pending }" @pointerdown="startDrag">
+  <div class="node" :class="{ 'node--pending': pending }">
     <NodeHeader :title="nodeTitle" justify="center" />
     <div class="delay-body">
       <input

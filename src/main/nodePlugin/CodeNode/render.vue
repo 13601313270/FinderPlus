@@ -9,7 +9,6 @@ import { highlightSelectionMatches } from '@codemirror/search'
 import { keymap } from '@codemirror/view'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { CodeNode, type CodeInputKind, type CodeInputMeta, type CodePortKind, type CodeOutputMeta, type CodePortNameError } from './node'
-import { useNodePosition } from '@renderer/composables/useNodePosition'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
 import HelpDialog from '@renderer/components/HelpDialog.vue'
@@ -80,7 +79,6 @@ const copyHint = ref<string>('')
 
 let unsubscribe: (() => void) | undefined
 
-const { startDrag } = useNodePosition(() => codeNode.value)
 
 /** 把节点里的状态同步到本地 ref */
 function syncFromNode(node: CodeNode): void {
@@ -255,9 +253,6 @@ function onCopyCallOutputPort(): void {
   <div class="node">
     <NodeHeader
       :title="nodeTitle"
-      :title-hint="t('dragHint')"
-      :drag-handler="startDrag"
-      :help-title="t('helpTitle')"
       @help="showHelp = true"
     >
       <template #actions>
@@ -521,14 +516,6 @@ function onCopyCallOutputPort(): void {
   border: 1px solid @node-border-color;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-
-  // NodeHeader 覆盖：title 超长省略号 + actions 间距
-  :deep(.node-header__handle) {
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
 
   :deep(.node-header__actions) {
     gap: 6px;

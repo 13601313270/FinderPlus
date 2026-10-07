@@ -6,23 +6,6 @@ import type { LocalizedText } from '../../../shared/language'
  * 若将来新增语言码未补齐，仍由 useLocalizedMessages → resolveLocalizedText 兜底到英语。
  */
 export const messages = {
-  dragHint: {
-    zh: '拖动节点',
-    en: 'Drag node',
-    ja: 'ノードをドラッグ',
-    ko: '노드 드래그',
-    es: 'Arrastrar nodo',
-    ar: 'اسحب العقدة',
-    fr: 'Glisser le nœud',
-    pt: 'Arrastar nó',
-    ru: 'Перетащить узел',
-    hi: "नोड खींचें",
-    id: "Seret node",
-    de: "Knoten ziehen",
-    vi: "Kéo nút",
-    tr: "Düğümü sürükle",
-    it: "Trascina il nodo",
-  },
   collapseConfig: {
     zh: '收起配置',
     en: 'Collapse settings',

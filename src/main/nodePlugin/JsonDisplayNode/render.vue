@@ -2,7 +2,6 @@
 import { computed, onMounted, onUnmounted, ref, shallowRef } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { JsonDisplayNode } from './node'
-import { useNodePosition } from '@renderer/composables/useNodePosition'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
 import { messages } from './i18n'
@@ -47,7 +46,6 @@ const formattedJson = computed(() => {
 
 let unsubscribe: (() => void) | undefined
 
-const { startDrag } = useNodePosition(() => displayNode.value)
 
 onMounted(() => {
   const found = workspaceScene.getNode(props.id)
@@ -112,9 +110,6 @@ const expandTitle = computed(() => t('expand'))
   <div class="node">
     <NodeHeader
       :title="nodeTitle"
-      :title-hint="t('dragHint')"
-      :drag-handler="startDrag"
-      :help-title="t('helpTitle')"
       @help="showHelp = true"
     >
       <template #actions>

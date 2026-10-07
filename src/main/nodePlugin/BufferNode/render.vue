@@ -2,7 +2,6 @@
 import { onMounted, onUnmounted, ref, shallowRef } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { BufferNode, type BufferKind } from './node'
-import { useNodePosition } from '@renderer/composables/useNodePosition'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
 import { messages } from './i18n'
@@ -60,8 +59,6 @@ onUnmounted(() => {
   unsubscribe?.()
 })
 
-// 节点整体拖拽（落点写回 node.position）
-const { startDrag } = useNodePosition(() => bufferNode.value)
 
 /** 切换数据类型：节点侧同步重建输入 / 输出端口 */
 function onKindChange(e: Event): void {
@@ -78,9 +75,6 @@ function onTake(): void {
   <div class="node">
     <NodeHeader
       :title="nodeTitle"
-      :title-hint="t('dragHint')"
-      :drag-handler="startDrag"
-      :help-title="t('helpTitle')"
       @help="showHelp = true"
     />
 
@@ -134,13 +128,6 @@ function onTake(): void {
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   overflow: hidden;
-
-  :deep(.node-header__handle) {
-    text-align: center;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
 }
 
 .buffer {

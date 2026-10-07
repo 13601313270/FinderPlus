@@ -79,6 +79,10 @@ const ar: Language = {
     title: 'دليل الاستخدام',
     close: 'إغلاق (Esc)'
   },
+  nodeHeader: {
+    dragHint: 'Drag node',
+    helpTitle: 'Help'
+  },
   minimap: {
     dragToMove: 'اسحب لتحريك الخريطة المصغّرة',
     expand: 'توسيع الخريطة المصغّرة',

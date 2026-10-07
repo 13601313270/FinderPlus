@@ -7,23 +7,6 @@ import type { LocalizedText } from '../../../shared/language'
  * 若将来新增语言码未补齐，仍由 useLocalizedMessages → resolveLocalizedText 兜底到英语。
  */
 export const messages = {
-  dragHint: {
-    zh: '拖动节点（整个头部可拖）',
-    en: 'Drag node (the whole header is draggable)',
-    ja: 'ノードをドラッグ（ヘッダー全体をつかめます）',
-    ko: '노드 드래그 (헤더 전체를 잡을 수 있습니다)',
-    es: 'Arrastra el nodo (toda la cabecera es arrastrable)',
-    ar: 'اسحب العقدة (الترويسة بأكملها قابلة للسحب)',
-    fr: 'Glisser le nœud (tout l’en-tête est déplaçable)',
-    pt: 'Arrastar nó (toda a cabeçalho é arrastável)',
-    ru: 'Перетащить узел (вся шапка доступна для перетаскивания)',
-    hi: 'नोड खींचें (पूरा हेडर खींचा जा सकता है)',
-    id: 'Seret node (seluruh header dapat diseret)',
-    de: 'Knoten ziehen (der gesamte Kopfbereich ist ziehbar)',
-    vi: 'Kéo nút (toàn bộ phần đầu có thể kéo được)',
-    tr: 'Düğümü sürükle (başlığın tamamı sürüklenebilir)',
-    it: 'Trascina il nodo (l’intera intestazione è trascinabile)'
-  },
   gearConfigured: {
     zh: '图像模型已配置，点击修改 Key',
     en: 'Image model configured, click to change Key',
@@ -210,23 +193,6 @@ export const messages = {
     vi: 'Mô hình hiện tại: {model}',
     tr: 'Geçerli model: {model}',
     it: 'Modello attuale: {model}'
-  },
-  helpTitle: {
-    zh: '使用说明',
-    en: 'Help',
-    ja: '使い方',
-    ko: '사용 안내',
-    es: 'Ayuda',
-    ar: 'مساعدة',
-    fr: 'Aide',
-    pt: 'Ajuda',
-    ru: 'Справка',
-    hi: 'सहायता',
-    id: 'Bantuan',
-    de: 'Hilfe',
-    vi: 'Trợ giúp',
-    tr: 'Yardım',
-    it: 'Guida'
   },
   helpDialogTitle: {
     zh: '图片生成节点使用说明',

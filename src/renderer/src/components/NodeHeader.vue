@@ -1,34 +1,39 @@
 <script setup lang="ts">
+import { inject } from 'vue'
+import { useI18n } from 'vue-i18n'
+
 /**
- * 节点卡片通用头部：可拖拽的标题栏 + 右侧操作区 slot + 可选 help 按钮。
+ * 节点卡片通用头部：可拖拽的标题栏 + 右侧操作区 slot + 统一 help 按钮。
  *
- * 大多数节点的右上角都有一个「?」帮助按钮，逻辑完全重复（title + stop pointerdown + emit click），
- * 所以这里统一收口。其他自定义按钮（齿轮、配置、状态标签等）放 #actions slot 会排在 help 左边。
+ * 三个核心逻辑都在上层收口了，render.vue 只需要传 :title 和 @help：
+ *  - 拖拽：NodeShell/NodeWire provide('nodeStartDrag') → inject 自动拿
+ *  - title hover 提示：全局 i18n nodeHeader.dragHint（所有节点一致）
+ *  - help 按钮 hover 提示：全局 i18n nodeHeader.helpTitle（所有节点一致）
  *
  * 用法示例：
- * <NodeHeader
- *   :title="nodeTitle"
- *   title-hint="拖动以移动节点"
- *   :drag-handler="startDrag"
- *   help-title="打开帮助"
- *   @help="showHelp = true"
- * >
+ * <NodeHeader :title="nodeTitle" @help="showHelp = true">
  *   <template #actions>
  *     <button @click="openGear()">⚙️</button>
  *   </template>
  * </NodeHeader>
+ *
+ * 不需要 help 按钮的节点传 :hide-help="true"。
  */
 interface Props {
   /** 标题文字（节点名） */
   title: string
-  /** 标题 hover 提示（原生 title 属性） */
+  /** 标题 hover 提示覆盖。不传用全局 i18n nodeHeader.dragHint */
   titleHint?: string
-  /** 拖拽处理器：绑在 header 容器的 @pointerdown 上。不传则不绑定（某些节点 drag 绑在别处） */
-  dragHandler?: (e: PointerEvent) => void
-  /** help 按钮的 hover 提示。不传则不渲染 help 按钮 */
+  /** help 按钮 hover 提示覆盖。不传用全局 i18n nodeHeader.helpTitle */
   helpTitle?: string
+  /** 设为 true 则不渲染 help 按钮 */
+  hideHelp?: boolean
+  /** 拖拽处理器覆盖。不传则用 NodeShell/NodeWire provide 的 nodeStartDrag */
+  dragHandler?: (e: PointerEvent) => void
   /** justify-content，默认 'space-between' */
   justify?: 'space-between' | 'center' | 'flex-start'
+  /** 内边距，默认 '4px 0' */
+  padding?: string
   /** 固定高度，不传则由内容撑开 */
   height?: string
   /** align-items，默认 'center' */
@@ -38,12 +43,30 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   justify: 'space-between',
   padding: '4px 0',
-  alignItems: 'center'
+  alignItems: 'center',
+  hideHelp: false
 })
 
 const emit = defineEmits<{
   (e: 'help'): void
 }>()
+
+const { t } = useI18n()
+
+// 默认从外层外壳注入 startDrag — render.vue 不用再自己调 useNodePosition
+const injectedDrag = inject<(e: PointerEvent) => void>('nodeStartDrag')
+
+/** 最终生效的拖拽处理器：显式传入优先，否则用注入的 */
+const effectiveDrag = (e: PointerEvent) => {
+  const h = props.dragHandler ?? injectedDrag
+  h?.(e)
+}
+
+/** 最终生效的标题 hover 提示：显式传入优先，否则用全局 i18n */
+const effectiveTitleHint = () => props.titleHint ?? t('nodeHeader.dragHint')
+
+/** 最终生效的 help 按钮 hover 提示：显式传入优先，否则用全局 i18n */
+const effectiveHelpTitle = () => props.helpTitle ?? t('nodeHeader.helpTitle')
 </script>
 
 <template>
@@ -55,16 +78,16 @@ const emit = defineEmits<{
       height,
       alignItems
     }"
-    @pointerdown="dragHandler"
+    @pointerdown="effectiveDrag"
   >
-    <span class="node-header__handle" :title="titleHint">{{ title }}</span>
+    <span class="node-header__handle" :title="effectiveTitleHint()">{{ title }}</span>
     <div class="node-header__actions">
       <slot name="actions" />
       <button
-        v-if="helpTitle"
+        v-if="!hideHelp"
         class="node-header__help"
         type="button"
-        :title="helpTitle"
+        :title="effectiveHelpTitle()"
         @pointerdown.stop
         @click.stop="emit('help')"
       >?</button>

@@ -89,6 +89,10 @@ const zh: Language = {
     title: '使用说明',
     close: '关闭（Esc）'
   },
+  nodeHeader: {
+    dragHint: '拖动节点',
+    helpTitle: '使用说明'
+  },
   minimap: {
     dragToMove: '拖动以移动小地图',
     expand: '展开小地图',

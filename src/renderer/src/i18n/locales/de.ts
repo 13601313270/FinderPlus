@@ -79,6 +79,10 @@ const de: Language = {
     title: 'Anleitung',
     close: 'Schließen (Esc)'
   },
+  nodeHeader: {
+    dragHint: 'Drag node',
+    helpTitle: 'Help'
+  },
   minimap: {
     dragToMove: 'Ziehen, um die Minikarte zu verschieben',
     expand: 'Minikarte erweitern',

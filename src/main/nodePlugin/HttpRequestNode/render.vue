@@ -2,7 +2,6 @@
 import { computed, nextTick, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { HttpRequestNode, type HttpMethod, type HeaderEntry } from './node'
-import { useNodePosition } from '@renderer/composables/useNodePosition'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
 import { messages } from './i18n'
@@ -51,7 +50,6 @@ const expanded = ref(false)
 
 let unsubscribe: (() => void) | undefined
 
-const { startDrag } = useNodePosition(() => httpNode.value)
 
 function syncFromNode(node: HttpRequestNode): void {
   method.value = node.displayMethod
@@ -195,7 +193,7 @@ onUnmounted(() => { unsubscribe?.() })
     @wheel="onRootWheel"
   >
     <!-- 头部：拖动 + type 标签 + 帮助 + 展开/收起 toggle -->
-    <NodeHeader :title="nodeTitle" :title-hint="t('dragHint')" :drag-handler="startDrag" :help-title="t('helpHint')" @help="showHelp = true">
+    <NodeHeader :title="nodeTitle" @help="showHelp = true">
       <template #actions>
         <button
           v-if="httpNode"

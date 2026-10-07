@@ -2,7 +2,6 @@
 import { onMounted, onUnmounted, ref, shallowRef } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { FileInfoNode } from './node'
-import { useNodePosition } from '@renderer/composables/useNodePosition'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
 import { messages } from './i18n'
@@ -36,7 +35,6 @@ const fileType = ref('')
 
 let unsubscribe: (() => void) | undefined
 
-const { startDrag } = useNodePosition(() => infoNode.value)
 
 /** 格式化文件大小 */
 function formatSize(bytes: number): string {
@@ -69,9 +67,6 @@ onUnmounted(() => {
   <div class="node">
     <NodeHeader
       :title="nodeTitle"
-      :title-hint="t('dragHint')"
-      :drag-handler="startDrag"
-      :help-title="t('helpTitle')"
       @help="showHelp = true"
     />
     <div class="file-info" :class="{ 'file-info--empty': !fileName }">
@@ -114,10 +109,6 @@ onUnmounted(() => {
   border: 1px solid @node-border-color;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-
-  :deep(.node-header__handle) {
-    text-align: center;
-  }
 }
 
 .file-info {

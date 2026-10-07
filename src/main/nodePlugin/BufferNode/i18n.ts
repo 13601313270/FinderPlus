@@ -44,23 +44,6 @@ export const outLabel: LocalizedText = {
  * 若将来新增语言码未补齐，仍由 useLocalizedMessages → resolveLocalizedText 兜底到英语。
  */
 export const messages = {
-  dragHint: {
-    zh: '拖动节点',
-    en: 'Drag node',
-    ja: 'ノードをドラッグ',
-    ko: '노드 드래그',
-    es: 'Arrastrar nodo',
-    ar: 'اسحب العقدة',
-    fr: 'Glisser le nœud',
-    pt: 'Arrastar nó',
-    ru: 'Перетащить узел',
-    hi: 'नोड खींचें',
-    id: 'Seret node',
-    de: 'Knoten ziehen',
-    vi: 'Kéo nút',
-    tr: 'Düğümü sürükle',
-    it: 'Trascina il nodo',
-  },
   typeLabel: {
     zh: '数据类型',
     en: 'Data type',
@@ -111,23 +94,6 @@ export const messages = {
     vi: 'Lấy ra',
     tr: 'Çıkar',
     it: 'Estrai'
-  },
-  helpTitle: {
-    zh: '帮助',
-    en: 'Help',
-    ja: 'ヘルプ',
-    ko: '도움말',
-    es: 'Ayuda',
-    ar: 'مساعدة',
-    fr: 'Aide',
-    pt: 'Ajuda',
-    ru: 'Справка',
-    hi: 'सहायता',
-    id: 'Bantuan',
-    de: 'Hilfe',
-    vi: 'Trợ giúp',
-    tr: 'Yardım',
-    it: 'Aiuto'
   },
   helpDialogTitle: {
     zh: '缓冲区节点使用说明',

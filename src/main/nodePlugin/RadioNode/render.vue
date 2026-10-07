@@ -2,7 +2,6 @@
 import { nextTick, onMounted, onUnmounted, ref, shallowRef } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { RadioNode, type RadioOption, type RadioValueKind } from './node'
-import { useNodePosition } from '@renderer/composables/useNodePosition'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
 import { messages } from './i18n'
@@ -38,7 +37,6 @@ const selectedId = ref<string | undefined>(undefined)
 
 let unsubscribe: (() => void) | undefined
 
-const { startDrag } = useNodePosition(() => radioNode.value)
 
 /** 把节点状态同步到本地 ref（引擎字段非响应式，靠 onChanged 桥接） */
 function syncFromNode(node: RadioNode): void {
@@ -130,7 +128,7 @@ function onDocClick(e: MouseEvent): void {
 
 <template>
   <div class="node">
-    <NodeHeader :title="nodeTitle" :title-hint="t('dragHint')" :drag-handler="startDrag" :help-title="t('helpTitle')" @help="showHelp = true">
+    <NodeHeader :title="nodeTitle" @help="showHelp = true">
       <template #actions>
         <button
           v-if="radioNode"

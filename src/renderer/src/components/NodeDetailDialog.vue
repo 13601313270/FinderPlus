@@ -406,6 +406,7 @@ onUnmounted(() => {
     background: #f7f8fa;
     border-right: 1px solid #e5e7eb;
     overflow: hidden;
+    max-height: 100%;
   }
 
   &--output {
@@ -417,6 +418,7 @@ onUnmounted(() => {
     flex: 1;
     background: #fff;
     overflow: hidden;
+    max-height: 100%;
   }
 
   &__label {

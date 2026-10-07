@@ -1,5 +1,6 @@
 import { StringValue } from '../../engine/data/StringValue'
 import { InputPort } from '../../engine/port/InputPort'
+import { MethodPort } from '../../engine/port/MethodPort'
 import { OutputPort } from '../../engine/port/OutputPort'
 import { Node } from '../../engine/node/Node'
 
@@ -54,6 +55,27 @@ export class HttpRequestNode extends Node {
     it: 'Corpo della risposta'
   })
 
+  /** 方法端口：上游 commit 任意值即触发一次发送 */
+  readonly sendPort = new MethodPort('send', {
+    label: {
+      zh: '发送',
+      en: 'Send',
+      ja: '送信',
+      ko: '전송',
+      es: 'Enviar',
+      ar: 'إرسال',
+      fr: 'Envoyer',
+      pt: 'Enviar',
+      ru: 'Отправить',
+      hi: 'भेजें',
+      id: 'Kirim',
+      de: 'Senden',
+      vi: 'Gửi',
+      tr: 'Gönder',
+      it: 'Invia'
+    }
+  })
+
   // —— 持久化字段 ——
 
   /** HTTP 方法 */
@@ -95,11 +117,13 @@ export class HttpRequestNode extends Node {
   private collapsed = false
 
   /** 正常展开时 box 尺寸（构造默认值；实际高度由 render.vue 动态测量） */
-  private static readonly EXPANDED_BOX: [number, number] = [360, 420]
+  private static readonly EXPANDED_BOX: [number, number] = [260, 178]
 
   constructor(id: string) {
     super(id)
     this.addOutput(this.textOutput)
+    this.addMethod(this.sendPort)
+    this.sendPort.onTrigger(() => { void this.run() })
     // 默认给一个输入端口，方便直接开用
     this.addInputPort()
     // 内容区硬约束：手柄 + 方法/URL + headers/body + 端口控制 + 发送按钮 + 结果
@@ -414,7 +438,7 @@ export class HttpRequestNode extends Node {
       // 冷启动先给一个合理的 box 高度（跟 render.vue COLLAPSED_MIN 对齐），
       // render.vue adjustBoxHeight 上来后会再用 scrollHeight 精调
       if (this.collapsed) {
-        this.setBox(HttpRequestNode.EXPANDED_BOX[0], 150)
+        // this.setBox(HttpRequestNode.EXPANDED_BOX[0], 150)
       }
     }
     // 新格式：headers 是 KV 数组

@@ -25,7 +25,8 @@ export const manifest: NodePluginManifest = {
   render,
   iconPaths: ['M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0-18 0', 'M3 12h18', 'M12 3a14 14 0 0 1 0 18', 'M12 3a14 14 0 0 0 0 18'],
   category: 'tool',
-  help: () => import('./HttpRequestHelpDialog.vue')
+  help: () => import('./HttpRequestHelpDialog.vue'),
+  detailPanel: () => import('./HttpRequestDetailPanel.vue')
 }
 
 export default manifest

@@ -154,6 +154,10 @@ const vi: Language = {
       output: 'Đầu ra / Hiển thị',
       container: 'Vùng chứa',
       footer: 'Danh sách "Trợ giúp nút" ở bên trái hiển thị các nút hiện có tài liệu trợ giúp được đăng ký. Nhấp vào một mục để xem hướng dẫn sử dụng chi tiết.'
+    },
+    gallery: {
+      title: 'Xem nó có thể làm gì',
+      caption: 'Kết nối các nút {imageGen}, {llm}, {code} và các nút khác để xây dựng quy trình làm việc tự động hoàn chỉnh. Dưới đây là một đường ống «trình tạo sách tranh» — nó chia văn bản thành các đoạn, tạo minh họa cho từng đoạn và tự động ghép các trang, tất cả bằng cách kéo và kết nối các nút trên khung vẽ.'
     }
   },
   fileDragGuide: {

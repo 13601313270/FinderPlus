@@ -159,6 +159,10 @@ const en: Language = {
       output: 'Output / Display',
       container: 'Container',
       footer: 'The "Node help" list on the left shows the nodes that currently have help documents registered. Click one to view detailed usage.'
+    },
+    gallery: {
+      title: 'See what it can do',
+      caption: 'Wire up {imageGen}, {llm}, {code} and other nodes to build complete automated workflows. Below is a "picture-book generator" pipeline — it splits text into paragraphs, generates an illustration for each, and auto-assembles pages, all by dragging and connecting nodes on the canvas.'
     }
   },
   fileDragGuide: {

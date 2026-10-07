@@ -154,6 +154,10 @@ const de: Language = {
       output: 'Ausgabe / Anzeige',
       container: 'Container',
       footer: 'Die Liste "Knotenhilfe" links zeigt die Knoten, für die derzeit Hilfedokumente registriert sind. Klicke auf einen, um die detaillierte Verwendung anzuzeigen.'
+    },
+    gallery: {
+      title: 'Sehen Sie, was es kann',
+      caption: 'Verbinden Sie {imageGen}, {llm}, {code} und andere Knoten, um vollständige automatisierte Workflows aufzubauen. Unten ist eine «Bilderbuch-Generator»-Pipeline — sie teilt Text in Absätze auf, erzeugt eine Illustration für jeden und fügt Seiten automatisch zusammen, alles durch Ziehen und Verbinden von Knoten auf dem Canvas.'
     }
   },
   fileDragGuide: {

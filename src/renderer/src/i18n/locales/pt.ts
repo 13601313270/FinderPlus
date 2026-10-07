@@ -154,6 +154,10 @@ const pt: Language = {
       output: 'Saída / Exibição',
       container: 'Contêiner',
       footer: 'A lista "Ajuda do nó" à esquerda mostra os nós que atualmente têm documentação de ajuda registrada. Clique em um deles para ver o uso detalhado.'
+    },
+    gallery: {
+      title: 'Veja o que ele pode fazer',
+      caption: 'Conecte os nós {imageGen}, {llm}, {code} e outros para construir fluxos de trabalho automatizados completos. Abaixo está um pipeline de «gerador de livros ilustrados» — divide o texto em parágrafos, gera uma ilustração para cada um e monta as páginas automaticamente, tudo arrastando e conectando nós no canvas.'
     }
   },
   fileDragGuide: {

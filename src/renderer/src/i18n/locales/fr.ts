@@ -153,6 +153,10 @@ const fr: Language = {
       output: 'Sortie / Affichage',
       container: 'Conteneur',
       footer: 'La liste « Aide des nœuds » à gauche répertorie les nœuds pour lesquels une documentation d\'aide est enregistrée. Cliquez sur l\'un d\'eux pour consulter son utilisation détaillée.'
+    },
+    gallery: {
+      title: "Voyez ce qu'il peut faire",
+      caption: "Reliez les nœuds {imageGen}, {llm}, {code} et d'autres pour créer des workflows automatisés complets. Voici un pipeline de « générateur de livres illustrés » — il divise le texte en paragraphes, génère une illustration pour chacun et assemble les pages automatiquement, le tout en faisant glisser et connectant des nœuds sur le canevas."
     }
   },
   fileDragGuide: {

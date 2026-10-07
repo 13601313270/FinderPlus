@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
+import textToImageWorkflow from '../../assets/images/text-to-image-workflow.png'
 
 /**
  * 「关于 Finder+」帮助文档。
@@ -118,6 +119,19 @@ const { t } = useI18n()
       <p class="help-section__p" style="margin-top: 8px;">
         {{ t('intro.nodeTypes.footer') }}
       </p>
+    </section>
+
+    <!-- 典型工作流展示 -->
+    <section class="help-section">
+      <h4 class="help-section__title">{{ t('intro.gallery.title') }}</h4>
+      <i18n-t keypath="intro.gallery.caption" tag="p" class="help-section__p">
+        <template #imageGen><code>image-gen</code></template>
+        <template #llm><code>llm</code></template>
+        <template #code><code>code</code></template>
+      </i18n-t>
+      <div class="help-gallery">
+        <img :src="textToImageWorkflow" class="help-gallery__img" alt="text-to-image workflow" />
+      </div>
     </section>
   </div>
 </template>
@@ -244,6 +258,20 @@ const { t } = useI18n()
       background: #fef2f2;
       border-radius: 3px;
     }
+  }
+}
+
+.help-gallery {
+  margin-top: 10px;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid #f3f4f6;
+  background: #fafafa;
+
+  &__img {
+    display: block;
+    width: 100%;
+    height: auto;
   }
 }
 </style>

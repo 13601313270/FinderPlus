@@ -154,6 +154,10 @@ const id: Language = {
       output: 'Keluaran / Tampilan',
       container: 'Wadah',
       footer: 'Daftar "Bantuan node" di sebelah kiri menampilkan node yang saat ini memiliki dokumen bantuan terdaftar. Klik salah satunya untuk melihat penggunaan terperinci.'
+    },
+    gallery: {
+      title: 'Lihat apa yang bisa dilakukan',
+      caption: 'Hubungkan {imageGen}, {llm}, {code} dan node lainnya untuk membangun alur kerja otomatis yang lengkap. Berikut adalah pipeline «generator buku bergambar» — membagi teks menjadi paragraf, membuat ilustrasi untuk masing-masing, dan merakit halaman secara otomatis, semuanya dengan menyeret dan menghubungkan node di kanvas.'
     }
   },
   fileDragGuide: {

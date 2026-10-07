@@ -154,6 +154,10 @@ const it: Language = {
       output: 'Output / Visualizzazione',
       container: 'Contenitore',
       footer: 'L’elenco "Guida dei nodi" a sinistra mostra i nodi per cui è attualmente registrata una documentazione di assistenza. Fai clic su uno per visualizzarne l’uso dettagliato.'
+    },
+    gallery: {
+      title: 'Scopri cosa può fare',
+      caption: "Collega i nodi {imageGen}, {llm}, {code} e altri per costruire flussi di lavoro automatici completi. Di seguito una pipeline «generatore di libri illustrati» — divide il testo in paragrafi, genera un'illustrazione per ciascuno e assembla automaticamente le pagine, tutto trascinando e collegando nodi sulla tela."
     }
   },
   fileDragGuide: {

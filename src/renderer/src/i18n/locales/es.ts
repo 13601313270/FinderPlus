@@ -154,6 +154,10 @@ const es: Language = {
       output: 'Salida / Visualización',
       container: 'Contenedor',
       footer: 'La lista "Ayuda de nodos" de la izquierda muestra los nodos que tienen documentación de ayuda registrada. Haz clic en uno para ver su uso detallado.'
+    },
+    gallery: {
+      title: 'Mira qué puede hacer',
+      caption: 'Conecta los nodos {imageGen}, {llm}, {code} y otros para construir flujos de trabajo automatizados completos. A continuación hay una canalización de «generador de libros ilustrados» — divide el texto en párrafos, genera una ilustración para cada uno y ensambla las páginas automáticamente, todo arrastrando y conectando nodos en el lienzo.'
     }
   },
   fileDragGuide: {

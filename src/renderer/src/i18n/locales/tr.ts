@@ -154,6 +154,10 @@ const tr: Language = {
       output: 'Çıkış / Görünüm',
       container: 'Kapsayıcı',
       footer: 'Soldaki "Düğüm yardımı" listesi, şu anda yardım belgesi kayıtlı olan düğümleri gösterir. Ayrıntılı kullanımı görmek için birine tıklayın.'
+    },
+    gallery: {
+      title: 'Ne yapabildiğini görün',
+      caption: "Tam otomatik iş akışları oluşturmak için {imageGen}, {llm}, {code} ve diğer düğümleri birbirine bağlayın. Aşağıda bir «resimli kitap üretici» pipeline'ı var — metni paragraflara böler, her biri için bir illüstrasyon oluşturur ve sayfaları otomatik olarak birleştirir, hepsi tuval üzerinde düğümleri sürükleyip bağlayarak."
     }
   },
   fileDragGuide: {

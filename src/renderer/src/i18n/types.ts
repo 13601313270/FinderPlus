@@ -184,6 +184,12 @@ export type Language = {
       container: string
       footer: string
     }
+    /** 典型工作流展示 section：嵌入截图并配一段说明文字 */
+    gallery: {
+      title: string
+      /** 占位符 {imageGen} {llm} {code}，均为行内代码 */
+      caption: string
+    }
   }
   /** 「文件类节点」帮助文章，讲解通过拖拽文件进画布创建节点的方式 */
   fileDragGuide: {

@@ -278,6 +278,13 @@ export type Language = {
     columnSettings: string
     sqlPort: string
     sqlPortTitle: string
+    /** SQL 端口管理弹窗 */
+    sqlPortDialogTitle: string
+    sqlPortSectionTitle: string
+    sqlPortEmpty: string
+    sqlPortAdd: string
+    /** 确认删除 SQL 端口，占位符 {idx} */
+    sqlPortConfirmDelete: string
     addRow: string
 
     /** 搜索栏 */

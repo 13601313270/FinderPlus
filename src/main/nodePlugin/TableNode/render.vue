@@ -72,6 +72,9 @@ const { box, startDrag } = useNodePosition(() => tableNode.value)
  */
 const columnsVersion = ref(0)
 
+/** 同 columnsVersion，强制 queryPorts 列表重渲染 */
+const sqlPortVersion = ref(0)
+
 /** 表格（列表视图）显示的列——过滤掉 showInList: false 的 */
 const listColumns = computed<ColumnDef[]>(() => {
   columnsVersion.value  // 强制依赖 dummy ref
@@ -81,6 +84,11 @@ const listColumns = computed<ColumnDef[]>(() => {
 const formColumns = computed<ColumnDef[]>(() => {
   columnsVersion.value
   return tableNode.value?.columns ? [...tableNode.value.columns] : []
+})
+/** SQL 端口对列表——依赖 sqlPortVersion 强制重渲染 */
+const sqlPortPairs = computed(() => {
+  sqlPortVersion.value
+  return tableNode.value ? [...tableNode.value.queryPorts] : []
 })
 
 // —— 表格状态 ——
@@ -152,6 +160,9 @@ const columnError = ref('')
 // —— 帮助弹窗 ——
 const showHelp = ref(false)
 
+// —— SQL 端口管理弹窗 ——
+const showSqlPortDialog = ref(false)
+
 // businessType 切换时，defaultValue 重置成该类型的初始值，避免脏值串类型
 watch(newColumnBusinessType, (bt) => {
   const storageType = BUSINESS_TYPE_MAP[bt]
@@ -184,6 +195,7 @@ onMounted(async () => {
   offChanged = node.onChanged(() => {
     // 1. 无论什么变化，先 bump dummy ref → listColumns / formColumns 重算 → UI 刷新
     columnsVersion.value++
+    sqlPortVersion.value++
     // 2. 再决定要不要重建物理表 + 重读（只有 SQL 语法层变化才需要）
     const curSig = columnsSig(node.columns)
     if (curSig === lastColumnsSig) return
@@ -617,6 +629,14 @@ async function removeColumnFromUI(colName: string): Promise<void> {
     columnError.value = err instanceof Error ? err.message : String(err)
   }
 }
+/** 移除 SQL 查询端口对（带 confirm） */
+function removeQueryPortFromUI(id: string, idx: number): void {
+  const node = tableNode.value
+  if (!node) return
+  const ok = confirm(t('table.sqlPortConfirmDelete', { idx: idx + 1 }))
+  if (!ok) return
+  node.removeQueryPort(id)
+}
 </script>
 
 <template>
@@ -633,7 +653,7 @@ async function removeColumnFromUI(colName: string): Promise<void> {
         <button
           class="tbl__add-btn tbl__add-btn--column"
           type="button"
-          @click="tableNode?.addQueryPort()"
+          @click="showSqlPortDialog = true"
           :title="$t('table.sqlPortTitle')"
         >{{ $t('table.sqlPort') }}</button>
         <button
@@ -997,6 +1017,61 @@ async function removeColumnFromUI(colName: string): Promise<void> {
             type="button"
             @click="addColumnFromUI"
           >{{ $t('table.addColConfirm') }}</button>
+        </div>
+      </div>
+    </HelpDialog>
+
+    <!-- SQL 端口管理弹窗 -->
+    <HelpDialog
+      :visible="showSqlPortDialog"
+      :title="$t('table.sqlPortDialogTitle')"
+      :width="520"
+      @close="showSqlPortDialog = false"
+    >
+      <div class="tbl-col-dialog">
+        <div class="tbl-col-dialog__section">
+          <div class="tbl-col-dialog__section-title">{{ $t('table.sqlPortSectionTitle') }}</div>
+          <div v-if="sqlPortPairs.length === 0" class="tbl-col-dialog__empty">
+            {{ $t('table.sqlPortEmpty') }}
+          </div>
+          <table v-else class="tbl-col-dialog__table">
+            <thead>
+              <tr>
+                <th>{{ $t('table.colHeaderName') }}</th>
+                <th>{{ $t('table.colHeaderOperations') }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(pair, idx) in sqlPortPairs" :key="pair.id" class="tbl-col-dialog__row">
+                <td class="tbl-col-dialog__name-cell">
+                  {{ pair.input.label?.zh ?? '' }} / {{ pair.output.label.zh }}
+                </td>
+                <td class="tbl-col-dialog__ops-cell">
+                  <button
+                    class="tbl-col-dialog__remove"
+                    type="button"
+                    @click="removeQueryPortFromUI(pair.id, idx)"
+                  >{{ $t('table.delete') }}</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="tbl-col-dialog__section">
+          <button
+            class="tbl-col-dialog__add-trigger"
+            type="button"
+            @click="tableNode?.addQueryPort()"
+          >{{ $t('table.sqlPortAdd') }}</button>
+        </div>
+
+        <div class="tbl-form__actions">
+          <button
+            class="tbl-form__btn tbl-form__btn--cancel"
+            type="button"
+            @click="showSqlPortDialog = false"
+          >{{ $t('table.close') }}</button>
         </div>
       </div>
     </HelpDialog>

@@ -8,6 +8,7 @@ import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages
 import { messages } from './i18n'
 import GearIcon from '@renderer/components/icons/GearIcon.vue'
 import HelpDialog from '@renderer/components/HelpDialog.vue'
+import NodeHeader from '@renderer/components/NodeHeader.vue'
 import CommandHelpDialog from './CommandHelpDialog.vue'
 
 /**
@@ -176,27 +177,21 @@ function onSave(): void {
 
 <template>
   <div ref="rootEl" class="node">
-    <div class="node__header" @pointerdown="startDrag">
-      <span class="node__handle" :title="t('dragHint')">{{ nodeTitle }}</span>
-      <button
-        class="node__help"
-        type="button"
-        :title="t('helpTitle')"
-        @pointerdown.stop
-        @click.stop="showHelp = true"
-      >?</button>
-      <button
-        v-if="commandNode"
-        ref="gearBtn"
-        class="node__gear"
-        type="button"
-        :title="t('editCommand')"
-        @pointerdown.stop
-        @click.stop="onGearClick"
-      >
-        <GearIcon />
-      </button>
-    </div>
+    <NodeHeader :title="nodeTitle" :title-hint="t('dragHint')" :drag-handler="startDrag" :help-title="t('helpTitle')" @help="showHelp = true">
+      <template #actions>
+        <button
+          v-if="commandNode"
+          ref="gearBtn"
+          class="node__gear"
+          type="button"
+          :title="t('editCommand')"
+          @pointerdown.stop
+          @click.stop="onGearClick"
+        >
+          <GearIcon />
+        </button>
+      </template>
+    </NodeHeader>
 
     <!-- 命令名称（在命令预览上方单独一行） -->
     <input
@@ -344,29 +339,6 @@ function onSave(): void {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-  }
-
-  &__help {
-    all: unset;
-    cursor: pointer;
-    margin-left: auto;
-    width: 18px;
-    height: 18px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    background: #f3f4f6;
-    color: #6b7280;
-    font-size: 12px;
-    font-weight: 600;
-    line-height: 1;
-    transition: background 0.15s, color 0.15s;
-
-    &:hover {
-      background: #dbeafe;
-      color: #2563eb;
-    }
   }
 
   &__gear {

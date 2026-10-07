@@ -7,6 +7,7 @@ import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
 import { messages } from './i18n'
 import HelpDialog from '@renderer/components/HelpDialog.vue'
+import NodeHeader from '@renderer/components/NodeHeader.vue'
 import BoolInputHelpDialog from './BoolInputHelpDialog.vue'
 
 /**
@@ -64,15 +65,7 @@ function onToggle(): void {
 
 <template>
   <div class="node">
-    <div class="node__header">
-      <span class="node__handle" :title="t('dragHint')" @pointerdown="startDrag">{{ nodeTitle }}</span>
-      <button
-        class="node__help"
-        type="button"
-        :title="t('helpTitle')"
-        @click.stop="showHelp = true"
-      >?</button>
-    </div>
+    <NodeHeader :title="nodeTitle" :title-hint="t('dragHint')" :drag-handler="startDrag" :help-title="t('helpTitle')" @help="showHelp = true" />
     <div class="node__row">
       <button
         class="node__switch"
@@ -111,50 +104,6 @@ function onToggle(): void {
   border: 1px solid @node-border-color;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-
-  &__header {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 4px 0;
-    border-bottom: 1px dashed @node-border-color;
-    flex-shrink: 0;
-  }
-
-  &__handle {
-    cursor: grab;
-    user-select: none;
-    font-size: 12px;
-    color: @color-text-weak;
-    text-align: center;
-
-    &:active {
-      cursor: grabbing;
-    }
-  }
-
-  &__help {
-    all: unset;
-    cursor: pointer;
-    width: 18px;
-    height: 18px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    background: #f3f4f6;
-    color: #6b7280;
-    font-size: 12px;
-    font-weight: 600;
-    line-height: 1;
-    transition: background 0.15s, color 0.15s;
-
-    &:hover {
-      background: #dbeafe;
-      color: #2563eb;
-    }
-  }
 
   &__row {
     flex: 1;

@@ -7,6 +7,7 @@ import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
 import { messages } from './i18n'
 import HelpDialog from '@renderer/components/HelpDialog.vue'
+import NodeHeader from '@renderer/components/NodeHeader.vue'
 import BufferHelpDialog from './BufferHelpDialog.vue'
 
 /**
@@ -75,16 +76,13 @@ function onTake(): void {
 
 <template>
   <div class="node">
-    <div class="node__header" @pointerdown="startDrag">
-      <span class="node__handle" :title="t('dragHint')">{{ nodeTitle }}</span>
-      <button
-        class="node__help"
-        type="button"
-        :title="t('helpTitle')"
-        @pointerdown.stop
-        @click.stop="showHelp = true"
-      >?</button>
-    </div>
+    <NodeHeader
+      :title="nodeTitle"
+      :title-hint="t('dragHint')"
+      :drag-handler="startDrag"
+      :help-title="t('helpTitle')"
+      @help="showHelp = true"
+    />
 
     <div class="buffer__row">
       <span class="buffer__label">{{ t('typeLabel') }}</span>
@@ -137,56 +135,11 @@ function onTake(): void {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   overflow: hidden;
 
-  &__header {
-    position: relative;
-    display: flex;
-    align-items: center;
-    height: 30px;
-    justify-content: center;
-    padding: 6px 22px;
-    border-bottom: 1px dashed @node-border-color;
-    flex-shrink: 0;
-  }
-
-  &__handle {
-    cursor: grab;
-    user-select: none;
-    font-size: 12px;
-    color: @color-text-weak;
+  :deep(.node-header__handle) {
     text-align: center;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-
-    &:active {
-      cursor: grabbing;
-    }
-  }
-
-  &__help {
-    all: unset;
-    position: absolute;
-    right: 2px;
-    top: 50%;
-    transform: translateY(-50%);
-    cursor: pointer;
-    width: 18px;
-    height: 18px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    background: #f3f4f6;
-    color: #6b7280;
-    font-size: 12px;
-    font-weight: 600;
-    line-height: 1;
-    transition: background 0.15s, color 0.15s;
-
-    &:hover {
-      background: #dbeafe;
-      color: #2563eb;
-    }
   }
 }
 

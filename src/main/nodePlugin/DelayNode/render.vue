@@ -5,6 +5,7 @@ import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { DelayNode } from './node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
+import NodeHeader from '@renderer/components/NodeHeader.vue'
 
 const props = defineProps<{ id: string }>()
 
@@ -62,9 +63,7 @@ function onDelayInput(e: Event): void {
 
 <template>
   <div class="node" :class="{ 'node--pending': pending }" @pointerdown="startDrag">
-    <div class="node__header">
-      <span class="node__handle">{{ nodeTitle }}</span>
-    </div>
+    <NodeHeader :title="nodeTitle" justify="center" />
     <div class="delay-body">
       <input
         class="delay-body__input"
@@ -89,6 +88,8 @@ function onDelayInput(e: Event): void {
   width: 100%;
   height: 100%;
   display: flex;
+  padding: 8px;
+  padding-top: 0;
   flex-direction: column;
   background: @color-surface;
   border: 1px solid @node-border-color;
@@ -99,27 +100,6 @@ function onDelayInput(e: Event): void {
   &--pending {
     border-color: #818cf8;
     box-shadow: 0 2px 8px rgba(129, 140, 248, 0.25);
-  }
-
-  &__header {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 4px 0;
-    border-bottom: 1px dashed @node-border-color;
-    flex-shrink: 0;
-  }
-
-  &__handle {
-    cursor: grab;
-    user-select: none;
-    font-size: 12px;
-    color: @color-text-weak;
-
-    &:active {
-      cursor: grabbing;
-    }
   }
 }
 

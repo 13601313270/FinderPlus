@@ -14,6 +14,7 @@ import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
 import HelpDialog from '@renderer/components/HelpDialog.vue'
 import CodeHelpDialog from './CodeHelpDialog.vue'
+import NodeHeader from '@renderer/components/NodeHeader.vue'
 import { messages } from './i18n'
 
 /** CodeMirror basic setup：行号 + 历史 + 括号匹配 + 折叠等 */
@@ -252,19 +253,17 @@ function onCopyCallOutputPort(): void {
 
 <template>
   <div class="node">
-    <div class="node__header" @pointerdown="startDrag">
-      <span class="node__handle" :title="t('dragHint')">{{ nodeTitle }}</span>
-      <div class="node__header-right">
+    <NodeHeader
+      :title="nodeTitle"
+      :title-hint="t('dragHint')"
+      :drag-handler="startDrag"
+      :help-title="t('helpTitle')"
+      @help="showHelp = true"
+    >
+      <template #actions>
         <span class="node__status" :class="`node__status--${status}`">{{ statusLabel }}</span>
-        <button
-          class="node__help"
-          type="button"
-          :title="t('helpTitle')"
-          @pointerdown.stop
-          @click.stop="showHelp = true"
-        >?</button>
-      </div>
-    </div>
+      </template>
+    </NodeHeader>
 
     <!-- 配置入口按钮：点击打开「配置函数」弹窗（含端口配置 + 代码编辑） -->
     <button
@@ -523,28 +522,16 @@ function onCopyCallOutputPort(): void {
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 
-  &__header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    border-bottom: 1px dashed @node-border-color;
-    height: 32px;
-    cursor: grab;
-    user-select: none;
-
-    &:active {
-      cursor: grabbing;
-    }
-  }
-
-  &__handle {
-    font-size: 12px;
-    color: @color-text-weak;
-    padding: 2px 0;
+  // NodeHeader 覆盖：title 超长省略号 + actions 间距
+  :deep(.node-header__handle) {
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  :deep(.node-header__actions) {
+    gap: 6px;
   }
 
   &__status {
@@ -568,35 +555,6 @@ function onCopyCallOutputPort(): void {
     &--error {
       background: #fee2e2;
       color: #dc2626;
-    }
-  }
-
-  &__header-right {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    flex-shrink: 0;
-  }
-
-  &__help {
-    all: unset;
-    cursor: pointer;
-    width: 18px;
-    height: 18px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    background: #f3f4f6;
-    color: #6b7280;
-    font-size: 12px;
-    font-weight: 600;
-    line-height: 1;
-    transition: background 0.15s, color 0.15s;
-
-    &:hover {
-      background: #dbeafe;
-      color: #2563eb;
     }
   }
 

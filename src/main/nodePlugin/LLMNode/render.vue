@@ -15,6 +15,7 @@ import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages
 import { messages } from './i18n'
 import GearIcon from '@renderer/components/icons/GearIcon.vue'
 import HelpDialog from '@renderer/components/HelpDialog.vue'
+import NodeHeader from '@renderer/components/NodeHeader.vue'
 import LLMHelpDialog from './LLMHelpDialog.vue'
 
 /**
@@ -133,9 +134,8 @@ function onSendClick(): void {
 
 <template>
   <div class="node">
-    <div class="node__header" @pointerdown="startDrag">
-      <span class="node__handle" :title="t('dragHint')">{{ nodeTitle }}</span>
-      <div class="node__header-actions">
+    <NodeHeader :title="nodeTitle" :title-hint="t('dragHint')" :drag-handler="startDrag" :help-title="t('helpTitle')" @help="showHelp = true">
+      <template #actions>
         <button
           v-if="llmNode"
           class="node__gear"
@@ -146,15 +146,8 @@ function onSendClick(): void {
         >
           <GearIcon />
         </button>
-        <button
-          class="node__help"
-          type="button"
-          :title="t('helpTitle')"
-          @pointerdown.stop
-          @click.stop="showHelp = true"
-        >?</button>
-      </div>
-    </div>
+      </template>
+    </NodeHeader>
 
     <!-- 节点级配置行：provider + model + jsonMode(仅 deepseek) -->
     <div v-if="llmNode" class="node__config-row">
@@ -269,7 +262,8 @@ function onSendClick(): void {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  padding: 10px;
+  padding: 8px;
+  padding-top: 0;
   background: @color-surface;
   border: 1px solid @node-border-color;
   border-radius: 8px;
@@ -373,28 +367,6 @@ function onSendClick(): void {
   }
 
   // —— 底部操作栏（不变） ——
-
-  &__help {
-    all: unset;
-    cursor: pointer;
-    width: 18px;
-    height: 18px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    background: #f3f4f6;
-    color: #6b7280;
-    font-size: 12px;
-    font-weight: 600;
-    line-height: 1;
-    transition: background 0.15s, color 0.15s;
-
-    &:hover {
-      background: #dbeafe;
-      color: #2563eb;
-    }
-  }
 
   &__gear {
     all: unset;

@@ -7,6 +7,7 @@ import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
 import { messages } from './i18n'
 import HelpDialog from '@renderer/components/HelpDialog.vue'
+import NodeHeader from '@renderer/components/NodeHeader.vue'
 import FileInfoHelpDialog from './FileInfoHelpDialog.vue'
 
 /**
@@ -66,15 +67,13 @@ onUnmounted(() => {
 
 <template>
   <div class="node">
-    <div class="node__header" @pointerdown="startDrag">
-      <span class="node__handle" :title="t('dragHint')">{{ nodeTitle }}</span>
-      <button
-        class="node__help"
-        type="button"
-        :title="t('helpTitle')"
-        @click.stop="showHelp = true"
-      >?</button>
-    </div>
+    <NodeHeader
+      :title="nodeTitle"
+      :title-hint="t('dragHint')"
+      :drag-handler="startDrag"
+      :help-title="t('helpTitle')"
+      @help="showHelp = true"
+    />
     <div class="file-info" :class="{ 'file-info--empty': !fileName }">
       <template v-if="fileName">
         <div class="file-info__row">
@@ -110,57 +109,14 @@ onUnmounted(() => {
   flex-direction: column;
   gap: 6px;
   padding: 8px;
+  padding-top: 0;
   background: @color-surface;
   border: 1px solid @node-border-color;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 
-  &__header {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 2px 22px;
-    border-bottom: 1px dashed @node-border-color;
-    flex-shrink: 0;
-  }
-
-  &__handle {
-    cursor: grab;
-    user-select: none;
-    font-size: 12px;
-    color: @color-text-weak;
+  :deep(.node-header__handle) {
     text-align: center;
-
-    &:active {
-      cursor: grabbing;
-    }
-  }
-
-  &__help {
-    all: unset;
-    position: absolute;
-    right: 2px;
-    top: 50%;
-    transform: translateY(-50%);
-    cursor: pointer;
-    width: 18px;
-    height: 18px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    background: #f3f4f6;
-    color: #6b7280;
-    font-size: 12px;
-    font-weight: 600;
-    line-height: 1;
-    transition: background 0.15s, color 0.15s;
-
-    &:hover {
-      background: #dbeafe;
-      color: #2563eb;
-    }
   }
 }
 

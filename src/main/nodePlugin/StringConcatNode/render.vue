@@ -9,6 +9,7 @@ import { useNodeDetail } from '@renderer/composables/useNodeDetail'
 import { viewport } from '@renderer/canvas/viewport'
 import { messages } from './i18n'
 import HelpDialog from '@renderer/components/HelpDialog.vue'
+import NodeHeader from '@renderer/components/NodeHeader.vue'
 import StringConcatHelpDialog from './StringConcatHelpDialog.vue'
 
 /**
@@ -95,16 +96,8 @@ function onResizePointerDown(e: PointerEvent): void {
 
 <template>
   <div class="node">
-    <div class="node__header" @pointerdown="startDrag">
-      <span class="node__handle" :title="t('dragHint')">{{ nodeTitle }}</span>
-      <div class="node__actions">
-        <button
-          class="node__help"
-          type="button"
-          :title="t('helpTitle')"
-          @pointerdown.stop
-          @click.stop="showHelp = true"
-        >?</button>
+    <NodeHeader :title="nodeTitle" :title-hint="t('dragHint')" :drag-handler="startDrag" :help-title="t('helpTitle')" @help="showHelp = true">
+      <template #actions>
         <button
           class="node__edit"
           type="button"
@@ -117,8 +110,8 @@ function onResizePointerDown(e: PointerEvent): void {
             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
           </svg>
         </button>
-      </div>
-    </div>
+      </template>
+    </NodeHeader>
 
     <div class="node__result">
       <div class="node__result-text" :title="resultValue">{{ resultValue || t('resultPlaceholder') }}</div>
@@ -147,6 +140,7 @@ function onResizePointerDown(e: PointerEvent): void {
   flex-direction: column;
   gap: 6px;
   padding: 8px;
+  padding-top: 0;
   background: @color-surface;
   border: 1px solid @node-border-color;
   border-radius: 8px;
@@ -154,33 +148,6 @@ function onResizePointerDown(e: PointerEvent): void {
   position: relative; // resize handle 绝对定位锚点
   overflow: hidden;
 
-  &__header {
-    display: flex;
-    align-items: center;
-    cursor: grab;
-    user-select: none;
-    border-bottom: 1px dashed @node-border-color;
-    padding-bottom: 4px;
-
-    &:active {
-      cursor: grabbing;
-    }
-  }
-
-  &__handle {
-    font-size: 12px;
-    color: @color-text-weak;
-    padding: 2px 0;
-    flex: 1; // 撑满 header，让 actions 靠右
-  }
-
-  &__actions {
-    display: flex;
-    gap: 4px;
-    flex-shrink: 0;
-  }
-
-  &__help,
   &__edit {
     all: unset;
     cursor: pointer;
@@ -204,12 +171,6 @@ function onResizePointerDown(e: PointerEvent): void {
       background: #dbeafe;
       color: #2563eb;
     }
-  }
-
-  &__help {
-    font-size: 12px;
-    font-weight: 600;
-    line-height: 1;
   }
 
   &__result {

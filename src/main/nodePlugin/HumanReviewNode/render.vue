@@ -15,6 +15,7 @@ import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
 import { messages } from './i18n'
 import HelpDialog from '@renderer/components/HelpDialog.vue'
+import NodeHeader from '@renderer/components/NodeHeader.vue'
 import HumanReviewHelpDialog from './HumanReviewHelpDialog.vue'
 import JsonTreeNode from '@renderer/components/JsonTreeNode.vue'
 
@@ -276,9 +277,14 @@ function onResizePointerDown(e: PointerEvent): void {
 
 <template>
   <div class="node">
-    <div class="node__header" @pointerdown="startDrag">
-      <span class="node__handle" :title="t('dragHint')">{{ nodeTitle }}</span>
-      <div class="node__header-btns">
+    <NodeHeader
+      :title="nodeTitle"
+      :title-hint="t('dragHint')"
+      :drag-handler="startDrag"
+      :help-title="t('helpTitle')"
+      @help="showHelp = true"
+    >
+      <template #actions>
         <button
           class="node__fs"
           type="button"
@@ -286,14 +292,8 @@ function onResizePointerDown(e: PointerEvent): void {
           :disabled="!hasCurrent"
           @click.stop="showFullscreen = true"
         >⛶</button>
-        <button
-          class="node__help"
-          type="button"
-          :title="t('helpTitle')"
-          @click.stop="showHelp = true"
-        >?</button>
-      </div>
-    </div>
+      </template>
+    </NodeHeader>
 
     <div class="review" @wheel="onReviewWheel">
       <div class="review__label">{{ t('reviewLabel') }}</div>
@@ -500,28 +500,6 @@ function onResizePointerDown(e: PointerEvent): void {
     &:disabled {
       opacity: 0.35;
       cursor: not-allowed;
-    }
-  }
-
-  &__help {
-    all: unset;
-    cursor: pointer;
-    width: 18px;
-    height: 18px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    background: #f3f4f6;
-    color: #6b7280;
-    font-size: 12px;
-    font-weight: 600;
-    line-height: 1;
-    transition: background 0.15s, color 0.15s;
-
-    &:hover {
-      background: #dbeafe;
-      color: #2563eb;
     }
   }
 

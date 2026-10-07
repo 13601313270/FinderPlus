@@ -9,6 +9,7 @@ import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
 import { messages } from './i18n'
 import HelpDialog from '@renderer/components/HelpDialog.vue'
+import NodeHeader from '@renderer/components/NodeHeader.vue'
 import ImageGenHelpDialog from './ImageGenHelpDialog.vue'
 
 // 卡片头部标题走插件 manifest 的多语言 title，未配当前语言时由 resolveNodeTitle 兜底
@@ -173,28 +174,7 @@ function onGenClick(): void {
 
 <template>
   <div class="node">
-    <div class="node__header" @pointerdown="startDrag">
-      <span class="node__handle" :title="t('dragHint')">{{ nodeTitle }}</span>
-      <div class="node__header-actions">
-        <!-- <button
-          v-if="node"
-          class="node__gear"
-          type="button"
-          :title="currentProviderKeyOk ? t('gearConfigured') : t('gearConfigure')"
-          @pointerdown.stop
-          @click.stop="onGearClick"
-        >
-          <GearIcon />
-        </button> -->
-        <button
-          class="node__help"
-          type="button"
-          :title="t('helpTitle')"
-          @pointerdown.stop
-          @click.stop="showHelp = true"
-        >?</button>
-      </div>
-    </div>
+    <NodeHeader :title="nodeTitle" :title-hint="t('dragHint')" :drag-handler="startDrag" :help-title="t('helpTitle')" @help="showHelp = true" />
 
     <!-- 节点级配置行：provider + model（对齐 LLMNode） -->
     <div v-if="node" class="node__config-row">
@@ -311,39 +291,12 @@ function onGenClick(): void {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 10px;
+  padding: 8px;
+  padding-top: 0;
   background: @color-surface;
   border: 1px solid @node-border-color;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-
-  &__header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    border-bottom: 1px dashed @node-border-color;
-    padding-bottom: 4px;
-    cursor: grab;
-    user-select: none;
-
-    &:active {
-      cursor: grabbing;
-    }
-  }
-
-  &__handle {
-    font-size: 12px;
-    color: @color-text-weak;
-    padding: 2px 0;
-  }
-
-  // 右侧按钮组：齿轮 + 帮助，靠右对齐（head 已 space-between，auto 双保险）
-  &__header-actions {
-    display: flex;
-    align-items: center;
-    gap: 2px;
-    margin-left: auto;
-  }
 
   // —— 节点配置行 ——
   &__config-row {
@@ -474,28 +427,6 @@ function onGenClick(): void {
     padding: 1px 6px;
     border-radius: 3px;
     white-space: nowrap;
-  }
-
-  &__help {
-    all: unset;
-    cursor: pointer;
-    width: 18px;
-    height: 18px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    background: #f3f4f6;
-    color: #6b7280;
-    font-size: 12px;
-    font-weight: 600;
-    line-height: 1;
-    transition: background 0.15s, color 0.15s;
-
-    &:hover {
-      background: #dbeafe;
-      color: #2563eb;
-    }
   }
 
   &__gear {

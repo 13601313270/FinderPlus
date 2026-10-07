@@ -8,6 +8,7 @@ import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages
 import { messages } from './i18n'
 import GearIcon from '@renderer/components/icons/GearIcon.vue'
 import HelpDialog from '@renderer/components/HelpDialog.vue'
+import NodeHeader from '@renderer/components/NodeHeader.vue'
 import RadioHelpDialog from './RadioHelpDialog.vue'
 
 /**
@@ -129,27 +130,21 @@ function onDocClick(e: MouseEvent): void {
 
 <template>
   <div class="node">
-    <div class="node__header" @pointerdown="startDrag">
-      <span class="node__handle" :title="t('dragHint')">{{ nodeTitle }}</span>
-      <button
-        class="node__help"
-        type="button"
-        :title="t('helpTitle')"
-        @pointerdown.stop
-        @click.stop="showHelp = true"
-      >?</button>
-      <button
-        v-if="radioNode"
-        ref="gearBtn"
-        class="node__gear"
-        type="button"
-        :title="t('settingsTitle')"
-        @pointerdown.stop
-        @click.stop="onGearClick"
-      >
-        <GearIcon />
-      </button>
-    </div>
+    <NodeHeader :title="nodeTitle" :title-hint="t('dragHint')" :drag-handler="startDrag" :help-title="t('helpTitle')" @help="showHelp = true">
+      <template #actions>
+        <button
+          v-if="radioNode"
+          ref="gearBtn"
+          class="node__gear"
+          type="button"
+          :title="t('settingsTitle')"
+          @pointerdown.stop
+          @click.stop="onGearClick"
+        >
+          <GearIcon />
+        </button>
+      </template>
+    </NodeHeader>
 
     <!-- 一组单选框：竖向排列 -->
     <div class="node__list">
@@ -248,55 +243,6 @@ function onDocClick(e: MouseEvent): void {
   border: 1px solid @node-border-color;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-
-  &__header {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 0;
-    border-bottom: 1px dashed @node-border-color;
-    flex-shrink: 0;
-    cursor: grab;
-    user-select: none;
-
-    &:active {
-      cursor: grabbing;
-    }
-  }
-
-  &__handle {
-    font-size: 12px;
-    color: @color-text-weak;
-    padding: 2px 0;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    flex: 1;
-  }
-
-  &__help {
-    all: unset;
-    cursor: pointer;
-    width: 18px;
-    height: 18px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    background: #f3f4f6;
-    color: #6b7280;
-    font-size: 12px;
-    font-weight: 600;
-    line-height: 1;
-    flex-shrink: 0;
-    transition: background 0.15s, color 0.15s;
-
-    &:hover {
-      background: #dbeafe;
-      color: #2563eb;
-    }
-  }
 
   &__gear {
     all: unset;

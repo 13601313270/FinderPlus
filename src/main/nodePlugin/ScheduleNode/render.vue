@@ -5,6 +5,7 @@ import { viewport } from '@renderer/canvas/viewport'
 import { ScheduleNode } from './node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
+import NodeHeader from '@renderer/components/NodeHeader.vue'
 
 const props = defineProps<{ id: string }>()
 
@@ -122,10 +123,11 @@ onUnmounted(() => {
 
 <template>
   <div class="node" :class="{ 'node--disabled': !enabled }" @pointerdown="startDrag">
-    <div class="node__header">
-      <span class="node__handle">{{ nodeTitle }}</span>
-      <span v-if="running && enabled" class="node__dot" title="定时器运行中"></span>
-    </div>
+    <NodeHeader :title="nodeTitle">
+      <template #actions>
+        <span v-if="running && enabled" class="node__dot" title="定时器运行中"></span>
+      </template>
+    </NodeHeader>
 
     <div class="node__body">
       <!-- 启停开关 + 测试按钮 -->
@@ -185,6 +187,7 @@ onUnmounted(() => {
   height: 100%;
   display: flex;
   flex-direction: column;
+  padding: 0 8px;
   position: relative;
   background: @color-surface;
   border: 1px solid @node-border-color;
@@ -195,24 +198,6 @@ onUnmounted(() => {
 
   &--disabled {
     opacity: 0.55;
-  }
-
-  &__header {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 4px 0;
-    border-bottom: 1px dashed @node-border-color;
-    flex-shrink: 0;
-  }
-
-  &__handle {
-    cursor: grab;
-    font-size: 12px;
-    color: @color-text-weak;
-
-    &:active { cursor: grabbing; }
   }
 
   &__dot {

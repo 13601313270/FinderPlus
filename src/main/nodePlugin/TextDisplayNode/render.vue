@@ -8,6 +8,7 @@ import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages
 import { viewport } from '@renderer/canvas/viewport'
 import { messages } from './i18n'
 import HelpDialog from '@renderer/components/HelpDialog.vue'
+import NodeHeader from '@renderer/components/NodeHeader.vue'
 import TextDisplayHelpDialog from './TextDisplayHelpDialog.vue'
 
 /**
@@ -199,11 +200,10 @@ function onResizePointerDown(e: PointerEvent): void {
 
 <template>
   <div class="node" @pointerdown="startDrag">
-    <div class="node__header">
-      <span class="node__handle" :title="t('dragHint')">{{ nodeTitle }}</span>
-      <div class="node__actions">
+    <NodeHeader :title="nodeTitle" :title-hint="t('dragHint')" :help-title="t('helpTitle')" @help="showHelp = true">
+      <template #actions>
         <button
-          class="node__help"
+          class="node__preview-btn"
           type="button"
           :title="t('previewHint')"
           @pointerdown.stop
@@ -216,14 +216,8 @@ function onResizePointerDown(e: PointerEvent): void {
             <path d="M3 21l7-7" />
           </svg>
         </button>
-        <button
-          class="node__help"
-          type="button"
-          :title="t('helpTitle')"
-          @click.stop="showHelp = true"
-        >?</button>
-      </div>
-    </div>
+      </template>
+    </NodeHeader>
     <div class="render-display-container">
       <div
         ref="renderDisplayRef"
@@ -281,29 +275,11 @@ function onResizePointerDown(e: PointerEvent): void {
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 
-  &__header {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 6px 0;
-    border-bottom: 1px dashed @node-border-color;
-    flex-shrink: 0;
-  }
-
-  &__handle {
-    cursor: grab;
-    user-select: none;
-    font-size: 12px;
-    color: @color-text-weak;
+  :deep(.node-header__handle) {
     text-align: center;
-
-    &:active {
-      cursor: grabbing;
-    }
   }
 
-  &__help {
+  &__preview-btn {
     all: unset;
     cursor: pointer;
     width: 18px;
@@ -328,12 +304,6 @@ function onResizePointerDown(e: PointerEvent): void {
       background: #dbeafe;
       color: #2563eb;
     }
-  }
-
-  &__actions {
-    display: flex;
-    align-items: center;
-    gap: 4px;
   }
 
   &__resize-handle {

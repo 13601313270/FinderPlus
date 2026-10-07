@@ -9,6 +9,7 @@ import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages
 import { viewport } from '@renderer/canvas/viewport'
 import { messages } from './i18n'
 import HelpDialog from '@renderer/components/HelpDialog.vue'
+import NodeHeader from '@renderer/components/NodeHeader.vue'
 import TextInputHelpDialog from './TextInputHelpDialog.vue'
 
 /**
@@ -272,11 +273,10 @@ function onResizeEnd(): void {
 
 <template>
   <div class="node">
-    <div class="node__header" @pointerdown="startDrag">
-      <span class="node__handle" :title="t('dragHint')">{{ nodeTitle }}</span>
-      <div class="node__header-actions">
+    <NodeHeader :title="nodeTitle" :title-hint="t('dragHint')" :drag-handler="startDrag" :help-title="t('helpTitle')" @help="showHelp = true">
+      <template #actions>
         <button
-          class="node__help"
+          class="node__edit-btn"
           type="button"
           :title="t('editHint')"
           @pointerdown.stop
@@ -287,15 +287,8 @@ function onResizeEnd(): void {
             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
           </svg>
         </button>
-        <button
-          class="node__help"
-          type="button"
-          :title="t('helpTitle')"
-          @pointerdown.stop
-          @click.stop="showHelp = true"
-        >?</button>
-      </div>
-    </div>
+      </template>
+    </NodeHeader>
     <div class="render-input-container">
       <textarea
         ref="textareaRef"
@@ -391,39 +384,13 @@ function onResizeEnd(): void {
   flex-direction: column;
   gap: 6px;
   padding: 8px;
+  padding-top: 0;
   background: @color-surface;
   border: 1px solid @node-border-color;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 
-  &__header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    cursor: grab;
-    user-select: none;
-    border-bottom: 1px dashed @node-border-color;
-    padding-bottom: 4px;
-
-    &:active {
-      cursor: grabbing;
-    }
-  }
-
-  &__handle {
-    font-size: 12px;
-    color: @color-text-weak;
-    padding: 2px 0;
-  }
-
-  &__header-actions {
-    display: flex;
-    align-items: center;
-    gap: 2px;
-    margin-left: auto;
-  }
-
-  &__help {
+  &__edit-btn {
     all: unset;
     align-self: center;
     flex-shrink: 0;

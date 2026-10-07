@@ -8,6 +8,7 @@ import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages
 import { messages } from './i18n'
 import ChevronIcon from '@renderer/components/icons/ChevronIcon.vue'
 import HelpDialog from '@renderer/components/HelpDialog.vue'
+import NodeHeader from '@renderer/components/NodeHeader.vue'
 import HttpRequestHelpDialog from './HttpRequestHelpDialog.vue'
 
 /**
@@ -194,9 +195,8 @@ onUnmounted(() => { unsubscribe?.() })
     @wheel="onRootWheel"
   >
     <!-- 头部：拖动 + type 标签 + 帮助 + 展开/收起 toggle -->
-    <div class="node__header" @pointerdown="startDrag">
-      <span class="node__handle" :title="t('dragHint')">{{ nodeTitle }}</span>
-      <div class="node__header-right">
+    <NodeHeader :title="nodeTitle" :title-hint="t('dragHint')" :drag-handler="startDrag" :help-title="t('helpHint')" @help="showHelp = true">
+      <template #actions>
         <button
           v-if="httpNode"
           class="node__toggle"
@@ -209,15 +209,8 @@ onUnmounted(() => { unsubscribe?.() })
           <ChevronIcon :direction="expanded ? 'up' : 'down'" :size="12" />
           <span class="node__toggle-text">{{ expanded ? t('collapse') : t('expand') }}</span>
         </button>
-        <button
-          class="node__help"
-          type="button"
-          :title="t('helpHint')"
-          @pointerdown.stop
-          @click.stop="showHelp = true"
-        >?</button>
-      </div>
-    </div>
+      </template>
+    </NodeHeader>
 
     <!-- —— 折叠态可见：方法+URL 预览行 —— -->
     <div
@@ -405,6 +398,7 @@ onUnmounted(() => { unsubscribe?.() })
   flex-direction: column;
   gap: 6px;
   padding: 8px;
+  padding-top: 0;
   background: @color-surface;
   border: 1px solid @node-border-color;
   border-radius: 8px;
@@ -433,20 +427,6 @@ onUnmounted(() => { unsubscribe?.() })
     align-items: center;
     gap: 4px;
     flex-shrink: 0;
-  }
-
-  // 帮助按钮沿用 code 节点的灰底圆问号外观
-  &__help {
-    all: unset;
-    cursor: pointer;
-    flex-shrink: 0;
-    width: 18px; height: 18px;
-    display: flex; align-items: center; justify-content: center;
-    border-radius: 50%;
-    background: #f3f4f6; color: #6b7280;
-    font-size: 12px; font-weight: 600; line-height: 1;
-    transition: background 0.15s, color 0.15s;
-    &:hover { background: #dbeafe; color: #2563eb; }
   }
 
   &__toggle {

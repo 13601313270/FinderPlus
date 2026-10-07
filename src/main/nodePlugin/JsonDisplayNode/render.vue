@@ -10,6 +10,7 @@ import { viewport } from '@renderer/canvas/viewport'
 import HelpDialog from '@renderer/components/HelpDialog.vue'
 import JsonDisplayHelpDialog from './JsonDisplayHelpDialog.vue'
 import JsonTreeNode from '@renderer/components/JsonTreeNode.vue'
+import NodeHeader from '@renderer/components/NodeHeader.vue'
 
 const props = defineProps<{ id: string }>()
 
@@ -109,11 +110,16 @@ const expandTitle = computed(() => t('expand'))
 
 <template>
   <div class="node">
-    <div class="node__header" @pointerdown="startDrag">
-      <span class="node__handle" :title="t('dragHint')">{{ nodeTitle }}</span>
-      <div class="node__actions">
+    <NodeHeader
+      :title="nodeTitle"
+      :title-hint="t('dragHint')"
+      :drag-handler="startDrag"
+      :help-title="t('helpTitle')"
+      @help="showHelp = true"
+    >
+      <template #actions>
         <button
-          class="node__help"
+          class="node__preview-btn"
           type="button"
           :title="t('previewHint')"
           :disabled="!canPreview"
@@ -127,14 +133,8 @@ const expandTitle = computed(() => t('expand'))
             <path d="M3 21l7-7" />
           </svg>
         </button>
-        <button
-          class="node__help"
-          type="button"
-          :title="t('helpTitle')"
-          @click.stop="showHelp = true"
-        >?</button>
-      </div>
-    </div>
+      </template>
+    </NodeHeader>
 
     <div class="render-body">
       <!-- 还没接过输入 -->
@@ -189,42 +189,13 @@ const expandTitle = computed(() => t('expand'))
   flex-direction: column;
   gap: 6px;
   padding: 8px;
+  padding-top: 0;
   background: @color-surface;
   border: 1px solid @node-border-color;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 
-  &__header {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 2px 22px;
-    border-bottom: 1px dashed @node-border-color;
-    flex-shrink: 0;
-  }
-
-  &__handle {
-    cursor: grab;
-    user-select: none;
-    font-size: 12px;
-    color: @color-text-weak;
-    text-align: center;
-
-    &:active { cursor: grabbing; }
-  }
-
-  &__actions {
-    position: absolute;
-    right: 2px;
-    top: 50%;
-    transform: translateY(-50%);
-    display: flex;
-    align-items: center;
-    gap: 4px;
-  }
-
-  &__help {
+  &__preview-btn {
     all: unset;
     cursor: pointer;
     width: 18px;

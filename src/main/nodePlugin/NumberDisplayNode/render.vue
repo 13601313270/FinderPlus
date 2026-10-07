@@ -8,6 +8,7 @@ import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages
 import { viewport } from '@renderer/canvas/viewport'
 import { messages } from './i18n'
 import HelpDialog from '@renderer/components/HelpDialog.vue'
+import NodeHeader from '@renderer/components/NodeHeader.vue'
 import NumberDisplayHelpDialog from './NumberDisplayHelpDialog.vue'
 
 /**
@@ -170,9 +171,8 @@ function onResizePointerDown(e: PointerEvent): void {
 
 <template>
   <div class="node" @pointerdown="startDrag">
-    <div class="node__header">
-      <span class="node__handle" :title="t('dragHint')">{{ nodeTitle }}</span>
-      <div class="node__actions">
+    <NodeHeader :title="nodeTitle" :title-hint="t('dragHint')" :help-title="t('helpTitle')" @help="showHelp = true">
+      <template #actions>
         <button
           class="node__icon-btn"
           type="button"
@@ -193,15 +193,8 @@ function onResizePointerDown(e: PointerEvent): void {
             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
           </svg>
         </button>
-        <button
-          class="node__icon-btn"
-          type="button"
-          :title="t('helpTitle')"
-          @pointerdown.stop
-          @click.stop="showHelp = true"
-        >?</button>
-      </div>
-    </div>
+      </template>
+    </NodeHeader>
     <div ref="displayEl" class="render-display">
       <span
         v-if="value !== null"
@@ -276,32 +269,8 @@ function onResizePointerDown(e: PointerEvent): void {
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 
-  &__header {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 6px 0;
-    border-bottom: 1px dashed @node-border-color;
-    flex-shrink: 0;
-  }
-
-  &__handle {
-    cursor: grab;
-    user-select: none;
-    font-size: 12px;
-    color: @color-text-weak;
+  :deep(.node-header__handle) {
     text-align: center;
-
-    &:active {
-      cursor: grabbing;
-    }
-  }
-
-  &__actions {
-    display: flex;
-    align-items: center;
-    gap: 4px;
   }
 
   &__icon-btn {

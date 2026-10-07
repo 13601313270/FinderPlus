@@ -8,6 +8,7 @@ import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages
 import { messages } from './i18n'
 import HelpDialog from '@renderer/components/HelpDialog.vue'
 import PromiseAllHelpDialog from './PromiseAllHelpDialog.vue'
+import NodeHeader from '@renderer/components/NodeHeader.vue'
 
 /**
  * PromiseAll 汇合节点的渲染组件。
@@ -245,18 +246,14 @@ async function onForceTrigger(): Promise<void> {
       </div>
     </div>
 
-    <!-- header：顶部浮层，左边标题、右边帮助按钮 -->
-    <div class="node__header" @pointerdown="startDrag">
-      <span class="node__handle" :title="t('dragHint')">{{ nodeTitle }}</span>
-      <button
-        class="node__help"
-        type="button"
-        :title="t('helpTitle')"
-        @pointerdown.stop
-        @dblclick.stop
-        @click.stop="showHelp = true"
-      >?</button>
-    </div>
+    <!-- header：顶部浮层 -->
+    <NodeHeader
+      :title="nodeTitle"
+      :title-hint="t('dragHint')"
+      :drag-handler="startDrag"
+      :help-title="t('helpTitle')"
+      @help="showHelp = true"
+    />
 
     <!-- actions：底部浮层，只留 +/− -->
     <div class="node__actions" @pointerdown.stop>
@@ -298,6 +295,8 @@ async function onForceTrigger(): Promise<void> {
   box-sizing: border-box;
   width: 100%;
   height: 100%;
+  padding: 8px;
+  padding-top: 0;
   overflow: hidden;
   background: @color-surface;
   border: 1px solid @node-border-color;
@@ -372,61 +371,13 @@ async function onForceTrigger(): Promise<void> {
     transition: color 0.15s;
   }
 
-  // —— header ——
-
-  &__header {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 2px 6px;
-    pointer-events: auto;
-    z-index: 10;
+  // —— header（NodeHeader 浮层覆盖）——
+  :deep(.node-header) {
+    border-bottom: none; // 原浮层 header 无分割线
   }
 
-  &__handle {
-    cursor: grab;
-    user-select: none;
-    font-size: 12px;
-    color: @color-text-weak;
-    width: 100%;
+  :deep(.node-header__handle) {
     text-align: center;
-
-    &:active {
-      cursor: grabbing;
-    }
-  }
-
-  &__help {
-    all: unset;
-    position: absolute;
-    right: 2px;
-    cursor: pointer;
-    width: 18px;
-    height: 18px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    background: transparent;
-    color: @color-text-weak;
-    font-size: 12px;
-    font-weight: 600;
-    line-height: 1;
-    transition: background 0.15s, color 0.15s;
-    flex-shrink: 0;
-
-    &:hover {
-      background: #e5e7eb;
-      color: #374151;
-    }
-
-    &:active {
-      background: #d1d5db;
-    }
   }
 
   // —— actions ——

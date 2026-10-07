@@ -154,6 +154,14 @@ export class OutputPort {
   }
 
   /**
+   * 只存值、不分发。给批量发送场景用：调用方自己组织 EdgeBatch，
+   * 但 OutputPort 还是要把 currentValue 存好（UI tooltip、后续 fingerprint 比对）。
+   */
+  setCurrentValue(value: Value): void {
+    this.currentValue = value
+  }
+
+  /**
    * 清空当前值并沿 edges 向后派发"清空"信号。
    * 给中间节点用：上游值消失时（断边/上游节点被删），中间节点不仅要
    * 让自己的输入端变空，还要通知下游清空它缓存的那个旧值。

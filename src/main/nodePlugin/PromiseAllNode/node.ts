@@ -8,6 +8,8 @@ import { Value, type ValueKind } from '../../engine/data/Value'
 import { InputPort } from '../../engine/port/InputPort'
 import { OutputPort } from '../../engine/port/OutputPort'
 import { Node } from '../../engine/node/Node'
+import { EdgeBatch } from '../../engine/graph/EdgeBatch'
+import type { Edge } from '../../engine/graph/Edge'
 
 /** OutputPort 构造函数需要的 Value 子类形状（与 OutputPort.ts 里的 ValueClass 同构但未导出，这里内联） */
 type ValueClass = { readonly VALUE_NAME: ValueKind; prototype: Value; new (...args: any[]): Value }
@@ -264,16 +266,52 @@ export class PromiseAllNode extends Node {
   }
 
   /**
-   * 把所有已有值的输入端口 commit 到对应输出端口。
-   * @param force true 时传 { force: true } 绕过 fingerprint 排重（手动触发场景）
+   * 把所有已有值的输入端口对应输出端口的值，按目标下游 Node 分组后一次性分发。
+   * 同一目标 Node 有 ≥2 条边 → EdgeBatch 批量发送（合并成一次 _onInputPortChanged）；
+   * 只有 1 条边 → 走单条路径 edge.transferData（等价于原来的 outPort.commit）。
+   *
+   * 这样比如 7 个输出端口分别连到 A(3条)、B(3条)、C(1条)，
+   * A 收到 1 次合并通知，B 收到 1 次合并通知，C 收到 1 次单条通知。
+   * @param force true 时跳过 fingerprint 排重，所有通道都强推
    */
   private commitAllAvailable(force: boolean): void {
+    // 第一步：存 OutputPort.currentValue（UI tooltip + 后续 fingerprint 比对需要），
+    // 同时收集所有 (edge, value) 对
+    type EdgeValuePair = { edge: Edge; value: Value }
+    const allPairs: EdgeValuePair[] = []
+
     for (let i = 0; i < this.portCount; i++) {
       const inPort = this.inputPortsList[i]
       const outPort = this.outputPortsList[i]
       const [value] = inPort.value
       if (value === undefined) continue
-      outPort.commit(value, force ? { force: true } : undefined)
+
+      outPort.setCurrentValue(value)
+      for (const edge of outPort.edges) {
+        allPairs.push({ edge, value })
+      }
+    }
+
+    // 第二步：按目标 Node 分桶
+    const byOwner = new Map<Node, { edges: Edge[]; values: Value[] }>()
+    for (const { edge, value } of allPairs) {
+      const owner = edge.endPort.getOwner()
+      if (!owner) continue
+      const group = byOwner.get(owner) ?? { edges: [], values: [] }
+      group.edges.push(edge)
+      group.values.push(value)
+      byOwner.set(owner, group)
+    }
+
+    // 第三步：分发——桶里 ≥2 条走 EdgeBatch，1 条走单条路径
+    for (const [, group] of byOwner) {
+      if (group.edges.length >= 2) {
+        new EdgeBatch(group.edges).transferData(group.values, force)
+      } else {
+        const edge = group.edges[0]!
+        const value = group.values[0]!
+        edge.transferData(value, force)
+      }
     }
   }
 

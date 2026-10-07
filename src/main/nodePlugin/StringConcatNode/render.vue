@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { StringConcatNode } from './node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
+import { useNodeDetail } from '@renderer/composables/useNodeDetail'
 import { viewport } from '@renderer/canvas/viewport'
 import { messages } from './i18n'
 import HelpDialog from '@renderer/components/HelpDialog.vue'
@@ -31,29 +32,21 @@ const t = useLocalizedMessages(messages)
 
 // 帮助浮层开关（弹窗壳由 HelpDialog 负责）
 const showHelp = ref(false)
-// 查看完整拼接结果的覆层开关
-const showFullResult = ref(false)
-// 大窗口模板编辑弹窗开关
-const showEditTemplate = ref(false)
 
-const editTemplateRef = ref<HTMLTextAreaElement | null>(null)
-watch(showEditTemplate, (val) => {
-  if (!val) return
-  nextTick(() => editTemplateRef.value?.focus())
-})
+const { openNodeDetail } = useNodeDetail()
 
-const templateValue = ref('')
 const resultValue = ref('')
-const inputCount = ref(0)
 
 let offChanged: (() => void) | undefined
 
 onMounted(() => {
   const node = concatNode.value
   if (!node) return
-  sync(node)
+  resultValue.value = node.displayResult
   offChanged = node.onChanged(() => {
-    if (concatNode.value) sync(concatNode.value)
+    if (concatNode.value) {
+      resultValue.value = concatNode.value.displayResult
+    }
   })
 })
 
@@ -61,28 +54,8 @@ onUnmounted(() => {
   offChanged?.()
 })
 
-function sync(node: StringConcatNode): void {
-  templateValue.value = node.templateText
-  resultValue.value = node.displayResult
-  inputCount.value = node.inputCount
-}
-
 // 拖拽（落点写回 node.position）；位置本身由外壳跟随 node.position 展示。
 const { startDrag } = useNodePosition(() => concatNode.value)
-
-/** 模板框敲字 → 更新模板并立即重算 */
-function onInput(e: Event): void {
-  const target = e.target as HTMLTextAreaElement
-  concatNode.value?.setTemplate(target.value)
-}
-
-function onAddPort(): void {
-  concatNode.value?.addInputPort()
-}
-
-function onRemovePort(): void {
-  concatNode.value?.removeLastInputPort()
-}
 
 // —— resize handle 拖拽：右下角双向自由调整宽高，不锁比例 ——
 const MIN_WIDTH = 220
@@ -124,71 +97,31 @@ function onResizePointerDown(e: PointerEvent): void {
   <div class="node">
     <div class="node__header" @pointerdown="startDrag">
       <span class="node__handle" :title="t('dragHint')">{{ nodeTitle }}</span>
-      <button
-        class="node__help"
-        type="button"
-        :title="t('helpTitle')"
-        @pointerdown.stop
-        @click.stop="showHelp = true"
-      >?</button>
-    </div>
-
-    <div class="node__template-wrap">
-      <textarea
-        class="node__template"
-        rows="3"
-        :value="templateValue"
-        :disabled="!concatNode"
-        :placeholder="t('templatePlaceholder')"
-        @input="onInput"
-      />
-      <button
-        class="node__template-edit"
-        type="button"
-        :title="t('editTemplateHint')"
-        @pointerdown.stop
-        @click.stop="showEditTemplate = true"
-      >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-        </svg>
-      </button>
-    </div>
-
-    <div class="node__ports">
-      <span class="node__ports-count">{{ t('portsCount', { n: inputCount }) }}</span>
-      <div class="node__ports-actions">
+      <div class="node__actions">
         <button
-          class="node__btn"
+          class="node__help"
           type="button"
-          :title="t('removePortHint')"
-          :disabled="!concatNode || inputCount <= 1"
-          @click="onRemovePort"
-        >
-          －
-        </button>
+          :title="t('helpTitle')"
+          @pointerdown.stop
+          @click.stop="showHelp = true"
+        >?</button>
         <button
-          class="node__btn"
+          class="node__edit"
           type="button"
-          :title="t('addPortHint')"
-          :disabled="!concatNode"
-          @click="onAddPort"
+          :title="t('editTemplateHint')"
+          @pointerdown.stop
+          @click.stop="openNodeDetail(id)"
         >
-          ＋
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+          </svg>
         </button>
       </div>
     </div>
 
     <div class="node__result">
       <div class="node__result-text" :title="resultValue">{{ resultValue || t('resultPlaceholder') }}</div>
-      <button
-        v-if="resultValue"
-        class="node__result-expand"
-        type="button"
-        :title="t('expandResult')"
-        @click.stop="showFullResult = true"
-      >⤢</button>
     </div>
 
     <div
@@ -202,33 +135,6 @@ function onResizePointerDown(e: PointerEvent): void {
   <!-- 帮助弹窗 -->
   <HelpDialog :visible="showHelp" :title="t('helpDialogTitle')" @close="showHelp = false">
     <StringConcatHelpDialog />
-  </HelpDialog>
-
-  <!-- 完整结果覆层 -->
-  <HelpDialog
-    :visible="showFullResult"
-    :title="t('fullResultDialogTitle')"
-    width="80vw"
-    @close="showFullResult = false"
-  >
-    <pre class="full-result">{{ resultValue }}</pre>
-  </HelpDialog>
-
-  <!-- 大窗口模板编辑 -->
-  <HelpDialog
-    :visible="showEditTemplate"
-    :title="t('editTemplateDialogTitle')"
-    width="90vw"
-    @close="showEditTemplate = false"
-  >
-    <textarea
-      ref="editTemplateRef"
-      class="template-edit-textarea"
-      :value="templateValue"
-      :disabled="!concatNode"
-      :placeholder="t('templatePlaceholder')"
-      @input="onInput"
-    />
   </HelpDialog>
 </template>
 
@@ -265,71 +171,29 @@ function onResizePointerDown(e: PointerEvent): void {
     font-size: 12px;
     color: @color-text-weak;
     padding: 2px 0;
+    flex: 1; // 撑满 header，让 actions 靠右
   }
 
-  &__help {
+  &__actions {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+
+  &__help,
+  &__edit {
     all: unset;
     cursor: pointer;
-    margin-left: auto;
-    width: 18px;
-    height: 18px;
+    width: 20px;
+    height: 20px;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 50%;
     background: #f3f4f6;
     color: #6b7280;
-    font-size: 12px;
-    font-weight: 600;
-    line-height: 1;
     transition: background 0.15s, color 0.15s;
-
-    &:hover {
-      background: #dbeafe;
-      color: #2563eb;
-    }
-  }
-
-  &__template {
-    width: 100%;
-    height: 80px;
-    overflow: hidden;
-    box-sizing: border-box;
-    padding: 6px 8px;
-    padding-right: 28px; // 给右上角编辑按钮留空间
-    border: 1px solid @node-border-color;
-    border-radius: 6px;
-    font-size: 13px;
-    font-family: inherit;
-    resize: vertical;
     flex-shrink: 0;
-
-    &:disabled {
-      opacity: 0.5;
-    }
-  }
-
-  &__template-wrap {
-    position: relative;
-    flex-shrink: 0;
-  }
-
-  &__template-edit {
-    all: unset;
-    position: absolute;
-    top: 4px;
-    right: 4px;
-    cursor: pointer;
-    width: 30px;
-    height: 30px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 4px;
-    background: #f3f4f6;
-    color: #6b7280;
-    border: solid 1px;
-    transition: background 0.15s, color 0.15s;
 
     svg {
       width: 12px;
@@ -342,43 +206,10 @@ function onResizePointerDown(e: PointerEvent): void {
     }
   }
 
-  &__ports {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    font-size: 11px;
-    color: @color-text-weak;
-    flex-shrink: 0;
-  }
-
-  &__ports-actions {
-    display: flex;
-    gap: 4px;
-  }
-
-  &__btn {
-    all: unset;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 22px;
-    height: 22px;
-    border: 1px solid @node-border-color;
-    border-radius: 4px;
-    font-size: 13px;
+  &__help {
+    font-size: 12px;
+    font-weight: 600;
     line-height: 1;
-    color: @color-text;
-
-    &:hover:not(:disabled) {
-      border-color: @color-primary;
-      color: @color-primary;
-    }
-
-    &:disabled {
-      cursor: not-allowed;
-      opacity: 0.4;
-    }
   }
 
   &__result {
@@ -436,50 +267,6 @@ function onResizePointerDown(e: PointerEvent): void {
     border-right: 2px solid #b0b7c3;
     border-bottom: 2px solid #b0b7c3;
     border-bottom-right-radius: 4px;
-  }
-}
-
-/* 完整结果弹窗内的 pre（scoped + Teleport 仍可匹配，因为 data-v 属性跟元素走） */
-.full-result {
-  margin: 0;
-  padding: 12px 16px;
-  max-height: 70vh;
-  overflow: auto;
-  font-size: 13px;
-  line-height: 1.6;
-  font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
-  white-space: pre-wrap;
-  word-break: break-all;
-  background: #f7f8fa;
-  border-radius: 8px;
-  color: #1f2937;
-  user-select: text;
-}
-
-/* 大窗口模板编辑弹窗内的 textarea */
-.template-edit-textarea {
-  display: block;
-  width: 100%;
-  height: 65vh;
-  box-sizing: border-box;
-  padding: 12px 14px;
-  border: 1px solid @node-border-color;
-  border-radius: 8px;
-  font-size: 14px;
-  line-height: 1.6;
-  font-family: inherit;
-  resize: none;
-  white-space: pre-wrap;
-  word-break: break-all;
-  overflow-y: auto;
-
-  &:focus {
-    outline: none;
-    border-color: #2563eb;
-  }
-
-  &:disabled {
-    opacity: 0.5;
   }
 }
 </style>

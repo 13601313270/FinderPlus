@@ -131,7 +131,7 @@ defineProps<{
 
 <style>
 .jt-head {
-  white-space: nowrap;
+  /* white-space: nowrap; */
 }
 
 .jt-key {

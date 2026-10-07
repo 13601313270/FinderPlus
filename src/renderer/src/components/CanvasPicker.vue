@@ -84,18 +84,7 @@ function onKeyDown(e: KeyboardEvent): void {
     <!-- 顶部：应用名 + 标题 -->
     <div class="picker__header">
       <div class="picker__logo">
-        <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-          <rect width="36" height="36" rx="8" fill="#007AFF" />
-          <rect x="6" y="6" width="24" height="24" rx="3" stroke="white" stroke-width="1.5" fill="none" />
-          <circle cx="14" cy="14" r="2" fill="white" />
-          <circle cx="22" cy="14" r="2" fill="white" />
-          <circle cx="14" cy="22" r="2" fill="white" />
-          <circle cx="22" cy="22" r="2" fill="white" />
-          <line x1="14" y1="14" x2="22" y2="14" stroke="white" stroke-width="1" opacity="0.6" />
-          <line x1="14" y1="22" x2="22" y2="22" stroke="white" stroke-width="1" opacity="0.6" />
-          <line x1="14" y1="14" x2="14" y2="22" stroke="white" stroke-width="1" opacity="0.6" />
-          <line x1="22" y1="14" x2="22" y2="22" stroke="white" stroke-width="1" opacity="0.6" />
-        </svg>
+        <img src="../assets/images/app-icon.png" alt="CanvasDesk logo" width="56" height="56" />
       </div>
       <h1 class="picker__title">选择画布</h1>
       <p class="picker__subtitle">Finder+</p>

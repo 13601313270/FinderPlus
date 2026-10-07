@@ -19,6 +19,7 @@ import ContextMenu, { type MenuItem } from './components/ContextMenu.vue'
 import type { NodeMenuItem } from '../../main/engine/node/Node'
 import { canvasNotice } from '@renderer/canvas/notice'
 import HelpCenter from './components/HelpCenter.vue'
+import NodeDetailDialog from './components/NodeDetailDialog.vue'
 import OnboardingGuide from './components/OnboardingGuide.vue'
 import SettingsDialog from './components/SettingsDialog.vue'
 import PromptDialog from './components/PromptDialog.vue'
@@ -995,6 +996,9 @@ onUnmounted(() => {
 
     <!-- 全局帮助中心：列出所有注册了 help 的节点，点击左侧项动态加载帮助组件 -->
     <HelpCenter />
+
+    <!-- 全局节点详情弹窗：三栏布局（INPUT | detailPanel | OUTPUT），节点自己的中间栏由 manifest.detailPanel 异步加载 -->
+    <NodeDetailDialog />
 
     <!-- 全局设置弹窗：顶部栏「设置」按钮和系统应用菜单「设置…」共享它 -->
     <SettingsDialog />

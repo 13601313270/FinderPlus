@@ -55,6 +55,20 @@ export interface NodePluginManifest {
    * 点击节点上的帮助按钮时会 resolve 这个函数，把默认导出的组件嵌进 HelpDialog 弹窗。
    */
   readonly help?: () => Promise<{ default: Component }>
+  /**
+   * 节点详情弹窗的中间栏组件（可选）。
+   * 声明了这个字段的节点会在 NodeShell 上自动出现一个「详情」按钮，
+   * 点开后弹出全局 NodeDetailDialog（三栏：INPUT | detailPanel | OUTPUT）。
+   *
+   * 节点自己的 render.vue 也可以手动调 `openNodeDetail(nodeId)` 打开同一个弹窗——
+   * 两种方式复用同一套状态和组件，不互斥。
+   *
+   * 中间栏组件接收 props: { nodeId: string }，自行到 workspaceScene 里拿节点实例，
+   * 改节点状态的方式跟画布上的 render.vue 完全一样（node.setXxx → notifyChanged → UI 同步）。
+   *
+   * 异步加载函数形式，如 `detailPanel: () => import('./StringConcatDetailPanel.vue')`。
+   */
+  readonly detailPanel?: () => Promise<{ default: Component }>
 }
 
 /**

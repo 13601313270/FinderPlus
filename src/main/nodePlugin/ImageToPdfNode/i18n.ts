@@ -17,6 +17,14 @@ export const messages = {
     zh: '生成中…',
     en: 'Generating…'
   },
+  pageSizeLabel: {
+    zh: '页面',
+    en: 'Page'
+  },
+  marginLabel: {
+    zh: '边距',
+    en: 'Margin'
+  },
   helpTitle: {
     zh: '使用说明',
     en: 'Help'

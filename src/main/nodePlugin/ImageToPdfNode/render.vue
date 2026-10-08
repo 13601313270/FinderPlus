@@ -2,7 +2,7 @@
 import { computed, ref, watch, onUnmounted } from 'vue'
 import { bytesToBase64 } from '../../engine/data/base64'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
-import { ImageToPdfNode } from './node'
+import { ImageToPdfNode, PAGE_SIZE_PRESETS, type PageSizePreset } from './node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
 import HelpDialog from '@renderer/components/HelpDialog.vue'
@@ -26,7 +26,11 @@ const { startDrag } = useNodePosition(() => node.value)
 const connectedCount = ref(0)
 const totalPorts = ref(1)
 const isGenerating = ref(false)
-const lastFileName = ref('')
+const pageSize = ref<PageSizePreset>('A4')
+const margin = ref(20)
+
+/** 预设下拉可选项 */
+const pageSizeOptions = Object.keys(PAGE_SIZE_PRESETS) as PageSizePreset[]
 
 let unsubscribe: (() => void) | undefined
 watch(
@@ -36,10 +40,14 @@ watch(
     unsubscribe = n?.onChanged(() => {
       connectedCount.value = n.connectedImageCount
       totalPorts.value = n.inputPorts.length
+      pageSize.value = n.pdfPageSize
+      margin.value = n.pdfMargin
     })
     if (n) {
       connectedCount.value = n.connectedImageCount
       totalPorts.value = n.inputPorts.length
+      pageSize.value = n.pdfPageSize
+      margin.value = n.pdfMargin
     } else {
       connectedCount.value = 0
       totalPorts.value = 1
@@ -48,6 +56,18 @@ watch(
   { immediate: true, flush: 'sync' }
 )
 
+/** UI 改页面尺寸 → 写回节点 */
+function onPageSizeChange(val: PageSizePreset): void {
+  node.value?.setPdfPageSize(val)
+}
+
+/** UI 改边距 → 写回节点 */
+function onMarginChange(val: number | string): void {
+  const num = typeof val === 'string' ? parseInt(val, 10) : val
+  if (!Number.isFinite(num)) return
+  node.value?.setPdfMargin(num)
+}
+
 onUnmounted(() => {
   unsubscribe?.()
 })
@@ -55,8 +75,8 @@ onUnmounted(() => {
 /**
  * 生成 PDF 并 commit 到输出端口。
  * - 收集所有已连接端口的图片（按端口顺序）
- * - 用 pdf-lib 每张图作为一页，A4 页面 + contain 等比缩放居中
- * - 生成完成调 node.setOutput()
+ * - 用 pdf-lib 每张图作为一页，contain 等比缩放居中
+ * - 页面尺寸和边距从节点属性读取
  */
 async function generatePdf(): Promise<void> {
   const n = node.value
@@ -70,10 +90,9 @@ async function generatePdf(): Promise<void> {
     const { PDFDocument } = await import('pdf-lib')
     const pdfDoc = await PDFDocument.create()
 
-    // A4 页面尺寸（PDF points）：595.28 × 841.89
-    const A4_WIDTH = 595.28
-    const A4_HEIGHT = 841.89
-    const PAGE_MARGIN = 20 // 页面边距
+    const W = n.pdfPageWidth
+    const H = n.pdfPageHeight
+    const M = n.pdfMargin
 
     for (const { file } of images) {
       const arrayBuffer = await file.arrayBuffer()
@@ -93,26 +112,24 @@ async function generatePdf(): Promise<void> {
       }
 
       // 创建页面并 contain 模式绘制
-      const page = pdfDoc.addPage([A4_WIDTH, A4_HEIGHT])
-      const usableW = A4_WIDTH - PAGE_MARGIN * 2
-      const usableH = A4_HEIGHT - PAGE_MARGIN * 2
+      const page = pdfDoc.addPage([W, H])
+      const usableW = W - M * 2
+      const usableH = H - M * 2
       const imgAspect = embeddedImg.width / embeddedImg.height
       const pageAspect = usableW / usableH
 
       let drawW: number
       let drawH: number
       if (imgAspect > pageAspect) {
-        // 图片更宽 → 按页面可用宽度缩放
         drawW = usableW
         drawH = usableW / imgAspect
       } else {
-        // 图片更高或相等 → 按页面可用高度缩放
         drawH = usableH
         drawW = usableH * imgAspect
       }
 
-      const cx = PAGE_MARGIN + (usableW - drawW) / 2
-      const cy = PAGE_MARGIN + (usableH - drawH) / 2
+      const cx = M + (usableW - drawW) / 2
+      const cy = M + (usableH - drawH) / 2
 
       page.drawImage(embeddedImg, {
         x: cx,
@@ -122,14 +139,12 @@ async function generatePdf(): Promise<void> {
       })
     }
 
-    // 保存为 base64（用项目已有工具，内部是循环 String.fromCharCode 逐个调用，
-    // 避免对大 Uint8Array 做 spread 展开触发栈溢出）
+    // 保存为 base64（用项目已有工具，避免对大 Uint8Array 做 spread 展开触发栈溢出）
     const pdfBytes = await pdfDoc.save()
     const base64 = bytesToBase64(pdfBytes)
 
     const fileName = `output_${Date.now()}.pdf`
     n.setOutput(base64, fileName)
-    lastFileName.value = fileName
   } catch (err) {
     console.error('[ImageToPdfNode] PDF 生成失败：', err)
   } finally {
@@ -186,10 +201,29 @@ function convertToPngBytes(file: File): Promise<Uint8Array> {
     </div>
 
     <!-- 端口信息 -->
-    <div class="node-card__info">
-      <span class="node-card__count">
-        {{ t('imagesConnected', { connected: connectedCount, total: totalPorts }) }}
-      </span>
+    <div class="node-card__count">
+      {{ t('imagesConnected', { connected: connectedCount, total: totalPorts }) }}
+    </div>
+
+    <!-- 配置行：页面尺寸 + 边距 -->
+    <div class="node-card__config" @pointerdown.stop>
+      <label class="node-card__label">{{ t('pageSizeLabel') }}</label>
+      <select
+        class="node-card__select"
+        :value="pageSize"
+        @change="onPageSizeChange(($event.target as HTMLSelectElement).value as PageSizePreset)"
+      >
+        <option v-for="s in pageSizeOptions" :key="s" :value="s">{{ s }}</option>
+      </select>
+      <label class="node-card__label">{{ t('marginLabel') }}</label>
+      <input
+        class="node-card__input"
+        type="number"
+        min="0"
+        max="100"
+        :value="margin"
+        @change="onMarginChange(($event.target as HTMLInputElement).value)"
+      />
     </div>
 
     <!-- 生成按钮 -->
@@ -239,24 +273,50 @@ function convertToPngBytes(file: File): Promise<Uint8Array> {
   user-select: none;
   &:active { cursor: grabbing; }
 
-  &__icon {
-    width: 56px;
-    height: 56px;
-  }
-
-  &__icon-svg {
-    width: 100%;
-    height: 100%;
-    display: block;
-  }
-
-  &__info {
-    text-align: center;
-  }
+  &__icon { width: 48px; height: 48px; }
+  &__icon-svg { width: 100%; height: 100%; display: block; }
 
   &__count {
     font-size: 11px;
     color: @color-text-weak;
+  }
+
+  &__config {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    color: @color-text-weak;
+  }
+
+  &__label { font-size: 10px; color: @color-text-weak; white-space: nowrap; }
+
+  &__select {
+    all: unset;
+    padding: 1px 4px;
+    font-size: 11px;
+    color: @color-text;
+    background: #fff;
+    border: 1px solid #d1d5db;
+    border-radius: 3px;
+    cursor: pointer;
+    min-width: 44px;
+
+    &:hover { border-color: #9ca3af; }
+  }
+
+  &__input {
+    all: unset;
+    width: 42px;
+    padding: 1px 4px;
+    font-size: 11px;
+    color: @color-text;
+    background: #fff;
+    border: 1px solid #d1d5db;
+    border-radius: 3px;
+    text-align: center;
+
+    &:focus { border-color: #4a7cff; outline: none; }
   }
 
   &__btn {
@@ -271,10 +331,7 @@ function convertToPngBytes(file: File): Promise<Uint8Array> {
     transition: background 0.15s;
 
     &:hover:not(:disabled) { background: #2d5de0; }
-    &:disabled {
-      background: #c5cbd4;
-      cursor: not-allowed;
-    }
+    &:disabled { background: #c5cbd4; cursor: not-allowed; }
   }
 
   &__help {
@@ -296,10 +353,7 @@ function convertToPngBytes(file: File): Promise<Uint8Array> {
     line-height: 1;
     transition: background 0.15s, color 0.15s;
 
-    &:hover {
-      background: #dbeafe;
-      color: #2563eb;
-    }
+    &:hover { background: #dbeafe; color: #2563eb; }
   }
 }
 </style>

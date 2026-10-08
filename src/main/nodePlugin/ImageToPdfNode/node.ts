@@ -7,6 +7,25 @@ import { OutputPort } from '../../engine/port/OutputPort'
 import { Node } from '../../engine/node/Node'
 
 /**
+ * 预设页面尺寸（单位：PDF points，1pt = 1/72 英寸）。
+ * 全部 portrait（纵向），用户可以通过 width/height setter 自由改。
+ */
+export const PAGE_SIZE_PRESETS: Record<string, { width: number; height: number }> = {
+  A4:    { width: 595.28, height: 841.89 },
+  A3:    { width: 841.89, height: 1190.55 },
+  A5:    { width: 419.53, height: 595.28 },
+  Letter:{ width: 612,    height: 792 },
+  Legal: { width: 612,    height: 1008 }
+}
+
+export type PageSizePreset = keyof typeof PAGE_SIZE_PRESETS
+
+/** 默认页边距（PDF points，上下左右各一份） */
+const DEFAULT_MARGIN = 20
+const MIN_MARGIN = 0
+const MAX_MARGIN = 100
+
+/**
  * 图片转 PDF 节点：接收若干张图片，把每张图片作为 PDF 的一页，
  * 输出一个合并好的 PDF 文件。
  *
@@ -43,13 +62,24 @@ export class ImageToPdfNode extends Node {
     it: 'File PDF'
   })
 
+  /**
+   * PDF 页面尺寸（预设）。默认 A4。
+   * 用 setter 写入时会自动同步 pageWidth / pageHeight。
+   */
+  private pageSize: PageSizePreset = 'A4'
+  private pageWidth: number = PAGE_SIZE_PRESETS.A4.width
+  private pageHeight: number = PAGE_SIZE_PRESETS.A4.height
+
+  /** 页边距（PDF points，上下左右各一份）。默认 20 ≈ 7mm */
+  private pageMargin: number = DEFAULT_MARGIN
+
   constructor(id: string) {
     super(id)
     // 初始 1 个端口，后续按需自动扩
     this.addImagePort(0)
     this.addOutput(this.pdfOutput)
     // 内容区硬约束：简单的处理节点，比文件卡片宽一点
-    this.setBox(200, 180)
+    this.setBox(200, 200)
   }
 
   /** 创建并登记一个新的图片输入端口 */
@@ -168,7 +198,8 @@ export class ImageToPdfNode extends Node {
     const file = new File([ab], fileName, { type: 'application/pdf' })
     const hash = djb2(base64)
     this.pdfOutput.commit(new PdfFileValue(file, hash))
-    this.notifyChanged()
+    // 消化 dirty → stable：commit 了输出 = 输入的图片已经被处理完了
+    this.completeRun()
   }
 
   /** 所有端口都连接了图片值（render.vue 用来决定是否可以生成 PDF） */
@@ -182,13 +213,47 @@ export class ImageToPdfNode extends Node {
     return this.inputPorts.filter((p) => p.incoming.size > 0).length
   }
 
+  // —— PDF 页面配置 ——
+
+  /** 当前页面尺寸预设 key（'A4' / 'A3' / ...） */
+  get pdfPageSize(): PageSizePreset { return this.pageSize }
+  /** 当前页面宽度（PDF points） */
+  get pdfPageWidth(): number { return this.pageWidth }
+  /** 当前页面高度（PDF points） */
+  get pdfPageHeight(): number { return this.pageHeight }
+  /** 当前页边距（PDF points，上下左右各一份） */
+  get pdfMargin(): number { return this.pageMargin }
+
+  /**
+   * 按预设 key 设置页面尺寸。已知 key 用预设值，未知 key 忽略。
+   */
+  setPdfPageSize(preset: PageSizePreset): void {
+    const p = PAGE_SIZE_PRESETS[preset]
+    if (!p) return
+    if (this.pageSize === preset) return
+    this.pageSize = preset
+    this.pageWidth = p.width
+    this.pageHeight = p.height
+    this.notifyChanged()
+  }
+
+  /** 设置页边距（PDF points），自动夹紧到 [0, 100] */
+  setPdfMargin(margin: number): void {
+    const m = Math.round(Math.max(MIN_MARGIN, Math.min(MAX_MARGIN, margin)))
+    if (m === this.pageMargin) return
+    this.pageMargin = m
+    this.notifyChanged()
+  }
+
   // —— 序列化 ——
 
   saveState(): Record<string, unknown> {
     const [w, h] = this.box
     return {
       box: [w, h],
-      portCount: this.inputPorts.length
+      portCount: this.inputPorts.length,
+      pageSize: this.pageSize,
+      margin: this.pageMargin
     }
   }
 
@@ -196,6 +261,14 @@ export class ImageToPdfNode extends Node {
     const savedCount = typeof state.portCount === 'number' && state.portCount >= 1
       ? state.portCount : 1
     const savedBox = state.box as [number, number] | undefined
+
+    // 页面配置
+    if (typeof state.pageSize === 'string' && state.pageSize in PAGE_SIZE_PRESETS) {
+      this.setPdfPageSize(state.pageSize as PageSizePreset)
+    }
+    if (typeof state.margin === 'number') {
+      this.setPdfMargin(state.margin)
+    }
 
     if (Array.isArray(savedBox) && savedBox.length === 2) {
       this.setBox(savedBox[0], savedBox[1])

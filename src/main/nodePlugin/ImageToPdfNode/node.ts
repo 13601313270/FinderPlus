@@ -20,6 +20,16 @@ export const PAGE_SIZE_PRESETS: Record<string, { width: number; height: number }
 
 export type PageSizePreset = keyof typeof PAGE_SIZE_PRESETS
 
+/**
+ * 图片在页面上的适配模式（类比 CSS object-fit）：
+ * - contain: 等比缩放，完整显示，居中留白（默认，不变形）
+ * - fill: 拉伸铺满页面，不保持宽高比（可能变形）
+ * - cover: 等比缩放，铺满页面，裁剪溢出部分（无留白）
+ */
+export type FitMode = 'contain' | 'fill' | 'cover'
+
+const DEFAULT_FIT: FitMode = 'contain'
+
 /** 默认页边距（PDF points，上下左右各一份）。0 = 铺满页面无白边 */
 const DEFAULT_MARGIN = 0
 const MIN_MARGIN = 0
@@ -70,8 +80,11 @@ export class ImageToPdfNode extends Node {
   private pageWidth: number = PAGE_SIZE_PRESETS.A4.width
   private pageHeight: number = PAGE_SIZE_PRESETS.A4.height
 
-  /** 页边距（PDF points，上下左右各一份）。默认 20 ≈ 7mm */
+  /** 页边距（PDF points，上下左右各一份）。默认 0 = 铺满无白边 */
   private pageMargin: number = DEFAULT_MARGIN
+
+  /** 图片适配模式：contain / fill / cover */
+  private fitMode: FitMode = DEFAULT_FIT
 
   constructor(id: string) {
     super(id)
@@ -245,6 +258,16 @@ export class ImageToPdfNode extends Node {
     this.notifyChanged()
   }
 
+  /** 当前图片适配模式 */
+  get pdfFitMode(): FitMode { return this.fitMode }
+
+  /** 设置图片适配模式。未知值忽略 */
+  setPdfFitMode(mode: FitMode): void {
+    if (mode === this.fitMode) return
+    this.fitMode = mode
+    this.notifyChanged()
+  }
+
   // —— 序列化 ——
 
   saveState(): Record<string, unknown> {
@@ -253,7 +276,8 @@ export class ImageToPdfNode extends Node {
       box: [w, h],
       portCount: this.inputPorts.length,
       pageSize: this.pageSize,
-      margin: this.pageMargin
+      margin: this.pageMargin,
+      fitMode: this.fitMode
     }
   }
 
@@ -268,6 +292,9 @@ export class ImageToPdfNode extends Node {
     }
     if (typeof state.margin === 'number') {
       this.setPdfMargin(state.margin)
+    }
+    if (state.fitMode === 'contain' || state.fitMode === 'fill' || state.fitMode === 'cover') {
+      this.setPdfFitMode(state.fitMode)
     }
 
     if (Array.isArray(savedBox) && savedBox.length === 2) {

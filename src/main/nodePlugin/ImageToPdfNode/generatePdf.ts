@@ -42,15 +42,33 @@ export async function generatePdfFromNode(node: ImageToPdfNode): Promise<void> {
     const usableH = H - M * 2
     const imgAspect = embeddedImg.width / embeddedImg.height
     const pageAspect = usableW / usableH
+    const fit = node.pdfFitMode
 
     let drawW: number
     let drawH: number
-    if (imgAspect > pageAspect) {
+
+    if (fit === 'fill') {
+      // 拉伸铺满，不保持比例（可能变形）
       drawW = usableW
-      drawH = usableW / imgAspect
-    } else {
       drawH = usableH
-      drawW = usableH * imgAspect
+    } else if (fit === 'cover') {
+      // 等比缩放铺满，裁剪溢出部分（以短边为基准）
+      if (imgAspect > pageAspect) {
+        drawH = usableH
+        drawW = usableH * imgAspect
+      } else {
+        drawW = usableW
+        drawH = usableW / imgAspect
+      }
+    } else {
+      // contain：等比缩放完整显示，居中留白（默认）
+      if (imgAspect > pageAspect) {
+        drawW = usableW
+        drawH = usableW / imgAspect
+      } else {
+        drawH = usableH
+        drawW = usableH * imgAspect
+      }
     }
 
     const cx = M + (usableW - drawW) / 2

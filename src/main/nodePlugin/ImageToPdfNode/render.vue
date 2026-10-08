@@ -29,6 +29,7 @@ const { startDrag } = useNodePosition(() => node.value)
 const connectedCount = ref(0)
 const totalPorts = ref(1)
 const pageSize = ref<string>('A4')
+const fitMode = ref<string>('contain')
 const isGenerating = ref(false)
 
 let unsubscribe: (() => void) | undefined
@@ -40,11 +41,13 @@ watch(
       connectedCount.value = n.connectedImageCount
       totalPorts.value = n.inputPorts.length
       pageSize.value = n.pdfPageSize
+      fitMode.value = n.pdfFitMode
     })
     if (n) {
       connectedCount.value = n.connectedImageCount
       totalPorts.value = n.inputPorts.length
       pageSize.value = n.pdfPageSize
+      fitMode.value = n.pdfFitMode
     } else {
       connectedCount.value = 0
       totalPorts.value = 1
@@ -99,7 +102,10 @@ async function onGenerate(): Promise<void> {
       <span class="node-card__count">
         {{ t('imagesConnected', { connected: connectedCount, total: totalPorts }) }}
       </span>
-      <span class="node-card__pagesize">{{ pageSize }}</span>
+      <span class="node-card__tags">
+        <span class="node-card__pagesize">{{ pageSize }}</span>
+        <span class="node-card__fit">{{ fitMode }}</span>
+      </span>
     </div>
 
     <!-- 生成按钮（紧凑版） -->
@@ -175,11 +181,22 @@ async function onGenerate(): Promise<void> {
 
   &__count { font-size: 10px; color: @color-text-weak; }
 
+  &__tags { display: flex; gap: 2px; }
+
   &__pagesize {
     font-size: 10px;
     font-weight: 600;
     color: #e53e3e;
     background: #fef2f2;
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+
+  &__fit {
+    font-size: 10px;
+    font-weight: 600;
+    color: #2563eb;
+    background: #eff6ff;
     padding: 1px 5px;
     border-radius: 3px;
   }

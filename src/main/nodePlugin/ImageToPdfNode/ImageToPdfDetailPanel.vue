@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
-import { ImageToPdfNode, PAGE_SIZE_PRESETS, type PageSizePreset } from './node'
+import { ImageToPdfNode, PAGE_SIZE_PRESETS, type PageSizePreset, type FitMode } from './node'
 import { generatePdfFromNode } from './generatePdf'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
 import { messages } from './i18n'
@@ -24,11 +24,17 @@ const pdfNode = computed(() => {
 
 const pageSize = ref<PageSizePreset>('A4')
 const margin = ref(0)
+const fitMode = ref<FitMode>('contain')
 const connectedCount = ref(0)
 const totalPorts = ref(1)
 const isGenerating = ref(false)
 
 const pageSizeOptions = Object.keys(PAGE_SIZE_PRESETS) as PageSizePreset[]
+const fitOptions: { value: FitMode; label: string }[] = [
+  { value: 'contain', label: 'Contain' },
+  { value: 'fill',    label: 'Fill' },
+  { value: 'cover',   label: 'Cover' }
+]
 
 let offChanged: (() => void) | undefined
 
@@ -48,6 +54,7 @@ onUnmounted(() => {
 function sync(n: ImageToPdfNode): void {
   pageSize.value = n.pdfPageSize
   margin.value = n.pdfMargin
+  fitMode.value = n.pdfFitMode
   connectedCount.value = n.connectedImageCount
   totalPorts.value = n.inputPorts.length
 }
@@ -65,6 +72,10 @@ function onMarginChange(val: number | string): void {
   const num = typeof val === 'string' ? parseInt(val, 10) : val
   if (!Number.isFinite(num)) return
   pdfNode.value?.setPdfMargin(num)
+}
+
+function onFitChange(val: FitMode): void {
+  pdfNode.value?.setPdfFitMode(val)
 }
 
 /** 详情面板里的生成按钮——和卡片上的按钮调同一个共享函数 */
@@ -115,6 +126,19 @@ async function onGenerate(): Promise<void> {
         @change="onMarginChange(($event.target as HTMLInputElement).value)"
       />
       <div class="detail-panel__hint">{{ t('marginHint') }}</div>
+    </div>
+
+    <!-- 适配模式 -->
+    <div class="detail-panel__section">
+      <label class="detail-panel__label">{{ t('fitModeLabel') }}</label>
+      <select
+        class="detail-panel__select"
+        :value="fitMode"
+        @change="onFitChange(($event.target as HTMLSelectElement).value as FitMode)"
+      >
+        <option v-for="opt in fitOptions" :key="opt.value" :value="opt.value">{{ t(`fitMode_${opt.value}`) }}</option>
+      </select>
+      <div class="detail-panel__hint">{{ t(`fitModeHint_${fitMode}`) }}</div>
     </div>
 
     <!-- 生成按钮 -->

@@ -79,6 +79,8 @@ export class OutputPort {
   /**
    * 渲染层 tooltip 图片预览用：如果当前产出值是 FileValue 子类，返回它携带的 File 对象。
    * 非文件值 / 还没产出值时均为 undefined。
+   *
+   * @deprecated 请直接读 value 给 ValueRenderer，由 ImgFileValueRenderer 自己 createObjectURL
    */
   get currentValueFile(): File | undefined {
     return (this.currentValue as { file?: File | undefined } | undefined)?.file

@@ -5,8 +5,7 @@ import { useNodeDetail } from '@renderer/composables/useNodeDetail'
 import { resolveNodeTitle } from '../../../main/nodePlugin/manifest'
 import { getNodeManifest } from '../../../main/nodePlugin'
 import { useLanguageSettings } from '@renderer/composables/useLanguageSettings'
-import JsonTreeNode from './JsonTreeNode.vue'
-import type { Value } from '../../../main/engine/data/Value'
+import ValueRenderer from './ValueRenderer.vue'
 
 /**
  * 节点详情弹窗：左 INPUT / 中 detailPanel / 右 OUTPUT 三栏布局。
@@ -105,14 +104,14 @@ const outputPorts = computed(() => {
   return node.value?.outputPorts ?? []
 })
 
-/** InputPort 的展示数据（带解析好的 label + 值快照） */
+/** InputPort 的展示数据（带解析好的 label + 原始 Value 实例数组） */
 const inputPortDisplays = computed(() => {
   nodeTick.value // 直接依赖 tick——跳过中间 inputPorts computed 的引用比较优化
   return inputPorts.value.map((p) => ({
     id: p.id,
     name: resolvePortLabel(p.label, p.id),
     typeNames: p.acceptValueNames.join('/'),
-    values: portInputValues(p)
+    values: p.value // 直接拿引擎侧的 readonly Value[]，不再做 valueToPlain 切片
   }))
 })
 
@@ -123,63 +122,9 @@ const outputPortDisplays = computed(() => {
     id: p.id,
     name: resolvePortLabel(p.label, p.id),
     typeName: p.outputValueName,
-    value: portOutputValue(p)
+    value: p.value // 直接拿引擎侧的 Value | undefined
   }))
 })
-
-/**
- * 把 Value 实例转成可 JSON 展示的 plain value。
- * JsonTreeNode 只吃 JS 原始类型（object / array / string / number / boolean / null），
- * 所以这里做一次提取。isNull 的值统一映射成 null（不是字符串）。
- */
-function valueToPlain(v: Value): unknown {
-  if (v.isNull) return null
-
-  // 从实例的 constructor 上取 VALUE_NAME（静态属性）。
-  // constructor 类型是 Function，先转 unknown 再读属性。
-  const ctor = v.constructor as unknown as { VALUE_NAME: string }
-  const kind = ctor.VALUE_NAME
-
-  // FileValue / ImgFileValue / TxtFileValue：展示摘要
-  if (kind.includes('file')) {
-    const f = (v as { file?: File | undefined }).file
-    if (f) {
-      return {
-        name: f.name,
-        size: `${(f.size / 1024).toFixed(1)} KB`,
-        type: f.type || '(unknown)'
-      }
-    }
-  }
-  // 通用：直接取 value 字段（StringValue/NumberValue/BoolValue/JsonValue 都有）
-  const maybeValue = (v as { value?: unknown }).value
-  return maybeValue
-}
-
-/** 从 Value 实例读静态 VALUE_NAME 的类型安全封装 */
-function valueKind(v: Value): string {
-  return (v.constructor as unknown as { VALUE_NAME: string }).VALUE_NAME
-}
-
-/** 多值端口：可能有多条连线连入，每条有各自的值 */
-function portInputValues(port: { value: readonly Value[]; incomingEdgeCount: number }): { label: string; plain: unknown; isNull: boolean }[] {
-  if (port.incomingEdgeCount === 0) return []
-  return port.value.map((v) => ({
-    label: valueKind(v),
-    plain: valueToPlain(v),
-    isNull: v.isNull
-  }))
-}
-
-/** OutputPort 的当前值 */
-function portOutputValue(port: { value?: Value }): { label: string; plain: unknown; isNull: boolean } | null {
-  if (!port.value) return null
-  return {
-    label: valueKind(port.value),
-    plain: valueToPlain(port.value),
-    isNull: port.value.isNull
-  }
-}
 
 // —— 关闭逻辑 ——
 function onMaskClick(): void {
@@ -226,11 +171,11 @@ onUnmounted(() => {
                   </div>
                   <div class="detail-port__values">
                     <template v-if="p.values.length > 0">
-                      <JsonTreeNode
+                      <ValueRenderer
                         v-for="(v, idx) in p.values"
                         :key="idx"
-                        :value="v.plain"
-                        :default-expanded="false"
+                        :value="v"
+                        context="detail"
                       />
                     </template>
                     <div v-else class="detail-port__empty">(未连接)</div>
@@ -272,10 +217,7 @@ onUnmounted(() => {
                   </div>
                   <div class="detail-port__values">
                     <template v-if="p.value">
-                      <JsonTreeNode
-                        :value="p.value.plain"
-                        :default-expanded="false"
-                      />
+                      <ValueRenderer :value="p.value" context="detail" />
                     </template>
                     <div v-else class="detail-port__empty">(无产出)</div>
                   </div>

@@ -9,6 +9,8 @@ import {
   type PortSide
 } from '@renderer/canvas/elements'
 import { connectionDrag, startConnectDrag } from '@renderer/canvas/connectionDrag'
+import ValueRenderer from './ValueRenderer.vue'
+import type { Value } from '../../../main/engine/data/Value'
 
 const props = defineProps<{
   nodeId: string
@@ -118,40 +120,23 @@ const tooltipEl = ref<HTMLElement | null>(null)   // 用来量真实尺寸
 
 let showTimer: ReturnType<typeof setTimeout> | null = null
 
-/** tooltip 展示的图片预览 URL 列表（hover 时 createObjectURL，hide 时 revoke） */
-const imageUrls = ref<{ url: string; name: string }[]>([])
-
-/** hover 期间累积的 objectURL，hide 时统一 revoke 防内存泄漏 */
-let pendingRevoke: string[] = []
-function revokeAllUrls(): void {
-  for (const u of pendingRevoke) URL.revokeObjectURL(u)
-  pendingRevoke = []
-  imageUrls.value = []
-}
-
-/** tooltip 展示内容：有缓存值时列出标签，否则显示"暂无数据" */
-const tooltipLines = computed(() => {
+/**
+ * tooltip 要展示的 Value 实例列表。
+ *
+ * 为什么不是 computed：
+ *   InputPort.value / OutputPort.value 内部读的是原生 Map（this.incoming），
+ *   Vue Proxy 感知不到 Map 的 set/delete——如果做成 computed，上游值变了但 computed 的
+ *   依赖追踪没感知到，会一直返回旧缓存。
+ *
+ *   tooltip 模板只在 v-if="tooltipVisible" 为 true 时渲染，每次 show 必然是
+ *   刚 toggle true 的那帧，函数每次被调都拿最新数据，不复用缓存。
+ */
+function tooltipValues(): readonly Value[] {
   if (isIn) {
-    const values = props.port.currentValues
-    if (values && values.length > 0) return values
-    // 上游空但有 defaultValueLabel（单值场景）也展示
-    if (props.port.defaultValueLabel) return [props.port.defaultValueLabel]
-    return []
+    return (props.port.value as readonly Value[] | undefined) ?? []
   } else {
-    const v = props.port.currentValueLabel
+    const v = props.port.value as Value | undefined
     return v ? [v] : []
-  }
-})
-
-/** hover 时收集图片 File，返回 File[] */
-function collectImageFiles(): readonly File[] {
-  if (isIn) {
-    const files = props.port.currentValueFiles
-    if (!files?.length) return []
-    return files.filter(f => f.type.startsWith('image/'))
-  } else {
-    const f = props.port.currentValueFile
-    return f && f.type.startsWith('image/') ? [f] : []
   }
 }
 
@@ -170,16 +155,7 @@ function showTooltip(): void {
   showTimer = setTimeout(() => {
     showTimer = null
 
-    // 图片预览：hover 时才 createObjectURL，避免常驻内存
-    const imgs = collectImageFiles()
-    revokeAllUrls()  // 先清掉上一轮的，防止同端口重复 hover 时残留
-    for (const f of imgs) {
-      const url = URL.createObjectURL(f)
-      imageUrls.value.push({ url, name: f.name })
-      pendingRevoke.push(url)
-    }
-
-    // 先让它渲染出来（随便放个初始位置），渲染完再量真实尺寸精确定位
+    // 让 tooltip 渲染出来（ValueRenderer 内部各自 createObjectURL 等），渲染完量真实尺寸精确定位
     tooltipStyle.value = { left: '0px', top: '0px' }
     tooltipVisible.value = true
     nextTick(() => {
@@ -191,12 +167,11 @@ function showTooltip(): void {
 function hideTooltip(): void {
   clearShowTimer()
   tooltipVisible.value = false
-  revokeAllUrls()
+  // objectURL / 资源清理由各 ValueRenderer 的 onUnmounted 自己做——组件随 v-if 消失会自动触发
 }
 
 onUnmounted(() => {
   clearShowTimer()
-  revokeAllUrls()
 })
 
 /**
@@ -323,30 +298,14 @@ function updateTooltipPosition(): void {
         <span class="port-tooltip__name">{{ label }}</span>
       </div>
 
-      <!--  图片预览网格：hover 时 createObjectURL，单图大图，多图 2 列  -->
-      <div v-if="imageUrls.length > 0" class="port-tooltip__images"
-           :class="{ 'port-tooltip__images--single': imageUrls.length === 1 }">
-        <div
-          v-for="(img, i) in imageUrls"
-          :key="i"
-          class="port-tooltip__thumb"
-        >
-          <img :src="img.url" :alt="img.name" @load="updateTooltipPosition" />
-          <span class="port-tooltip__thumb-name">{{ img.name }}</span>
+      <!-- ValueRenderer 循环：每个 Value 实例自己按 kind 渲染（图片/JSON/文本…） -->
+      <div v-if="tooltipValues().length > 0" class="port-tooltip__values">
+        <div v-for="(v, i) in tooltipValues()" :key="i" class="port-tooltip__value">
+          <ValueRenderer :value="v" context="tooltip" @resize="updateTooltipPosition" />
         </div>
       </div>
 
-      <!--  文本标签行（图片端口也会显示文件名字段对应的 displayLabel）  -->
-      <div v-if="tooltipLines.length > 0" class="port-tooltip__values">
-        <div
-          v-for="(line, i) in tooltipLines"
-          :key="i"
-          class="port-tooltip__value"
-        >{{ line }}</div>
-      </div>
-
-      <div v-if="imageUrls.length === 0 && tooltipLines.length === 0"
-           class="port-tooltip__empty">暂无数据</div>
+      <div v-else class="port-tooltip__empty">暂无数据</div>
     </div>
   </Teleport>
 </template>

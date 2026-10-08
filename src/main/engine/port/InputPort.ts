@@ -155,6 +155,8 @@ export class InputPort {
   /**
    * 渲染层 tooltip 图片预览用：当前生效值里所有 FileValue 子类携带的 File 对象。
    * 无文件值返回空数组；不区分图片/文本，renderer 自己按 mimeType 过滤。
+   *
+   * @deprecated 请直接读 value 给 ValueRenderer，由各 renderer 自己处理图片预览
    */
   get currentValueFiles(): readonly File[] {
     const out: File[] = []

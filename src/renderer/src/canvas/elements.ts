@@ -1,5 +1,6 @@
 import { ref, type ComponentPublicInstance, type Ref } from 'vue'
 import type { LocalizedText } from '../../../shared/language'
+import type { Value } from '../../../main/engine/data/Value'
 
 /**
  * 画布元素的登记与测量：节点外壳多大、端口圆点在哪。
@@ -69,25 +70,31 @@ export interface PortLike {
    * 输入端口才有：当前接入的边数量。渲染层用来初始化连接状态。
    */
   readonly incomingEdgeCount?: number
+
+  // ── Value 实例级访问（供 ValueRenderer 消费） ──
+
   /**
-   * 输入端口才有：缓存的输入值标签列表，按端口 value getter 顺序。
-   * 渲染层 tooltip 用它展示端口上当前挂着的数据。
+   * Value 实例或实例数组。
+   *  - 输入端口：readonly Value[]（多值，空则 []）
+   *  - 输出端口：Value | undefined（单值，未产出则 undefined）
+   *
+   * 引擎侧 InputPort.value / OutputPort.value 本来就是这两个类型，
+   * renderer 读的时候用 isIn 做类型收窄即可。
    */
+  readonly value?: readonly Value[] | Value
+
+  // ── 以下为历史遗留切片字段（基于 Value 实例的 displayLabel / file 拆出来的） ──
+  // 待消费者全部迁到 ValueRenderer 后可统一删除。
+
+  /** @deprecated 用 valueInstances 喂给 ValueRenderer 代替 */
   readonly currentValues?: readonly string[]
-  /**
-   * 输出端口才有：缓存的输出值标签。
-   * 渲染层 tooltip 用它展示节点产出了什么。
-   */
+  /** @deprecated 用 valueInstance 喂给 ValueRenderer 代替 */
   readonly currentValueLabel?: string
-  /**
-   * 输入端口才有：当前生效值里所有 FileValue 子类携带的 File 对象（无文件值时空数组）。
-   * 渲染层 tooltip 按 mimeType 过滤出图片，用 createObjectURL 做预览。
-   */
+  /** @deprecated ImgFileValueRenderer 内部自己 createObjectURL 了 */
   readonly currentValueFiles?: readonly File[]
-  /**
-   * 输出端口才有：当前产出值若为 FileValue 子类则返回其 File，否则 undefined。
-   */
+  /** @deprecated ImgFileValueRenderer 内部自己 createObjectURL 了 */
   readonly currentValueFile?: File | undefined
+
   /**
    * 隐藏端口 label 文字（圆点仍然显示）。
    * 典型场景：节点内部已有文字说明每个端口的含义，再显示 label 就是冗余。

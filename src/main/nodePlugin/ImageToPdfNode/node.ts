@@ -20,8 +20,8 @@ export const PAGE_SIZE_PRESETS: Record<string, { width: number; height: number }
 
 export type PageSizePreset = keyof typeof PAGE_SIZE_PRESETS
 
-/** 默认页边距（PDF points，上下左右各一份） */
-const DEFAULT_MARGIN = 20
+/** 默认页边距（PDF points，上下左右各一份）。0 = 铺满页面无白边 */
+const DEFAULT_MARGIN = 0
 const MIN_MARGIN = 0
 const MAX_MARGIN = 100
 
@@ -78,8 +78,8 @@ export class ImageToPdfNode extends Node {
     // 初始 1 个端口，后续按需自动扩
     this.addImagePort(0)
     this.addOutput(this.pdfOutput)
-    // 内容区硬约束：简单的处理节点，比文件卡片宽一点
-    this.setBox(200, 200)
+    // 内容区硬约束：紧凑卡片 + 一行生成按钮
+    this.setBox(160, 138)
   }
 
   /** 创建并登记一个新的图片输入端口 */

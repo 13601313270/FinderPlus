@@ -15,7 +15,7 @@
  * @resize 事件：某些 renderer（ImgFileValue 等）内容加载后会撑大，
  *   父组件（如 NodePort tooltip）可以监听它重新定位。
  */
-import { computed, h, type PropType } from 'vue'
+import { computed, h } from 'vue'
 import type { Value } from '../../../main/engine/data/Value'
 import { resolveRenderer, NullValueRenderer } from './valueRenderers/index'
 

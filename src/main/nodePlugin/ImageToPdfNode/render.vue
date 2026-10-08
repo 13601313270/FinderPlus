@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { computed, ref, watch, onUnmounted } from 'vue'
-import { bytesToBase64 } from '../../engine/data/base64'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
-import { ImageToPdfNode, PAGE_SIZE_PRESETS, type PageSizePreset } from './node'
+import { ImageToPdfNode } from './node'
+import { generatePdfFromNode } from './generatePdf'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
+import { useNodeDetail } from '@renderer/composables/useNodeDetail'
 import HelpDialog from '@renderer/components/HelpDialog.vue'
+import GearIcon from '@renderer/components/icons/GearIcon.vue'
 import { messages } from './i18n'
 import ImageToPdfHelpDialog from './ImageToPdfHelpDialog.vue'
 
@@ -13,6 +15,7 @@ const props = defineProps<{ id: string }>()
 
 const t = useLocalizedMessages(messages)
 const showHelp = ref(false)
+const { openNodeDetail } = useNodeDetail()
 
 const node = computed(() => {
   const n = workspaceScene.getNode(props.id)
@@ -25,12 +28,8 @@ const { startDrag } = useNodePosition(() => node.value)
 // —— 卡片状态 ——
 const connectedCount = ref(0)
 const totalPorts = ref(1)
+const pageSize = ref<string>('A4')
 const isGenerating = ref(false)
-const pageSize = ref<PageSizePreset>('A4')
-const margin = ref(20)
-
-/** 预设下拉可选项 */
-const pageSizeOptions = Object.keys(PAGE_SIZE_PRESETS) as PageSizePreset[]
 
 let unsubscribe: (() => void) | undefined
 watch(
@@ -41,13 +40,11 @@ watch(
       connectedCount.value = n.connectedImageCount
       totalPorts.value = n.inputPorts.length
       pageSize.value = n.pdfPageSize
-      margin.value = n.pdfMargin
     })
     if (n) {
       connectedCount.value = n.connectedImageCount
       totalPorts.value = n.inputPorts.length
       pageSize.value = n.pdfPageSize
-      margin.value = n.pdfMargin
     } else {
       connectedCount.value = 0
       totalPorts.value = 1
@@ -56,125 +53,22 @@ watch(
   { immediate: true, flush: 'sync' }
 )
 
-/** UI 改页面尺寸 → 写回节点 */
-function onPageSizeChange(val: PageSizePreset): void {
-  node.value?.setPdfPageSize(val)
-}
-
-/** UI 改边距 → 写回节点 */
-function onMarginChange(val: number | string): void {
-  const num = typeof val === 'string' ? parseInt(val, 10) : val
-  if (!Number.isFinite(num)) return
-  node.value?.setPdfMargin(num)
-}
-
 onUnmounted(() => {
   unsubscribe?.()
 })
 
-/**
- * 生成 PDF 并 commit 到输出端口。
- * - 收集所有已连接端口的图片（按端口顺序）
- * - 用 pdf-lib 每张图作为一页，contain 等比缩放居中
- * - 页面尺寸和边距从节点属性读取
- */
-async function generatePdf(): Promise<void> {
+/** 卡片上的生成按钮 */
+async function onGenerate(): Promise<void> {
   const n = node.value
-  if (!n) return
-
-  const images = n.getConnectedImages()
-  if (images.length === 0) return
-
+  if (!n || isGenerating.value) return
   isGenerating.value = true
   try {
-    const { PDFDocument } = await import('pdf-lib')
-    const pdfDoc = await PDFDocument.create()
-
-    const W = n.pdfPageWidth
-    const H = n.pdfPageHeight
-    const M = n.pdfMargin
-
-    for (const { file } of images) {
-      const arrayBuffer = await file.arrayBuffer()
-      const bytes = new Uint8Array(arrayBuffer)
-
-      // 根据 MIME 选择 embed 方法
-      const mime = file.type
-      let embeddedImg
-      if (mime === 'image/jpeg' || mime === 'image/jpg') {
-        embeddedImg = await pdfDoc.embedJpg(bytes)
-      } else if (mime === 'image/png') {
-        embeddedImg = await pdfDoc.embedPng(bytes)
-      } else {
-        // 其他格式（WebP/GIF/BMP等）先转 PNG：用 Canvas 解码后 toBlob
-        const pngBytes = await convertToPngBytes(file)
-        embeddedImg = await pdfDoc.embedPng(pngBytes)
-      }
-
-      // 创建页面并 contain 模式绘制
-      const page = pdfDoc.addPage([W, H])
-      const usableW = W - M * 2
-      const usableH = H - M * 2
-      const imgAspect = embeddedImg.width / embeddedImg.height
-      const pageAspect = usableW / usableH
-
-      let drawW: number
-      let drawH: number
-      if (imgAspect > pageAspect) {
-        drawW = usableW
-        drawH = usableW / imgAspect
-      } else {
-        drawH = usableH
-        drawW = usableH * imgAspect
-      }
-
-      const cx = M + (usableW - drawW) / 2
-      const cy = M + (usableH - drawH) / 2
-
-      page.drawImage(embeddedImg, {
-        x: cx,
-        y: cy,
-        width: drawW,
-        height: drawH
-      })
-    }
-
-    // 保存为 base64（用项目已有工具，避免对大 Uint8Array 做 spread 展开触发栈溢出）
-    const pdfBytes = await pdfDoc.save()
-    const base64 = bytesToBase64(pdfBytes)
-
-    const fileName = `output_${Date.now()}.pdf`
-    n.setOutput(base64, fileName)
+    await generatePdfFromNode(n)
   } catch (err) {
     console.error('[ImageToPdfNode] PDF 生成失败：', err)
   } finally {
     isGenerating.value = false
   }
-}
-
-/**
- * 把非 PNG/JPG 图片文件转成 PNG 的 Uint8Array。
- * 用 Canvas 解码 → toBlob('image/png') → 读 ArrayBuffer。
- */
-function convertToPngBytes(file: File): Promise<Uint8Array> {
-  return new Promise((resolve, reject) => {
-    const img = new Image()
-    img.onload = () => {
-      const canvas = document.createElement('canvas')
-      canvas.width = img.naturalWidth
-      canvas.height = img.naturalHeight
-      const ctx = canvas.getContext('2d')
-      if (!ctx) { reject(new Error('Canvas context 不可用')); return }
-      ctx.drawImage(img, 0, 0)
-      canvas.toBlob(async (blob) => {
-        if (!blob) { reject(new Error('toBlob 返回 null')); return }
-        const buf = await blob.arrayBuffer()
-        resolve(new Uint8Array(buf))
-      }, 'image/png')
-    }
-    img.onerror = () => reject(new Error(`图片解码失败：${file.name}`))
-    img.src = URL.createObjectURL(file)
-  })
 }
 </script>
 
@@ -200,41 +94,36 @@ function convertToPngBytes(file: File): Promise<Uint8Array> {
       </svg>
     </div>
 
-    <!-- 端口信息 -->
-    <div class="node-card__count">
-      {{ t('imagesConnected', { connected: connectedCount, total: totalPorts }) }}
+    <!-- 状态行 -->
+    <div class="node-card__status">
+      <span class="node-card__count">
+        {{ t('imagesConnected', { connected: connectedCount, total: totalPorts }) }}
+      </span>
+      <span class="node-card__pagesize">{{ pageSize }}</span>
     </div>
 
-    <!-- 配置行：页面尺寸 + 边距 -->
-    <div class="node-card__config" @pointerdown.stop>
-      <label class="node-card__label">{{ t('pageSizeLabel') }}</label>
-      <select
-        class="node-card__select"
-        :value="pageSize"
-        @change="onPageSizeChange(($event.target as HTMLSelectElement).value as PageSizePreset)"
-      >
-        <option v-for="s in pageSizeOptions" :key="s" :value="s">{{ s }}</option>
-      </select>
-      <label class="node-card__label">{{ t('marginLabel') }}</label>
-      <input
-        class="node-card__input"
-        type="number"
-        min="0"
-        max="100"
-        :value="margin"
-        @change="onMarginChange(($event.target as HTMLInputElement).value)"
-      />
-    </div>
-
-    <!-- 生成按钮 -->
+    <!-- 生成按钮（紧凑版） -->
     <button
-      class="node-card__btn"
+      class="node-card__gen"
       type="button"
       :disabled="connectedCount === 0 || isGenerating"
-      @click.stop="generatePdf"
+      @pointerdown.stop
+      @click.stop="onGenerate"
     >
       <span v-if="isGenerating">{{ t('generating') }}</span>
       <span v-else>{{ t('generateBtn') }}</span>
+    </button>
+
+    <!-- 齿轮：打开详情面板 -->
+    <button
+      class="node-card__gear"
+      type="button"
+      :title="t('settingsTitle')"
+      @pointerdown.stop
+      @dblclick.stop
+      @click.stop="openNodeDetail(props.id)"
+    >
+      <GearIcon />
     </button>
 
     <!-- 帮助入口 -->
@@ -262,8 +151,8 @@ function convertToPngBytes(file: File): Promise<Uint8Array> {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
-  padding: 10px 10px 8px;
+  gap: 4px;
+  padding: 8px 8px 6px;
   background: @color-surface;
   border: 1px solid @node-border-color;
   border-radius: 8px;
@@ -273,60 +162,38 @@ function convertToPngBytes(file: File): Promise<Uint8Array> {
   user-select: none;
   &:active { cursor: grabbing; }
 
-  &__icon { width: 48px; height: 48px; }
+  &__icon { width: 52px; height: 52px; }
   &__icon-svg { width: 100%; height: 100%; display: block; }
 
-  &__count {
-    font-size: 11px;
-    color: @color-text-weak;
-  }
-
-  &__config {
+  &__status {
+    width: 100%;
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: 4px;
+    padding: 0 2px;
+  }
+
+  &__count { font-size: 10px; color: @color-text-weak; }
+
+  &__pagesize {
     font-size: 10px;
-    color: @color-text-weak;
-  }
-
-  &__label { font-size: 10px; color: @color-text-weak; white-space: nowrap; }
-
-  &__select {
-    all: unset;
-    padding: 1px 4px;
-    font-size: 11px;
-    color: @color-text;
-    background: #fff;
-    border: 1px solid #d1d5db;
+    font-weight: 600;
+    color: #e53e3e;
+    background: #fef2f2;
+    padding: 1px 5px;
     border-radius: 3px;
-    cursor: pointer;
-    min-width: 44px;
-
-    &:hover { border-color: #9ca3af; }
   }
 
-  &__input {
+  &__gen {
     all: unset;
-    width: 42px;
-    padding: 1px 4px;
+    width: 100%;
+    padding: 3px 0;
     font-size: 11px;
-    color: @color-text;
-    background: #fff;
-    border: 1px solid #d1d5db;
-    border-radius: 3px;
-    text-align: center;
-
-    &:focus { border-color: #4a7cff; outline: none; }
-  }
-
-  &__btn {
-    all: unset;
-    padding: 4px 12px;
-    font-size: 12px;
     font-weight: 500;
     color: #fff;
     background: #4a7cff;
     border-radius: 4px;
+    text-align: center;
     cursor: pointer;
     transition: background 0.15s;
 
@@ -334,11 +201,11 @@ function convertToPngBytes(file: File): Promise<Uint8Array> {
     &:disabled { background: #c5cbd4; cursor: not-allowed; }
   }
 
+  &__gear,
   &__help {
     all: unset;
     position: absolute;
-    top: 6px;
-    right: 6px;
+    top: 4px;
     cursor: pointer;
     width: 18px;
     height: 18px;
@@ -348,12 +215,19 @@ function convertToPngBytes(file: File): Promise<Uint8Array> {
     border-radius: 50%;
     background: #f3f4f6;
     color: #6b7280;
-    font-size: 12px;
+    font-size: 10px;
     font-weight: 600;
     line-height: 1;
     transition: background 0.15s, color 0.15s;
 
     &:hover { background: #dbeafe; color: #2563eb; }
   }
+
+  &__gear {
+    right: 26px;
+    :deep(.icon) { width: 12px; height: 12px; }
+  }
+
+  &__help { right: 4px; }
 }
 </style>

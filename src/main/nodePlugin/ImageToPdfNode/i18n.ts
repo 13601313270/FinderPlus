@@ -25,6 +25,14 @@ export const messages = {
     zh: '边距',
     en: 'Margin'
   },
+  marginHint: {
+    zh: 'PDF points（上下左右各一份，0 = 铺满）',
+    en: 'PDF points (applies to all sides, 0 = no padding)'
+  },
+  settingsTitle: {
+    zh: '设置 · 详情面板',
+    en: 'Settings · Detail Panel'
+  },
   helpTitle: {
     zh: '使用说明',
     en: 'Help'

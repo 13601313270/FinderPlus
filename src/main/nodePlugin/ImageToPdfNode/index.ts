@@ -25,7 +25,8 @@ export const manifest: NodePluginManifest = {
   iconPaths: ['M4 4h12l4 4v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z', 'M16 4v4h4', 'M8 14h8', 'M8 18h5'],
   category: 'image',
   render,
-  help: () => import('./ImageToPdfHelpDialog.vue')
+  help: () => import('./ImageToPdfHelpDialog.vue'),
+  detailPanel: () => import('./ImageToPdfDetailPanel.vue')
 }
 
 export default manifest

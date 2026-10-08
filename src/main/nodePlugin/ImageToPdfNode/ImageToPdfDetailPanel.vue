@@ -1,0 +1,217 @@
+<script setup lang="ts">
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { workspaceScene } from '../../engine/graph/SceneRegistry'
+import { ImageToPdfNode, PAGE_SIZE_PRESETS, type PageSizePreset } from './node'
+import { generatePdfFromNode } from './generatePdf'
+import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
+import { messages } from './i18n'
+
+/**
+ * 图片转 PDF 节点的详情面板中间栏：
+ * - 页面尺寸预设下拉
+ * - 边距数值输入
+ * - 已连接图片数量展示
+ * - 生成 PDF 按钮（与卡片上的按钮共用 generatePdfFromNode 逻辑）
+ */
+const props = defineProps<{ nodeId: string }>()
+
+const t = useLocalizedMessages(messages)
+
+const pdfNode = computed(() => {
+  const node = workspaceScene.getNode(props.nodeId)
+  return node instanceof ImageToPdfNode ? node : undefined
+})
+
+const pageSize = ref<PageSizePreset>('A4')
+const margin = ref(0)
+const connectedCount = ref(0)
+const totalPorts = ref(1)
+const isGenerating = ref(false)
+
+const pageSizeOptions = Object.keys(PAGE_SIZE_PRESETS) as PageSizePreset[]
+
+let offChanged: (() => void) | undefined
+
+onMounted(() => {
+  const n = pdfNode.value
+  if (!n) return
+  sync(n)
+  offChanged = n.onChanged(() => {
+    if (pdfNode.value) sync(pdfNode.value)
+  })
+})
+
+onUnmounted(() => {
+  offChanged?.()
+})
+
+function sync(n: ImageToPdfNode): void {
+  pageSize.value = n.pdfPageSize
+  margin.value = n.pdfMargin
+  connectedCount.value = n.connectedImageCount
+  totalPorts.value = n.inputPorts.length
+}
+
+watch(() => props.nodeId, () => {
+  const n = pdfNode.value
+  if (n) sync(n)
+})
+
+function onPageSizeChange(val: PageSizePreset): void {
+  pdfNode.value?.setPdfPageSize(val)
+}
+
+function onMarginChange(val: number | string): void {
+  const num = typeof val === 'string' ? parseInt(val, 10) : val
+  if (!Number.isFinite(num)) return
+  pdfNode.value?.setPdfMargin(num)
+}
+
+/** 详情面板里的生成按钮——和卡片上的按钮调同一个共享函数 */
+async function onGenerate(): Promise<void> {
+  const n = pdfNode.value
+  if (!n || isGenerating.value) return
+  isGenerating.value = true
+  try {
+    await generatePdfFromNode(n)
+  } catch (err) {
+    console.error('[ImageToPdfNode] PDF 生成失败：', err)
+  } finally {
+    isGenerating.value = false
+  }
+}
+</script>
+
+<template>
+  <div class="detail-panel">
+    <!-- 端口状态 -->
+    <div class="detail-panel__section">
+      <label class="detail-panel__label">{{ t('imagesConnected', { connected: connectedCount, total: totalPorts }) }}</label>
+    </div>
+
+    <!-- 页面尺寸 -->
+    <div class="detail-panel__section">
+      <label class="detail-panel__label">{{ t('pageSizeLabel') }}</label>
+      <select
+        class="detail-panel__select"
+        :value="pageSize"
+        @change="onPageSizeChange(($event.target as HTMLSelectElement).value as PageSizePreset)"
+      >
+        <option v-for="s in pageSizeOptions" :key="s" :value="s">{{ s }}</option>
+      </select>
+      <div class="detail-panel__hint">{{ Math.round(pdfNode?.pdfPageWidth ?? 0) }} × {{ Math.round(pdfNode?.pdfPageHeight ?? 0) }} pt</div>
+    </div>
+
+    <!-- 页边距 -->
+    <div class="detail-panel__section">
+      <label class="detail-panel__label">{{ t('marginLabel') }}</label>
+      <input
+        class="detail-panel__input"
+        type="number"
+        min="0"
+        max="100"
+        step="1"
+        :value="margin"
+        @change="onMarginChange(($event.target as HTMLInputElement).value)"
+      />
+      <div class="detail-panel__hint">{{ t('marginHint') }}</div>
+    </div>
+
+    <!-- 生成按钮 -->
+    <div class="detail-panel__section">
+      <button
+        class="detail-panel__btn detail-panel__btn--primary"
+        type="button"
+        :disabled="connectedCount === 0 || isGenerating"
+        @click="onGenerate"
+      >
+        <span v-if="isGenerating">{{ t('generating') }}</span>
+        <span v-else>{{ t('generateBtn') }}</span>
+      </button>
+    </div>
+  </div>
+</template>
+
+<style scoped lang="less">
+.detail-panel {
+  box-sizing: border-box;
+  height: 100%;
+  padding: 16px 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
+  &__section {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  &__label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #374151;
+  }
+
+  &__hint {
+    font-size: 11px;
+    color: #9ca3af;
+  }
+
+  &__select {
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #1f2937;
+    background: #fff;
+    cursor: pointer;
+    transition: border-color 0.15s;
+
+    &:hover { border-color: #9ca3af; }
+    &:focus { border-color: #2563eb; outline: none; }
+  }
+
+  &__input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #1f2937;
+    background: #fff;
+    transition: border-color 0.15s;
+
+    &:focus { border-color: #2563eb; outline: none; }
+  }
+
+  &__btn {
+    all: unset;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+
+    &:hover:not(:disabled) { opacity: 0.9; }
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+
+    &--primary {
+      background: #2563eb;
+      color: #fff;
+
+      &:hover:not(:disabled) { background: #1d4ed8; }
+    }
+  }
+}
+</style>

@@ -160,23 +160,14 @@ onUnmounted(() => {
             <aside class="detail-col detail-col--input">
               <div class="detail-col__label">INPUT</div>
               <div class="detail-port-list">
-                <div
-                  v-for="p in inputPortDisplays"
-                  :key="p.id"
-                  class="detail-port"
-                >
+                <div v-for="p in inputPortDisplays" :key="p.id" class="detail-port">
                   <div class="detail-port__header">
                     <span class="detail-port__name">{{ p.name }}</span>
                     <span class="detail-port__type">{{ p.typeNames }}</span>
                   </div>
                   <div class="detail-port__values">
                     <template v-if="p.values.length > 0">
-                      <ValueRenderer
-                        v-for="(v, idx) in p.values"
-                        :key="idx"
-                        :value="v"
-                        context="detail"
-                      />
+                      <ValueRenderer v-for="(v, idx) in p.values" :key="idx" :value="v" context="detail" />
                     </template>
                     <div v-else class="detail-port__empty">(未连接)</div>
                   </div>
@@ -194,11 +185,7 @@ onUnmounted(() => {
                 <button class="detail-close" type="button" @click="closeNodeDetail">×</button>
               </div>
               <div class="detail-center__panel">
-                <component
-                  v-if="currentComp && currentNodeId"
-                  :is="currentComp"
-                  :node-id="currentNodeId"
-                />
+                <component v-if="currentComp && currentNodeId" :is="currentComp" :node-id="currentNodeId" />
               </div>
             </main>
 
@@ -206,11 +193,7 @@ onUnmounted(() => {
             <aside class="detail-col detail-col--output">
               <div class="detail-col__label">OUTPUT</div>
               <div class="detail-port-list">
-                <div
-                  v-for="p in outputPortDisplays"
-                  :key="p.id"
-                  class="detail-port"
-                >
+                <div v-for="p in outputPortDisplays" :key="p.id" class="detail-port">
                   <div class="detail-port__header">
                     <span class="detail-port__name">{{ p.name }}</span>
                     <span class="detail-port__type">{{ p.typeName }}</span>
@@ -248,7 +231,7 @@ onUnmounted(() => {
 
 .detail-dialog {
   width: 900px;
-  height: 68vh;
+  height: 75vh;
   border-radius: 12px;
   display: flex;
   flex-direction: column;
@@ -360,7 +343,7 @@ onUnmounted(() => {
     flex: 1;
     background: #fff;
     overflow: hidden;
-    max-height: 100%;
+    height: 100%;
   }
 
   &__label {
@@ -422,8 +405,12 @@ onUnmounted(() => {
     font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
     font-size: 12px;
     line-height: 1.5;
-    max-height: 160px;
     overflow-y: auto;
+
+    :deep(.v-img__thumb) {
+      width: 60px;
+      height: auto;
+    }
   }
 
   &__empty {
@@ -434,16 +421,30 @@ onUnmounted(() => {
 }
 
 @keyframes detailFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes detailPopIn {
-  from { opacity: 0; transform: translateY(-8px) scale(0.97); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 @keyframes detailSpin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>

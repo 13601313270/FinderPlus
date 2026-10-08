@@ -96,11 +96,15 @@ export const nodeManifests: readonly NodePluginManifest[] = [
 ]
 
 /**
- * 调色板专用列表：只列出功能节点，不含文件类型节点。
- * 文件类型节点（txt-file、img-file、any-file）通过外部拖入创建，
- * 不在左上角「＋」菜单中展示。
+ * 调色板专用列表：功能节点 + 文件类型节点。
+ * 文件类型节点（txt-file、img-file、any-file）既支持外部拖入创建，
+ * 也支持从调色板放入空节点后通过输入端口传入文件路径。
  */
-export const paletteManifests: readonly NodePluginManifest[] = functionalManifests
+export const paletteManifests: readonly NodePluginManifest[] = [
+  ...functionalManifests,
+  ...fileManifests,
+  ...fallbackManifests
+]
 
 const byType = new Map<string, NodePluginManifest>(nodeManifests.map((m) => [m.type, m]))
 

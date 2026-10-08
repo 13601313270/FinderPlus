@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, provide, type Component } from 'vue'
+import { computed, onMounted, onUnmounted, provide, ref, type Component } from 'vue'
 import { useNodePosition, type NodeLike } from '@renderer/composables/useNodePosition'
 import { nodeElementRef, type PortsOwnerLike } from '@renderer/canvas/elements'
 import NodePorts from './NodePorts.vue'
@@ -66,11 +66,49 @@ const stateTooltip = computed(() => {
   }
 })
 
+/**
+ * 端口数量镜像：引擎的 inputPorts / outputPorts 是普通数组（push/splice 不会触发 Vue reactivity），
+ * 这里通过 node.onChanged 订阅引擎层的 notifyChanged，手动把端口数同步进 reactive ref，
+ * 让 contentStyle computed 能追踪到端口增删。
+ */
+const inputPortCount = ref(0)
+const outputPortCount = ref(0)
+
+let portCountUnsub: (() => void) | undefined
+
+onMounted(() => {
+  const sync = () => {
+    inputPortCount.value = props.node.inputPorts.length
+    outputPortCount.value = props.node.outputPorts.length
+  }
+  sync()
+  portCountUnsub = props.node.onChanged(sync)
+})
+
+onUnmounted(() => {
+  portCountUnsub?.()
+})
+
+/**
+ * 两侧端口竖向排列时，每个 .port-item 至少占 28px（min-height），
+ * 加 space-evenly 的间距余量取 34px——跟 PromiseAllNode.PER_PORT_HEIGHT 保持一致。
+ */
+const PER_PORT_HEIGHT = 34
+
 // 内容区硬约束：box 双轴里 >0 的那一维把 .node-content 定死宽/高（0 维不约束）。
-// render.vue 在框内自适应填满，超出被 .node-content 的 overflow 裁剪。
+// 但如果 box 声明的高度不够装下所有端口，自动撑到能容纳的高度——
+// 避免动态端口节点（如 ImageToPdfNode 9 个输入）的端口溢出 box 范围。
 const contentStyle = computed(() => {
-  const w = box.value[0] > 0 ? `${box.value[0]}px` : undefined
-  const h = box.value[1] > 0 ? `${box.value[1]}px` : undefined
+  const boxW = box.value[0]
+  const boxH = box.value[1]
+
+  // 两侧端口列各需的最小高度，取较大那一侧
+  const portsMinH = Math.max(inputPortCount.value, outputPortCount.value) * PER_PORT_HEIGHT
+
+  const w = boxW > 0 ? `${boxW}px` : undefined
+  // box 为 0 → 完全由端口数量决定；box 不够 → 撑到端口需求；box 够 → 用 box
+  const h = boxH > 0 ? `${Math.max(boxH, portsMinH)}px` : portsMinH > 0 ? `${portsMinH}px` : undefined
+
   return { width: w, height: h }
 })
 

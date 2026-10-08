@@ -222,7 +222,7 @@ onUnmounted(() => {
   position: fixed;
   inset: 0;
   z-index: 2000;
-  background: rgba(0, 0, 0, 0.35);
+  background: rgba(0, 0, 0, 0.6);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -230,7 +230,7 @@ onUnmounted(() => {
 }
 
 .detail-dialog {
-  width: 900px;
+  width: 1000px;
   height: 75vh;
   border-radius: 12px;
   display: flex;
@@ -263,13 +263,46 @@ onUnmounted(() => {
 
   // —— body：三栏水平 flex 容器 ——
   .detail-body {
+    position: relative; // 给左右 flow 箭头绝对定位用
     flex: 1;
     display: flex;
     flex-direction: row;
     align-items: center;
     min-height: 0; // 关键：flex 子项 overflow 能滚的前提
     overflow: hidden;
-    gap: 16px;
+    gap: 44px;
+
+    // —— 左 flow 箭头（INPUT → center）——
+    &::before {
+      content: '';
+      position: absolute;
+      left: 234px; // input 220px + gap 32px 中心偏移
+      top: 50%;
+      width: 0;
+      height: 0;
+      border-top: 10px solid transparent;
+      border-bottom: 10px solid transparent;
+      border-left: 16px solid #ffffff;
+      pointer-events: none;
+      transform: translateY(-50%);
+      filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.15));
+    }
+
+    // —— 右 flow 箭头（center → OUTPUT）——
+    &::after {
+      content: '';
+      position: absolute;
+      right: 230px; // output 220px + gap 32px 中心偏移
+      top: 50%;
+      width: 0;
+      height: 0;
+      border-top: 10px solid transparent;
+      border-bottom: 10px solid transparent;
+      border-left: 16px solid #ffffff;
+      pointer-events: none;
+      transform: translateY(-50%);
+      filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.15));
+    }
   }
 }
 
@@ -329,14 +362,10 @@ onUnmounted(() => {
     width: 220px;
     flex-shrink: 0;
     background: #f7f8fa;
-    border-right: 1px solid #e5e7eb;
+    border: 2px solid #3b7cff;
     overflow: hidden;
-    max-height: 100%;
-  }
-
-  &--output {
-    border-right: none;
-    border-left: 1px solid #e5e7eb;
+    max-height: 90%;
+    border-radius: 12px;
   }
 
   &--center {
@@ -344,6 +373,7 @@ onUnmounted(() => {
     background: #fff;
     overflow: hidden;
     height: 100%;
+    border-radius: 12px;
   }
 
   &__label {

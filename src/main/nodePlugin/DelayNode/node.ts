@@ -60,7 +60,8 @@ export class DelayNode extends Node {
     super(id)
     this.inputPort = new InputPort('in', {
       accepts: DelayNode.ALL_VALUE_CLASSES,
-      label: inLabel
+      label: inLabel,
+      isHiddenLabel: true
     })
     this.addInput(this.inputPort)
     // header(~24px) + 内容区(~50px)

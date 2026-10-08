@@ -80,6 +80,6 @@ const { language } = useLanguageSettings()
     :port="port"
     :side="side"
     :is-dirty="side === 'in' ? (dirtyIds?.has(port.id) ?? false) : false"
-    :hide-label="hideLabel"
+    :hide-label="port.isHiddenLabel ?? hideLabel"
   />
 </template>

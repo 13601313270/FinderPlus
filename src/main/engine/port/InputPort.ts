@@ -30,6 +30,8 @@ export interface InputPortOptions {
   readonly defaultValue?: Value
   /** 端口文本标记（多语言），UI 显示用；可只配若干语言，未命中的语言兜底到英语。不填则显示端口的 id */
   readonly label?: LocalizedText
+  /** 隐藏端口 label 文字（圆点仍然显示）。典型场景：节点内部已有文字说明每个端口的含义 */
+  readonly isHiddenLabel?: boolean
 }
 
 /** 输入端口：节点接收值的入口 */
@@ -125,6 +127,10 @@ export class InputPort {
 
   get defaultValue(): Value | undefined {
     return this.options.defaultValue
+  }
+
+  get isHiddenLabel(): boolean {
+    return this.options.isHiddenLabel ?? false
   }
 
   /** 默认值的渲染层可读标签，没有默认值则返回 undefined */

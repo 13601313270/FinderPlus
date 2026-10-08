@@ -155,7 +155,8 @@ export class PromiseAllNode extends Node {
   private addPortPair(index: number): void {
     const inPort = new InputPort(`in_${index}`, {
       accepts: ALL_VALUE_CLASSES,
-      label: appendIndex(IN_LABEL, index)
+      label: appendIndex(IN_LABEL, index),
+      isHiddenLabel: true
     })
     // 先按 StringValue 占位——SwitchNode 同构
     const outPort = new OutputPort(`out_${index}`, StringValue, appendIndex(OUT_LABEL, index))

@@ -88,6 +88,11 @@ export interface PortLike {
    * 输出端口才有：当前产出值若为 FileValue 子类则返回其 File，否则 undefined。
    */
   readonly currentValueFile?: File | undefined
+  /**
+   * 隐藏端口 label 文字（圆点仍然显示）。
+   * 典型场景：节点内部已有文字说明每个端口的含义，再显示 label 就是冗余。
+   */
+  readonly isHiddenLabel?: boolean
 }
 
 /** 能提供端口的节点（Node 基类的最小结构子集），NodePorts 用它枚举两侧端口 */

@@ -30,7 +30,8 @@ export const BUILTIN_VALUE_KINDS = [
   'json',
   'file',
   'txt-file',
-  'img-file'
+  'img-file',
+  'pdf-file'
 ] as const
 
 export type BuiltinValueKind = (typeof BUILTIN_VALUE_KINDS)[number]

@@ -117,7 +117,8 @@ const pt: Language = {
     json: 'JSON',
     file: 'Arquivo',
     'txt-file': 'Arquivo de texto',
-    'img-file': 'Arquivo de imagem'
+    'img-file': 'Arquivo de imagem',
+    'pdf-file': 'Arquivo PDF'
   },
   intro: {
     whatIs: {

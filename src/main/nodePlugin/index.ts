@@ -9,6 +9,7 @@ import { manifest as boolInputManifest } from './BoolInputNode'
 import { manifest as radioManifest } from './RadioNode'
 import { manifest as txtFileManifest } from './TxtFileNode'
 import { manifest as imgFileManifest } from './ImgFileNode'
+import { manifest as pdfFileManifest } from './PdfFileNode'
 import { manifest as anyFileManifest } from './AnyFileNode'
 import { manifest as fileInfoManifest } from './FileInfoNode'
 import { manifest as imagePreviewManifest } from './ImagePreviewNode'
@@ -32,6 +33,7 @@ import { manifest as queueManifest } from './QueueNode'
 import { manifest as httpRequestManifest } from './HttpRequestNode'
 import { manifest as jsonDisplayManifest } from './JsonDisplayNode'
 import { manifest as imageCropManifest } from './ImageCropNode'
+import { manifest as imageToPdfManifest } from './ImageToPdfNode'
 import { manifest as promiseAllManifest } from './PromiseAllNode'
 import { manifest as tableManifest } from './TableNode'
 import { manifest as scheduleManifest } from './ScheduleNode'
@@ -76,13 +78,15 @@ const functionalManifests: NodePluginManifest[] = [
   httpRequestManifest,
   jsonDisplayManifest,
   imageCropManifest,
+  imageToPdfManifest,
   tableManifest,
   scheduleManifest
 ]
 
 const fileManifests: NodePluginManifest[] = [
   txtFileManifest,
-  imgFileManifest
+  imgFileManifest,
+  pdfFileManifest
 ]
 
 const fallbackManifests: NodePluginManifest[] = [

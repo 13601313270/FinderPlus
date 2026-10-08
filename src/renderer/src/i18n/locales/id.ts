@@ -117,7 +117,8 @@ const id: Language = {
     json: 'JSON',
     file: 'Berkas',
     'txt-file': 'Berkas Teks',
-    'img-file': 'Berkas Gambar'
+    'img-file': 'Berkas Gambar',
+    'pdf-file': 'Berkas PDF'
   },
   intro: {
     whatIs: {

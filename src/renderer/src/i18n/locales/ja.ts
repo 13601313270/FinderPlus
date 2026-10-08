@@ -117,7 +117,8 @@ const ja: Language = {
     json: 'JSON',
     file: 'ファイル',
     'txt-file': 'テキストファイル',
-    'img-file': '画像ファイル'
+    'img-file': '画像ファイル',
+    'pdf-file': 'PDFファイル'
   },
   intro: {
     whatIs: {

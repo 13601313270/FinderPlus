@@ -117,7 +117,8 @@ const ko: Language = {
     json: 'JSON',
     file: '파일',
     'txt-file': '텍스트 파일',
-    'img-file': '이미지 파일'
+    'img-file': '이미지 파일',
+    'pdf-file': 'PDF 파일'
   },
   intro: {
     whatIs: {

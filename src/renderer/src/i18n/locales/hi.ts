@@ -117,7 +117,8 @@ const hi: Language = {
     json: 'JSON',
     file: 'फ़ाइल',
     'txt-file': 'टेक्स्ट फ़ाइल',
-    'img-file': 'छवि फ़ाइल'
+    'img-file': 'छवि फ़ाइल',
+    'pdf-file': 'PDF फ़ाइल'
   },
   intro: {
     whatIs: {

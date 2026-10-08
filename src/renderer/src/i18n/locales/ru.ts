@@ -117,7 +117,8 @@ const ru: Language = {
     json: 'JSON',
     file: 'Файл',
     'txt-file': 'Текстовый файл',
-    'img-file': 'Файл изображения'
+    'img-file': 'Файл изображения',
+    'pdf-file': 'PDF-файл'
   },
   intro: {
     whatIs: {

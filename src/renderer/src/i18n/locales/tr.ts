@@ -117,7 +117,8 @@ const tr: Language = {
     json: 'JSON',
     file: 'Dosya',
     'txt-file': 'Metin Dosyası',
-    'img-file': 'Görsel Dosyası'
+    'img-file': 'Görsel Dosyası',
+    'pdf-file': 'PDF Dosyası'
   },
   intro: {
     whatIs: {

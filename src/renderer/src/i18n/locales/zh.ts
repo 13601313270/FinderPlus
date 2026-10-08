@@ -130,7 +130,8 @@ const zh: Language = {
     json: 'JSON',
     file: '文件',
     'txt-file': '文本文件',
-    'img-file': '图片文件'
+    'img-file': '图片文件',
+    'pdf-file': 'PDF文件'
   },
   intro: {
     whatIs: {

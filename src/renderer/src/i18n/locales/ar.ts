@@ -117,7 +117,8 @@ const ar: Language = {
     json: 'JSON',
     file: 'ملف',
     'txt-file': 'ملف نصي',
-    'img-file': 'ملف صورة'
+    'img-file': 'ملف صورة',
+    'pdf-file': 'PDF ملف'
   },
   intro: {
     whatIs: {

@@ -117,7 +117,8 @@ const vi: Language = {
     json: 'JSON',
     file: 'Tệp',
     'txt-file': 'Tệp văn bản',
-    'img-file': 'Tệp hình ảnh'
+    'img-file': 'Tệp hình ảnh',
+    'pdf-file': 'Tệp PDF'
   },
   intro: {
     whatIs: {

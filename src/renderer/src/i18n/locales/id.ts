@@ -35,6 +35,7 @@ const id: Language = {
     groupGeneral: 'Umum',
     groupLLM: 'Pengaturan LLM',
     groupImage: 'Pembuatan Gambar',
+    groupNodes: 'Palet Node',
 
     groupCanvases: "Kanvas Saya",
     llmTitle: 'Kunci API LLM',
@@ -65,6 +66,10 @@ const id: Language = {
     canvasDeleteConfirmTitle: "Hapus kanvas?",
     canvasDeleteConfirmBody: "Simpul, garis, dan file di kanvas akan semuanya dihapus dan tidak dapat dipulihkan.\n\nKanvas: {name}",
     canvasDeleteFailed: "Gagal menghapus",
+    nodesTitle: "Palet Node",
+    nodesHint: "Jenis node yang tidak dicentang akan disembunyikan dari palet. Node yang sudah ada di kanvas tidak terpengaruh.",
+    nodesHiddenCount: "{count} jenis node saat ini disembunyikan.",
+    nodesShowAll: "Tampilkan Semua",
   },
   helpCenter: {
     title: 'Pusat Bantuan',
@@ -95,7 +100,8 @@ const id: Language = {
     addNode: 'Tambah node',
     searchPlaceholder: 'Cari node…',
     noResult: 'Tidak ada node yang cocok',
-    nodeHelp: 'Lihat dokumentasi node'
+    nodeHelp: 'Lihat dokumentasi node',
+    paletteSettings: 'Pengaturan palet…'
   },
   connection: {
     selfLoop: 'Port pada node yang sama tidak dapat dihubungkan',

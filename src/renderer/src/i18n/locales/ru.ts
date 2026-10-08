@@ -35,6 +35,7 @@ const ru: Language = {
     groupGeneral: 'Общие',
     groupLLM: 'Настройки LLM',
     groupImage: 'Генерация изображений',
+    groupNodes: 'Палитра узлов',
 
     groupCanvases: "Мои холсты",
     llmTitle: 'API-ключ LLM',
@@ -65,6 +66,10 @@ const ru: Language = {
     canvasDeleteConfirmTitle: "Удалить холст?",
     canvasDeleteConfirmBody: "Узлы, рёбра и файлы холста будут удалены без возможности восстановления.\n\nХолст: {name}",
     canvasDeleteFailed: "Ошибка удаления",
+    nodesTitle: "Палитра узлов",
+    nodesHint: "Неотмеченные типы узлов будут скрыты из палитры. Существующие узлы на холсте не затрагиваются.",
+    nodesHiddenCount: "Скрыто {count} тип(ов) узлов.",
+    nodesShowAll: "Показать все",
   },
   helpCenter: {
     title: 'Центр справки',
@@ -95,7 +100,8 @@ const ru: Language = {
     addNode: 'Добавить узел',
     searchPlaceholder: 'Поиск узлов…',
     noResult: 'Нет подходящих узлов',
-    nodeHelp: 'Открыть справку по узлу'
+    nodeHelp: 'Открыть справку по узлу',
+    paletteSettings: 'Настройки палитры…'
   },
   connection: {
     selfLoop: 'Порты одного узла нельзя соединить между собой',

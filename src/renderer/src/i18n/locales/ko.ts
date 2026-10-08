@@ -35,6 +35,7 @@ const ko: Language = {
     groupGeneral: '일반',
     groupLLM: 'LLM 설정',
     groupImage: '이미지 생성',
+    groupNodes: '노드 팔레트',
 
     groupCanvases: "내 캔버스",
     llmTitle: 'LLM API 키',
@@ -65,6 +66,10 @@ const ko: Language = {
     canvasDeleteConfirmTitle: "캔버스를 삭제하시겠습니까?",
     canvasDeleteConfirmBody: "캔버스의 노드, 선 및 파일이 모두 삭제되며 복구할 수 없습니다.\n\n캔버스: {name}",
     canvasDeleteFailed: "삭제 실패",
+    nodesTitle: "노드 팔레트",
+    nodesHint: "체크하지 않은 노드 유형은 팔레트에서 숨겨집니다. 캔버스의 기존 노드는 영향받지 않습니다.",
+    nodesHiddenCount: "현재 {count}개의 노드 유형이 숨겨져 있습니다.",
+    nodesShowAll: "모두 표시",
   },
   helpCenter: {
     title: '도움말 센터',
@@ -95,7 +100,8 @@ const ko: Language = {
     addNode: '노드 추가',
     searchPlaceholder: '노드 검색…',
     noResult: '일치하는 노드가 없습니다',
-    nodeHelp: '노드 설명 보기'
+    nodeHelp: '노드 설명 보기',
+    paletteSettings: '팔레트 설정…'
   },
   connection: {
     selfLoop: '같은 노드의 포트끼리는 연결할 수 없습니다',

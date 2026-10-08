@@ -35,6 +35,7 @@ const it: Language = {
     groupGeneral: 'Generale',
     groupLLM: 'Impostazioni LLM',
     groupImage: 'Generazione immagini',
+    groupNodes: 'Palette nodi',
 
     groupCanvases: "I miei canvas",
     llmTitle: 'Chiave API LLM',
@@ -65,6 +66,10 @@ const it: Language = {
     canvasDeleteConfirmTitle: "Eliminare canvas?",
     canvasDeleteConfirmBody: "I nodi, i bordi e i file del canvas verranno tutti eliminati e non potranno essere recuperati.\n\nCanvas: {name}",
     canvasDeleteFailed: "Eliminazione fallita",
+    nodesTitle: "Palette nodi",
+    nodesHint: "I tipi di nodo non selezionati saranno nascosti dalla palette. I nodi esistenti sul canvas non sono influenzati.",
+    nodesHiddenCount: "{count} tipo(i) di nodo attualmente nascosto(i).",
+    nodesShowAll: "Mostra tutto",
   },
   helpCenter: {
     title: 'Centro assistenza',
@@ -95,7 +100,8 @@ const it: Language = {
     addNode: 'Aggiungi nodo',
     searchPlaceholder: 'Cerca nodi…',
     noResult: 'Nessun nodo corrispondente',
-    nodeHelp: 'Visualizza la documentazione del nodo'
+    nodeHelp: 'Visualizza la documentazione del nodo',
+    paletteSettings: 'Impostazioni palette…'
   },
   connection: {
     selfLoop: 'Le porte sullo stesso nodo non possono essere collegate',

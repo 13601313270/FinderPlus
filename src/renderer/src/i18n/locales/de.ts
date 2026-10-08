@@ -35,6 +35,7 @@ const de: Language = {
     groupGeneral: 'Allgemein',
     groupLLM: 'LLM-Einstellungen',
     groupImage: 'Bildgenerierung',
+    groupNodes: 'Knotenpalette',
 
     groupCanvases: "Meine Leinwände",
     llmTitle: 'LLM-API-Schlüssel',
@@ -65,6 +66,10 @@ const de: Language = {
     canvasDeleteConfirmTitle: "Leinwand löschen?",
     canvasDeleteConfirmBody: "Knoten, Kanten und Dateien der Leinwand werden gelöscht und können nicht wiederhergestellt werden.\n\nLeinwand: {name}",
     canvasDeleteFailed: "Löschen fehlgeschlagen",
+    nodesTitle: "Knotenpalette",
+    nodesHint: "Nicht ausgewählte Knotentypen werden aus der Palette ausgeblendet. Vorhandene Knoten auf der Leinwand bleiben unverändert.",
+    nodesHiddenCount: "{count} Knotentyp(en) derzeit ausgeblendet.",
+    nodesShowAll: "Alle anzeigen",
   },
   helpCenter: {
     title: 'Hilfe-Center',
@@ -95,7 +100,8 @@ const de: Language = {
     addNode: 'Knoten hinzufügen',
     searchPlaceholder: 'Knoten suchen…',
     noResult: 'Keine passenden Knoten',
-    nodeHelp: 'Knotendokumentation ansehen'
+    nodeHelp: 'Knotendokumentation ansehen',
+    paletteSettings: 'Paletteneinstellungen…'
   },
   connection: {
     selfLoop: 'Ports am selben Knoten können nicht verbunden werden',

@@ -11,6 +11,9 @@ import {
 import { resolveLocalizedText } from '../../../shared/language';
 import { useLanguageSettings } from '@renderer/composables/useLanguageSettings';
 import { useHelpCenter } from '@renderer/composables/useHelpCenter';
+import { usePaletteSettings } from '@renderer/composables/usePaletteSettings';
+import { useGlobalSettings } from '@renderer/composables/useGlobalSettings';
+import GearIcon from './icons/GearIcon.vue';
 /**
  * 节点调色板：画布左上角的「＋」按钮。
  *
@@ -28,6 +31,8 @@ import { useHelpCenter } from '@renderer/composables/useHelpCenter';
 const { t } = useI18n();
 const { language } = useLanguageSettings();
 const { openTopic } = useHelpCenter();
+const { hiddenTypes } = usePaletteSettings();
+const { openSettings } = useGlobalSettings();
 const emit = defineEmits<{
  (e: 'select-type', type: string): void;
 }>();
@@ -90,6 +95,12 @@ function onHelp(type: string): void {
  void openTopic(type);
 }
 
+/** 齿轮按钮：打开全局设置并聚焦到「节点调色板」section */
+function onOpenPaletteSettings(): void {
+ closeMenu();
+ openSettings('nodes');
+}
+
 interface PaletteItem {
  type: string;
  label: string;
@@ -111,7 +122,10 @@ interface PaletteGroup {
 // 这样新增/第三方插件不用改 Finder+ 的中央词条表就能带上自己的显示名。
 // 图标同理：manifest.iconPaths 由插件自己声明，缺省时列表项只显示文字。
 // 分类同理：manifest.category 缺省时归入「其他」，第三方老插件不会从菜单里消失。
-const allItems = computed<PaletteItem[]>(() => paletteManifests.map((m) => ({
+// 用户在全局设置里取消勾选的节点类型会被隐藏，不参与调色板渲染。
+const allItems = computed<PaletteItem[]>(() => paletteManifests
+  .filter((m) => !hiddenTypes.value.has(m.type))
+  .map((m) => ({
  type: m.type,
  label: resolveNodeTitle(m, language.value),
  iconPaths: m.iconPaths ?? [],
@@ -344,6 +358,15 @@ onBeforeUnmount(() => {
             @blur="searchFocused = false"
             @keydown="onSearchKeydown"
           />
+          <button
+            class="palette__gear"
+            type="button"
+            :title="t('palette.paletteSettings')"
+            aria-label="palette settings"
+            @click.stop="onOpenPaletteSettings"
+          >
+            <GearIcon :size="14" />
+          </button>
         </div>
 
         <div class="palette__list" role="listbox">
@@ -426,6 +449,30 @@ onBeforeUnmount(() => {
     &:hover {
       background: #eef1f5;
       border-color: @color-primary;
+      color: @color-primary;
+    }
+  }
+
+  // 齿轮按钮：放在搜索框右侧，与搜索 icon + input 同行。
+  // 14×14 正好和 search-icon 同尺寸，视觉对齐；
+  // 静止态灰 #8a919c、hover 翻蓝，和 help 按钮同一套反馈。
+  &__gear {
+    flex-shrink: 0;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: transparent;
+    color: #8a919c;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: background 0.15s ease, color 0.15s ease;
+
+    &:hover {
+      background: #eef1f5;
       color: @color-primary;
     }
   }

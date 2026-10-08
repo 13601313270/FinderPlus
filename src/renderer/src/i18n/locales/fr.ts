@@ -35,6 +35,7 @@ const fr: Language = {
     groupGeneral: 'Général',
     groupLLM: 'Paramètres des LLM',
     groupImage: "Génération d'images",
+    groupNodes: 'Palette de nœuds',
     groupCanvases: 'Mes toiles',
     llmTitle: 'Clé API LLM',
     llmHint: 'Configurez ici les clés API de chaque fournisseur. Chaque nœud LLM peut choisir indépendamment le fournisseur et le modèle à utiliser.',
@@ -64,6 +65,10 @@ const fr: Language = {
     canvasDeleteConfirmTitle: "Supprimer la toile ?",
     canvasDeleteConfirmBody: "Les nœuds, arêtes et fichiers de la toile seront supprimés et ne pourront pas être récupérés.\n\nToile : {name}",
     canvasDeleteFailed: "Échec de la suppression",
+    nodesTitle: "Palette de nœuds",
+    nodesHint: "Les types de nœuds non cochés seront masqués dans la palette. Les nœuds existants sur le canevas ne sont pas affectés.",
+    nodesHiddenCount: "{count} type(s) de nœud(s) actuellement masqué(s).",
+    nodesShowAll: "Tout afficher",
   },
   helpCenter: {
     title: 'Centre d\'aide',
@@ -94,7 +99,8 @@ const fr: Language = {
     addNode: 'Ajouter un nœud',
     searchPlaceholder: 'Rechercher des nœuds…',
     noResult: 'Aucun nœud correspondant',
-    nodeHelp: 'Voir la documentation du nœud'
+    nodeHelp: 'Voir la documentation du nœud',
+    paletteSettings: 'Paramètres de la palette…'
   },
   connection: {
     selfLoop: 'Les ports d\'un même nœud ne peuvent pas être reliés',

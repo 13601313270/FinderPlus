@@ -35,6 +35,7 @@ const pt: Language = {
     groupGeneral: 'Geral',
     groupLLM: 'Configurações de LLM',
     groupImage: 'Geração de imagens',
+    groupNodes: 'Paleta de nós',
 
     groupCanvases: "Meus canvases",
     llmTitle: 'Chave API do LLM',
@@ -65,6 +66,10 @@ const pt: Language = {
     canvasDeleteConfirmTitle: "Excluir canvas?",
     canvasDeleteConfirmBody: "Nós, arestas e arquivos do canvas serão todos excluídos e não poderão ser recuperados.\n\nCanvas: {name}",
     canvasDeleteFailed: "Falha ao excluir",
+    nodesTitle: "Paleta de nós",
+    nodesHint: "Tipos de nó desmarcados serão ocultados da paleta. Nós existentes no canvas não são afetados.",
+    nodesHiddenCount: "{count} tipo(s) de nó atualmente oculto(s).",
+    nodesShowAll: "Mostrar todos",
   },
   helpCenter: {
     title: 'Central de Ajuda',
@@ -95,7 +100,8 @@ const pt: Language = {
     addNode: 'Adicionar nó',
     searchPlaceholder: 'Buscar nós…',
     noResult: 'Nenhum nó correspondente',
-    nodeHelp: 'Ver a documentação do nó'
+    nodeHelp: 'Ver a documentação do nó',
+    paletteSettings: 'Configurações da paleta…'
   },
   connection: {
     selfLoop: 'As portas do mesmo nó não podem ser conectadas',

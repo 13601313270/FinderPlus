@@ -35,6 +35,7 @@ const ar: Language = {
     groupGeneral: 'عام',
     groupLLM: 'إعدادات نماذج اللغة الكبيرة',
     groupImage: 'توليد الصور',
+    groupNodes: 'لوحة العقد',
 
     groupCanvases: "لوحاتي",
     llmTitle: 'مفتاح API لنموذج اللغة',
@@ -65,6 +66,10 @@ const ar: Language = {
     canvasDeleteConfirmTitle: "حذف اللوحة؟",
     canvasDeleteConfirmBody: "سيتم حذف العقد والحواف والملفات في اللوحة ولا يمكن استردادها.\n\nاللوحة: {name}",
     canvasDeleteFailed: "فشل الحذف",
+    nodesTitle: "لوحة العقد",
+    nodesHint: "العقد غير المحدد لن يظهر في اللوحة. العقد الموجودة بالفعل على لوحة العمل لن تتأثر.",
+    nodesHiddenCount: "{count} نوع عقد مخفي حاليًا.",
+    nodesShowAll: "إظهار الكل",
   },
   helpCenter: {
     title: 'مركز المساعدة',
@@ -95,7 +100,8 @@ const ar: Language = {
     addNode: 'إضافة عقدة',
     searchPlaceholder: 'ابحث عن العقد…',
     noResult: 'لا توجد عقد مطابقة',
-    nodeHelp: 'عرض وثائق العقدة'
+    nodeHelp: 'عرض وثائق العقدة',
+    paletteSettings: 'إعدادات اللوحة…'
   },
   connection: {
     selfLoop: 'لا يمكن ربط المنافذ ضمن العقدة نفسها',

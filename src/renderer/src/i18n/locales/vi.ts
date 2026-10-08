@@ -35,6 +35,7 @@ const vi: Language = {
     groupGeneral: 'Chung',
     groupLLM: 'Cài đặt LLM',
     groupImage: 'Tạo ảnh',
+    groupNodes: 'Bảng nút',
 
     groupCanvases: "Canvas của tôi",
     llmTitle: 'Khóa API LLM',
@@ -65,6 +66,10 @@ const vi: Language = {
     canvasDeleteConfirmTitle: "Xóa canvas?",
     canvasDeleteConfirmBody: "Nút, dây nối và tệp trong canvas sẽ bị xóa tất cả và không thể khôi phục.\n\nCanvas: {name}",
     canvasDeleteFailed: "Xóa thất bại",
+    nodesTitle: "Bảng nút",
+    nodesHint: "Các loại nút không được chọn sẽ bị ẩn khỏi bảng. Các nút hiện có trên khung vẽ không bị ảnh hưởng.",
+    nodesHiddenCount: "Hiện có {count} loại nút bị ẩn.",
+    nodesShowAll: "Hiện tất cả",
   },
   helpCenter: {
     title: 'Trung tâm trợ giúp',
@@ -95,7 +100,8 @@ const vi: Language = {
     addNode: 'Thêm nút',
     searchPlaceholder: 'Tìm nút…',
     noResult: 'Không có nút phù hợp',
-    nodeHelp: 'Xem tài liệu về nút'
+    nodeHelp: 'Xem tài liệu về nút',
+    paletteSettings: 'Cài đặt bảng nút…'
   },
   connection: {
     selfLoop: 'Không thể kết nối các cổng trên cùng một nút',

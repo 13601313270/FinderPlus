@@ -37,6 +37,8 @@ const en: Language = {
     groupLLM: 'LLM Settings',
     groupImage: 'Image Generation',
 
+    groupNodes: 'Node Palette',
+
     groupCanvases: "My Canvases",
 
     // LLM / Image section titles and hints (previously hardcoded)
@@ -70,6 +72,12 @@ const en: Language = {
     canvasDeleteConfirmTitle: "Delete canvas?",
     canvasDeleteConfirmBody: "Nodes, edges, and files in the canvas will all be deleted and cannot be recovered.\n\nCanvas: {name}",
     canvasDeleteFailed: "Delete failed",
+
+    // Node palette settings
+    nodesTitle: 'Node Palette',
+    nodesHint: 'Unchecked node types will be hidden from the palette. Existing nodes on the canvas are unaffected.',
+    nodesHiddenCount: '{count} node type(s) currently hidden.',
+    nodesShowAll: 'Show All',
   },
   helpCenter: {
     title: 'Help Center',
@@ -100,7 +108,8 @@ const en: Language = {
     addNode: 'Add node',
     searchPlaceholder: 'Search nodes…',
     noResult: 'No matching nodes',
-    nodeHelp: 'View node documentation'
+    nodeHelp: 'View node documentation',
+    paletteSettings: 'Palette settings…'
   },
   connection: {
     selfLoop: 'Ports on the same node cannot be connected',

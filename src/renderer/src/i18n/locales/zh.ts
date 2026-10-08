@@ -42,6 +42,8 @@ const zh: Language = {
     groupLLM: '大语言模型设置',
     groupImage: '生图模型',
 
+    groupNodes: '节点调色板',
+
     groupCanvases: "我的画布",
 
     // LLM / 文生图 section 标题与提示（原硬编码）
@@ -75,6 +77,12 @@ const zh: Language = {
     canvasDeleteConfirmTitle: "确定要删除画布吗？",
     canvasDeleteConfirmBody: "画布中的节点、连线和文件都会被删除，且无法恢复。\n\n画布：{name}",
     canvasDeleteFailed: "删除失败",
+
+    // 节点调色板设置
+    nodesTitle: '节点调色板',
+    nodesHint: '取消勾选的节点类型不会在调色板中展示。画布上已有的该类型节点不受影响。',
+    nodesHiddenCount: '当前隐藏了 {count} 种节点。',
+    nodesShowAll: '全部显示',
   },
   helpCenter: {
     title: '帮助中心',
@@ -105,7 +113,8 @@ const zh: Language = {
     addNode: '添加节点',
     searchPlaceholder: '搜索节点…',
     noResult: '没有匹配的节点',
-    nodeHelp: '查看该节点的使用说明'
+    nodeHelp: '查看该节点的使用说明',
+    paletteSettings: '调色板设置…'
   },
   connection: {
     selfLoop: '同一个节点的端口之间不能连线',

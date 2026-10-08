@@ -52,6 +52,7 @@ export type Language = {
     groupGeneral: string
     groupLLM: string
     groupImage: string
+    groupNodes: string
     groupCanvases: string
     /** LLM / 文生图 section 标题与提示（原硬编码） */
     llmTitle: string
@@ -84,6 +85,12 @@ export type Language = {
     canvasDeleteConfirmTitle: string
     canvasDeleteConfirmBody: string
     canvasDeleteFailed: string
+    /** 节点调色板设置 section */
+    nodesTitle: string
+    nodesHint: string
+    /** 占位符 {count} */
+    nodesHiddenCount: string
+    nodesShowAll: string
   }
   helpCenter: {
     title: string
@@ -121,6 +128,8 @@ export type Language = {
     noResult: string
     /** 瓦片角上「?」帮助入口的提示文案 */
     nodeHelp: string
+    /** trigger 右下角齿轮按钮的 hover 提示 */
+    paletteSettings: string
   }
   connection: {
     /** 端口自环 */

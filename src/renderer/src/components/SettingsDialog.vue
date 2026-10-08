@@ -17,16 +17,21 @@ import {
   type ImageProviderId
 } from '../../../main/nodePlugin/ImageGenNode/providers'
 import { useImageSettings } from '@renderer/composables/useImageSettings'
+import { usePaletteSettings } from '@renderer/composables/usePaletteSettings'
 import SelectMenu from './SelectMenu.vue'
 import { workspaceScene } from '../../../main/engine/graph/SceneRegistry'
 import { viewport } from '@renderer/canvas/viewport'
+import { paletteManifests } from '../../../main/nodePlugin'
+import { resolveNodeTitle } from '../../../main/nodePlugin/manifest'
+import { NODE_CATEGORIES, DEFAULT_NODE_CATEGORY, CATEGORY_LABELS, type NodeCategory } from '../../../main/nodePlugin/category'
+import { resolveLocalizedText } from '../../../shared/language'
 
 /**
  * 全局设置弹窗：左侧分类栏 + 右侧滚动内容。
  * 三个分组（sidebar nav）：通用 | 大语言模型设置 | 生图模型
  */
 const { t } = useI18n()
-const { visible, openSettings, closeSettings } = useGlobalSettings()
+const { visible, targetSection, openSettings, closeSettings } = useGlobalSettings()
 const { language, setLanguage, languageOptions } = useLanguageSettings()
 const { restart: restartOnboarding } = useOnboarding()
 const {
@@ -41,28 +46,32 @@ const {
   saveProviderKey: saveImageProviderKey,
   clearKey: clearImageKey
 } = useImageSettings()
+const { hiddenTypes, toggleHidden, showAll } = usePaletteSettings()
 
 /** 左侧选中的分类 */
-type SectionKey = 'general' | 'llm' | 'image' | 'canvases'
+type SectionKey = 'general' | 'llm' | 'image' | 'nodes' | 'canvases'
 const activeSection = ref<SectionKey>('general')
 
-const SECTION_ORDER: SectionKey[] = ['general', 'llm', 'image', 'canvases']
+const SECTION_ORDER: SectionKey[] = ['general', 'llm', 'image', 'nodes', 'canvases']
 
 function sectionLabel(key: SectionKey): string {
   switch (key) {
     case 'general':   return t('settingsDialog.groupGeneral')
     case 'llm':       return t('settingsDialog.groupLLM')
     case 'image':     return t('settingsDialog.groupImage')
+    case 'nodes':     return t('settingsDialog.groupNodes')
     case 'canvases':  return t('settingsDialog.groupCanvases')
   }
 }
 
-/** SettingsDialog 打开时同步初始化 LLM + Image draft，并切回第一个分类 */
+/** SettingsDialog 打开时同步初始化 LLM + Image draft，并处理侧边栏聚焦 */
 watch(visible, (v) => {
   if (v) {
     initLLMDraft()
     initImageDraft()
-    activeSection.value = 'general'
+    // 调用方可以在 openSettings('nodes') 时指定聚焦 section；否则兜底第一个
+    const requested = targetSection.value as SectionKey | null
+    activeSection.value = requested && SECTION_ORDER.includes(requested) ? requested : 'general'
   }
 })
 
@@ -80,6 +89,36 @@ const languageSelectOptions = computed(() =>
   languageOptions.map((opt) => ({ value: opt.code, label: opt.label }))
 )
 
+/**
+ * 调色板节点按分类分组，供节点设置页面渲染。
+ * 复用 NodePalette 的分类维度和 resolveNodeTitle 本地化逻辑，保证设置页和调色板
+ * 显示的分类名、节点名完全一致。
+ */
+const groupedNodes = computed(() => {
+  const rows = paletteManifests.map((m) => ({
+    type: m.type,
+    label: resolveNodeTitle(m, language.value),
+    iconPaths: m.iconPaths ?? [],
+    category: (m.category ?? DEFAULT_NODE_CATEGORY) as NodeCategory
+  }))
+  return NODE_CATEGORIES
+    .map((cat) => ({
+      category: cat,
+      label: resolveLocalizedText(CATEGORY_LABELS[cat], language.value, cat),
+      items: rows.filter((r) => r.category === cat)
+    }))
+    .filter((g) => g.items.length > 0)
+})
+
+/** 某个节点 type 当前是否显示（不隐藏）：用于 checkbox 的 v-model */
+function isVisible(type: string): boolean {
+  return !hiddenTypes.value.has(type)
+}
+
+function onToggleNode(type: string, visible: boolean): void {
+  toggleHidden(type, !visible)
+}
+
 function onLanguageChange(value: string): void {
   setLanguage(value as LanguageCode)
 }
@@ -94,7 +133,8 @@ const EXPORT_KEYS = [
   'canvasdesk.language',
   'canvasdesk.llm.config',
   'canvasdesk.image.config',
-  'canvasdesk.tutorialSeen'
+  'canvasdesk.tutorialSeen',
+  'canvasdesk.palette.hiddenTypes'
 ]
 
 /**
@@ -604,6 +644,60 @@ async function onDeleteCanvas(id: string, name: string): Promise<void> {
               </section>
             </template>
 
+            <!-- ========== 节点调色板 ========== -->
+            <template v-if="activeSection === 'nodes'">
+              <section class="gs-section">
+                <h4 class="gs-section__title">{{ t('settingsDialog.nodesTitle') }}</h4>
+                <p class="gs-section__hint">{{ t('settingsDialog.nodesHint') }}</p>
+                <p class="gs-section__hint">{{ t('settingsDialog.nodesHiddenCount', { count: hiddenTypes.size }) }}</p>
+
+                <div class="gs-transfer__actions" style="margin-bottom: 12px;">
+                  <button
+                    class="gs-btn"
+                    type="button"
+                    @click="showAll()"
+                  >{{ t('settingsDialog.nodesShowAll') }}</button>
+                </div>
+
+                <div class="gs-nodes__groups">
+                  <div v-for="group in groupedNodes" :key="group.category" class="gs-nodes__group">
+                    <div class="gs-nodes__group-title">{{ group.label }}</div>
+                    <div class="gs-nodes__grid">
+                      <label
+                        v-for="item in group.items"
+                        :key="item.type"
+                        class="gs-nodes__tile"
+                        :class="{ 'gs-nodes__tile--hidden': !isVisible(item.type) }"
+                      >
+                        <input
+                          type="checkbox"
+                          :checked="isVisible(item.type)"
+                          class="gs-nodes__checkbox"
+                          @change="onToggleNode(item.type, ($event.target as HTMLInputElement).checked)"
+                        />
+                        <svg
+                          v-if="item.iconPaths.length"
+                          class="gs-nodes__icon"
+                          width="20"
+                          height="20"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="1.8"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          aria-hidden="true"
+                        >
+                          <path v-for="(d, i) in item.iconPaths" :key="i" :d="d" />
+                        </svg>
+                        <span class="gs-nodes__tile-label">{{ item.label }}</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            </template>
+
             <!-- ========== 我的画布 ========== -->
             <template v-if="activeSection === 'canvases'">
               <section class="gs-section">
@@ -978,6 +1072,99 @@ async function onDeleteCanvas(id: string, name: string): Promise<void> {
     display: flex;
     flex-direction: column;
     gap: 10px;
+  }
+}
+
+// —— 节点调色板设置样式（grid 瓦片） ——
+.gs-nodes {
+  &__groups {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  &__group {
+    padding: 10px 12px 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background: #f9fafb;
+  }
+
+  &__group-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    gap: 8px;
+  }
+
+  &__tile {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 10px 6px 8px;
+    min-height: 64px;
+    border-radius: 8px;
+    border: 1px solid #dedede;
+    background: #fff;
+    font-size: 12px;
+    color: #1f2937;
+    cursor: pointer;
+    transition: background 0.1s ease, color 0.1s ease, border-color 0.1s ease, opacity 0.15s ease;
+
+    &:hover {
+      background: #eef1f5;
+      border-color: #2563eb;
+      color: #2563eb;
+
+      .gs-nodes__icon {
+        color: #2563eb;
+      }
+    }
+
+    &--hidden {
+      opacity: 0.45;
+
+      .gs-nodes__icon {
+        color: #9ca3af;
+      }
+    }
+  }
+
+  &__checkbox {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 14px;
+    height: 14px;
+    accent-color: #2563eb;
+    cursor: pointer;
+  }
+
+  &__icon {
+    width: 20px;
+    height: 20px;
+    color: #8a919c;
+    transition: color 0.1s ease;
+  }
+
+  &__tile-label {
+    max-width: 100%;
+    line-height: 1.2;
+    text-align: center;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
   }
 }
 

@@ -35,6 +35,7 @@ const ja: Language = {
     groupGeneral: '一般',
     groupLLM: 'LLM設定',
     groupImage: '画像生成',
+    groupNodes: 'ノードパレット',
 
     groupCanvases: "マイキャンバス",
     llmTitle: 'LLM APIキー',
@@ -65,6 +66,10 @@ const ja: Language = {
     canvasDeleteConfirmTitle: "キャンバスを削除しますか？",
     canvasDeleteConfirmBody: "キャンバス内のノード、エッジ、ファイルはすべて削除され、復元できません。\n\nキャンバス：{name}",
     canvasDeleteFailed: "削除に失敗しました",
+    nodesTitle: "ノードパレット",
+    nodesHint: "チェックを外したノードタイプはパレットに表示されません。キャンバス上の既存ノードには影響しません。",
+    nodesHiddenCount: "{count} 種類のノードタイプが非表示です。",
+    nodesShowAll: "すべて表示",
   },
   helpCenter: {
     title: 'ヘルプセンター',
@@ -95,7 +100,8 @@ const ja: Language = {
     addNode: 'ノードを追加',
     searchPlaceholder: 'ノードを検索…',
     noResult: '一致するノードがありません',
-    nodeHelp: 'このノードの説明を見る'
+    nodeHelp: 'このノードの説明を見る',
+    paletteSettings: 'パレット設定…'
   },
   connection: {
     selfLoop: '同じノードのポート同士は接続できません',

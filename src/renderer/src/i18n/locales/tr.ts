@@ -35,6 +35,7 @@ const tr: Language = {
     groupGeneral: 'Genel',
     groupLLM: 'LLM Ayarları',
     groupImage: 'Görüntü Oluşturma',
+    groupNodes: 'Düğüm Paleti',
 
     groupCanvases: "Benim tuvalim",
     llmTitle: 'LLM API Anahtarı',
@@ -65,6 +66,10 @@ const tr: Language = {
     canvasDeleteConfirmTitle: "Tuval silinsin mi?",
     canvasDeleteConfirmBody: "Tuvaldeki düğümler, kenarlar ve dosyalar tamamen silinecek ve kurtarılamayacak.\n\nTuval: {name}",
     canvasDeleteFailed: "Silme başarısız",
+    nodesTitle: "Düğüm Paleti",
+    nodesHint: "İşaretlenmemiş düğüm türleri paletten gizlenecektir. Kanvastaki mevcut düğümler etkilenmez.",
+    nodesHiddenCount: "Şu anda {count} düğüm türü gizli.",
+    nodesShowAll: "Tümünü Göster",
   },
   helpCenter: {
     title: 'Yardım Merkezi',
@@ -95,7 +100,8 @@ const tr: Language = {
     addNode: 'Düğüm ekle',
     searchPlaceholder: 'Düğüm ara…',
     noResult: 'Eşleşen düğüm yok',
-    nodeHelp: 'Düğüm belgelerini görüntüle'
+    nodeHelp: 'Düğüm belgelerini görüntüle',
+    paletteSettings: 'Palet ayarları…'
   },
   connection: {
     selfLoop: 'Aynı düğümdeki bağlantı noktaları birbirine bağlanamaz',

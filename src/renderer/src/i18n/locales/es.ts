@@ -35,6 +35,7 @@ const es: Language = {
     groupGeneral: 'General',
     groupLLM: 'Ajustes de LLM',
     groupImage: 'Generación de imágenes',
+    groupNodes: 'Paleta de nodos',
 
     groupCanvases: "Mis lienzos",
     llmTitle: 'Clave API de LLM',
@@ -65,6 +66,10 @@ const es: Language = {
     canvasDeleteConfirmTitle: "¿Eliminar lienzo?",
     canvasDeleteConfirmBody: "Los nodos, aristas y archivos del lienzo se eliminarán y no podrán recuperarse.\n\nLienzo: {name}",
     canvasDeleteFailed: "Error al eliminar",
+    nodesTitle: "Paleta de nodos",
+    nodesHint: "Los tipos de nodo desmarcados se ocultarán de la paleta. Los nodos existentes en el lienzo no se ven afectados.",
+    nodesHiddenCount: "{count} tipo(s) de nodo ocultos actualmente.",
+    nodesShowAll: "Mostrar todos",
   },
   helpCenter: {
     title: 'Centro de ayuda',
@@ -95,7 +100,8 @@ const es: Language = {
     addNode: 'Añadir nodo',
     searchPlaceholder: 'Buscar nodos…',
     noResult: 'No hay nodos coincidentes',
-    nodeHelp: 'Ver la documentación del nodo'
+    nodeHelp: 'Ver la documentación del nodo',
+    paletteSettings: 'Ajustes de paleta…'
   },
   connection: {
     selfLoop: 'No se pueden conectar puertos del mismo nodo',

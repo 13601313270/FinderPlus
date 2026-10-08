@@ -35,6 +35,7 @@ const hi: Language = {
     groupGeneral: 'सामान्य',
     groupLLM: 'LLM सेटिंग्स',
     groupImage: 'छवि निर्माण',
+    groupNodes: 'नोड पैलेट',
 
     groupCanvases: "मेरे कैनवास",
     llmTitle: 'LLM API कुंजी',
@@ -65,6 +66,10 @@ const hi: Language = {
     canvasDeleteConfirmTitle: "कैनवास हटाएं?",
     canvasDeleteConfirmBody: "कैनवास के नोड, किनारे और फ़ाइलें सभी हटा दी जाएंगी और पुनर्प्राप्त नहीं की जा सकेंगी।\n\nकैनवास: {name}",
     canvasDeleteFailed: "हटाने में विफल",
+    nodesTitle: "नोड पैलेट",
+    nodesHint: "अनचेक किए गए नोड प्रकार पैलेट से छिप जाएंगे। कैनवास पर मौजूद नोड प्रभावित नहीं होंगे।",
+    nodesHiddenCount: "{count} नोड प्रकार वर्तमान में छिपे हुए हैं।",
+    nodesShowAll: "सभी दिखाएं",
   },
   helpCenter: {
     title: 'सहायता केंद्र',
@@ -95,7 +100,8 @@ const hi: Language = {
     addNode: 'नोड जोड़ें',
     searchPlaceholder: 'नोड खोजें…',
     noResult: 'कोई मेल खाता नोड नहीं',
-    nodeHelp: 'नोड दस्तावेज़ देखें'
+    nodeHelp: 'नोड दस्तावेज़ देखें',
+    paletteSettings: 'पैलेट सेटिंग्स…'
   },
   connection: {
     selfLoop: 'एक ही नोड के पोर्ट आपस में जोड़े नहीं जा सकते',

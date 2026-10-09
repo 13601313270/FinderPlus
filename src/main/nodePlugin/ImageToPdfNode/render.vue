@@ -128,6 +128,16 @@ watch(
           }
         }, 0)
       }
+      // MethodPort 外部连线触发：等同点「生成」按钮
+      if (n.hasPendingMethodTrigger) {
+        n.consumePendingMethodTrigger()
+        const nodeSnap = n
+        setTimeout(() => {
+          if (!isGenerating.value && nodeSnap.totalImageCount > 0) {
+            void onGenerateForAutoRun(nodeSnap)
+          }
+        }, 0)
+      }
     })
     if (n) {
       imageCount.value = n.totalImageCount

@@ -1,6 +1,6 @@
 {
   "name": "canvas-desk",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "description": "Finder+ - Electron + Vue3 + Less + TS desktop app",
   "main": "./out/main/index.js",
   "author": "wanghaoran",

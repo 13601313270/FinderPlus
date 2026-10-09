@@ -39,7 +39,7 @@ export class NumberInputNode extends Node {
     super(id)
     this.addOutput(this.numberOutput)
     // 内容区硬约束：手柄 + 输入框 + padding ≈ 80px 高，宽 220px
-    this.setBox(220, 77)
+    this.setBox(220, 80)
   }
 
   /** 拖入文件落点命中本节点时被调用；本节点不接收文件，返回 false */

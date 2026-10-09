@@ -1014,12 +1014,12 @@ onUnmounted(() => {
     <!-- 全局设置弹窗：顶部栏「设置」按钮和系统应用菜单「设置…」共享它 -->
     <SettingsDialog />
 
-    <!-- 全局 prompt / confirm / alert 替代组件，挂载后自动接管 imperative API -->
-    <PromptDialog />
-
     <!-- 首次启动新手引导：全屏覆盖层 + 步骤卡片，pointer-events: none 不阻断画布交互 -->
     <OnboardingGuide />
   </section>
+
+  <!-- 全局 prompt / confirm / alert 替代组件：必须在 v-if/v-else 外面，picker 模式也要用 -->
+  <PromptDialog />
 </template>
 
 <style scoped lang="less">

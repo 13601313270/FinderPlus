@@ -4,6 +4,7 @@ import type { Scene } from '../../engine/graph/Scene'
 import { ImgFileCollectionValue } from '../../engine/data/ImgFileCollectionValue'
 import { ImgFileValue } from '../../engine/data/ImgFileValue'
 import { MethodPort } from '../../engine/port/MethodPort'
+import { NumberValue } from '../../engine/data/NumberValue'
 import { OutputPort } from '../../engine/port/OutputPort'
 import { FolderNode } from '../FolderNode/node'
 import { ImgFileNode } from '../ImgFileNode/node'
@@ -70,6 +71,25 @@ export class ImgFolderNode extends FolderNode {
     it: 'Tutte le immagini'
   })
 
+  /** 数量输出端口：当前文件夹内的图片张数（NumberValue） */
+  readonly countOutput = new OutputPort('count', NumberValue, {
+    zh: '图片数量',
+    en: 'Image Count',
+    ja: '画像数',
+    ko: '이미지 수',
+    es: 'Cantidad de imágenes',
+    ar: 'عدد الصور',
+    fr: 'Nombre d\'images',
+    pt: 'Quantidade de imagens',
+    ru: 'Количество изображений',
+    hi: 'छवियों की संख्या',
+    id: 'Jumlah Gambar',
+    de: 'Bildanzahl',
+    vi: 'Số lượng ảnh',
+    tr: 'Görsel Sayısı',
+    it: 'Numero di immagini'
+  })
+
   /** 所有子节点 onChanged 订阅清理函数集合，collection 输出重算依赖它 */
   private readonly childSubs = new Set<() => void>()
 
@@ -107,6 +127,7 @@ export class ImgFolderNode extends FolderNode {
     super(id)
     this.addOutput(this.imageOutput)
     this.addOutput(this.collectionOutput)
+    this.addOutput(this.countOutput)
     this.addMethod(this.clearPort)
     this.clearPort.onTrigger(() => this.clearAll())
   }
@@ -187,6 +208,11 @@ export class ImgFolderNode extends FolderNode {
     this.collectionOutput.commit(new ImgFileCollectionValue(items))
   }
 
+  /** 把当前 children 数量 commit 到 countOutput */
+  private commitCount(): void {
+    this.countOutput.commit(new NumberValue(this.children.length))
+  }
+
   // —— 收养入口收紧为「仅图片」 ——
 
   /** 只收养图片节点；首个被收养的子节点自动选中 */
@@ -198,6 +224,7 @@ export class ImgFolderNode extends FolderNode {
     }
     this.resubscribeAllChildren()
     this.commitCollection()
+    this.commitCount()
   }
 
   /** 端口收值：只接受图片值，其余走超类流程会产生非图片子节点，直接拦截 */
@@ -225,6 +252,7 @@ export class ImgFolderNode extends FolderNode {
     if (child.id !== this.selectedChildIdValue) {
       this.resubscribeAllChildren()
       this.commitCollection()
+      this.commitCount()
       return
     }
     this.selectedChildIdValue = ''
@@ -238,6 +266,7 @@ export class ImgFolderNode extends FolderNode {
     }
     this.resubscribeAllChildren()
     this.commitCollection()
+    this.commitCount()
   }
 
   // —— 清空 ——
@@ -259,6 +288,7 @@ export class ImgFolderNode extends FolderNode {
     this.imageOutput.clear()
     this.resubscribeAllChildren()
     this.commitCollection()
+    this.commitCount()
     // 清 fingerprint 映射（父类的属性子类直接访问）
     // @ts-ignore — fingerprintToChild 是 FolderNode private，这里用下标签名绕过
     const fpMap: Map<string, Node> = (this as unknown as { fingerprintToChild: Map<string, Node> }).fingerprintToChild
@@ -287,6 +317,7 @@ export class ImgFolderNode extends FolderNode {
     this.pendingSelectedChildId = ''
     this.resubscribeAllChildren()
     this.commitCollection()
+    this.commitCount()
   }
 
   override async beforeDestroy(): Promise<void> {

@@ -38,7 +38,7 @@ async function handleDoubleClick(e: MouseEvent): Promise<void> {
 }
 
 async function createAndOpen(): Promise<void> {
-  const name = window.prompt('画布名称', '')
+  const name = await window.showPrompt('画布名称', '')
   if (!name || !name.trim()) return
   try {
     const result = await window.canvasApi.create(name.trim())

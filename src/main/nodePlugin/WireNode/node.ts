@@ -43,7 +43,8 @@ export class WireNode extends Node {
     super(id)
     this.inputPort = new InputPort('in', {
       accepts: WireNode.ALL_VALUE_CLASSES,
-      label: inLabel
+      label: inLabel,
+      isHiddenLabel: true,
     })
     this.addInput(this.inputPort)
     // 注意：构造时不加输出端口——等上游连上才动态创建（跟 HumanReviewNode 一致）

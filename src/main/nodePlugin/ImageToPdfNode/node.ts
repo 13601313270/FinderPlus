@@ -4,6 +4,7 @@ import { PdfFileValue } from '../../engine/data/PdfFileValue'
 import { ImgFileCollectionValue } from '../../engine/data/ImgFileCollectionValue'
 import { ImgFileValue } from '../../engine/data/ImgFileValue'
 import { InputPort } from '../../engine/port/InputPort'
+import { MethodPort } from '../../engine/port/MethodPort'
 import { OutputPort } from '../../engine/port/OutputPort'
 import { Node } from '../../engine/node/Node'
 
@@ -73,6 +74,30 @@ export class ImageToPdfNode extends Node {
     it: 'File PDF'
   })
 
+  /** 方法端口：外部连线触发一次 PDF 生成（等同点「生成」按钮） */
+  readonly generatePdfMethod = new MethodPort('generatePdf', {
+    label: {
+      zh: '生成 PDF',
+      en: 'Generate PDF',
+      ja: 'PDF生成',
+      ko: 'PDF 생성',
+      es: 'Generar PDF',
+      ar: 'إنشاء PDF',
+      fr: 'Générer PDF',
+      pt: 'Gerar PDF',
+      ru: 'Создать PDF',
+      hi: 'PDF बनाएँ',
+      id: 'Buat PDF',
+      de: 'PDF erzeugen',
+      vi: 'Tạo PDF',
+      tr: 'PDF Oluştur',
+      it: 'Genera PDF'
+    }
+  })
+
+  /** MethodPort 被外部触发后设为 true，render.vue 在 onChanged 里消费它并执行生成 */
+  private pendingMethodTrigger = false
+
   /**
    * PDF 页面尺寸（预设）。默认 A4。
    * 用 setter 写入时会自动同步 pageWidth / pageHeight。
@@ -95,6 +120,12 @@ export class ImageToPdfNode extends Node {
     // 初始 1 个端口，后续按需自动扩
     this.addImagePort(0)
     this.addOutput(this.pdfOutput)
+    this.addMethod(this.generatePdfMethod)
+    // 方法端口被触发 → 设标记 + notifyChanged，render.vue 消费后执行生成
+    this.generatePdfMethod.onTrigger(() => {
+      this.pendingMethodTrigger = true
+      this.notifyChanged()
+    })
     // 内容区硬约束：紧凑卡片 + 一行生成按钮
     this.setBox(160, 138)
   }
@@ -247,6 +278,16 @@ export class ImageToPdfNode extends Node {
     if (this.autoRunEnabled === enabled) return
     this.autoRunEnabled = enabled
     this.notifyChanged()
+  }
+
+  /** MethodPort 是否有待消费的触发信号（render.vue 读它决定是否执行生成） */
+  get hasPendingMethodTrigger(): boolean {
+    return this.pendingMethodTrigger
+  }
+
+  /** render.vue 消费完 MethodPort 触发后调它清掉标记，避免下一轮 notifyChanged 重复触发 */
+  consumePendingMethodTrigger(): void {
+    this.pendingMethodTrigger = false
   }
 
   // —— PDF 页面配置 ——

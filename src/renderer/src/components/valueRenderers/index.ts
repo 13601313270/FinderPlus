@@ -37,6 +37,7 @@ import FileValueRenderer from './FileValueRenderer.vue'
 import TxtFileValueRenderer from './TxtFileValueRenderer.vue'
 import ImgFileValueRenderer from './ImgFileValueRenderer.vue'
 import PdfFileValueRenderer from './PdfFileValueRenderer.vue'
+import ImgFileCollectionValueRenderer from './ImgFileCollectionValueRenderer.vue'
 
 /**
  * 编译期类型门：强制每个内置 kind 都有 renderer。
@@ -45,14 +46,15 @@ import PdfFileValueRenderer from './PdfFileValueRenderer.vue'
 export type BuiltinRendererMap = Record<BuiltinKind, Component>
 
 const builtinRenderers = {
-  'bool':     BoolValueRenderer,
-  'number':   NumberValueRenderer,
-  'string':   StringValueRenderer,
-  'json':     JsonValueRenderer,
-  'file':     FileValueRenderer,
-  'txt-file': TxtFileValueRenderer,
-  'img-file': ImgFileValueRenderer,
-  'pdf-file': PdfFileValueRenderer
+  'bool':                BoolValueRenderer,
+  'number':              NumberValueRenderer,
+  'string':              StringValueRenderer,
+  'json':                JsonValueRenderer,
+  'file':                FileValueRenderer,
+  'txt-file':            TxtFileValueRenderer,
+  'img-file':            ImgFileValueRenderer,
+  'pdf-file':            PdfFileValueRenderer,
+  'img-file-collection': ImgFileCollectionValueRenderer
 } satisfies BuiltinRendererMap
 
 // ── 运行时注册表：从 builtinRenderers 批量初始化，支持插件扩展 ──

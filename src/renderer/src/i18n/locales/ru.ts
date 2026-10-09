@@ -118,7 +118,8 @@ const ru: Language = {
     file: 'Файл',
     'txt-file': 'Текстовый файл',
     'img-file': 'Файл изображения',
-    'pdf-file': 'PDF-файл'
+    'pdf-file': 'PDF-файл',
+    'img-file-collection': 'Коллекция изображений'
   },
   intro: {
     whatIs: {

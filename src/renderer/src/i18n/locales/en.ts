@@ -126,7 +126,8 @@ const en: Language = {
     file: 'File',
     'txt-file': 'Text File',
     'img-file': 'Image File',
-    'pdf-file': 'PDF File'
+    'pdf-file': 'PDF File',
+    'img-file-collection': 'Image Collection'
   },
   intro: {
     whatIs: {

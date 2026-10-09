@@ -118,7 +118,8 @@ const hi: Language = {
     file: 'फ़ाइल',
     'txt-file': 'टेक्स्ट फ़ाइल',
     'img-file': 'छवि फ़ाइल',
-    'pdf-file': 'PDF फ़ाइल'
+    'pdf-file': 'PDF फ़ाइल',
+    'img-file-collection': 'छवि संग्रह'
   },
   intro: {
     whatIs: {

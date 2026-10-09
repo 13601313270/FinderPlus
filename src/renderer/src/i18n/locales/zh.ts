@@ -131,7 +131,8 @@ const zh: Language = {
     file: '文件',
     'txt-file': '文本文件',
     'img-file': '图片文件',
-    'pdf-file': 'PDF文件'
+    'pdf-file': 'PDF文件',
+    'img-file-collection': '图片文件集合'
   },
   intro: {
     whatIs: {

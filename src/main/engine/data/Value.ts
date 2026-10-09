@@ -31,7 +31,8 @@ export const BUILTIN_VALUE_KINDS = [
   'file',
   'txt-file',
   'img-file',
-  'pdf-file'
+  'pdf-file',
+  'img-file-collection'
 ] as const
 
 export type BuiltinValueKind = (typeof BUILTIN_VALUE_KINDS)[number]

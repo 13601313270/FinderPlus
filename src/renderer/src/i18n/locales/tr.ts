@@ -118,7 +118,8 @@ const tr: Language = {
     file: 'Dosya',
     'txt-file': 'Metin Dosyası',
     'img-file': 'Görsel Dosyası',
-    'pdf-file': 'PDF Dosyası'
+    'pdf-file': 'PDF Dosyası',
+    'img-file-collection': 'Görsel Koleksiyonu'
   },
   intro: {
     whatIs: {

@@ -78,6 +78,17 @@ function onFitChange(val: FitMode): void {
   pdfNode.value?.setPdfFitMode(val)
 }
 
+function onAddPort(): void {
+  pdfNode.value?.addImage()
+}
+
+function onRemovePort(): void {
+  const n = pdfNode.value
+  if (!n || n.inputPorts.length <= 1) return
+  const last = n.inputPorts[n.inputPorts.length - 1]
+  if (last) n.removeImagePort(last.id)
+}
+
 /** 详情面板里的生成按钮——和卡片上的按钮调同一个共享函数 */
 async function onGenerate(): Promise<void> {
   const n = pdfNode.value
@@ -95,9 +106,28 @@ async function onGenerate(): Promise<void> {
 
 <template>
   <div class="detail-panel">
-    <!-- 端口状态 -->
+    <!-- 端口管理 -->
     <div class="detail-panel__section">
-      <label class="detail-panel__label">{{ t('imagesConnected', { connected: connectedCount, total: totalPorts }) }}</label>
+      <label class="detail-panel__label">{{ t('portsLabel') }}</label>
+      <div class="detail-panel__port-controls">
+        <span class="detail-panel__port-count">{{ t('imagesConnected', { connected: connectedCount, total: totalPorts }) }}</span>
+        <div class="detail-panel__port-btns">
+          <button
+            class="detail-panel__btn detail-panel__btn--icon"
+            type="button"
+            :disabled="totalPorts <= 1"
+            :title="t('removePort')"
+            @click="onRemovePort"
+          >−</button>
+          <button
+            class="detail-panel__btn detail-panel__btn--icon"
+            type="button"
+            :title="t('addPort')"
+            @click="onAddPort"
+          >＋</button>
+        </div>
+      </div>
+      <div class="detail-panel__hint">{{ t('portsHint') }}</div>
     </div>
 
     <!-- 页面尺寸 -->
@@ -236,6 +266,39 @@ async function onGenerate(): Promise<void> {
 
       &:hover:not(:disabled) { background: #1d4ed8; }
     }
+
+    &--icon {
+      padding: 2px 10px;
+      font-size: 16px;
+      font-weight: 600;
+      line-height: 1;
+      border: 1px solid #d1d5db;
+      border-radius: 4px;
+      background: #fff;
+      color: #374151;
+
+      &:hover:not(:disabled) {
+        border-color: #2563eb;
+        color: #2563eb;
+      }
+    }
+  }
+
+  &__port-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  &__port-count {
+    font-size: 13px;
+    color: #374151;
+  }
+
+  &__port-btns {
+    display: flex;
+    gap: 4px;
   }
 }
 </style>

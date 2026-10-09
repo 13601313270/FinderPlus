@@ -117,7 +117,8 @@ const fr: Language = {
     file: 'Fichier',
     'txt-file': 'Fichier texte',
     'img-file': 'Fichier image',
-    'pdf-file': 'Fichier PDF'
+    'pdf-file': 'Fichier PDF',
+    "img-file-collection": "Collection d'images"
   },
   intro: {
     whatIs: {

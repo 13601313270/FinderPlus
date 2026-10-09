@@ -1,6 +1,7 @@
 import { base64ToBytes } from '../../engine/data/base64'
 import { djb2 } from '../../engine/data/hash'
 import { PdfFileValue } from '../../engine/data/PdfFileValue'
+import { ImgFileCollectionValue } from '../../engine/data/ImgFileCollectionValue'
 import { ImgFileValue } from '../../engine/data/ImgFileValue'
 import { InputPort } from '../../engine/port/InputPort'
 import { OutputPort } from '../../engine/port/OutputPort'
@@ -98,7 +99,7 @@ export class ImageToPdfNode extends Node {
   /** 创建并登记一个新的图片输入端口 */
   private addImagePort(index: number): InputPort {
     const port = new InputPort(`image-${index}`, {
-      accepts: [ImgFileValue],
+      accepts: [ImgFileValue, ImgFileCollectionValue],
       multiple: false,
       label: {
         zh: `图片 ${index + 1}`,
@@ -184,6 +185,7 @@ export class ImageToPdfNode extends Node {
 
   /**
    * 获取所有已连接端口的图片值，按端口顺序排列。
+   * 单个 ImgFileValue 直接加；ImgFileCollectionValue 展开 items 全部加入。
    * 用于 render.vue 生成 PDF。
    */
   getConnectedImages(): Array<{ portId: string; file: File }> {
@@ -192,6 +194,12 @@ export class ImageToPdfNode extends Node {
       for (const [edge, value] of port.incoming) {
         if (value instanceof ImgFileValue && !value.isNull && value.file) {
           result.push({ portId: port.id, file: value.file })
+        } else if (value instanceof ImgFileCollectionValue && !value.isNull && value.items) {
+          for (const item of value.items) {
+            if (!item.isNull && item.file) {
+              result.push({ portId: port.id, file: item.file })
+            }
+          }
         }
         void edge // edge 不使用，避免未使用变量警告
       }
@@ -221,9 +229,9 @@ export class ImageToPdfNode extends Node {
       && this.inputPorts.every((p) => p.incoming.size > 0)
   }
 
-  /** 已连接的图片数量 */
-  get connectedImageCount(): number {
-    return this.inputPorts.filter((p) => p.incoming.size > 0).length
+  /** 所有输入端口累计传入的图片张数（ImgFileCollectionValue 展开后计数） */
+  get totalImageCount(): number {
+    return this.getConnectedImages().length
   }
 
   // —— PDF 页面配置 ——

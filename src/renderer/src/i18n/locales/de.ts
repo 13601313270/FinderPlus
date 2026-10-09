@@ -118,7 +118,8 @@ const de: Language = {
     file: 'Datei',
     'txt-file': 'Textdatei',
     'img-file': 'Bilddatei',
-    'pdf-file': 'PDF-Datei'
+    'pdf-file': 'PDF-Datei',
+    'img-file-collection': 'Bildsammlung'
   },
   intro: {
     whatIs: {

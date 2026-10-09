@@ -26,8 +26,7 @@ const node = computed(() => {
 const { startDrag } = useNodePosition(() => node.value)
 
 // —— 卡片状态 ——
-const connectedCount = ref(0)
-const totalPorts = ref(1)
+const imageCount = ref(0)
 const pageSize = ref<string>('A4')
 const fitMode = ref<string>('contain')
 const isGenerating = ref(false)
@@ -38,19 +37,16 @@ watch(
   (n) => {
     unsubscribe?.()
     unsubscribe = n?.onChanged(() => {
-      connectedCount.value = n.connectedImageCount
-      totalPorts.value = n.inputPorts.length
+      imageCount.value = n.totalImageCount
       pageSize.value = n.pdfPageSize
       fitMode.value = n.pdfFitMode
     })
     if (n) {
-      connectedCount.value = n.connectedImageCount
-      totalPorts.value = n.inputPorts.length
+      imageCount.value = n.totalImageCount
       pageSize.value = n.pdfPageSize
       fitMode.value = n.pdfFitMode
     } else {
-      connectedCount.value = 0
-      totalPorts.value = 1
+      imageCount.value = 0
     }
   },
   { immediate: true, flush: 'sync' }
@@ -100,7 +96,7 @@ async function onGenerate(): Promise<void> {
     <!-- 状态行 -->
     <div class="node-card__status">
       <span class="node-card__count">
-        {{ t('imagesConnected', { connected: connectedCount, total: totalPorts }) }}
+        {{ t('imagesConnected', { count: imageCount }) }}
       </span>
       <span class="node-card__tags">
         <span class="node-card__pagesize">{{ pageSize }}</span>
@@ -108,11 +104,13 @@ async function onGenerate(): Promise<void> {
       </span>
     </div>
 
+    <div style="flex-grow: 1;"></div>
+
     <!-- 生成按钮（紧凑版） -->
     <button
       class="node-card__gen"
       type="button"
-      :disabled="connectedCount === 0 || isGenerating"
+      :disabled="imageCount === 0 || isGenerating"
       @pointerdown.stop
       @click.stop="onGenerate"
     >

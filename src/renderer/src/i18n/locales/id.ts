@@ -118,7 +118,8 @@ const id: Language = {
     file: 'Berkas',
     'txt-file': 'Berkas Teks',
     'img-file': 'Berkas Gambar',
-    'pdf-file': 'Berkas PDF'
+    'pdf-file': 'Berkas PDF',
+    'img-file-collection': 'Koleksi Gambar'
   },
   intro: {
     whatIs: {

@@ -118,7 +118,8 @@ const ja: Language = {
     file: 'ファイル',
     'txt-file': 'テキストファイル',
     'img-file': '画像ファイル',
-    'pdf-file': 'PDFファイル'
+    'pdf-file': 'PDFファイル',
+    'img-file-collection': '画像コレクション'
   },
   intro: {
     whatIs: {

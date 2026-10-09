@@ -6,8 +6,24 @@ import type { LocalizedText } from '../../../shared/language'
  */
 export const messages = {
   imagesConnected: {
-    zh: '已连接 {connected}/{total} 张图片',
-    en: '{connected}/{total} images connected'
+    zh: '共 {count} 张图片',
+    en: '{count} images'
+  },
+  portsLabel: {
+    zh: '输入端口',
+    en: 'Input Ports'
+  },
+  portsHint: {
+    zh: '单个端口可接单张图片或图片集合（1 条 Edge 装 N 张）',
+    en: 'Each port accepts one image or a collection (1 Edge carries N images)'
+  },
+  addPort: {
+    zh: '添加端口',
+    en: 'Add Port'
+  },
+  removePort: {
+    zh: '删除端口',
+    en: 'Remove Port'
   },
   generateBtn: {
     zh: '生成 PDF',

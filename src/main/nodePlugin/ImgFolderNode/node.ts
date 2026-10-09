@@ -1,6 +1,7 @@
 import type { Node } from '../../engine/node/Node'
 import type { InputPort } from '../../engine/port/InputPort'
 import type { Scene } from '../../engine/graph/Scene'
+import { ImgFileCollectionValue } from '../../engine/data/ImgFileCollectionValue'
 import { ImgFileValue } from '../../engine/data/ImgFileValue'
 import { MethodPort } from '../../engine/port/MethodPort'
 import { OutputPort } from '../../engine/port/OutputPort'
@@ -50,6 +51,28 @@ export class ImgFolderNode extends FolderNode {
     it: 'Immagine selezionata'
   })
 
+  /** 集合输出端口：全部子图片组成的 ImgFileCollectionValue */
+  readonly collectionOutput = new OutputPort('collection', ImgFileCollectionValue, {
+    zh: '全部图片',
+    en: 'All Images',
+    ja: 'すべての画像',
+    ko: '모든 이미지',
+    es: 'Todas las imágenes',
+    ar: 'جميع الصور',
+    fr: 'Toutes les images',
+    pt: 'Todas as imagens',
+    ru: 'Все изображения',
+    hi: 'सभी छवियां',
+    id: 'Semua Gambar',
+    de: 'Alle Bilder',
+    vi: 'Tất cả ảnh',
+    tr: 'Tüm Görseller',
+    it: 'Tutte le immagini'
+  })
+
+  /** 所有子节点 onChanged 订阅清理函数集合，collection 输出重算依赖它 */
+  private readonly childSubs = new Set<() => void>()
+
   /** 方法端口：外部连线触发清空全部子图片 */
   private readonly clearPort = new MethodPort('clear', {
     label: {
@@ -83,6 +106,7 @@ export class ImgFolderNode extends FolderNode {
   constructor(id: string) {
     super(id)
     this.addOutput(this.imageOutput)
+    this.addOutput(this.collectionOutput)
     this.addMethod(this.clearPort)
     this.clearPort.onTrigger(() => this.clearAll())
   }
@@ -128,6 +152,41 @@ export class ImgFolderNode extends FolderNode {
     }
   }
 
+  /**
+   * 订阅所有当前子节点的变化（先清理旧订阅）。
+   * 子节点 fileOutput 变化时 → commitCollection() 重算集合输出。
+   */
+  private resubscribeAllChildren(): void {
+    this.childSubs.forEach(unsub => unsub())
+    this.childSubs.clear()
+    for (const child of this.children) {
+      if (child instanceof ImgFileNode) {
+        const unsub = child.onChanged(() => this.commitCollection())
+        this.childSubs.add(unsub)
+      }
+    }
+  }
+
+  /**
+   * 构造 ImgFileCollectionValue 并 commit 到 collectionOutput。
+   * 所有子节点的 fileOutput.value 收集起来；没有子节点则 commit null 值。
+   */
+  private commitCollection(): void {
+    if (this.children.length === 0) {
+      this.collectionOutput.commit(new ImgFileCollectionValue())
+      return
+    }
+    const items: ImgFileValue[] = []
+    for (const child of this.children) {
+      if (!(child instanceof ImgFileNode)) continue
+      const v = child.fileOutput.value
+      if (v instanceof ImgFileValue && !v.isNull) {
+        items.push(v)
+      }
+    }
+    this.collectionOutput.commit(new ImgFileCollectionValue(items))
+  }
+
   // —— 收养入口收紧为「仅图片」 ——
 
   /** 只收养图片节点；首个被收养的子节点自动选中 */
@@ -137,6 +196,8 @@ export class ImgFolderNode extends FolderNode {
     if (!this.selectedChildIdValue) {
       this.selectChild(child.id)
     }
+    this.resubscribeAllChildren()
+    this.commitCollection()
   }
 
   /** 端口收值：只接受图片值，其余走超类流程会产生非图片子节点，直接拦截 */
@@ -161,7 +222,11 @@ export class ImgFolderNode extends FolderNode {
   /** 释放子节点：若释放的正是选中项，退订并回退到下一个子节点（没有则清空输出） */
   override removeChild(child: Node): void {
     super.removeChild(child)
-    if (child.id !== this.selectedChildIdValue) return
+    if (child.id !== this.selectedChildIdValue) {
+      this.resubscribeAllChildren()
+      this.commitCollection()
+      return
+    }
     this.selectedChildIdValue = ''
     this.resubscribeSelected(undefined)
     const next = this.children[0]
@@ -171,13 +236,15 @@ export class ImgFolderNode extends FolderNode {
       this.imageOutput.clear()
       this.notifyChanged()
     }
+    this.resubscribeAllChildren()
+    this.commitCollection()
   }
 
   // —— 清空 ——
 
   /**
    * 清空全部子图片节点（彻底 destroy，不是释放回画布）。
-   * 选中态、输出值、fingerprint 映射一并清理。
+   * 选中态、输出值、fingerprint 映射、集合输出一并清理。
    */
   clearAll(): void {
     const scene = this.sceneRef
@@ -190,6 +257,8 @@ export class ImgFolderNode extends FolderNode {
     this.selectedChildIdValue = ''
     this.resubscribeSelected(undefined)
     this.imageOutput.clear()
+    this.resubscribeAllChildren()
+    this.commitCollection()
     // 清 fingerprint 映射（父类的属性子类直接访问）
     // @ts-ignore — fingerprintToChild 是 FolderNode private，这里用下标签名绕过
     const fpMap: Map<string, Node> = (this as unknown as { fingerprintToChild: Map<string, Node> }).fingerprintToChild
@@ -216,10 +285,14 @@ export class ImgFolderNode extends FolderNode {
     const target = wanted ?? this.children[0]
     if (target) this.selectChild(target.id)
     this.pendingSelectedChildId = ''
+    this.resubscribeAllChildren()
+    this.commitCollection()
   }
 
   override async beforeDestroy(): Promise<void> {
     this.resubscribeSelected(undefined)
+    this.childSubs.forEach(unsub => unsub())
+    this.childSubs.clear()
     await super.beforeDestroy()
   }
 }

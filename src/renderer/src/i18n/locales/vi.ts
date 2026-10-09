@@ -118,7 +118,8 @@ const vi: Language = {
     file: 'Tệp',
     'txt-file': 'Tệp văn bản',
     'img-file': 'Tệp hình ảnh',
-    'pdf-file': 'Tệp PDF'
+    'pdf-file': 'Tệp PDF',
+    'img-file-collection': 'Bộ sưu tập ảnh'
   },
   intro: {
     whatIs: {

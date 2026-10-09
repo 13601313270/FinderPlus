@@ -118,7 +118,8 @@ const ar: Language = {
     file: 'ملف',
     'txt-file': 'ملف نصي',
     'img-file': 'ملف صورة',
-    'pdf-file': 'PDF ملف'
+    'pdf-file': 'PDF ملف',
+    'img-file-collection': 'مجموعة الصور'
   },
   intro: {
     whatIs: {

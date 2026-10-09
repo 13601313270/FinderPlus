@@ -87,6 +87,9 @@ export class ImageToPdfNode extends Node {
   /** 图片适配模式：contain / fill / cover */
   private fitMode: FitMode = DEFAULT_FIT
 
+  /** 自动执行开关（持久化）：打开后收到图片自动生成 PDF */
+  private autoRunEnabled = false
+
   constructor(id: string) {
     super(id)
     // 初始 1 个端口，后续按需自动扩
@@ -234,6 +237,18 @@ export class ImageToPdfNode extends Node {
     return this.getConnectedImages().length
   }
 
+  /** 渲染层读自动执行开关状态 */
+  get displayAutoRun(): boolean {
+    return this.autoRunEnabled
+  }
+
+  /** 切换自动执行开关 */
+  setAutoRun(enabled: boolean): void {
+    if (this.autoRunEnabled === enabled) return
+    this.autoRunEnabled = enabled
+    this.notifyChanged()
+  }
+
   // —— PDF 页面配置 ——
 
   /** 当前页面尺寸预设 key（'A4' / 'A3' / ...） */
@@ -285,7 +300,8 @@ export class ImageToPdfNode extends Node {
       portCount: this.inputPorts.length,
       pageSize: this.pageSize,
       margin: this.pageMargin,
-      fitMode: this.fitMode
+      fitMode: this.fitMode,
+      autoRun: this.autoRunEnabled
     }
   }
 
@@ -303,6 +319,9 @@ export class ImageToPdfNode extends Node {
     }
     if (state.fitMode === 'contain' || state.fitMode === 'fill' || state.fitMode === 'cover') {
       this.setPdfFitMode(state.fitMode)
+    }
+    if (typeof state.autoRun === 'boolean') {
+      this.autoRunEnabled = state.autoRun
     }
 
     if (Array.isArray(savedBox) && savedBox.length === 2) {

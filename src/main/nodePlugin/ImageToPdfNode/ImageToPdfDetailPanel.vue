@@ -28,6 +28,7 @@ const fitMode = ref<FitMode>('contain')
 const connectedCount = ref(0)
 const totalPorts = ref(1)
 const isGenerating = ref(false)
+const autoRun = ref(false)
 
 const pageSizeOptions = Object.keys(PAGE_SIZE_PRESETS) as PageSizePreset[]
 const fitOptions: { value: FitMode; label: string }[] = [
@@ -55,8 +56,9 @@ function sync(n: ImageToPdfNode): void {
   pageSize.value = n.pdfPageSize
   margin.value = n.pdfMargin
   fitMode.value = n.pdfFitMode
-  connectedCount.value = n.connectedImageCount
+  connectedCount.value = n.totalImageCount
   totalPorts.value = n.inputPorts.length
+  autoRun.value = n.displayAutoRun
 }
 
 watch(() => props.nodeId, () => {
@@ -87,6 +89,10 @@ function onRemovePort(): void {
   if (!n || n.inputPorts.length <= 1) return
   const last = n.inputPorts[n.inputPorts.length - 1]
   if (last) n.removeImagePort(last.id)
+}
+
+function onAutoRunToggle(e: Event): void {
+  pdfNode.value?.setAutoRun((e.target as HTMLInputElement).checked)
 }
 
 /** 详情面板里的生成按钮——和卡片上的按钮调同一个共享函数 */
@@ -171,8 +177,23 @@ async function onGenerate(): Promise<void> {
       <div class="detail-panel__hint">{{ t(`fitModeHint_${fitMode}`) }}</div>
     </div>
 
-    <!-- 生成按钮 -->
+    <!-- 自动生成开关 -->
     <div class="detail-panel__section">
+      <label class="detail-panel__switch">
+        <input
+          class="detail-panel__switch-input"
+          type="checkbox"
+          :checked="autoRun"
+          @change="onAutoRunToggle"
+        />
+        <span class="detail-panel__switch-slider" aria-hidden="true" />
+        <span class="detail-panel__switch-label">{{ t('autoLabel') }}</span>
+      </label>
+      <div class="detail-panel__hint">{{ t('autoHint') }}</div>
+    </div>
+
+    <!-- 生成按钮（autoRun 时隐藏） -->
+    <div v-if="!autoRun" class="detail-panel__section">
       <button
         class="detail-panel__btn detail-panel__btn--primary"
         type="button"
@@ -299,6 +320,59 @@ async function onGenerate(): Promise<void> {
   &__port-btns {
     display: flex;
     gap: 4px;
+  }
+
+  // —— autoRun switch ——
+  &__switch {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  &__switch-input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  &__switch-slider {
+    position: relative;
+    width: 36px;
+    height: 20px;
+    background: #d1d5db;
+    border-radius: 10px;
+    transition: background 0.2s;
+    flex-shrink: 0;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 16px;
+      height: 16px;
+      background: #fff;
+      border-radius: 50%;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+      transition: transform 0.2s;
+    }
+  }
+
+  &__switch-input:checked + &__switch-slider {
+    background: #2563eb;
+
+    &::before {
+      transform: translateX(16px);
+    }
+  }
+
+  &__switch-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #374151;
   }
 }
 </style>

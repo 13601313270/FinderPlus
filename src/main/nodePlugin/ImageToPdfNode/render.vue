@@ -32,6 +32,7 @@ const imageCount = ref(0)
 const pageSize = ref<string>('A4')
 const fitMode = ref<string>('contain')
 const isGenerating = ref(false)
+const autoRun = ref(false)
 
 // —— PDF 弹窗预览 ——
 const showPreview = ref(false)
@@ -116,17 +117,29 @@ watch(
       imageCount.value = n.totalImageCount
       pageSize.value = n.pdfPageSize
       fitMode.value = n.pdfFitMode
+      autoRun.value = n.displayAutoRun
       syncOutputPdf(n)
+      // 自动生成：异步跑，让本次 notifyChanged 先完成
+      if (n.displayAutoRun && n.totalImageCount > 0 && !isGenerating.value) {
+        const nodeSnap = n
+        setTimeout(() => {
+          if (!isGenerating.value && nodeSnap.totalImageCount > 0) {
+            void onGenerateForAutoRun(nodeSnap)
+          }
+        }, 0)
+      }
     })
     if (n) {
       imageCount.value = n.totalImageCount
       pageSize.value = n.pdfPageSize
       fitMode.value = n.pdfFitMode
+      autoRun.value = n.displayAutoRun
       syncOutputPdf(n)
     } else {
       imageCount.value = 0
       hasOutputPdf.value = false
       previewFile.value = null
+      autoRun.value = false
     }
   },
   { immediate: true, flush: 'sync' }
@@ -137,10 +150,9 @@ onUnmounted(() => {
   destroyAll()
 })
 
-/** 卡片上的生成按钮 */
-async function onGenerate(): Promise<void> {
-  const n = node.value
-  if (!n || isGenerating.value) return
+/** 内部共享：生成 PDF（接受显式 node，autoRun 也复用） */
+async function onGenerateForAutoRun(n: ImageToPdfNode): Promise<void> {
+  if (isGenerating.value) return
   isGenerating.value = true
   try {
     await generatePdfFromNode(n)
@@ -149,6 +161,13 @@ async function onGenerate(): Promise<void> {
   } finally {
     isGenerating.value = false
   }
+}
+
+/** 卡片上的生成按钮 */
+async function onGenerate(): Promise<void> {
+  const n = node.value
+  if (!n) return
+  await onGenerateForAutoRun(n)
 }
 
 /** 弹窗翻页控件是否显示 */
@@ -192,18 +211,20 @@ const showPreviewPager = computed(() =>
 
     <div style="flex-grow: 1;"></div>
 
-    <!-- 操作行：生成 + 预览 -->
+    <!-- 操作行：生成(autoRun 时隐藏) + 预览 -->
     <div class="node-card__actions">
-      <button
-        class="node-card__gen"
-        type="button"
-        :disabled="imageCount === 0 || isGenerating"
-        @pointerdown.stop
-        @click.stop="onGenerate"
-      >
-        <span v-if="isGenerating">{{ t('generating') }}</span>
-        <span v-else>{{ t('generateBtn') }}</span>
-      </button>
+      <template v-if="!autoRun">
+        <button
+          class="node-card__gen"
+          type="button"
+          :disabled="imageCount === 0 || isGenerating"
+          @pointerdown.stop
+          @click.stop="onGenerate"
+        >
+          <span v-if="isGenerating">{{ t('generating') }}</span>
+          <span v-else>{{ t('generateBtn') }}</span>
+        </button>
+      </template>
       <button
         class="node-card__preview"
         type="button"

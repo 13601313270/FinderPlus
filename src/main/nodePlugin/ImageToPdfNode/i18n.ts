@@ -33,6 +33,14 @@ export const messages = {
     zh: '生成中…',
     en: 'Generating…'
   },
+  autoLabel: {
+    zh: '自动生成',
+    en: 'Auto-generate'
+  },
+  autoHint: {
+    zh: '收到图片后自动生成 PDF，无需手动点按钮',
+    en: 'Automatically generate PDF when images arrive'
+  },
   previewBtn: {
     zh: '预览 PDF',
     en: 'Preview PDF'

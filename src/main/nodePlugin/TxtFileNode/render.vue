@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
+import { computed, ref, watch, onUnmounted } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { TxtFileNode } from './node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
@@ -40,7 +40,6 @@ const fileName = ref('')
 const fileSize = ref(0)
 
 let unsubscribe: (() => void) | undefined
-let unsubscribeFile: (() => void) | undefined
 watch(
   fileNode,
   (n) => {
@@ -63,7 +62,6 @@ watch(
 onUnmounted(() => {
   unsubscribe?.()
   cleanupDragOut()
-  unsubscribeFile?.()
 })
 
 /** 格式化文件大小 */
@@ -72,32 +70,6 @@ function formatSize(bytes: number): string {
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
   return `${(bytes / 1024 / 1024).toFixed(2)} MB`
 }
-
-// 挂载时：如果有 fileName 但没内容，自动读一次兜底
-// 同时订阅画布目录文件变化，外部编辑器改了文件 → 自动重读 + commit 下游
-onMounted(async () => {
-  const node = fileNode.value
-  if (!node) return
-  if (node.fileName && !node.content) {
-    try {
-      const text = await window.fileApi.readText(node.fileName)
-      node.setContent(text)
-    } catch { /* 文件可能已被用户删了，静默忽略 */ }
-  }
-
-  // 订阅文件变化：canvasId + fileName 都匹配时才重读
-  // 多窗口并行时，窗口 A 的文件变化不会误触发窗口 B 的节点
-  unsubscribeFile = window.fileApi.onChanged(async ({ canvasId: changedCanvasId, fileName: changedName }) => {
-    // 跨画布变化不关心
-    if (changedCanvasId !== window.getCurrentCanvasId()) return
-    const current = fileNode.value
-    if (!current || current.fileName !== changedName) return
-    try {
-      const text = await window.fileApi.readText(changedName)
-      current.setContent(text)
-    } catch { /* 文件被删/读不到，静默忽略 */ }
-  })
-})
 </script>
 
 <template>

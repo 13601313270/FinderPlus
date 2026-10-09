@@ -594,6 +594,18 @@ export abstract class Node {
   abstract readState(state: Record<string, unknown>): void
 
   /**
+   * 节点就绪钩子，异步。画布启动时由 bootstrapScene 在 addNode + readState + connect 全部完成后
+   * 统一 await 一轮——此时端口已就绪、状态已恢复、边已重建，子类可以做最后一层异步初始化，
+   * 比如 FileNode 子类从磁盘补读文件内容并 commit 输出端口。
+   *
+   * 基类空实现：大部分节点不需要额外初始化。节点自己抛出的错误会被 bootstrap 吞掉并打印警告，
+   * 不应中断整个画布的加载（单个节点初始化失败不该拖垮整张画布）。
+   */
+  onReady(): Promise<void> | void {
+    // 默认什么也不做
+  }
+
+  /**
    * 删除前钩子，异步。Scene.removeNode 会先 await 它再真正断开边、删记录、落库。
    * 子类 override 做清理工作——比如 FileNode 需要先删文件系统里的文件，
    * 或者展示节点需要弹确认框。

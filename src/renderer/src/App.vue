@@ -828,6 +828,17 @@ async function bootstrapScene(): Promise<void> {
   // 重建完成后才 attachStorage——期间 addNode/connect 里的 storage?.xxx() 都是空转，
   // 不然会把刚从 DB 读出来的东西再写回去（重复且浪费 IO）
   workspaceScene.attachStorage(new IpcStorage(boundCanvasId))
+
+  // —— 5. onReady：让各节点做启动后的异步收尾（如 FileNode 从磁盘补读内容）——
+  // 放在 attachStorage 之后：onReady 里 setContent 触发的 notifyChanged 会被 debounce 存回 DB，
+  // 下次启动就不用再读磁盘了。单个节点 onReady 失败不拖垮整张画布，吞掉并打印警告。
+  for (const node of workspaceScene.allNodes) {
+    try {
+      await node.onReady()
+    } catch (err) {
+      console.warn(`[bootstrap] 节点 ${node.id} (${node.type}) onReady 失败：`, err)
+    }
+  }
 }
 
 // —— 视口持久化：debounce 500ms，拖拽/缩放停下来再写 DB ——

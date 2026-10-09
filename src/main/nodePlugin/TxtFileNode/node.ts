@@ -138,20 +138,43 @@ export class TxtFileNode extends FileNode {
   }
 
   /**
-   * 把字符串写入节点内容，并在有 fileName 时同步落盘。
+   * 把字符串写入节点内容并同步落盘。
+   * 先写磁盘，成功了再改内存——确保 contentValue 始终等于磁盘文件内容。
+   * 没有 fileName 时先创建文件再写入，主进程处理重名冲突。
    */
   private async applyContent(text: string): Promise<void> {
-    this.setContent(text)
-    if (!this.fileName) return
     try {
       // @ts-ignore — 只在 renderer 里执行，window.fileApi 一定存在
       const base64 = bytesToBase64(new TextEncoder().encode(text))
       // @ts-ignore
-      const result = await window.fileApi.writeBuffer(this.fileName, base64, true)
+      const result = await window.fileApi.writeBuffer(this.fileName || `${this.id}.txt`, base64, true)
+      // 落盘成功 → 写回 fileName（可能是新创建的）+ 改内存 + commit 端口
+      this.fileNameValue = result.fileName
       this.fileSizeValue = result.size
+      this.setContent(text)
+      void this.commitPath()
       this.notifyChanged()
+      this.completeRun();
     } catch (err) {
-      console.warn('[TxtFileNode] 写入磁盘文件失败：', this.fileName, err)
+      // 落盘失败 → 内存保持旧值（或空），不变量不破
+      console.warn('[TxtFileNode] 写入磁盘文件失败：', this.fileName || `${this.id}.txt`, err)
+    }
+  }
+
+  /** 画布启动就绪时：先注册基类的文件变化监听，再做启动补读 */
+  override async onReady(): Promise<void> {
+    // 基类注册文件系统变化监听（外部编辑器改文件 → 自动调 reloadFileContent）
+    super.onReady()
+    // 补读：有 fileName 但 content 没从 DB 恢复回来时，从磁盘读一次
+    if (this.fileName && !this.contentValue) {
+      try {
+        // @ts-ignore — 只在 renderer 里执行，window.fileApi 一定存在
+        const text = await window.fileApi.readText(this.fileName)
+        this.setContent(text)
+      } catch (err) {
+        // 文件可能已被用户删了，静默忽略——节点本身正常展示
+        console.warn('[TxtFileNode] 启动时读文件失败：', this.fileName, err)
+      }
     }
   }
 
@@ -174,9 +197,9 @@ export class TxtFileNode extends FileNode {
 
   /**
    * 写入内容并 commit 两个输出端口。
-   * 由 render.vue 在读完文件后调用（选文件按钮点击、或持久化恢复时自动读回）。
+   * 内部方法，由 applyContent / onReady / reloadFileContent 调用。
    */
-  setContent(text: string): void {
+  private setContent(text: string): void {
     if (text === this.contentValue) return
     this.contentValue = text
     this.contentOutput.commit(new StringValue(text))

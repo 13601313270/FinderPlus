@@ -67,6 +67,9 @@ export abstract class FileNode extends Node {
   /** 文件被输入端口替换的次数。同名文件替换时 fileName 不变，UI 靠它感知内容已换 */
   private fileRevisionValue = 0
 
+  /** 文件变化监听的取消订阅函数。由 onReady 注册，beforeDestroy 注销 */
+  private fileChangeUnsubscribe?: () => void
+
   constructor(id: string) {
     super(id)
   }
@@ -195,6 +198,27 @@ export abstract class FileNode extends Node {
    */
   async reloadFileContent(): Promise<void> {}
 
+  /**
+   * 画布启动就绪时：注册文件系统变化监听。
+   * 外部编辑器改了磁盘文件 → 自动 bump revision + 调 reloadFileContent 让子类 commit 端口。
+   * 所有 FileNode 子类共用，子类 override onReady 时先调 super.onReady()。
+   */
+  override onReady(): void {
+    if (!this.fileNameValue) return
+    // @ts-ignore — 只在 renderer 里执行，window.fileApi / getCurrentCanvasId 一定存在
+    const myCanvasId = window.getCurrentCanvasId()
+    // @ts-ignore
+    this.fileChangeUnsubscribe = window.fileApi.onChanged(async ({ canvasId, fileName }) => {
+      // 跨画布变化不关心
+      if (canvasId !== myCanvasId) return
+      // 不是我的文件（fileName 可能在 replaceFile 里被换了）
+      if (fileName !== this.fileNameValue) return
+      this.fileRevisionValue += 1
+      this.notifyChanged()
+      await this.reloadFileContent()
+    })
+  }
+
   saveState(): Record<string, unknown> {
     return { fileName: this.fileNameValue, fileSize: this.fileSizeValue }
   }
@@ -202,7 +226,7 @@ export abstract class FileNode extends Node {
   readState(state: Record<string, unknown>): void {
     const name = typeof state.fileName === 'string' ? state.fileName : ''
     if (!name) return
-    // 只恢复文件名和大小；内容由 render.vue 挂载时发现 fileName 存在后自动读回
+    // 只恢复文件名和大小；内容由子类 onReady / reloadFileContent 从磁盘补读
     this.fileNameValue = name
     const size = typeof state.fileSize === 'number' ? state.fileSize : 0
     this.fileSizeValue = size
@@ -211,10 +235,13 @@ export abstract class FileNode extends Node {
   }
 
   /**
-   * 删除节点前：把画布目录里的文件副本也清掉，不留垃圾。
+   * 删除节点前：先注销文件变化监听，再删磁盘上的文件副本。
    * 空文件不调 IPC，省一次开销。
    */
-  async beforeDestroy(): Promise<void> {
+  override async beforeDestroy(): Promise<void> {
+    // 先注销文件变化监听——文件可能被删了，别让回调再触发 reload
+    this.fileChangeUnsubscribe?.()
+    this.fileChangeUnsubscribe = undefined
     if (this.fileNameValue) {
       try {
         // @ts-ignore — tsconfig.node.json 编译本文件时不把 preload 的 Window 扩展带进来，

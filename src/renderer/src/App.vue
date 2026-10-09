@@ -958,7 +958,7 @@ onUnmounted(() => {
       <!-- 右侧可拖动区（stretch 撑满） -->
       <span class="stage__dragbar-drag-area stage__dragbar-drag-area--right" />
       <div>
-        <button class="stage__settings-btn" type="button" :title="t('app.settings')" @click="openSettings">
+        <button class="stage__settings-btn" type="button" :title="t('app.settings')" @click="openSettings()">
           <GearIcon :size="14" />
           <span>{{ t('app.settings') }}</span>
         </button>

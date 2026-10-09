@@ -15,8 +15,6 @@ const previewLen = computed(() =>
   props.context === 'detail' ? PREVIEW_DETAIL : PREVIEW_TOOLTIP
 )
 
-let readerAbort: AbortController | null = null
-
 async function loadPreview(): Promise<void> {
   const f = props.value.file
   if (!f) { preview.value = '(null)'; return }

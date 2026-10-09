@@ -85,21 +85,8 @@ const hasOutputs = computed(() => outputs.value.length > 0)
 const hasCode = computed(() => code.value.trim().length > 0)
 const running = computed(() => status.value === 'running')
 
-const STATUS_KEYS = {
-  idle: 'statusIdle',
-  running: 'statusRunning',
-  done: 'statusDone',
-  error: 'statusError'
-} as const
-
-const statusLabel = computed(() => t(STATUS_KEYS[status.value]))
-
 function onRun(): void {
   codeNode.value?.run(true)
-}
-
-function onAutoRunToggle(e: Event): void {
-  codeNode.value?.setAutoRun((e.target as HTMLInputElement).checked)
 }
 
 /** CodeMirror 内容变更：实时写回节点（不执行） */

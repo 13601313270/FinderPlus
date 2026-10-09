@@ -33,6 +33,14 @@ export const messages = {
     zh: '生成中…',
     en: 'Generating…'
   },
+  previewBtn: {
+    zh: '预览 PDF',
+    en: 'Preview PDF'
+  },
+  previewTitle: {
+    zh: 'PDF 预览',
+    en: 'PDF Preview'
+  },
   pageSizeLabel: {
     zh: '页面',
     en: 'Page'

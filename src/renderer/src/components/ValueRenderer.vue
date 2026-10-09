@@ -38,13 +38,6 @@ const targetComp = computed(() => {
   if (props.value.isNull) return NullValueRenderer
   return resolveRenderer(kind.value)
 })
-
-/** 用 render 函数动态创建子组件，props 透传 */
-const render = () => h(targetComp.value, {
-  value: props.value,
-  context: props.context ?? 'inline',
-  onResize: () => { /* 子组件 emit('resize') 会冒泡 */ }
-})
 </script>
 
 <template>

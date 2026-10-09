@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /** TxtFileValue 渲染器：前 N 字符预览 */
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, onUnmounted, ref, watch } from 'vue'
 
 const props = defineProps<{
   value: { file?: File; displayLabel: string }
@@ -33,7 +33,9 @@ async function loadPreview(): Promise<void> {
 watch(() => props.value.file, loadPreview, { immediate: true })
 watch(previewLen, loadPreview)
 
-onUnmounted(() => { readerAbort?.abort() })
+onUnmounted(() => {
+  // readerAbort?.abort()
+})
 </script>
 
 <template>

@@ -7,7 +7,7 @@
  * objectURL 生命周期内聚在本组件内部——挂载 create，卸载 revoke，
  * 不再散落在 NodePort.vue 的 imageUrls / collectImageFiles / revokeAllUrls 里。
  */
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, onUnmounted, ref, watch } from 'vue'
 
 const props = defineProps<{
   value: { file?: File; displayLabel: string }

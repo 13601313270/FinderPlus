@@ -57,6 +57,23 @@ export const messages = {
     tr: 'Dosya seçilmedi',
     it: 'Nessun file selezionato'
   },
+  resizeHint: {
+    zh: '拖拽调整预览大小（保持 PDF 页面比例）',
+    en: 'Drag to resize the preview (keeps PDF page ratio)',
+    ja: 'ドラッグしてプレビューの大きさを変更（PDFページの比率を保持）',
+    ko: '드래그하여 미리보기 크기 조절 (PDF 페이지 비율 유지)',
+    es: 'Arrastra para cambiar el tamaño de la vista previa (mantiene la proporción de la página PDF)',
+    ar: 'اسحب لتغيير حجم المعاينة (مع الحفاظ على نسبة صفحة PDF)',
+    fr: 'Glissez pour redimensionner l’aperçu (conserve les proportions de la page PDF)',
+    pt: 'Arraste para redimensionar a prévia (mantém a proporção da página PDF)',
+    ru: 'Перетащите, чтобы изменить размер предпросмотра (сохраняя пропорции страницы PDF)',
+    hi: 'पूर्वावलोकन का आकार बदलने के लिए खींचें (PDF पेज अनुपात बनाए रखें)',
+    id: 'Seret untuk mengubah ukuran pratinjau (mempertahankan rasio halaman PDF)',
+    de: 'Ziehen, um die Vorschaugröße zu ändern (behält das PDF-Seitenverhältnis bei)',
+    vi: 'Kéo để thay đổi kích thước xem trước (giữ nguyên tỷ lệ trang PDF)',
+    tr: 'Önizleme boyutunu değiştirmek için sürükleyin (PDF sayfa oranını korur)',
+    it: 'Trascina per ridimensionare l’anteprima (mantiene le proporzioni della pagina PDF)'
+  },
   helpTitle: {
     zh: '使用说明',
     en: 'Help',

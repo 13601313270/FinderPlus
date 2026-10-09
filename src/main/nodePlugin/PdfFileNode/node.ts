@@ -8,18 +8,19 @@ import { FileNode } from '../FileNode/node'
 /** PDF 后缀集合，供 acceptsExtension 使用 */
 const ACCEPTED_EXTS = new Set(['.pdf'])
 
-/** 卡片固定尺寸：PDF 不需要预览图，图标区 + 文件名行 + padding ≈ 122px 高 */
-const CARD_WIDTH = 180
-const CARD_HEIGHT = 122
+/** 卡片默认宽度（世界像素）——预览区按 PDF 页面比例，高度随宽度推导 */
+export const DEFAULT_PREVIEW_WIDTH = 200
+/** 卡片最小宽度（用户拖 handle 不能再缩小） */
+export const MIN_PREVIEW_WIDTH = 100
+/** 卡片最大宽度（用户拖 handle 封顶） */
+export const MAX_PREVIEW_WIDTH = 800
 
 /**
- * PDF 文件节点：选中 .pdf 文件后由渲染端读取二进制，
- * 节点负责构造 PdfFileValue 并从 fileOutput 送出。
- *
- * 与 ImgFileNode 的差异：
- * - PDF 不做内嵌预览（不需要 pdf.js），只展示 PDF 文件图标 + 文件名 + 大小
- * - 只有单 fileOutput（PdfFileValue，kind = 'pdf-file'）+ 基类 pathOutput
+ * 卡片固定垂直开销：flex-gap + padding + 文件名行 ≈ 40px
+ * 预览区高度 = boxWidth / PDF 页面宽高比
  */
+const CARD_VERTICAL_OVERHEAD = 40
+
 export class PdfFileNode extends FileNode {
   static readonly TYPE = 'pdf-file'
 
@@ -28,6 +29,11 @@ export class PdfFileNode extends FileNode {
   }
 
   readonly type = PdfFileNode.TYPE
+
+  /** PDF 第一页天然宽度（像素）。render.vue 的 pdfjs 加载后回写；0 表示尚未加载 */
+  private pageWidthValue = 0
+  /** PDF 第一页天然高度（像素）。render.vue 的 pdfjs 加载后回写；0 表示尚未加载 */
+  private pageHeightValue = 0
 
   /** 文件输出（PdfFileValue，kind = 'pdf-file'） */
   readonly fileOutput = new OutputPort('file', PdfFileValue, {
@@ -45,7 +51,7 @@ export class PdfFileNode extends FileNode {
     de: 'Datei',
     vi: 'Tệp',
     tr: 'Dosya',
-    it: 'File'
+    it: 'Scrivi dati'
   })
 
   /** 文件数据输入端口：只接受同类型（PDF）文件，收到值即替换本节点文件 */
@@ -76,7 +82,8 @@ export class PdfFileNode extends FileNode {
     // 基类共用的路径端口（文件绝对路径），挂在末尾
     this.addOutput(this.pathOutput)
     this.bindFileInput(this.fileInput)
-    this.setBox(CARD_WIDTH, CARD_HEIGHT)
+    // 宽度走基类 box（用户可拖 handle 调）；高度维 0 = 不约束，随 PDF 页面比例撑开
+    this.setBox(DEFAULT_PREVIEW_WIDTH, 0)
   }
 
   /** 文件被输入端口替换后：重读新 PDF 二进制并 commit fileOutput */
@@ -86,6 +93,9 @@ export class PdfFileNode extends FileNode {
       // @ts-ignore — 只在 renderer 里执行，window.fileApi 一定存在
       const base64 = await window.fileApi.readBinary(this.fileName)
       this.setContent(base64)
+      // 换了文件，旧页面尺寸作废；新尺寸由 render.vue 的 pdfjs 加载回写
+      this.pageWidthValue = 0
+      this.pageHeightValue = 0
     } catch (err) {
       console.warn('[PdfFileNode] 读取替换后的文件失败：', this.fileName, err)
     }
@@ -108,6 +118,39 @@ export class PdfFileNode extends FileNode {
     this.notifyChanged()
   }
 
+  /** 当前 PDF 第一页天然宽度（pdf 单位）；0 表示尚未加载 */
+  get pageWidth(): number { return this.pageWidthValue }
+  /** 当前 PDF 第一页天然高度（pdf 单位）；0 表示尚未加载 */
+  get pageHeight(): number { return this.pageHeightValue }
+
+  /**
+   * 写入 PDF 第一页天然尺寸，由 render.vue 的 pdfjs getPage(1) 后回写。
+   */
+  setPageSize(width: number, height: number): void {
+    if (width === this.pageWidthValue && height === this.pageHeightValue) return
+    this.pageWidthValue = width
+    this.pageHeightValue = height
+    this.recalcHeight()
+  }
+
+  /**
+   * 根据当前 box 宽度和 PDF 页面天然比例，算出卡片需要的总高度并 setBox。
+   * PDF 尚未加载（pageWidth=0）时跳过。
+   *
+   * 在两处被调：
+   * 1. setPageSize（PDF 首次加载后）
+   * 2. render.vue 的 resize handle 拖拽中（宽度变了，高度跟着按比例变）
+   */
+  recalcHeight(): void {
+    const pw = this.pageWidthValue
+    const ph = this.pageHeightValue
+    if (!pw || !ph) return
+    const w = this.box[0] || DEFAULT_PREVIEW_WIDTH
+    const aspectRatio = pw / ph
+    const iconHeight = w / aspectRatio
+    this.setBox(w, Math.round(iconHeight + CARD_VERTICAL_OVERHEAD))
+  }
+
   saveState(): Record<string, unknown> {
     return { ...super.saveState(), box: this.box }
   }
@@ -116,7 +159,7 @@ export class PdfFileNode extends FileNode {
     super.readState(state)
     const box = state.box as [number, number]
     if (box !== undefined) {
-      this.setBox(CARD_WIDTH, box[1] || CARD_HEIGHT)
+      this.setBox(Math.min(MAX_PREVIEW_WIDTH, Math.max(MIN_PREVIEW_WIDTH, Math.round(box[0]))), box[1])
     }
   }
 

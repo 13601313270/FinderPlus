@@ -141,6 +141,7 @@ export abstract class FileNode extends Node {
     const [value] = input.value
     if (value instanceof FileValue && !value.isNull) {
       void this.replaceFile(value.file!)
+      this.completeRun()
     }
   }
 
@@ -158,7 +159,7 @@ export abstract class FileNode extends Node {
    * 用新文件替换本节点当前文件：先删掉画布目录里的旧副本，再把新 File 落盘并挂上。
    * 落盘后交给 reloadFileContent 重读内容并 commit 业务端口。
    */
-  async replaceFile(file: File): Promise<void> {
+  private async replaceFile(file: File): Promise<void> {
     try {
       const previousName = this.fileNameValue
       if (previousName) {

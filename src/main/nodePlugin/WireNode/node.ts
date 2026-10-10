@@ -108,9 +108,9 @@ export class WireNode extends Node {
     }
   }
 
-  /** 从 incoming 边推算上游 OutputPort 的类型（不要求值已到达） */
+  /** 从 allBindEdge 推算上游 OutputPort 的类型（不要求值已到达） */
   private resolveUpstreamValueClass(): OutputPort['valueClass'] | undefined {
-    for (const edge of this.inputPort.incoming.keys()) {
+    for (const edge of this.inputPort.allBindEdge) {
       return edge.startPort.valueClass
     }
     return undefined

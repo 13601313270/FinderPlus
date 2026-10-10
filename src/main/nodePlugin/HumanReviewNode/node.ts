@@ -167,9 +167,9 @@ export class HumanReviewNode extends Node {
     // 入队后保持 dirty——队列非空 = 有未处理的审核项，等 approve/reject 清空后 stable
   }
 
-  /** 从 incoming 边推算上游 OutputPort 的类型（不要求值已到达） */
+  /** 从 allBindEdge 推算上游 OutputPort 的类型（不要求值已到达） */
   private resolveUpstreamValueClass(): OutputPort['valueClass'] | undefined {
-    for (const edge of this.input.incoming.keys()) {
+    for (const edge of this.input.allBindEdge) {
       return edge.startPort.valueClass
     }
     return undefined

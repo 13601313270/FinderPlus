@@ -5,7 +5,6 @@ import { StringValue } from '../../engine/data/StringValue'
 import { InputPort } from '../../engine/port/InputPort'
 import { OutputPort } from '../../engine/port/OutputPort'
 import { Node } from '../../engine/node/Node'
-import type { Edge } from '../../engine/graph/Edge'
 
 /** 引擎侧能接受的图层值类型联合 */
 export type LayerValue = ImgFileValue | StringValue
@@ -178,9 +177,9 @@ export class ImageOverlayNode extends Node {
   inputPortReceiveValue(_ports: InputPort[]): void {
     // 同步 LayerState：新端口（或新绑边）初始化，已有的不动
     for (const port of this.inputPorts) {
-      const edge = port.incoming.keys().next().value as Edge | undefined
-      if (!edge) continue
-      const value = port.incoming.get(edge)
+      if (port.allBindEdge.size === 0) continue
+      const value = port.lastReceiveValue
+      if (!value) continue
       let kind: 'image' | 'text'
       if (value instanceof StringValue) kind = 'text'
       else if (value instanceof ImgFileValue) kind = 'image'
@@ -305,9 +304,8 @@ export class ImageOverlayNode extends Node {
   }> {
     const result: { portId: string; state: LayerState; value: LayerValue }[] = []
     for (const port of this.inputPorts) {
-      const edge = port.incoming.keys().next().value as Edge | undefined
-      if (!edge) continue
-      const value = port.incoming.get(edge)
+      if (port.allBindEdge.size === 0) continue
+      const value = port.lastReceiveValue
       const state = this.layerStates.get(port.id)
       if ((value instanceof ImgFileValue || value instanceof StringValue) && state) {
         result.push({ portId: port.id, state, value })

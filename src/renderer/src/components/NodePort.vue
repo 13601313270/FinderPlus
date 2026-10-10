@@ -124,8 +124,8 @@ let showTimer: ReturnType<typeof setTimeout> | null = null
  * tooltip 要展示的 Value 实例列表。
  *
  * 为什么不是 computed：
- *   InputPort.value / OutputPort.value 内部读的是原生 Map（this.incoming），
- *   Vue Proxy 感知不到 Map 的 set/delete——如果做成 computed，上游值变了但 computed 的
+ *   InputPort.value / OutputPort.value 内部读的是 class 属性（this.lastReceiveValue / this.currentValue），
+ *   Vue Proxy 感知不到 class 属性的直接赋值——如果做成 computed，上游值变了但 computed 的
  *   依赖追踪没感知到，会一直返回旧缓存。
  *
  *   tooltip 模板只在 v-if="tooltipVisible" 为 true 时渲染，每次 show 必然是

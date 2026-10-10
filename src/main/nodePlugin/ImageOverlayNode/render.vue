@@ -180,11 +180,12 @@ function clearThumbnails(): void {
   thumbnailRevoke.clear()
 }
 
-/** 从端口取当前连接的 Edge 和值，没有则返回 null */
-function getPortValue(port: { incoming: Map<Edge, unknown> }): { edge: Edge; value: LayerValue } | null {
-  for (const [edge, v] of port.incoming) {
-    if (v instanceof ImgFileValue || v instanceof StringValue) return { edge, value: v }
-  }
+/** 从端口取当前值和第一条连接的 Edge，没有则返回 null */
+function getPortValue(port: { allBindEdge: Set<Edge>; lastReceiveValue: unknown }): { edge: Edge; value: LayerValue } | null {
+  const edge = port.allBindEdge.values().next().value
+  if (!edge) return null
+  const v = port.lastReceiveValue
+  if (v instanceof ImgFileValue || v instanceof StringValue) return { edge, value: v }
   return null
 }
 

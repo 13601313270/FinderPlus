@@ -184,6 +184,9 @@ function onContextMenu(e: MouseEvent): void {
   box-sizing: border-box; // box 是内容区外包壳宽，border+padding 算在 box 内
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   position: relative; // loading 覆层绝对定位的参照
+  background: @color-surface;
+  border: 1px solid #a4aab3;
+  border-radius: 8px;
 }
 
 // —— running 状态的 loading 覆层 ——

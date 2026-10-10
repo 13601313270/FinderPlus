@@ -42,14 +42,11 @@ export class InputPort {
    */
   private readonly bindingListeners = new Set<EdgeBindingListener>()
 
-  /**
-   * 边 -> 该边最后一次送来的值。
-   * 值为 undefined 表示「连线已建立，但上游还没送来过值」。
-   *
-   * 连线的增删由 EdgeBinder 收口（它得同时改两端，只有它知道全貌）；
-   * 而值的写入是单点操作，不涉及多指针一致，所以 receive 自己管。
-   */
-  readonly incoming = new Map<Edge, Value | undefined>()
+  /** 最近一次 receive 写入的值（不管来自哪条 Edge），undefined 表示上游还没送来过任何值 */
+  lastReceiveValue: Value | undefined
+
+  /** 本端口绑定的所有 Edge（拓扑关系） */
+  allBindEdge: Set<Edge> = new Set()
 
   /** 端口多语言标签（可运行时修改，NodeShell 画布上的端口名显示用它） */
   protected labelValue: LocalizedText | undefined
@@ -134,13 +131,12 @@ export class InputPort {
 
   /** 当前接入的边数量（渲染层用来判断"有没有接 Edge"） */
   get incomingEdgeCount(): number {
-    return this.incoming.size
+    return this.allBindEdge.size
   }
 
   /**
    * 渲染层 tooltip 展示用：当前生效值的 displayLabel 列表。
-   * 上游有值就上游（incomeValue 的 displayLabel 数组），
-   * 上游空就 defaultValue，都没有返回空数组。
+   * 上游有值就上游，上游空就 defaultValue，都没有返回空数组。
    */
   get currentValues(): readonly string[] {
     return this.value.map(v => v.displayLabel)
@@ -166,37 +162,27 @@ export class InputPort {
     return this.labelValue
   }
 
-  /** 多值端口取值：无序集合，只含上游算出来有值的那些。私有，外部应读 effectiveValue */
-  private get incomeValue(): readonly Value[] {
-    const list: Value[] = []
-    this.incoming.forEach((value) => {
-      if (value !== undefined) list.push(value)
-    })
-    return list
-  }
-
   /**
    * 实际生效的值：上游有值就上游，上游空就 defaultValue，都没有返回空数组。
    * 节点应读这个，不用关心值是连来的还是默认的。
    */
   get value(): readonly Value[] {
-    const upstream = this.incomeValue
-    if (upstream.length > 0) return upstream
+    if (this.lastReceiveValue !== undefined) return [this.lastReceiveValue]
     return this.defaultValue ? [this.defaultValue] : []
   }
 
   /** 必填是否已满足；引擎的禁跑校验和节点自查共用这一处判断 */
   isSatisfied(): boolean {
-    return !this.required || this.incomeValue.length > 0 || this.defaultValue !== undefined
+    return !this.required || this.lastReceiveValue !== undefined || this.defaultValue !== undefined
   }
 
   /**
    * 接收上游送来（或重算后重发）的值，force=true 时跳过 fingerprint 比对直接通知节点。
    * 手动触发场景（按钮/快捷键）应透传 force=true，避免两层排重卡掉"再跑一次"的语义。
    */
-  receive(edge: Edge, value: Value, force = false): void {
-    const changed = force || this.incoming.get(edge)?.fingerprint !== value.fingerprint
-    this.incoming.set(edge, value)
+  receive(_edge: Edge, value: Value, force = false): void {
+    const changed = force || this.lastReceiveValue?.fingerprint !== value.fingerprint
+    this.lastReceiveValue = value
     if (changed) {
       if (this.locked) {
         this.pendingNotify = true
@@ -206,9 +192,9 @@ export class InputPort {
     }
   }
 
-  receiveClear(edge: Edge): void {
-    const hadValue = this.incoming.get(edge) !== undefined
-    this.incoming.set(edge, undefined)
+  receiveClear(_edge: Edge): void {
+    const hadValue = this.lastReceiveValue !== undefined
+    this.lastReceiveValue = undefined
     if (hadValue) {
       if (this.locked) {
         this.pendingNotify = true
@@ -245,7 +231,7 @@ export class InputPort {
       return { result: false, message: 'kind-not-allowed' }
     }
 
-    if (this.incoming.size > 0) {
+    if (this.allBindEdge.size > 0) {
       return { result: false, message: 'single-port-occupied' }
     }
     return { result: true };
@@ -253,7 +239,8 @@ export class InputPort {
 
   /** 绑定Edge，设置值为undefined */
   bindEdge(edge: Edge) {
-    this.incoming.set(edge, undefined)
+    this.allBindEdge.add(edge)
+    this.lastReceiveValue = undefined
     if (this.locked) {
       this.pendingNotify = true
     } else {
@@ -262,12 +249,12 @@ export class InputPort {
     this.notifyEdgeBinding('bind', edge)
   }
 
-  // 解绑Edge，清空值为undefined。edge 不在 incoming 里就直接返回，不触发通知
+  // 解绑Edge。edge 不在 allBindEdge 里就直接返回，不触发通知
   unbindEdge(edge: Edge): { result: true } | { result: false, message: string } {
-    if (!this.incoming.has(edge)) {
+    if (!this.allBindEdge.has(edge)) {
       return { result: false, message: 'edge not bound to this port' }
     }
-    this.incoming.delete(edge)
+    this.allBindEdge.delete(edge)
     if (this.locked) {
       this.pendingNotify = true
     } else {

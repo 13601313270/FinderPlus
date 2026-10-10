@@ -336,19 +336,13 @@ export class PromiseAllNode extends Node {
   }
 
   /**
-   * 从输入端口的 incoming 边里取上游 OutputPort 的 valueClass。
-   * 优先取**有值的边**（最准确），退而求其次取**第一条边**（刚连线还没值时也能拿到类型）。
+   * 从 allBindEdge 取上游 OutputPort 的 valueClass。
+   * 多条 edge 时取第一条——端口对外只有 lastReceiveValue，已退化成单值语义。
    */
   private resolveUpstreamValueClass(inPort: InputPort): ValueClass | undefined {
-    if (inPort.incoming.size === 0) return undefined
-    // 优先：有值的边（fingerprint 比对用的真实类型）
-    for (const [edge, val] of inPort.incoming) {
-      if (val !== undefined) return edge.startPort.valueClass
-    }
-    // 退化：第一条边（刚连线还没 commit，但其 OutputPort 已经声明了 valueClass）
-    const firstEdge = inPort.incoming.keys().next().value
-    if (firstEdge) return firstEdge.startPort.valueClass
-    return undefined
+    if (inPort.allBindEdge.size === 0) return undefined
+    const edge = inPort.allBindEdge.values().next().value
+    return edge?.startPort.valueClass
   }
 
   /** 重建第 index 个输出端口为指定 valueClass。

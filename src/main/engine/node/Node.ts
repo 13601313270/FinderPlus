@@ -384,8 +384,8 @@ export abstract class Node {
 
     this.methods.splice(idx, 1)
 
-    // 断边：MethodPort 继承 InputPort，也有 incoming Map
-    this.disconnectPortEdges(port.incoming.keys())
+    // 断边：MethodPort 继承 InputPort，也有 allBindEdge
+    this.disconnectPortEdges(port.allBindEdge)
     this.notifyChanged()
   }
 
@@ -400,8 +400,8 @@ export abstract class Node {
     // 从数组移除
     this.inputs.splice(idx, 1)
 
-    // 断边（InputPort.incoming 是 Map，取 .keys() 拿到 Edge 迭代器）
-    this.disconnectPortEdges(port.incoming.keys())
+    // 断边
+    this.disconnectPortEdges(port.allBindEdge)
     this.notifyChanged()
   }
 

@@ -33,8 +33,8 @@ export class InputPortManager {
       const edge = edges[i]!
       const value = values[i]!
       const port = edge.endPort
-      const changed = force || port.incoming.get(edge)?.fingerprint !== value.fingerprint
-      port.incoming.set(edge, value)
+      const changed = force || port.lastReceiveValue?.fingerprint !== value.fingerprint
+      port.lastReceiveValue = value
       if (changed) {
         changedPorts.add(port)
       }
@@ -52,8 +52,8 @@ export class InputPortManager {
     const changedPorts = new Set<InputPort>()
     for (const edge of edges) {
       const port = edge.endPort
-      const hadValue = port.incoming.get(edge) !== undefined
-      port.incoming.set(edge, undefined)
+      const hadValue = port.lastReceiveValue !== undefined
+      port.lastReceiveValue = undefined
       if (hadValue) {
         changedPorts.add(port)
       }

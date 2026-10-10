@@ -209,7 +209,7 @@ export class ImageToPdfNode extends Node {
   inputPortReceiveValue(_ports: InputPort[]): void {
     // 自动扩容：所有端口都接上了值 → 新增一个空端口
     const allConnected = this.inputPorts.length > 0
-      && this.inputPorts.every((p) => p.incoming.size > 0)
+      && this.inputPorts.every((p) => p.allBindEdge.size > 0)
     if (allConnected) {
       this.addImage()
     }
@@ -224,17 +224,16 @@ export class ImageToPdfNode extends Node {
   getConnectedImages(): Array<{ portId: string; file: File }> {
     const result: Array<{ portId: string; file: File }> = []
     for (const port of this.inputPorts) {
-      for (const [edge, value] of port.incoming) {
-        if (value instanceof ImgFileValue && !value.isNull && value.file) {
-          result.push({ portId: port.id, file: value.file })
-        } else if (value instanceof ImgFileCollectionValue && !value.isNull && value.items) {
-          for (const item of value.items) {
-            if (!item.isNull && item.file) {
-              result.push({ portId: port.id, file: item.file })
-            }
+      const value = port.lastReceiveValue
+      if (!value) continue
+      if (value instanceof ImgFileValue && !value.isNull && value.file) {
+        result.push({ portId: port.id, file: value.file })
+      } else if (value instanceof ImgFileCollectionValue && !value.isNull && value.items) {
+        for (const item of value.items) {
+          if (!item.isNull && item.file) {
+            result.push({ portId: port.id, file: item.file })
           }
         }
-        void edge // edge 不使用，避免未使用变量警告
       }
     }
     return result
@@ -259,7 +258,7 @@ export class ImageToPdfNode extends Node {
   /** 所有端口都连接了图片值（render.vue 用来决定是否可以生成 PDF） */
   get hasAllImagesConnected(): boolean {
     return this.inputPorts.length > 0
-      && this.inputPorts.every((p) => p.incoming.size > 0)
+      && this.inputPorts.every((p) => p.allBindEdge.size > 0)
   }
 
   /** 所有输入端口累计传入的图片张数（ImgFileCollectionValue 展开后计数） */

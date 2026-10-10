@@ -169,6 +169,26 @@ const httpApi = {
 }
 
 /**
+ * 爬虫 API：交给主进程发 HTTP 请求 + cheerio 解析。
+ * 渲染进程只负责传参和接结果，主进程绕开 CORS、内置 UA/Accept 头。
+ */
+const crawlerApi = {
+  scrape: (args: {
+    url: string
+    headers?: Record<string, string>
+    timeout?: number
+    selector: string
+    extractMode: 'text' | 'html' | 'attr'
+    attrName?: string
+    includeRawHtml?: boolean
+    userAgent?: string
+  }): Promise<
+    { ok: true; status: number; count: number; results: unknown[]; rawHtml?: string }
+    | { ok: false; error: string }
+  > => ipcRenderer.invoke('crawler:scrape', args)
+}
+
+/**
  * WASM 资源 API：给渲染进程读取 img-compressor-wasm 的 wasm 二进制。
  *
  * 生产环境 renderer 以 file:// 加载时，包内胶水代码的 fetch 会被 Chromium 拒绝，
@@ -542,6 +562,7 @@ if (process.contextIsolated) {
     contextBridge.exposeInMainWorld('commandApi', commandApi)
     contextBridge.exposeInMainWorld('codeApi', codeApi)
     contextBridge.exposeInMainWorld('httpApi', httpApi)
+    contextBridge.exposeInMainWorld('crawlerApi', crawlerApi)
     contextBridge.exposeInMainWorld('wasmApi', wasmApi)
     contextBridge.exposeInMainWorld('appMenuApi', appMenuApi)
     contextBridge.exposeInMainWorld('dialogApi', dialogApi)
@@ -570,6 +591,8 @@ if (process.contextIsolated) {
   // @ts-ignore (define in dts)
   window.httpApi = httpApi
   // @ts-ignore (define in dts)
+  window.crawlerApi = crawlerApi
+  // @ts-ignore (define in dts)
   window.wasmApi = wasmApi
   // @ts-ignore (define in dts)
   window.appMenuApi = appMenuApi
@@ -595,6 +618,7 @@ export type FileApi = typeof fileApi
 export type CommandApi = typeof commandApi
 export type CodeApi = typeof codeApi
 export type HttpApi = typeof httpApi
+export type CrawlerApi = typeof crawlerApi
 export type WasmApi = typeof wasmApi
 export type AppMenuApi = typeof appMenuApi
 export type DialogApi = typeof dialogApi

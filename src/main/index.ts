@@ -7,6 +7,8 @@ import https from 'node:https'
 import { URL } from 'node:url'
 import AdmZip from 'adm-zip'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
+import * as cheerio from 'cheerio'
+import * as iconv from 'iconv-lite'
 import { openDatabase, closeDatabase, getDatabase, persist } from './db/database'
 import { SCHEMA_VERSION } from './db/schema'
 import { SqliteStorage } from './db/SqliteStorage'
@@ -1296,6 +1298,222 @@ function registerIpcHandlers(): void {
     })
   })
 }
+
+/**
+ * 爬虫抓取 + cheerio 解析。
+ *
+ * 主进程用 Node http/https 发请求（复用 http:request 的网络逻辑），
+ * 拿到 HTML body 后用 cheerio.load 解析，按 CSS 选择器提取内容。
+ * 返回匹配元素数组（可能为空），以及可选的原始 HTML。
+ *
+ * extractMode 三种：
+ * - text       → $(el).text().trim()
+ * - html       → $(el).html() ?? ''
+ * - attr       → $(el).attr(attrName) ?? ''
+ */
+ipcMain.handle('crawler:scrape', async (e, args: {
+  url: string
+  headers?: Record<string, string>
+  timeout?: number
+  selector: string
+  extractMode: 'text' | 'html' | 'attr'
+  attrName?: string
+  includeRawHtml?: boolean
+  userAgent?: string
+}): Promise<
+  { ok: true; status: number; count: number; results: unknown[]; rawHtml?: string }
+  | { ok: false; error: string }
+> => {
+  const { url, headers, timeout, selector, extractMode, attrName, includeRawHtml, userAgent } = args
+  const ms = Math.min(60_000, Math.max(1000, timeout ?? 15_000))
+
+  const forward = (...lines: string[]): void => {
+    const text = lines.filter(Boolean).join('\n')
+    try { e.sender.send('main:log', text) } catch { /* noop */ }
+  }
+
+  // —— 参数校验 ——
+  let parsed: URL
+  try {
+    parsed = new URL(url)
+  } catch {
+    forward(`[crawler] ✗ INVALID URL  ${url}`)
+    return { ok: false, error: `URL 格式错误：${url}` }
+  }
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    forward(`[crawler] ✗ INVALID PROTOCOL  ${parsed.protocol}`)
+    return { ok: false, error: `只支持 http: 或 https: 协议，当前是 ${parsed.protocol}` }
+  }
+  const sel = selector.trim()
+  // selector 允许为空——空时跳过 cheerio 解析，整个 body 当作一条结果输出
+  if (extractMode === 'attr' && !attrName?.trim()) {
+    return { ok: false, error: '提取属性模式下 attrName 不能为空' }
+  }
+
+  // —— headers 过滤（复用 http:request 的 hop-by-hop 过滤） ——
+  const HOP_BY_HOP = new Set([
+    'connection', 'host', 'content-length', 'accept-encoding',
+    'keep-alive', 'proxy-authorization', 'te', 'trailer',
+    'transfer-encoding', 'upgrade'
+  ])
+  const filteredHeaders: Record<string, string> = {}
+  if (headers) {
+    for (const [rawKey, rawVal] of Object.entries(headers)) {
+      const key = String(rawKey)
+      if (HOP_BY_HOP.has(key.toLowerCase())) continue
+      filteredHeaders[key] = String(rawVal)
+    }
+  }
+  // 爬虫默认加一个 Accept 和 User-Agent，避免被反爬
+  if (!filteredHeaders['Accept']) filteredHeaders['Accept'] = 'text/html,application/xhtml+xml'
+  if (!filteredHeaders['User-Agent']) {
+    filteredHeaders['User-Agent'] = userAgent && userAgent.trim().length > 0
+      ? userAgent.trim()
+      : 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
+  }
+
+  forward(`[crawler] → GET ${url}  selector="${sel}"  mode=${extractMode}  timeout=${ms}ms`)
+
+  // —— 发请求（带自动跟随 3xx 重定向，最多 5 次）——
+  const t0 = Date.now()
+
+  const fetchOnce = (fetchUrl: URL, redirectCount: number): Promise<
+    { ok: true; status: number; body: string }
+    | { ok: false; error: string }
+  > => new Promise((resolve) => {
+    const lib = fetchUrl.protocol === 'https:' ? https : http
+    const req = lib.request(
+      {
+        method: 'GET',
+        hostname: fetchUrl.hostname,
+        port: fetchUrl.port || (fetchUrl.protocol === 'https:' ? 443 : 80),
+        path: fetchUrl.pathname + fetchUrl.search,
+        headers: filteredHeaders,
+        timeout: ms
+      },
+      (res) => {
+        // 3xx 重定向自动跟随
+        if (res.statusCode && [301, 302, 303, 307, 308].includes(res.statusCode)) {
+          const location = res.headers['location']
+          if (!location) {
+            resolve({ ok: false, error: `重定向 ${res.statusCode} 但缺少 Location 头` })
+            return
+          }
+          if (redirectCount >= 5) {
+            resolve({ ok: false, error: `重定向超过 5 次，疑似循环` })
+            return
+          }
+          let nextUrl: URL
+          try {
+            nextUrl = new URL(location, fetchUrl)
+          } catch {
+            resolve({ ok: false, error: `重定向 URL 格式错误：${location}` })
+            return
+          }
+          forward(`[crawler] ← ${res.statusCode} → ${nextUrl}`)
+          // 清空 body 流再重发
+          res.resume()
+          void fetchOnce(nextUrl, redirectCount + 1).then(resolve)
+          return
+        }
+
+        const chunks: Buffer[] = []
+        res.on('data', (chunk) => chunks.push(chunk))
+        res.on('end', () => {
+          const buf = Buffer.concat(chunks)
+          const dt = Date.now() - t0
+          // 根据 Content-Type 的 charset 选择编码（default utf-8，兼容 GBK 等中文站）
+          const contentType = (res.headers['content-type'] ?? '') as string
+          const charsetMatch = contentType.match(/charset=([^\s;]+)/i)
+          const charset = charsetMatch ? charsetMatch[1]!.toLowerCase() : 'utf-8'
+          let bodyStr: string
+          if (iconv.encodingExists(charset)) {
+            try {
+              bodyStr = iconv.decode(buf, charset)
+            } catch {
+              bodyStr = buf.toString('utf-8')
+            }
+          } else {
+            bodyStr = buf.toString('utf-8')
+          }
+          forward(`[crawler] ← ${res.statusCode ?? 0}  ${dt}ms  body=${buf.length}B  charset=${charset}  hops=${redirectCount}`)
+          resolve({ ok: true, status: res.statusCode ?? 0, body: bodyStr })
+        })
+      }
+    )
+    req.on('timeout', () => req.destroy(new Error(`请求超时（${ms}ms）`)))
+    req.on('error', (err) => {
+      const dt = Date.now() - t0
+      forward(`[crawler] ✗ ERROR  ${err.message}  after ${dt}ms`)
+      resolve({ ok: false, error: err.message })
+    })
+    req.end()
+  })
+
+  const fetchResult = await fetchOnce(parsed, 0)
+
+  if (!fetchResult.ok) {
+    return { ok: false, error: fetchResult.error }
+  }
+
+  // —— 空 selector：跳过 cheerio，整个 body 当作一条 html 结果 ——
+  if (!sel) {
+    const results: unknown[] = [fetchResult.body]
+    forward(`[crawler] ✓ empty selector → full body as 1 result  dt=${Date.now() - t0}ms`)
+    return {
+      ok: true,
+      status: fetchResult.status,
+      count: 1,
+      results,
+      rawHtml: includeRawHtml ? fetchResult.body : undefined
+    }
+  }
+
+  // —— cheerio 解析 ——
+  let $: cheerio.CheerioAPI
+  try {
+    $ = cheerio.load(fetchResult.body)
+  } catch (err) {
+    return { ok: false, error: `HTML 解析失败：${err instanceof Error ? err.message : String(err)}` }
+  }
+
+  let matches: cheerio.Cheerio<any>
+  try {
+    matches = $(sel)
+  } catch (err) {
+    return { ok: false, error: `CSS 选择器语法错误：${err instanceof Error ? err.message : String(err)}` }
+  }
+
+  const results: unknown[] = []
+  const attrKey = attrName?.trim() ?? ''
+  matches.each((_, el) => {
+    let val: unknown
+    switch (extractMode) {
+      case 'text':
+        val = $(el).text().trim()
+        break
+      case 'html': {
+        const inner = $(el).html()
+        val = inner ?? ''
+        break
+      }
+      case 'attr':
+        val = $(el).attr(attrKey) ?? ''
+        break
+    }
+    results.push(val)
+  })
+
+  forward(`[crawler] ✓ matched ${results.length} elements  dt=${Date.now() - t0}ms`)
+
+  return {
+    ok: true,
+    status: fetchResult.status,
+    count: results.length,
+    results,
+    rawHtml: includeRawHtml ? fetchResult.body : undefined
+  }
+})
 
 /** 目标目录下已存在同名文件时，返回加数字后缀的不冲突文件名 */
 function resolveNonCollidingName(dir: string, fileName: string): string {

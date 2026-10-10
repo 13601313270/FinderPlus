@@ -425,6 +425,9 @@ onUnmounted(() => {
   width: 196px;
   overflow: hidden;
   user-select: none;
+  background-color: white;
+  border: solid 1px #b8c0cb;
+  border-radius: 4px;
 
   &--ready {
     opacity: 1;

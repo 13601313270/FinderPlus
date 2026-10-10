@@ -6,6 +6,7 @@ import type {
   CommandApi,
   CodeApi,
   HttpApi,
+  CrawlerApi,
   WasmApi,
   AppMenuApi,
   DialogApi,
@@ -26,6 +27,7 @@ declare global {
     commandApi: CommandApi
     codeApi: CodeApi
     httpApi: HttpApi
+    crawlerApi: CrawlerApi
     wasmApi: WasmApi
     appMenuApi: AppMenuApi
     dialogApi: DialogApi

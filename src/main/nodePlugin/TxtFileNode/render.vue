@@ -140,10 +140,6 @@ function formatSize(bytes: number): string {
   align-items: center;
   gap: 6px;
   padding: 10px 10px 8px;
-  background: @color-surface;
-  border: 1px solid @node-border-color;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   position: relative; // 供右上角悬浮帮助按钮定位
   cursor: grab;
   user-select: none;

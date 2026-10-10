@@ -139,9 +139,6 @@ onUnmounted(() => {
   height: 100%;
   position: relative;
   overflow: visible;
-  background: #ffffff;
-  border: 1px solid @node-border-color;
-  border-radius: 10px;
 
   // 注意：不要把 grab 光标/startDrag 放这里——整体可拖会让「点子节点」也拖起文件夹
 

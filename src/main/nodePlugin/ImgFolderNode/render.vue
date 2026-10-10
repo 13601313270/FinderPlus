@@ -232,9 +232,6 @@ onUnmounted(() => {
   flex-direction: column;
   overflow: hidden;
   user-select: none;
-  background: @color-surface;
-  border: 1px solid @node-border-color;
-  border-radius: @radius-md;
 
   &__bar {
     flex: 0 0 22px;

@@ -1101,10 +1101,6 @@ function removeQueryPortFromUI(id: string, idx: number): void {
   flex-direction: column;
   padding: 8px;
   gap: 4px;
-  background: @color-surface;
-  border: 1px solid @node-border-color;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   overflow: visible;
 
   &__header {

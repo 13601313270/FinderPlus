@@ -175,10 +175,6 @@ onUnmounted(() => { unsubscribe?.() })
   gap: 6px;
   padding: 8px;
   padding-top: 0;
-  background: @color-surface;
-  border: 1px solid @node-border-color;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   overflow: hidden;
 
   &__gear {

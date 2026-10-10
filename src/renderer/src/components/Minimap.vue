@@ -423,10 +423,6 @@ onUnmounted(() => {
   // 挂载量到初始落点前先藏起来，避免从左上角闪一下
   opacity: 0;
   width: 196px;
-  border: 1px solid @node-border-color;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.94);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
   overflow: hidden;
   user-select: none;
 

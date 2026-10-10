@@ -104,10 +104,6 @@ const wireDash = computed(() => condition.value === undefined ? '4 4' : '')
   width: 100%;
   height: 100%;
   position: relative;
-  background: @color-surface;
-  border: 1px solid @node-border-color;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   cursor: grab;
   user-select: none;
 

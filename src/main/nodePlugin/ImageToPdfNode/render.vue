@@ -327,10 +327,6 @@ const showPreviewPager = computed(() =>
   align-items: center;
   gap: 4px;
   padding: 8px 8px 6px;
-  background: @color-surface;
-  border: 1px solid @node-border-color;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   position: relative;
   cursor: grab;
   user-select: none;

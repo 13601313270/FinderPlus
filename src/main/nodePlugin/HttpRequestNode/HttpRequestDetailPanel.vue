@@ -375,7 +375,7 @@ function onRemovePort(): void { httpNode.value?.removeLastInputPort() }
     border: 1px solid #d1d5db;
     border-radius: 8px;
     font-size: 13px;
-    text-align: right;
+    text-align: center;
     outline: none;
 
     &:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12); }

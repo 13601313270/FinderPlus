@@ -35,6 +35,7 @@ export class InputPortManager {
       const port = edge.endPort
       const changed = force || port.lastReceiveValue?.fingerprint !== value.fingerprint
       port.lastReceiveValue = value
+      port.lastReceiveEdge = edge
       if (changed) {
         changedPorts.add(port)
       }
@@ -52,9 +53,10 @@ export class InputPortManager {
     const changedPorts = new Set<InputPort>()
     for (const edge of edges) {
       const port = edge.endPort
-      const hadValue = port.lastReceiveValue !== undefined
-      port.lastReceiveValue = undefined
-      if (hadValue) {
+      // 只有被清空的 edge 恰好是槽位里值的来源，才清槽位
+      if (port.lastReceiveValue !== undefined && port.lastReceiveEdge === edge) {
+        port.lastReceiveValue = undefined
+        port.lastReceiveEdge = undefined
         changedPorts.add(port)
       }
     }

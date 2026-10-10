@@ -56,8 +56,9 @@ export class MethodPort extends InputPort {
    * InputPort 的 fingerprint 去重针对的是"值没变就不用重算"的计算型语义，
    * 而方法端口是"每次信号都触发一次动作"，所以必须绕过。
    */
-  override receive(_edge: Edge, value: Value, _force = false): void {
+  override receive(edge: Edge, value: Value, _force = false): void {
     this.lastReceiveValue = value
+    this.lastReceiveEdge = edge
     // 每次都通知 owner——不等 fingerprint 比对
     if (this.locked) {
       this.pendingNotify = true

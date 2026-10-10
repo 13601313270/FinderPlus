@@ -7,7 +7,7 @@ import { OutputPort } from './OutputPort'
 /** 任何带 VALUE_NAME 静态属性的 Value 子类 */
 type ValueClass = { readonly VALUE_NAME: ValueKind; prototype: Value; new (...args: any[]): Value }
 
-export type InputPortBindRejectReason = 'kind-not-allowed' | 'single-port-occupied'
+export type InputPortBindRejectReason = 'kind-not-allowed'
 
 export type EdgeBindingEvent =
   | { readonly kind: 'bind'; readonly edge: Edge }
@@ -44,6 +44,9 @@ export class InputPort {
 
   /** 最近一次 receive 写入的值（不管来自哪条 Edge），undefined 表示上游还没送来过任何值 */
   lastReceiveValue: Value | undefined
+
+  /** lastReceiveValue 的来源 Edge——unbindEdge / receiveClear 时靠它判断要不要清槽位 */
+  lastReceiveEdge: Edge | undefined
 
   /** 本端口绑定的所有 Edge（拓扑关系） */
   allBindEdge: Set<Edge> = new Set()
@@ -180,9 +183,10 @@ export class InputPort {
    * 接收上游送来（或重算后重发）的值，force=true 时跳过 fingerprint 比对直接通知节点。
    * 手动触发场景（按钮/快捷键）应透传 force=true，避免两层排重卡掉"再跑一次"的语义。
    */
-  receive(_edge: Edge, value: Value, force = false): void {
+  receive(edge: Edge, value: Value, force = false): void {
     const changed = force || this.lastReceiveValue?.fingerprint !== value.fingerprint
     this.lastReceiveValue = value
+    this.lastReceiveEdge = edge
     if (changed) {
       if (this.locked) {
         this.pendingNotify = true
@@ -192,16 +196,18 @@ export class InputPort {
     }
   }
 
-  receiveClear(_edge: Edge): void {
-    const hadValue = this.lastReceiveValue !== undefined
-    this.lastReceiveValue = undefined
-    if (hadValue) {
+  receiveClear(edge: Edge): void {
+    // 只有被清空的 edge 恰好是槽位里值的来源，才清槽位并通知
+    if (this.lastReceiveValue !== undefined && this.lastReceiveEdge === edge) {
+      this.lastReceiveValue = undefined
+      this.lastReceiveEdge = undefined
       if (this.locked) {
         this.pendingNotify = true
       } else {
         this.owner?._onInputPortChanged([this], 'receiveClear')
       }
     }
+    // 不是来源 edge，值保留——不触发通知
   }
 
   /** 认领：由 Node 登记端口时调用 */
@@ -231,16 +237,12 @@ export class InputPort {
       return { result: false, message: 'kind-not-allowed' }
     }
 
-    if (this.allBindEdge.size > 0) {
-      return { result: false, message: 'single-port-occupied' }
-    }
     return { result: true };
   }
 
-  /** 绑定Edge，设置值为undefined */
+  /** 绑定Edge：只挂拓扑关系，不清值；上游 onOutputPortBind 会按需补送 */
   bindEdge(edge: Edge) {
     this.allBindEdge.add(edge)
-    this.lastReceiveValue = undefined
     if (this.locked) {
       this.pendingNotify = true
     } else {
@@ -255,11 +257,19 @@ export class InputPort {
       return { result: false, message: 'edge not bound to this port' }
     }
     this.allBindEdge.delete(edge)
-    if (this.locked) {
-      this.pendingNotify = true
-    } else {
-      this.owner?._onInputPortChanged([this], 'unbindEdge')
+    const wasValueSource = this.lastReceiveEdge === edge
+    if (wasValueSource) {
+      // 解绑的 edge 是槽位值的来源——清槽位 + 走脏标记通知下游节点
+      this.lastReceiveValue = undefined
+      this.lastReceiveEdge = undefined
+      if (this.locked) {
+        this.pendingNotify = true
+      } else {
+        this.owner?._onInputPortChanged([this], 'unbindEdge')
+      }
     }
+    // 不是来源 edge：拓扑变化由 notifyEdgeBinding → owner.notifyChanged() 覆盖（UI 刷新），
+    // 不走脏标记路径——值没变，不该触发节点重算
     this.notifyEdgeBinding('unbind', edge)
     return { result: true };
   }

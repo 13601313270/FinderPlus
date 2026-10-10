@@ -21,12 +21,6 @@ Finder+ تطبيق سطح مكتب لبناء **مسارات عمل مرئية**
 
 أحدث إصدار: **<https://github.com/13601313270/FinderPlus/releases>**
 
-رابط مباشر للإصدار v0.1.0 (Apple Silicon):
-
-```
-https://github.com/13601313270/FinderPlus/releases/download/0.1.0/Finder+-0.1.0-arm64.dmg
-```
-
 افتح ملف `.dmg`، واسحب **Finder+** إلى مجلد **Applications**، ثم أخرج صورة القرص.
 
 ### أول تشغيل على macOS

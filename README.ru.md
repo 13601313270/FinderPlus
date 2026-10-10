@@ -21,12 +21,6 @@ Finder+ — это десктопное приложение для постро
 
 Последний релиз: **<https://github.com/13601313270/FinderPlus/releases>**
 
-Прямая ссылка на v0.1.0 (Apple Silicon):
-
-```
-https://github.com/13601313270/FinderPlus/releases/download/0.1.0/Finder+-0.1.0-arm64.dmg
-```
-
 Откройте `.dmg`, перетащите **Finder+** в папку **Applications**, затем извлеките образ диска.
 
 ### Первый запуск в macOS

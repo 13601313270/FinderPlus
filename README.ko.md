@@ -21,12 +21,6 @@ Finder+는 **비주얼 워크플로**를 만들기 위한 데스크톱 앱입니
 
 최신 릴리스: **<https://github.com/13601313270/FinderPlus/releases>**
 
-v0.1.0 직접 링크 (Apple Silicon):
-
-```
-https://github.com/13601313270/FinderPlus/releases/download/0.1.0/Finder+-0.1.0-arm64.dmg
-```
-
 `.dmg`를 열고 **Finder+**를 **Applications** 폴더로 드래그한 다음 디스크 이미지를 추출합니다.
 
 ### macOS 첫 실행

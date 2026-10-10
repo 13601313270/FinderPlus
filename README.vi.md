@@ -21,12 +21,6 @@ Các cách dùng phổ biến:
 
 Bản phát hành mới nhất: **<https://github.com/13601313270/FinderPlus/releases>**
 
-Liên kết trực tiếp cho v0.1.0 (Apple Silicon):
-
-```
-https://github.com/13601313270/FinderPlus/releases/download/0.1.0/Finder+-0.1.0-arm64.dmg
-```
-
 Mở tệp `.dmg`, kéo **Finder+** vào thư mục **Applications**, rồi đẩy (eject) ảnh đĩa ra.
 
 ### Lần khởi chạy đầu tiên trên macOS

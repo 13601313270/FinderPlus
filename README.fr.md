@@ -21,12 +21,6 @@ Usages typiques :
 
 Dernière version : **<https://github.com/13601313270/FinderPlus/releases>**
 
-Lien direct pour la v0.1.0 (Apple Silicon) :
-
-```
-https://github.com/13601313270/FinderPlus/releases/download/0.1.0/Finder+-0.1.0-arm64.dmg
-```
-
 Ouvrez le `.dmg`, faites glisser **Finder+** dans le dossier **Applications**, puis éjectez l'image disque.
 
 ### Premier lancement sur macOS

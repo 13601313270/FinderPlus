@@ -21,12 +21,6 @@ Tipik kullanımlar:
 
 En son sürüm: **<https://github.com/13601313270/FinderPlus/releases>**
 
-v0.1.0 için doğrudan bağlantı (Apple Silicon):
-
-```
-https://github.com/13601313270/FinderPlus/releases/download/0.1.0/Finder+-0.1.0-arm64.dmg
-```
-
 `.dmg` dosyasını açın, **Finder+** uygulamasını **Applications** klasörüne sürükleyin ve ardından disk imajını çıkarın.
 
 ### macOS'ta ilk başlatma

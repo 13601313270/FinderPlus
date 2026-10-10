@@ -21,12 +21,6 @@ Finder+ **विज़ुअल वर्कफ़्लो** बनाने �
 
 नवीनतम रिलीज़: **<https://github.com/13601313270/FinderPlus/releases>**
 
-v0.1.0 (Apple Silicon) का सीधा लिंक:
-
-```
-https://github.com/13601313270/FinderPlus/releases/download/0.1.0/Finder+-0.1.0-arm64.dmg
-```
-
 `.dmg` खोलें, **Finder+** को **Applications** फ़ोल्डर में खींचें, फिर डिस्क इमेज को इजेक्ट करें।
 
 ### macOS पर पहली बार लॉन्च

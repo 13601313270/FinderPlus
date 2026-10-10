@@ -21,12 +21,6 @@ Finder+ 是一个用来搭**可视化工作流**的桌面应用。你不用写�
 
 最新版本：**<https://github.com/13601313270/FinderPlus/releases>**
 
-v0.1.0 直链（Apple Silicon）：
-
-```
-https://github.com/13601313270/FinderPlus/releases/download/0.1.0/Finder+-0.1.0-arm64.dmg
-```
-
 打开 `.dmg`，把 **Finder+** 拖进 **Applications**，然后推出磁盘映像即可。
 
 ### macOS 首次打开

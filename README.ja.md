@@ -21,12 +21,6 @@ Finder+ は**ビジュアルワークフロー**を組み立てるためのデ�
 
 最新リリース: **<https://github.com/13601313270/FinderPlus/releases>**
 
-v0.1.0 の直リンク（Apple Silicon）:
-
-```
-https://github.com/13601313270/FinderPlus/releases/download/0.1.0/Finder+-0.1.0-arm64.dmg
-```
-
 `.dmg` を開き、**Finder+** を **Applications** フォルダにドラッグしてから、ディスクイメージを排出します。
 
 ### macOS での初回起動

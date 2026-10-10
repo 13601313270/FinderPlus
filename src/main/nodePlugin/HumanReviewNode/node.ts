@@ -47,6 +47,8 @@ export class HumanReviewNode extends Node {
   /** 输出端口引用；没有上游时为 undefined */
   approveOutput: OutputPort | undefined
   rejectOutput: OutputPort | undefined
+  /** 拒绝理由输出端口（固定 StringValue 类型） */
+  rejectReasonOutput: OutputPort | undefined
 
   /** FIFO 待审核队列（不含当前正在审核的项） */
   private readonly queue: Value[] = []
@@ -173,7 +175,7 @@ export class HumanReviewNode extends Node {
     return undefined
   }
 
-  /** 首次有值时创建两个输出端口 */
+  /** 首次有值时创建三个输出端口 */
   private createOutputPorts(valueClass: OutputPort['valueClass']): void {
     this.approveOutput = new OutputPort('approve', valueClass, {
       zh: '同意',
@@ -209,8 +211,26 @@ export class HumanReviewNode extends Node {
       tr: 'Reddet',
       it: 'Rifiuta'
     })
+    this.rejectReasonOutput = new OutputPort('reject-reason', StringValue, {
+      zh: '拒绝理由',
+      en: 'Reject Reason',
+      ja: '却下理由',
+      ko: '거부 사유',
+      es: 'Motivo de rechazo',
+      ar: 'سبب الرفض',
+      fr: 'Raison du rejet',
+      pt: 'Motivo da rejeição',
+      ru: 'Причина отклонения',
+      hi: 'अस्वीकार का कारण',
+      id: 'Alasan penolakan',
+      de: 'Ablehnungsgrund',
+      vi: 'Lý do từ chối',
+      tr: 'Reddetme nedeni',
+      it: 'Motivo del rifiuto'
+    })
     this.addOutput(this.approveOutput)
     this.addOutput(this.rejectOutput)
+    this.addOutput(this.rejectReasonOutput)
   }
 
   /** 类型变化时删掉旧端口（自动断下游边）+ 新建 */
@@ -218,10 +238,14 @@ export class HumanReviewNode extends Node {
     if (!this.approveOutput || !this.rejectOutput) return
     this.removeOutput(this.approveOutput)
     this.removeOutput(this.rejectOutput)
+    if (this.rejectReasonOutput) {
+      this.removeOutput(this.rejectReasonOutput)
+      this.rejectReasonOutput = undefined
+    }
     this.createOutputPorts(valueClass)
   }
 
-  /** 上游清空时删掉两个输出端口 */
+  /** 上游清空时删掉三个输出端口 */
   private deleteOutputPorts(): void {
     if (this.approveOutput) {
       this.removeOutput(this.approveOutput)
@@ -230,6 +254,10 @@ export class HumanReviewNode extends Node {
     if (this.rejectOutput) {
       this.removeOutput(this.rejectOutput)
       this.rejectOutput = undefined
+    }
+    if (this.rejectReasonOutput) {
+      this.removeOutput(this.rejectReasonOutput)
+      this.rejectReasonOutput = undefined
     }
   }
 
@@ -242,10 +270,13 @@ export class HumanReviewNode extends Node {
     this.advance()
   }
 
-  /** 拒绝当前项：commit 到 rejectOutput，然后取下一个 */
-  reject(): void {
+  /** 拒绝当前项：commit 到 rejectOutput + rejectReasonOutput（拒绝理由字符串），然后取下一个 */
+  reject(reason: string): void {
     if (!this.current || !this.rejectOutput) return
     this.rejectOutput.commit(this.current)
+    if (this.rejectReasonOutput) {
+      this.rejectReasonOutput.commit(new StringValue(reason ?? ''))
+    }
     this.advance()
   }
 

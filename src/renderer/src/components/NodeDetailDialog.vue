@@ -158,7 +158,6 @@ onUnmounted(() => {
           <div class="detail-body">
             <!-- 左栏 INPUT -->
             <aside class="detail-col detail-col--input">
-              <div class="detail-col__label">INPUT</div>
               <div class="detail-port-list">
                 <div v-for="p in inputPortDisplays" :key="p.id" class="detail-port">
                   <div class="detail-port__header">
@@ -191,7 +190,6 @@ onUnmounted(() => {
 
             <!-- 右栏 OUTPUT -->
             <aside class="detail-col detail-col--output">
-              <div class="detail-col__label">OUTPUT</div>
               <div class="detail-port-list">
                 <div v-for="p in outputPortDisplays" :key="p.id" class="detail-port">
                   <div class="detail-port__header">
@@ -227,11 +225,12 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   animation: detailFadeIn 0.15s ease;
+  top: 34px;
 }
 
 .detail-dialog {
-  width: 1000px;
-  height: 75vh;
+  width: 1100px;
+  height: 100%;
   border-radius: 12px;
   display: flex;
   flex-direction: column;
@@ -276,13 +275,13 @@ onUnmounted(() => {
     &::before {
       content: '';
       position: absolute;
-      left: 234px; // input 220px + gap 32px 中心偏移
+      left: 262px; // input 220px + gap 32px 中心偏移
       top: 50%;
       width: 0;
       height: 0;
-      border-top: 10px solid transparent;
-      border-bottom: 10px solid transparent;
-      border-left: 16px solid #ffffff;
+      border-top: 16px solid transparent;
+      border-bottom: 16px solid transparent;
+      border-left: 20px solid #ffffff;
       pointer-events: none;
       transform: translateY(-50%);
       filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.15));
@@ -292,13 +291,13 @@ onUnmounted(() => {
     &::after {
       content: '';
       position: absolute;
-      right: 230px; // output 220px + gap 32px 中心偏移
+      right: 262px; // output 220px + gap 32px 中心偏移
       top: 50%;
       width: 0;
       height: 0;
-      border-top: 10px solid transparent;
-      border-bottom: 10px solid transparent;
-      border-left: 16px solid #ffffff;
+      border-top: 16px solid transparent;
+      border-bottom: 16px solid transparent;
+      border-left: 20px solid #ffffff;
       pointer-events: none;
       transform: translateY(-50%);
       filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.15));
@@ -359,12 +358,12 @@ onUnmounted(() => {
 
   &--input,
   &--output {
-    width: 220px;
+    width: 250px;
     flex-shrink: 0;
-    background: #f7f8fa;
-    border: 2px solid #3b7cff;
+    // background: #f7f8fa;
+    // border: 2px solid #3b7cff;
     overflow: hidden;
-    max-height: 90%;
+    max-height: 100%;
     border-radius: 12px;
   }
 
@@ -372,19 +371,8 @@ onUnmounted(() => {
     flex: 1;
     background: #fff;
     overflow: hidden;
-    height: 100%;
+    max-height: 85%;
     border-radius: 12px;
-  }
-
-  &__label {
-    flex-shrink: 0;
-    padding: 10px 14px;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 1px;
-    color: #6b7280;
-    background: #eef1f5;
-    border-bottom: 1px solid #e5e7eb;
   }
 
   &__empty {
@@ -399,13 +387,17 @@ onUnmounted(() => {
 .detail-port-list {
   flex: 1;
   overflow-y: auto;
-  padding: 8px;
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
 .detail-port {
+  background: #f7f8fa;
+  border: 2px solid #3b7cff;
+  padding: 6px;
+  border-radius: 12px;
+
   &__header {
     display: flex;
     align-items: center;

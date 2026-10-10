@@ -31,8 +31,12 @@ const t = useLocalizedMessages(messages)
 // 帮助浮层开关（弹窗壳由 HelpDialog 负责）
 const showHelp = ref(false)
 
-// 全屏审核弹窗开关
+// 全屏弹窗开关
 const showFullscreen = ref(false)
+
+// 拒绝理由对话框
+const showRejectDialog = ref(false)
+const rejectReasonInput = ref('')
 
 const currentLabel = ref('')
 const pendingCount = ref(0)
@@ -217,7 +221,20 @@ function onApprove(): void {
 }
 
 function onReject(): void {
-  reviewNode.value?.reject()
+  if (!hasCurrent.value) return
+  rejectReasonInput.value = ''
+  showRejectDialog.value = true
+}
+
+function onRejectConfirm(): void {
+  showRejectDialog.value = false
+  reviewNode.value?.reject(rejectReasonInput.value)
+  rejectReasonInput.value = ''
+}
+
+function onRejectCancel(): void {
+  showRejectDialog.value = false
+  rejectReasonInput.value = ''
 }
 
 /**
@@ -419,6 +436,33 @@ function onResizePointerDown(e: PointerEvent): void {
             :disabled="!hasCurrent"
             @click="onApprove"
           >{{ t('approve') }}</button>
+        </div>
+      </div>
+    </div>
+  </Teleport>
+
+  <!-- 拒绝理由对话框 -->
+  <Teleport to="body">
+    <div v-if="showRejectDialog" class="fs-mask" @click="onRejectCancel">
+      <div class="rd-dialog" @click.stop>
+        <div class="rd-header">
+          <h3 class="rd-title">{{ t('rejectReasonTitle') }}</h3>
+        </div>
+        <div class="rd-body">
+          <textarea
+            class="rd-textarea"
+            v-model="rejectReasonInput"
+            :placeholder="t('rejectReasonPlaceholder')"
+            rows="5"
+          ></textarea>
+        </div>
+        <div class="rd-footer">
+          <button class="rd-btn rd-btn--cancel" type="button" @click="onRejectCancel">
+            {{ t('rejectReasonCancel') }}
+          </button>
+          <button class="rd-btn rd-btn--confirm" type="button" @click="onRejectConfirm">
+            {{ t('rejectReasonConfirm') }}
+          </button>
         </div>
       </div>
     </div>
@@ -841,5 +885,101 @@ function onResizePointerDown(e: PointerEvent): void {
 @keyframes fsPopIn {
   from { opacity: 0; transform: translateY(-12px) scale(0.98); }
   to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* 拒绝理由对话框样式 */
+.rd-dialog {
+  width: 480px;
+  max-width: 90vw;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  animation: fsPopIn 0.2s ease;
+  overflow: hidden;
+}
+
+.rd-header {
+  flex-shrink: 0;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #fafbfc;
+}
+
+.rd-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.rd-body {
+  flex: 1;
+  padding: 20px;
+}
+
+.rd-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1.5;
+  font-family: inherit;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+
+  &:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+  }
+}
+
+.rd-footer {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 20px;
+  border-top: 1px solid #e5e7eb;
+  background: #fafbfc;
+}
+
+.rd-btn {
+  padding: 8px 22px;
+  border: 1px solid;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  min-width: 80px;
+
+  &:not(:disabled):active {
+    transform: translateY(1px);
+  }
+}
+
+.rd-btn--cancel {
+  background: #fff;
+  border-color: #d1d5db;
+  color: #374151;
+
+  &:not(:disabled):hover {
+    background: #f3f4f6;
+  }
+}
+
+.rd-btn--confirm {
+  background: #ef4444;
+  border-color: #dc2626;
+  color: #fff;
+
+  &:not(:disabled):hover {
+    background: #dc2626;
+  }
 }
 </style>

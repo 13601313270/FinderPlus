@@ -1,6 +1,7 @@
 import { StringValue } from '../../engine/data/StringValue'
 import { JsonValue } from '../../engine/data/JsonValue'
 import { InputPort } from '../../engine/port/InputPort'
+import { MethodPort } from '../../engine/port/MethodPort'
 import { OutputPort } from '../../engine/port/OutputPort'
 import { Node } from '../../engine/node/Node'
 
@@ -19,6 +20,12 @@ import { Node } from '../../engine/node/Node'
  */
 
 type LLMStatus = 'idle' | 'loading' | 'done' | 'error'
+
+/** 一条对话消息（连续对话历史的基本单元） */
+export interface ChatMessage {
+  role: 'user' | 'assistant'
+  content: string
+}
 
 export type LLMProviderId =
   | 'deepseek' | 'openai' | 'kimi' | 'qwen' | 'glm'
@@ -148,6 +155,48 @@ export class LLMNode extends Node {
   /** 输出端口：模型回复（类型随 jsonMode 切换：StringValue ↔ JsonValue） */
   private textOutput!: OutputPort
 
+  /** 方法端口：上游 commit 任意值即清空对话历史 */
+  readonly clearHistoryPort = new MethodPort('clearHistory', {
+    label: {
+      zh: '清空对话',
+      en: 'Clear History',
+      ja: '履歴をクリア',
+      ko: '기록 지우기',
+      es: 'Limpiar historial',
+      ar: 'مسح السجل',
+      fr: 'Effacer l’historique',
+      pt: 'Limpar histórico',
+      ru: 'Очистить историю',
+      hi: 'इतिहास साफ़ करें',
+      id: 'Hapus riwayat',
+      de: 'Verlauf löschen',
+      vi: 'Xóa lịch sử',
+      tr: 'Geçmişi temizle',
+      it: 'Cancella cronologia'
+    }
+  })
+
+  /** 方法端口：上游 commit 任意值即触发一次发送 */
+  readonly sendPort = new MethodPort('send', {
+    label: {
+      zh: '发送',
+      en: 'Send',
+      ja: '送信',
+      ko: '전송',
+      es: 'Enviar',
+      ar: 'إرسال',
+      fr: 'Envoyer',
+      pt: 'Enviar',
+      ru: 'Отправить',
+      hi: 'भेजें',
+      id: 'Kirim',
+      de: 'Senden',
+      vi: 'Gửi',
+      tr: 'Gönder',
+      it: 'Invia'
+    }
+  })
+
   /** 内部 prompt 文本（仅 promptInput 未接边时使用） */
   private localPrompt = ''
 
@@ -164,12 +213,22 @@ export class LLMNode extends Node {
   /** 是否自动调用：收到上游输入时自动触发 fetch；默认 false，需用户手动点发送按钮 */
   private autoCall = false
 
+  /** 是否开启连续对话模式：每次 prompt 追加到 history，下次请求带上完整历史 */
+  private chatMode = false
+
+  /** 连续对话历史（chatMode 开启时才生效） */
+  private chatHistory: ChatMessage[] = []
+
   constructor(id: string) {
     super(id)
     this.textOutput = this.buildOutputPort(this.jsonMode)
     this.addInput(this.systemInput)
     this.addInput(this.promptInput)
     this.addOutput(this.textOutput)
+    this.addMethod(this.clearHistoryPort)
+    this.clearHistoryPort.onTrigger(() => { this.clearHistory() })
+    this.addMethod(this.sendPort)
+    this.sendPort.onTrigger(() => { this.manualTrigger() })
     this.setBox(320, 280)
   }
 
@@ -219,6 +278,40 @@ export class LLMNode extends Node {
   setAutoCall(value: boolean): void {
     if (this.autoCall === value) return
     this.autoCall = value
+    this.notifyChanged()
+  }
+
+  // —— 连续对话模式 ——
+
+  /** 是否开启连续对话模式 —— UI 读它决定是否显示历史区 */
+  get displayChatMode(): boolean {
+    return this.chatMode
+  }
+
+  /** 设置连续对话开关；关闭时自动清空历史 */
+  setChatMode(value: boolean): void {
+    if (this.chatMode === value) return
+    this.chatMode = value
+    if (!value) {
+      this.chatHistory = []
+    }
+    this.notifyChanged()
+  }
+
+  /** 当前对话历史条数 —— UI 可显示 "N 条消息" */
+  get historyCount(): number {
+    return this.chatHistory.length
+  }
+
+  /** 对话历史快照（UI 渲染预览用，返回副本） */
+  get displayHistory(): readonly ChatMessage[] {
+    return this.chatHistory.slice()
+  }
+
+  /** 清空对话历史 */
+  clearHistory(): void {
+    if (this.chatHistory.length === 0) return
+    this.chatHistory = []
     this.notifyChanged()
   }
 
@@ -346,12 +439,20 @@ export class LLMNode extends Node {
     let ok = false
 
     try {
+      // 构建 messages：system 始终放最前面；chatMode 开启时带上历史；最后拼当前 prompt
+      const messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
+        { role: 'system', content: system || 'You are a helpful assistant.' }
+      ]
+      if (this.chatMode) {
+        for (const msg of this.chatHistory) {
+          messages.push({ role: msg.role, content: msg.content })
+        }
+      }
+      messages.push({ role: 'user', content: prompt })
+
       const body: Record<string, unknown> = {
         model,
-        messages: [
-          { role: 'system', content: system || 'You are a helpful assistant.' },
-          { role: 'user', content: prompt }
-        ],
+        messages,
         stream: false
       }
 
@@ -391,6 +492,13 @@ export class LLMNode extends Node {
     if (ok) {
       this.response = resultText
       this.status = 'done'
+
+      // 连续对话模式：追加 user + assistant 到历史
+      if (this.chatMode) {
+        this.chatHistory.push({ role: 'user', content: prompt })
+        this.chatHistory.push({ role: 'assistant', content: resultText })
+      }
+
       if (this.jsonMode) {
         try {
           const parsed = JSON.parse(resultText)
@@ -418,7 +526,9 @@ export class LLMNode extends Node {
       model: this.model,
       jsonMode: this.jsonMode,
       autoCall: this.autoCall,
-      localPrompt: this.localPrompt
+      localPrompt: this.localPrompt,
+      chatMode: this.chatMode,
+      chatHistory: this.chatHistory.slice()
     }
   }
 
@@ -440,6 +550,22 @@ export class LLMNode extends Node {
     }
     if (typeof state.localPrompt === 'string') {
       this.localPrompt = state.localPrompt
+    }
+    if (typeof state.chatMode === 'boolean') {
+      this.chatMode = state.chatMode
+    }
+    if (Array.isArray(state.chatHistory)) {
+      const cleaned: ChatMessage[] = []
+      for (const item of state.chatHistory) {
+        if (
+          item && typeof item === 'object' &&
+          (item.role === 'user' || item.role === 'assistant') &&
+          typeof item.content === 'string'
+        ) {
+          cleaned.push({ role: item.role, content: item.content })
+        }
+      }
+      this.chatHistory = cleaned
     }
   }
 

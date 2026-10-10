@@ -1,10 +1,13 @@
 import { StringValue } from '../../engine/data/StringValue'
 import { InputPort } from '../../engine/port/InputPort'
+import { OutputPort } from '../../engine/port/OutputPort'
 import { Node } from '../../engine/node/Node'
 
 /**
- * 字符串展示节点：把上游送来的字符串显示出来。
- * 没有输出端口——它的产出就是「展示」这件事本身，UI 直接读 text。
+ * 字符串展示节点：把上游送来的字符串显示出来，同时直传输出。
+ *
+ * 输入端口接 StringValue → 更新展示内容 → commit 到输出端口。
+ * 相当于一个带 UI 预览的直通管道：内容流经时节点自己展示一下，同时原样传给下游。
  */
 export class TextDisplayNode extends Node {
   static readonly TYPE = 'text-display'
@@ -32,11 +35,31 @@ export class TextDisplayNode extends Node {
     }
   })
 
+  /** 输出端口：直传输入的字符串 */
+  readonly textOutput = new OutputPort('out', StringValue, {
+    zh: '文本',
+    en: 'Text',
+    ja: 'テキスト',
+    ko: '텍스트',
+    es: 'Texto',
+    ar: 'نص',
+    fr: 'Texte',
+    pt: 'Texto',
+    ru: 'Текст',
+    hi: 'टेक्स्ट',
+    id: 'Teks',
+    de: 'Text',
+    vi: 'Văn bản',
+    tr: 'Metin',
+    it: 'Testo'
+  })
+
   private displayed = ''
 
   constructor(id: string) {
     super(id)
     this.addInput(this.textInput)
+    this.addOutput(this.textOutput)
     // 内容区硬约束：手柄 + 文本展示区。文本可长，超出的部分在框内滚动
     this.setBox(220, 150)
   }
@@ -55,12 +78,20 @@ export class TextDisplayNode extends Node {
     return this.displayed
   }
 
-  /** 收到通知就刷新展示，这是它唯一要做的事 */
+  /** 收到通知就刷新展示，并把值 commit 到输出端口直传下游 */
   inputPortReceiveValue(_ports: InputPort[]): void {
     const [first] = this.textInput.value
-    this.displayed = first instanceof StringValue && !first.isNull ? first.value! : ''
+    const incoming = first instanceof StringValue && !first.isNull ? first.value! : ''
+    this.displayed = incoming
+    if (first instanceof StringValue) {
+      // 上游有值（包括 isNull）→ 原样 commit 到输出端口，保持直传语义
+      this.textOutput.commit(first)
+    } else {
+      // 断边 / 没值 → 清空输出（commit 空 StringValue 保持输出端口有值）
+      this.textOutput.commit(new StringValue(''))
+    }
     this.notifyChanged()
-    // 同步节点：展示出来就算消化完输入 → 回 stable
+    // 同步节点：展示 + commit 都完成 → 回 stable
     this.completeRun()
   }
 

@@ -1,8 +1,8 @@
 import { StringValue } from '../../engine/data/StringValue'
 import type { Edge } from '../../engine/graph/Edge'
+import { InputPort } from '../../engine/port/InputPort'
 import { OutputPort } from '../../engine/port/OutputPort'
 import { Node } from '../../engine/node/Node'
-import type { InputPort } from '../../engine/port/InputPort'
 
 /** 构造默认 box（多行输入）；用户拖拽调整后以 setBox 为准 */
 const DEFAULT_BOX: [number, number] = [300, 180]
@@ -13,12 +13,38 @@ const MIN_HEIGHT = 80
 
 /**
  * 字符串输入框节点：源头节点，框里写什么就往外送什么。
- * 没有输入端口，只有一个字符串输出。
+ *
+ * 有一个可选的输入端口 set：上游传来 StringValue，节点把自己的 content 覆盖成它，
+ * 然后自动 commit 到输出端口——相当于"外部可以写我"。
+ * 没有连线时这个端口不生效，节点就是纯源头。
+ *
  * 永远是多行 textarea，支持右下角拖拽调整宽高，尺寸持久化到 saveState。
  */
 export class TextInputNode extends Node {
   static readonly TYPE = 'text-input'
   readonly type = TextInputNode.TYPE
+
+  /** 输入端口：外部驱动节点内容 */
+  readonly setInput = new InputPort('set', {
+    accepts: [StringValue],
+    label: {
+      zh: '外部值',
+      en: 'Set',
+      ja: '外部値',
+      ko: '외부 값',
+      es: 'Valor externo',
+      ar: 'قيمة خارجية',
+      fr: 'Valeur externe',
+      pt: 'Valor externo',
+      ru: 'Внешнее значение',
+      hi: 'बाहरी मान',
+      id: 'Nilai eksternal',
+      de: 'Externer Wert',
+      vi: 'Giá trị ngoài',
+      tr: 'Dış değer',
+      it: 'Valore esterno'
+    }
+  })
 
   /** 输出端口：字符串 */
   readonly textOutput = new OutputPort('text', StringValue, {
@@ -46,6 +72,7 @@ export class TextInputNode extends Node {
 
   constructor(id: string) {
     super(id)
+    this.addInput(this.setInput)
     this.addOutput(this.textOutput)
     const [w, h] = DEFAULT_BOX
     this.setBox(w, h)
@@ -105,8 +132,34 @@ export class TextInputNode extends Node {
     this.setBox(Math.max(MIN_WIDTH, Math.round(width)), Math.max(MIN_HEIGHT, Math.round(height)))
   }
 
-  /** 没有输入端口，永远收不到通知 */
-  inputPortReceiveValue(_ports: InputPort[], _source: 'receive' | 'receiveClear' | 'bindEdge' | 'unbindEdge'): void {}
+  /**
+   * 外部 setInput 端口值变化 → 覆盖 content（草稿），auto-send 开启才自动 commit。
+   * - 有 StringValue 进来（非 null）→ content = value
+   * - 有 StringValue 进来（null）→ content 清空
+   * - 端口断边清空（value 数组空）→ 不做任何事，节点保持自己的草稿
+   * 无论是否 auto-send，content 变了都 notifyChanged 触发持久化 + UI 输入框刷新。
+   */
+  inputPortReceiveValue(_ports: InputPort[], _source: 'receive' | 'receiveClear' | 'bindEdge' | 'unbindEdge'): void {
+    const [first] = this.setInput.value
+    if (first === undefined) {
+      // 断边清空：外部没人传值了，但不改节点自身草稿，直接回 stable
+      this.completeRun()
+      return
+    }
+    if (first instanceof StringValue) {
+      const incoming = first.isNull ? '' : (first.value ?? '')
+      if (incoming !== this.content) {
+        this.content = incoming
+        this.notifyChanged() // 触发持久化 + UI 输入框刷新
+      }
+      // 只有 auto-send 开启才自动 commit 给下游
+      if (this.autoSend) {
+        this.commitText()
+      }
+    }
+    // 同步节点：消化完外部输入 → 回 stable
+    this.completeRun()
+  }
 
   /**
    * 新连线接上时：auto-send 开启则立即 commit 当前草稿值给所有边（force=true 跳过排重，

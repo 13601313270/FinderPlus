@@ -2,17 +2,12 @@
 import { computed, onMounted, onUnmounted, ref, shallowRef } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { HumanReviewNode } from './node'
-import { JsonValue } from '../../engine/data/JsonValue'
-import { ImgFileValue } from '../../engine/data/ImgFileValue'
-import { FileValue } from '../../engine/data/FileValue'
-import { TxtFileValue } from '../../engine/data/TxtFileValue'
-import { StringValue } from '../../engine/data/StringValue'
-import { NumberValue } from '../../engine/data/NumberValue'
-import { BoolValue } from '../../engine/data/BoolValue'
+import type { Value } from '../../engine/data/Value'
 import { viewport } from '@renderer/canvas/viewport'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
 import { messages } from './i18n'
+import { resolveRenderer } from '@renderer/components/valueRenderers'
 import HelpDialog from '@renderer/components/HelpDialog.vue'
 import NodeHeader from '@renderer/components/NodeHeader.vue'
 import HumanReviewHelpDialog from './HumanReviewHelpDialog.vue'
@@ -38,33 +33,39 @@ const showFullscreen = ref(false)
 const showRejectDialog = ref(false)
 const rejectReasonInput = ref('')
 
+// —— 从节点同步到渲染层的状态 ——
 const currentLabel = ref('')
 const pendingCount = ref(0)
 const hasCurrent = ref(false)
 
-// 卡片内展示用（区分 JSON vs 非 JSON）
-const currentIsJson = ref(false)
-const jsonValue = ref<unknown>(undefined)
+/** 当前审核项的 Value 实例（传给 renderer 组件当 prop，renderer 靠 instance.constructor.VALUE_NAME 分发） */
+const currentValue = ref<Value | undefined>(undefined)
+/** 当前审核项的 kind（即 VALUE_NAME，字符串，便于模板做 === 判断） */
+const currentKind = ref<string>('')
 
-// 全屏弹窗用的类型细分
-const fsIsImg = ref(false)
-const fsIsJson = ref(false)
-const fsIsTxt = ref(false)
-const fsIsString = ref(false)
-const fsIsNumber = ref(false)
-const fsIsBool = ref(false)
-const fsIsFile = ref(false)
-const fsJsonValue = ref<unknown>(undefined)
-const fsTextContent = ref<string>('')
-const fsSimpleValue = ref<string>('')
-const fsFileName = ref<string>('')
-const fsFileSize = ref<number>(0)
-const fsFileType = ref<string>('')
-const fsValueTypeLabel = ref<string>('')
-
-// 全屏图片 objectURL
+// —— 全屏弹窗专用（renderer 组件 detail 模式只有缩略图/预览，全屏需要自己控制大图/完整文本） ——
 const fsImageUrl = ref<string | null>(null)
 let fsRevokeUrl: (() => void) | null = null
+const fsTextContent = ref<string>('')
+
+/** 从 currentValue 取 File（img-file / txt-file / file / pdf-file 通用） */
+const fsFile = computed<File | undefined>(() => {
+  const cv = currentValue.value as { file?: File } | undefined
+  return cv?.file
+})
+
+/** 从 currentValue 取 JsonValue 的 value 字段 */
+const fsJsonContent = computed<unknown>(() => {
+  const cv = currentValue.value as { value?: unknown } | undefined
+  return cv?.value
+})
+
+/** 字节数 → 可读体积 */
+function formatSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / 1024 / 1024).toFixed(2)} MB`
+}
 
 /** 释放全屏图片 objectURL */
 function clearFsImage(): void {
@@ -73,13 +74,6 @@ function clearFsImage(): void {
     fsRevokeUrl = null
   }
   fsImageUrl.value = null
-}
-
-/** 字节数 → 可读体积 */
-function formatSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-  return `${(bytes / 1024 / 1024).toFixed(2)} MB`
 }
 
 /** File → 文本（Promise） */
@@ -97,6 +91,7 @@ const labelText = computed(() => (hasCurrent.value ? currentLabel.value : t('awa
 
 let unsubscribe: (() => void) | undefined
 
+/** 同步节点状态到渲染层：核心只存 currentValue（Value 实例）和 currentKind */
 function syncCurrent() {
   const n = reviewNode.value
   if (!n) return
@@ -104,85 +99,27 @@ function syncCurrent() {
   pendingCount.value = n.pendingCount
   hasCurrent.value = n.hasCurrent
   const cv = n.currentValue
+  currentValue.value = cv
+  currentKind.value = cv ? ((cv.constructor as unknown) as { VALUE_NAME: string }).VALUE_NAME : ''
 
-  // 卡片内展示用
-  currentIsJson.value = cv instanceof JsonValue
-  jsonValue.value = currentIsJson.value ? (cv as JsonValue).value : undefined
-
-  // 全屏弹窗用：类型细分 + 各自数据
+  // —— 全屏弹窗的定制数据（卡片内 renderer 组件自己管，这里只给全屏用） ——
   clearFsImage()
-  fsIsImg.value = false
-  fsIsJson.value = false
-  fsIsTxt.value = false
-  fsIsString.value = false
-  fsIsNumber.value = false
-  fsIsBool.value = false
-  fsIsFile.value = false
-  fsJsonValue.value = undefined
   fsTextContent.value = ''
-  fsSimpleValue.value = ''
-  fsFileName.value = ''
-  fsFileSize.value = 0
-  fsFileType.value = ''
-  fsValueTypeLabel.value = ''
-
-  if (!cv) return
-
-  if (cv instanceof ImgFileValue) {
-    fsIsImg.value = true
-    fsValueTypeLabel.value = 'Image'
-    const file = cv.file
+  if (cv && currentKind.value === 'img-file') {
+    const file = (cv as { file?: File }).file
     if (file) {
-      fsFileName.value = file.name
-      fsFileSize.value = file.size
-      fsFileType.value = file.type || 'image/*'
       fsImageUrl.value = URL.createObjectURL(file)
       fsRevokeUrl = () => URL.revokeObjectURL(fsImageUrl.value!)
     }
-  } else if (cv instanceof JsonValue) {
-    fsIsJson.value = true
-    fsValueTypeLabel.value = 'JSON'
-    fsJsonValue.value = cv.value
-  } else if (cv instanceof TxtFileValue) {
-    fsIsTxt.value = true
-    fsValueTypeLabel.value = 'Text File'
-    const file = cv.file
+  } else if (cv && currentKind.value === 'txt-file') {
+    const file = (cv as { file?: File }).file
     if (file) {
-      fsFileName.value = file.name
-      fsFileSize.value = file.size
-      fsFileType.value = file.type || 'text/plain'
-      // 异步读文本
       readFileAsText(file).then((text) => {
         fsTextContent.value = text
       }).catch(() => {
         fsTextContent.value = '(Failed to read file)'
       })
     }
-  } else if (cv instanceof FileValue) {
-    // 普通 FileValue（不是 ImgFileValue / TxtFileValue）
-    fsIsFile.value = true
-    fsValueTypeLabel.value = 'File'
-    const file = cv.file
-    if (file) {
-      fsFileName.value = file.name
-      fsFileSize.value = file.size
-      fsFileType.value = file.type || 'application/octet-stream'
-    }
-  } else if (cv instanceof StringValue) {
-    fsIsString.value = true
-    fsValueTypeLabel.value = 'String'
-    fsSimpleValue.value = cv.isNull ? '(null)' : (cv.value ?? '')
-  } else if (cv instanceof NumberValue) {
-    fsIsNumber.value = true
-    fsValueTypeLabel.value = 'Number'
-    fsSimpleValue.value = cv.isNull ? '(null)' : String(cv.value)
-  } else if (cv instanceof BoolValue) {
-    fsIsBool.value = true
-    fsValueTypeLabel.value = 'Boolean'
-    fsSimpleValue.value = cv.isNull ? '(null)' : String(cv.value)
-  } else {
-    // 兜底：displayLabel
-    fsSimpleValue.value = cv.displayLabel
   }
 }
 
@@ -309,13 +246,13 @@ function onResizePointerDown(e: PointerEvent): void {
 
     <div class="review" @wheel="onReviewWheel">
       <div class="review__label">{{ t('reviewLabel') }}</div>
-      <!-- JSON 值 → 折叠树；其他类型 → 文本标签；无值 → 占位 -->
-      <JsonTreeNode
-        v-if="hasCurrent && currentIsJson"
-        :value="jsonValue"
-        :default-expanded="true"
-      />
-      <div v-else class="review__value" :title="labelText">{{ labelText }}</div>
+
+      <!-- 无值 → 占位文案 -->
+      <div v-if="!hasCurrent" class="review__value">{{ labelText }}</div>
+      <!-- null 值 → 直接显示 (null)，不用 NullValueRenderer（它的 prop 类型要求 { isNull: true } 收窄，模板里做不到） -->
+      <div v-else-if="currentValue?.isNull" class="review__value">(null)</div>
+      <!-- 有值 → 按 kind 从注册表找 renderer -->
+      <component v-else :is="resolveRenderer(currentKind)" :value="currentValue!" context="tooltip" />
 
       <div class="review__queue" v-if="pendingCount > 0">
         {{ t('queueRemaining', { n: pendingCount }) }}
@@ -361,7 +298,7 @@ function onResizePointerDown(e: PointerEvent): void {
         <div class="fs-header">
           <h3 class="fs-title">{{ t('fullscreenTitle') }}</h3>
           <div class="fs-header-info">
-            <span v-if="hasCurrent" class="fs-type-badge">{{ fsValueTypeLabel }}</span>
+            <span v-if="hasCurrent" class="fs-type-badge">{{ currentKind }}</span>
             <span v-if="pendingCount > 0" class="fs-pending">{{ t('queueRemaining', { n: pendingCount }) }}</span>
           </div>
           <button class="fs-close" type="button" @click="showFullscreen = false">×</button>
@@ -374,52 +311,57 @@ function onResizePointerDown(e: PointerEvent): void {
           </div>
 
           <!-- 图片 -->
-          <template v-else-if="fsIsImg">
+          <template v-else-if="currentKind === 'img-file'">
             <div class="fs-meta">
-              <span>{{ fsFileName }}</span>
-              <span>{{ formatSize(fsFileSize) }}</span>
-              <span>{{ fsFileType }}</span>
+              <span>{{ fsFile?.name }}</span>
+              <span v-if="fsFile">{{ formatSize(fsFile.size) }}</span>
+              <span v-if="fsFile">{{ fsFile.type }}</span>
             </div>
             <div class="fs-image-wrap">
-              <img v-if="fsImageUrl" class="fs-image" :src="fsImageUrl" :alt="fsFileName" />
+              <img v-if="fsImageUrl" class="fs-image" :src="fsImageUrl" :alt="fsFile?.name" />
             </div>
           </template>
 
           <!-- JSON -->
-          <template v-else-if="fsIsJson">
+          <template v-else-if="currentKind === 'json'">
             <div class="fs-meta">
               <span>{{ currentLabel }}</span>
             </div>
             <div class="fs-json">
-              <JsonTreeNode :value="fsJsonValue" :default-expanded="true" />
+              <JsonTreeNode :value="fsJsonContent" :default-expanded="true" />
             </div>
           </template>
 
           <!-- 文本文件 -->
-          <template v-else-if="fsIsTxt">
+          <template v-else-if="currentKind === 'txt-file'">
             <div class="fs-meta">
-              <span>{{ fsFileName }}</span>
-              <span>{{ formatSize(fsFileSize) }}</span>
+              <span>{{ fsFile?.name }}</span>
+              <span v-if="fsFile">{{ formatSize(fsFile.size) }}</span>
             </div>
             <pre class="fs-text">{{ fsTextContent }}</pre>
           </template>
 
-          <!-- 普通文件 -->
-          <template v-else-if="fsIsFile">
+          <!-- 其他文件类（file / pdf-file / img-file-collection 等） -->
+          <template v-else-if="['file', 'pdf-file', 'img-file-collection'].includes(currentKind)">
             <div class="fs-meta">
-              <span>{{ fsFileName }}</span>
-              <span>{{ formatSize(fsFileSize) }}</span>
-              <span>{{ fsFileType }}</span>
+              <span>{{ fsFile?.name ?? currentLabel }}</span>
+              <span v-if="fsFile">{{ formatSize(fsFile.size) }}</span>
+              <span v-if="fsFile">{{ fsFile.type }}</span>
             </div>
-            <div class="fs-file-placeholder">📄 {{ fsFileName }}</div>
+            <div class="fs-file-placeholder">📄 {{ fsFile?.name ?? currentLabel }}</div>
           </template>
 
-          <!-- 简单值（String / Number / Bool） -->
+          <!-- null 值 -->
+          <template v-else-if="currentValue?.isNull">
+            <pre class="fs-text fs-text--simple">(null)</pre>
+          </template>
+
+          <!-- 简单值（String / Number / Bool）或兜底 UnknownValueRenderer 的内容（直接用 displayLabel） -->
           <template v-else>
             <div class="fs-meta">
-              <span>{{ fsValueTypeLabel }}</span>
+              <span>{{ currentKind }}</span>
             </div>
-            <pre class="fs-text fs-text--simple">{{ fsSimpleValue }}</pre>
+            <pre class="fs-text fs-text--simple">{{ currentLabel }}</pre>
           </template>
         </div>
 

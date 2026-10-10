@@ -2,7 +2,7 @@
 import { debounce } from 'lodash-es'
 import { computed, onMounted, onUnmounted, ref, shallowRef } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
-import { LLMNode } from './node'
+import { LLMNode, type ChatMessage } from './node'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import { useGlobalSettings } from '@renderer/composables/useGlobalSettings'
 import {
@@ -45,6 +45,10 @@ const provider = ref<LLMProvider>('deepseek')
 const model = ref('')
 const jsonMode = ref(false)
 
+// 连续对话模式
+const chatMode = ref(false)
+const chatHistory = ref<ChatMessage[]>([])
+
 let unsubscribe: (() => void) | undefined
 
 
@@ -73,6 +77,8 @@ onMounted(() => {
     provider.value = found.displayProvider
     model.value = found.displayModel
     jsonMode.value = found.displayJsonMode
+    chatMode.value = found.displayChatMode
+    chatHistory.value = found.displayHistory.slice()
 
     unsubscribe = found.onChanged(() => {
       response.value = found.displayResponse
@@ -80,6 +86,8 @@ onMounted(() => {
       autoCall.value = found.displayAutoCall
       promptConnected.value = found.displayPromptConnected
       localPrompt.value = found.displayLocalPrompt
+      chatMode.value = found.displayChatMode
+      chatHistory.value = found.displayHistory.slice()
       // provider / model / jsonMode 改了也同步
       if (found.displayProvider !== provider.value) provider.value = found.displayProvider
       if (found.displayModel !== model.value) model.value = found.displayModel
@@ -117,6 +125,15 @@ function onJsonModeChange(e: Event): void {
 function onAutoCallChange(e: Event): void {
   const target = e.target as HTMLInputElement
   llmNode.value?.setAutoCall(target.checked)
+}
+
+function onChatModeChange(e: Event): void {
+  const target = e.target as HTMLInputElement
+  llmNode.value?.setChatMode(target.checked)
+}
+
+function onClearHistory(): void {
+  llmNode.value?.clearHistory()
 }
 
 function onPromptInput(val: string): void {
@@ -174,6 +191,14 @@ function onSendClick(): void {
         />
         <span>JSON</span>
       </label>
+      <label class="node__json-label node__chat-label" :title="t('chatModeHint')">
+        <input
+          type="checkbox"
+          :checked="chatMode"
+          @change="onChatModeChange"
+        />
+        <span>{{ t('chatMode') }}</span>
+      </label>
     </div>
 
     <!-- 输出区 -->
@@ -206,6 +231,32 @@ function onSendClick(): void {
       >⤢</button>
     </div>
 
+    <!-- 历史预览区（仅 chatMode 开启时显示） -->
+    <div v-if="llmNode && chatMode" class="llm-history">
+      <div class="llm-history__header">
+        <span class="llm-history__title">{{ t('chatMode') }}（{{ chatHistory.length }}）</span>
+      </div>
+      <div class="llm-history__scroll">
+        <template v-if="chatHistory.length === 0">
+          <div class="llm-history__empty">{{ t('historyEmpty') }}</div>
+        </template>
+        <template v-else>
+          <div
+            v-for="(msg, idx) in chatHistory"
+            :key="idx"
+            class="llm-history__msg"
+            :class="{
+              'llm-history__msg--user': msg.role === 'user',
+              'llm-history__msg--assistant': msg.role === 'assistant'
+            }"
+          >
+            <span class="llm-history__role">{{ msg.role === 'user' ? t('historyUser') : t('historyAssistant') }}</span>
+            <span class="llm-history__content">{{ msg.content }}</span>
+          </div>
+        </template>
+      </div>
+    </div>
+
     <!-- 底部操作栏：无连线时左 textarea + 右按钮；有连线时左自动开关 + 右按钮 -->
     <div class="node__bottom" v-if="llmNode">
       <template v-if="!promptConnected">
@@ -224,6 +275,15 @@ function onSendClick(): void {
           <span class="node__switch-label">{{ t('autoCall') }}</span>
         </label>
       </template>
+      <button
+        v-if="chatMode && chatHistory.length > 0"
+        class="node__clear-history"
+        type="button"
+        :title="t('clearHistory')"
+        @click="onClearHistory"
+      >
+        🗑
+      </button>
       <button
         class="node__send"
         type="button"
@@ -583,6 +643,107 @@ function onSendClick(): void {
   border-radius: 8px;
   color: #1f2937;
   user-select: text;
+}
+
+// —— 连续对话模式样式 ——
+
+.node__chat-label {
+  background: #fef3c7;
+  border-color: #fde68a;
+  color: #92400e;
+}
+
+.node__clear-history {
+  all: unset;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background: #fff;
+  border: 1px solid @node-border-color;
+  font-size: 14px;
+  color: #6b7280;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  flex-shrink: 0;
+
+  &:hover {
+    background: #fef2f2;
+    border-color: #fecaca;
+    color: #dc2626;
+  }
+}
+
+.llm-history {
+  border: 1px solid @node-border-color;
+  border-radius: 6px;
+  background: #fafafa;
+  overflow: hidden;
+  flex-shrink: 0;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    padding: 4px 8px;
+    background: #f3f4f6;
+    border-bottom: 1px solid @node-border-color;
+  }
+
+  &__title {
+    font-size: 10px;
+    color: #6b7280;
+    font-weight: 500;
+  }
+
+  &__scroll {
+    max-height: 120px;
+    overflow-y: auto;
+    padding: 4px;
+  }
+
+  &__empty {
+    font-size: 11px;
+    color: #9aa2ad;
+    font-style: italic;
+    text-align: center;
+    padding: 8px;
+  }
+
+  &__msg {
+    display: flex;
+    gap: 4px;
+    padding: 3px 4px;
+    font-size: 11px;
+    line-height: 1.4;
+    border-radius: 3px;
+    margin-bottom: 2px;
+    word-break: break-all;
+
+    &--user {
+      background: #eff6ff;
+      color: #1e40af;
+    }
+
+    &--assistant {
+      background: #f0fdf4;
+      color: #166534;
+    }
+  }
+
+  &__role {
+    flex-shrink: 0;
+    font-weight: 600;
+    font-size: 10px;
+    opacity: 0.7;
+    min-width: 28px;
+  }
+
+  &__content {
+    flex: 1;
+    white-space: pre-wrap;
+  }
 }
 
 @keyframes spin {

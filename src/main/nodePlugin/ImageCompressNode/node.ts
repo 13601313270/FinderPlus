@@ -254,7 +254,8 @@ export class ImageCompressNode extends Node {
     const file = new File([ab], fileName, { type: mime })
     const hash = djb2(base64)
     this.imageOutput.commit(new ImgFileValue(file, hash))
-    this.notifyChanged()
+    // 同步节点：commit 输出就算消化完输入 → 回 stable
+    this.completeRun()
   }
 
   /**

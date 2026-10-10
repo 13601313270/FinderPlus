@@ -175,39 +175,41 @@ export class TableNode extends Node {
    * @ts-ignore — 同 beforeDestroy：preload API 只在 renderer 有，tsconfig.node.json 不带 Window 扩展
    */
   async inputPortReceiveValue(ports: InputPort[]): Promise<void> {
-    for (const port of ports) {
-      const pair = this.queryPorts.find((p) => p.input === port)
-      if (!pair) continue
+    this.beginRun()
+    try {
+      for (const port of ports) {
+        const pair = this.queryPorts.find((p) => p.input === port)
+        if (!pair) continue
 
-      const [first] = port.value
-      if (!(first instanceof StringValue) || first.isNull) {
-        pair.output.clear()
-        this.notifyChanged()
-        continue
-      }
-
-      const sql = first.value!.trim()
-      if (!sql) {
-        pair.output.clear()
-        this.notifyChanged()
-        continue
-      }
-
-      try {
-        // @ts-ignore
-        const res = await window.tableApi.executeRawSql({ nodeId: this.id, sql })
-        if (res.ok) {
-          pair.output.commit(new JsonValue(res.rows))
-        } else {
+        const [first] = port.value
+        if (!(first instanceof StringValue) || first.isNull) {
           pair.output.clear()
-          console.warn('[TableNode] SQL query failed:', res.error)
+          continue
         }
-      } catch (err) {
-        pair.output.clear()
-        console.warn('[TableNode] SQL query error:', err)
+
+        const sql = first.value!.trim()
+        if (!sql) {
+          pair.output.clear()
+          continue
+        }
+
+        try {
+          // @ts-ignore
+          const res = await window.tableApi.executeRawSql({ nodeId: this.id, sql })
+          if (res.ok) {
+            pair.output.commit(new JsonValue(res.rows))
+          } else {
+            pair.output.clear()
+            console.warn('[TableNode] SQL query failed:', res.error)
+          }
+        } catch (err) {
+          pair.output.clear()
+          console.warn('[TableNode] SQL query error:', err)
+        }
       }
+    } finally {
+      this.completeRun()
     }
-    this.notifyChanged()
   }
 
   saveState(): Record<string, unknown> {

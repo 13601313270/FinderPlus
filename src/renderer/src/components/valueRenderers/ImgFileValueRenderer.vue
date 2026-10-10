@@ -62,7 +62,6 @@ const sizeClass = computed(() => ({
 
   &__thumb {
     width: 100%;
-    height: 80px;
     object-fit: cover;
     border-radius: 4px;
     background: #111827;

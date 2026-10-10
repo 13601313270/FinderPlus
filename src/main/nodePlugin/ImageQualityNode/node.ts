@@ -220,7 +220,8 @@ export class ImageQualityNode extends Node {
     const file = new File([ab], fileName, { type: mime })
     const hash = djb2(base64)
     this.imageOutput.commit(new ImgFileValue(file, hash))
-    this.notifyChanged()
+    // 同步节点：commit 输出就算消化完输入 → 回 stable
+    this.completeRun()
   }
 
   /** 输入端口值变化：通知视图刷新（render.vue 据此触发重新压缩） */

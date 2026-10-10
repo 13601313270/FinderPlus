@@ -1,7 +1,7 @@
 import { app, shell, BrowserWindow, ipcMain, Menu, dialog, Notification } from 'electron'
 import { join, basename, extname, parse } from 'node:path'
 import { copyFileSync, existsSync, readFileSync, readdirSync, rmSync, mkdirSync, statSync, unlinkSync, watch, writeFileSync } from 'node:fs'
-import { exec } from 'node:child_process'
+import { exec, spawn } from 'node:child_process'
 import http from 'node:http'
 import https from 'node:https'
 import { URL } from 'node:url'
@@ -35,6 +35,147 @@ const NOW = () => Date.now()
 const userDataDir = app.getPath('userData')
 app.setName('Finder+')
 app.setPath('userData', userDataDir)
+
+// —— Code 节点依赖目录（所有 CodeNode 共享） ——
+
+/** Code 节点用户安装的 npm 包所在目录 */
+const CODE_MODULES_DIR = join(userDataDir, 'code_modules')
+/** 包名合法正则：@scope/name 或 name，name 部分允许字母数字下划线中划线 */
+const PKG_NAME_RE = /^(?:@[a-zA-Z0-9_-]+\/)?[a-zA-Z0-9_-]+$/
+
+/** 确保 code_modules 目录存在、且里面有个最小 package.json（npm init -y 的等价物） */
+function ensureCodeModulesDir(): void {
+  if (!existsSync(CODE_MODULES_DIR)) {
+    mkdirSync(CODE_MODULES_DIR, { recursive: true })
+  }
+  const pkgJson = join(CODE_MODULES_DIR, 'package.json')
+  if (!existsSync(pkgJson)) {
+    writeFileSync(pkgJson, JSON.stringify({
+      name: 'canvasdesk-code-modules',
+      version: '1.0.0',
+      description: 'User-installed npm packages for CanvasDesk Code nodes',
+      private: true,
+      dependencies: {}
+    }, null, 2), 'utf-8')
+  }
+}
+
+/** 跨平台找 npm 可执行文件 */
+function resolveNpmBin(): string {
+  return process.platform === 'win32' ? 'npm.cmd' : 'npm'
+}
+
+/** 读某个 node_modules/<pkg>/package.json 的 version 字段 */
+function readPkgVersion(dir: string): string {
+  try {
+    const pkgPath = join(dir, 'package.json')
+    const json = JSON.parse(readFileSync(pkgPath, 'utf-8'))
+    return typeof json.version === 'string' ? json.version : 'unknown'
+  } catch {
+    return 'unknown'
+  }
+}
+
+// —— IPC：Code 节点依赖管理 ——
+
+ipcMain.handle('code:installPackage', async (_e, pkgName: string): Promise<
+  { ok: true; stdout: string }
+  | { ok: false; error: string; stderr?: string }
+> => {
+  const trimmed = pkgName.trim()
+  if (!trimmed) return { ok: false, error: '包名不能为空' }
+  if (!PKG_NAME_RE.test(trimmed)) return { ok: false, error: `包名格式不合法：${trimmed}` }
+
+  ensureCodeModulesDir()
+
+  return await new Promise((resolve) => {
+    const child = spawn(resolveNpmBin(), ['install', trimmed, '--no-save', '--prefer-offline'], {
+      cwd: CODE_MODULES_DIR,
+      windowsHide: true,
+      env: { ...process.env }
+    })
+
+    let stdout = ''
+    let stderr = ''
+    child.stdout?.on('data', (d: Buffer) => { stdout += d.toString() })
+    child.stderr?.on('data', (d: Buffer) => { stderr += d.toString() })
+    child.on('error', (err) => {
+      resolve({ ok: false, error: `npm 启动失败：${err.message}` })
+    })
+    child.on('close', (code) => {
+      if (code === 0) {
+        resolve({ ok: true, stdout })
+      } else {
+        resolve({ ok: false, error: `npm install 退出码 ${code}`, stderr })
+      }
+    })
+  })
+})
+
+ipcMain.handle('code:uninstallPackage', async (_e, pkgName: string): Promise<
+  { ok: true; stdout: string }
+  | { ok: false; error: string; stderr?: string }
+> => {
+  const trimmed = pkgName.trim()
+  if (!trimmed) return { ok: false, error: '包名不能为空' }
+  if (!PKG_NAME_RE.test(trimmed)) return { ok: false, error: `包名格式不合法：${trimmed}` }
+
+  if (!existsSync(CODE_MODULES_DIR)) return { ok: true, stdout: '' }
+
+  return await new Promise((resolve) => {
+    const child = spawn(resolveNpmBin(), ['uninstall', trimmed, '--no-save'], {
+      cwd: CODE_MODULES_DIR,
+      windowsHide: true,
+      env: { ...process.env }
+    })
+
+    let stdout = ''
+    let stderr = ''
+    child.stdout?.on('data', (d: Buffer) => { stdout += d.toString() })
+    child.stderr?.on('data', (d: Buffer) => { stderr += d.toString() })
+    child.on('error', (err) => {
+      resolve({ ok: false, error: `npm 启动失败：${err.message}` })
+    })
+    child.on('close', (code) => {
+      if (code === 0) {
+        resolve({ ok: true, stdout })
+      } else {
+        resolve({ ok: false, error: `npm uninstall 退出码 ${code}`, stderr })
+      }
+    })
+  })
+})
+
+ipcMain.handle('code:listPackages', (): Array<{ name: string; version: string }> => {
+  const nodeModules = join(CODE_MODULES_DIR, 'node_modules')
+  if (!existsSync(nodeModules)) return []
+
+  const result: Array<{ name: string; version: string }> = []
+  try {
+    const entries = readdirSync(nodeModules)
+    for (const entry of entries) {
+      const full = join(nodeModules, entry)
+      const stat = statSync(full)
+      if (!stat.isDirectory()) continue
+
+      if (entry.startsWith('@')) {
+        const subEntries = readdirSync(full)
+        for (const sub of subEntries) {
+          const subFull = join(full, sub)
+          if (statSync(subFull).isDirectory()) {
+            result.push({ name: `${entry}/${sub}`, version: readPkgVersion(subFull) })
+          }
+        }
+      } else {
+        result.push({ name: entry, version: readPkgVersion(full) })
+      }
+    }
+  } catch { /* 目录不存在或读不到 → 返回空 */ }
+
+  return result.sort((a, b) => a.name.localeCompare(b.name))
+})
+
+ipcMain.handle('code:getModulesDir', (): string => CODE_MODULES_DIR)
 
 let storage: SqliteStorage | null = null
 let canvasWatcher: ReturnType<typeof watch> | null = null

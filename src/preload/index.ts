@@ -1,10 +1,24 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
+import { join } from 'node:path'
 
 // AsyncFunction 在 Electron preload 环境下没有挂成全局标识符，
 // 用 (async () => {}).constructor 间接拿到它（所有 async 函数共享同一个构造器）
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const AsyncFunction: new (...args: string[]) => (...fnArgs: unknown[]) => unknown = (async () => {}).constructor as any
+
+// —— 模块加载时，先把用户 code_modules 目录 push 到 require 搜索路径 ——
+// 这样 preload 进程里的所有 require（包括注入到 AsyncFunction 的那个）
+// 都会先查项目 node_modules，再查用户装的 code_modules
+ipcRenderer.invoke('code:getModulesDir').then((modulesDir: string) => {
+  const nodeModules = join(modulesDir, 'node_modules')
+  if (!module.paths.includes(nodeModules)) {
+    module.paths.push(nodeModules)
+  }
+}).catch(() => {
+  // 主进程 IPC 还没 ready 就先跳过——Code 节点真正执行时如果路径还没 push，
+  // 用户 require 不到包会报 MODULE_NOT_FOUND，但不会影响项目自己的依赖
+})
 
 const api = {
   ping: (): Promise<string> => ipcRenderer.invoke('ping')
@@ -112,12 +126,16 @@ const codeApi = {
         onOutput(name, value)
       }
 
+      // 注入原生 require——用户代码里可以直接 require('lodash-es') 等
+      // 会先查项目 node_modules，再查用户 userData/code_modules/node_modules
+      const req = require
+
       // 用 AsyncFunction 构造函数体，这样用户代码里可以直接写 await，
       // 而不需要自己用 async function 包裹——AsyncFunction 本身就是 async 的
       // 构造失败（语法错误包括 await 放非 async 上下文、async 写非 AsyncFunction 里都会被 catch）
       // eslint-disable-next-line no-new-func
-      const fn = new AsyncFunction(...names, 'callOutputPort', `"use strict";\n${body}`) as (...args: unknown[]) => unknown
-      const result = fn(...values, callOutputPort)
+      const fn = new AsyncFunction(...names, 'callOutputPort', 'require', `"use strict";\n${body}`) as (...args: unknown[]) => unknown
+      const result = fn(...values, callOutputPort, req)
 
       // 函数本身执行时抛同步错误 → 被下面外层 catch 捕获
       // 返回 Promise：fire-and-forget，但 reject 要通知 renderer；resolve 也要通知让 renderer 收口状态
@@ -144,7 +162,23 @@ const codeApi = {
       }
       return r
     }
-  }
+  },
+
+  /** 安装一个 npm 包到 code_modules（主进程 spawn npm install） */
+  installPackage: (pkgName: string): Promise<
+    { ok: true; stdout: string }
+    | { ok: false; error: string; stderr?: string }
+  > => ipcRenderer.invoke('code:installPackage', pkgName),
+
+  /** 从 code_modules 卸载一个包 */
+  uninstallPackage: (pkgName: string): Promise<
+    { ok: true; stdout: string }
+    | { ok: false; error: string; stderr?: string }
+  > => ipcRenderer.invoke('code:uninstallPackage', pkgName),
+
+  /** 列出 code_modules 里已装的包 */
+  listPackages: (): Promise<Array<{ name: string; version: string }>> =>
+    ipcRenderer.invoke('code:listPackages')
 }
 
 /**

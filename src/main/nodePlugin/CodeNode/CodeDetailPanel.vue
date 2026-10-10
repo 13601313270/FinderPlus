@@ -55,6 +55,14 @@ const outputNameErrors = ref<Record<string, CodePortNameError>>({})
 // 复制按钮的瞬时反馈
 const copyHint = ref<string>('')
 
+// —— 依赖管理状态 ——
+type PkgItem = { name: string; version: string }
+const installedPackages = ref<PkgItem[]>([])
+const installInput = ref('')
+const installing = ref(false)
+const installError = ref('')
+const installLog = ref('')
+
 let offChanged: (() => void) | undefined
 
 function syncFromNode(node: CodeNode): void {
@@ -74,11 +82,57 @@ onMounted(() => {
     syncFromNode(found)
     offChanged = found.onChanged(() => syncFromNode(found))
   }
+  // 加载已装的 npm 包列表（所有 CodeNode 共享）
+  void refreshPackages()
 })
 
 onUnmounted(() => {
   offChanged?.()
 })
+
+// —— 依赖管理 ——
+
+async function refreshPackages(): Promise<void> {
+  try {
+    const list = await window.codeApi.listPackages()
+    installedPackages.value = list
+  } catch { /* 首次启动时主进程 IPC 可能还没 ready，忽略 */ }
+}
+
+async function onInstallPackage(): Promise<void> {
+  const pkg = installInput.value.trim()
+  if (!pkg || installing.value) return
+  installing.value = true
+  installError.value = ''
+  installLog.value = ''
+  try {
+    const result = await window.codeApi.installPackage(pkg)
+    if (result.ok) {
+      installInput.value = ''
+      installLog.value = result.stdout.trim()
+      await refreshPackages()
+    } else {
+      installError.value = `${result.error}${result.stderr ? '\n' + result.stderr : ''}`
+    }
+  } catch (err) {
+    installError.value = err instanceof Error ? err.message : String(err)
+  } finally {
+    installing.value = false
+  }
+}
+
+async function onUninstallPackage(name: string): Promise<void> {
+  try {
+    const result = await window.codeApi.uninstallPackage(name)
+    if (result.ok) {
+      await refreshPackages()
+    } else {
+      installError.value = result.error
+    }
+  } catch (err) {
+    installError.value = err instanceof Error ? err.message : String(err)
+  }
+}
 
 const hasInputs = computed(() => inputs.value.length > 0)
 const hasOutputs = computed(() => outputs.value.length > 0)
@@ -340,6 +394,63 @@ function onCopyCallOutputPort(): void {
           :title="t('portKindHint', { kind: o.kind })"
         >{{ o.name }}<span class="code-hint__port-kind">:{{ o.kind }}</span></span>
       </div>
+      <div class="code-hint__line code-hint__line-req">
+        <span class="code-hint__line-content">
+          <span class="code-hint__key">require</span>
+          <span class="code-hint__paren">(</span>
+          <span class="code-hint__str">'lodash-es'</span>
+          <span class="code-hint__paren">)</span>
+        </span>
+      </div>
+    </div>
+
+    <!-- 依赖管理：全局一次安装，所有 CodeNode 共享 -->
+    <div class="code-deps">
+      <div class="code-deps__header">
+        <span class="code-deps__title">npm 依赖</span>
+        <span class="code-deps__count">{{ installedPackages.length }}</span>
+      </div>
+
+      <!-- 已装包列表 -->
+      <div v-if="installedPackages.length > 0" class="code-deps__list">
+        <div
+          v-for="pkg in installedPackages"
+          :key="pkg.name"
+          class="code-deps__row"
+        >
+          <span class="code-deps__pkg">{{ pkg.name }}</span>
+          <span class="code-deps__ver">v{{ pkg.version }}</span>
+          <button
+            class="code-deps__remove"
+            type="button"
+            title="卸载"
+            @click="onUninstallPackage(pkg.name)"
+          >×</button>
+        </div>
+      </div>
+      <div v-else class="code-deps__empty">尚未安装任何包（所有 CodeNode 共享）</div>
+
+      <!-- 安装输入 -->
+      <div class="code-deps__install">
+        <input
+          class="code-input code-deps__input"
+          type="text"
+          :value="installInput"
+          :disabled="installing"
+          placeholder="包名，如 lodash-es 或 @scope/pkg"
+          @keyup.enter="onInstallPackage"
+          @input="installInput = ($event.target as HTMLInputElement).value"
+        />
+        <button
+          class="code-deps__btn"
+          type="button"
+          :disabled="installing || !installInput.trim()"
+          @click="onInstallPackage"
+        >{{ installing ? '安装中…' : '安装' }}</button>
+      </div>
+
+      <div v-if="installError" class="code-deps__err">{{ installError }}</div>
+      <pre v-if="installLog" class="code-deps__log">{{ installLog }}</pre>
     </div>
 
     <!-- 代码编辑区 -->
@@ -547,6 +658,12 @@ function onCopyCallOutputPort(): void {
       align-items: center;
       gap: 6px;
 
+      &-req {
+        margin-top: 2px;
+        padding-top: 2px;
+        border-top: 1px dashed #e5e7eb;
+      }
+
       &-content {
         font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
         font-size: 11px;
@@ -624,6 +741,153 @@ function onCopyCallOutputPort(): void {
         color: #9aa2ad;
         font-size: 9px;
       }
+    }
+  }
+
+  .code-deps {
+    flex-shrink: 0;
+    padding: 8px 10px;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+
+    &__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    &__title {
+      font-size: 12px;
+      font-weight: 500;
+      color: #374151;
+    }
+
+    &__count {
+      font-size: 10px;
+      color: #9aa2ad;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      background: #f3f4f6;
+      padding: 1px 6px;
+      border-radius: 10px;
+    }
+
+    &__list {
+      max-height: 120px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    &__row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 11px;
+      padding: 2px 0;
+    }
+
+    &__pkg {
+      flex: 1;
+      color: #1f2937;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      min-width: 0;
+    }
+
+    &__ver {
+      color: #6b7280;
+      font-size: 10px;
+      flex-shrink: 0;
+    }
+
+    &__remove {
+      all: unset;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      border-radius: 3px;
+      color: #9aa2ad;
+      font-size: 13px;
+      line-height: 1;
+      flex-shrink: 0;
+      transition: color 0.15s, background 0.15s;
+
+      &:hover {
+        color: #dc2626;
+        background: #fee2e2;
+      }
+    }
+
+    &__empty {
+      font-size: 11px;
+      color: #9aa2ad;
+      font-style: italic;
+      padding: 2px 0;
+    }
+
+    &__install {
+      display: flex;
+      gap: 6px;
+
+      .code-deps__input {
+        flex: 1;
+      }
+    }
+
+    &__btn {
+      all: unset;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 5px 12px;
+      font-size: 12px;
+      font-weight: 500;
+      color: #fff;
+      background: #3b82f6;
+      border-radius: 6px;
+      flex-shrink: 0;
+      transition: background 0.15s;
+
+      &:hover:not(:disabled) { background: #2563eb; }
+      &:active:not(:disabled) { background: #1d4ed8; }
+      &:disabled { cursor: not-allowed; background: #93c5fd; }
+    }
+
+    &__err {
+      font-size: 11px;
+      color: #dc2626;
+      padding: 4px 6px;
+      background: #fef2f2;
+      border-radius: 4px;
+      border: 1px solid #fecaca;
+      white-space: pre-wrap;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      max-height: 80px;
+      overflow-y: auto;
+    }
+
+    &__log {
+      font-size: 10px;
+      color: #374151;
+      padding: 4px 6px;
+      background: #f3f4f6;
+      border-radius: 4px;
+      margin: 0;
+      white-space: pre-wrap;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      max-height: 80px;
+      overflow-y: auto;
     }
   }
 

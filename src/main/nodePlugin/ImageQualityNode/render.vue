@@ -8,15 +8,20 @@ import { ImgFileNode } from '../ImgFileNode/node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
+import { useNodeDetail } from '@renderer/composables/useNodeDetail'
 import { messages } from './i18n'
 import HelpDialog from '@renderer/components/HelpDialog.vue'
 import ImageQualityHelpDialog from './ImageQualityHelpDialog.vue'
+import GearIcon from '@renderer/components/icons/GearIcon.vue'
 
 // 卡片头部标题走插件 manifest 的多语言 title，未配当前语言时由 resolveNodeTitle 兜底
 const nodeTitle = useNodeTitle(ImageQualityNode.TYPE)
 
 // 卡片内文案走节点本地的 i18n.ts（放在节点文件夹里，便于插件化替换），跟随界面语言
 const t = useLocalizedMessages(messages)
+
+// 打开详情面板（大图预览）
+const { openNodeDetail } = useNodeDetail()
 
 // 帮助浮层开关（弹窗壳由 HelpDialog 负责）
 const showHelp = ref(false)
@@ -275,6 +280,9 @@ onUnmounted(() => {
     <div class="quality-card__header">
       <span class="quality-card__title">{{ nodeTitle }}</span>
       <div class="quality-card__header-actions">
+        <button class="quality-card__gear" type="button" title="查看大图" @pointerdown.stop @click.stop="openNodeDetail(props.id)">
+          <GearIcon />
+        </button>
         <button class="quality-card__help" type="button" :title="t('helpTitle')" @pointerdown.stop @click.stop="showHelp = true">?</button>
       </div>
     </div>
@@ -375,6 +383,27 @@ onUnmounted(() => {
     align-items: center;
     gap: 4px;
     flex-shrink: 0;
+  }
+
+  // 齿轮按钮：打开详情面板看大图
+  &__gear {
+    all: unset;
+    flex-shrink: 0;
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #f3f4f6;
+    color: #6b7280;
+    transition: background 0.15s, color 0.15s;
+
+    &:hover {
+      background: #dbeafe;
+      color: #2563eb;
+    }
   }
 
   // 帮助按钮沿用 code 节点的灰底圆问号外观

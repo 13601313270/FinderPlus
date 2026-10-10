@@ -54,7 +54,7 @@ const OUT_LABEL = {
 }
 
 /** 内容区尺寸基础值 + 每增加一个端口对追加的高度 */
-const NODE_WIDTH = 190
+const NODE_WIDTH = 150
 const BASE_HEIGHT = 60
 const PER_PORT_HEIGHT = 34
 

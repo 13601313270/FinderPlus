@@ -95,7 +95,7 @@ export class ImageQualityNode extends Node {
     this.addInput(this.imageInput)
     this.addOutput(this.imageOutput)
     // 内容区硬约束：头部标签（含格式下拉）+ 预览区 + 质量滑杆 + 底部信息栏
-    this.setBox(260, 300)
+    this.setBox(210, 268)
   }
 
   /** 拖入文件落点命中本节点时被调用；本节点不接收外部文件，返回 false */

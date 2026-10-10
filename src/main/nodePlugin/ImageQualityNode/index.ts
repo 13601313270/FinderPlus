@@ -25,7 +25,8 @@ export const manifest: NodePluginManifest = {
   render,
   iconPaths: ['M12 3l2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.2-4.1 5.8-.8Z'],
   category: 'image',
-  help: () => import('./ImageQualityHelpDialog.vue')
+  help: () => import('./ImageQualityHelpDialog.vue'),
+  detailPanel: () => import('./ImageQualityDetailPanel.vue')
 }
 
 export default manifest

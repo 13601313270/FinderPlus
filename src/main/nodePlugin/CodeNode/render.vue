@@ -69,14 +69,6 @@ onUnmounted(() => {
 const hasCode = computed(() => code.value.trim().length > 0)
 const running = computed(() => status.value === 'running')
 
-/** 从 resultText 或 errorText 中提取最后一行，用于在卡片上显示最新输出 */
-const lastLine = computed(() => {
-  const text = errorText.value || resultText.value
-  if (!text) return ''
-  const lines = text.split('\n').filter(l => l.trim().length > 0)
-  return lines.length > 0 ? lines[lines.length - 1]! : text
-})
-
 const STATUS_KEYS = {
   idle: 'statusIdle',
   running: 'statusRunning',
@@ -132,7 +124,7 @@ function onAutoRunToggle(e: Event): void {
           <span class="code-output__spinner" />
           <span>{{ t('running') }}</span>
         </template>
-        <template v-else-if="errorText || resultText">{{ lastLine }}</template>
+        <template v-else-if="errorText || resultText"></template>
         <template v-else>{{ codeNode ? t('clickToRun') : t('nodeMissing') }}</template>
       </div>
       <button

@@ -76,7 +76,7 @@ function onToggle(): void {
       >
         <span class="node__knob" />
       </button>
-      <span class="node__state">{{ checked ? 'true' : 'false' }}</span>
+      <!-- <span class="node__state">{{ checked ? 'true' : 'false' }}</span> -->
     </div>
   </div>
 
@@ -112,9 +112,9 @@ function onToggle(): void {
     box-sizing: border-box;
     cursor: pointer;
     position: relative;
-    width: 44px;
-    height: 24px;
-    border-radius: 12px;
+    width: 52.8px;   // 44 × 1.2
+    height: 28.8px;  // 24 × 1.2
+    border-radius: 14.4px; // 12 × 1.2
     background: #cbd5e1;
     transition: background 0.2s;
     flex-shrink: 0;
@@ -132,10 +132,10 @@ function onToggle(): void {
   // 开关滑块
   &__knob {
     position: absolute;
-    top: 2px;
-    left: 2px;
-    width: 20px;
-    height: 20px;
+    top: 2.4px;    // 2 × 1.2
+    left: 2.4px;   // 2 × 1.2
+    width: 24px;   // 20 × 1.2
+    height: 24px;  // 20 × 1.2
     border-radius: 50%;
     background: #fff;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
@@ -143,7 +143,7 @@ function onToggle(): void {
   }
 
   &__switch--on &__knob {
-    transform: translateX(20px);
+    transform: translateX(24px); // 20 × 1.2
   }
 
   &__state {

@@ -102,7 +102,7 @@ function onDelayInput(e: Event): void {
   align-items: center;
   justify-content: center;
   gap: 2px;
-  padding: 8px 6px;
+  padding: 8px 0;
   position: relative;
   flex-grow: 1;
 
@@ -120,7 +120,7 @@ function onDelayInput(e: Event): void {
   }
 
   &__input {
-    width: 48px;
+    width: 60px;
     border: none;
     outline: none;
     background: transparent;

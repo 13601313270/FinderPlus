@@ -223,6 +223,28 @@ const crawlerApi = {
 }
 
 /**
+ * 阿里云 OSS API：把上传参数交给主进程（ali-oss 是 Node.js SDK，渲染进程没有 node:http）。
+ * 主进程完成 put 后返回可访问 URL。
+ */
+const ossApi = {
+  upload: (args: {
+    accessKeyId: string
+    accessKeySecret: string
+    region: string
+    bucket: string
+    endpoint?: string
+    objectKey: string
+    base64Data: string
+    contentType?: string
+    signUrl?: boolean
+    signExpires?: number
+  }): Promise<
+    { ok: true; url: string; objectKey: string; etag?: string }
+    | { ok: false; error: string }
+  > => ipcRenderer.invoke('oss:upload', args)
+}
+
+/**
  * WASM 资源 API：给渲染进程读取 img-compressor-wasm 的 wasm 二进制。
  *
  * 生产环境 renderer 以 file:// 加载时，包内胶水代码的 fetch 会被 Chromium 拒绝，
@@ -597,6 +619,7 @@ if (process.contextIsolated) {
     contextBridge.exposeInMainWorld('codeApi', codeApi)
     contextBridge.exposeInMainWorld('httpApi', httpApi)
     contextBridge.exposeInMainWorld('crawlerApi', crawlerApi)
+    contextBridge.exposeInMainWorld('ossApi', ossApi)
     contextBridge.exposeInMainWorld('wasmApi', wasmApi)
     contextBridge.exposeInMainWorld('appMenuApi', appMenuApi)
     contextBridge.exposeInMainWorld('dialogApi', dialogApi)
@@ -627,6 +650,8 @@ if (process.contextIsolated) {
   // @ts-ignore (define in dts)
   window.crawlerApi = crawlerApi
   // @ts-ignore (define in dts)
+  window.ossApi = ossApi
+  // @ts-ignore (define in dts)
   window.wasmApi = wasmApi
   // @ts-ignore (define in dts)
   window.appMenuApi = appMenuApi
@@ -653,6 +678,7 @@ export type CommandApi = typeof commandApi
 export type CodeApi = typeof codeApi
 export type HttpApi = typeof httpApi
 export type CrawlerApi = typeof crawlerApi
+export type OssApi = typeof ossApi
 export type WasmApi = typeof wasmApi
 export type AppMenuApi = typeof appMenuApi
 export type DialogApi = typeof dialogApi

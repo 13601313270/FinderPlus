@@ -9,6 +9,7 @@ import AdmZip from 'adm-zip'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import * as cheerio from 'cheerio'
 import * as iconv from 'iconv-lite'
+import OSS from 'ali-oss'
 import { openDatabase, closeDatabase, getDatabase, persist } from './db/database'
 import { SCHEMA_VERSION } from './db/schema'
 import { SqliteStorage } from './db/SqliteStorage'
@@ -1693,6 +1694,104 @@ function truncate(str: string, max: number): string {
   if (str.length <= max) return str
   return `${str.slice(0, max)}…(+${str.length - max} chars)`
 }
+
+// —— 阿里云 OSS 上传 ——
+
+/** 阿里云 OSS 上传 IPC handler。
+ *
+ * 把 base64 文件内容 + bucket 配置交给主进程，用 ali-oss SDK put 到目标 key，
+ * 返回可访问 URL（默认 result.url；若 signUrl=true 则走 signatureUrl 生成带签名的长期链接）。
+ *
+ * 不走渲染进程直传——ali-oss 是 Node.js SDK，渲染进程没有 node:http。
+ * 也不走 preload——preload 设计目标是桥接而非执行重逻辑，且凭证安全边界不变。
+ */
+ipcMain.handle('oss:upload', async (_e, args: {
+  accessKeyId: string
+  accessKeySecret: string
+  region: string
+  bucket: string
+  endpoint?: string
+  objectKey: string
+  base64Data: string
+  contentType?: string
+  signUrl?: boolean
+  signExpires?: number
+}): Promise<
+  { ok: true; url: string; objectKey: string; etag?: string }
+  | { ok: false; error: string }
+> => {
+  const {
+    accessKeyId, accessKeySecret, region, bucket, endpoint,
+    objectKey, base64Data, contentType,
+    signUrl, signExpires
+  } = args
+
+  // —— 参数校验 ——
+  if (!accessKeyId?.trim()) return { ok: false, error: 'AccessKeyId 不能为空' }
+  if (!accessKeySecret?.trim()) return { ok: false, error: 'AccessKeySecret 不能为空' }
+  if (!region?.trim()) return { ok: false, error: 'Region 不能为空（如 oss-cn-hangzhou）' }
+  if (!bucket?.trim()) return { ok: false, error: 'Bucket 不能为空' }
+  if (!objectKey?.trim()) return { ok: false, error: '对象 Key 不能为空（如 uploads/photo.jpg）' }
+  if (!base64Data) return { ok: false, error: '文件内容为空' }
+
+  // base64 解码（去掉可能的 data:xxx;base64, 前缀）
+  const pureB64 = base64Data.replace(/^data:[^;]+;base64,/, '')
+  let buffer: Buffer
+  try {
+    buffer = Buffer.from(pureB64, 'base64')
+  } catch (err) {
+    return { ok: false, error: `base64 解码失败：${err instanceof Error ? err.message : String(err)}` }
+  }
+
+  // —— 构造 OSS 客户端 ——
+  // ali-oss 默认 endpoint 协议是 http，这里强制走 https（阿里云官方也推荐 https）
+  let effectiveEndpoint: string
+  if (endpoint?.trim()) {
+    // 用户自定义 endpoint：缺协议头时补 https://
+    const raw = endpoint.trim()
+    effectiveEndpoint = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`
+  } else {
+    // 默认 endpoint：https://{region}.aliyuncs.com
+    effectiveEndpoint = `https://${region.trim()}.aliyuncs.com`
+  }
+
+  try {
+    const client = new OSS({
+      region: region.trim(),
+      accessKeyId: accessKeyId.trim(),
+      accessKeySecret: accessKeySecret.trim(),
+      bucket: bucket.trim(),
+      endpoint: effectiveEndpoint
+    })
+
+    // —— 上传 ——
+    const putOptions: Record<string, unknown> = {}
+    if (contentType?.trim()) {
+      putOptions.headers = { 'Content-Type': contentType.trim() }
+    }
+
+    const result = await client.put(objectKey.trim(), buffer, putOptions)
+    // result: { name, url, res: { status, headers }, data }
+
+    // —— 生成返回 URL ——
+    let url: string
+    if (signUrl) {
+      const expires = Math.max(60, signExpires ?? 31536000) // 默认 1 年
+      url = client.signatureUrl(objectKey.trim(), { expires })
+    } else {
+      url = result.url
+    }
+
+    // 兜底：把 http:// 换成 https://（防止 result.url 里有 http 残留）
+    url = url.replace(/^http:\/\//, 'https://')
+
+    return { ok: true, url, objectKey: result.name, etag: result.res.headers.etag }
+  } catch (err) {
+    // ali-oss 抛的是 Error，message 里通常有 OSS 返回的具体错误码（如 AccessDenied / SignatureDoesNotMatch）
+    const msg = err instanceof Error ? err.message : String(err)
+    return { ok: false, error: `OSS 上传失败：${msg}` }
+  }
+})
 
 // —— 数据导出 / 导入 ——
 

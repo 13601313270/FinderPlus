@@ -7,6 +7,7 @@ import type {
   CodeApi,
   HttpApi,
   CrawlerApi,
+  OssApi,
   WasmApi,
   AppMenuApi,
   DialogApi,
@@ -28,6 +29,7 @@ declare global {
     codeApi: CodeApi
     httpApi: HttpApi
     crawlerApi: CrawlerApi
+    ossApi: OssApi
     wasmApi: WasmApi
     appMenuApi: AppMenuApi
     dialogApi: DialogApi

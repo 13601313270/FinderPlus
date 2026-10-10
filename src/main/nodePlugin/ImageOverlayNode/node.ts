@@ -103,7 +103,6 @@ export class ImageOverlayNode extends Node {
   private addLayerPort(index: number): InputPort {
     const port = new InputPort(`layer-${index}`, {
       accepts: [ImgFileValue, StringValue],
-      multiple: false,
       label: {
         zh: `图层 ${index + 1}`,
         en: `Layer ${index + 1}`,

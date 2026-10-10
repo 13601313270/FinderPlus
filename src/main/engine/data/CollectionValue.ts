@@ -7,11 +7,6 @@ import { Value, type ValueKind } from './Value'
  * 解决的问题：文件夹节点一次产出 100 张图，下游 PDF 节点只需要一条 Edge
  * 就能收到全部图片，不用拖 100 条 Edge。
  *
- * 与现有 InputPort.multiple 机制的关系：
- * - multiple 解决的是「一个 InputPort 接多条 Edge 时如何合并值」
- * - CollectionValue 解决的是「一条 Edge 如何装多个值」
- * 两者正交、互补，不是替代关系。
- *
  * 不可变约束：继承 Value 的不可变铁律——items 是 readonly，构造后不改动。
  * 上游需要替换集合时，重新构造一个新的 CollectionValue 实例 commit 即可。
  *

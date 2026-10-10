@@ -3,7 +3,7 @@ import { InputPort, type InputPortBindRejectReason } from './InputPort'
 import type { Edge } from '../graph/Edge'
 import type { OutputPort } from './OutputPort'
 
-/** 方法端口选项：比 InputPort 简单——不需要 accepts（接受所有类型）、不需要 required/defaultValue/multiple */
+/** 方法端口选项：比 InputPort 简单——不需要 accepts（接受所有类型）、不需要 required/defaultValue */
 export interface MethodPortOptions {
   /** 端口文本标记（多语言），UI 显示用 */
   readonly label?: import('../../../shared/language').LocalizedText
@@ -35,10 +35,8 @@ export class MethodPort extends InputPort {
     options: MethodPortOptions = {}
   ) {
     // 传给基类：空 accepts（基类会说"不接受任何类型"——但我们 override canBindEdge 放行所有）
-    // multiple: true — 允许多条连线接入
     super(id, {
       accepts: [],
-      multiple: true,
       label: options.label
     })
   }

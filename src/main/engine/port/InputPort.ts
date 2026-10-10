@@ -24,8 +24,6 @@ export interface InputPortOptions {
   readonly accepts: readonly ValueClass[]
   /** 必填：没有任何输入（含默认值）时，节点不应运行 */
   readonly required?: boolean
-  /** 多值：允许多条连线接入，值按无序集合语义看待 */
-  readonly multiple?: boolean
   /** 未接线时可采用的值，是否采用由节点自己决定 */
   readonly defaultValue?: Value
   /** 端口文本标记（多语言），UI 显示用；可只配若干语言，未命中的语言兜底到英语。不填则显示端口的 id */
@@ -119,10 +117,6 @@ export class InputPort {
 
   get required(): boolean {
     return this.options.required ?? false
-  }
-
-  get multiple(): boolean {
-    return this.options.multiple ?? false
   }
 
   get defaultValue(): Value | undefined {
@@ -251,7 +245,7 @@ export class InputPort {
       return { result: false, message: 'kind-not-allowed' }
     }
 
-    if (this.multiple === false && this.incoming.size > 0) {
+    if (this.incoming.size > 0) {
       return { result: false, message: 'single-port-occupied' }
     }
     return { result: true };

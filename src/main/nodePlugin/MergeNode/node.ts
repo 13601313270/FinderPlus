@@ -37,10 +37,8 @@ const MIN_PORT_COUNT = 1
  * 汇流（Merge）节点：多个独立输入端口 → 一个输出端口，逐值即时透传。
  *
  * - 数据类型由用户在节点上选择，选定后所有输入端口的 accepts 和输出端口的 valueClass 同步重建。
- * - 每个输入端口是独立的（multiple=false），接受一条上游连线。
- * - 每个输入端口可独立增删，底部有 +/- 按钮。
+ * - 每个输入端口独立，接受一条上游连线，可独立增删，底部有 +/- 按钮。
  * - 某个输入端口收到新值 → 立即 force=true commit 到输出端口，不等其他输入、不做批量合并。
- * - 不使用 multiple:true——每个输入都是独立端口，渲染层和连线校验都更直观。
  *
  * 没有计算语义，纯粹的多入一出中继。
  */
@@ -54,7 +52,7 @@ export class MergeNode extends Node {
   /** 当前输入端口数量 */
   private portCount: number
 
-  /** 所有输入端口（独立的，不是 multiple） */
+  /** 所有独立输入端口 */
   private readonly inputPortsList: InputPort[] = []
 
   /** 唯一的输出端口 */

@@ -134,7 +134,6 @@ export class ImageToPdfNode extends Node {
   private addImagePort(index: number): InputPort {
     const port = new InputPort(`image-${index}`, {
       accepts: [ImgFileValue, ImgFileCollectionValue],
-      multiple: false,
       label: {
         zh: `图片 ${index + 1}`,
         en: `Image ${index + 1}`,

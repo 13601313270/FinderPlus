@@ -136,7 +136,7 @@ export class HumanReviewNode extends Node {
     }
 
     // —— 入队 ——
-    const value = values[0] // multiple: false，取第一个
+    const value = values[0]
 
     const wasEmpty = this.current === undefined
     if (wasEmpty) {

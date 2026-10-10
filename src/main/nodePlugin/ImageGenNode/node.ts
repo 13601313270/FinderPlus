@@ -101,7 +101,7 @@ export class ImageGenNode extends Node {
   })
 
   /**
-   * 参考图 1~4：按端口编号固定顺序，避免 multiple 连线顺序不稳定。
+   * 参考图 1~4：按端口编号固定顺序。
    * 提示词里的"第一张图"对应 ref1，"第二张图"对应 ref2，依此类推。
    * 不接就缺省跳过，模型能吃几张由 providers.ts 的 maxReferenceImages 决定，
    * 超上限（比如 qwen-image-2.0-pro 接了 ref4）会直接报错。

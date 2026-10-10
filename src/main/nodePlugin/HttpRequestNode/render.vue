@@ -40,6 +40,8 @@ const method = ref<string>('GET')
 const urlTemplate = ref('')
 const headers = ref<HeaderEntry[]>([])
 const bodyText = ref('')
+const bodySource = ref<'multipart' | 'text' | 'none'>('none')
+const fileBodyNames = ref<string[]>([])
 const resolvedUrl = ref('')
 const inputCount = ref(1)
 const status = ref<'idle' | 'running' | 'done' | 'error'>('idle')
@@ -54,6 +56,8 @@ function syncFromNode(node: HttpRequestNode): void {
   urlTemplate.value = node.displayUrlTemplate
   headers.value = node.displayHeaders.map((h) => ({ key: h.key, value: h.value }))
   bodyText.value = node.displayBody
+  bodySource.value = node.bodySource
+  fileBodyNames.value = [...node.displayFileBodyNames]
   resolvedUrl.value = node.displayResolvedUrl
   inputCount.value = node.inputCount
   status.value = node.displayStatus
@@ -115,7 +119,9 @@ onUnmounted(() => { unsubscribe?.() })
     <!-- —— headers/body/端口数摘要 —— -->
     <div v-if="httpNode" class="http-summary">
       <span>{{ t('headersSummary', { n: headerCount }) }}</span>
-      <span>body: {{ bodyText ? (allowsBody ? t('bodySet') : t('bodyNotSent', { method })) : t('bodyNone') }}</span>
+      <span v-if="bodySource === 'multipart'">body: 📎 {{ fileBodyNames.length }} files ({{ fileBodyNames.join(', ') }})</span>
+      <span v-else-if="bodySource === 'text'">body: {{ allowsBody ? t('bodySet') : t('bodyNotSent', { method }) }}</span>
+      <span v-else>body: {{ allowsBody ? t('bodyNone') : t('bodyNotSent', { method }) }}</span>
       <span>{{ t('portSummary', { n: inputCount }) }}</span>
     </div>
 

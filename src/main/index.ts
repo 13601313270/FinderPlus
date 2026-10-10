@@ -1306,7 +1306,7 @@ function registerIpcHandlers(): void {
     url: string
     method?: string
     headers?: Record<string, string>
-    body?: string
+    body?: string | ArrayBuffer
     timeout?: number
   }): Promise<
     { ok: true; status: number; statusText: string; headers: Record<string, string>; body: string }
@@ -1361,20 +1361,36 @@ function registerIpcHandlers(): void {
 
     const lib = parsed.protocol === 'https:' ? https : http
     const verb = (method ?? 'GET').toUpperCase()
-    const bodyData = verb === 'GET' || verb === 'HEAD' ? undefined : (body ?? '')
+
+    // body 统一转成 Buffer（string 按 utf-8 编码，ArrayBuffer 直接 wrap）
+    let bodyData: Buffer | undefined
+    if (verb !== 'GET' && verb !== 'HEAD' && body !== undefined) {
+      bodyData = typeof body === 'string' ? Buffer.from(body, 'utf-8') : Buffer.from(body)
+    }
+
     const t0 = Date.now()
 
     const reqHeadersStr = Object.keys(filteredHeaders).length > 0
       ? JSON.stringify(filteredHeaders)
       : '(none)'
     const reqBodyPreview = bodyData
-      ? truncate(bodyData, 500)
+      ? (bodyData.length > 500 ? `<binary ${bodyData.length}B>` : truncate(bodyData.toString('utf-8'), 500))
       : '(none)'
+
+    // multipart body 特殊诊断：打印前 200 字节的 ASCII + hex，方便确认 boundary 格式
+    let multipartDebug = ''
+    if (bodyData && filteredHeaders['Content-Type']?.toLowerCase().includes('multipart')) {
+      const headBytes = bodyData.slice(0, Math.min(200, bodyData.length))
+      const asciiPreview = headBytes.toString('utf-8').replace(/[^\x20-\x7E\r\n]/g, '.')
+      const hexPreview = headBytes.toString('hex').match(/.{1,2}/g)!.join(' ')
+      multipartDebug = `\n[http]   multipart head ASCII: ${asciiPreview}\n[http]   multipart head HEX:   ${hexPreview}`
+    }
 
     forward(
       `[http] → ${verb} ${url}  timeout=${ms}ms`,
       `[http]   req headers: ${reqHeadersStr}`,
-      bodyData ? `[http]   req body (${bodyData.length}B): ${reqBodyPreview}` : ''
+      bodyData ? `[http]   req body (${bodyData.length}B): ${reqBodyPreview}` : '',
+      multipartDebug
     )
 
     return await new Promise((resolve) => {

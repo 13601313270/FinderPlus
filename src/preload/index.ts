@@ -194,7 +194,7 @@ const httpApi = {
     url: string
     method?: string
     headers?: Record<string, string>
-    body?: string
+    body?: string | ArrayBuffer
     timeout?: number
   }): Promise<
     { ok: true; status: number; statusText: string; headers: Record<string, string>; body: string }

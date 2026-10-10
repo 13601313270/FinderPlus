@@ -1,3 +1,4 @@
+import { FileValue } from '../../engine/data/FileValue'
 import { StringValue } from '../../engine/data/StringValue'
 import { InputPort } from '../../engine/port/InputPort'
 import { MethodPort } from '../../engine/port/MethodPort'
@@ -96,6 +97,12 @@ export class HttpRequestNode extends Node {
   /** 端口 id 自增序号，保证 id 唯一（与 $N 的编号无关） */
   private portSeq = 0
 
+  /** 文件端口 id 自增序号（文件端口 id 是 f1 / f2 / f3 …） */
+  private filePortSeq = 0
+
+  /** 文件端口 → multipart fieldName 的映射（持久化） */
+  private filePortFields = new Map<string, string>()
+
   // —— 派生状态（不持久化） ——
 
   /** 按模板 + 当前输入值生成的最终 URL（UI 展示、执行时都用它） */
@@ -124,7 +131,8 @@ export class HttpRequestNode extends Node {
     this.addOutput(this.textOutput)
     this.addMethod(this.sendPort)
     this.sendPort.onTrigger(() => { void this.run() })
-    // 默认给一个输入端口，方便直接开用
+    // 默认给一个文件端口（fieldName 默认 'file'）和一个文本模板端口
+    this.addFilePort('file')
     this.addInputPort()
     // 内容区硬约束：手柄 + 方法/URL + headers/body + 端口控制 + 发送按钮 + 结果
     this.setBox(...HttpRequestNode.EXPANDED_BOX)
@@ -176,9 +184,9 @@ export class HttpRequestNode extends Node {
     return this.timeoutMs
   }
 
-  /** 当前输入端口数量 */
+  /** 当前模板输入端口数量（fileBodyPort 不计入） */
   get inputCount(): number {
-    return this.inputPorts.length
+    return this.templateInputPorts.length
   }
 
   get displayStatus(): HttpRequestStatus {
@@ -204,6 +212,35 @@ export class HttpRequestNode extends Node {
   /** 当前方法是否支持 body（GET/HEAD 不带 body） */
   get methodAllowsBody(): boolean {
     return this.method !== 'GET' && this.method !== 'HEAD'
+  }
+
+  /**
+   * 当前请求体来源（渲染层摘要展示用）：
+   * - 'multipart' → 有 ≥1 个有效文件端口，run() 会拼 multipart/form-data
+   * - 'text' → 走 bodyText 文本模板路径
+   * - 'none' → 方法不支持 body 或 body 为空
+   */
+  get bodySource(): 'multipart' | 'text' | 'none' {
+    if (!this.methodAllowsBody) return 'none'
+    if (this.activeFileValues().length >= 1) return 'multipart'
+    return this.bodyText ? 'text' : 'none'
+  }
+
+  /** 当前有效文件端口数量（有 FileValue 且非 null） */
+  get activeFileCount(): number {
+    return this.activeFileValues().length
+  }
+
+  /** 文件端口总数 */
+  get filePortCount(): number {
+    return this.fileInputPorts.length
+  }
+
+  /** 当前有效文件的文件名列表（渲染层摘要展示用） */
+  get displayFileBodyNames(): readonly string[] {
+    return this.activeFileValues()
+      .map(v => v.file?.name ?? '')
+      .filter(Boolean)
   }
 
   /** 渲染层读折叠状态（true = 折叠中） */
@@ -274,21 +311,61 @@ export class HttpRequestNode extends Node {
     this.notifyChanged()
   }
 
-  /** 追加一个输入端口，编号接在当前末尾之后 */
+  /** 追加一个模板输入端口，编号接在当前末尾之后（id: pN） */
   addInputPort(): void {
     this.portSeq += 1
     const port = new InputPort(`p${this.portSeq}`, {
       accepts: [StringValue],
-      label: { zh: `$${this.inputPorts.length + 1}`, en: `$${this.inputPorts.length + 1}` }
+      label: { zh: `$${this.templateInputPorts.length + 1}`, en: `$${this.templateInputPorts.length + 1}` }
     })
     this.addInput(port)
     this.recompute()
   }
 
-  /** 移除末尾的输入端口；断开其上的连线；至少保留 1 个 */
+  /** 追加一个文件输入端口（id: fN），配 multipart fieldName（默认 'file'） */
+  addFilePort(fieldName = 'file'): InputPort {
+    this.filePortSeq += 1
+    const port = new InputPort(`f${this.filePortSeq}`, {
+      accepts: [FileValue],
+      label: { zh: fieldName, en: fieldName }
+    })
+    this.filePortFields.set(port.id, fieldName)
+    this.addInput(port)
+    this.recompute()
+    return port
+  }
+
+  /** 移除末尾的文件端口；断开其上的连线；至少保留 1 个 */
+  removeLastFilePort(): void {
+    const filePorts = this.fileInputPorts
+    if (filePorts.length <= 1) return
+    const last = filePorts[filePorts.length - 1]
+    if (!last) return
+    this.filePortFields.delete(last.id)
+    this.removeInput(last)
+    this.recompute()
+  }
+
+  /** 设置某文件端口的 multipart fieldName（默认 'file'） */
+  setFilePortField(portId: string, fieldName: string): void {
+    const name = fieldName.trim() || 'file'
+    const port = this.inputPorts.find(p => p.id === portId)
+    if (!port) return
+    this.filePortFields.set(portId, name)
+    port.setLabel({ zh: name, en: name })
+    this.notifyChanged()
+  }
+
+  /** 取某文件端口的 fieldName（默认 'file'） */
+  getFilePortField(portId: string): string {
+    return this.filePortFields.get(portId) ?? 'file'
+  }
+
+  /** 移除末尾的模板输入端口；断开其上的连线；至少保留 1 个 */
   removeLastInputPort(): void {
-    if (this.inputPorts.length <= 1) return
-    const last = this.inputPorts[this.inputPorts.length - 1]
+    const templatePorts = this.templateInputPorts
+    if (templatePorts.length <= 1) return
+    const last = templatePorts[templatePorts.length - 1]
     if (!last) return
     this.removeInput(last)
     this.recompute()
@@ -303,21 +380,46 @@ export class HttpRequestNode extends Node {
     this.notifyChanged()
   }
 
-  /** 是否所有输入端口都已被连边占用 */
+  /** 是否所有模板输入端口都已被连边占用（文件端口不参与自动扩口判断） */
   private allPortsFull(): boolean {
-    if (this.inputPorts.length === 0) return false
-    return this.inputPorts.every((p) => p.incomingEdgeCount > 0)
+    const templatePorts = this.templateInputPorts
+    if (templatePorts.length === 0) return false
+    return templatePorts.every((p) => p.incomingEdgeCount > 0)
+  }
+
+  /** 只参与 $N 模板替换的端口（模板端口 id 以 p 开头） */
+  private get templateInputPorts(): readonly InputPort[] {
+    return this.inputPorts.filter(p => p.id.startsWith('p'))
+  }
+
+  /** 文件输入端口列表（id 以 f 开头） */
+  get fileInputPorts(): readonly InputPort[] {
+    return this.inputPorts.filter(p => p.id.startsWith('f'))
+  }
+
+  /** 文件端口中有 FileValue 且非 null 的值（run() 用） */
+  private activeFileValues(): readonly FileValue[] {
+    const out: FileValue[] = []
+    for (const port of this.fileInputPorts) {
+      const [first] = port.value
+      if (first instanceof FileValue && !first.isNull && first.file) {
+        out.push(first)
+      }
+    }
+    return out
   }
 
   /**
    * 把模板里的 $1 $2 $3 … 按输入端口当前值替换掉。
    * 缺值 / 无对应端口时该占位符替换为空串；$$ 转义成字面量 $。
+   *
+   * 只对 StringValue 做替换——端口类型被上游串成 FileValue 时，模板占位符视为无值。
    */
   private replacePlaceholders(text: string): string {
     return text.replace(/\$\$|\$(\d+)/g, (_match, digits: string | undefined) => {
       if (digits === undefined) return '$'
       const index = Number(digits) - 1
-      const port = this.inputPorts[index]
+      const port = this.templateInputPorts[index]
       if (!port) return ''
       const [first] = port.value
       return first instanceof StringValue && !first.isNull ? first.value! : ''
@@ -357,8 +459,15 @@ export class HttpRequestNode extends Node {
       this.notifyChanged()
       return
     }
-    // 上一次还没跑完就不重复触发
-    if (this.status === 'running') return
+    // 引擎层 running guard：beginRun() 内部会判断 nodeState === 'running' 并 return
+    // 这里先标记我们自己的 UI status，beginRun() 负责锁输入端口
+    this.beginRun()
+    this.status = 'running'
+    this.lastStatus = 0
+    this.lastStatusText = ''
+    this.lastBody = ''
+    this.lastError = ''
+    this.notifyChanged()
 
     // headers KV → Record（空 key 跳过；value 允许空串）
     const parsedHeaders: Record<string, string> = {}
@@ -367,14 +476,54 @@ export class HttpRequestNode extends Node {
       if (!k) continue
       parsedHeaders[k] = h.value
     }
-    const hasHeaders = Object.keys(parsedHeaders).length > 0
 
-    this.status = 'running'
-    this.lastStatus = 0
-    this.lastStatusText = ''
-    this.lastBody = ''
-    this.lastError = ''
-    this.notifyChanged()
+    // —— 构造请求体 ——
+    let body: string | ArrayBuffer | undefined = undefined
+    let autoContentType: string | undefined
+    if (this.methodAllowsBody) {
+      const files = this.activeFileValues()
+
+      if (files.length >= 1) {
+        // multipart/form-data：不管 1 个还是多个文件都走 multipart
+        // （PHP $_FILES / multer 等标准服务端文件上传接口都只认 multipart 格式）
+        const parts: { fieldName: string; filename: string; mimeType: string; data: ArrayBuffer }[] = []
+        for (const port of this.fileInputPorts) {
+          const [fv] = port.value
+          if (fv instanceof FileValue && !fv.isNull && fv.file) {
+            const ab = await fv.file.arrayBuffer()
+            parts.push({
+              fieldName: this.filePortFields.get(port.id) ?? 'file',
+              filename: fv.file.name,
+              mimeType: fv.file.type || 'application/octet-stream',
+              data: ab
+            })
+          }
+        }
+        const mb = buildMultipartBody(parts)
+        body = mb.buffer
+        autoContentType = `multipart/form-data; boundary=${mb.boundary}`
+
+        // eslint-disable-next-line no-console
+        console.info('[http-request] 文件体构造:', {
+          fileCount: parts.length,
+          parts: parts.map(p => ({ fieldName: p.fieldName, filename: p.filename, mimeType: p.mimeType, size: p.data.byteLength })),
+          multipartBodySize: mb.buffer.byteLength,
+          contentType: autoContentType
+        })
+      } else {
+        // 文本模板路径（原有逻辑）
+        body = this.resolvedBodyText || undefined
+      }
+    }
+
+    // —— 注入自动 Content-Type（multipart 场景；用户手动设的 Content-Type 优先） ——
+    if (autoContentType && !hasContentTypeHeader(parsedHeaders)) {
+      parsedHeaders['Content-Type'] = autoContentType
+    } else if (autoContentType && hasContentTypeHeader(parsedHeaders)) {
+      // eslint-disable-next-line no-console
+      console.info('[http-request] 检测到 multipart 但用户已手动设置 Content-Type，跳过自动注入')
+    }
+    const finalHasHeaders = Object.keys(parsedHeaders).length > 0
 
     let result:
       | { ok: true; status: number; statusText: string; headers: Record<string, string>; body: string }
@@ -385,8 +534,8 @@ export class HttpRequestNode extends Node {
       result = await window.httpApi.request({
         url,
         method: this.method,
-        headers: hasHeaders ? parsedHeaders : undefined,
-        body: this.methodAllowsBody ? this.resolvedBodyText : undefined,
+        headers: finalHasHeaders ? parsedHeaders : undefined,
+        body,
         timeout: this.timeoutMs
       })
     } catch (err) {
@@ -401,12 +550,14 @@ export class HttpRequestNode extends Node {
       this.lastError = ''
       // 响应体发给下游（不管 2xx 还是 4xx/5xx）
       this.textOutput.commit(new StringValue(result.body))
+      this.completeRun()
     } else {
       this.status = 'error'
       this.lastStatus = 0
       this.lastStatusText = ''
       this.lastBody = ''
       this.lastError = result.error
+      this.failRun()
     }
     this.notifyChanged()
   }
@@ -421,8 +572,13 @@ export class HttpRequestNode extends Node {
       bodyText: this.bodyText,
       timeoutMs: this.timeoutMs,
       collapsed: this.collapsed,
-      // 端口数量：恢复时按此重建端口，边才能重新接上
-      inputCount: this.inputPorts.length
+      // 模板端口数量
+      templateInputCount: this.templateInputPorts.length,
+      // 文件端口数量 + 每个端口的 fieldName
+      fileInputCount: this.fileInputPorts.length,
+      filePortFields: Object.fromEntries(this.filePortFields),
+      // filePortSeq 让恢复时端口 id 编号能续上
+      filePortSeq: this.filePortSeq
     }
   }
 
@@ -435,11 +591,6 @@ export class HttpRequestNode extends Node {
     }
     if (typeof state.collapsed === 'boolean') {
       this.collapsed = state.collapsed
-      // 冷启动先给一个合理的 box 高度（跟 render.vue COLLAPSED_MIN 对齐），
-      // render.vue adjustBoxHeight 上来后会再用 scrollHeight 精调
-      if (this.collapsed) {
-        // this.setBox(HttpRequestNode.EXPANDED_BOX[0], 150)
-      }
     }
     // 新格式：headers 是 KV 数组
     if (Array.isArray(state.headers)) {
@@ -471,15 +622,47 @@ export class HttpRequestNode extends Node {
     if (typeof state.timeoutMs === 'number') {
       this.timeoutMs = Math.max(1000, Math.min(60_000, Math.round(state.timeoutMs)))
     }
-    // 按存储的端口数量重建端口。先直接 removeInput 清干净（绕过 removeLastInputPort 的底线），再重建。
-    const wanted = typeof state.inputCount === 'number' ? Math.max(1, Math.floor(state.inputCount)) : this.inputPorts.length
+    // 端口重建：先清干净所有端口，再按存的数量重建文件端口 + 模板端口
+    // 新格式存 templateInputCount / fileInputCount / filePortFields；
+    // 旧格式（单 fileBodyPort）存 inputCount 或 templateInputCount=1 + fileInputCount 缺失
+    const savedTemplateCount = typeof state.templateInputCount === 'number'
+      ? state.templateInputCount
+      : (typeof state.inputCount === 'number' ? state.inputCount : this.inputPorts.length - 1)
+    const savedFileCount = typeof state.fileInputCount === 'number'
+      ? state.fileInputCount
+      : (typeof state.inputCount === 'number' ? 1 : 1) // 旧数据默认 1 个文件端口
+    const wantedTemplate = Math.max(1, Math.floor(savedTemplateCount))
+    const wantedFile = Math.max(1, Math.floor(savedFileCount))
+    if (typeof state.filePortSeq === 'number') {
+      this.filePortSeq = state.filePortSeq
+    }
+
+    // 清掉所有现有端口（removeLastInputPort 不碰文件端口，得直接 removeInput）
     while (this.inputPorts.length > 0) {
       const p = this.inputPorts[this.inputPorts.length - 1]!
       this.removeInput(p)
     }
-    for (let i = 0; i < wanted; i += 1) {
+
+    // 重建文件端口：先重建 filePortSeq 到正确的值，再逐个加
+    // 因为 addFilePort 内部会 ++filePortSeq，我们把它调到 wantedFile 之前
+    this.filePortSeq = 0
+    this.filePortFields.clear()
+    const savedFields = state.filePortFields && typeof state.filePortFields === 'object'
+      ? state.filePortFields as Record<string, unknown>
+      : null
+    for (let i = 0; i < wantedFile; i += 1) {
+      const fieldId = `f${i + 1}`
+      const fieldName = savedFields && typeof savedFields[fieldId] === 'string'
+        ? savedFields[fieldId] as string
+        : 'file'
+      this.addFilePort(fieldName)
+    }
+
+    // 重建模板端口
+    for (let i = 0; i < wantedTemplate; i += 1) {
       this.addInputPort()
     }
+
     this.recompute()
     this.notifyChanged()
   }
@@ -494,4 +677,64 @@ function headerListsEqual(a: HeaderEntry[], b: HeaderEntry[]): boolean {
     if (a[i].key !== b[i].key || a[i].value !== b[i].value) return false
   }
   return true
+}
+
+/** 检查 headers 里是否已有 Content-Type（大小写不敏感） */
+function hasContentTypeHeader(headers: Record<string, string>): boolean {
+  return Object.keys(headers).some(k => k.toLowerCase() === 'content-type')
+}
+
+/** multipart/form-data 的 part 定义（每个 part 对应一个文件端口） */
+interface MultipartFilePart {
+  fieldName: string
+  filename: string
+  mimeType: string
+  data: ArrayBuffer
+}
+
+/**
+ * 手动拼 multipart/form-data body。
+ * 不走 FormData（渲染进程里 FormData 给 fetch 用的，Node http/https 不认），
+ * 直接按 RFC 7578 格式拼字节，返回 { buffer, boundary }。
+ */
+function buildMultipartBody(parts: MultipartFilePart[]): { buffer: ArrayBuffer; boundary: string } {
+  const boundary = `----CanvasDeskBoundary${Date.now()}${Math.random().toString(36).slice(2, 10)}`
+  const CRLF = '\r\n'
+
+  // 先算每段的字节长度，一次性分配 Buffer
+  const encoder = new TextEncoder()
+  const segments: Uint8Array[] = []
+  let totalLen = 0
+
+  for (const part of parts) {
+    const header =
+      `--${boundary}${CRLF}` +
+      `Content-Disposition: form-data; name="${part.fieldName}"; filename="${part.filename}"${CRLF}` +
+      `Content-Type: ${part.mimeType}${CRLF}${CRLF}`
+    const headerBytes = encoder.encode(header)
+    segments.push(headerBytes)
+    totalLen += headerBytes.length
+
+    const fileBytes = new Uint8Array(part.data)
+    segments.push(fileBytes)
+    totalLen += fileBytes.length
+
+    const closing = encoder.encode(CRLF)
+    segments.push(closing)
+    totalLen += closing.length
+  }
+
+  const finalBoundary = encoder.encode(`--${boundary}--${CRLF}`)
+  segments.push(finalBoundary)
+  totalLen += finalBoundary.length
+
+  // 合并
+  const out = new Uint8Array(totalLen)
+  let offset = 0
+  for (const seg of segments) {
+    out.set(seg, offset)
+    offset += seg.length
+  }
+
+  return { buffer: out.buffer.slice(out.byteOffset, out.byteOffset + out.byteLength), boundary }
 }

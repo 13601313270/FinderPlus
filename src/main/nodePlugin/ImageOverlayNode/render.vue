@@ -906,29 +906,24 @@ function updateTextStyle(portId: string, partial: Partial<{ fontSize: number; co
             <!-- 颜色 -->
             <label class="overlay-card__tb-row">
               <span class="overlay-card__tb-label">颜色</span>
-              <input
-                type="color"
-                :value="selectedTextLayer.state?.color ?? '#000000'"
-                @input="updateTextStyle(selectedTextLayer!.portId, { color: ($event.target as HTMLInputElement).value })"
-              >
+              <el-color-picker
+                :model-value="selectedTextLayer.state?.color ?? '#000000'"
+                show-alpha
+                size="small"
+                @update:model-value="updateTextStyle(selectedTextLayer!.portId, { color: $event })"
+              />
             </label>
 
             <!-- 背景 -->
             <label class="overlay-card__tb-row">
               <span class="overlay-card__tb-label">背景</span>
-              <input
-                type="color"
-                :value="selectedTextLayer.state?.backgroundColor ?? '#ffffff'"
-                :style="{ opacity: selectedTextLayer.state?.backgroundColor ? 1 : 0.4 }"
-                @input="updateTextStyle(selectedTextLayer!.portId, { backgroundColor: ($event.target as HTMLInputElement).value })"
-              >
-              <button
-                v-if="selectedTextLayer.state?.backgroundColor"
-                class="overlay-card__tb-clear-bg"
-                type="button"
-                title="清除背景"
-                @click="updateTextStyle(selectedTextLayer!.portId, { backgroundColor: undefined })"
-              >×</button>
+              <el-color-picker
+                :model-value="selectedTextLayer.state?.backgroundColor"
+                show-alpha
+                clearable
+                size="small"
+                @update:model-value="updateTextStyle(selectedTextLayer!.portId, { backgroundColor: $event ?? undefined })"
+              />
             </label>
 
             <!-- 对齐 -->

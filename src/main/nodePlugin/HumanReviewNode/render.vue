@@ -6,12 +6,12 @@ import type { Value } from '../../engine/data/Value'
 import { viewport } from '@renderer/canvas/viewport'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
+import { useNodeDetail } from '@renderer/composables/useNodeDetail'
 import { messages } from './i18n'
 import { resolveRenderer } from '@renderer/components/valueRenderers'
 import HelpDialog from '@renderer/components/HelpDialog.vue'
 import NodeHeader from '@renderer/components/NodeHeader.vue'
 import HumanReviewHelpDialog from './HumanReviewHelpDialog.vue'
-import JsonTreeNode from '@renderer/components/JsonTreeNode.vue'
 
 const props = defineProps<{ id: string }>()
 
@@ -26,12 +26,12 @@ const t = useLocalizedMessages(messages)
 // 帮助浮层开关（弹窗壳由 HelpDialog 负责）
 const showHelp = ref(false)
 
-// 全屏弹窗开关
-const showFullscreen = ref(false)
-
-// 拒绝理由对话框
+// 拒绝理由对话框（卡片内 reject 按钮触发）
 const showRejectDialog = ref(false)
 const rejectReasonInput = ref('')
+
+// 详情弹窗（替代原来的全屏审核弹窗）
+const { openNodeDetail } = useNodeDetail()
 
 // —— 从节点同步到渲染层的状态 ——
 const currentLabel = ref('')
@@ -42,49 +42,6 @@ const hasCurrent = ref(false)
 const currentValue = ref<Value | undefined>(undefined)
 /** 当前审核项的 kind（即 VALUE_NAME，字符串，便于模板做 === 判断） */
 const currentKind = ref<string>('')
-
-// —— 全屏弹窗专用（renderer 组件 detail 模式只有缩略图/预览，全屏需要自己控制大图/完整文本） ——
-const fsImageUrl = ref<string | null>(null)
-let fsRevokeUrl: (() => void) | null = null
-const fsTextContent = ref<string>('')
-
-/** 从 currentValue 取 File（img-file / txt-file / file / pdf-file 通用） */
-const fsFile = computed<File | undefined>(() => {
-  const cv = currentValue.value as { file?: File } | undefined
-  return cv?.file
-})
-
-/** 从 currentValue 取 JsonValue 的 value 字段 */
-const fsJsonContent = computed<unknown>(() => {
-  const cv = currentValue.value as { value?: unknown } | undefined
-  return cv?.value
-})
-
-/** 字节数 → 可读体积 */
-function formatSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-  return `${(bytes / 1024 / 1024).toFixed(2)} MB`
-}
-
-/** 释放全屏图片 objectURL */
-function clearFsImage(): void {
-  if (fsRevokeUrl) {
-    fsRevokeUrl()
-    fsRevokeUrl = null
-  }
-  fsImageUrl.value = null
-}
-
-/** File → 文本（Promise） */
-function readFileAsText(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve(String(reader.result ?? ''))
-    reader.onerror = () => reject(reader.error)
-    reader.readAsText(file)
-  })
-}
 
 // 无待审核项时 node 侧返回空串，这里兜底成多语言占位文案（读 language，切语言会重算）
 const labelText = computed(() => (hasCurrent.value ? currentLabel.value : t('awaitingInput')))
@@ -101,26 +58,6 @@ function syncCurrent() {
   const cv = n.currentValue
   currentValue.value = cv
   currentKind.value = cv ? ((cv.constructor as unknown) as { VALUE_NAME: string }).VALUE_NAME : ''
-
-  // —— 全屏弹窗的定制数据（卡片内 renderer 组件自己管，这里只给全屏用） ——
-  clearFsImage()
-  fsTextContent.value = ''
-  if (cv && currentKind.value === 'img-file') {
-    const file = (cv as { file?: File }).file
-    if (file) {
-      fsImageUrl.value = URL.createObjectURL(file)
-      fsRevokeUrl = () => URL.revokeObjectURL(fsImageUrl.value!)
-    }
-  } else if (cv && currentKind.value === 'txt-file') {
-    const file = (cv as { file?: File }).file
-    if (file) {
-      readFileAsText(file).then((text) => {
-        fsTextContent.value = text
-      }).catch(() => {
-        fsTextContent.value = '(Failed to read file)'
-      })
-    }
-  }
 }
 
 onMounted(() => {
@@ -130,28 +67,11 @@ onMounted(() => {
     syncCurrent()
     unsubscribe = found.onChanged(syncCurrent)
   }
-  document.addEventListener('keydown', onKeyDown)
 })
 
 onUnmounted(() => {
   unsubscribe?.()
-  clearFsImage()
-  document.removeEventListener('keydown', onKeyDown)
 })
-
-function onKeyDown(e: KeyboardEvent): void {
-  if (showFullscreen.value && e.key === 'Escape') {
-    showFullscreen.value = false
-  }
-}
-
-function onFsMaskClick(): void {
-  showFullscreen.value = false
-}
-
-function onFsDialogClick(e: MouseEvent): void {
-  e.stopPropagation()
-}
 
 function onApprove(): void {
   reviewNode.value?.approve()
@@ -238,8 +158,7 @@ function onResizePointerDown(e: PointerEvent): void {
           class="node__fs"
           type="button"
           :title="t('fullscreenBtnTitle')"
-          :disabled="!hasCurrent"
-          @click.stop="showFullscreen = true"
+          @click.stop="openNodeDetail(id)"
         >⛶</button>
       </template>
     </NodeHeader>
@@ -290,98 +209,6 @@ function onResizePointerDown(e: PointerEvent): void {
   <HelpDialog :visible="showHelp" :title="t('helpDialogTitle')" @close="showHelp = false">
     <HumanReviewHelpDialog />
   </HelpDialog>
-
-  <!-- 全屏审核弹窗 -->
-  <Teleport to="body">
-    <div v-if="showFullscreen" class="fs-mask" @click="onFsMaskClick">
-      <div class="fs-dialog" @click="onFsDialogClick">
-        <div class="fs-header">
-          <h3 class="fs-title">{{ t('fullscreenTitle') }}</h3>
-          <div class="fs-header-info">
-            <span v-if="hasCurrent" class="fs-type-badge">{{ currentKind }}</span>
-            <span v-if="pendingCount > 0" class="fs-pending">{{ t('queueRemaining', { n: pendingCount }) }}</span>
-          </div>
-          <button class="fs-close" type="button" @click="showFullscreen = false">×</button>
-        </div>
-
-        <div class="fs-body">
-          <!-- 无待审核项 -->
-          <div v-if="!hasCurrent" class="fs-empty">
-            {{ t('fullscreenNoData') }}
-          </div>
-
-          <!-- 图片 -->
-          <template v-else-if="currentKind === 'img-file'">
-            <div class="fs-meta">
-              <span>{{ fsFile?.name }}</span>
-              <span v-if="fsFile">{{ formatSize(fsFile.size) }}</span>
-              <span v-if="fsFile">{{ fsFile.type }}</span>
-            </div>
-            <div class="fs-image-wrap">
-              <img v-if="fsImageUrl" class="fs-image" :src="fsImageUrl" :alt="fsFile?.name" />
-            </div>
-          </template>
-
-          <!-- JSON -->
-          <template v-else-if="currentKind === 'json'">
-            <div class="fs-meta">
-              <span>{{ currentLabel }}</span>
-            </div>
-            <div class="fs-json">
-              <JsonTreeNode :value="fsJsonContent" :default-expanded="true" />
-            </div>
-          </template>
-
-          <!-- 文本文件 -->
-          <template v-else-if="currentKind === 'txt-file'">
-            <div class="fs-meta">
-              <span>{{ fsFile?.name }}</span>
-              <span v-if="fsFile">{{ formatSize(fsFile.size) }}</span>
-            </div>
-            <pre class="fs-text">{{ fsTextContent }}</pre>
-          </template>
-
-          <!-- 其他文件类（file / pdf-file / img-file-collection 等） -->
-          <template v-else-if="['file', 'pdf-file', 'img-file-collection'].includes(currentKind)">
-            <div class="fs-meta">
-              <span>{{ fsFile?.name ?? currentLabel }}</span>
-              <span v-if="fsFile">{{ formatSize(fsFile.size) }}</span>
-              <span v-if="fsFile">{{ fsFile.type }}</span>
-            </div>
-            <div class="fs-file-placeholder">📄 {{ fsFile?.name ?? currentLabel }}</div>
-          </template>
-
-          <!-- null 值 -->
-          <template v-else-if="currentValue?.isNull">
-            <pre class="fs-text fs-text--simple">(null)</pre>
-          </template>
-
-          <!-- 简单值（String / Number / Bool）或兜底 UnknownValueRenderer 的内容（直接用 displayLabel） -->
-          <template v-else>
-            <div class="fs-meta">
-              <span>{{ currentKind }}</span>
-            </div>
-            <pre class="fs-text fs-text--simple">{{ currentLabel }}</pre>
-          </template>
-        </div>
-
-        <div class="fs-footer">
-          <button
-            class="fs-btn fs-btn--reject"
-            type="button"
-            :disabled="!hasCurrent"
-            @click="onReject"
-          >{{ t('reject') }}</button>
-          <button
-            class="fs-btn fs-btn--approve"
-            type="button"
-            :disabled="!hasCurrent"
-            @click="onApprove"
-          >{{ t('approve') }}</button>
-        </div>
-      </div>
-    </div>
-  </Teleport>
 
   <!-- 拒绝理由对话框 -->
   <Teleport to="body">
@@ -583,7 +410,7 @@ function onResizePointerDown(e: PointerEvent): void {
 }
 </style>
 
-<!-- 全屏审核弹窗样式：非 scoped，因为 Teleport 到 body -->
+<!-- 拒绝理由对话框样式：非 scoped，因为 Teleport 到 body -->
 <style lang="less">
 .fs-mask {
   position: fixed;
@@ -594,229 +421,6 @@ function onResizePointerDown(e: PointerEvent): void {
   align-items: center;
   justify-content: center;
   animation: fsFadeIn 0.15s ease;
-}
-
-.fs-dialog {
-  width: 90vw;
-  height: 90vh;
-  max-width: 1400px;
-  max-height: 900px;
-  background: #fff;
-  border-radius: 14px;
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.25);
-  display: flex;
-  flex-direction: column;
-  animation: fsPopIn 0.2s ease;
-  overflow: hidden;
-  user-select: text;
-}
-
-.fs-header {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 14px 20px;
-  border-bottom: 1px solid #e5e7eb;
-  background: #fafbfc;
-}
-
-.fs-title {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 600;
-  color: #1a1a1a;
-}
-
-.fs-header-info {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex: 1;
-}
-
-.fs-type-badge {
-  padding: 2px 10px;
-  border-radius: 12px;
-  background: #eef3ff;
-  color: #4a7cff;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.3px;
-}
-
-.fs-pending {
-  font-size: 12px;
-  color: #6b7280;
-}
-
-.fs-close {
-  all: unset;
-  cursor: pointer;
-  width: 30px;
-  height: 30px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 8px;
-  color: #9ca3af;
-  font-size: 22px;
-  line-height: 1;
-  transition: background 0.15s, color 0.15s;
-
-  &:hover {
-    background: #f3f4f6;
-    color: #374151;
-  }
-}
-
-.fs-body {
-  flex: 1;
-  overflow: auto;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.fs-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  padding: 8px 14px;
-  background: #f3f4f6;
-  border-radius: 6px;
-  font-size: 12px;
-  color: #6b7280;
-  font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
-
-  span {
-    white-space: nowrap;
-  }
-}
-
-.fs-empty {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #9aa2ad;
-  font-size: 15px;
-  font-style: italic;
-}
-
-.fs-image-wrap {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #f4f5f7;
-  border-radius: 8px;
-  min-height: 200px;
-  overflow: auto;
-}
-
-.fs-image {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
-  display: block;
-}
-
-.fs-json {
-  flex: 1;
-  overflow: auto;
-  padding: 14px 16px;
-  background: #fafbfc;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
-  font-size: 13px;
-  line-height: 1.5;
-}
-
-.fs-text {
-  flex: 1;
-  overflow: auto;
-  padding: 16px 18px;
-  background: #1e1e1e;
-  border-radius: 8px;
-  color: #e0e0e0;
-  font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
-  font-size: 13px;
-  line-height: 1.6;
-  white-space: pre-wrap;
-  word-break: break-word;
-  margin: 0;
-
-  &.fs-text--simple {
-    background: #fafbfc;
-    color: #1a1a1a;
-    border: 1px solid #e5e7eb;
-    white-space: pre-wrap;
-  }
-}
-
-.fs-file-placeholder {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #f3f4f6;
-  border-radius: 8px;
-  color: #6b7280;
-  font-size: 14px;
-  gap: 8px;
-}
-
-.fs-footer {
-  flex-shrink: 0;
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  padding: 14px 20px;
-  border-top: 1px solid #e5e7eb;
-  background: #fafbfc;
-}
-
-.fs-btn {
-  padding: 10px 28px;
-  border: 1px solid;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  min-width: 100px;
-
-  &:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
-
-  &:not(:disabled):active {
-    transform: translateY(1px);
-  }
-}
-
-.fs-btn--approve {
-  background: #22c55e;
-  border-color: #16a34a;
-  color: #fff;
-
-  &:not(:disabled):hover {
-    background: #16a34a;
-  }
-}
-
-.fs-btn--reject {
-  background: #fff;
-  border-color: #ef4444;
-  color: #ef4444;
-
-  &:not(:disabled):hover {
-    background: #fef2f2;
-  }
 }
 
 @keyframes fsFadeIn {

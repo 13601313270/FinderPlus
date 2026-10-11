@@ -9,8 +9,15 @@ import type { Value } from '../../engine/data/Value'
 
 const NODE_HEIGHT = 220
 
+/** 审核模式：queue（FIFO 队列逐条审核）/ override（只保留最新值覆盖） */
+export type ReviewMode = 'queue' | 'override'
+
 /**
- * 人工审核节点：接受所有现有 Value 子类，进入 FIFO 队列等待人工审核。
+ * 人工审核节点：接受所有现有 Value 子类，进入审核等待人工确认。
+ *
+ * 两种模式：
+ * - queue：FIFO 队列，上游多次传入 → 一条条排队审核
+ * - override：覆盖模式，上游多次传入 → 只保留最新的那一条待审核
  *
  * 输出端口动态管理：
  * - 构造时无输出端口——没有上游就没有输出
@@ -50,11 +57,14 @@ export class HumanReviewNode extends Node {
   /** 拒绝理由输出端口（固定 StringValue 类型） */
   rejectReasonOutput: OutputPort | undefined
 
-  /** FIFO 待审核队列（不含当前正在审核的项） */
+  /** FIFO 待审核队列（不含当前正在审核的项；仅 queue 模式使用） */
   private readonly queue: Value[] = []
 
   /** 当前正在审核的项，undefined 表示队列为空 */
   private current: Value | undefined
+
+  /** 审核模式：默认 queue（兼容旧数据） */
+  private mode: ReviewMode = 'queue'
 
   constructor(id: string) {
     super(id)
@@ -78,8 +88,9 @@ export class HumanReviewNode extends Node {
     return this.current?.displayLabel ?? ''
   }
 
-  /** 队列中还有多少项（不含当前） */
+  /** 队列中还有多少项（不含当前）；override 模式永远返回 0 */
   get pendingCount(): number {
+    if (this.mode === 'override') return 0
     return this.queue.length
   }
 
@@ -91,6 +102,27 @@ export class HumanReviewNode extends Node {
   /** 当前正在审核的值实例（render.vue 用来判断 instanceof JsonValue 等） */
   get currentValue(): Value | undefined {
     return this.current
+  }
+
+  /** 当前审核模式 */
+  get reviewMode(): ReviewMode {
+    return this.mode
+  }
+
+  /**
+   * 切换审核模式。
+   * - queue → override：清掉队列（保留当前正在审核的项，因为它是唯一需要被审核的）
+   * - override → queue：空操作（切换后后续传入值自动入队）
+   * 切换后发 notifyChanged，让 UI 立即刷新。
+   */
+  setReviewMode(mode: ReviewMode): void {
+    if (mode === this.mode) return
+    this.mode = mode
+    if (mode === 'override') {
+      // 切到覆盖模式 → 清掉积压的队列，只保留 current
+      this.queue.length = 0
+    }
+    this.notifyChanged()
   }
 
   /** 是否已有输出端口（渲染层用来显示/隐藏右侧端口列） */
@@ -135,9 +167,19 @@ export class HumanReviewNode extends Node {
       return
     }
 
-    // —— 入队 ——
+    // —— 入队 / 覆盖 ——
     const value = values[0]
 
+    if (this.mode === 'override') {
+      // 覆盖模式：每次都替换 current，不维护队列
+      this.current = value
+      this.notifyChanged()
+      // 覆盖模式不发系统通知——频繁覆盖场景下弹通知会骚扰用户
+      // 保持 dirty：有 current 待审核
+      return
+    }
+
+    // queue 模式：FIFO 入队
     const wasEmpty = this.current === undefined
     if (wasEmpty) {
       this.current = value
@@ -280,11 +322,17 @@ export class HumanReviewNode extends Node {
     this.advance()
   }
 
-  /** 从队列取下一个成为当前项；队列为空则 current 置 undefined */
+  /** 审核通过/拒绝后取下一个待审核项 */
   private advance(): void {
-    this.current = this.queue.shift()
+    if (this.mode === 'override') {
+      // 覆盖模式：只有一条，审完就清空
+      this.current = undefined
+    } else {
+      // queue 模式：从队列取下一个成为当前项；队列为空则 current 置 undefined
+      this.current = this.queue.shift()
+    }
     this.notifyChanged()
-    // 队列清空 → 所有项都审核完了 → stable
+    // 没有待审核项了 → stable
     if (this.current === undefined) {
       this.completeRun()
     }
@@ -293,11 +341,11 @@ export class HumanReviewNode extends Node {
   // —— 持久化 ——
 
   /**
-   * 持久化 box 尺寸（用户拖拽右下角 resize handle 调整过的宽高）。
+   * 持久化 box 尺寸和审核模式。
    * 队列不持久化，恢复时上游重新 commit 自动重建；输出端口动态重建。
    */
   saveState(): Record<string, unknown> {
-    return { box: [...this.box] }
+    return { box: [...this.box], mode: this.mode }
   }
 
   readState(state: Record<string, unknown>): void {
@@ -305,6 +353,11 @@ export class HumanReviewNode extends Node {
     const box = state.box as unknown
     if (Array.isArray(box) && box.length === 2 && typeof box[0] === 'number' && typeof box[1] === 'number') {
       this.setBox(box[0], box[1])
+    }
+    // 恢复审核模式；老版本没有 mode 字段，默认 queue（向后兼容）
+    const mode = state.mode as unknown
+    if (mode === 'queue' || mode === 'override') {
+      this.mode = mode
     }
     // 队列和输出端口都由上游重新 commit 时自动重建
   }

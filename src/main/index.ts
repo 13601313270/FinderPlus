@@ -219,7 +219,8 @@ function createWindow(canvasId: string = 'default'): BrowserWindow {
     backgroundColor: '#f5f6f8',
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
-      sandbox: false
+      sandbox: false,
+      webviewTag: true
     }
   })
 
@@ -273,7 +274,8 @@ function createPickerWindow(): BrowserWindow {
     backgroundColor: '#f5f6f8',
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
-      sandbox: false
+      sandbox: false,
+      webviewTag: true
     }
   })
 
@@ -790,20 +792,31 @@ function registerIpcHandlers(): void {
    * 启动系统级文件拖拽：渲染进程检测到用户把文件节点拖出窗口边界时调这个，
    * 主进程用 `webContents.startDrag` 让 OS 接管拖拽（拖到桌面/文件夹就是移动/复制）。
    *
-   * 同步返回实际用到的 fullPath——renderer 需要这个路径来区分"自己 startDrag 引发的
-   * 意外 drop"和"Finder 等外部拖进来的文件"：App.vue 的 onCanvasDrop 会对比
-   * dataTransfer.files 的 path 和这个 fullPath，命中则跳过，避免创建重复节点。
+   * 支持单文件（fileNames 长度 = 1）和多文件（批量拖出，如 ImgFolderNode 整体拖出）。
+   *
+   * 返回实际 startDrag 用到的所有 fullPath——renderer 需要这个数组来区分
+   * "自己 startDrag 引发的意外 drop"和"Finder 等外部拖进来的文件"：App.vue 的 onCanvasDrop
+   * 会遍历 dataTransfer.files 对比这些 fullPath，命中则跳过，避免创建重复节点。
    */
-  ipcMain.handle('file:startDrag', async (_e, args: { fileName: string; canvasId?: string }): Promise<string | null> => {
-    const fullPath = join(getCanvasDir(args.canvasId), args.fileName)
-    if (!existsSync(fullPath)) {
-      console.warn(`[file:startDrag] 文件不存在：${fullPath}`)
+  ipcMain.handle('file:startDrag', async (_e, args: { fileNames: string[]; canvasId?: string }): Promise<string[] | null> => {
+    const canvasDir = getCanvasDir(args.canvasId)
+    const fullPaths = args.fileNames
+      .map((n) => join(canvasDir, n))
+      .filter((p) => existsSync(p))
+    if (fullPaths.length === 0) {
+      console.warn('[file:startDrag] 所有文件均不存在：', args.fileNames)
       return null
     }
     try {
-      const icon = await app.getFileIcon(fullPath)
-      _e.sender.startDrag({ file: fullPath, icon })
-      return fullPath
+      // 取第一个文件的图标作为 OS 拖拽预览
+      const icon = await app.getFileIcon(fullPaths[0])
+      if (fullPaths.length === 1) {
+        _e.sender.startDrag({ file: fullPaths[0], icon })
+      } else {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Electron 运行时支持 files 数组，但 TS 类型未声明
+        _e.sender.startDrag({ files: fullPaths, icon } as any)
+      }
+      return fullPaths
     } catch (err) {
       console.warn('[file:startDrag] 启动拖拽失败：', err)
       return null

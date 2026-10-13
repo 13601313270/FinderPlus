@@ -5,6 +5,7 @@ import type { Node } from '../../engine/node/Node'
 import { base64ToBlob } from '../../engine/data/base64'
 import ImgThumbCell from '@renderer/components/ImgThumbCell.vue'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
+import { setLastDragPaths } from '@renderer/composables/useFileDragOut'
 import { viewport } from '@renderer/canvas/viewport'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
@@ -140,6 +141,19 @@ function releaseAllThumbs(): void {
   thumbs.value = {}
 }
 
+// —— 批量 OS 级拖出：取所有子节点的 fileName，一次 startDrag 全拖走 ——
+function onBatchDragOutPointerDown(e: PointerEvent): void {
+  e.stopPropagation()
+  e.preventDefault()
+  const names = children.value
+    .filter((c) => c instanceof ImgFileNode && c.fileName)
+    .map((c) => (c as ImgFileNode).fileName)
+  if (names.length === 0) return
+  window.fileApi.startDrag(names).then((paths) => {
+    setLastDragPaths(paths)
+  })
+}
+
 // —— 东南角 resize：拖手柄 → setBox（ImgFolderNode 继承 FolderNode 的最小框钳制） ——
 let resizing = false
 let startClientX = 0
@@ -211,6 +225,21 @@ onUnmounted(() => {
     <span class="img-folder__hint">
       {{ t('imageCount', { n: children.length }) }}<template v-if="selectedName"> · {{ t('selected', { name: selectedName }) }}</template>
     </span>
+
+    <!-- 左下角批量拖出图标：唤醒 OS 级拖拽所有子文件 -->
+    <button
+      v-if="children.length > 0"
+      class="img-folder__drag-all"
+      type="button"
+      title="批量拖出所有图片"
+      @pointerdown.stop.prevent="onBatchDragOutPointerDown"
+      @click.stop
+    >
+      <svg viewBox="0 0 16 16" width="12" height="12" fill="none">
+        <path d="M3 3h6l4 4v6a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" stroke="currentColor" stroke-width="1.2" />
+        <path d="M9 3v4h4" stroke="currentColor" stroke-width="1.2" />
+      </svg>
+    </button>
 
     <!-- 东南角 resize 手柄 -->
     <div class="img-folder__resize" @pointerdown.stop="startResize" :title="t('resizeHint')" />
@@ -316,6 +345,35 @@ onUnmounted(() => {
     cursor: nwse-resize;
     background: linear-gradient(135deg, transparent 50%, #b0b7c3 50%);
     z-index: 2;
+  }
+
+  // 左下角批量拖出图标
+  &__drag-all {
+    position: absolute;
+    left: 6px;
+    bottom: 6px;
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    border: none;
+    background: rgba(74, 124, 255, 0.9);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: grab;
+    padding: 0;
+    opacity: 0;
+    transition: opacity 0.15s;
+    z-index: 2;
+
+    .img-folder:hover & {
+      opacity: 1;
+    }
+
+    &:active {
+      cursor: grabbing;
+    }
   }
 }
 </style>

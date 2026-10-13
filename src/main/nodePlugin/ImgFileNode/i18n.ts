@@ -91,6 +91,23 @@ export const messages = {
     tr: 'Önizleme boyutunu değiştirmek için sürükleyin (orijinal görüntü oranını korur)',
     it: 'Trascina per ridimensionare l’anteprima (mantiene le proporzioni originali)'
   },
+  dragToBrowser: {
+    zh: '拖到浏览器节点上传',
+    en: 'Drag to browser node to upload',
+    ja: 'ブラウザノードにドラッグしてアップロード',
+    ko: '브라우저 노드로 드래그하여 업로드',
+    es: 'Arrastra al nodo del navegador para subir',
+    ar: 'اسحب إلى عقدة المتصفح للرفع',
+    fr: 'Glissez vers le nœud navigateur pour télécharger',
+    pt: 'Arraste para o nó do navegador para enviar',
+    ru: 'Перетащите на узел браузера для загрузки',
+    hi: 'अपलोड करने के लिए ब्राउज़र नोड पर खींचें',
+    id: 'Seret ke node browser untuk mengunggah',
+    de: 'Zum Hochladen auf den Browser-Knoten ziehen',
+    vi: 'Kéo vào nút trình duyệt để tải lên',
+    tr: 'Yüklemek için tarayıcı düğümüne sürükleyin',
+    it: 'Trascina sul nodo browser per caricare'
+  },
   helpTitle: {
     zh: '使用说明',
     en: 'Help',

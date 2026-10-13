@@ -5,7 +5,7 @@ import { ImgFileValue } from '../../engine/data/ImgFileValue'
 import { ImagePreviewNode } from './node'
 import { ImgFileNode } from '../ImgFileNode/node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
-import { setLastDragPath } from '@renderer/composables/useFileDragOut'
+import { setLastDragPaths } from '@renderer/composables/useFileDragOut'
 import { viewport } from '@renderer/canvas/viewport'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
@@ -109,8 +109,8 @@ const { startDrag: startPreviewDrag } = useNodePosition(
       // writeBuffer + startDrag 交给 OS
       const base64 = await fileToBase64(file)
       const written = await window.fileApi.writeBuffer(file.name, base64)
-      const fullPath = await window.fileApi.startDrag(written.fileName)
-      setLastDragPath(fullPath)
+      const paths = await window.fileApi.startDrag(written.fileName)
+      setLastDragPaths(paths)
     }
   }
 )

@@ -2,34 +2,37 @@ import type { DragOutOpts } from './useNodePosition'
 import { workspaceScene } from '../../../main/engine/graph/SceneRegistry'
 
 /**
- * 最近一次 startDrag 主进程返回的 fullPath（如果有的话）。
+ * 最近一次 startDrag 主进程返回的所有 fullPath（如果有的话）。
  *
  * 用来精确区分两类 drop：
  * - Finder 拖进来的文件 → path 是 Finder 的原位置（/Users/xxx/Desktop/4.txt），
  *   跟我们画布目录的 fullPath 不相等 → 放行创建节点
- * - 自己 startDrag 又回来松手 → Chromium 派发的 drop 的 files.path 就是这个 fullPath，
- *   完全相等 → App.vue 里跳过，避免重复节点
+ * - 自己 startDrag 又回来松手 → Chromium 派发的 drop 的 files.path 就是某个 fullPath，
+ *   命中数组里任意一个 → App.vue 里跳过，避免重复节点
  *
- * 之所以不用布尔标记 + 时间窗口（之前的方案），是因为 onPointerUp 会在 drop 事件
- * 的同一帧触发——Finder 拖进来时它抢先清成 false，导致标记方案彻底失效。
- * 路径匹配没有时机问题：startDrag 返回的 fullPath 是主进程算出来的，drop 里
- * getPathForFile 拿到的也是 Chromium 原生路径，两个字符串精确对比即可。
+ * 用 Set 存比对快，遍历数组也行——量级都是 1~200 级别，不是瓶颈。
  */
-let lastStartDragPath: string | undefined
+let lastStartDragPaths: string[] | undefined
 
-/** App.vue 的 onCanvasDrop 过滤文件时用：命中则跳过（自拖自），否则放行 */
+/** App.vue 的 onCanvasDrop 过滤文件时用：命中任意一个路径则跳过（自拖自），否则放行 */
 export function isSelfDragDrop(filePath: string): boolean {
-  return !!lastStartDragPath && filePath === lastStartDragPath
+  return !!lastStartDragPaths && lastStartDragPaths.includes(filePath)
 }
 
 /**
  * 手动设置/清除 self-drag-drop 路径标记。
- * 主要给 usePreviewImageDrag 这类"自己调 startDrag 但不属于 useFileDragOut"的场景用——
- * 它 doStartDrag 调完 startDrag 后必须把返回的 fullPath 存进同一处，
+ * 支持多路径（批量 startDrag），也兼容旧的单路径传入。
+ * 给 usePreviewImageDrag、ImgFolderNode 批量拖出、ImgThumbCell native drag 等场景用——
+ * 它调完 startDrag 后必须把返回的 fullPath(s) 存进同一处，
  * 否则 App.vue 的 isSelfDragDrop 匹配不到，OS 拖拽回来时会再创建重复节点。
  */
+export function setLastDragPaths(fullPaths: string[] | null | undefined): void {
+  lastStartDragPaths = fullPaths && fullPaths.length > 0 ? fullPaths : undefined
+}
+
+/** 单路径便捷写法——内部包成数组 */
 export function setLastDragPath(fullPath: string | null | undefined): void {
-  lastStartDragPath = fullPath ?? undefined
+  setLastDragPaths(fullPath ? [fullPath] : undefined)
 }
 
 /**
@@ -39,7 +42,7 @@ export function setLastDragPath(fullPath: string | null | undefined): void {
  * 调用点是 App.vue 的 onCanvasDrop 循环结束后。
  */
 export function clearSelfDragDrop(): void {
-  lastStartDragPath = undefined
+  lastStartDragPaths = undefined
 }
 
 /**
@@ -95,8 +98,9 @@ export function useFileDragOut(getNode: () => FileDragLike | undefined): FileDra
     // 还原节点到按下前的位置——越界前已经被 setPosition 跟着鼠标移动过了
     node.setPosition(startPos[0], startPos[1])
 
-    // await 主进程：拿到它实际 startDrag 用的 fullPath，存起来供 App.vue 路径匹配
-    lastStartDragPath = (await window.fileApi.startDrag(node.fileName)) ?? undefined
+    // await 主进程：拿到它实际 startDrag 用的 fullPath 数组，存起来供 App.vue 路径匹配
+    const paths = await window.fileApi.startDrag(node.fileName)
+    setLastDragPaths(paths)
 
     // OS 拖拽期间窗口可能失焦，用 document 级 pointerup 兜底清理
     function onPointerUp(): void {

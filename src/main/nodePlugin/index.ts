@@ -32,6 +32,7 @@ import { manifest as stackManifest } from './StackNode'
 import { manifest as queueManifest } from './QueueNode'
 import { manifest as httpRequestManifest } from './HttpRequestNode'
 import { manifest as crawlerManifest } from './CrawlerNode'
+import { manifest as browserManifest } from './BrowserNode'
 import { manifest as ossManifest } from './OssNode'
 import { manifest as jsonDisplayManifest } from './JsonDisplayNode'
 import { manifest as imageCropManifest } from './ImageCropNode'
@@ -81,6 +82,7 @@ const functionalManifests: NodePluginManifest[] = [
   mergeManifest,
   httpRequestManifest,
   crawlerManifest,
+  browserManifest,
   ossManifest,
   jsonDisplayManifest,
   imageCropManifest,

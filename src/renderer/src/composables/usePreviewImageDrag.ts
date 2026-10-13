@@ -1,7 +1,7 @@
 import { workspaceScene } from '../../../main/engine/graph/SceneRegistry'
 import { ImgFileNode } from '../../../main/nodePlugin/ImgFileNode/node'
 import { screenToWorld, getCanvasContainer } from '@renderer/canvas/viewport'
-import { setLastDragPath } from '@renderer/composables/useFileDragOut'
+import { setLastDragPaths } from '@renderer/composables/useFileDragOut'
 
 /** 新建 ImgFileNode 时的唯一 ID */
 function generateNodeId(type: string): string {
@@ -88,10 +88,10 @@ export function usePreviewImageDrag(
     if (!file) return
     const base64 = await fileToBase64(file)
     const written = await window.fileApi.writeBuffer(file.name, base64)
-    // startDrag 返回的 fullPath 必须存入同一处，让 App.vue 的 isSelfDragDrop 能识别
+    // startDrag 返回的 fullPath 数组必须存入同一处，让 App.vue 的 isSelfDragDrop 能识别
     // （OS 拖拽回来时不会再创建重复的 ImgFileNode）
-    const fullPath = await window.fileApi.startDrag(written.fileName)
-    setLastDragPath(fullPath)
+    const paths = await window.fileApi.startDrag(written.fileName)
+    setLastDragPaths(paths)
   }
 
   /** 画布内松手：writeBuffer → 新建 ImgFileNode → addNode → 直接固定在落点 */

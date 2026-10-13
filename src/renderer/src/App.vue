@@ -340,7 +340,9 @@ async function onCanvasDrop(e: DragEvent): Promise<void> {
   const [worldX, worldY] = screenToWorld(dropSX, dropSY)
 
   try {
-    // 只处理第一个能被承接的文件（简化版；后续可扩展多文件批量创建）
+    // 批量处理所有可承接的文件：每个文件独立走"自拖自过滤 → 后缀匹配 → 劫持测试 → 复制 → 新建节点"
+    // 劫持命中后直接 return（语义上是"喂一个文件给已有节点"，不继续批量新建）
+    let firstCreated = true
     for (let i = 0; i < files.length; i++) {
       const file = files[i]
       // 路径匹配：这一份是不是我们自己 startDrag 引发的意外 drop？
@@ -377,13 +379,14 @@ async function onCanvasDrop(e: DragEvent): Promise<void> {
         continue
       }
 
-      // 如果已有节点在跟随，先固定它
-      if (trackingNode.value) {
+      // 如果已有节点在跟随，先固定它（只在第一个文件处理前清一次就够了，循环里重复清没副作用）
+      if (firstCreated && trackingNode.value) {
         trackingNode.value = null
       }
 
       // 命中测试：落点是否落在某个已有节点的内容区内，且该节点愿意劫持这个文件。
-      // 劫持成功 → 不再新建节点，清掉悬停态并结束这个文件的处理。
+      // 劫持成功 → 不再新建节点，清掉悬停态并结束整个 drop 流程。
+      // （语义：劫持是"把拖进来的文件喂给已有节点"，喂一个就结束，不应该批量新建）
       for (const node of workspaceScene.allNodes) {
         const [nodeWidth, nodeHeight] = node.box
         const [nodeX, nodeY] = node.worldPosition
@@ -395,12 +398,13 @@ async function onCanvasDrop(e: DragEvent): Promise<void> {
           if (accept) {
             node.onFileDrop(sourcePath)
             clearAllFileDropZones()
+            clearSelfDragDrop()
             return
           }
         }
       }
 
-      // —— 未被任何节点劫持：走原「拖成新节点」逻辑，复用已复制的文件 ——
+      // —— 未被任何节点劫持：走「拖成新节点」逻辑，每个文件创建一个节点 ——
       // 先让主进程把文件复制到画布目录（copyFileSync + 重名去重）
       let copied: { fileName: string; size: number }
       try {
@@ -410,25 +414,23 @@ async function onCanvasDrop(e: DragEvent): Promise<void> {
         console.warn(`[drop] 文件 ${file.name} 复制失败：`, err)
         continue
       }
+
+      // 第 i 个文件落点偏移 i * 40 像素，避免多文件完全重叠
+      const NODE_OFFSET = 40
       const node = new manifest.nodeClass(generateNodeId(manifest.type))
-      node.setPosition(worldX, worldY)
-        // 用复制后的 fileName（可能加了 _1 后缀）写节点
-        ; (node as FileNode).setFile(copied.fileName, copied.size)
+      node.setPosition(worldX + i * NODE_OFFSET, worldY + i * NODE_OFFSET)
+      // 用复制后的 fileName（可能加了 _1 后缀）写节点
+      ;(node as FileNode).setFile(copied.fileName, copied.size)
 
       workspaceScene.addNode(node)
       console.log('[drop] 节点已加入 Scene：', node.id)
 
-      // 新手引导：Step 1 完成（拖文件进画布），推进到 Step 2
-      if (onboarding.active.value && onboarding.step.value === 0) {
+      // 新手引导：Step 1 完成（拖文件进画布），只在第一个文件成功创建时推进
+      if (firstCreated && onboarding.active.value && onboarding.step.value === 0) {
         onboarding.nextStep()
       }
-
-      // 文件 drop 已经让用户选好了落点——**不进入跟随放置模式**。
-      // 跟随放置只用于「调色板 → 选中类型 → 画布空白处点击固定」那条路径：
-      // 因为调色板选中时鼠标还在节点上，得等用户选落点再固定。
-      // 文件拖进来不一样，drop 的位置本身就是用户想要的位置。
-      break // 只处理第一个文件就够了
-    }
+      firstCreated = false
+  }
   } finally {
     // 无论有没有命中自拖自，处理完都清掉缓存。
     clearSelfDragDrop()

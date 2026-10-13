@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, onUnmounted, type CSSProperties } from 'vue'
 import { useNodePosition, type NodeLike } from '@renderer/composables/useNodePosition'
+import { useFileOpenInSystem } from '@renderer/composables/useFileOpenInSystem'
+import { setLastDragPaths } from '@renderer/composables/useFileDragOut'
 import { viewport, screenToWorld, getCanvasContainer } from '@renderer/canvas/viewport'
 
 /**
@@ -36,6 +38,7 @@ const emit = defineEmits<{
 }>()
 
 const { startDrag } = useNodePosition(() => props.node)
+const { openInSystem } = useFileOpenInSystem()
 
 // —— 拖拽视觉：格子跟随指针平移。屏幕位移 ÷ 视口缩放 = 世界位移，与节点实际位移一致；
 //    越出容器会被容器的 overflow 裁掉，表现和文件夹里拖动子节点一致。 ——
@@ -51,6 +54,15 @@ function onDragEnd(): void {
   dragDelta.value = null
   window.removeEventListener('pointermove', onDragMove)
   window.removeEventListener('pointerup', onDragEnd)
+}
+
+/** native drag 入口：图标 pointerdown.stop.prevent → OS 接管拖拽 */
+function onDragIconPointerDown(e: PointerEvent): void {
+  e.stopPropagation()
+  e.preventDefault()
+  window.fileApi.startDrag(props.name).then((paths) => {
+    setLastDragPaths(paths)
+  })
 }
 
 const dragStyle = computed<CSSProperties | undefined>(() => {
@@ -94,6 +106,7 @@ onUnmounted(onDragEnd)
     :style="dragStyle"
     :title="name"
     @pointerdown="onPointerDown"
+    @dblclick="openInSystem(name)"
   >
     <div class="img-thumb-cell__thumb">
       <img v-if="src" :src="src" alt="" draggable="false" />
@@ -104,6 +117,20 @@ onUnmounted(onDragEnd)
         <path d="M5 18l5-5 3 3 3-3 3 3" stroke="#c5cbd4" stroke-width="1.5" stroke-linecap="round"
           stroke-linejoin="round" />
       </svg>
+
+      <!-- native drag 小图标：OS 级拖拽入口 -->
+      <button
+        class="img-thumb-cell__drag-icon"
+        type="button"
+        title="拖出到浏览器或桌面"
+        @pointerdown.stop.prevent="onDragIconPointerDown"
+        @click.stop
+      >
+        <svg viewBox="0 0 16 16" width="10" height="10" fill="none">
+          <path d="M3 3h6l4 4v6a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" stroke="currentColor" stroke-width="1.2" />
+          <path d="M9 3v4h4" stroke="currentColor" stroke-width="1.2" />
+        </svg>
+      </button>
     </div>
     <span class="img-thumb-cell__name">{{ name }}</span>
   </div>
@@ -147,6 +174,7 @@ onUnmounted(onDragEnd)
     display: flex;
     align-items: center;
     justify-content: center;
+    position: relative; // 给 __drag-icon 做定位上下文
 
     img {
       width: 100%;
@@ -155,6 +183,35 @@ onUnmounted(onDragEnd)
       display: block;
       pointer-events: none;
       background: #fff;
+    }
+  }
+
+  // native drag 小图标：左下角浮层，hover 或选中时显示
+  &__drag-icon {
+    position: absolute;
+    left: 3px;
+    bottom: 3px;
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    border: none;
+    background: rgba(74, 124, 255, 0.9);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: grab;
+    padding: 0;
+    opacity: 0;
+    transition: opacity 0.15s;
+
+    .img-thumb-cell:hover &,
+    .img-thumb-cell--selected & {
+      opacity: 1;
+    }
+
+    &:active {
+      cursor: grabbing;
     }
   }
 

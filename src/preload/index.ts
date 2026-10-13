@@ -304,11 +304,16 @@ const fileApi = {
 
   /**
    * 启动 OS 级文件拖拽（拖出画布到桌面/系统文件夹）。
-   * 返回主进程实际 startDrag 用的 fullPath（或 null）——renderer 用它区分
+   * 支持单文件（传 string）和多文件（传 string[]），主进程用 webContents.startDrag 的
+   * file / files 两种模式分别处理。
+   *
+   * 返回主进程实际 startDrag 用的所有 fullPath（或 null）——renderer 用它区分
    * "自己 startDrag 引发的意外 drop"和"Finder 等外部拖进来的文件"。
    */
-  startDrag: (fileName: string, canvasId?: string): Promise<string | null> =>
-    ipcRenderer.invoke('file:startDrag', { fileName, canvasId: fillCanvasId(canvasId) }),
+  startDrag: (fileNames: string | string[], canvasId?: string): Promise<string[] | null> => {
+    const names = Array.isArray(fileNames) ? fileNames : [fileNames]
+    return ipcRenderer.invoke('file:startDrag', { fileNames: names, canvasId: fillCanvasId(canvasId) })
+  },
 
   /** 检查画布目录下文件是否还存在（外部拖拽结束后判断节点要不要删） */
   exists: (fileName: string, canvasId?: string): Promise<boolean> =>

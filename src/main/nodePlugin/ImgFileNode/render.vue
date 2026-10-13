@@ -6,7 +6,7 @@ import { ImgFileNode } from './node'
 import { MIN_PREVIEW_WIDTH, MAX_PREVIEW_WIDTH } from './node'
 import { inferImageMime } from './mime'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
-import { useFileDragOut } from '@renderer/composables/useFileDragOut'
+import { useFileDragOut, setLastDragPaths } from '@renderer/composables/useFileDragOut'
 import { useFileOpenInSystem } from '@renderer/composables/useFileOpenInSystem'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
 import { viewport } from '@renderer/canvas/viewport'
@@ -30,6 +30,36 @@ const fileNode = computed(() => {
 // —— 拖拽：窗口内移动 + 拖出外部 ——
 const { dragOutOpts, cleanup: cleanupDragOut } = useFileDragOut(() => fileNode.value)
 const { startDrag } = useNodePosition(() => fileNode.value, dragOutOpts)
+
+// —— 小图标 native drag（OS 级，立即触发）——
+function onDragIconPointerDown(e: PointerEvent): void {
+  // eslint-disable-next-line no-console
+  console.log('[ImgFileNode] 🖼️ 📥 icon pointerdown', {
+    hasFile: !!fileNode.value?.fileName,
+    fileName: fileNode.value?.fileName
+  })
+  const node = fileNode.value
+  if (!node?.fileName) {
+    // eslint-disable-next-line no-console
+    console.log('[ImgFileNode] 🖼️ 无 fileName，不触发 native drag')
+    return
+  }
+  // 关键：同时 stopPropagation + preventDefault
+  // stopPropagation 阻止冒泡 → 卡片的 useNodePosition.startDrag 不触发 → 节点不动
+  // preventDefault 阻止 Chromium 默认 pointer 行为
+  e.stopPropagation()
+  e.preventDefault()
+
+  // 立即 OS 接管 native drag（无延时）
+  window.fileApi.startDrag(node.fileName).then((paths) => {
+    setLastDragPaths(paths)
+    // eslint-disable-next-line no-console
+    console.log('[ImgFileNode] 🖼️ ✅ native drag startDrag 返回:', paths)
+  }).catch((err: any) => {
+    // eslint-disable-next-line no-console
+    console.error('[ImgFileNode] 🖼️ ❌ startDrag 失败:', err)
+  })
+}
 
 // —— 双击图标：用系统默认应用打开文件 ——
 const { openInSystem } = useFileOpenInSystem()
@@ -172,6 +202,21 @@ onUnmounted(() => {
           IMG
         </text>
       </svg>
+
+      <!-- 拖入 BrowserNode 的专用图标（左下角浮层）—— OS 级 native drag -->
+      <button
+        v-if="fileName"
+        class="file-card__drag-icon"
+        type="button"
+        :title="t('dragToBrowser')"
+        @pointerdown.stop.prevent="onDragIconPointerDown"
+        @click.stop
+      >
+        <svg viewBox="0 0 16 16" width="12" height="12" fill="none">
+          <path d="M3 3h6l4 4v6a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" stroke="currentColor" stroke-width="1.2" />
+          <path d="M9 3v4h4" stroke="currentColor" stroke-width="1.2" />
+        </svg>
+      </button>
     </div>
 
     <!-- 文件名 + 格式/像素 -->
@@ -242,6 +287,42 @@ onUnmounted(() => {
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    position: relative; // 浮层图标定位用
+  }
+
+  // —— 拖入 BrowserNode 的小图标（左下角浮层）——
+  &__drag-icon {
+    all: unset;
+    position: absolute;
+    left: 4px;
+    bottom: 4px;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    background: rgba(74, 124, 255, 0.12);
+    color: #4a7cff;
+    cursor: grab;
+    opacity: 0;
+    transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+    z-index: 2;
+    // 确保它捕获 pointer 事件时不冒泡到卡片
+    pointer-events: auto;
+
+    .file-card:hover &,
+    &:focus {
+      opacity: 1;
+    }
+
+    &:hover {
+      background: rgba(74, 124, 255, 0.22);
+    }
+
+    &:active {
+      cursor: grabbing;
+    }
   }
 
   &__img {

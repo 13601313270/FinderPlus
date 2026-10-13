@@ -21,15 +21,9 @@ const { identities: allIdentities } = useBrowserIdentities()
 // —— webview DOM 引用 ——
 const webviewEl = ref<any>(null)
 
-/** webview 首次渲染时用的初始 URL。只在组件生命周期内设置一次，之后永远不变——
- *  这样 Vue diff 永远不会 re-patch :src 属性，杜绝意外 reload。
- *  用户后续输入新 URL 导航 → 直接调 webview.loadURL() 手动控制。
- */
-const initialSrc = ref('')
-
 /**
  * webview 重新挂载 key：identity 变化时递增此值，让 Vue 销毁旧 webview 并重建。
- *  因为 partition 属性在 webview 创建时就决定了 session，事后修改不生效。
+ * 因为 partition 属性在 webview 创建时就决定了 session，事后修改不生效。
  */
 const webviewKey = ref(0)
 
@@ -309,10 +303,12 @@ async function executeScript(script: ScriptItem): Promise<void> {
     lastScriptResult.value = { ok: false, text: 'webview 未就绪' }
     return
   }
+  // 把 $1 $2 … 占位符按当前输入端口值替换掉
+  const resolvedCode = browserNode.value?.replacePlaceholders(script.code) ?? script.code
   // eslint-disable-next-line no-console
-  console.log('[BrowserNode] 🚀 执行脚本:', script.name, 'code:', script.code.slice(0, 80))
+  console.log('[BrowserNode] 🚀 执行脚本:', script.name, 'code:', resolvedCode.slice(0, 80))
   try {
-    const result = await webviewEl.value.executeJavaScript(script.code)
+    const result = await webviewEl.value.executeJavaScript(resolvedCode)
     const text = result === undefined ? '(undefined)' : JSON.stringify(result)
     // eslint-disable-next-line no-console
     console.log('[BrowserNode] 🚀 脚本结果:', text)
@@ -400,6 +396,27 @@ function handleFailLoading(_e: any, code: number, description: string, failedUrl
   browserNode.value.onWebviewFailLoading(`${msg} (${failedUrl})`)
 }
 
+/**
+ * Electron webview 拦截 target="_blank" / window.open() 的弹窗请求。
+ * 我们阻止默认行为（不开新窗口），改为在当前 webview 内 loadURL。
+ * 这样用户点页面上带 target="_blank" 的链接也能正常跳转。
+ */
+function handleNewWindow(e: any): void {
+  const url = e?.url ?? e?.newGuest?.request?.url ?? ''
+  // eslint-disable-next-line no-console
+  console.log('[BrowserNode] 🪟 new-window 拦截，改为当前页加载:', url)
+  e.preventDefault?.()
+  if (url && webviewEl.value) {
+    try { webviewEl.value.loadURL(url) } catch { /* noop */ }
+  }
+}
+
+/** 导航即将发生时的日志钩子——帮助排查"点击链接无反应"是拦截在 Electron 层还是 Vue 层 */
+function handleWillNavigate(e: any, url: string): void {
+  // eslint-disable-next-line no-console
+  console.log('[BrowserNode] 🧭 will-navigate:', url)
+}
+
 // —— 生命周期 ——
 
 onMounted(() => {
@@ -416,13 +433,8 @@ onMounted(() => {
   syncFromNode(found)
   addressInput.value = found.displayHomeUrl
 
-  // ★ 在 nextTick 之前就锁定 initialSrc，让 <webview :src> 首次渲染时带上真实 URL。
-  // 空字符串 → Electron 根本不创建 webContents → dom-ready 永不触发 → loadURL 直接抛错。
-  // 所以空值必须回退 'about:blank'，保证 webContents 被创建并走完初始化。
-  initialSrc.value = found.displayResolvedUrl || 'about:blank'
-
   // eslint-disable-next-line no-console
-  console.log('[BrowserNode] onMounted node ok', { homeUrl: found.displayHomeUrl, resolvedUrl: found.displayResolvedUrl, initialSrc: initialSrc.value })
+  console.log('[BrowserNode] onMounted node ok', { homeUrl: found.displayHomeUrl, resolvedUrl: found.displayResolvedUrl })
 
   // 订阅节点变化
   unsubscribe = found.onChanged(() => {
@@ -468,9 +480,12 @@ onMounted(() => {
   // 需要等它的 dom-ready 事件才能安全调用 loadURL
   nextTick(() => {
     const wv = webviewEl.value
-    // eslint-disable-next-line no-console
-    console.log('[BrowserNode] nextTick webviewEl=', !!wv, wv?.tagName, wv?.src)
     if (!wv) return
+
+    // ★ 手动设置 src，让 Vue 不控制此属性——防止 onChanged 触发 Vue re-render
+    // 时把 src 回滚到初始值，打断 webview 正在进行的导航（比如用户在页面内点链接）
+    const initialUrl = found.displayResolvedUrl || 'about:blank'
+    wv.setAttribute('src', initialUrl)
 
     wv.addEventListener('dom-ready', handleWebviewReady)
     wv.addEventListener('did-navigate', handleNavigate)
@@ -479,6 +494,8 @@ onMounted(() => {
     wv.addEventListener('did-start-loading', handleStartLoading)
     wv.addEventListener('did-stop-loading', handleStopLoading)
     wv.addEventListener('did-fail-load', handleFailLoading)
+    wv.addEventListener('new-window', handleNewWindow)
+    wv.addEventListener('will-navigate', handleWillNavigate)
     // eslint-disable-next-line no-console
     console.log('[BrowserNode] ✅ 所有事件监听器已挂载')
   })
@@ -500,6 +517,8 @@ onUnmounted(() => {
     wv.removeEventListener('did-start-loading', handleStartLoading)
     wv.removeEventListener('did-stop-loading', handleStopLoading)
     wv.removeEventListener('did-fail-load', handleFailLoading)
+    wv.removeEventListener('new-window', handleNewWindow)
+    wv.removeEventListener('will-navigate', handleWillNavigate)
     try { wv.destroy?.() } catch { /* noop */ }
   }
 
@@ -715,9 +734,9 @@ onUnmounted(() => {
         ref="webviewEl"
         class="browser-webview"
         :class="{ 'browser-webview--browsing': browsing }"
-        :src="initialSrc"
         :partition="partition"
         nodeintegration="false"
+        allowpopups
       />
 
       <!-- 空态 / 错误态遮罩（webview 上方，默认和浏览模式都显示） -->

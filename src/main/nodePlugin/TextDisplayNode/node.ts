@@ -1,7 +1,7 @@
 import { StringValue } from '../../engine/data/StringValue'
 import { InputPort } from '../../engine/port/InputPort'
 import { OutputPort } from '../../engine/port/OutputPort'
-import { Node } from '../../engine/node/Node'
+import { Node, NodeMenuItem } from '../../engine/node/Node'
 
 /**
  * 字符串展示节点：把上游送来的字符串显示出来，同时直传输出。
@@ -110,5 +110,19 @@ export class TextDisplayNode extends Node {
       this.setBox(box[0], box[1])
     }
     // displayed 等上游恢复后自然会刷新
+  }
+
+  contextMenuItems(): NodeMenuItem[] {
+    const superItems = super.contextMenuItems()
+    return [
+      {
+        id: 'copy-text',
+        label: '复制文本',
+        run: async () => {
+          await navigator.clipboard.writeText(this.text)
+        }
+      },
+      ...superItems,
+    ]
   }
 }

@@ -440,8 +440,8 @@ export class BrowserNode extends Node {
     return this.inputPorts.every((p) => p.incomingEdgeCount > 0)
   }
 
-  /** 把模板里的 $1 $2 $3 … 按输入端口当前值替换掉 */
-  private replacePlaceholders(text: string): string {
+  /** 把模板里的 $1 $2 $3 … 按输入端口当前值替换掉；$$ 转义为字面 $。URL 和自定义脚本共用 */
+  replacePlaceholders(text: string): string {
     return text.replace(/\$\$|\$(\d+)/g, (_match, digits: string | undefined) => {
       if (digits === undefined) return '$'
       const index = Number(digits) - 1

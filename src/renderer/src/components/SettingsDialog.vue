@@ -18,6 +18,10 @@ import {
 } from '../../../main/nodePlugin/ImageGenNode/providers'
 import { useImageSettings } from '@renderer/composables/useImageSettings'
 import { usePaletteSettings } from '@renderer/composables/usePaletteSettings'
+import {
+  useBrowserIdentities,
+  type BrowserIdentity
+} from '@renderer/composables/useBrowserIdentities'
 import SelectMenu from './SelectMenu.vue'
 import { workspaceScene } from '../../../main/engine/graph/SceneRegistry'
 import { viewport } from '@renderer/canvas/viewport'
@@ -25,6 +29,7 @@ import { paletteManifests } from '../../../main/nodePlugin'
 import { resolveNodeTitle } from '../../../main/nodePlugin/manifest'
 import { NODE_CATEGORIES, DEFAULT_NODE_CATEGORY, CATEGORY_LABELS, type NodeCategory } from '../../../main/nodePlugin/category'
 import { resolveLocalizedText } from '../../../shared/language'
+import { BrowserNode } from '../../../main/nodePlugin/BrowserNode/node'
 
 /**
  * 全局设置弹窗：左侧分类栏 + 右侧滚动内容。
@@ -47,12 +52,18 @@ const {
   clearKey: clearImageKey
 } = useImageSettings()
 const { hiddenTypes, toggleHidden, showAll } = usePaletteSettings()
+const {
+  identities: browserIdentities,
+  add: addBrowserIdentity,
+  rename: renameBrowserIdentity,
+  remove: removeBrowserIdentity
+} = useBrowserIdentities()
 
 /** 左侧选中的分类 */
-type SectionKey = 'general' | 'llm' | 'image' | 'nodes' | 'canvases'
+type SectionKey = 'general' | 'llm' | 'image' | 'nodes' | 'canvases' | 'browser'
 const activeSection = ref<SectionKey>('general')
 
-const SECTION_ORDER: SectionKey[] = ['general', 'llm', 'image', 'nodes', 'canvases']
+const SECTION_ORDER: SectionKey[] = ['general', 'llm', 'image', 'nodes', 'browser', 'canvases']
 
 function sectionLabel(key: SectionKey): string {
   switch (key) {
@@ -60,6 +71,7 @@ function sectionLabel(key: SectionKey): string {
     case 'llm':       return t('settingsDialog.groupLLM')
     case 'image':     return t('settingsDialog.groupImage')
     case 'nodes':     return t('settingsDialog.groupNodes')
+    case 'browser':   return t('settingsDialog.groupBrowser')
     case 'canvases':  return t('settingsDialog.groupCanvases')
   }
 }
@@ -354,6 +366,64 @@ async function handleClearCanvas(): Promise<void> {
   } finally {
     clearBusy.value = false
   }
+}
+
+// —— 浏览器身份 section ——
+
+/** 查找当前画布上引用了某个身份 id 的所有浏览器节点 */
+function findNodesUsingIdentity(id: string): BrowserNode[] {
+  return workspaceScene.allNodes.filter(
+    (n): n is BrowserNode => n instanceof BrowserNode && n.currentIdentityId === id
+  )
+}
+
+/** 新增浏览器身份 */
+async function onAddBrowserIdentity(): Promise<void> {
+  const name = await window.showPrompt(
+    t('settingsDialog.browserAddPrompt'),
+    ''
+  )
+  if (!name || !name.trim()) return
+  addBrowserIdentity(name.trim())
+}
+
+/** 重命名浏览器身份 */
+async function onRenameBrowserIdentity(identity: BrowserIdentity): Promise<void> {
+  const name = await window.showPrompt(
+    t('settingsDialog.browserRenamePrompt'),
+    identity.name
+  )
+  if (!name || !name.trim() || name.trim() === identity.name) return
+  renameBrowserIdentity(identity.id, name.trim())
+}
+
+/**
+ * 删除浏览器身份：
+ * 1. 查找引用该身份的节点
+ * 2. 二次确认（有节点用 → 告知数量并确认降级；无节点 → 直接确认删除）
+ * 3. 删除身份
+ * 4. 把所有引用节点切回独立模式（降级）
+ */
+async function onDeleteBrowserIdentity(identity: BrowserIdentity): Promise<void> {
+  const usingNodes = findNodesUsingIdentity(identity.id)
+
+  const title = t('settingsDialog.browserDeleteConfirmTitle', { name: identity.name })
+  const body = usingNodes.length > 0
+    ? t('settingsDialog.browserDeleteConfirmBodyWithNodes', {
+        count: usingNodes.length,
+        name: identity.name
+      })
+    : t('settingsDialog.browserDeleteConfirmBody', { name: identity.name })
+
+  const ok = await window.showConfirm(title, body)
+  if (!ok) return
+
+  // 先降级：把所有引用节点切回独立模式
+  for (const node of usingNodes) {
+    node.setIdentity(undefined)
+  }
+  // 再删身份定义
+  removeBrowserIdentity(identity.id)
 }
 
 // —— 我的画布 tab ——
@@ -692,6 +762,53 @@ async function onDeleteCanvas(id: string, name: string): Promise<void> {
                         </svg>
                         <span class="gs-nodes__tile-label">{{ item.label }}</span>
                       </label>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            </template>
+
+            <!-- ========== 浏览器身份 ========== -->
+            <template v-if="activeSection === 'browser'">
+              <section class="gs-section">
+                <h4 class="gs-section__title">{{ t('settingsDialog.browserTitle') }}</h4>
+                <p class="gs-section__hint">{{ t('settingsDialog.browserHint') }}</p>
+
+                <div class="gs-transfer__actions" style="margin-bottom: 12px;">
+                  <button
+                    class="gs-btn gs-btn--primary"
+                    type="button"
+                    @click="onAddBrowserIdentity"
+                  >+ {{ t('settingsDialog.browserAddBtn') }}</button>
+                </div>
+
+                <div v-if="browserIdentities.length === 0" class="gs-canvases__empty">
+                  {{ t('settingsDialog.browserEmpty') }}
+                </div>
+
+                <div v-else class="gs-browser__list">
+                  <div
+                    v-for="id in browserIdentities"
+                    :key="id.id"
+                    class="gs-browser-card"
+                  >
+                    <div class="gs-browser-card__info">
+                      <span class="gs-browser-card__name">{{ id.name }}</span>
+                      <span class="gs-browser-card__usage">
+                        {{ t('settingsDialog.browserUsage', { count: findNodesUsingIdentity(id.id).length }) }}
+                      </span>
+                    </div>
+                    <div class="gs-browser-card__actions">
+                      <button
+                        class="gs-canvas-card__btn"
+                        type="button"
+                        @click="onRenameBrowserIdentity(id)"
+                      >{{ t('settingsDialog.browserRenameBtn') }}</button>
+                      <button
+                        class="gs-canvas-card__btn gs-canvas-card__btn--danger"
+                        type="button"
+                        @click="onDeleteBrowserIdentity(id)"
+                      >{{ t('settingsDialog.browserDeleteBtn') }}</button>
                     </div>
                   </div>
                 </div>
@@ -1072,6 +1189,59 @@ async function onDeleteCanvas(id: string, name: string): Promise<void> {
     display: flex;
     flex-direction: column;
     gap: 10px;
+  }
+}
+
+// —— 浏览器身份卡片样式 ——
+.gs-browser {
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+}
+
+.gs-browser-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  transition: border-color 0.15s;
+
+  &:hover {
+    border-color: #c7d2fe;
+  }
+
+  &__info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    flex: 1;
+  }
+
+  &__name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1f2937;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__usage {
+    font-size: 11px;
+    color: #9ca3af;
+  }
+
+  &__actions {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
   }
 }
 

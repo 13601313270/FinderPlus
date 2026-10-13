@@ -11,6 +11,25 @@ const MIN_URL_LEN = 4
 const MAX_URL_LEN = 2000
 const MAX_SCRIPT_LEN = 10000
 
+/**
+ * 浏览器身份模式：
+ * - 独立：每个节点按自身 nodeId 生成 partition，完全隔离
+ * - 共享：引用某个全局身份 id，多个节点共享同一 partition
+ */
+export type IdentityMode = 'isolated' | 'shared'
+
+/**
+ * 根据 nodeId / identityId 生成 Electron partition 字符串。
+ * 命名规则统一，全项目只此一处生成 partition。
+ */
+export function makePartition(mode: IdentityMode, key: string): string {
+  // partition 只接受 alphanum / - / _ / :，key 通常是 uuid 风格，安全
+  const safeKey = key.replace(/[^a-zA-Z0-9_-]/g, '_')
+  return mode === 'isolated'
+    ? `persist:canvasdesk-node-${safeKey}`
+    : `persist:canvasdesk-identity-${safeKey}`
+}
+
 /** 一段可执行的用户自定义脚本——detailPanel 里 CRUD，render.vue 里渲染成按钮 */
 export interface ScriptItem {
   /** 稳定 id（uuid 风格） */
@@ -111,6 +130,13 @@ export class BrowserNode extends Node {
   /** 用户自定义脚本（执行按钮） */
   private scripts: ScriptItem[] = []
 
+  /**
+   * 浏览器身份引用：
+   * - undefined → 独立模式，partition 按 nodeId 生成
+   * - string → 共享该全局身份 id，partition 按 identityId 生成
+   */
+  private identityId: string | undefined = undefined
+
   // —— 运行时派生状态（不持久化，由 render.vue 驱动更新） ——
 
   /** 按模板 + 当前输入值生成的最终 URL */
@@ -161,6 +187,33 @@ export class BrowserNode extends Node {
   /** URL 模板原文 */
   get displayHomeUrl(): string {
     return this.homeUrl
+  }
+
+  /**
+   * 当前使用的 Electron partition 字符串。
+   * render.vue 用此值绑定 <webview :partition>。
+   * identityId 未设置 → 按 nodeId 独立隔离；否则按 identityId 共享。
+   */
+  get partition(): string {
+    if (this.identityId) {
+      return makePartition('shared', this.identityId)
+    }
+    return makePartition('isolated', this.id)
+  }
+
+  /** 当前身份引用：undefined = 独立，string = 共享该全局身份 */
+  get currentIdentityId(): string | undefined {
+    return this.identityId
+  }
+
+  /**
+   * 切换身份：传入 undefined → 独立模式；传入字符串 → 共享该身份。
+   * 调用后 render.vue 应重建 webview 以让新 partition 生效。
+   */
+  setIdentity(id: string | undefined): void {
+    if (id === this.identityId) return
+    this.identityId = id
+    this.notifyChanged()
   }
 
   /** 模板解析后的最终 URL（输入端口值 + 模板替换结果） */
@@ -416,7 +469,8 @@ export class BrowserNode extends Node {
       homeUrl: this.homeUrl,
       inputCount: this.inputPorts.length,
       zoomFactor: this.zoomFactor,
-      scripts: this.scripts
+      scripts: this.scripts,
+      identityId: this.identityId
     }
   }
 
@@ -427,6 +481,13 @@ export class BrowserNode extends Node {
 
     if (typeof state.zoomFactor === 'number') {
       this.zoomFactor = Math.min(5.0, Math.max(0.25, Math.round(state.zoomFactor * 100) / 100))
+    }
+
+    // identityId：string 保留，undefined/空串 → 独立模式
+    if (typeof state.identityId === 'string' && state.identityId.trim()) {
+      this.identityId = state.identityId.trim()
+    } else {
+      this.identityId = undefined
     }
 
     if (Array.isArray(state.scripts)) {

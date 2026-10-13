@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, ref, shallowRef } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { BrowserNode, type ScriptItem } from './node'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
 import { useNodeDetail } from '@renderer/composables/useNodeDetail'
+import { useBrowserIdentities } from '@renderer/composables/useBrowserIdentities'
 import { messages } from './i18n'
 import NodeHeader from '@renderer/components/NodeHeader.vue'
 import GearIcon from '@renderer/components/icons/GearIcon.vue'
@@ -15,6 +16,7 @@ const browserNode = shallowRef<BrowserNode | undefined>(undefined)
 const nodeTitle = useNodeTitle(() => browserNode.value, '?')
 const t = useLocalizedMessages(messages)
 const { openNodeDetail } = useNodeDetail()
+const { identities: allIdentities } = useBrowserIdentities()
 
 // —— webview DOM 引用 ——
 const webviewEl = ref<any>(null)
@@ -24,6 +26,12 @@ const webviewEl = ref<any>(null)
  *  用户后续输入新 URL 导航 → 直接调 webview.loadURL() 手动控制。
  */
 const initialSrc = ref('')
+
+/**
+ * webview 重新挂载 key：identity 变化时递增此值，让 Vue 销毁旧 webview 并重建。
+ *  因为 partition 属性在 webview 创建时就决定了 session，事后修改不生效。
+ */
+const webviewKey = ref(0)
 
 /** webview 是否已发出 dom-ready（此后才能安全 loadURL / goBack 等） */
 const webviewReady = ref(false)
@@ -43,6 +51,11 @@ const canGoForward = ref(false)
 const lastError = ref('')
 const zoomFactor = ref(1.0)
 const scripts = ref<ScriptItem[]>([])
+/** 当前 webview 使用的 partition 字符串（用于检测 identity 变化） */
+const partition = ref('')
+/** 最近一次显示用的身份信息（供 header 视觉标记使用） */
+const displayIdentityLabel = ref<string>('')
+const displayIsIsolated = ref<boolean>(true)
 /** 最近一次脚本执行结果，显示在脚本按钮条下方 */
 const lastScriptResult = ref<{ ok: boolean; text: string } | null>(null)
 
@@ -119,6 +132,7 @@ function syncFromNode(node: BrowserNode): void {
   lastError.value = node.displayLastError
   zoomFactor.value = node.currentZoomFactor
   scripts.value = node.getScripts()
+  partition.value = node.partition
 }
 
 // —— 派生 ——
@@ -126,6 +140,33 @@ function syncFromNode(node: BrowserNode): void {
 const loading = computed(() => status.value === 'loading')
 const hasConfig = computed(() => homeUrl.value.trim().length > 0)
 const browsing = computed(() => browsingMode.value)
+
+/**
+ * 当前节点的身份标签（给 header 视觉标记用）：
+ * 独立模式 → 空字符串（不显示）
+ * 共享模式 → 身份名称
+ */
+const identityLabel = computed(() => {
+  if (!browserNode.value) return ''
+  const id = browserNode.value.currentIdentityId
+  if (!id) return ''
+  return allIdentities.value.find((i) => i.id === id)?.name ?? ''
+})
+
+/** 身份选择下拉框是否展开 */
+const identityMenuOpen = ref(false)
+
+/** 切换身份：下拉框里点某个选项时调这个 */
+function onSelectIdentity(id: string | undefined): void {
+  identityMenuOpen.value = false
+  if (!browserNode.value) return
+  browserNode.value.setIdentity(id)
+}
+
+/** 点外部关闭下拉框 */
+function closeIdentityMenu(): void {
+  identityMenuOpen.value = false
+}
 
 // —— 地址栏：渲染层输入 → 写回节点持久化 homeUrl ——
 
@@ -361,7 +402,25 @@ onMounted(() => {
   // 订阅节点变化
   unsubscribe = found.onChanged(() => {
     const prevZoom = zoomFactor.value
+    const prevPartition = partition.value
     syncFromNode(found)
+
+    // —— identity 变化 → partition 变化 → 必须重建 webview ——
+    if (partition.value !== prevPartition) {
+      // eslint-disable-next-line no-console
+      console.log('[BrowserNode] partition 变化 → 重建 webview', { from: prevPartition, to: partition.value })
+      webviewKey.value += 1
+      webviewReady.value = false
+      // 重置导航状态，等新 webview 的 did-stop-loading 来驱动
+      status.value = 'idle'
+      currentUrl.value = ''
+      canGoBack.value = false
+      canGoForward.value = false
+      // initialSrc 在模板 diff 时被新 webview 绑定，重新触发导航
+      nextTick(() => navigateToResolved())
+      return // 下面的 zoom/navigate 逻辑是给稳定态用的，重建后等新的 onChanged 再走
+    }
+
     // zoom 变化 → 立即应用（不需要等 did-stop-loading）
     if (zoomFactor.value !== prevZoom && webviewReady.value) {
       applyZoom()
@@ -376,6 +435,12 @@ onMounted(() => {
       nextTick(() => navigateToResolved())
     }
   })
+
+  // 身份选择下拉框：点外部关闭
+  const onDocClickForIdentity = (): void => {
+    if (identityMenuOpen.value) identityMenuOpen.value = false
+  }
+  document.addEventListener('click', onDocClickForIdentity)
 
   // webview DOM 在 <webview ref="webviewEl" /> 渲染后就绪
   // Vue 的 ref 在模板渲染完成后自动赋值，但 <webview> 是自定义元素，
@@ -400,6 +465,9 @@ onMounted(() => {
 
 onUnmounted(() => {
   unsubscribe?.()
+
+  // 清理身份选择下拉框的文档级点击监听
+  document.removeEventListener('click', onDocClickForIdentity)
 
   // 清理 webview 事件监听 + 销毁实例
   const wv = webviewEl.value
@@ -436,6 +504,18 @@ onUnmounted(() => {
         </button>
       </template>
     </NodeHeader>
+
+    <!-- —— 身份指示行（仅共享模式显示） —— -->
+    <div
+      v-if="browserNode && identityLabel"
+      class="browser-identity-indicator"
+      :title="identityLabel"
+    >
+      <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>
+      </svg>
+      <span>{{ identityLabel }}</span>
+    </div>
 
     <!-- —— 工具栏 —— -->
     <div v-if="browserNode" class="browser-toolbar">
@@ -513,6 +593,50 @@ onUnmounted(() => {
         >＋</button>
       </div>
 
+      <!-- 身份选择 -->
+      <div class="browser-toolbar__identity" @pointerdown.stop>
+        <button
+          class="browser-identity-btn"
+          type="button"
+          :title="identityLabel ? `身份: ${identityLabel}` : '独立浏览器会话'"
+          @click.stop="identityMenuOpen = !identityMenuOpen"
+        >
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>
+          </svg>
+        </button>
+        <!-- 下拉菜单 -->
+        <div
+          v-if="identityMenuOpen"
+          class="browser-identity-menu"
+          @click.stop
+        >
+          <button
+            class="browser-identity-option"
+            type="button"
+            :class="{ 'browser-identity-option--active': !browserNode?.currentIdentityId }"
+            @click="onSelectIdentity(undefined)"
+          >
+            <span class="browser-identity-option__check">{{ !browserNode?.currentIdentityId ? '✓' : '' }}</span>
+            <span>独立</span>
+          </button>
+          <template v-if="allIdentities.length > 0">
+            <div class="browser-identity-divider" />
+            <button
+              v-for="id in allIdentities"
+              :key="id.id"
+              class="browser-identity-option"
+              type="button"
+              :class="{ 'browser-identity-option--active': browserNode?.currentIdentityId === id.id }"
+              @click="onSelectIdentity(id.id)"
+            >
+              <span class="browser-identity-option__check">{{ browserNode?.currentIdentityId === id.id ? '✓' : '' }}</span>
+              <span>{{ id.name }}</span>
+            </button>
+          </template>
+        </div>
+      </div>
+
       <!-- 浏览模式切换 -->
       <button
         class="browser-mode"
@@ -566,10 +690,12 @@ onUnmounted(() => {
     >
       <!-- 默认遮罩：浏览模式关闭时，pointer-events:none 让画布事件穿透 -->
       <webview
+        :key="webviewKey"
         ref="webviewEl"
         class="browser-webview"
         :class="{ 'browser-webview--browsing': browsing }"
         :src="initialSrc"
+        :partition="partition"
         nodeintegration="false"
       />
 
@@ -930,6 +1056,101 @@ onUnmounted(() => {
   .browser-node:hover & {
     opacity: 0.6;
   }
+}
+
+// —— 身份指示行（header 与 toolbar 之间的小徽章） ——
+.browser-identity-indicator {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 8px;
+  margin: 0 2px;
+  border-radius: 10px;
+  background: #eff6ff;
+  color: #2563eb;
+  font-size: 10px;
+  font-weight: 500;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+
+  span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+// —— 身份选择按钮 + 下拉菜单 ——
+.browser-toolbar__identity {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.browser-identity-btn {
+  all: unset;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  color: #4b5563;
+  transition: background 0.15s;
+
+  &:hover { background: #e2e8f0; }
+}
+
+.browser-identity-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  min-width: 160px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  padding: 4px 0;
+}
+
+.browser-identity-option {
+  all: unset;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  font-size: 12px;
+  color: #374151;
+  transition: background 0.1s;
+
+  &:hover { background: #eff6ff; }
+
+  &--active {
+    background: #eff6ff;
+    color: #2563eb;
+    font-weight: 500;
+  }
+
+  &__check {
+    width: 14px;
+    font-size: 11px;
+    color: #2563eb;
+    flex-shrink: 0;
+  }
+}
+
+.browser-identity-divider {
+  height: 1px;
+  background: #e5e7eb;
+  margin: 4px 0;
 }
 
 @keyframes spin {

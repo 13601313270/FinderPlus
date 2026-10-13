@@ -91,6 +91,23 @@ export type Language = {
     /** 占位符 {count} */
     nodesHiddenCount: string
     nodesShowAll: string
+    /** 浏览器身份 section */
+    groupBrowser: string
+    browserTitle: string
+    browserHint: string
+    browserAddBtn: string
+    browserAddPrompt: string
+    browserRenamePrompt: string
+    browserEmpty: string
+    /** 占位符 {count} */
+    browserUsage: string
+    browserRenameBtn: string
+    browserDeleteBtn: string
+    browserDeleteConfirmTitle: string
+    /** 占位符 {name} */
+    browserDeleteConfirmBody: string
+    /** 占位符 {name} {count} */
+    browserDeleteConfirmBodyWithNodes: string
   }
   helpCenter: {
     title: string

@@ -70,6 +70,21 @@ const de: Language = {
     nodesHint: "Nicht ausgewählte Knotentypen werden aus der Palette ausgeblendet. Vorhandene Knoten auf der Leinwand bleiben unverändert.",
     nodesHiddenCount: "{count} Knotentyp(en) derzeit ausgeblendet.",
     nodesShowAll: "Alle anzeigen",
+
+    // Browser identities (fallback)
+    groupBrowser: 'Browser Identities',
+    browserTitle: 'Browser Identity Management',
+    browserHint: 'Each identity is a separate browser session (cookies, login state, etc.). Multiple browser nodes can share the same identity, or each use its own.',
+    browserAddBtn: 'New Identity',
+    browserAddPrompt: 'Enter a name for this identity:',
+    browserRenamePrompt: 'Rename identity:',
+    browserEmpty: 'No browser identities yet. Click "New Identity" to create one.',
+    browserUsage: 'Used by {count} browser node(s)',
+    browserRenameBtn: 'Rename',
+    browserDeleteBtn: 'Delete',
+    browserDeleteConfirmTitle: 'Delete Identity?',
+    browserDeleteConfirmBody: 'This will also remove all browser data (cookies, login state, etc.) for "{name}" and cannot be undone. Are you sure?',
+    browserDeleteConfirmBodyWithNodes: 'This will also remove all browser data (cookies, login state, etc.) for "{name}". There are currently {count} browser node(s) using this identity. They will automatically switch to independent mode after deletion. Continue?',
   },
   helpCenter: {
     title: 'Hilfe-Center',

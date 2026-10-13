@@ -83,6 +83,21 @@ const zh: Language = {
     nodesHint: '取消勾选的节点类型不会在调色板中展示。画布上已有的该类型节点不受影响。',
     nodesHiddenCount: '当前隐藏了 {count} 种节点。',
     nodesShowAll: '全部显示',
+
+    // 浏览器身份
+    groupBrowser: '浏览器身份',
+    browserTitle: '浏览器身份管理',
+    browserHint: '每个身份是一套独立的浏览器会话（Cookie、登录态等）。多个浏览器节点可以共享同一个身份，也可以各自独立。',
+    browserAddBtn: '新建身份',
+    browserAddPrompt: '请输入身份名称：',
+    browserRenamePrompt: '重命名身份：',
+    browserEmpty: '还没有浏览器身份。点击「新建身份」创建一个。',
+    browserUsage: '被 {count} 个浏览器节点使用',
+    browserRenameBtn: '重命名',
+    browserDeleteBtn: '删除',
+    browserDeleteConfirmTitle: '确定删除身份？',
+    browserDeleteConfirmBody: '删除后，这个身份的所有浏览器数据（Cookie、登录态等）也会被一并清除，且无法恢复。确定要删除「{name}」吗？',
+    browserDeleteConfirmBodyWithNodes: '删除后，「{name}」的所有浏览器数据（Cookie、登录态等）也会被清除。\n\n当前有 {count} 个浏览器节点正在使用这个身份，删除后它们会自动切换为独立模式。\n\n确定继续？',
   },
   helpCenter: {
     title: '帮助中心',

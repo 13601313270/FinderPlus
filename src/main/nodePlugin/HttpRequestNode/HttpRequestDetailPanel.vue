@@ -186,7 +186,7 @@ function onRemovePort(): void { httpNode.value?.removeLastInputPort() }
       <input
         class="detail-panel__timeout"
         type="number"
-        min="1000" max="60000" step="1000"
+        min="1000" max="600000" step="1000"
         :value="timeout"
         @input="onTimeoutInput"
       />

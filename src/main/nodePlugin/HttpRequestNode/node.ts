@@ -303,9 +303,9 @@ export class HttpRequestNode extends Node {
     this.notifyChanged()
   }
 
-  /** 设置超时毫秒；夹到 [1000, 60000] */
+  /** 设置超时毫秒；夹到 [1000, 600000] */
   setTimeoutMs(ms: number): void {
-    const clamped = Math.max(1000, Math.min(60_000, Math.round(ms)))
+    const clamped = Math.max(1000, Math.min(600_000, Math.round(ms)))
     if (clamped === this.timeoutMs) return
     this.timeoutMs = clamped
     this.notifyChanged()
@@ -620,7 +620,7 @@ export class HttpRequestNode extends Node {
       this.bodyText = state.bodyText
     }
     if (typeof state.timeoutMs === 'number') {
-      this.timeoutMs = Math.max(1000, Math.min(60_000, Math.round(state.timeoutMs)))
+      this.timeoutMs = Math.max(1000, Math.min(600_000, Math.round(state.timeoutMs)))
     }
     // 端口重建：先清干净所有端口，再按存的数量重建文件端口 + 模板端口
     // 新格式存 templateInputCount / fileInputCount / filePortFields；

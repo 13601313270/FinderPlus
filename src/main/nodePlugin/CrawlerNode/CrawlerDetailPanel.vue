@@ -153,7 +153,7 @@ function modeLabel(mode: ExtractMode): string {
       <!-- 超时 -->
       <div class="detail-panel__section">
         <label class="detail-panel__label">超时 (ms)</label>
-        <input class="detail-panel__timeout" type="number" min="1000" max="60000" step="1000" :value="timeout"
+        <input class="detail-panel__timeout" type="number" min="1000" max="600000" step="1000" :value="timeout"
           @input="onTimeoutInput" />
       </div>
 

@@ -259,6 +259,14 @@ export abstract class Node {
 
   constructor(readonly id: string) { }
 
+  /**
+   * 生成唯一节点 ID：类型 + 时间戳 + 随机后缀。
+   * 统一替代散落在 App.vue / FolderNode / usePreviewImageDrag 的重复 generateNodeId/makeId。
+   */
+  static generateId(type: string): string {
+    return `${type}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+  }
+
   /** 节点当前位置（只读元组，防止外部直接改值绕过通知）。相对直接父容器的局部坐标 */
   get position(): readonly [number, number] {
     return this.positionValue
@@ -621,12 +629,42 @@ export abstract class Node {
   /**
    * 右键菜单项声明。子类按需要 override，在 super 返回的基础上追加自己的项。
    *
-   * 默认包含「删除节点」——run 依赖 bindScene 注入的 sceneRef。
+   * 默认包含「复制节点」和「删除节点」——run 依赖 bindScene 注入的 sceneRef。
    * 子类如果有专属操作（如 TextInputNode 的「清空内容」），override 时追加即可，
    * 不需要改动 App.vue。
    */
   contextMenuItems(): NodeMenuItem[] {
     return [
+      {
+        id: 'duplicate',
+        label: '复制节点',
+        run: async () => {
+          const scene = this.sceneRef
+          if (!scene) return
+          // 用构造函数签名 (id: string) 统一创建新实例，避免引擎层反向依赖插件注册表
+          const Ctor = this.constructor as new (id: string) => Node
+          const newNode = new Ctor(Node.generateId(this.type))
+          // 复制内部运行状态（saveState 存子类字段 → readState 恢复，基类字段由外层处理）
+          newNode.readState(this.saveState())
+          // 位置偏移：原位置 + (24, 24)，避免和原节点完全重叠
+          const [ox, oy] = this.position
+          newNode.setPosition(ox + 24, oy + 24)
+          // 注册到 Scene
+          scene.addNode(newNode)
+          // 如果原节点在容器内，新节点也放进同一个容器（保持局部坐标体系）
+          if (this.containerNode) {
+            const container = this.containerNode as unknown as { adoptNode?: (n: Node) => void }
+            container.adoptNode?.(newNode)
+          }
+          // 就绪钩子：FileNode 子类靠 onReady 从磁盘补读文件内容并 commit 输出，
+          // addNode 不会触发它，这里手动调一次。失败不应中断（单节点坏了不影响整体）
+          try {
+            await newNode.onReady()
+          } catch (err) {
+            console.warn('[Node.duplicate] onReady 失败：', newNode.id, err)
+          }
+        }
+      },
       {
         id: 'delete',
         label: '删除节点',

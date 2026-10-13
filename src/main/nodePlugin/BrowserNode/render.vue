@@ -65,6 +65,9 @@ const addressInput = ref('')
 // MethodPort navigate 序号：用于精确区分"这次是 MethodPort 触发的导航"
 let lastNavigateSeq = 0
 
+/** 导航令牌：每次 navigateToResolved 递增，防止旧的重试回调覆盖新导航 */
+let navToken = 0
+
 // —— Resize-handle 逻辑 ——
 
 /** resize 会话状态：一次 mousedown 开始一次会话 */
@@ -168,6 +171,11 @@ function closeIdentityMenu(): void {
   identityMenuOpen.value = false
 }
 
+/** 文档级点击监听（onMounted 注册，onUnmounted 清理，需提升到外层作用域） */
+const onDocClickForIdentity = (): void => {
+  if (identityMenuOpen.value) identityMenuOpen.value = false
+}
+
 // —— 地址栏：渲染层输入 → 写回节点持久化 homeUrl ——
 
 function commitAddress(): void {
@@ -190,9 +198,11 @@ function onAddressKeydown(e: KeyboardEvent): void {
 
 /**
  * 让 webview 加载当前 resolvedUrl。
- * 必须等 webview dom-ready 之后才能调 loadURL（Electron 硬要求），
- * initialSrc 方案保证首次渲染时就有真实 URL，dom-ready 一定会在
- * addEventListener 之后触发。用户后续输入导航也会在 webviewReady=true 之后。
+ * 不再依赖 webviewReady 守卫——改用 try-catch + 延迟重试处理 Electron
+ * "must be attached and dom-ready before loadURL" 的时序错误。
+ * 因为 webview 首次创建时 initialSrc 现在一定会回退到 'about:blank'，
+ * webContents 必然存在，但 dom-ready 可能比用户输入 URL 更快烧完，
+ * 此时 webviewReady=true 但内部仍需等下一帧才能接受 loadURL。
  */
 function navigateToResolved(): void {
   if (!browserNode.value) {
@@ -211,20 +221,33 @@ function navigateToResolved(): void {
     return
   }
 
-  if (!webviewReady.value || !webviewEl.value) {
-    // eslint-disable-next-line no-console
-    console.warn('[BrowserNode] webview 还没 ready，等 dom-ready 再加载')
-    return
+  const token = ++navToken
+  let attempts = 0
+  const maxAttempts = 10
+
+  const tryLoad = (): void => {
+    // 如果有更新的导航请求，放弃这次
+    if (token !== navToken) return
+    if (!webviewEl.value) return
+    try {
+      // eslint-disable-next-line no-console
+      console.log('[BrowserNode] → loadURL', url, `(attempt ${attempts + 1})`)
+      webviewEl.value.loadURL(url)
+      webviewReady.value = true
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn('[BrowserNode] loadURL 失败，延迟重试:', err)
+      attempts++
+      if (attempts < maxAttempts) {
+        setTimeout(tryLoad, 80 * (attempts + 1)) // 递增延迟：80, 160, 240...
+      } else {
+        // eslint-disable-next-line no-console
+        console.error('[BrowserNode] loadURL 多次重试失败，放弃')
+      }
+    }
   }
 
-  try {
-    // eslint-disable-next-line no-console
-    console.log('[BrowserNode] → loadURL', url)
-    webviewEl.value.loadURL(url)
-  } catch (err) {
-    // eslint-disable-next-line no-console
-    console.warn('[BrowserNode] webview.loadURL failed:', err)
-  }
+  tryLoad()
 }
 
 function goBack(): void {
@@ -310,9 +333,11 @@ function clearScriptResult(): void {
 function handleWebviewReady(): void {
   // eslint-disable-next-line no-console
   console.log('[BrowserNode] ✅ dom-ready', webviewEl.value?.src)
-  // dom-ready 只作为确认，真正的 webviewReady 标志在 did-stop-loading 里设——
-  // 因为 about:blank 的 dom-ready 会在 addEventListener 之前烧完，
-  // 但 did-stop-loading 一定会在挂载后触发（哪怕是 about:blank）
+  // dom-ready 也设 webviewReady=true，双重保障 about:blank 快速加载时事件不丢失。
+  // 此前只在 did-stop-loading 里设，但 about:blank 的 did-stop-loading 和 dom-ready
+  // 都可能在 nextTick 绑定监听器之前烧完，导致 webviewReady 永远为 false，
+  // 用户后续输入 URL 按回车时 navigateToResolved 会提前 return。
+  webviewReady.value = true
 }
 
 function handleNavigate(_e: any, url: string): void {
@@ -392,9 +417,9 @@ onMounted(() => {
   addressInput.value = found.displayHomeUrl
 
   // ★ 在 nextTick 之前就锁定 initialSrc，让 <webview :src> 首次渲染时带上真实 URL。
-  // 这是解决 dom-ready 时序问题的关键——about:blank 的 dom-ready 在 addEventListener
-  // 之前就烧完了，但带真实 URL 的 webview 一定会在挂载后再发一次 dom-ready。
-  initialSrc.value = found.displayResolvedUrl
+  // 空字符串 → Electron 根本不创建 webContents → dom-ready 永不触发 → loadURL 直接抛错。
+  // 所以空值必须回退 'about:blank'，保证 webContents 被创建并走完初始化。
+  initialSrc.value = found.displayResolvedUrl || 'about:blank'
 
   // eslint-disable-next-line no-console
   console.log('[BrowserNode] onMounted node ok', { homeUrl: found.displayHomeUrl, resolvedUrl: found.displayResolvedUrl, initialSrc: initialSrc.value })
@@ -436,10 +461,6 @@ onMounted(() => {
     }
   })
 
-  // 身份选择下拉框：点外部关闭
-  const onDocClickForIdentity = (): void => {
-    if (identityMenuOpen.value) identityMenuOpen.value = false
-  }
   document.addEventListener('click', onDocClickForIdentity)
 
   // webview DOM 在 <webview ref="webviewEl" /> 渲染后就绪

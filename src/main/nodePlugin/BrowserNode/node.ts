@@ -308,8 +308,11 @@ export class BrowserNode extends Node {
 
   /** 设置 URL 模板（持久化），模板变更 → 重算 resolvedUrl 并通知 UI */
   setHomeUrl(text: string): void {
-    // strip 首尾反引号 / 引号，避免用户从 Markdown 里复制粘贴进来
-    let trimmed = text.trim().replace(/^[`"'\s]+|[`"'\s]+$/g, '').slice(0, MAX_URL_LEN)
+    // strip 首尾反引号 / 引号（含中文引号、智能引号等 Unicode 变体），
+    // 避免用户从 Markdown、聊天窗口里复制粘贴进来带多余字符
+    const quoteChars = '`"\'“”‘’「」『』《》〈〉'
+    const reStrip = new RegExp(`^[\\s${quoteChars}]+|[\\s${quoteChars}]+$`, 'g')
+    let trimmed = text.trim().replace(reStrip, '').slice(0, MAX_URL_LEN)
     // 自动补协议：用户输入 "google.com" → "https://google.com"
     trimmed = this.autoPrependScheme(trimmed)
     if (trimmed === this.homeUrl) return

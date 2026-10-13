@@ -251,7 +251,7 @@ export class CrawlerNode extends Node {
 
   /** 设置超时 */
   setTimeoutMs(ms: number): void {
-    const clamped = Math.max(1000, Math.min(60_000, Math.round(ms)))
+    const clamped = Math.max(1000, Math.min(600_000, Math.round(ms)))
     if (clamped === this.timeoutMs) return
     this.timeoutMs = clamped
     this.notifyChanged()
@@ -486,7 +486,7 @@ export class CrawlerNode extends Node {
     }
     if (typeof state.attrName === 'string') this.attrName = state.attrName
     if (typeof state.timeoutMs === 'number') {
-      this.timeoutMs = Math.max(1000, Math.min(60_000, Math.round(state.timeoutMs)))
+      this.timeoutMs = Math.max(1000, Math.min(600_000, Math.round(state.timeoutMs)))
     }
     // includeRawHtml 已废弃，跳过兼容老版本存档
     if (typeof state.headersText === 'string') this.headersText = state.headersText

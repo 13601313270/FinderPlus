@@ -876,7 +876,7 @@ function registerIpcHandlers(): void {
     return await new Promise((resolve) => {
       exec(
         command,
-        { cwd: app.getPath('home'), timeout: 60_000, maxBuffer: 1024 * 1024, windowsHide: true },
+        { cwd: app.getPath('home'), timeout: 600_000, maxBuffer: 1024 * 1024, windowsHide: true },
         (err, stdout, stderr) => {
           let code = 0
           let errOut = stderr ?? ''
@@ -1327,7 +1327,7 @@ function registerIpcHandlers(): void {
     | { ok: false; error: string }
   > => {
     const { url, method, headers, body, timeout } = args
-    const ms = Math.min(60_000, Math.max(1000, timeout ?? 15_000))
+    const ms = Math.min(600_000, Math.max(1000, timeout ?? 15_000))
 
     const forward = (...lines: string[]): void => {
       const text = lines.filter(Boolean).join('\n')
@@ -1496,7 +1496,7 @@ ipcMain.handle('crawler:scrape', async (e, args: {
   | { ok: false; error: string }
 > => {
   const { url, headers, timeout, selector, extractMode, attrName, includeRawHtml, userAgent } = args
-  const ms = Math.min(60_000, Math.max(1000, timeout ?? 15_000))
+  const ms = Math.min(600_000, Math.max(1000, timeout ?? 15_000))
 
   const forward = (...lines: string[]): void => {
     const text = lines.filter(Boolean).join('\n')

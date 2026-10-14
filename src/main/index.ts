@@ -198,6 +198,9 @@ function slugify(name: string): string {
 // canvasId → BrowserWindow 映射，保证同一画布只开一个窗口
 const canvasWindows = new Map<string, BrowserWindow>()
 
+/** 通知点击防重入锁：macOS 上多个 Notification 实例可能同时响应一次用户点击 */
+let notificationClickInFlight = false
+
 function createWindow(canvasId: string = 'default'): BrowserWindow {
   // 已开就 focus + show，不再新建
   const existing = canvasWindows.get(canvasId)
@@ -2100,28 +2103,48 @@ ipcMain.handle('notification:show', (_e, args: {
 
     // 点击通知 → focus 对应画布窗口 + 推事件让 renderer 把节点滚到中心
     n.on('click', () => {
-      if (targetCanvasId) {
-        const win = canvasWindows.get(targetCanvasId)
-        if (win && !win.isDestroyed()) {
-          if (win.isMinimized()) win.restore()
-          win.show()
-          win.focus()
-          // 告诉 renderer 把这个节点滚到中心
-          if (targetNodeId) {
-            win.webContents.send('app:focusNode', { nodeId: targetNodeId })
-          }
-        } else {
-          // 窗口还没开（多画布场景），开一个
-          createWindow(targetCanvasId)
-          // 新开窗口会重建 Scene，on('ready-to-show') 时 renderer 还没准备好，
-          // 延迟一下再推，让窗口先 load + 完成初始渲染
-          setTimeout(() => {
-            const w = canvasWindows.get(targetCanvasId)
-            if (w && !w.isDestroyed() && targetNodeId) {
-              w.webContents.send('app:focusNode', { nodeId: targetNodeId })
+      // 防重入：macOS 上同一个 app 可能有多个 Notification 实例同时响应一次点击，
+      // 这里加锁确保只有第一个 handler 真正执行逻辑，后续的直接跳过。
+      if (notificationClickInFlight) {
+        console.warn('[Notification] click handler skipped — another handler already in flight')
+        return
+      }
+      notificationClickInFlight = true
+      console.log(`[Notification] click fired: canvasId=${targetCanvasId}, nodeId=${targetNodeId}, windows=${BrowserWindow.getAllWindows().length}, canvasWindows=${canvasWindows.size}`)
+
+      try {
+        // macOS 上系统通知点击有时会把焦点给到错误的 Electron 实例（多个 dev 跑的 Electron 项目
+        // 共享通知分发通道的经典坑）。用 steal: true 强制把焦点夺回到自己身上。
+        app.focus({ steal: true })
+
+        if (targetCanvasId) {
+          const win = canvasWindows.get(targetCanvasId)
+          if (win && !win.isDestroyed()) {
+            if (win.isMinimized()) win.restore()
+            win.show()
+            win.focus()
+            // 告诉 renderer 把这个节点滚到中心
+            if (targetNodeId) {
+              win.webContents.send('app:focusNode', { nodeId: targetNodeId })
             }
-          }, 1500)
+          } else {
+            // 窗口还没开（多画布场景），开一个
+            console.log(`[Notification] target win not found, creating new window for canvasId=${targetCanvasId}`)
+            createWindow(targetCanvasId)
+            // 新开窗口会重建 Scene，on('ready-to-show') 时 renderer 还没准备好，
+            // 延迟一下再推，让窗口先 load + 完成初始渲染
+            setTimeout(() => {
+              const w = canvasWindows.get(targetCanvasId)
+              if (w && !w.isDestroyed() && targetNodeId) {
+                w.webContents.send('app:focusNode', { nodeId: targetNodeId })
+              }
+            }, 1500)
+          }
         }
+      } finally {
+        // 异步部分（setTimeout）不解锁——锁到主同步逻辑完成即可，后续的 setTimeout 不会再触发新的 click
+        // 解锁在 tick 末尾，让同一事件循环内可能触发的重复 click 都被拦住
+        setTimeout(() => { notificationClickInFlight = false }, 2000)
       }
     })
 

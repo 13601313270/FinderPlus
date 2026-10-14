@@ -33,6 +33,9 @@ const pkg = require('../package.json')
 const APP_NAME = 'Finder+'
 /** 要显示的应用版本，跟随 package.json，避免两处对不上 */
 const APP_VERSION = pkg.version
+/** macOS bundle identifier —— 必须独立于其他 Electron 项目，否则 UserNotifications 框架
+ *  会把同 bundle id 的多个 dev 实例当成同一个 app，点通知时一起激活。 */
+const APP_BUNDLE_ID = 'com.canvasdesk.app'
 /** 图标源文件（打包态 electron-builder 也认这个路径） */
 const ICON_PATH = path.join(__dirname, '..', 'build', 'icon.icns')
 
@@ -49,9 +52,10 @@ function patchPlist(plistPath) {
   const setString = (plist, key, value) =>
     plist.replace(new RegExp(`(<key>${key}</key>\\s*<string>)([^<]*)(</string>)`), `$1${value}$3`)
 
-  // 名字两个键 + 版本两个键（「关于」面板左值取 ShortVersionString、括号里取 Version）
+  // Bundle Identifier（隔离其他 Electron 项目，防止通知点击串 app）+ 名字两个键 + 版本两个键
   let patched = original
   for (const [key, value] of [
+    ['CFBundleIdentifier', APP_BUNDLE_ID],
     ['CFBundleDisplayName', APP_NAME],
     ['CFBundleName', APP_NAME],
     ['CFBundleShortVersionString', APP_VERSION],

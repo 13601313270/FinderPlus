@@ -17,6 +17,16 @@ export type Language = {
     /** 主进程非 macOS 平台「File」菜单的标题（macOS 的 role 菜单项由系统自动本地化） */
     fileMenu: string
   }
+  /** 系统应用菜单（Electron Menu）里手写子项的文案。role 类菜单项由 OS 自动本地化，不走这里。
+   * 可选：未提供时 vue-i18n 自动 fallback 到 en。 */
+  menu?: {
+    /** View 菜单标题 */
+    view: string
+    /** View → 刷新画布 */
+    viewReload: string
+    /** View → 切换开发者工具（仅开发环境显示） */
+    viewToggleDevTools: string
+  }
   settingsDialog: {
     title: string
     close: string

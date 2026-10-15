@@ -193,13 +193,14 @@ onMounted(async () => {
 
   lastColumnsSig = columnsSig(node.columns)
   offChanged = node.onChanged(() => {
-    // 1. 无论什么变化，先 bump dummy ref → listColumns / formColumns 重算 → UI 刷新
-    columnsVersion.value++
-    sqlPortVersion.value++
-    // 2. 再决定要不要重建物理表 + 重读（只有 SQL 语法层变化才需要）
+    // 只有列定义真正变化（SQL 语法层）才 bump dummy ref 强制 computed 重算。
+    // position / port 等变化也会走 notifyChanged，但这些不该触发列重渲染——
+    // 否则拖动节点时 columnsVersion 反复 bump，打断 Vue 拖拽事件链。
     const curSig = columnsSig(node.columns)
     if (curSig === lastColumnsSig) return
     lastColumnsSig = curSig
+    columnsVersion.value++
+    sqlPortVersion.value++
     ensureAndLoad()
   })
 
@@ -250,7 +251,6 @@ async function ensureAndLoad(): Promise<void> {
 
   // 1. 确保物理表存在（CREATE TABLE IF NOT EXISTS）
   const colNames = node.columns.map((c) => c.name).join(', ') || t('table.noCustomColumns')
-  console.log(`[TableNode] ensure table for ${node.id}, columns: ${colNames}`)
 
   // @ts-ignore — 只在 renderer 里有 window.tableApi
   const ensureResult = await window.tableApi.ensure({

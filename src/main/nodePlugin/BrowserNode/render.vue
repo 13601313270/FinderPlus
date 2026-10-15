@@ -419,6 +419,19 @@ function handleWillNavigate(e: any, url: string): void {
 
 // —— 生命周期 ——
 
+/**
+ * 响应系统菜单「打开指定浏览器组件 DevTools」事件。
+ * 事件里带 nodeId，匹配当前节点才触发。
+ */
+function handleOpenDevToolsFromMenu(e: Event): void {
+  const ce = e as CustomEvent<string>
+  if (ce.detail !== props.id) return
+  const wv = webviewEl.value
+  if (wv?.openDevTools) {
+    try { wv.openDevTools() } catch { /* devtools 打开失败静默忽略 */ }
+  }
+}
+
 onMounted(() => {
   // eslint-disable-next-line no-console
   console.log('[BrowserNode] 🔧 onMounted start', { id: props.id })
@@ -435,6 +448,9 @@ onMounted(() => {
 
   // eslint-disable-next-line no-console
   console.log('[BrowserNode] onMounted node ok', { homeUrl: found.displayHomeUrl, resolvedUrl: found.displayResolvedUrl })
+
+  // —— 系统菜单 → 打开这个浏览器组件的 DevTools ——
+  window.addEventListener('app:open-browser-devtools', handleOpenDevToolsFromMenu)
 
   // 订阅节点变化
   unsubscribe = found.onChanged(() => {
@@ -506,6 +522,9 @@ onUnmounted(() => {
 
   // 清理身份选择下拉框的文档级点击监听
   document.removeEventListener('click', onDocClickForIdentity)
+
+  // 清理系统菜单 DevTools 事件监听
+  window.removeEventListener('app:open-browser-devtools', handleOpenDevToolsFromMenu)
 
   // 清理 webview 事件监听 + 销毁实例
   const wv = webviewEl.value

@@ -48,7 +48,10 @@ watch(
   () => {
     window.appMenuApi?.setLabels({
       settings: t('app.settings'),
-      file: t('app.fileMenu')
+      file: t('app.fileMenu'),
+      view: t('menu.view'),
+      viewReload: t('menu.viewReload'),
+      viewToggleDevTools: t('menu.viewToggleDevTools')
     })
   },
   { immediate: true }
@@ -73,6 +76,7 @@ let unsubscribeScene: (() => void) | undefined
 
 function onSceneChanged(): void {
   sceneTick.value++
+  syncBrowserList()
 }
 
 // —— 新手引导：Scene 变更订阅 ——
@@ -80,6 +84,41 @@ let unsubscribeOnboardingCheck: (() => void) | undefined
 
 // —— 系统通知点击 → 节点居中 ——
 let unsubscribeFocusNode: (() => void) | undefined
+
+// —— 浏览器节点 DevTools 菜单监听 ——
+let disposeBrowserDevToolsListener: (() => void) | undefined
+
+/**
+ * 把当前画布上所有 BrowserNode 推给主进程，
+ * 让 View → 开发者工具子菜单动态生成每台浏览器的入口。
+ *
+ * 做了 300ms debounce：scene.onChanged 在节点增删、
+ * bootstrap 重建整张画布时会被密集触发（addNode × N + connect × M），
+ * 每次都同步 IPC + 主进程 rebuild 没必要，合并到一次就行。
+ */
+let browserListDebounce: ReturnType<typeof setTimeout> | undefined
+function syncBrowserList(): void {
+  clearTimeout(browserListDebounce)
+  browserListDebounce = setTimeout(() => {
+    const list = workspaceScene.allNodes
+      .filter((n) => n.type === 'browser')
+      .map((n) => ({
+        id: n.id,
+        // label 优先用节点当前显示的标题（浏览器当前 URL/title），没有就 fallback 到 id
+        label: (n as unknown as { currentTitle?: string }).currentTitle || n.id.slice(0, 20)
+      }))
+    window.appMenuApi?.setBrowserList(list)
+  }, 300)
+}
+
+/**
+ * 主进程菜单 → 打开指定 BrowserNode 的 DevTools：
+ * 通过 dispatch 一个 CustomEvent 让 BrowserNode 的 render.vue 自己响应。
+ * 因为 webview DOM 元素只在 BrowserNode 组件内部持有，App 拿不到引用。
+ */
+function openBrowserDevToolsById(nodeId: string): void {
+  window.dispatchEvent(new CustomEvent('app:open-browser-devtools', { detail: nodeId }))
+}
 
 /**
  * 主进程推来「点击通知，把节点滚到中心」事件：
@@ -863,7 +902,12 @@ if (!isPickerMode) {
     if (boundCanvasId === 'default') {
       onboarding.start()
     }
+    // bootstrap 里 addNode 会触发 onSceneChanged → syncBrowserList，
+    // 但那时 BrowserNode 的 currentTitle 可能还没初始化好，这里重建完再推一次
+    syncBrowserList()
   })
+  // 系统应用菜单 → 打开指定浏览器节点 DevTools
+  disposeBrowserDevToolsListener = window.appMenuApi?.onOpenBrowserDevTools(openBrowserDevToolsById)
 }
 
 onMounted(() => {
@@ -905,6 +949,7 @@ onUnmounted(() => {
   unsubscribeScene?.()
   unsubscribeOnboardingCheck?.()
   unsubscribeFocusNode?.()
+  disposeBrowserDevToolsListener?.()
   document.body.style.cursor = ''
   clearTimeout(viewportPersistTimer)
 })

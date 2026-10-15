@@ -54,7 +54,7 @@ export class Scene {
    * 挂持久化实现。挂上后：
    * - 当前已有的所有节点都会注册 onChanged → debounce → saveNode；
    * - 之后 addNode 自动做同样注册；
-   * - 增删节点/边会立刻调用 storage 做对应操作。
+   * - 对同一 storage 幂等（registerNodePersistence 内部去重）。
    */
   attachStorage(storage: NodeStorage): void {
     this.storage = storage

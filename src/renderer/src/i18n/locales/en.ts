@@ -7,6 +7,11 @@ const en: Language = {
     help: 'Help',
     fileMenu: 'File'
   },
+  menu: {
+    view: 'View',
+    viewReload: 'Reload Canvas',
+    viewToggleDevTools: 'Toggle Developer Tools'
+  },
   settingsDialog: {
     title: 'Settings',
     close: 'Close (Esc)',

@@ -380,13 +380,46 @@ function openSettings(): void {
 }
 
 /**
+ * 强制打开**主画布渲染进程**的 DevTools。
+ *
+ * 为什么不用 role: 'toggleDevTools'：
+ *   Electron 的 role 走 focusedWebContents.toggleDevTools()，
+ *   当 <webview> 浏览器组件处于焦点或刚被点击过，DevTools 会被路由到 webview 上，
+ *   用户想开画布 DevTools 反而被浏览器组件抢走。
+ *   这里显式指定 BrowserWindow 的 webContents，保证永远是画布。
+ */
+function openMainDevTools(): void {
+  const win = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
+  win?.webContents.toggleDevTools()
+}
+
+/**
+ * 打开指定浏览器节点的 DevTools。
+ * 主进程拿不到渲染进程里 <webview> 的 webContents，
+ * 所以通过 IPC 把 nodeId 推回渲染进程，让 BrowserNode 自己调 webview.openDevTools()。
+ */
+function openBrowserDevTools(nodeId: string): void {
+  const win = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
+  win?.webContents.send('app-menu:open-browser-devtools', nodeId)
+}
+
+/** 主进程缓存的浏览器节点列表（来自渲染进程推送，用于动态生成 DevTools 子菜单） */
+let browserNodeList: Array<{ id: string; label: string }> = []
+
+/**
  * 应用菜单里需要跟随界面语言的文案。
  *
  * 默认给英文兜底（渲染进程还没推过来、或者推送失败时用），渲染进程就绪后会把
  * 当前语言的版本通过 'app-menu:set-labels' 推过来并触发菜单重建。
  * 之所以不在主进程直接读词条：语言存在渲染进程的 localStorage 里，主进程拿不到。
  */
-let menuLabels: MenuLabels = { settings: 'Settings', file: 'File' }
+let menuLabels: MenuLabels = {
+  settings: 'Settings',
+  file: 'File',
+  view: 'View',
+  viewReload: 'Reload Canvas',
+  viewToggleDevTools: 'Toggle Developer Tools'
+}
 
 /**
  * 构建系统应用菜单。
@@ -409,6 +442,47 @@ function buildApplicationMenu(): void {
     click: openSettings
   }
 
+  /**
+   * View 菜单：手写替换 role: 'viewMenu'。
+   * - 把 Reload / Force Reload 换成「刷新画布」——前者是 webContents.reload()，
+   *   会连带刷新所有 <webview> 浏览器组件，对用户反而是副作用；
+   * - Zoom In/Out/Reset 删掉——画布缩放是自定义 viewport scale，不是 web zoom；
+   * - 全屏归 Window 菜单管（macOS windowMenu 默认就有 Zoom/Full Screen），
+   *   这里不再重复，避免一份操作出现在两个子菜单里；
+   * - 开发者工具做成子菜单（仅开发环境）：「画布」强制指向主 webContents，
+   *   再动态列出当前画布上所有 BrowserNode，点击对应节点打开它的 webview DevTools。
+   */
+  const devtoolsSubmenu: Electron.MenuItemConstructorOptions[] = [
+    {
+      // 画布 DevTools：强制指定 mainWindow.webContents，不被 webview 抢走
+      label: 'Canvas / Main',
+      click: openMainDevTools
+    },
+    ...(browserNodeList.length
+      ? [{ type: 'separator' as const }, ...browserNodeList.map((n) => ({
+          label: `🌐 ${n.label}`,
+          click: () => openBrowserDevTools(n.id)
+        }))]
+      : [])
+  ]
+
+  const viewSubmenu: Electron.MenuItemConstructorOptions[] = [
+    {
+      label: menuLabels.viewReload,
+      accelerator: 'CmdOrCtrl+R',
+      click: () => {
+        const w = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
+        w?.webContents.reload()
+      }
+    },
+    ...(is.dev
+      ? [
+          { type: 'separator' as const },
+          { label: menuLabels.viewToggleDevTools, submenu: devtoolsSubmenu }
+        ]
+      : [])
+  ]
+
   const template: Electron.MenuItemConstructorOptions[] = isMac
     ? [
         {
@@ -428,7 +502,7 @@ function buildApplicationMenu(): void {
           ]
         },
         { role: 'editMenu' },
-        { role: 'viewMenu' },
+        { label: menuLabels.view, submenu: viewSubmenu },
         { role: 'windowMenu' }
       ]
     : [
@@ -437,7 +511,7 @@ function buildApplicationMenu(): void {
           submenu: [settingsItem, { type: 'separator' }, { role: 'quit' }]
         },
         { role: 'editMenu' },
-        { role: 'viewMenu' },
+        { label: menuLabels.view, submenu: viewSubmenu },
         { role: 'windowMenu' }
       ]
 
@@ -450,6 +524,19 @@ function registerIpcHandlers(): void {
     menuLabels = labels
     buildApplicationMenu()
   })
+
+  /**
+   * 渲染进程推来当前画布上所有 BrowserNode 的列表（id + label），
+   * 用于在 View → 开发者工具子菜单里动态生成每台浏览器的 DevTools 入口。
+   * 每次 Scene 结构变化（节点增删）都会推一次，主进程收到后重建菜单。
+   */
+  ipcMain.on(
+    'app-menu:update-browser-list',
+    (_e, list: Array<{ id: string; label: string }>) => {
+      browserNodeList = Array.isArray(list) ? list : []
+      buildApplicationMenu()
+    }
+  )
 
   // —— 画布管理 IPC：CRUD + 开新窗口 ——
 
@@ -1136,6 +1223,7 @@ function registerIpcHandlers(): void {
 
     try {
       const db = getDatabase()
+
       const cols: string[] = []
       const placeholders: string[] = []
       const params: unknown[] = []
@@ -1171,6 +1259,7 @@ function registerIpcHandlers(): void {
         : 0
 
       persist()
+
       return { ok: true, newId }
     } catch (err) {
       return { ok: false, error: err instanceof Error ? err.message : String(err) }

@@ -356,6 +356,12 @@ export interface MenuLabels {
   settings: string
   /** 非 macOS 平台文件菜单的标题 */
   file: string
+  /** View 菜单标题 */
+  view: string
+  /** View → Reload Canvas 子项 */
+  viewReload: string
+  /** View → Toggle DevTools 子项 */
+  viewToggleDevTools: string
 }
 
 /**
@@ -372,6 +378,21 @@ const appMenuApi = {
     const handler = (): void => callback()
     ipcRenderer.on('app-menu:open-settings', handler)
     return () => ipcRenderer.removeListener('app-menu:open-settings', handler)
+  },
+
+  /**
+   * 监听主进程推来的「打开指定浏览器节点 DevTools」事件。
+   * 参数是 BrowserNode 的 id（主进程菜单子项点击时带过来的）。
+   */
+  onOpenBrowserDevTools: (callback: (nodeId: string) => void): (() => void) => {
+    const handler = (_e: unknown, nodeId: string): void => callback(nodeId)
+    ipcRenderer.on('app-menu:open-browser-devtools', handler)
+    return () => ipcRenderer.removeListener('app-menu:open-browser-devtools', handler)
+  },
+
+  /** 把当前画布上 BrowserNode 的列表推给主进程（Scene 每次结构变化时调用） */
+  setBrowserList: (list: Array<{ id: string; label: string }>): void => {
+    ipcRenderer.send('app-menu:update-browser-list', list)
   },
 
   /** 把当前语言的菜单文案推给主进程（启动时和每次切语言都会推） */

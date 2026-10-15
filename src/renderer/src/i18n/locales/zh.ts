@@ -12,6 +12,11 @@ const zh: Language = {
     help: '帮助',
     fileMenu: '文件'
   },
+  menu: {
+    view: '视图',
+    viewReload: '刷新画布',
+    viewToggleDevTools: '切换开发者工具'
+  },
   settingsDialog: {
     title: '设置',
     close: '关闭（Esc）',

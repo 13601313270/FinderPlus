@@ -207,6 +207,9 @@ export class LLMNode extends Node {
   /** 请求序列号，用于防止 stale 响应覆盖新响应 */
   private requestId = 0
 
+  /** 当前请求的 AbortController；cancel() / beforeDestroy 时 abort 掉 in-flight fetch */
+  private abortController: AbortController | null = null
+
   /** 防抖定时器：两个输入端口快速连续到达时合并成一次 fetch */
   private debounceTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -340,6 +343,29 @@ export class LLMNode extends Node {
     this.doFetch()
   }
 
+  /**
+   * 取消当前进行中的推理：
+   * - abort 掉 in-flight fetch
+   * - 递增 requestId 防 stale 响应
+   * - 切回 idle，清空 response + errorMessage
+   */
+  cancel(): void {
+    if (this.debounceTimer) {
+      clearTimeout(this.debounceTimer)
+      this.debounceTimer = null
+    }
+    this.abortController?.abort()
+    this.abortController = null
+    this.requestId++
+    if (this.status === 'loading') {
+      this.status = 'idle'
+      this.errorMessage = ''
+      this.response = ''
+      this.failRun() // running → dirty 兜底回到 stable
+      this.notifyChanged()
+    }
+  }
+
   /** 拖入文件落点命中本节点时被调用；本节点不接收文件，返回 false */
   isPositionAcceptFileDrop(_relativeX: number, _relativeY: number): boolean {
     return false
@@ -434,9 +460,15 @@ export class LLMNode extends Node {
     this.errorMessage = ''
     this.notifyChanged()
 
+    // 每次请求 fresh controller；cancel() 会 abort 它并置 null
+    const controller = new AbortController()
+    this.abortController = controller
+    const signal = controller.signal
+
     let resultText = ''
     let errMsg = ''
     let ok = false
+    let aborted = false
 
     try {
       // 构建 messages：system 始终放最前面；chatMode 开启时带上历史；最后拼当前 prompt
@@ -466,7 +498,8 @@ export class LLMNode extends Node {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${key}`
         },
-        body: JSON.stringify(body)
+        body: JSON.stringify(body),
+        signal
       })
 
       const data = await res.json()
@@ -483,8 +516,17 @@ export class LLMNode extends Node {
         }
       }
     } catch (err) {
+      // 用户主动 cancel → AbortError 是预期行为，静默退出
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        aborted = true
+        return
+      }
       errMsg = err instanceof Error ? err.message : '网络请求异常'
+    } finally {
+      if (this.abortController === controller) this.abortController = null
     }
+
+    if (aborted) return
 
     // —— Stale-call 守卫 ——
     if (this.requestId !== myRequestId) return
@@ -569,12 +611,8 @@ export class LLMNode extends Node {
     }
   }
 
-  /** 节点销毁时清理防抖定时器，防止卸载后还触发 fetch */
+  /** 节点销毁时清理防抖定时器 + abort 进行中的请求 */
   async beforeDestroy(): Promise<void> {
-    if (this.debounceTimer) {
-      clearTimeout(this.debounceTimer)
-      this.debounceTimer = null
-    }
-    this.requestId++
+    this.cancel()
   }
 }

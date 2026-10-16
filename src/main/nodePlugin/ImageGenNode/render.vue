@@ -10,6 +10,7 @@ import { messages } from './i18n'
 import HelpDialog from '@renderer/components/HelpDialog.vue'
 import NodeHeader from '@renderer/components/NodeHeader.vue'
 import ImageGenHelpDialog from './ImageGenHelpDialog.vue'
+import ImageRedrawDialog from './ImageRedrawDialog.vue'
 
 // 卡片头部标题走插件 manifest 的多语言 title，未配当前语言时由 resolveNodeTitle 兜底
 const nodeTitle = useNodeTitle(ImageGenNode.TYPE)
@@ -40,6 +41,7 @@ const model = ref('')
 
 // 帮助浮层开关（弹窗壳由 HelpDialog 负责）
 const showHelp = ref(false)
+const showRedrawDialog = ref(false)
 const errorMessage = ref('')
 const promptConnected = ref(false)
 const sizeConnected = ref(false)
@@ -168,6 +170,12 @@ function onSizeChange(e: Event): void {
 function onGenClick(): void {
   node.value?.manualTrigger()
 }
+
+async function onStopClick(): Promise<void> {
+  const confirmed = await window.showConfirm(t('stopConfirmTitle'), t('stopConfirmBody'))
+  if (!confirmed) return
+  node.value?.cancel()
+}
 </script>
 
 <template>
@@ -233,6 +241,17 @@ function onGenClick(): void {
         'igen-preview--loading': status === 'loading'
       }"
     >
+      <!-- 重绘按钮：absolute 到 preview 容器右上角 -->
+      <button
+        v-if="imageUrl && status === 'done'"
+        class="igen-preview__redraw-btn"
+        type="button"
+        @click.stop="showRedrawDialog = true"
+        :title="t('redrawButton')"
+      >
+        {{ t('redrawButton') }}
+      </button>
+
       <template v-if="status === 'loading'">
         <span class="igen-preview__spinner" />
         <span class="igen-preview__loading-text">{{ t('generating') }}</span>
@@ -252,7 +271,7 @@ function onGenClick(): void {
       </template>
     </div>
 
-    <!-- 底部操作栏：左尺寸下拉 + 右生成按钮 -->
+    <!-- 底部操作栏 -->
     <div class="node__bottom" v-if="node">
       <select
         class="igen-size"
@@ -264,12 +283,20 @@ function onGenClick(): void {
         <option v-for="s in sizeChoices" :key="s" :value="s">{{ s }}</option>
       </select>
       <button
+        v-if="status === 'loading'"
+        class="node__send node__send--stop"
+        type="button"
+        @click="onStopClick"
+      >
+        {{ t('stop') }}
+      </button>
+      <button
+        v-else
         class="node__send"
         type="button"
-        :disabled="status === 'loading'"
         @click="onGenClick"
       >
-        {{ status === 'loading' ? t('generating') : t('generate') }}
+        {{ t('generate') }}
       </button>
     </div>
   </div>
@@ -278,6 +305,15 @@ function onGenClick(): void {
   <HelpDialog :visible="showHelp" :title="t('helpDialogTitle')" @close="showHelp = false">
     <ImageGenHelpDialog />
   </HelpDialog>
+
+  <!-- 重绘弹窗 -->
+  <ImageRedrawDialog
+    v-if="node && imageUrl"
+    :visible="showRedrawDialog"
+    :node="node"
+    :original-image-url="imageUrl"
+    @close="showRedrawDialog = false"
+  />
 </template>
 
 <style scoped lang="less">
@@ -480,6 +516,19 @@ function onGenClick(): void {
       cursor: not-allowed;
       background: #93c5fd;
     }
+
+    // 停止按钮（loading 时显示）：红色系，和生成按钮区分
+    &--stop {
+      background: #ef4444;
+
+      &:hover {
+        background: #dc2626;
+      }
+
+      &:active {
+        background: #b91c1c;
+      }
+    }
   }
 }
 
@@ -523,6 +572,33 @@ function onGenClick(): void {
   overflow: hidden;
   background: #f4f5f7;
   color: #1f2937;
+  position: relative; // 为内部绝对定位的重绘按钮提供参照
+
+  &__redraw-btn {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    z-index: 2;
+    cursor: pointer;
+    padding: 2px 8px;
+    font-size: 11px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.9);
+    color: #374151;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    transition: background 0.12s, color 0.12s;
+
+    &:hover {
+      background: #4f46e5;
+      color: #fff;
+      border-color: #4f46e5;
+    }
+
+    &:active {
+      background: #4338ca;
+    }
+  }
 
   &__img {
     max-width: 100%;

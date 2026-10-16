@@ -145,6 +145,12 @@ function onSendClick(): void {
   debouncedSetPrompt.flush()
   llmNode.value?.manualTrigger()
 }
+
+async function onStopClick(): Promise<void> {
+  const confirmed = await window.showConfirm(t('stopConfirmTitle'), t('stopConfirmBody'))
+  if (!confirmed) return
+  llmNode.value?.cancel()
+}
 </script>
 
 <template>
@@ -285,12 +291,20 @@ function onSendClick(): void {
         🗑
       </button>
       <button
+        v-if="status === 'loading'"
+        class="node__send node__send--stop"
+        type="button"
+        @click="onStopClick"
+      >
+        {{ t('stop') }}
+      </button>
+      <button
+        v-else
         class="node__send"
         type="button"
-        :disabled="status === 'loading'"
         @click="onSendClick"
       >
-        {{ status === 'loading' ? t('loading') : t('send') }}
+        {{ t('send') }}
       </button>
     </div>
   </div>
@@ -551,6 +565,19 @@ function onSendClick(): void {
     &:disabled {
       cursor: not-allowed;
       background: #93c5fd;
+    }
+
+    // 停止按钮（loading 时显示）：红色系
+    &--stop {
+      background: #ef4444;
+
+      &:hover {
+        background: #dc2626;
+      }
+
+      &:active {
+        background: #b91c1c;
+      }
     }
   }
 }

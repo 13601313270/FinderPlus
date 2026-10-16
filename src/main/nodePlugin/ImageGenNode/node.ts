@@ -48,8 +48,24 @@ const IMAGE_TASK_TIMEOUT_MS = 120_000
  */
 const MAX_REFERENCE_IMAGE_BYTES = 7 * 1024 * 1024
 
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms))
+/**
+ * 可中断的 sleep：传 signal 后，abort 会立刻 reject AbortError。
+ * 这样 waitForTask 在轮询间隔期间点停止，不用等 sleep 跑完。
+ */
+function sleep(ms: number, signal?: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (signal?.aborted) {
+      reject(new DOMException('Aborted', 'AbortError'))
+      return
+    }
+    const timeoutId = setTimeout(resolve, ms)
+    if (signal) {
+      signal.addEventListener('abort', () => {
+        clearTimeout(timeoutId)
+        reject(new DOMException('Aborted', 'AbortError'))
+      }, { once: true })
+    }
+  })
 }
 
 export class ImageGenNode extends Node {
@@ -193,6 +209,12 @@ export class ImageGenNode extends Node {
   /** 请求序列号，用于防止 stale 响应覆盖新结果 */
   private requestId = 0
 
+  /**
+   * 当前请求的 AbortController。每次 fetchAndCommit 创建新实例，
+   * cancel() / beforeDestroy 时 abort 掉 in-flight 的网络请求。
+   */
+  private abortController: AbortController | null = null
+
   constructor(id: string) {
     super(id)
     this.addInput(this.promptInput)
@@ -300,6 +322,145 @@ export class ImageGenNode extends Node {
     void this.doFetch()
   }
 
+  /**
+   * 图生图重绘（弹窗里的临时生成）。
+   * 与 manualTrigger 不同的是：
+   * - prompt 由调用方传入（弹窗输入框），不从上游端口取
+   * - 参考图固定用当前已生成的 resultFile（即画布上的那张图）
+   * - provider/model 可临时覆盖，不保存到节点状态
+   * - 返回 {file, hash} 或 {error}，不自动 commit 到 imageOutput，由调用方决定是否 apply
+   *
+   * stale-call 守卫用独立的 redrawRequestId（不干扰主流程 requestId），
+   * 同一时刻只允许一个重绘请求在飞，后发会 cancel 前发。
+   */
+  private redrawRequestId = 0
+  private redrawAbortController: AbortController | null = null
+
+  async generateRedraw(
+    prompt: string,
+    overrideProvider?: ImageProviderId,
+    overrideModel?: string
+  ): Promise<{ file: File; hash: string } | { error: string }> {
+    // 同一时刻只允许一个重绘请求
+    this.redrawAbortController?.abort()
+    this.redrawAbortController = null
+
+    // 用节点当前配置或传入的临时覆盖
+    const prov = overrideProvider ?? this.provider
+    const modelOverride = overrideModel !== undefined ? overrideModel : this.model
+    const endpoint = readImageEndpoint(prov, modelOverride)
+
+    // 校验 API Key
+    if (!endpoint.key) {
+      const label = IMAGE_PROVIDERS[prov].label
+      return { error: `请先在全局设置中为 ${label} 配置 API Key` }
+    }
+
+    // 校验模型支持参考图（图生图前提）
+    if (endpoint.maxReferenceImages === 0) {
+      return { error: `当前模型 ${endpoint.model} 不支持参考图（图生图），请切换到百炼的 qwen-image-2.0 / qwen-image-2.0-pro / qwen-image-2.0-2in1 / wan2.6-image 等模型` }
+    }
+
+    // 必须有已生成的图才能重绘
+    if (!this.resultFile) {
+      return { error: '当前没有可重绘的图片，请先生成一张图' }
+    }
+
+    const trimmedPrompt = prompt.trim()
+    if (!trimmedPrompt) {
+      return { error: '请输入重绘提示词' }
+    }
+
+    // 把当前 resultFile 转成 base64 data URI 作为参考图
+    let refImage: string
+    try {
+      const bytes = new Uint8Array(await this.resultFile.arrayBuffer())
+      const mime = this.resultFile.type || 'image/png'
+      refImage = `data:${mime};base64,${bytesToBase64(bytes)}`
+    } catch (err) {
+      return { error: `读取当前图片失败：${err instanceof Error ? err.message : String(err)}` }
+    }
+
+    const myRequestId = ++this.redrawRequestId
+    const controller = new AbortController()
+    this.redrawAbortController = controller
+    const signal = controller.signal
+
+    try {
+      const outcome = await this.requestImage(
+        endpoint, trimmedPrompt, endpoint.defaultSize, [refImage],
+        () => this.redrawRequestId !== myRequestId,
+        signal
+      )
+      if (outcome.cancelled) return { error: '已取消' }
+      if (outcome.error) return { error: outcome.error }
+
+      let file: File | null = null
+      let hash = ''
+      if (outcome.result?.base64) {
+        const built = this.buildFileFromBase64(outcome.result.base64)
+        file = built.file
+        hash = built.hash
+      } else if (outcome.result?.url) {
+        const built = await this.buildFileFromUrl(outcome.result.url, signal)
+        file = built.file
+        hash = built.hash
+      }
+
+      if (!file) return { error: '响应里没找到图片数据' }
+      // stale-call 守卫
+      if (this.redrawRequestId !== myRequestId) return { error: '已取消' }
+      return { file, hash }
+    } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        return { error: '已取消' }
+      }
+      return { error: err instanceof Error ? err.message : '网络请求异常' }
+    } finally {
+      if (this.redrawAbortController === controller) this.redrawAbortController = null
+    }
+  }
+
+  /** 取消正在进行中的重绘请求（弹窗关闭时调用） */
+  cancelRedraw(): void {
+    this.redrawAbortController?.abort()
+    this.redrawAbortController = null
+    this.redrawRequestId++
+  }
+
+  /**
+   * 用户在弹窗里点了「确认替换」后调用：
+   * 把重绘结果设为节点新的 resultFile，commit 到输出端口，状态置 done。
+   */
+  applyRedrawResult(file: File, hash: string): void {
+    this.resultFile = file
+    this.status = 'done'
+    this.errorMessage = ''
+    this.imageOutput.commit(new ImgFileValue(file, hash))
+    this.notifyChanged()
+  }
+
+  /**
+   * 取消当前进行中的生成：
+   * - abort 掉所有 in-flight fetch（同步 POST、轮询 GET、下载 URL）
+   * - 递增 requestId，防止 abort 前刚好发出去的请求的响应回来时覆盖新状态
+   * - 切回 idle，清理 errorMessage / resultFile
+   *
+   * 节点销毁时 beforeDestroy 也复用这个逻辑，避免残留请求。
+   */
+  cancel(): void {
+    this.abortController?.abort()
+    this.abortController = null
+    this.requestId++
+    if (this.status === 'loading') {
+      this.status = 'idle'
+      this.errorMessage = ''
+      this.resultFile = null
+      this.failRun() // running → dirty 兜底回到 stable
+      this.notifyChanged()
+    }
+  }
+
   /** 拖入文件落点命中本节点时被调用；本节点不接收文件，返回 false */
   isPositionAcceptFileDrop(_relativeX: number, _relativeY: number): boolean {
     return false
@@ -310,16 +471,9 @@ export class ImageGenNode extends Node {
   }
 
   /**
-   * 跳过脏标记——文生图节点是手动触发型：
-   * - prompt/size/ref 输入变化只刷新 UI 占位，不自动生成
-   * - generate MethodPort 触发由 onTrigger 回调独立处理
-   * 两种情况都不需要 engine 层的 dirty 语义，统一只走 inputPortReceiveValue 刷新 UI。
+   * 输入端口有变化（值到达 / 连线增删）时只刷新 UI，不自动生成——生成按张计费，等用户点按钮。
+   * 脏标记（dirty）由基类 _onInputPortChanged 自动处理，这里只负责通知 UI 重绘。
    */
-  override _onInputPortChanged(ports: InputPort[], source: InputPortChangeSource): void {
-    this.inputPortReceiveValue(ports, source)
-  }
-
-  /** 输入端口有变化（值到达 / 连线增删）时只刷新 UI，不自动生成——生成按张计费，等用户点按钮 */
   inputPortReceiveValue(_ports: InputPort[], _source: InputPortChangeSource): void {
     this.notifyChanged()
   }
@@ -446,12 +600,22 @@ export class ImageGenNode extends Node {
     this.errorMessage = ''
     this.notifyChanged()
 
+    // 每次请求 fresh controller；cancel() 会 abort 它并置 null
+    const controller = new AbortController()
+    this.abortController = controller
+    const signal = controller.signal
+
     let file: File | null = null
     let hash = ''
     let errMsg = ''
+    let aborted = false
 
     try {
-      const outcome = await this.requestImage(endpoint, prompt, size, referenceImages, myRequestId)
+      const outcome = await this.requestImage(
+        endpoint, prompt, size, referenceImages,
+        () => this.requestId !== myRequestId,
+        signal
+      )
       // 轮询期间节点被销毁 / 用户又点了生成 → 整个结果丢弃，交给新请求收尾
       if (outcome.cancelled) return
       if (outcome.error) {
@@ -461,13 +625,24 @@ export class ImageGenNode extends Node {
         file = built.file
         hash = built.hash
       } else if (outcome.result?.url) {
-        const built = await this.buildFileFromUrl(outcome.result.url)
+        const built = await this.buildFileFromUrl(outcome.result.url, signal)
         file = built.file
         hash = built.hash
       }
     } catch (err) {
+      // 用户主动 cancel → AbortError 是预期行为，静默退出
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        aborted = true
+        return
+      }
       errMsg = err instanceof Error ? err.message : '网络请求异常'
+    } finally {
+      // 只清理当前 controller，cancel() 可能已经置 null 了
+      if (this.abortController === controller) this.abortController = null
     }
+
+    // 用户 cancel() 后 requestId 已变，cancel() 自身已把状态切回 idle，这里不用再写
+    if (aborted) return
 
     // —— Stale-call 守卫 ——
     // 期间用户又点了生成 → requestId 已变，本次结果直接丢弃，不覆盖 UI、不 commit
@@ -490,18 +665,23 @@ export class ImageGenNode extends Node {
   /**
    * 发请求取图片数据。
    * 同步协议一次拿结果；百炼异步协议要先提交任务再轮询，所以返回取消标记交给上层丢弃。
+   *
+   * @param isStale 轮询期间判断当前请求是否已过期（被后续请求取代 / cancel），
+   *                调用方分别用自己的 requestId 计数器构造。
    */
   private async requestImage(
     endpoint: ResolvedImageEndpoint,
     prompt: string,
     size: string,
     referenceImages: readonly string[] | undefined,
-    myRequestId: number
+    isStale: () => boolean,
+    signal: AbortSignal
   ): Promise<{ result?: ExtractedImage; error?: string; cancelled?: boolean }> {
     const res = await fetch(endpoint.requestUrl, {
       method: 'POST',
       headers: buildImageRequestHeaders(endpoint),
-      body: JSON.stringify(buildImageRequestBody(endpoint, prompt, size, referenceImages))
+      body: JSON.stringify(buildImageRequestBody(endpoint, prompt, size, referenceImages)),
+      signal
     })
     const data = await res.json().catch(() => undefined)
 
@@ -516,26 +696,27 @@ export class ImageGenNode extends Node {
     if (!taskId) {
       return { error: extractImageErrorMessage(data) ?? '任务已提交但响应里没有 task_id' }
     }
-    return this.waitForTask(endpoint, taskId, myRequestId)
+    return this.waitForTask(endpoint, taskId, isStale, signal)
   }
 
   /**
    * 轮询异步任务直到 成功 / 失败 / 超时。
-   * 每轮都校验 requestId：用户中途重新生成或节点被销毁就立刻退出，
-   * 否则几轮之后旧任务的结果会把新请求的结果顶掉。
+   * 每轮都通过 isStale 检查是否过期：用户中途重新生成 / 取消 / 节点被销毁就立刻退出。
    */
   private async waitForTask(
     endpoint: ResolvedImageEndpoint,
     taskId: string,
-    myRequestId: number
+    isStale: () => boolean,
+    signal: AbortSignal
   ): Promise<{ result?: ExtractedImage; error?: string; cancelled?: boolean }> {
     const deadline = Date.now() + IMAGE_TASK_TIMEOUT_MS
     while (Date.now() < deadline) {
-      await sleep(IMAGE_TASK_POLL_INTERVAL_MS)
-      if (this.requestId !== myRequestId) return { cancelled: true }
+      await sleep(IMAGE_TASK_POLL_INTERVAL_MS, signal)
+      if (isStale()) return { cancelled: true }
 
       const res = await fetch(`${endpoint.taskUrlPrefix}${taskId}`, {
-        headers: { Authorization: `Bearer ${endpoint.key}` }
+        headers: { Authorization: `Bearer ${endpoint.key}` },
+        signal
       })
       const data = await res.json().catch(() => undefined)
       if (!res.ok) {
@@ -571,8 +752,8 @@ export class ImageGenNode extends Node {
   }
 
   /** url 形态：URL 有效期有限，立刻拉成字节再落成 File */
-  private async buildFileFromUrl(url: string): Promise<{ file: File; hash: string }> {
-    const res = await fetch(url)
+  private async buildFileFromUrl(url: string, signal: AbortSignal): Promise<{ file: File; hash: string }> {
+    const res = await fetch(url, { signal })
     if (!res.ok) throw new Error(`下载生成图失败（${res.status} ${res.statusText}）`)
     const blob = await res.blob()
     const bytes = new Uint8Array(await blob.arrayBuffer())
@@ -612,8 +793,8 @@ export class ImageGenNode extends Node {
     // resultFile / status 等派生状态等用户再次生成时刷新
   }
 
-  /** 节点销毁时废弃所有未完成请求：递增 requestId，in-flight 的 fetch 回来时自然丢弃 */
+  /** 节点销毁时废弃所有未完成请求：cancel() 会 abort fetch + 递增 requestId */
   async beforeDestroy(): Promise<void> {
-    this.requestId++
+    this.cancel()
   }
 }

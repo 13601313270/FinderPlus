@@ -9,6 +9,7 @@ import { manifest as boolInputManifest } from './BoolInputNode'
 import { manifest as radioManifest } from './RadioNode'
 import { manifest as txtFileManifest } from './TxtFileNode'
 import { manifest as imgFileManifest } from './ImgFileNode'
+import { manifest as audioFileManifest } from './AudioFileNode'
 import { manifest as pdfFileManifest } from './PdfFileNode'
 import { manifest as anyFileManifest } from './AnyFileNode'
 import { manifest as fileInfoManifest } from './FileInfoNode'
@@ -19,6 +20,7 @@ import { manifest as folderManifest } from './FolderNode'
 import { manifest as imgFolderManifest } from './ImgFolderNode'
 import { manifest as llmManifest } from './LLMNode'
 import { manifest as imageGenManifest } from './ImageGenNode'
+import { manifest as ttsManifest } from './TTSNode'
 import { manifest as humanReviewManifest } from './HumanReviewNode'
 import { manifest as stringConcatManifest } from './StringConcatNode'
 import { manifest as commandManifest } from './CommandNode'
@@ -70,6 +72,7 @@ const functionalManifests: NodePluginManifest[] = [
   imgFolderManifest,
   llmManifest,
   imageGenManifest,
+  ttsManifest,
   humanReviewManifest,
   stringConcatManifest,
   commandManifest,
@@ -96,6 +99,7 @@ const functionalManifests: NodePluginManifest[] = [
 const fileManifests: NodePluginManifest[] = [
   txtFileManifest,
   imgFileManifest,
+  audioFileManifest,
   pdfFileManifest
 ]
 

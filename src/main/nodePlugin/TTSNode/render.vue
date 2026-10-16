@@ -29,7 +29,16 @@ const textConnected = ref(false)
 
 let previewUrl: string | null = null
 const previewAudioUrl = ref<string | null>(null)
+const audioEl = ref<HTMLAudioElement | null>(null)
 let unsubscribe: (() => void) | undefined
+
+function onAudioLoaded(): void {
+  if (!audioEl.value) return
+  const d = audioEl.value.duration || 0
+  if (d > 0 && isFinite(d)) {
+    node.value?.commitDuration(Number(d.toFixed(3)))
+  }
+}
 
 function refresh(): void {
   const n = node.value
@@ -147,6 +156,7 @@ function supportsInstructions(): boolean { return model.value === 'qwen3-tts-ins
       />
     </div>
 
+    <div style="flex-grow: 1;"></div>
     <!-- 生成按钮 / 取消按钮 / Spinner -->
     <div class="tts-action">
       <button
@@ -172,7 +182,13 @@ function supportsInstructions(): boolean { return model.value === 'qwen3-tts-ins
 
     <!-- 音频预览 -->
     <div v-if="status === 'done' && previewAudioUrl" class="tts-preview">
-      <audio :src="previewAudioUrl" controls preload="metadata" />
+      <audio
+        ref="audioEl"
+        :src="previewAudioUrl"
+        controls
+        preload="metadata"
+        @loadedmetadata="onAudioLoaded"
+      />
     </div>
   </div>
 </template>
@@ -182,7 +198,7 @@ function supportsInstructions(): boolean { return model.value === 'qwen3-tts-ins
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 10px 12px;
+  padding: 0 8px 8px;
   height: 100%;
   box-sizing: border-box;
   overflow: auto;

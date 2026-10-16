@@ -134,7 +134,7 @@ export class TTSNode extends Node {
     this.addOutput(this.durationOutput)
     this.addMethod(this.generateMethod)
     this.generateMethod.onTrigger(() => this.manualTrigger())
-    this.setBox(260, 280)
+    this.setBox(260, 226)
   }
 
   // —— UI 读写 ——
@@ -338,7 +338,7 @@ export class TTSNode extends Node {
 
       // 5. commit 到输出端口
       this.audioOutput.commit(new AudioFileValue(file, hash))
-      // 解析 WAV 头算时长
+      // WAV 文件头解析拿时长（精确）；若解析失败则等 render.vue 的 audio loadedmetadata 回写
       const duration = parseWavDuration(bytes)
       if (duration !== null) {
         this.durationOutput.commit(new NumberValue(Number(duration.toFixed(3))))
@@ -399,6 +399,16 @@ export class TTSNode extends Node {
   beforeDestroy(): void {
     this.cancel()
     super.beforeDestroy()
+  }
+
+  /**
+   * 由 render.vue 在 audio loadedmetadata 时调——
+   * 双保险：fetchAndCommit 里 parseWavDuration 可能因 chunk 布局差异返回 null，
+   * render.vue 的 <audio> 元素用浏览器解码器能拿到任何格式的准确时长。
+   */
+  commitDuration(seconds: number): void {
+    this.durationOutput.commit(new NumberValue(seconds))
+    this.notifyChanged()
   }
 }
 

@@ -5,7 +5,6 @@ import { NumberValue } from '../../engine/data/NumberValue'
 import { OutputPort } from '../../engine/port/OutputPort'
 import { InputPort } from '../../engine/port/InputPort'
 import { FileNode } from '../FileNode/node'
-import { parseWavDuration } from '../TTSNode/node'
 import { inferAudioMime } from './mime'
 
 /** 音频文件后缀集合 */
@@ -88,7 +87,7 @@ export class AudioFileNode extends FileNode {
     this.addOutput(this.durationOutput)
     this.addOutput(this.pathOutput)
     this.bindFileInput(this.fileInput)
-    this.setBox(240, 140)
+    this.setBox(140, 150)
   }
 
   /** 文件被替换后：重读二进制并 commit fileOutput */
@@ -104,8 +103,9 @@ export class AudioFileNode extends FileNode {
   }
 
   /**
-   * 写入音频二进制并 commit fileOutput + durationOutput。
-   * 时长优先从文件名推断（WAV 用 parseWavDuration，其他格式兜底 0）。
+   * 写入音频二进制并 commit fileOutput。
+   * 时长由 render.vue 在 audio loadedmetadata 时通过 commitDuration 回写
+   * （浏览器能解任何格式，比自己写文件头解析靠谱得多）。
    */
   setContent(base64: string): void {
     if (!this.fileName) return
@@ -115,18 +115,6 @@ export class AudioFileNode extends FileNode {
     const file = new File([ab], this.fileName, { type: mime })
     const hash = djb2(base64)
     this.fileOutput.commit(new AudioFileValue(file, hash))
-
-    // 时长推断：WAV 解析文件头；其他格式暂不支持，commit null 值
-    if (/\.wav$/i.test(this.fileName)) {
-      const dur = parseWavDuration(bytes)
-      if (dur !== null) {
-        this.durationOutput.commit(new NumberValue(Number(dur.toFixed(3))))
-      } else {
-        this.durationOutput.commit(new NumberValue())
-      }
-    } else {
-      this.durationOutput.commit(new NumberValue())
-    }
     this.notifyChanged()
   }
 
@@ -156,4 +144,13 @@ export class AudioFileNode extends FileNode {
   }
 
   onFileDrop(_sourcePath: string): void { /* 不处理 */ }
+
+  /**
+   * 由 render.vue 在 audio loadedmetadata 时调：用浏览器解码出的真实时长（支持所有格式）
+   * 覆盖 setContent 里文件头解析的结果（wav 精确、其他格式兜底 null）。
+   */
+  commitDuration(seconds: number): void {
+    this.durationOutput.commit(new NumberValue(seconds))
+    this.notifyChanged()
+  }
 }

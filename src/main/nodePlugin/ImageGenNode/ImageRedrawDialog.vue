@@ -1,13 +1,14 @@
 <script setup lang="ts">
 /**
- * 图生图重绘弹窗：
- * - 左侧显示当前节点已生成的原图
- * - 右侧显示重绘预览（点击"生成预览"后出现）
- * - provider/model 默认跟节点当前配置，但可临时切换（仅本次弹窗，不保存到节点）
- * - 输入 prompt → 生成预览 → 用户确认 → applyRedrawResult 替换画布上的图
+ * 通用图生图重绘弹窗：ImageGenNode 和 ImgFileNode 共用。
+ *
+ * 通过回调与外部解耦：
+ * - generateFn(prompt, provider?, model?) → 生成预览图，返回 {file, hash} 或 {error}
+ * - applyFn(file, hash) → 用户点"确认替换"后调用，外部负责落盘/commit
+ * - cancelCallback() → 弹窗关闭时调用（如中断正在进行的生成）
+ * - initialProvider / initialModel → 弹窗内模型下拉的初始值
  */
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import type { ImageGenNode } from './node'
 import { IMAGE_PROVIDERS, readImageEndpoint, type ImageModelPreset, type ImageProviderId } from './providers'
 import { useImageSettings } from '@renderer/composables/useImageSettings'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
@@ -16,10 +17,19 @@ import { messages } from './i18n'
 const t = useLocalizedMessages(messages)
 const { hasKey } = useImageSettings()
 
+interface GenerateResult {
+  file: File
+  hash: string
+}
+
 const props = defineProps<{
   visible: boolean
-  node: ImageGenNode
+  initialProvider: ImageProviderId
+  initialModel: string
   originalImageUrl: string
+  generateFn: (prompt: string, provider?: ImageProviderId, model?: string) => Promise<GenerateResult | { error: string }>
+  applyFn: (file: File, hash: string) => void
+  cancelCallback?: () => void
 }>()
 
 const emit = defineEmits<{
@@ -29,8 +39,8 @@ const emit = defineEmits<{
 const providers = Object.entries(IMAGE_PROVIDERS) as [ImageProviderId, typeof IMAGE_PROVIDERS[ImageProviderId]][]
 
 // —— 弹窗内临时的 provider/model（跟节点状态解耦）——
-const tempProvider = ref<ImageProviderId>(props.node.displayProvider)
-const tempModel = ref<string>(props.node.displayModel)
+const tempProvider = ref<ImageProviderId>(props.initialProvider)
+const tempModel = ref<string>(props.initialModel)
 
 // —— prompt 输入 ——
 const prompt = ref('')
@@ -56,23 +66,23 @@ function clearPreview(): void {
 // 弹窗关闭时清理
 watch(() => props.visible, (v) => {
   if (!v) {
-    props.node.cancelRedraw()
+    props.cancelCallback?.()
     clearPreview()
     prompt.value = ''
     errorMessage.value = ''
     loading.value = false
-    // 重置 provider/model 为节点当前值（节点可能在弹窗开着时被外部改了）
-    tempProvider.value = props.node.displayProvider
-    tempModel.value = props.node.displayModel
+    // 重置 provider/model 为初始值（外部可能已更新）
+    tempProvider.value = props.initialProvider
+    tempModel.value = props.initialModel
   }
 })
 
 onBeforeUnmount(() => {
-  props.node.cancelRedraw()
+  props.cancelCallback?.()
   clearPreview()
 })
 
-// —— 模型下拉（复用 render.vue 的自定义下拉模式）——
+// —— 模型下拉 ——
 const modelDropdownOpen = ref(false)
 const modelSelectRef = ref<HTMLElement | null>(null)
 
@@ -93,7 +103,6 @@ function onDocPointerDown(e: PointerEvent): void {
   }
 }
 
-// 挂载时注册全局点击监听
 onMounted(() => {
   document.addEventListener('pointerdown', onDocPointerDown, true)
 })
@@ -107,12 +116,10 @@ const modelOptions = computed(
   () => Object.entries(currentPreset.value.models) as [string, ImageModelPreset][]
 )
 
-// 当前临时模型是否支持参考图（图生图前提）
 const tempEndpoint = computed(() => readImageEndpoint(tempProvider.value, tempModel.value))
 const modelSupportsRef = computed(() => tempEndpoint.value.maxReferenceImages > 0)
 const modelHasKey = computed(() => hasKey(tempProvider.value))
 
-// 是否可以点生成
 const canGenerate = computed(() =>
   !loading.value &&
   prompt.value.trim().length > 0 &&
@@ -123,7 +130,7 @@ const canGenerate = computed(() =>
 // —— 事件处理 ——
 function onProviderChange(val: ImageProviderId): void {
   tempProvider.value = val
-  tempModel.value = '' // 换 provider 重置 model
+  tempModel.value = ''
 }
 
 async function onGenerate(): Promise<void> {
@@ -133,7 +140,7 @@ async function onGenerate(): Promise<void> {
   clearPreview()
 
   try {
-    const result = await props.node.generateRedraw(
+    const result = await props.generateFn(
       prompt.value,
       tempProvider.value,
       tempModel.value
@@ -153,7 +160,7 @@ async function onGenerate(): Promise<void> {
 
 function onConfirm(): void {
   if (!previewFile.value) return
-  props.node.applyRedrawResult(previewFile.value, previewHash.value)
+  props.applyFn(previewFile.value, previewHash.value)
   emit('close')
 }
 

@@ -13,6 +13,12 @@ import { viewport } from '@renderer/canvas/viewport'
 import HelpDialog from '@renderer/components/HelpDialog.vue'
 import { messages } from './i18n'
 import ImgFileHelpDialog from './ImgFileHelpDialog.vue'
+import ImageRedrawDialog from '../ImageGenNode/ImageRedrawDialog.vue'
+import { messages as redrawMessages } from '../ImageGenNode/i18n'
+import type { ImageProviderId } from '../ImageGenNode/providers'
+
+// 重绘弹窗文案（复用 ImageGenNode 的多语言）
+const redrawT = useLocalizedMessages(redrawMessages)
 
 const props = defineProps<{ id: string }>()
 
@@ -21,6 +27,11 @@ const t = useLocalizedMessages(messages)
 
 // 帮助浮层开关（弹窗壳由 HelpDialog 负责）
 const showHelp = ref(false)
+// 重绘弹窗开关
+const showRedrawDialog = ref(false)
+// ImgFileNode 没有自己的 provider/model 配置，用硅基流动默认作为弹窗初始值
+const REDRAW_DEFAULT_PROVIDER: ImageProviderId = 'siliconflow'
+const REDRAW_DEFAULT_MODEL = ''
 
 const fileNode = computed(() => {
   const node = workspaceScene.getNode(props.id)
@@ -252,12 +263,37 @@ onUnmounted(() => {
       @dblclick.stop
       @click.stop="showHelp = true"
     >?</button>
+
+    <!-- 重绘入口：帮助按钮左侧，有文件时显示 -->
+    <button
+      v-if="fileName"
+      class="file-card__redraw"
+      type="button"
+      :title="redrawT('redrawButton')"
+      @pointerdown.stop
+      @click.stop="showRedrawDialog = true"
+    >
+      {{ redrawT('redrawButton') }}
+    </button>
   </div>
 
   <!-- 帮助弹窗 -->
   <HelpDialog :visible="showHelp" :title="t('helpDialogTitle')" @close="showHelp = false">
     <ImgFileHelpDialog />
   </HelpDialog>
+
+  <!-- 重绘弹窗 -->
+  <ImageRedrawDialog
+    v-if="fileNode && thumbnailUrl"
+    :visible="showRedrawDialog"
+    :initial-provider="REDRAW_DEFAULT_PROVIDER"
+    :initial-model="REDRAW_DEFAULT_MODEL"
+    :original-image-url="thumbnailUrl"
+    :generate-fn="(prompt, prov, mdl) => fileNode!.generateRedraw(prompt, prov!, mdl ?? REDRAW_DEFAULT_MODEL)"
+    :apply-fn="(file, hash) => fileNode!.applyRedrawResult(file, hash)"
+    :cancel-callback="() => fileNode!.cancelRedraw()"
+    @close="showRedrawDialog = false"
+  />
 </template>
 
 <style scoped lang="less">
@@ -435,6 +471,33 @@ onUnmounted(() => {
     &:hover {
       background: #dbeafe;
       color: #2563eb;
+    }
+  }
+
+  &__redraw {
+    all: unset;
+    position: absolute;
+    top: 4px;
+    right: 30px;
+    cursor: pointer;
+    padding: 2px 8px;
+    font-size: 11px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.9);
+    color: #374151;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    z-index: 2;
+    transition: background 0.12s, color 0.12s;
+
+    &:hover {
+      background: #4f46e5;
+      color: #fff;
+      border-color: #4f46e5;
+    }
+
+    &:active {
+      background: #4338ca;
     }
   }
 }

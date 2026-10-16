@@ -310,8 +310,12 @@ async function onStopClick(): Promise<void> {
   <ImageRedrawDialog
     v-if="node && imageUrl"
     :visible="showRedrawDialog"
-    :node="node"
+    :initial-provider="node.displayProvider"
+    :initial-model="node.displayModel"
     :original-image-url="imageUrl"
+    :generate-fn="(prompt, prov, mdl) => node!.generateRedraw(prompt, prov, mdl)"
+    :apply-fn="(file, hash) => node!.applyRedrawResult(file, hash)"
+    :cancel-callback="() => node!.cancelRedraw()"
     @close="showRedrawDialog = false"
   />
 </template>

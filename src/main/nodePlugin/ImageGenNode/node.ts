@@ -1,5 +1,4 @@
-import { base64ToBytes, bytesToBase64 } from '../../engine/data/base64'
-import { djb2 } from '../../engine/data/hash'
+import { bytesToBase64 } from '../../engine/data/base64'
 import { ImgFileValue } from '../../engine/data/ImgFileValue'
 import { StringValue } from '../../engine/data/StringValue'
 import { InputPort } from '../../engine/port/InputPort'
@@ -7,66 +6,20 @@ import { MethodPort } from '../../engine/port/MethodPort'
 import { OutputPort } from '../../engine/port/OutputPort'
 import { Node, type InputPortChangeSource } from '../../engine/node/Node'
 import {
-  buildImageRequestBody,
-  buildImageRequestHeaders,
-  extractImageErrorMessage,
-  extractImageResult,
-  extractTaskId,
-  extractTaskStatus,
   readImageEndpoint,
   readImageProviderKey,
   IMAGE_PROVIDERS,
-  type ExtractedImage,
   type ImageProviderId,
   type ResolvedImageEndpoint
 } from './providers'
-
-/**
- * 文生图节点：
- * - prompt 从上游 promptInput 端口传入（本节点没有内部输入框，必须接线）
- * - 尺寸从上游 sizeInput 端口传入；未接线时用节点内本地选择，再不行用**当前模型的默认尺寸**
- *   （不同模型支持的尺寸范围不同，所以默认值跟着模型走，读 providers.ts 的 sizes[0]）
- * - 输出一个 ImgFileValue，下游可接图片预览 / 压缩 / 文件夹等节点
- *
- * 手动触发：点击「生成」才发起请求（图像生成按张计费，不做自动重算）。
- *
- * 配置来自独立键 canvasdesk.image.config（与 LLM 的 Key 分开存）。
- *
- * Stale-call 取消策略与 LLMNode 一致：递增 requestId 标记每次请求，
- * 后发请求回来时 ID 不匹配就丢弃，避免旧响应覆盖新结果。
- */
+import {
+  requestImage,
+  buildFileFromBase64,
+  buildFileFromUrl,
+  MAX_REFERENCE_IMAGE_BYTES
+} from './imageGenerationService'
 
 type ImageGenStatus = 'idle' | 'loading' | 'done' | 'error'
-
-/** 百炼异步任务的轮询间隔 / 总超时：出图通常十几秒到一两分钟 */
-const IMAGE_TASK_POLL_INTERVAL_MS = 2500
-const IMAGE_TASK_TIMEOUT_MS = 120_000
-
-/**
- * 参考图文件大小上限：百炼对单次请求体有 ~10MB 限制。
- * 7MB 原始文件 → base64 后约 9.3MB，留出 prompt / JSON 结构余量。
- */
-const MAX_REFERENCE_IMAGE_BYTES = 7 * 1024 * 1024
-
-/**
- * 可中断的 sleep：传 signal 后，abort 会立刻 reject AbortError。
- * 这样 waitForTask 在轮询间隔期间点停止，不用等 sleep 跑完。
- */
-function sleep(ms: number, signal?: AbortSignal): Promise<void> {
-  return new Promise((resolve, reject) => {
-    if (signal?.aborted) {
-      reject(new DOMException('Aborted', 'AbortError'))
-      return
-    }
-    const timeoutId = setTimeout(resolve, ms)
-    if (signal) {
-      signal.addEventListener('abort', () => {
-        clearTimeout(timeoutId)
-        reject(new DOMException('Aborted', 'AbortError'))
-      }, { once: true })
-    }
-  })
-}
 
 export class ImageGenNode extends Node {
   static readonly TYPE = 'image-gen'
@@ -387,7 +340,7 @@ export class ImageGenNode extends Node {
     const signal = controller.signal
 
     try {
-      const outcome = await this.requestImage(
+      const outcome = await requestImage(
         endpoint, trimmedPrompt, endpoint.defaultSize, [refImage],
         () => this.redrawRequestId !== myRequestId,
         signal
@@ -398,11 +351,11 @@ export class ImageGenNode extends Node {
       let file: File | null = null
       let hash = ''
       if (outcome.result?.base64) {
-        const built = this.buildFileFromBase64(outcome.result.base64)
+        const built = buildFileFromBase64(outcome.result.base64)
         file = built.file
         hash = built.hash
       } else if (outcome.result?.url) {
-        const built = await this.buildFileFromUrl(outcome.result.url, signal)
+        const built = await buildFileFromUrl(outcome.result.url, signal)
         file = built.file
         hash = built.hash
       }
@@ -611,7 +564,7 @@ export class ImageGenNode extends Node {
     let aborted = false
 
     try {
-      const outcome = await this.requestImage(
+      const outcome = await requestImage(
         endpoint, prompt, size, referenceImages,
         () => this.requestId !== myRequestId,
         signal
@@ -621,11 +574,11 @@ export class ImageGenNode extends Node {
       if (outcome.error) {
         errMsg = outcome.error
       } else if (outcome.result?.base64) {
-        const built = this.buildFileFromBase64(outcome.result.base64)
+        const built = buildFileFromBase64(outcome.result.base64)
         file = built.file
         hash = built.hash
       } else if (outcome.result?.url) {
-        const built = await this.buildFileFromUrl(outcome.result.url, signal)
+        const built = await buildFileFromUrl(outcome.result.url, signal)
         file = built.file
         hash = built.hash
       }
@@ -660,115 +613,6 @@ export class ImageGenNode extends Node {
       this.failRun() // 失败 → running 兜底回到 dirty
     }
     this.notifyChanged()
-  }
-
-  /**
-   * 发请求取图片数据。
-   * 同步协议一次拿结果；百炼异步协议要先提交任务再轮询，所以返回取消标记交给上层丢弃。
-   *
-   * @param isStale 轮询期间判断当前请求是否已过期（被后续请求取代 / cancel），
-   *                调用方分别用自己的 requestId 计数器构造。
-   */
-  private async requestImage(
-    endpoint: ResolvedImageEndpoint,
-    prompt: string,
-    size: string,
-    referenceImages: readonly string[] | undefined,
-    isStale: () => boolean,
-    signal: AbortSignal
-  ): Promise<{ result?: ExtractedImage; error?: string; cancelled?: boolean }> {
-    const res = await fetch(endpoint.requestUrl, {
-      method: 'POST',
-      headers: buildImageRequestHeaders(endpoint),
-      body: JSON.stringify(buildImageRequestBody(endpoint, prompt, size, referenceImages)),
-      signal
-    })
-    const data = await res.json().catch(() => undefined)
-
-    if (!res.ok) {
-      return { error: extractImageErrorMessage(data) ?? `请求失败（${res.status} ${res.statusText}）` }
-    }
-    if (endpoint.shape !== 'dashscope-async') {
-      return { result: extractImageResult(endpoint.shape, data) }
-    }
-
-    const taskId = extractTaskId(data)
-    if (!taskId) {
-      return { error: extractImageErrorMessage(data) ?? '任务已提交但响应里没有 task_id' }
-    }
-    return this.waitForTask(endpoint, taskId, isStale, signal)
-  }
-
-  /**
-   * 轮询异步任务直到 成功 / 失败 / 超时。
-   * 每轮都通过 isStale 检查是否过期：用户中途重新生成 / 取消 / 节点被销毁就立刻退出。
-   */
-  private async waitForTask(
-    endpoint: ResolvedImageEndpoint,
-    taskId: string,
-    isStale: () => boolean,
-    signal: AbortSignal
-  ): Promise<{ result?: ExtractedImage; error?: string; cancelled?: boolean }> {
-    const deadline = Date.now() + IMAGE_TASK_TIMEOUT_MS
-    while (Date.now() < deadline) {
-      await sleep(IMAGE_TASK_POLL_INTERVAL_MS, signal)
-      if (isStale()) return { cancelled: true }
-
-      const res = await fetch(`${endpoint.taskUrlPrefix}${taskId}`, {
-        headers: { Authorization: `Bearer ${endpoint.key}` },
-        signal
-      })
-      const data = await res.json().catch(() => undefined)
-      if (!res.ok) {
-        return { error: extractImageErrorMessage(data) ?? `查询任务失败（${res.status} ${res.statusText}）` }
-      }
-
-      const taskStatus = extractTaskStatus(data)
-      if (taskStatus === 'SUCCEEDED') {
-        return { result: extractImageResult('dashscope-async', data) }
-      }
-      // UNKNOWN = 任务已过期（百炼的 task_id 只保留 24 小时）
-      if (taskStatus === 'FAILED' || taskStatus === 'UNKNOWN') {
-        return { error: extractImageErrorMessage(data) ?? `任务失败（${taskStatus}）` }
-      }
-      // PENDING / RUNNING → 继续等
-    }
-    const timeoutSec = Math.round(IMAGE_TASK_TIMEOUT_MS / 1000)
-    return { error: `生成超时（超过 ${timeoutSec} 秒），任务仍在后台执行，可稍后在百炼控制台查看` }
-  }
-
-  /**
-   * b64_json 形态：base64 → 字节 → File。
-   * OpenAI 图像接口默认返回 PNG（dall-e-2/3 与 gpt-image-1 默认都是），故按 image/png 标记。
-   */
-  private buildFileFromBase64(b64: string): { file: File; hash: string } {
-    const bytes = base64ToBytes(b64)
-    // 显式 slice 取纯 ArrayBuffer，避免 TS 5.x 把 Uint8Array<ArrayBufferLike> 卡在 File 构造上
-    const ab = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer
-    return {
-      file: new File([ab], this.resultFileName('png'), { type: 'image/png' }),
-      hash: djb2(b64)
-    }
-  }
-
-  /** url 形态：URL 有效期有限，立刻拉成字节再落成 File */
-  private async buildFileFromUrl(url: string, signal: AbortSignal): Promise<{ file: File; hash: string }> {
-    const res = await fetch(url, { signal })
-    if (!res.ok) throw new Error(`下载生成图失败（${res.status} ${res.statusText}）`)
-    const blob = await res.blob()
-    const bytes = new Uint8Array(await blob.arrayBuffer())
-    const ab = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer
-    const mime = blob.type || 'image/png'
-    const ext = mime.includes('/') ? mime.split('/')[1] : 'png'
-    return {
-      file: new File([ab], this.resultFileName(ext), { type: mime }),
-      hash: djb2(bytesToBase64(bytes))
-    }
-  }
-
-  /** 生成图文件名：时间戳 + 随机后缀，避免多次生成重名 */
-  private resultFileName(ext: string): string {
-    return `image-${Date.now()}-${Math.random().toString(36).slice(2, 6)}.${ext}`
   }
 
   saveState(): Record<string, unknown> {

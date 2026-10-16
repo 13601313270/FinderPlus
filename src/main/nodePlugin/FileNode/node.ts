@@ -65,7 +65,7 @@ export abstract class FileNode extends Node {
   protected fileInputPort: InputPort | undefined
 
   /** 文件被输入端口替换的次数。同名文件替换时 fileName 不变，UI 靠它感知内容已换 */
-  private fileRevisionValue = 0
+  protected fileRevisionValue = 0
 
   /** 文件变化监听的取消订阅函数。由 onReady 注册，beforeDestroy 注销 */
   private fileChangeUnsubscribe?: () => void

@@ -1,10 +1,21 @@
-import { base64ToBytes } from '../../engine/data/base64'
+import { base64ToBytes, bytesToBase64 } from '../../engine/data/base64'
 import { djb2 } from '../../engine/data/hash'
 import { ImgFileValue } from '../../engine/data/ImgFileValue'
 import { OutputPort } from '../../engine/port/OutputPort'
 import { InputPort } from '../../engine/port/InputPort'
 import { FileNode } from '../FileNode/node'
 import { inferImageMime } from './mime'
+import {
+  readImageEndpoint,
+  readImageProviderKey,
+  IMAGE_PROVIDERS,
+  type ImageProviderId
+} from '../ImageGenNode/providers'
+import {
+  requestImage,
+  buildFileFromBase64,
+  buildFileFromUrl
+} from '../ImageGenNode/imageGenerationService'
 
 /** 图片后缀集合，供 acceptsExtension 使用 */
 const ACCEPTED_EXTS = new Set(['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'])
@@ -219,5 +230,154 @@ export class ImgFileNode extends FileNode {
   
   onFileDrop(_sourcePath: string): void {
     // 本节点不接收文件，不处理
+  }
+
+  // —— 图生图重绘 ——
+
+  /** 重绘请求的 stale-call 守卫计数器（独立于主流程） */
+  private redrawRequestId = 0
+  private redrawAbortController: AbortController | null = null
+
+  /**
+   * 图生图重绘：用当前图片作为参考图，调用指定的 provider/model 生成新图。
+   * ImgFileNode 没有自己的 provider/model 状态，由调用方（弹窗）直接传入。
+   *
+   * 返回 {file, hash} 或 {error}，不自动落盘/commit，由 applyRedrawResult 处理。
+   */
+  async generateRedraw(
+    prompt: string,
+    provider: ImageProviderId,
+    model: string
+  ): Promise<{ file: File; hash: string } | { error: string }> {
+    this.redrawAbortController?.abort()
+    this.redrawAbortController = null
+
+    const endpoint = readImageEndpoint(provider, model)
+
+    if (!endpoint.key) {
+      const label = IMAGE_PROVIDERS[provider].label
+      return { error: `请先在全局设置中为 ${label} 配置 API Key` }
+    }
+
+    if (endpoint.maxReferenceImages === 0) {
+      return { error: `当前模型 ${endpoint.model} 不支持参考图（图生图），请切换到百炼的 qwen-image-2.0 / wan2.6-image 等模型` }
+    }
+
+    if (!this.fileName) {
+      return { error: '当前没有可重绘的图片，请先选择文件' }
+    }
+
+    const trimmedPrompt = prompt.trim()
+    if (!trimmedPrompt) {
+      return { error: '请输入重绘提示词' }
+    }
+
+    // 从磁盘读取当前图片 → base64 data URI
+    let refImage: string
+    try {
+      // @ts-ignore — 只在 renderer 里执行
+      const b64 = await window.fileApi.readBinary(this.fileName)
+      const mime = inferImageMime(this.fileName)
+      refImage = `data:${mime};base64,${b64}`
+    } catch (err) {
+      return { error: `读取当前图片失败：${err instanceof Error ? err.message : String(err)}` }
+    }
+
+    const myRequestId = ++this.redrawRequestId
+    const controller = new AbortController()
+    this.redrawAbortController = controller
+    const signal = controller.signal
+
+    try {
+      const outcome = await requestImage(
+        endpoint, trimmedPrompt, endpoint.defaultSize, [refImage],
+        () => this.redrawRequestId !== myRequestId,
+        signal
+      )
+      if (outcome.cancelled) return { error: '已取消' }
+      if (outcome.error) return { error: outcome.error }
+
+      let file: File | null = null
+      let hash = ''
+      if (outcome.result?.base64) {
+        const built = buildFileFromBase64(outcome.result.base64)
+        file = built.file
+        hash = built.hash
+      } else if (outcome.result?.url) {
+        const built = await buildFileFromUrl(outcome.result.url, signal)
+        file = built.file
+        hash = built.hash
+      }
+
+      if (!file) return { error: '响应里没找到图片数据' }
+      if (this.redrawRequestId !== myRequestId) return { error: '已取消' }
+      return { file, hash }
+    } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        return { error: '已取消' }
+      }
+      return { error: err instanceof Error ? err.message : '网络请求异常' }
+    } finally {
+      if (this.redrawAbortController === controller) this.redrawAbortController = null
+    }
+  }
+
+  /** 取消正在进行的重绘请求 */
+  cancelRedraw(): void {
+    this.redrawAbortController?.abort()
+    this.redrawAbortController = null
+    this.redrawRequestId++
+  }
+
+  /**
+   * 确认替换：把重绘结果写回磁盘，更新节点状态。
+   *
+   * 注意：重绘结果几乎总是 PNG（API 默认），但原文件可能是 .jpg/.gif/.webp 等。
+   * 为避免扩展名与实际内容不匹配，这里生成新文件名：保持原目录+基名，
+   * 替换为与重绘 File 的 MIME 匹配的扩展名。
+   */
+  applyRedrawResult(file: File, hash: string): void {
+    if (!this.fileName) return
+    // 推断重绘 File 的正确扩展名
+    const mimeToExt: Record<string, string> = {
+      'image/png': 'png',
+      'image/jpeg': 'jpg',
+      'image/gif': 'gif',
+      'image/webp': 'webp',
+      'image/bmp': 'bmp'
+    }
+    const ext = mimeToExt[file.type] ?? 'png'
+    // 原文件路径 → 替换扩展名（保留目录和基名）
+    const lastDot = this.fileName.lastIndexOf('.')
+    const hasDir = this.fileName.includes('/')
+    const dirEnd = hasDir ? this.fileName.lastIndexOf('/') + 1 : 0
+    const newName = lastDot >= dirEnd
+      ? this.fileName.slice(0, lastDot) + '.' + ext  // 有后缀就替换
+      : this.fileName + '.' + ext                     // 无后缀就追加
+
+    const reader = new FileReader()
+    reader.onload = async () => {
+      const dataUrl = reader.result as string
+      const pureB64 = dataUrl.includes(',') ? dataUrl.split(',')[1] : dataUrl
+      let writeResult: { fileName: string; size: number } | null = null
+      try {
+        // @ts-ignore
+        writeResult = await window.fileApi.writeBuffer(newName, pureB64, true)
+      } catch {
+        // 写盘失败：仍然 commit 内存端口让下游拿到新图，UI 靠 thumbnailUrl 刷新
+      }
+      // 无论写盘成功与否，都更新端口 + bump revision 让 UI 重建缩略图
+      this.fileOutput.commit(new ImgFileValue(file, hash))
+      this.fileRevisionValue += 1
+      if (writeResult) {
+        // 写盘成功：setFile 更新 fileName / fileSize，触发 reloadFileContent → setContent
+        this.setFile(writeResult.fileName, writeResult.size)
+      } else {
+        // 写盘失败：手动 setContent + notifyChanged
+        this.setContent(pureB64)
+        this.notifyChanged()
+      }
+    }
+    reader.readAsDataURL(file)
   }
 }

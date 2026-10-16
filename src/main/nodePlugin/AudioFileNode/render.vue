@@ -5,6 +5,9 @@ import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { AudioFileNode } from './node'
 import { inferAudioMime } from './mime'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
+import { useNodePosition } from '@renderer/composables/useNodePosition'
+import { useFileDragOut, setLastDragPaths } from '@renderer/composables/useFileDragOut'
+import { useFileOpenInSystem } from '@renderer/composables/useFileOpenInSystem'
 import NodeHeader from '@renderer/components/NodeHeader.vue'
 import { messages } from './i18n'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
@@ -41,6 +44,23 @@ const isSeeking = ref(false)
 
 let seqCounter = 0  // 防竞态：多次 watch 触发时，只保留最后一次读文件结果
 let unsubscribe: (() => void) | undefined
+
+// —— 节点拖到空白位置（useNodePosition）+ OS native drag 拖出软件（useFileDragOut）——
+const { dragOutOpts, cleanup: cleanupDragOut } = useFileDragOut(() => fileNode.value)
+const { startDrag } = useNodePosition(() => fileNode.value, dragOutOpts)
+const { openInSystem } = useFileOpenInSystem()
+
+// —— 小图标 native drag（OS 级，立即触发）——
+function onDragIconPointerDown(e: PointerEvent): void {
+  const node = fileNode.value
+  if (!node?.fileName) return
+  e.stopPropagation()  // 阻止冒泡 → 卡片的 startDrag 不触发 → 节点不动
+  e.preventDefault()   // 阻止 Chromium 默认 pointer 行为
+  // @ts-ignore
+  window.fileApi.startDrag(node.fileName).then((paths: any) => {
+    setLastDragPaths(paths)
+  }).catch(() => { /* 静默忽略 */ })
+}
 
 function formatSize(bytes: number): string {
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
@@ -164,6 +184,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  cleanupDragOut()
   unsubscribe?.()
   if (audioEl.value) {
     audioEl.value.pause()
@@ -196,7 +217,7 @@ async function onSelectFile(): Promise<void> {
 </script>
 
 <template>
-  <div class="af-card">
+  <div class="af-card" @pointerdown="startDrag" @dblclick="openInSystem(fileNode?.fileName)">
     <NodeHeader :title="nodeTitle" />
 
     <div v-if="!fileName" class="af-empty">
@@ -241,6 +262,21 @@ async function onSelectFile(): Promise<void> {
       @pointerdown.stop="onSeekPointerDown">
       <div class="af-progress-fill" />
     </div>
+
+    <!-- OS native drag 拖出软件按钮（右下角） -->
+    <button
+      v-if="fileName"
+      class="af-drag-icon"
+      type="button"
+      title="拖拽到桌面导出"
+      @pointerdown.stop.prevent="onDragIconPointerDown"
+      @click.stop
+    >
+      <svg viewBox="0 0 16 16" width="12" height="12" fill="none">
+        <path d="M3 3h6l4 4v6a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" stroke="currentColor" stroke-width="1.2" />
+        <path d="M9 3v4h4" stroke="currentColor" stroke-width="1.2" />
+      </svg>
+    </button>
   </div>
 </template>
 
@@ -400,5 +436,27 @@ async function onSelectFile(): Promise<void> {
   background: #22c55e;
   border-radius: 2px;
   transition: width 0.05s linear;
+}
+
+// —— OS native drag 按钮 ——
+.af-drag-icon {
+  position: absolute;
+  right: 6px;
+  bottom: 4px;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(79, 70, 229, 0.08);
+  color: #6d28d9;
+  border: none;
+  border-radius: 4px;
+  cursor: grab;
+  padding: 0;
+
+  &:hover {
+    background: rgba(79, 70, 229, 0.18);
+  }
 }
 </style>

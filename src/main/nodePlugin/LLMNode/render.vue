@@ -4,12 +4,8 @@ import { computed, onMounted, onUnmounted, ref, shallowRef } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { LLMNode, type ChatMessage } from './node'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
-import { useGlobalSettings } from '@renderer/composables/useGlobalSettings'
-import {
-  LLM_PROVIDERS,
-  useLLMSettings,
-  type LLMProvider
-} from '@renderer/composables/useLLMSettings'
+import { useNodeDetail } from '@renderer/composables/useNodeDetail'
+import { LLM_PROVIDERS, type LLMProvider } from '@renderer/composables/useLLMSettings'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
 import { messages } from './i18n'
 import GearIcon from '@renderer/components/icons/GearIcon.vue'
@@ -25,8 +21,7 @@ import LLMHelpDialog from './LLMHelpDialog.vue'
  */
 const props = defineProps<{ id: string }>()
 
-const { openSettings: openGlobalSettings } = useGlobalSettings()
-const { hasKey } = useLLMSettings()
+const { openNodeDetail } = useNodeDetail()
 
 const t = useLocalizedMessages(messages)
 const showHelp = ref(false)
@@ -53,9 +48,6 @@ let unsubscribe: (() => void) | undefined
 
 
 const providers = Object.entries(LLM_PROVIDERS) as [LLMProvider, typeof LLM_PROVIDERS[LLMProvider]][]
-
-/** 当前 provider 是否已配全局 Key —— 决定齿轮 tooltip */
-const currentProviderKeyOk = computed(() => hasKey(provider.value))
 
 /** 当前 provider 的默认 model（model 为空时显示） */
 const currentDefaultModel = computed(() => LLM_PROVIDERS[provider.value].defaultModel)
@@ -103,7 +95,7 @@ onUnmounted(() => {
 
 function onGearClick(e: MouseEvent): void {
   e.stopPropagation()
-  openGlobalSettings()
+  openNodeDetail(props.id)
 }
 
 function onProviderChange(val: LLMProvider): void {
@@ -161,7 +153,7 @@ async function onStopClick(): Promise<void> {
           v-if="llmNode"
           class="node__gear"
           type="button"
-          :title="currentProviderKeyOk ? 'API Key 已配置' : '当前服务商 Key 未配置，点击全局设置'"
+          title="打开详情面板"
           @pointerdown.stop
           @click.stop="onGearClick"
         >
@@ -171,7 +163,7 @@ async function onStopClick(): Promise<void> {
     </NodeHeader>
 
     <!-- 节点级配置行：provider + model + jsonMode(仅 deepseek) -->
-    <div v-if="llmNode" class="node__config-row">
+    <!-- <div v-if="llmNode" class="node__config-row">
       <select
         class="node__provider-select"
         :value="provider"
@@ -205,7 +197,7 @@ async function onStopClick(): Promise<void> {
         />
         <span>{{ t('chatMode') }}</span>
       </label>
-    </div>
+    </div> -->
 
     <!-- 输出区 -->
     <div

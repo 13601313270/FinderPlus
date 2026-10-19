@@ -229,7 +229,8 @@ onUnmounted(() => {
 }
 
 .detail-dialog {
-  width: 1100px;
+  width: 1300px;
+  max-width: 96%;
   height: 100%;
   border-radius: 12px;
   display: flex;

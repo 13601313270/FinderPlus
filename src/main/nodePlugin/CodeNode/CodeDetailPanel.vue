@@ -11,6 +11,7 @@ import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { CodeNode, type CodeInputKind, type CodePortKind, type CodePortNameError, type CodeInputMeta, type CodeOutputMeta, type CodeStatus } from './node'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
 import { messages } from './i18n'
+import { LLM_PROVIDERS, resolveLLMEndpoint, getProviderKey, type LLMProvider } from '@renderer/composables/useLLMSettings'
 
 /** CodeMirror basic setup：行号 + 历史 + 括号匹配 + 折叠等 */
 const cmExtensions = [
@@ -62,6 +63,16 @@ const installInput = ref('')
 const installing = ref(false)
 const installError = ref('')
 const installLog = ref('')
+
+// —— AI 生成状态 ——
+const aiExpanded = ref(false)
+const aiPrompt = ref('')
+const aiProvider = ref<LLMProvider>('deepseek')
+const aiModel = ref('')
+const aiLoading = ref(false)
+const aiError = ref('')
+let aiAbortController: AbortController | null = null
+let aiRequestId = 0
 
 let offChanged: (() => void) | undefined
 
@@ -240,6 +251,129 @@ function onCopyCallOutputPort(): void {
   navigator.clipboard?.writeText(text)
   copyHint.value = 'callOutputPort'
   setTimeout(() => { copyHint.value = '' }, 1200)
+}
+
+// —— AI 生成辅助 ——
+
+/** 当前 provider 是否已配置 API Key（computed 用闭包捕获 aiProvider） */
+const aiKeyConfigured = computed(() => getProviderKey(aiProvider.value).length > 0)
+
+/** 根据当前端口元数据拼 system prompt，让 AI 知道有哪些变量可用 */
+function buildSystemPrompt(): string {
+  const inputLines = inputs.value.length > 0
+    ? inputs.value.map(i => `  - ${i.name} (${i.kind})`).join('\n')
+    : '  （无）'
+  const outputLines = outputs.value.length > 0
+    ? outputs.value.map(o => `  - ${o.name} (${o.kind})`).join('\n')
+    : '  - result (number)'
+
+  return `你是 CanvasDesk 代码节点助手。请根据用户需求，生成一段可直接运行的 JS 函数体。
+
+## 重要规则
+- 只输出纯 JS 代码，不要写 function 包裹、不要用 \`\`\`js/\`\`\` 包裹，不要写解释文字
+- 代码里直接用输入端口变量名引用上游数据
+- 提交输出时调用 callOutputPort(端口名, 值)；也可以直接 return 一个值，会自动提交到第一个输出端口
+- 支持顶层 await，可直接 require('包名') 引入已安装的 npm 依赖
+- Node API（process, Buffer）和 Web API（fetch, File）都可用
+
+## 当前输入端口（函数体里直接用这些变量名）：
+${inputLines}
+
+## 可用输出端口（callOutputPort 里用这些名字）：
+${outputLines}`
+}
+
+/** 清理 AI 返回里的 ```js ... ``` 包裹，返回纯代码 */
+function stripCodeFence(text: string): string {
+  const trimmed = text.trim()
+  const fenceMatch = trimmed.match(/^```(?:js|javascript)?\s*\n([\s\S]*?)```\s*$/)
+  if (fenceMatch) return fenceMatch[1]!.trim()
+  return trimmed
+}
+
+/** 折叠/展开 AI 面板 */
+function toggleAi(): void {
+  aiExpanded.value = !aiExpanded.value
+  aiError.value = ''
+}
+
+/** 取消进行中的 AI 生成 */
+function onCancelAi(): void {
+  aiAbortController?.abort()
+  aiAbortController = null
+}
+
+/** 调 LLM API 生成代码 */
+async function onGenerateCode(): Promise<void> {
+  const prompt = aiPrompt.value.trim()
+  if (!prompt || aiLoading.value) return
+
+  const key = getProviderKey(aiProvider.value)
+  if (!key) {
+    aiError.value = t('aiErrNoKey')
+    return
+  }
+
+  // —— 覆盖确认：如果编辑区已有代码，先弹 confirm ——
+  const existing = code.value.trim()
+  if (existing && !confirm(t('aiConfirmOverwrite'))) {
+    return
+  }
+
+  const { url, model } = resolveLLMEndpoint(aiProvider.value, aiModel.value)
+  const myRequestId = ++aiRequestId
+  aiLoading.value = true
+  aiError.value = ''
+
+  const controller = new AbortController()
+  aiAbortController = controller
+
+  try {
+    const body: Record<string, unknown> = {
+      model,
+      messages: [
+        { role: 'system', content: buildSystemPrompt() },
+        { role: 'user', content: prompt }
+      ],
+      stream: false
+    }
+
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${key}`
+      },
+      body: JSON.stringify(body),
+      signal: controller.signal
+    })
+
+    if (aiRequestId !== myRequestId) return // stale 丢弃
+
+    const data = await res.json()
+
+    if (!res.ok) {
+      aiError.value = (data?.error?.message as string | undefined) ?? `请求失败（${res.status} ${res.statusText}）`
+      return
+    }
+
+    const content: unknown = data?.choices?.[0]?.message?.content
+    if (typeof content !== 'string') {
+      aiError.value = '响应格式异常：未拿到 content 字段'
+      return
+    }
+
+    const generated = stripCodeFence(content)
+    code.value = generated
+    codeNode.value?.setCode(generated)
+  } catch (err) {
+    if (err instanceof DOMException && err.name === 'AbortError') return
+    if (aiRequestId !== myRequestId) return // stale 丢弃
+    aiError.value = err instanceof Error ? err.message : String(err)
+  } finally {
+    if (aiAbortController === controller) aiAbortController = null
+    if (aiRequestId === myRequestId) aiLoading.value = false
+  }
 }
 </script>
 
@@ -451,6 +585,74 @@ function onCopyCallOutputPort(): void {
 
       <div v-if="installError" class="code-deps__err">{{ installError }}</div>
       <pre v-if="installLog" class="code-deps__log">{{ installLog }}</pre>
+    </div>
+
+    <!-- AI 生成代码面板 -->
+    <div class="code-ai">
+      <button
+        class="code-ai__toggle"
+        type="button"
+        @click="toggleAi"
+      >
+        <span class="code-ai__toggle-icon">✨</span>
+        <span class="code-ai__toggle-text">{{ t('aiToggle') }}</span>
+        <span class="code-ai__toggle-arrow">{{ aiExpanded ? '▲' : '▼' }}</span>
+      </button>
+
+      <div v-if="aiExpanded" class="code-ai__panel">
+        <textarea
+          v-model="aiPrompt"
+          class="code-ai__textarea"
+          :placeholder="t('aiPromptPlaceholder')"
+          maxlength="1000"
+          rows="3"
+        />
+
+        <div class="code-ai__controls">
+          <select
+            v-model="aiProvider"
+            class="code-select code-ai__provider"
+            :disabled="aiLoading"
+          >
+            <option
+              v-for="(preset, key) in LLM_PROVIDERS"
+              :key="key"
+              :value="key"
+            >{{ preset.label }}</option>
+          </select>
+          <input
+            v-model="aiModel"
+            class="code-input code-ai__model"
+            type="text"
+            :disabled="aiLoading"
+            :placeholder="t('aiModelPlaceholder')"
+            maxlength="64"
+          />
+        </div>
+
+        <div v-if="!aiKeyConfigured" class="code-ai__warn">
+          {{ t('aiNoKey') }}
+        </div>
+
+        <div v-if="aiError" class="code-ai__err">{{ aiError }}</div>
+
+        <div class="code-ai__actions">
+          <button
+            class="code-ai__gen"
+            type="button"
+            :disabled="aiLoading || !aiPrompt.trim() || !aiKeyConfigured || !codeNode"
+            @click="onGenerateCode"
+          >
+            {{ aiLoading ? t('aiGenerating') : t('aiGenerate') }}
+          </button>
+          <button
+            v-if="aiLoading"
+            class="code-ai__cancel"
+            type="button"
+            @click="onCancelAi"
+          >{{ t('aiCancel') }}</button>
+        </div>
+      </div>
     </div>
 
     <!-- 代码编辑区 -->
@@ -888,6 +1090,148 @@ function onCopyCallOutputPort(): void {
       font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
       max-height: 80px;
       overflow-y: auto;
+    }
+  }
+
+  // —— AI 生成面板 ——
+  .code-ai {
+    flex-shrink: 0;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    background: #fff;
+    overflow: hidden;
+
+    &__toggle {
+      all: unset;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      width: 100%;
+      padding: 8px 12px;
+      font-size: 12px;
+      font-weight: 500;
+      color: #374151;
+      background: #fafbfc;
+      transition: background 0.15s;
+
+      &:hover { background: #f3f4f6; }
+
+      &-icon {
+        font-size: 14px;
+        line-height: 1;
+      }
+
+      &-text {
+        flex: 1;
+        text-align: left;
+      }
+
+      &-arrow {
+        font-size: 9px;
+        color: #9aa2ad;
+      }
+    }
+
+    &__panel {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 10px 12px 12px;
+      border-top: 1px solid #e5e7eb;
+    }
+
+    &__textarea {
+      box-sizing: border-box;
+      width: 100%;
+      resize: vertical;
+      padding: 8px 10px;
+      font-size: 12px;
+      color: #1f2937;
+      font-family: inherit;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      background: #fff;
+      outline: none;
+      transition: border-color 0.15s;
+
+      &:focus { border-color: #3b82f6; }
+      &::placeholder { color: #9aa2ad; }
+    }
+
+    &__controls {
+      display: flex;
+      gap: 6px;
+
+      .code-ai__provider {
+        flex: 1;
+      }
+
+      .code-ai__model {
+        flex: 1;
+      }
+    }
+
+    &__warn {
+      font-size: 11px;
+      color: #d97706;
+      padding: 4px 8px;
+      background: #fffbeb;
+      border-radius: 4px;
+      border: 1px solid #fde68a;
+    }
+
+    &__err {
+      font-size: 11px;
+      color: #dc2626;
+      padding: 4px 8px;
+      background: #fef2f2;
+      border-radius: 4px;
+      border: 1px solid #fecaca;
+      white-space: pre-wrap;
+    }
+
+    &__actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    &__gen {
+      all: unset;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+      height: 28px;
+      font-size: 12px;
+      font-weight: 500;
+      color: #fff;
+      background: #3b82f6;
+      border-radius: 6px;
+      transition: background 0.15s;
+
+      &:hover:not(:disabled) { background: #2563eb; }
+      &:active:not(:disabled) { background: #1d4ed8; }
+      &:disabled { cursor: not-allowed; background: #93c5fd; }
+    }
+
+    &__cancel {
+      all: unset;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 28px;
+      padding: 0 12px;
+      font-size: 12px;
+      color: #dc2626;
+      border-radius: 6px;
+      border: 1px solid #fecaca;
+      background: #fff;
+      transition: background 0.15s;
+
+      &:hover { background: #fef2f2; }
     }
   }
 

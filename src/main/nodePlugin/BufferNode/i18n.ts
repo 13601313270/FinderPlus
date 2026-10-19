@@ -20,6 +20,25 @@ export const inLabel: LocalizedText = {
 }
 
 /** 端口标签（引擎构造端口时用；栈 / 队列共用） */
+export const clearLabel: LocalizedText = {
+  zh: '清空',
+  en: 'Clear',
+  ja: 'クリア',
+  ko: '비우기',
+  es: 'Limpiar',
+  ar: 'مسح',
+  fr: 'Vider',
+  pt: 'Limpar',
+  ru: 'Очистить',
+  hi: 'साफ़ करें',
+  id: 'Kosongkan',
+  de: 'Leeren',
+  vi: 'Xóa',
+  tr: 'Temizle',
+  it: 'Svuota'
+}
+
+/** 端口标签（引擎构造端口时用；栈 / 队列共用） */
 export const outLabel: LocalizedText = {
   zh: '出',
   en: 'Out',

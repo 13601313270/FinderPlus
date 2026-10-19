@@ -131,6 +131,14 @@ export abstract class BufferNode extends Node {
     this.notifyChanged()
   }
 
+  /** 清空缓冲区：移除所有条目并重置去重标记 */
+  protected clear(): void {
+    if (this.items.length === 0 && this.lastEnqueued === undefined) return
+    this.items.length = 0
+    this.lastEnqueued = undefined
+    this.notifyChanged()
+  }
+
   // —— 输入：自动入缓冲区 ——
 
   /**

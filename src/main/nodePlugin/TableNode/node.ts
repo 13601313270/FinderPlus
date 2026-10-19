@@ -200,21 +200,18 @@ export class TableNode extends Node {
           // @ts-ignore
           const res = await window.tableApi.executeRawSql({ nodeId: this.id, sql })
           if (res.ok) {
-            // 把完整返回值 commit 给下游：
-            // - SELECT  → rows 有数据，changes=0
-            // - INSERT  → lastInsertRowid 有值，changes=1
-            // - UPDATE/DELETE → changes 是受影响行数
-            pair.output.commit(new JsonValue({
-              rows: res.rows,
-              changes: res.changes,
-              lastInsertRowid: res.lastInsertRowid,
-              sql
-            }))
-
-            // DML 副作用：非 SELECT 的语句执行成功后 bump，
-            // render.vue 的 onChanged 检测到后自动 loadPage() 刷新表格展示
             if (res.changes > 0) {
+              // —— DML（INSERT/UPDATE/DELETE）：带副作用信息 ——
+              pair.output.commit(new JsonValue({
+                changes: res.changes,
+                lastInsertRowid: res.lastInsertRowid,
+                sql
+              }))
+              // DML 副作用：render.vue 的 onChanged 检测到 mutationsVersion 变化后自动 loadPage()
               this.mutationsVersion++
+            } else {
+              // —— SELECT（changes=0）：维持原行为，直接 commit rows 数组 ——
+              pair.output.commit(new JsonValue(res.rows))
             }
           } else {
             pair.output.clear()

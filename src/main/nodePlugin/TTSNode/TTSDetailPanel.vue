@@ -7,8 +7,10 @@ import { messages } from './i18n'
 import {
   isAudioGenModel,
   isMaasModel,
+  TTS_SAMPLE_RATES,
   type TtsLanguageType,
-  type TtsModelId
+  type TtsModelId,
+  type TtsSampleRate
 } from './providers'
 
 /**
@@ -30,6 +32,7 @@ const voice = ref('')
 const languageType = ref<TtsLanguageType>('Chinese')
 const instructions = ref('')
 const workspaceId = ref('')
+const sampleRate = ref<TtsSampleRate>(24000)
 const localRefAudioName = ref('')
 const status = ref<'idle' | 'loading' | 'done' | 'error'>('idle')
 const errorMessage = ref('')
@@ -76,6 +79,7 @@ function sync(n: TTSNode): void {
   languageType.value = n.displayLanguage
   instructions.value = n.displayInstructions
   workspaceId.value = n.displayWorkspaceId
+  sampleRate.value = n.displaySampleRate
   status.value = n.displayStatus
   errorMessage.value = n.displayError
   hasDashscopeKey.value = n.hasDashscopeKey
@@ -88,6 +92,7 @@ function onVoiceChange(v: string): void { node.value?.setVoice(v) }
 function onLanguageChange(v: string): void { node.value?.setLanguage(v as TtsLanguageType) }
 function onInstructionsInput(v: string): void { node.value?.setInstructions(v) }
 function onWorkspaceIdInput(v: string): void { node.value?.setWorkspaceId(v) }
+function onSampleRateChange(v: string): void { node.value?.setSampleRate(Number(v)) }
 function onGenerate(): void { node.value?.manualTrigger() }
 function onCancel(): void { node.value?.cancel() }
 
@@ -168,6 +173,18 @@ function onClearReferenceAudio(): void {
         @change="(e: Event) => onLanguageChange((e.target as HTMLSelectElement).value)"
       >
         <option v-for="lg in node?.availableLanguages ?? []" :key="lg" :value="lg">{{ lg }}</option>
+      </select>
+    </div>
+
+    <!-- 采样率（仅 MAAS 端点可配） -->
+    <div v-if="isMaas" class="detail-panel__section">
+      <label class="detail-panel__label">{{ t('sampleRateLabel') }}</label>
+      <select
+        class="detail-panel__select"
+        :value="sampleRate"
+        @change="(e: Event) => onSampleRateChange((e.target as HTMLSelectElement).value)"
+      >
+        <option v-for="sr in TTS_SAMPLE_RATES" :key="sr" :value="sr">{{ sr }} Hz</option>
       </select>
     </div>
 

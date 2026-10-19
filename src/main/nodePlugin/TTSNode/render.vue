@@ -35,6 +35,7 @@ const hasProviderConfig = computed(() =>
 )
 
 let previewUrl: string | null = null
+let lastPreviewHash = ''
 const previewAudioUrl = ref<string | null>(null)
 const audioEl = ref<HTMLAudioElement | null>(null)
 let unsubscribe: (() => void) | undefined
@@ -42,9 +43,20 @@ let unsubscribe: (() => void) | undefined
 function onAudioLoaded(): void {
   if (!audioEl.value) return
   const d = audioEl.value.duration || 0
+  console.log('[TTS-render] loadedmetadata duration=', d, 'readyState=', audioEl.value.readyState, 'src=', audioEl.value.currentSrc?.slice(0, 60))
   if (d > 0 && isFinite(d)) {
     node.value?.commitDuration(Number(d.toFixed(3)))
   }
+}
+function onAudioDurationChange(): void {
+  console.log('[TTS-render] durationchange:', audioEl.value?.duration, 'readyState=', audioEl.value?.readyState)
+}
+function onAudioError(): void {
+  const e = audioEl.value?.error
+  console.log('[TTS-render] audio error:', e?.code, e?.message, 'src=', audioEl.value?.currentSrc?.slice(0, 60))
+}
+function onAudioCanPlay(): void {
+  console.log('[TTS-render] canplay duration=', audioEl.value?.duration, 'readyState=', audioEl.value?.readyState)
 }
 
 function refresh(): void {
@@ -56,16 +68,24 @@ function refresh(): void {
   hasDashscopeKey.value = n.hasDashscopeKey
   hasWorkspaceId.value = n.hasWorkspaceId
   textConnected.value = n.textInput.incomingEdgeCount > 0
-  if (previewUrl) {
-    URL.revokeObjectURL(previewUrl)
-    previewUrl = null
-  }
+
   const f = n.previewFile
-  if (f) {
-    previewUrl = URL.createObjectURL(f)
-    previewAudioUrl.value = previewUrl
-  } else {
-    previewAudioUrl.value = null
+  const h = n.previewHash
+  // 只有真的换了文件才重建 blob URL —— 否则 commitDuration 的 notifyChanged 会导致
+  // loadedmetadata → commitDuration → notifyChanged → refresh 死循环，audio 被反复重建
+  if (h !== lastPreviewHash) {
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl)
+      previewUrl = null
+    }
+    if (f) {
+      previewUrl = URL.createObjectURL(f)
+      previewAudioUrl.value = previewUrl
+      lastPreviewHash = h
+    } else {
+      previewAudioUrl.value = null
+      lastPreviewHash = ''
+    }
   }
 }
 
@@ -160,8 +180,11 @@ function onCancel(): void { node.value?.cancel() }
         ref="audioEl"
         :src="previewAudioUrl"
         controls
-        preload="metadata"
+        preload="auto"
         @loadedmetadata="onAudioLoaded"
+        @durationchange="onAudioDurationChange"
+        @error="onAudioError"
+        @canplay="onAudioCanPlay"
       />
     </div>
   </div>

@@ -12,10 +12,13 @@ import {
   TTS_MODEL_IDS,
   DEFAULT_TTS_MODEL,
   TTS_LANGUAGE_TYPES,
+  TTS_SAMPLE_RATES,
+  DEFAULT_SAMPLE_RATE,
   isAudioGenModel,
   isMaasModel,
   type TtsModelId,
   type TtsLanguageType,
+  type TtsSampleRate,
   type ResolvedTtsEndpoint
 } from './providers'
 
@@ -136,7 +139,8 @@ export class TTSNode extends Node {
   private voice = 'Cherry'
   private languageType: TtsLanguageType = 'Chinese'
   private instructions = '' // 仅 qwen3-tts-instruct-flash 有效
-  private workspaceId = '' // 仅 qwen-audio-3.1-tts-next 有效：业务空间 ID
+  private workspaceId = '' // 仅 MAAS 端点有效：业务空间 ID
+  private sampleRate: TtsSampleRate = DEFAULT_SAMPLE_RATE // MAAS 端点的输出采样率
 
   /** 本地缓存文本（textInput 未接线时用这个） */
   private localText = ''
@@ -203,6 +207,15 @@ export class TTSNode extends Node {
     const trimmed = v.trim()
     if (this.workspaceId === trimmed) return
     this.workspaceId = trimmed
+    this.notifyChanged()
+  }
+
+  get displaySampleRate(): TtsSampleRate { return this.sampleRate }
+  setSampleRate(v: number): void {
+    const rate = v as TtsSampleRate
+    if (!TTS_SAMPLE_RATES.includes(rate)) return
+    if (this.sampleRate === rate) return
+    this.sampleRate = rate
     this.notifyChanged()
   }
 
@@ -363,7 +376,7 @@ export class TTSNode extends Node {
           text,
           voice: this.voice,
           format: endpoint.defaultFormat ?? 'wav',
-          sample_rate: endpoint.defaultSampleRate ?? 24000
+          sample_rate: this.sampleRate
         }
         if (endpoint.supportsInstructions && this.instructions.trim()) {
           input.instruction = this.instructions.trim()
@@ -374,7 +387,7 @@ export class TTSNode extends Node {
         const audiogenInput: Record<string, unknown> = {
           text_prompt: text,
           format: endpoint.defaultFormat ?? 'wav',
-          sample_rate: endpoint.defaultSampleRate ?? 24000
+          sample_rate: this.sampleRate
         }
 
         // 收集参考音频：优先 referenceAudioInput 端口，fallback 本地
@@ -426,11 +439,20 @@ export class TTSNode extends Node {
       const httpsUrl = audioUrl.replace(/^http:\/\//i, 'https://')
       const audioRes = await fetch(httpsUrl, { signal: controller.signal })
       if (!audioRes.ok) throw new Error(`下载音频失败（${audioRes.status} ${audioRes.statusText}）`)
+      const serverContentType = audioRes.headers.get('content-type') ?? '(none)'
+      console.log('[TTS] server content-type:', serverContentType, 'url:', audioUrl)
       const blob = await audioRes.blob()
+      console.log('[TTS] blob.size:', blob.size, 'blob.type:', blob.type)
       const bytes = new Uint8Array(await blob.arrayBuffer())
+      console.log('[TTS] bytes.length:', bytes.length, 'first 16 bytes (hex):',
+        Array.from(bytes.slice(0, 16)).map(b => b.toString(16).padStart(2, '0')).join(' '))
+      // 用服务端返回的实际 content-type 替代硬编码，更靠谱
+      const actualMime = blob.type || serverContentType.split(';')[0].trim() || outMime
+      const actualExt = mimeToExt(actualMime) ?? outExt
       const ab = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer
-      const fileName = `tts-${Date.now()}.${outExt}`
-      const file = new File([ab], fileName, { type: outMime })
+      const fileName = `tts-${Date.now()}.${actualExt}`
+      const file = new File([ab], fileName, { type: actualMime })
+      console.log('[TTS] File created:', 'name=', fileName, 'size=', file.size, 'type=', file.type)
       const hash = djb2(bytesToBase64(bytes))
 
       if (this.requestId !== myRequestId) return // stale
@@ -458,6 +480,7 @@ export class TTSNode extends Node {
       // 5. commit
       this.audioOutput.commit(new AudioFileValue(file, hash))
       const duration = parseWavDuration(bytes)
+      console.log('[TTS] parseWavDuration result:', duration, 'format=', actualExt)
       if (duration !== null) {
         this.durationOutput.commit(new NumberValue(Number(duration.toFixed(3))))
       }
@@ -501,7 +524,8 @@ export class TTSNode extends Node {
       languageType: this.languageType,
       instructions: this.instructions,
       localText: this.localText,
-      workspaceId: this.workspaceId
+      workspaceId: this.workspaceId,
+      sampleRate: this.sampleRate
     }
   }
 
@@ -513,6 +537,8 @@ export class TTSNode extends Node {
     if (typeof state.instructions === 'string') this.instructions = state.instructions
     if (typeof state.localText === 'string') this.localText = state.localText
     if (typeof state.workspaceId === 'string') this.workspaceId = state.workspaceId.trim()
+    const sr = state.sampleRate as number | undefined
+    if (sr && TTS_SAMPLE_RATES.includes(sr as TtsSampleRate)) this.sampleRate = sr as TtsSampleRate
   }
 
   beforeDestroy(): void {
@@ -533,6 +559,17 @@ export class TTSNode extends Node {
 
 // —— 内部辅助 ——
 
+/** MIME → 扩展名（仅覆盖 TTS 常见格式） */
+function mimeToExt(mime: string): string | null {
+  const m = mime.toLowerCase()
+  if (m.includes('wav') || m.includes('wave')) return 'wav'
+  if (m.includes('mp3')) return 'mp3'
+  if (m.includes('ogg')) return 'ogg'
+  if (m.includes('flac')) return 'flac'
+  if (m.includes('m4a') || m.includes('mp4')) return 'm4a'
+  return null
+}
+
 /** 从 ImageGenNode/imageGenerationService 照搬的 djb2 哈希，做 FileValue fingerprint */
 function djb2(str: string): string {
   let h = 5381
@@ -545,14 +582,9 @@ function djb2(str: string): string {
 /**
  * 解析 WAV 文件头，返回时长（秒）。
  *
- * 百炼返回的是标准 RIFF/WAVE PCM，用 DataView 按小端读：
- * - fmt chunk 起始：offset 12（"fmt " 标识）
- * - channels：offset 18 → Uint16
- * - sampleRate：offset 20 → Uint32
- * - bitsPerSample：offset 30 → Uint16
- * - data chunk：在文件里搜索 "data" 标识 → dataSize → duration = dataSize / (sampleRate * channels * (bitsPerSample/8))
- *
- * 解析失败（非标准 WAV）返回 null，端口跳过 commit。
+ * 百炼返回的是 RIFF/WAVE 格式，用 DataView 按小端读。
+ * 正确的做法是遍历所有 chunk，找到 fmt 和 data 两类——
+ * 不要假定 fmt 紧接 RIFF header，因为中间可能夹着 JUNK/fact LIST 等 chunk。
  */
 export function parseWavDuration(bytes: Uint8Array): number | null {
   if (bytes.length < 44) return null
@@ -562,27 +594,34 @@ export function parseWavDuration(bytes: Uint8Array): number | null {
 
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength)
 
-  // 在文件里找 data chunk（从 offset 12 开始遍历 chunk）
-  let offset = 12
+  let fmtDataOffset = -1 // fmt chunk 数据区起始 offset（"fmt " 之后的内容）
   let dataSize = -1
+
+  // 遍历所有 chunk，同时抓 fmt 和 data
+  let offset = 12
   while (offset + 8 <= bytes.length) {
     const id = String.fromCharCode(bytes[offset], bytes[offset + 1], bytes[offset + 2], bytes[offset + 3])
     const chunkSize = view.getUint32(offset + 4, true)
-    if (id === 'data') {
+    if (id === 'fmt ') {
+      fmtDataOffset = offset + 8
+      // 如果同时找到了 data，可以提前退出
+      if (dataSize > 0) break
+    } else if (id === 'data') {
       dataSize = chunkSize
-      break
+      if (fmtDataOffset > 0) break
     }
     offset += 8 + chunkSize
-    if (chunkSize % 2 !== 0) offset += 1 // chunk 对齐
+    if (chunkSize % 2 !== 0) offset += 1
+    // 防死循环
+    if (chunkSize === 0 || offset > bytes.length) break
   }
-  if (dataSize <= 0) return null
+  if (fmtDataOffset < 0 || dataSize <= 0) return null
+  if (fmtDataOffset + 16 > bytes.length) return null
 
-  // 读 fmt chunk（应该在 data 之前）
-  // 简化：按标准 PCM 布局直接读 offset 18-31
-  if (bytes.length < 36) return null
-  const channels = view.getUint16(18, true)
-  const sampleRate = view.getUint32(20, true)
-  const bitsPerSample = view.getUint16(30, true)
+  // fmt chunk 数据区：audioFormat(2) + channels(2) + sampleRate(4) + byteRate(4) + blockAlign(2) + bitsPerSample(2)
+  const channels = view.getUint16(fmtDataOffset + 2, true)
+  const sampleRate = view.getUint32(fmtDataOffset + 4, true)
+  const bitsPerSample = view.getUint16(fmtDataOffset + 14, true)
   if (channels === 0 || sampleRate === 0 || bitsPerSample === 0) return null
 
   const bytesPerSecond = sampleRate * channels * (bitsPerSample / 8)

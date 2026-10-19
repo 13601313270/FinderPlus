@@ -175,6 +175,23 @@ export const messages: Record<string, LocalizedText> = {
     tr: 'Talimatlar',
     it: 'Istruzioni'
   },
+  sampleRateLabel: {
+    zh: '采样率',
+    en: 'Sample Rate',
+    ja: 'サンプルレート',
+    ko: '샘플 레이트',
+    es: 'Tasa de muestreo',
+    ar: 'معدل العينة',
+    fr: 'Taux d’échantillonnage',
+    pt: 'Taxa de amostragem',
+    ru: 'Частота дискретизации',
+    hi: 'नमूना दर',
+    id: 'Laju Sampel',
+    de: 'Abtastrate',
+    vi: 'Tốc độ mẫu',
+    tr: 'Örnekleme Oranı',
+    it: 'Frequenza di campionamento'
+  },
   instructionsPlaceholder: {
     zh: '如：语速较快，上扬语调，适合介绍产品…',
     en: 'e.g. Fast pace, upward tone, suitable for product intro…',

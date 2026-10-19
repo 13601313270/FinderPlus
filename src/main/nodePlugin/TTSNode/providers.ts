@@ -90,6 +90,11 @@ export const TTS_LANGUAGE_TYPES = [
 
 export type TtsLanguageType = (typeof TTS_LANGUAGE_TYPES)[number]
 
+/** 支持的采样率枚举（Hz）——MAAS TTS 端点常用值 */
+export const TTS_SAMPLE_RATES = [8000, 16000, 24000, 44100, 48000] as const
+export type TtsSampleRate = (typeof TTS_SAMPLE_RATES)[number]
+export const DEFAULT_SAMPLE_RATE: TtsSampleRate = 24000
+
 export interface ResolvedTtsEndpoint {
   url: string
   key: string

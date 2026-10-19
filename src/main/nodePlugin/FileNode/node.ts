@@ -74,6 +74,37 @@ export abstract class FileNode extends Node {
     super(id)
   }
 
+  /**
+   * 文件节点共用的右键菜单项：追加「在 Finder 中查看」。
+   * 只有已选中文件时才出现，插到「删除节点」之前。
+   */
+  override contextMenuItems() {
+    const items = super.contextMenuItems()
+    if (this.hasFile) {
+      // @ts-ignore — 见 commitPath 的说明：运行时 window.fileApi 一定存在
+      const openFolderItem = {
+        id: 'showInFolder',
+        label: '在 Finder 中查看',
+        run: async () => {
+          if (!this.fileNameValue) return
+          // @ts-ignore — 见 commitPath 的说明：运行时 window.fileApi 一定存在
+          const result = await window.fileApi.showItemInFolder(this.fileNameValue)
+          if (!result.ok) {
+            console.warn('[FileNode] 打开文件所在目录失败：', this.fileNameValue, result.error)
+          }
+        }
+      }
+      // 插到 delete（danger=true）之前，避免危险操作堆在中间
+      const deleteIdx = items.findIndex((it: { danger?: boolean }) => it.danger)
+      if (deleteIdx >= 0) {
+        items.splice(deleteIdx, 0, openFolderItem)
+      } else {
+        items.push(openFolderItem)
+      }
+    }
+    return items
+  }
+
   get fileName(): string {
     return this.fileNameValue
   }

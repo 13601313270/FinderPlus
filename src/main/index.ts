@@ -951,6 +951,24 @@ function registerIpcHandlers(): void {
   })
 
   /**
+   * 在 Finder / Explorer 中定位并高亮指定文件。
+   * 右键文件节点「在 Finder 中查看」菜单项调用。
+   * shell.showItemInFolder 在目标文件不存在时会静默失败，这里手动校验一下再返回错误。
+   */
+  ipcMain.handle('file:showItemInFolder', (_e, args: { fileName: string; canvasId?: string }): { ok: boolean; error?: string } => {
+    const fullPath = join(getCanvasDir(args.canvasId), args.fileName)
+    if (!existsSync(fullPath)) {
+      return { ok: false, error: '文件不存在' }
+    }
+    try {
+      shell.showItemInFolder(fullPath)
+      return { ok: true }
+    } catch (err) {
+      return { ok: false, error: String(err) }
+    }
+  })
+
+  /**
    * 执行一条 shell 命令，回传 stdout / stderr / 退出码（给命令行节点用）。
    *
    * 用 exec（走系统默认 shell）而非 spawn：命令是用户自己写的整串（含管道、重定向），

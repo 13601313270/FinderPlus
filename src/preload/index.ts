@@ -330,6 +330,10 @@ const fileApi = {
   openInSystem: (fileName: string, canvasId?: string): Promise<{ ok: boolean; error?: string }> =>
     ipcRenderer.invoke('file:openInSystem', { fileName, canvasId: fillCanvasId(canvasId) }),
 
+  /** 在 Finder / Explorer 中定位并高亮指定文件 */
+  showItemInFolder: (fileName: string, canvasId?: string): Promise<{ ok: boolean; error?: string }> =>
+    ipcRenderer.invoke('file:showItemInFolder', { fileName, canvasId: fillCanvasId(canvasId) }),
+
   /**
    * 监听画布目录下文件变化。
    * 主进程 fs.watch 监听到变化后 debounce 300ms 推送 { canvasId, fileName }。

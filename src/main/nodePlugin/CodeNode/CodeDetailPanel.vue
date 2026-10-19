@@ -383,57 +383,37 @@ async function onGenerateCode(): Promise<void> {
     <div class="inputs">
       <div class="inputs__header">
         <span class="inputs__title">{{ t('inputsTitle') }}</span>
-        <button
-          class="inputs__add"
-          type="button"
-          :disabled="!codeNode"
-          :title="t('addInputHint')"
-          @click="onAddInput"
-        >+</button>
+        <button class="inputs__add" type="button" :disabled="!codeNode" :title="t('addInputHint')"
+          @click="onAddInput">+</button>
       </div>
       <div v-if="!hasInputs" class="inputs__empty">{{ t('inputsEmpty') }}</div>
       <div v-else class="inputs__list">
-        <div
-          v-for="input in inputs"
-          :key="input.id"
-          class="inputs__row"
-          :class="{ 'inputs__row--error': inputNameErrors[input.id] }"
-        >
-          <div class="code-row inputs__subrow">
-            <span class="code-row__label">{{ t('typeLabel') }}</span>
-            <select
-              class="code-select"
-              :value="input.kind"
-              :disabled="!codeNode"
-              :title="t('inputKindHint')"
-              @change="(e) => onInputKindChange(input.id, e)"
-            >
-              <option value="number">number</option>
-              <option value="string">string</option>
-              <option value="bool">bool</option>
-              <option value="file">file</option>
-              <option value="json">json</option>
-            </select>
+        <div v-for="input in inputs" :key="input.id" class="inputs__row"
+          :class="{ 'inputs__row--error': inputNameErrors[input.id] }">
+          <div style="display: flex;align-items: center;gap: 6px;width: 100%;">
+            <div class="code-row inputs__subrow">
+              <span class="code-row__label">{{ t('typeLabel') }}</span>
+              <select class="code-select" :value="input.kind" :disabled="!codeNode" :title="t('inputKindHint')"
+                @change="(e) => onInputKindChange(input.id, e)">
+                <option value="number">number</option>
+                <option value="string">string</option>
+                <option value="bool">bool</option>
+                <option value="file">file</option>
+                <option value="json">json</option>
+              </select>
+            </div>
+            <div class="code-row inputs__subrow">
+              <span class="code-row__label">{{ t('varNameLabel') }}</span>
+              <input class="code-input" type="text" :value="input.name" :disabled="!codeNode" maxlength="32"
+                @input="(e) => onInputNameChange(input.id, e)" />
+            </div>
+            <button class="inputs__remove" type="button" :disabled="!codeNode" :title="t('removeInputHint')"
+              @click="onRemoveInput(input.id)">×</button>
           </div>
-          <div class="code-row inputs__subrow">
-            <span class="code-row__label">{{ t('varNameLabel') }}</span>
-            <input
-              class="code-input"
-              type="text"
-              :value="input.name"
-              :disabled="!codeNode"
-              maxlength="32"
-              @input="(e) => onInputNameChange(input.id, e)"
-            />
+          <div v-if="inputNameErrors[input.id]">
+            <span class="inputs__errmsg">{{ errText(inputNameErrors[input.id])
+              }}</span>
           </div>
-          <button
-            class="inputs__remove"
-            type="button"
-            :disabled="!codeNode"
-            :title="t('removeInputHint')"
-            @click="onRemoveInput(input.id)"
-          >×</button>
-          <span v-if="inputNameErrors[input.id]" class="inputs__errmsg">{{ errText(inputNameErrors[input.id]) }}</span>
         </div>
       </div>
     </div>
@@ -442,58 +422,38 @@ async function onGenerateCode(): Promise<void> {
     <div class="inputs">
       <div class="inputs__header">
         <span class="inputs__title">{{ t('outputsTitle') }}</span>
-        <button
-          class="inputs__add"
-          type="button"
-          :disabled="!codeNode"
-          :title="t('addOutputHint')"
-          @click="onAddOutput"
-        >+</button>
+        <button class="inputs__add" type="button" :disabled="!codeNode" :title="t('addOutputHint')"
+          @click="onAddOutput">+</button>
       </div>
       <div v-if="!hasOutputs" class="inputs__empty">{{ t('outputsEmpty') }}</div>
       <div v-else class="inputs__list">
-        <div
-          v-for="output in outputs"
-          :key="output.id"
-          class="inputs__row"
-          :class="{ 'inputs__row--error': outputNameErrors[output.id] }"
-        >
-          <div class="code-row inputs__subrow">
-            <span class="code-row__label">{{ t('typeLabel') }}</span>
-            <select
-              class="code-select"
-              :value="output.kind"
-              :disabled="!codeNode"
-              :title="t('outputKindHint')"
-              @change="(e) => onOutputKindChange(output.id, e)"
-            >
-              <option value="number">number</option>
-              <option value="string">string</option>
-              <option value="bool">bool</option>
-              <option value="file">file</option>
-              <option value="imgfile">img file</option>
-              <option value="json">json</option>
-            </select>
+        <div v-for="output in outputs" :key="output.id" class="inputs__row"
+          :class="{ 'inputs__row--error': outputNameErrors[output.id] }">
+          <div style="display: flex;align-items: center;gap: 6px;width: 100%;">
+            <div class="code-row inputs__subrow">
+              <span class="code-row__label">{{ t('typeLabel') }}</span>
+              <select class="code-select" :value="output.kind" :disabled="!codeNode" :title="t('outputKindHint')"
+                @change="(e) => onOutputKindChange(output.id, e)">
+                <option value="number">number</option>
+                <option value="string">string</option>
+                <option value="bool">bool</option>
+                <option value="file">file</option>
+                <option value="imgfile">img file</option>
+                <option value="json">json</option>
+              </select>
+            </div>
+            <div class="code-row inputs__subrow">
+              <span class="code-row__label">{{ t('portNameLabel') }}</span>
+              <input class="code-input" type="text" :value="output.name" :disabled="!codeNode" maxlength="32"
+                @input="(e) => onOutputNameChange(output.id, e)" />
+            </div>
+            <button class="inputs__remove" type="button" :disabled="!codeNode || outputs.length <= 1"
+              :title="t('removeOutputHint')" @click="onRemoveOutput(output.id)">×</button>
           </div>
-          <div class="code-row inputs__subrow">
-            <span class="code-row__label">{{ t('portNameLabel') }}</span>
-            <input
-              class="code-input"
-              type="text"
-              :value="output.name"
-              :disabled="!codeNode"
-              maxlength="32"
-              @input="(e) => onOutputNameChange(output.id, e)"
-            />
+          <div v-if="outputNameErrors[output.id]">
+            <span class="inputs__errmsg">{{ errText(outputNameErrors[output.id])
+            }}</span>
           </div>
-          <button
-            class="inputs__remove"
-            type="button"
-            :disabled="!codeNode || outputs.length <= 1"
-            :title="t('removeOutputHint')"
-            @click="onRemoveOutput(output.id)"
-          >×</button>
-          <span v-if="outputNameErrors[output.id]" class="inputs__errmsg">{{ errText(outputNameErrors[output.id]) }}</span>
         </div>
       </div>
     </div>
@@ -509,24 +469,16 @@ async function onGenerateCode(): Promise<void> {
           <span class="code-hint__ident">{{ t('snippetValue') }}</span>
           <span class="code-hint__paren">)</span>
         </span>
-        <button
-          class="code-hint__copy"
-          type="button"
-          :title="t('copyHint')"
-          @click="onCopyCallOutputPort"
-        >
+        <button class="code-hint__copy" type="button" :title="t('copyHint')" @click="onCopyCallOutputPort">
           <span class="code-hint__copy-icon">📋</span>
           <span v-if="copyHint === 'callOutputPort'" class="code-hint__copy-tip">{{ t('copied') }}</span>
         </button>
       </div>
       <div v-if="hasOutputs" class="code-hint__ports">
         <span class="code-hint__ports-label">{{ t('availablePorts') }}</span>
-        <span
-          v-for="o in outputs"
-          :key="o.id"
-          class="code-hint__port-tag"
-          :title="t('portKindHint', { kind: o.kind })"
-        >{{ o.name }}<span class="code-hint__port-kind">:{{ o.kind }}</span></span>
+        <span v-for="o in outputs" :key="o.id" class="code-hint__port-tag"
+          :title="t('portKindHint', { kind: o.kind })">{{ o.name }}<span class="code-hint__port-kind">:{{ o.kind
+          }}</span></span>
       </div>
       <div class="code-hint__line code-hint__line-req">
         <span class="code-hint__line-content">
@@ -547,40 +499,21 @@ async function onGenerateCode(): Promise<void> {
 
       <!-- 已装包列表 -->
       <div v-if="installedPackages.length > 0" class="code-deps__list">
-        <div
-          v-for="pkg in installedPackages"
-          :key="pkg.name"
-          class="code-deps__row"
-        >
+        <div v-for="pkg in installedPackages" :key="pkg.name" class="code-deps__row">
           <span class="code-deps__pkg">{{ pkg.name }}</span>
           <span class="code-deps__ver">v{{ pkg.version }}</span>
-          <button
-            class="code-deps__remove"
-            type="button"
-            title="卸载"
-            @click="onUninstallPackage(pkg.name)"
-          >×</button>
+          <button class="code-deps__remove" type="button" title="卸载" @click="onUninstallPackage(pkg.name)">×</button>
         </div>
       </div>
       <div v-else class="code-deps__empty">尚未安装任何包（所有 CodeNode 共享）</div>
 
       <!-- 安装输入 -->
       <div class="code-deps__install">
-        <input
-          class="code-input code-deps__input"
-          type="text"
-          :value="installInput"
-          :disabled="installing"
-          placeholder="包名，如 lodash-es 或 @scope/pkg"
-          @keyup.enter="onInstallPackage"
-          @input="installInput = ($event.target as HTMLInputElement).value"
-        />
-        <button
-          class="code-deps__btn"
-          type="button"
-          :disabled="installing || !installInput.trim()"
-          @click="onInstallPackage"
-        >{{ installing ? '安装中…' : '安装' }}</button>
+        <input class="code-input code-deps__input" type="text" :value="installInput" :disabled="installing"
+          placeholder="包名，如 lodash-es 或 @scope/pkg" @keyup.enter="onInstallPackage"
+          @input="installInput = ($event.target as HTMLInputElement).value" />
+        <button class="code-deps__btn" type="button" :disabled="installing || !installInput.trim()"
+          @click="onInstallPackage">{{ installing ? '安装中…' : '安装' }}</button>
       </div>
 
       <div v-if="installError" class="code-deps__err">{{ installError }}</div>
@@ -589,45 +522,22 @@ async function onGenerateCode(): Promise<void> {
 
     <!-- AI 生成代码面板 -->
     <div class="code-ai">
-      <button
-        class="code-ai__toggle"
-        type="button"
-        @click="toggleAi"
-      >
+      <button class="code-ai__toggle" type="button" @click="toggleAi">
         <span class="code-ai__toggle-icon">✨</span>
         <span class="code-ai__toggle-text">{{ t('aiToggle') }}</span>
         <span class="code-ai__toggle-arrow">{{ aiExpanded ? '▲' : '▼' }}</span>
       </button>
 
       <div v-if="aiExpanded" class="code-ai__panel">
-        <textarea
-          v-model="aiPrompt"
-          class="code-ai__textarea"
-          :placeholder="t('aiPromptPlaceholder')"
-          maxlength="1000"
-          rows="3"
-        />
+        <textarea v-model="aiPrompt" class="code-ai__textarea" :placeholder="t('aiPromptPlaceholder')" maxlength="1000"
+          rows="3" />
 
         <div class="code-ai__controls">
-          <select
-            v-model="aiProvider"
-            class="code-select code-ai__provider"
-            :disabled="aiLoading"
-          >
-            <option
-              v-for="(preset, key) in LLM_PROVIDERS"
-              :key="key"
-              :value="key"
-            >{{ preset.label }}</option>
+          <select v-model="aiProvider" class="code-select code-ai__provider" :disabled="aiLoading">
+            <option v-for="(preset, key) in LLM_PROVIDERS" :key="key" :value="key">{{ preset.label }}</option>
           </select>
-          <input
-            v-model="aiModel"
-            class="code-input code-ai__model"
-            type="text"
-            :disabled="aiLoading"
-            :placeholder="t('aiModelPlaceholder')"
-            maxlength="64"
-          />
+          <input v-model="aiModel" class="code-input code-ai__model" type="text" :disabled="aiLoading"
+            :placeholder="t('aiModelPlaceholder')" maxlength="64" />
         </div>
 
         <div v-if="!aiKeyConfigured" class="code-ai__warn">
@@ -637,43 +547,26 @@ async function onGenerateCode(): Promise<void> {
         <div v-if="aiError" class="code-ai__err">{{ aiError }}</div>
 
         <div class="code-ai__actions">
-          <button
-            class="code-ai__gen"
-            type="button"
-            :disabled="aiLoading || !aiPrompt.trim() || !aiKeyConfigured || !codeNode"
-            @click="onGenerateCode"
-          >
+          <button class="code-ai__gen" type="button"
+            :disabled="aiLoading || !aiPrompt.trim() || !aiKeyConfigured || !codeNode" @click="onGenerateCode">
             {{ aiLoading ? t('aiGenerating') : t('aiGenerate') }}
           </button>
-          <button
-            v-if="aiLoading"
-            class="code-ai__cancel"
-            type="button"
-            @click="onCancelAi"
-          >{{ t('aiCancel') }}</button>
+          <button v-if="aiLoading" class="code-ai__cancel" type="button" @click="onCancelAi">{{ t('aiCancel')
+          }}</button>
         </div>
       </div>
     </div>
 
     <!-- 代码编辑区 -->
     <div class="code-editor-wrapper" @wheel.passive="onEditorWheel">
-      <Codemirror
-        :model-value="code"
-        :disabled="!codeNode"
-        :extensions="cmExtensions"
-        @update:model-value="onCodeUpdate"
-      />
+      <Codemirror :model-value="code" :disabled="!codeNode" :extensions="cmExtensions"
+        @update:model-value="onCodeUpdate" />
     </div>
 
     <!-- 底部操作栏：状态标签 + 自动执行 + 执行按钮 -->
     <div class="detail-panel__actions">
-      <button
-        class="detail-panel__run"
-        type="button"
-        :disabled="running || !hasCode"
-        :title="hasCode ? t('runHint') : t('runHintNoCode')"
-        @click="onRun"
-      >
+      <button class="detail-panel__run" type="button" :disabled="running || !hasCode"
+        :title="hasCode ? t('runHint') : t('runHintNoCode')" @click="onRun">
         {{ running ? t('running') : t('run') }}
       </button>
     </div>
@@ -749,6 +642,7 @@ async function onGenerateCode(): Promise<void> {
     &__row {
       display: flex;
       align-items: center;
+      flex-direction: column;
       gap: 6px;
 
       &--error {
@@ -907,11 +801,26 @@ async function onGenerateCode(): Promise<void> {
       }
     }
 
-    &__key { color: #b91c1c; font-weight: 600; }
-    &__paren { color: #6b7280; }
-    &__str { color: #047857; }
-    &__comma { color: #6b7280; }
-    &__ident { color: #1d4ed8; }
+    &__key {
+      color: #b91c1c;
+      font-weight: 600;
+    }
+
+    &__paren {
+      color: #6b7280;
+    }
+
+    &__str {
+      color: #047857;
+    }
+
+    &__comma {
+      color: #6b7280;
+    }
+
+    &__ident {
+      color: #1d4ed8;
+    }
 
     &__ports {
       display: flex;
@@ -1061,9 +970,18 @@ async function onGenerateCode(): Promise<void> {
       flex-shrink: 0;
       transition: background 0.15s;
 
-      &:hover:not(:disabled) { background: #2563eb; }
-      &:active:not(:disabled) { background: #1d4ed8; }
-      &:disabled { cursor: not-allowed; background: #93c5fd; }
+      &:hover:not(:disabled) {
+        background: #2563eb;
+      }
+
+      &:active:not(:disabled) {
+        background: #1d4ed8;
+      }
+
+      &:disabled {
+        cursor: not-allowed;
+        background: #93c5fd;
+      }
     }
 
     &__err {
@@ -1115,7 +1033,9 @@ async function onGenerateCode(): Promise<void> {
       background: #fafbfc;
       transition: background 0.15s;
 
-      &:hover { background: #f3f4f6; }
+      &:hover {
+        background: #f3f4f6;
+      }
 
       &-icon {
         font-size: 14px;
@@ -1155,8 +1075,13 @@ async function onGenerateCode(): Promise<void> {
       outline: none;
       transition: border-color 0.15s;
 
-      &:focus { border-color: #3b82f6; }
-      &::placeholder { color: #9aa2ad; }
+      &:focus {
+        border-color: #3b82f6;
+      }
+
+      &::placeholder {
+        color: #9aa2ad;
+      }
     }
 
     &__controls {
@@ -1211,9 +1136,18 @@ async function onGenerateCode(): Promise<void> {
       border-radius: 6px;
       transition: background 0.15s;
 
-      &:hover:not(:disabled) { background: #2563eb; }
-      &:active:not(:disabled) { background: #1d4ed8; }
-      &:disabled { cursor: not-allowed; background: #93c5fd; }
+      &:hover:not(:disabled) {
+        background: #2563eb;
+      }
+
+      &:active:not(:disabled) {
+        background: #1d4ed8;
+      }
+
+      &:disabled {
+        cursor: not-allowed;
+        background: #93c5fd;
+      }
     }
 
     &__cancel {
@@ -1231,7 +1165,9 @@ async function onGenerateCode(): Promise<void> {
       background: #fff;
       transition: background 0.15s;
 
-      &:hover { background: #fef2f2; }
+      &:hover {
+        background: #fef2f2;
+      }
     }
   }
 
@@ -1287,21 +1223,66 @@ async function onGenerateCode(): Promise<void> {
       background: #f0f4ff;
     }
 
-    :deep(.cm-cursor) { border-left-color: #1f2937; }
-    :deep(.cm-keyword) { color: #b91c1c; }
-    :deep(.cm-string) { color: #047857; }
-    :deep(.cm-number) { color: #7c3aed; }
-    :deep(.cm-comment) { color: #9aa2ad; font-style: italic; }
-    :deep(.cm-def) { color: #1d4ed8; }
-    :deep(.cm-variable) { color: #1f2937; }
-    :deep(.cm-property) { color: #0369a1; }
-    :deep(.cm-operator) { color: #6b7280; }
-    :deep(.cm-punctuation) { color: #6b7280; }
-    :deep(.cm-bracket) { color: #6b7280; }
-    :deep(.cm-tag) { color: #b91c1c; }
-    :deep(.cm-attribute) { color: #7c3aed; }
-    :deep(.cm-atom) { color: #7c3aed; }
-    :deep(.cm-meta) { color: #9aa2ad; }
+    :deep(.cm-cursor) {
+      border-left-color: #1f2937;
+    }
+
+    :deep(.cm-keyword) {
+      color: #b91c1c;
+    }
+
+    :deep(.cm-string) {
+      color: #047857;
+    }
+
+    :deep(.cm-number) {
+      color: #7c3aed;
+    }
+
+    :deep(.cm-comment) {
+      color: #9aa2ad;
+      font-style: italic;
+    }
+
+    :deep(.cm-def) {
+      color: #1d4ed8;
+    }
+
+    :deep(.cm-variable) {
+      color: #1f2937;
+    }
+
+    :deep(.cm-property) {
+      color: #0369a1;
+    }
+
+    :deep(.cm-operator) {
+      color: #6b7280;
+    }
+
+    :deep(.cm-punctuation) {
+      color: #6b7280;
+    }
+
+    :deep(.cm-bracket) {
+      color: #6b7280;
+    }
+
+    :deep(.cm-tag) {
+      color: #b91c1c;
+    }
+
+    :deep(.cm-attribute) {
+      color: #7c3aed;
+    }
+
+    :deep(.cm-atom) {
+      color: #7c3aed;
+    }
+
+    :deep(.cm-meta) {
+      color: #9aa2ad;
+    }
 
     :deep(.cm-editor.cm-disabled) {
       opacity: 0.5;
@@ -1327,9 +1308,20 @@ async function onGenerateCode(): Promise<void> {
     color: #6b7280;
     flex-shrink: 0;
 
-    &--running { background: #dbeafe; color: #2563eb; }
-    &--done    { background: #dcfce7; color: #16a34a; }
-    &--error   { background: #fee2e2; color: #dc2626; }
+    &--running {
+      background: #dbeafe;
+      color: #2563eb;
+    }
+
+    &--done {
+      background: #dcfce7;
+      color: #16a34a;
+    }
+
+    &--error {
+      background: #fee2e2;
+      color: #dc2626;
+    }
   }
 
   .detail-panel__run {
@@ -1349,9 +1341,18 @@ async function onGenerateCode(): Promise<void> {
     min-width: 0;
     transition: background 0.15s;
 
-    &:hover:not(:disabled) { background: #2563eb; }
-    &:active:not(:disabled) { background: #1d4ed8; }
-    &:disabled { cursor: not-allowed; background: #93c5fd; }
+    &:hover:not(:disabled) {
+      background: #2563eb;
+    }
+
+    &:active:not(:disabled) {
+      background: #1d4ed8;
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      background: #93c5fd;
+    }
   }
 
   // —— autoRun 开关（复用 render.vue 样式逻辑，命名加前缀防冲突） ——
@@ -1370,13 +1371,18 @@ async function onGenerateCode(): Promise<void> {
       height: 0;
       pointer-events: none;
 
-      &:checked + .auto-run__slider {
+      &:checked+.auto-run__slider {
         background: #3b82f6;
 
-        &::after { transform: translateX(14px); }
+        &::after {
+          transform: translateX(14px);
+        }
       }
 
-      &:disabled + .auto-run__slider { opacity: 0.5; cursor: not-allowed; }
+      &:disabled+.auto-run__slider {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
     }
 
     &__slider {
@@ -1391,8 +1397,10 @@ async function onGenerateCode(): Promise<void> {
       &::after {
         content: '';
         position: absolute;
-        top: 2px; left: 2px;
-        width: 14px; height: 14px;
+        top: 2px;
+        left: 2px;
+        width: 14px;
+        height: 14px;
         border-radius: 50%;
         background: #fff;
         box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);

@@ -8,6 +8,7 @@ import { manifest as numberInputManifest } from './NumberInputNode'
 import { manifest as boolInputManifest } from './BoolInputNode'
 import { manifest as radioManifest } from './RadioNode'
 import { manifest as txtFileManifest } from './TxtFileNode'
+import { manifest as htmlFileManifest } from './HtmlFileNode'
 import { manifest as imgFileManifest } from './ImgFileNode'
 import { manifest as audioFileManifest } from './AudioFileNode'
 import { manifest as pdfFileManifest } from './PdfFileNode'
@@ -100,6 +101,7 @@ const functionalManifests: NodePluginManifest[] = [
 
 const fileManifests: NodePluginManifest[] = [
   txtFileManifest,
+  htmlFileManifest,
   imgFileManifest,
   audioFileManifest,
   pdfFileManifest

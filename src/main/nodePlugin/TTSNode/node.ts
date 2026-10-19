@@ -5,16 +5,18 @@ import { InputPort } from '../../engine/port/InputPort'
 import { MethodPort } from '../../engine/port/MethodPort'
 import { OutputPort } from '../../engine/port/OutputPort'
 import { Node, type InputPortChangeSource } from '../../engine/node/Node'
-import { bytesToBase64 } from '../../engine/data/base64'
+import { bytesToBase64, base64ToBytes } from '../../engine/data/base64'
 import { readImageProviderKey } from '../ImageGenNode/providers'
 import {
   resolveTtsEndpoint,
   TTS_MODEL_IDS,
   DEFAULT_TTS_MODEL,
-  TTS_VOICES,
   TTS_LANGUAGE_TYPES,
+  isAudioGenModel,
+  isMaasModel,
   type TtsModelId,
-  type TtsLanguageType
+  type TtsLanguageType,
+  type ResolvedTtsEndpoint
 } from './providers'
 
 type TtsStatus = 'idle' | 'loading' | 'done' | 'error'
@@ -44,6 +46,28 @@ export class TTSNode extends Node {
       vi: 'Văn bản',
       tr: 'Metin',
       it: 'Testo'
+    }
+  })
+
+  /** 输入端口：参考音频（音色克隆，仅 qwen-audio-3.1-tts-next 有效） */
+  readonly referenceAudioInput = new InputPort('reference_audio', {
+    accepts: [AudioFileValue],
+    label: {
+      zh: '参考音频',
+      en: 'Reference Audio',
+      ja: '参照音声',
+      ko: '참조 오디오',
+      es: 'Audio de referencia',
+      ar: 'الصوت المرجعي',
+      fr: 'Audio de référence',
+      pt: 'Áudio de referência',
+      ru: 'Опорный аудио',
+      hi: 'संदर्भ ऑडियो',
+      id: 'Audio Referensi',
+      de: 'Referenz-Audio',
+      vi: 'Âm thanh tham chiếu',
+      tr: 'Referans Ses',
+      it: 'Audio di riferimento'
     }
   })
 
@@ -112,9 +136,12 @@ export class TTSNode extends Node {
   private voice = 'Cherry'
   private languageType: TtsLanguageType = 'Chinese'
   private instructions = '' // 仅 qwen3-tts-instruct-flash 有效
+  private workspaceId = '' // 仅 qwen-audio-3.1-tts-next 有效：业务空间 ID
 
   /** 本地缓存文本（textInput 未接线时用这个） */
   private localText = ''
+  /** 本地参考音频 base64（referenceAudioInput 未接线时用这个） */
+  private localReferenceAudioBase64 = ''
 
   // —— 运行态 ——
 
@@ -130,11 +157,12 @@ export class TTSNode extends Node {
   constructor(id: string) {
     super(id)
     this.addInput(this.textInput)
+    this.addInput(this.referenceAudioInput)
     this.addOutput(this.audioOutput)
     this.addOutput(this.durationOutput)
     this.addMethod(this.generateMethod)
     this.generateMethod.onTrigger(() => this.manualTrigger())
-    this.setBox(260, 226)
+    this.setBox(240, 140)
   }
 
   // —— UI 读写 ——
@@ -170,6 +198,32 @@ export class TTSNode extends Node {
     this.notifyChanged()
   }
 
+  get displayWorkspaceId(): string { return this.workspaceId }
+  setWorkspaceId(v: string): void {
+    const trimmed = v.trim()
+    if (this.workspaceId === trimmed) return
+    this.workspaceId = trimmed
+    this.notifyChanged()
+  }
+
+  /** referenceAudioInput 是否已接线 */
+  get referenceAudioConnected(): boolean {
+    return this.referenceAudioInput.incomingEdgeCount > 0
+  }
+
+  /** referenceAudioInput 端口值（AudioFileValue | null） */
+  get displayReferenceAudio(): AudioFileValue | null {
+    const [first] = this.referenceAudioInput.value
+    return first instanceof AudioFileValue ? first : null
+  }
+
+  setLocalReferenceAudio(base64: string): void {
+    this.localReferenceAudioBase64 = base64
+    this.notifyChanged()
+  }
+
+  get displayReferenceAudioBase64(): string { return this.localReferenceAudioBase64 }
+
   get displayText(): string {
     // 优先取 textInput 端口最新值，没接退回 localText
     const [first] = this.textInput.value
@@ -189,19 +243,44 @@ export class TTSNode extends Node {
   get previewFile(): File | null { return this.resultFile }
   get previewHash(): string { return this.resultHash }
 
-  /** 当前百炼 key 是否已配置 */
-  get hasProviderKey(): boolean {
+  /** 百炼 API Key 是否配了（DashScope key，两个模型共用） */
+  get hasDashscopeKey(): boolean {
     return readImageProviderKey('dashscope').length > 0
+  }
+
+  /** 业务空间 ID 是否配了（所有 MAAS 端点模型都需要） */
+  get hasWorkspaceId(): boolean {
+    return this.workspaceId.length > 0
+  }
+
+  /** 综合：当前模型的鉴权配置是否完整 */
+  get hasProviderKey(): boolean {
+    if (isMaasModel(this.model)) {
+      return this.hasDashscopeKey && this.hasWorkspaceId
+    }
+    return this.hasDashscopeKey
+  }
+
+  /** 是否使用 MAAS 端点 */
+  get isMaasMode(): boolean {
+    return isMaasModel(this.model)
+  }
+
+  /** 是否使用 Audiogen（支持参考音频音色克隆） */
+  get isAudioGenMode(): boolean {
+    return isAudioGenModel(this.model)
   }
 
   /** 当前模型是否支持 instructions */
   get modelSupportsInstructions(): boolean {
-    return this.model === 'qwen3-tts-instruct-flash'
+    return resolveTtsEndpoint(this.model).supportsInstructions
   }
 
-  /** 可用音色选项 */
+  /** 可用音色选项（根据模型自动切换 MAAS / DashScope 列表） */
   get availableVoices(): readonly { id: string; label: string }[] {
-    return TTS_VOICES.map(v => ({
+    const preset = resolveTtsEndpoint(this.model)
+    const voices = preset.voices ?? []
+    return voices.map(v => ({
       id: v.id,
       label: `${v.label.zh} / ${v.label.en}`
     }))
@@ -223,6 +302,12 @@ export class TTSNode extends Node {
       this.notifyChanged()
       return
     }
+    if (this.isMaasMode && !this.workspaceId) {
+      this.status = 'error'
+      this.errorMessage = '请先填写业务空间 ID（Workspace ID）——可在百炼控制台「业务空间」页面找到'
+      this.notifyChanged()
+      return
+    }
     this.fetchAndCommit(text)
   }
 
@@ -240,7 +325,7 @@ export class TTSNode extends Node {
     }
   }
 
-  /** 核心：发 TTS 请求 → 下载 → 落盘 → commit */
+  /** 核心：发 TTS 请求 → 下载 → 落盘 → commit（支持两套 API） */
   private async fetchAndCommit(text: string): Promise<void> {
     const myRequestId = ++this.requestId
     const controller = new AbortController()
@@ -251,23 +336,61 @@ export class TTSNode extends Node {
     this.notifyChanged()
 
     try {
-      const endpoint = resolveTtsEndpoint(this.model)
+      const endpoint = resolveTtsEndpoint(this.model, this.workspaceId)
       if (!endpoint.key) {
         throw new Error('百炼 API Key 未配置。请先在图片生成节点的设置里填写阿里云百炼的 API Key（两个节点共用同一个 key）。')
       }
 
-      // 1. POST 请求体（百炼 multimodal-generation 协议）
-      const body: Record<string, unknown> = {
-        model: this.model,
-        input: {
+      // —— 1. 构造请求体（根据 requestFormat 走不同分支） ——
+      let bodyStr: string
+      let outMime = 'audio/wav'
+      let outExt = 'wav'
+
+      if (endpoint.requestFormat === 'dashscope-sync') {
+        // 旧模型：qwen3-tts-flash / qwen3-tts-instruct-flash
+        const body: Record<string, unknown> = {
+          model: this.model,
+          input: { text, voice: this.voice, language_type: this.languageType }
+        }
+        if (endpoint.supportsInstructions && this.instructions.trim()) {
+          body.input = { ...(body.input as Record<string, unknown>), instructions: this.instructions.trim() }
+          body.parameters = { optimize_instructions: true }
+        }
+        bodyStr = JSON.stringify(body)
+      } else if (endpoint.requestFormat === 'maas-simple') {
+        // MAAS 简单文生语音：qwen-audio-3.1-tts-flash
+        const input: Record<string, unknown> = {
           text,
           voice: this.voice,
-          language_type: this.languageType
+          format: endpoint.defaultFormat ?? 'wav',
+          sample_rate: endpoint.defaultSampleRate ?? 24000
         }
-      }
-      if (endpoint.supportsInstructions && this.instructions.trim()) {
-        body.input = { ...(body.input as Record<string, unknown>), instructions: this.instructions.trim() }
-        body.parameters = { optimize_instructions: true }
+        if (endpoint.supportsInstructions && this.instructions.trim()) {
+          input.instruction = this.instructions.trim()
+        }
+        bodyStr = JSON.stringify({ model: this.model, input })
+      } else {
+        // MAAS Audiogen：qwen-audio-3.1-tts-next —— 支持参考音频音色克隆
+        const audiogenInput: Record<string, unknown> = {
+          text_prompt: text,
+          format: endpoint.defaultFormat ?? 'wav',
+          sample_rate: endpoint.defaultSampleRate ?? 24000
+        }
+
+        // 收集参考音频：优先 referenceAudioInput 端口，fallback 本地
+        const refAudios: Array<{ audio_data: string }> = []
+        const portAudio = this.displayReferenceAudio
+        if (portAudio?.file) {
+          const refBytes = new Uint8Array(await portAudio.file.arrayBuffer())
+          const refB64 = bytesToBase64(refBytes)
+          const refMime = portAudio.file.type || 'audio/wav'
+          refAudios.push({ audio_data: `data:${refMime};base64,${refB64}` })
+        } else if (this.localReferenceAudioBase64) {
+          refAudios.push({ audio_data: `data:audio/wav;base64,${this.localReferenceAudioBase64}` })
+        }
+        if (refAudios.length > 0) audiogenInput.references = refAudios
+
+        bodyStr = JSON.stringify({ model: this.model, input: audiogenInput })
       }
 
       const res = await fetch(endpoint.url, {
@@ -276,21 +399,21 @@ export class TTSNode extends Node {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${endpoint.key}`
         },
-        body: JSON.stringify(body),
+        body: bodyStr,
         signal: controller.signal
       })
 
-      if (this.requestId !== myRequestId) return // stale —— 用户已取消或发了新请求
+      if (this.requestId !== myRequestId) return // stale
 
       const data = await res.json()
       const root = data as Record<string, unknown>
       const output = root?.output as Record<string, unknown> | undefined
       if (!res.ok) {
-        const msg = root?.message
-          ?? output?.message
-          ?? `TTS 请求失败（${res.status} ${res.statusText}）`
+        const msg = root?.message ?? output?.message ?? `TTS 请求失败（${res.status} ${res.statusText}）`
         throw new Error(String(msg))
       }
+
+      if (this.requestId !== myRequestId) return // stale
 
       // 2. 从响应体抠 audio URL：output.audio.url
       const audio = output?.audio as Record<string, unknown> | undefined
@@ -299,25 +422,21 @@ export class TTSNode extends Node {
         throw new Error('响应里没找到音频 URL')
       }
 
-      if (this.requestId !== myRequestId) return // stale
-
-      // 3. 下载音频文件（内联，不复用 buildFileFromUrl——后者 fallback mime 是 image/png）
-      // 百炼返回的 OSS URL 是 http://，但 renderer CSP 的 connect-src 只允许 https:
-      // 阿里云 OSS 桶同时支持 HTTPS，把协议改成 https:// 即可绕过
+      // 3. 下载（http → https 绕过 CSP connect-src 限制）
       const httpsUrl = audioUrl.replace(/^http:\/\//i, 'https://')
       const audioRes = await fetch(httpsUrl, { signal: controller.signal })
       if (!audioRes.ok) throw new Error(`下载音频失败（${audioRes.status} ${audioRes.statusText}）`)
       const blob = await audioRes.blob()
       const bytes = new Uint8Array(await blob.arrayBuffer())
       const ab = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer
-      const fileName = `tts-${Date.now()}.wav`
-      const file = new File([ab], fileName, { type: 'audio/wav' })
+      const fileName = `tts-${Date.now()}.${outExt}`
+      const file = new File([ab], fileName, { type: outMime })
       const hash = djb2(bytesToBase64(bytes))
 
       if (this.requestId !== myRequestId) return // stale
 
-      // 4. 落盘到画布目录（覆盖同名冲突）
-      let diskName = `tts-${Date.now()}-${Math.random().toString(36).slice(2, 6)}.wav`
+      // 4. 落盘
+      let diskName = `tts-${Date.now()}-${Math.random().toString(36).slice(2, 6)}.${outExt}`
       try {
         const reader = new FileReader()
         const b64Promise = new Promise<string>((resolve, reject) => {
@@ -329,16 +448,15 @@ export class TTSNode extends Node {
           reader.readAsDataURL(file)
         })
         const pureB64 = await b64Promise
-        // @ts-ignore — fileApi 在 preload 里注入
+        // @ts-ignore
         const written = await window.fileApi.writeBuffer(diskName, pureB64, false)
         diskName = written.fileName
       } catch {
-        // 落盘失败静默忽略（可能是 canvas 目录不可写），内存 commit 仍能让下游拿到音频
+        // 落盘失败静默忽略，内存 commit 仍能让下游拿到音频
       }
 
-      // 5. commit 到输出端口
+      // 5. commit
       this.audioOutput.commit(new AudioFileValue(file, hash))
-      // WAV 文件头解析拿时长（精确）；若解析失败则等 render.vue 的 audio loadedmetadata 回写
       const duration = parseWavDuration(bytes)
       if (duration !== null) {
         this.durationOutput.commit(new NumberValue(Number(duration.toFixed(3))))
@@ -349,7 +467,6 @@ export class TTSNode extends Node {
       this.errorMessage = ''
     } catch (err) {
       if ((err as Error).name === 'AbortError') {
-        // 用户取消 → 安静回到 idle 状态，不显示 error
         this.status = 'idle'
         this.errorMessage = ''
       } else {
@@ -383,7 +500,8 @@ export class TTSNode extends Node {
       voice: this.voice,
       languageType: this.languageType,
       instructions: this.instructions,
-      localText: this.localText
+      localText: this.localText,
+      workspaceId: this.workspaceId
     }
   }
 
@@ -394,6 +512,7 @@ export class TTSNode extends Node {
     if (typeof state.languageType === 'string') this.languageType = state.languageType as TtsLanguageType
     if (typeof state.instructions === 'string') this.instructions = state.instructions
     if (typeof state.localText === 'string') this.localText = state.localText
+    if (typeof state.workspaceId === 'string') this.workspaceId = state.workspaceId.trim()
   }
 
   beforeDestroy(): void {

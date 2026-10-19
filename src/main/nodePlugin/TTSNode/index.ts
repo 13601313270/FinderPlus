@@ -23,6 +23,7 @@ export const manifest: NodePluginManifest = {
     it: 'Sintesi vocale'
   },
   render,
+  detailPanel: () => import('./TTSDetailPanel.vue'),
   // 图标：喇叭 / 声波 两笔
   iconPaths: ['M3 10v4h4l5 4V6L7 10H3Z', 'M16 8a4 4 0 0 1 0 8', 'M19 5a7 7 0 0 1 0 14'],
   category: 'ai'

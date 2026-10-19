@@ -21,6 +21,7 @@ import { manifest as imgFolderManifest } from './ImgFolderNode'
 import { manifest as llmManifest } from './LLMNode'
 import { manifest as imageGenManifest } from './ImageGenNode'
 import { manifest as ttsManifest } from './TTSNode'
+import { manifest as recorderManifest } from './RecorderNode'
 import { manifest as humanReviewManifest } from './HumanReviewNode'
 import { manifest as stringConcatManifest } from './StringConcatNode'
 import { manifest as commandManifest } from './CommandNode'
@@ -73,6 +74,7 @@ const functionalManifests: NodePluginManifest[] = [
   llmManifest,
   imageGenManifest,
   ttsManifest,
+  recorderManifest,
   humanReviewManifest,
   stringConcatManifest,
   commandManifest,

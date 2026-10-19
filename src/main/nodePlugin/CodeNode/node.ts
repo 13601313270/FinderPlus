@@ -7,6 +7,7 @@ import { NumberValue } from '../../engine/data/NumberValue'
 import { StringValue } from '../../engine/data/StringValue'
 import { Value } from '../../engine/data/Value'
 import { InputPort } from '../../engine/port/InputPort'
+import { MethodPort } from '../../engine/port/MethodPort'
 import { OutputPort } from '../../engine/port/OutputPort'
 import { Node } from '../../engine/node/Node'
 
@@ -138,10 +139,18 @@ export class CodeNode extends Node {
   /** 折叠状态（持久化）：true 时只保留 header + node__actions，其余收起 */
   private collapsed = false
 
+  /** 方法端口：上游 commit 任意值即触发一次手动执行（forceManual=true，忽略指纹排重） */
+  private readonly triggerPort = new MethodPort('trigger', {
+    label: { zh: '执行', en: 'Run' }
+  })
+
   constructor(id: string) {
     super(id)
     // 默认给一个输出端口 "result"，方便第一次使用（也兼容旧版直接 return 的写法）
     this.addDefaultOutputPort()
+    // 注册方法端口 + 绑定触发回调
+    super.addMethod(this.triggerPort)
+    this.triggerPort.onTrigger(() => { void this.run(true) })
     // box 永远按折叠态高度：根据端口数量动态计算
     this.setBox(NODE_WIDTH, computeBoxHeight(0, 1))
   }
@@ -570,9 +579,13 @@ export class CodeNode extends Node {
     this.notifyChanged()
   }
 
-  /** 任一输入端口值变化 → 通知渲染层刷新 + 若开了自动执行则跑一次 */
-  inputPortReceiveValue(_ports: InputPort[]): void {
+  /** 输入端口值变化 → 通知渲染层刷新 + 若开了自动执行则跑一次 */
+  inputPortReceiveValue(ports: InputPort[]): void {
     this.notifyChanged()
+    // 过滤掉 triggerPort（MethodPort 触发已通过 onTrigger 回调单独处理），
+    // 避免 autoRunEnabled 时同一次 commit 走两条路 → 重复执行
+    const isMethodOnly = ports.length > 0 && ports.every(p => p === this.triggerPort)
+    if (isMethodOnly) return
     if (this.autoRunEnabled) {
       setTimeout(() => {
         void this.run(true)

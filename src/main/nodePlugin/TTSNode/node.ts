@@ -162,7 +162,7 @@ export class TTSNode extends Node {
     this.addOutput(this.durationOutput)
     this.addMethod(this.generateMethod)
     this.generateMethod.onTrigger(() => this.manualTrigger())
-    this.setBox(240, 200)
+    this.setBox(240, 240)
   }
 
   // —— UI 读写 ——

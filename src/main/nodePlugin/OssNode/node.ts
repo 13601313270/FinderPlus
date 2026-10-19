@@ -11,6 +11,22 @@ export type OssStatus = 'idle' | 'running' | 'done' | 'error'
 /** 默认签名 URL 有效期（秒）—— 1 年 */
 const DEFAULT_SIGN_EXPIRES = 365 * 24 * 3600
 
+/** 从文件名（可带路径）提取后缀，含点号，如 '.png'；无后缀返回 '' */
+function getExtension(filename: string): string {
+  const name = filename.split(/[/\\]/).pop() ?? ''
+  const dot = name.lastIndexOf('.')
+  // 要求：有点号、不在开头（不是 .hiddenfile 那种）、后缀长度 1-10
+  if (dot > 0 && dot >= name.length - 11) {
+    return name.slice(dot).toLowerCase()
+  }
+  return ''
+}
+
+/** 判断文件名（可带路径）是否已带后缀 */
+function hasExtension(name: string): boolean {
+  return getExtension(name).length > 0
+}
+
 /**
  * 阿里云 OSS 上传节点：接入任意 FileValue，用源文件名直接上传到 bucket，输出可访问 URL。
  *
@@ -33,6 +49,12 @@ export class OssNode extends Node {
   readonly fileInput = new InputPort('source', {
     accepts: [FileValue],
     label: { zh: '文件', en: 'File' }
+  })
+
+  /** 输入端口（可选）：自定义 OSS objectKey。接入后覆盖源文件自身的文件名。 */
+  readonly fileNameInput = new InputPort('filename', {
+    accepts: [StringValue],
+    label: { zh: '文件名', en: 'Filename' }
   })
 
   /** 输出端口：上传后的 URL */
@@ -71,10 +93,11 @@ export class OssNode extends Node {
   constructor(id: string) {
     super(id)
     this.addInput(this.fileInput)
+    this.addInput(this.fileNameInput)
     this.addOutput(this.urlOutput)
     this.addMethod(this.triggerPort)
     this.triggerPort.onTrigger(() => { void this.run() })
-    this.setBox(180, 160)
+    this.setBox(180, 180)
   }
 
   isPositionAcceptFileDrop(_relativeX: number, _relativeY: number): boolean { return false }
@@ -148,14 +171,30 @@ export class OssNode extends Node {
       this.status = 'error'
       this.lastError = '请先配置 AccessKey / Region / Bucket'
       this.notifyChanged()
+      this.failRun()
       return
     }
 
     // 3. running guard
     if (this.status === 'running') return
 
-    // 4. 去重：相同文件指纹 + 相同 objectKey（= 文件名）不重复上传
-    const objectKey = first.file.name
+    // 4. 决定 objectKey：优先用 fileNameInput 自定义名，否则走源文件名
+    const [namePort] = this.fileNameInput.value
+    let objectKey: string
+    if (namePort instanceof StringValue && !namePort.isNull && namePort.value?.trim()) {
+      objectKey = namePort.value.trim()
+      // 自定义名不带后缀 → 从源文件名推断后缀拼上
+      if (!hasExtension(objectKey)) {
+        const srcExt = getExtension(first.file.name)
+        if (srcExt) objectKey += srcExt
+      }
+    } else {
+      objectKey = first.file.name
+    }
+    // 清洗：去掉开头的 /（OSS key 不应以 / 开头）
+    objectKey = objectKey.replace(/^\/+/, '')
+
+    // 5. 去重：相同文件指纹 + 相同 objectKey 不重复上传
     if (this.lastUploadedFingerprint === first.fingerprint && this.lastObjectKey === objectKey) {
       if (this.lastUrl) {
         this.urlOutput.commit(new StringValue(this.lastUrl))
@@ -164,7 +203,7 @@ export class OssNode extends Node {
       return
     }
 
-    // 5. 读文件 → base64（分块避免 reduce 拼接 O(n²)）
+    // 6. 读文件 → base64（分块避免 reduce 拼接 O(n²)）
     let base64 = ''
     try {
       const bytes = new Uint8Array(await first.file.arrayBuffer())
@@ -182,7 +221,8 @@ export class OssNode extends Node {
       return
     }
 
-    // 6. 调主进程上传
+    // 7. 调主进程上传
+    this.beginRun()
     this.status = 'running'
     this.lastError = ''
     this.notifyChanged()
@@ -205,6 +245,7 @@ export class OssNode extends Node {
         signExpires: this.signExpires
       })
     } catch (err) {
+      this.failRun()
       result = { ok: false, error: err instanceof Error ? err.message : String(err) }
     }
 

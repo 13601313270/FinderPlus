@@ -15,6 +15,7 @@ const nodeTitle = useNodeTitle(() => ossNode.value, '?')
 const { openNodeDetail } = useNodeDetail()
 
 const lastUrl = ref('')
+const lastError = ref('')
 const status = ref<'idle' | 'running' | 'done' | 'error'>('idle')
 const autoSend = ref(false)
 const hasConfig = ref(false)
@@ -24,6 +25,7 @@ let unsubscribe: (() => void) | undefined
 
 function syncFromNode(node: OssNode): void {
   lastUrl.value = node.displayLastUrl
+  lastError.value = node.displayLastError
   status.value = node.displayStatus
   autoSend.value = node.displayAutoSend
   hasConfig.value = node.hasConfig
@@ -54,6 +56,7 @@ async function onCopyUrl(): Promise<void> {
 function onUpload(): void { ossNode.value?.run() }
 
 const running = computed(() => status.value === 'running')
+const isError = computed(() => status.value === 'error')
 </script>
 
 <template>
@@ -73,19 +76,25 @@ const running = computed(() => status.value === 'running')
       </template>
     </NodeHeader>
 
-    <!-- —— 极简内容区 —— -->
+    <!-- —— 内容区 —— -->
     <div class="oss-card__body">
+      <div class="oss-card__row">
+        <!-- 阿里云 logo -->
+        <img
+          class="oss-card__logo"
+          :class="{ 'oss-card__logo--spin': running, 'oss-card__logo--error': isError }"
+          :src="aliyunLogo"
+          alt="OSS"
+          :title="hasConfig ? (status === 'done' ? '已上传' : (status === 'error' ? '上传失败' : (status === 'running' ? '上传中…' : '待上传'))) : '未配置'"
+        />
 
-      <!-- 阿里云 logo -->
-      <img
-        class="oss-card__logo"
-        :class="{ 'oss-card__logo--spin': running }"
-        :src="aliyunLogo"
-        alt="OSS"
-        :title="hasConfig ? (status === 'done' ? '已上传' : (status === 'error' ? '上传失败' : (status === 'running' ? '上传中…' : '待上传'))) : '未配置'"
-      />
-
-      <span class="oss-card__label">OSS</span>
+        <span class="oss-card__label" :class="{ 'oss-card__label--error': isError }">
+          {{ isError ? '失败' : 'OSS' }}
+        </span>
+      </div>
+      <div v-if="isError && lastError" class="oss-card__err" :title="lastError">
+        {{ lastError }}
+      </div>
     </div>
     <div class="tools">
       <!-- 复制按钮（有 URL 时才显示） -->
@@ -142,10 +151,31 @@ const running = computed(() => status.value === 'running')
   &__body {
     flex: 1;
     display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    min-height: 0;
+  }
+
+  &__row {
+    display: flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
-    min-height: 0;
+  }
+
+  &__err {
+    max-width: 160px;
+    font-size: 10px;
+    line-height: 1.3;
+    color: #dc2626;
+    text-align: center;
+    word-break: break-all;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
   }
 
   .tools {
@@ -163,6 +193,10 @@ const running = computed(() => status.value === 'running')
     border-radius: 8px;
 
     &--spin { animation: spin 0.8s linear infinite; }
+    &--error {
+      border: 1.5px solid #fca5a5;
+      background: #fef2f2;
+    }
   }
 
   &__label {
@@ -170,6 +204,8 @@ const running = computed(() => status.value === 'running')
     font-weight: 700;
     color: #1f2937;
     letter-spacing: 0.5px;
+
+    &--error { color: #dc2626; }
   }
 
   &__copy {

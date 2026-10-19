@@ -147,6 +147,9 @@ export class TableNode extends Node {
   /** 动态查询端口对列表，按 add 顺序排列 */
   readonly queryPorts: QueryPortPair[] = []
 
+  /** 每次成功执行 INSERT/UPDATE/DELETE 时递增。render.vue 监听它来自动刷新表格数据。 */
+  mutationsVersion = 0
+
   constructor(id: string) {
     super(id)
     // 默认给一个示例 string 列，用户可以在 UI 里改
@@ -197,14 +200,29 @@ export class TableNode extends Node {
           // @ts-ignore
           const res = await window.tableApi.executeRawSql({ nodeId: this.id, sql })
           if (res.ok) {
-            pair.output.commit(new JsonValue(res.rows))
+            // 把完整返回值 commit 给下游：
+            // - SELECT  → rows 有数据，changes=0
+            // - INSERT  → lastInsertRowid 有值，changes=1
+            // - UPDATE/DELETE → changes 是受影响行数
+            pair.output.commit(new JsonValue({
+              rows: res.rows,
+              changes: res.changes,
+              lastInsertRowid: res.lastInsertRowid,
+              sql
+            }))
+
+            // DML 副作用：非 SELECT 的语句执行成功后 bump，
+            // render.vue 的 onChanged 检测到后自动 loadPage() 刷新表格展示
+            if (res.changes > 0) {
+              this.mutationsVersion++
+            }
           } else {
             pair.output.clear()
-            console.warn('[TableNode] SQL query failed:', res.error)
+            console.warn('[TableNode] SQL failed:', res.error, sql)
           }
         } catch (err) {
           pair.output.clear()
-          console.warn('[TableNode] SQL query error:', err)
+          console.warn('[TableNode] SQL error:', err)
         }
       }
     } finally {

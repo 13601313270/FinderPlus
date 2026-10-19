@@ -192,16 +192,26 @@ onMounted(async () => {
   if (!node) return
 
   lastColumnsSig = columnsSig(node.columns)
+  let lastMutationsVersion = node.mutationsVersion
+
   offChanged = node.onChanged(() => {
     // 只有列定义真正变化（SQL 语法层）才 bump dummy ref 强制 computed 重算。
     // position / port 等变化也会走 notifyChanged，但这些不该触发列重渲染——
     // 否则拖动节点时 columnsVersion 反复 bump，打断 Vue 拖拽事件链。
     const curSig = columnsSig(node.columns)
-    if (curSig === lastColumnsSig) return
-    lastColumnsSig = curSig
-    columnsVersion.value++
-    sqlPortVersion.value++
-    ensureAndLoad()
+    if (curSig !== lastColumnsSig) {
+      lastColumnsSig = curSig
+      columnsVersion.value++
+      sqlPortVersion.value++
+      ensureAndLoad()
+      return
+    }
+
+    // —— DML 副作用检测：mutationsVersion 变化说明 insert/update/delete 改过行 ——
+    if (node.mutationsVersion !== lastMutationsVersion) {
+      lastMutationsVersion = node.mutationsVersion
+      loadPage()
+    }
   })
 
   await ensureAndLoad()
@@ -629,6 +639,12 @@ async function removeColumnFromUI(colName: string): Promise<void> {
     columnError.value = err instanceof Error ? err.message : String(err)
   }
 }
+/** 添加 SQL 查询端口（UI 入口，手动 bump 强制 computed 刷新） */
+function addQueryPortFromUI(): void {
+  tableNode.value?.addQueryPort()
+  sqlPortVersion.value++
+}
+
 /** 移除 SQL 查询端口对（带 confirm） */
 function removeQueryPortFromUI(id: string, idx: number): void {
   const node = tableNode.value
@@ -636,6 +652,7 @@ function removeQueryPortFromUI(id: string, idx: number): void {
   const ok = confirm(t('table.sqlPortConfirmDelete', { idx: idx + 1 }))
   if (!ok) return
   node.removeQueryPort(id)
+  sqlPortVersion.value++
 }
 </script>
 
@@ -656,6 +673,12 @@ function removeQueryPortFromUI(id: string, idx: number): void {
           @click="showSqlPortDialog = true"
           :title="$t('table.sqlPortTitle')"
         >{{ $t('table.sqlPort') }}</button>
+        <button
+          class="tbl__help-btn"
+          type="button"
+          :title="$t('table.refreshTooltip')"
+          @click="page = 1; resetSearch(); loadPage()"
+        >⟳</button>
         <button
           class="tbl__help-btn"
           type="button"
@@ -1062,7 +1085,7 @@ function removeQueryPortFromUI(id: string, idx: number): void {
           <button
             class="tbl-col-dialog__add-trigger"
             type="button"
-            @click="tableNode?.addQueryPort()"
+            @click="addQueryPortFromUI"
           >{{ $t('table.sqlPortAdd') }}</button>
         </div>
 

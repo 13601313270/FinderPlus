@@ -420,6 +420,9 @@ export type Language = {
     /** 占位符 {name} */
     errorDuplicateName: string
 
+    /** 刷新按钮 tooltip */
+    refreshTooltip: string
+
     /** resize 手柄 tooltip */
     resizeTooltip: string
 

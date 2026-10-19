@@ -1180,25 +1180,35 @@ function registerIpcHandlers(): void {
   })
 
   /**
-   * 执行原始 SQL 查询（只允许 SELECT），返回 rows 数组。
+   * 执行原始 SQL（仅允许 DML：SELECT / INSERT / UPDATE / DELETE）。
    * SQL 中的 `{table}` 占位符会被替换成该节点的物理表名。
-   * 供 TableNode 动态查询端口使用——上游 StringValue 送 SQL 进来，
-   * TableNode 执行后把 rows 包装成 JsonValue commit 给下游。
+   * 禁止 DDL（DROP/ALTER/CREATE），避免破坏物理表与 columns 元数据的一致性。
+   *
+   * 返回值：
+   *   - SELECT → rows 数组（查询结果）
+   *   - INSERT  → lastInsertRowid（新行 id）
+   *   - UPDATE/DELETE → changes（受影响行数）
    */
   ipcMain.handle('table:executeRawSql', (_e, args: {
     nodeId: string
     sql: string
-  }): { ok: true; rows: Array<Record<string, unknown>> } | { ok: false; error: string } => {
+  }): {
+    ok: true
+    rows: Array<Record<string, unknown>>
+    changes: number
+    lastInsertRowid: number | null
+  } | { ok: false; error: string } => {
     if (importInProgress) return { ok: false, error: '导入中，暂不操作' }
 
     const sql = args.sql?.trim()
     if (!sql) return { ok: false, error: 'SQL 不能为空' }
 
-    // —— SELECT-only 守卫：正则匹配开头（允许前置空白/注释） ——
     const trimmed = sql.replace(/^[\s;]*|[\s;]*$/g, '')
-    const selectOnly = /^SELECT\b/i.test(trimmed)
-    if (!selectOnly) {
-      return { ok: false, error: '只允许 SELECT 查询，禁止修改类语句' }
+
+    // —— DML-only 守卫：只允许 SELECT / INSERT / UPDATE / DELETE ——
+    const dmlOnly = /^(SELECT|INSERT|UPDATE|DELETE)\b/i.test(trimmed)
+    if (!dmlOnly) {
+      return { ok: false, error: '只允许 SELECT/INSERT/UPDATE/DELETE，禁止 DDL 语句' }
     }
 
     // —— 替换 {table} 占位符 ——
@@ -1209,6 +1219,7 @@ function registerIpcHandlers(): void {
       const db = getDatabase()
       const result = db.exec(finalSql)
 
+      // —— 收集 SELECT 返回的 rows ——
       const rows: Array<Record<string, unknown>> = []
       if (result.length > 0 && result[0].values.length > 0) {
         const cols = result[0].columns
@@ -1221,7 +1232,31 @@ function registerIpcHandlers(): void {
         }
       }
 
-      return { ok: true, rows }
+      // —— 收集 INSERT/UPDATE/DELETE 的副作用信息 ——
+      let changes = 0
+      let lastInsertRowid: number | null = null
+
+      // sql.js 没有直接的 getRowsModified()，用 SELECT changes() 取
+      try {
+        const ch = db.exec('SELECT changes()')
+        if (ch.length > 0 && ch[0].values.length > 0) {
+          changes = Number(ch[0].values[0][0]) || 0
+        }
+      } catch { /* 忽略 */ }
+
+      // 取 INSERT 的新 id — 非 INSERT 时 last_insert_rowid() 返回上一次的值，
+      // 但前端会根据语句类型判断，不匹配时忽略即可
+      try {
+        const lastId = db.exec('SELECT last_insert_rowid()')
+        if (lastId.length > 0 && lastId[0].values.length > 0) {
+          const v = Number(lastId[0].values[0][0])
+          if (v > 0) lastInsertRowid = v
+        }
+      } catch { /* 忽略 */ }
+
+      persist()
+
+      return { ok: true, rows, changes, lastInsertRowid }
     } catch (err) {
       return { ok: false, error: err instanceof Error ? err.message : String(err) }
     }

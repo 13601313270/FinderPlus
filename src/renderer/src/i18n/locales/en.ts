@@ -343,6 +343,7 @@ const en: Language = {
     errorEmptyName: 'Please enter a column name',
     errorInvalidName: 'Column name must start with a letter or underscore, followed by letters, digits or underscores',
     errorDuplicateName: 'Column "{name}" already exists',
+    refreshTooltip: 'Refresh data (reset search + reload)',
     resizeTooltip: 'Drag to resize',
     nodeFallback: 'Table'
   }

@@ -349,6 +349,7 @@ const zh: Language = {
     errorEmptyName: '请输入列名',
     errorInvalidName: '列名只能以字母/下划线开头，后跟字母/数字/下划线',
     errorDuplicateName: '列名 "{name}" 已存在',
+    refreshTooltip: '刷新数据（重置搜索 + 重新加载）',
     resizeTooltip: '拖拽调整大小',
     nodeFallback: '表'
   }

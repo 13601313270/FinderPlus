@@ -1951,6 +1951,75 @@ ipcMain.handle('oss:upload', async (_e, args: {
   }
 })
 
+// —— 阿里云 OSS 文件存在性检查 ——
+
+/** 阿里云 OSS head 检查 IPC handler。
+ *
+ * 用 ali-oss SDK 的 client.head(objectKey) 判断对象是否存在。
+ * HTTP 404 → exists=false；其他 4xx/5xx → ok:false 返回错误；
+ * 成功返回 exists=true + 文件元信息（size / lastModified / etag / contentType）。
+ */
+ipcMain.handle('oss:head', async (_e, args: {
+  accessKeyId: string
+  accessKeySecret: string
+  region: string
+  bucket: string
+  endpoint?: string
+  objectKey: string
+}): Promise<
+  { ok: true; exists: false }
+  | { ok: true; exists: true; size?: number; lastModified?: string; etag?: string; contentType?: string }
+  | { ok: false; error: string }
+> => {
+  const { accessKeyId, accessKeySecret, region, bucket, endpoint, objectKey } = args
+
+  // —— 参数校验 ——
+  if (!accessKeyId?.trim()) return { ok: false, error: 'AccessKeyId 不能为空' }
+  if (!accessKeySecret?.trim()) return { ok: false, error: 'AccessKeySecret 不能为空' }
+  if (!region?.trim()) return { ok: false, error: 'Region 不能为空（如 oss-cn-hangzhou）' }
+  if (!bucket?.trim()) return { ok: false, error: 'Bucket 不能为空' }
+  if (!objectKey?.trim()) return { ok: false, error: '对象 Key 不能为空' }
+
+  // —— 构造 endpoint（和 upload handler 保持一致的策略）——
+  let effectiveEndpoint: string
+  if (endpoint?.trim()) {
+    const raw = endpoint.trim()
+    effectiveEndpoint = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`
+  } else {
+    effectiveEndpoint = `https://${region.trim()}.aliyuncs.com`
+  }
+
+  try {
+    const client = new OSS({
+      region: region.trim(),
+      accessKeyId: accessKeyId.trim(),
+      accessKeySecret: accessKeySecret.trim(),
+      bucket: bucket.trim(),
+      endpoint: effectiveEndpoint
+    })
+
+    const result = await client.head(objectKey.trim())
+    // result.res.status === 200
+    const headers = result.res.headers ?? {}
+    return {
+      ok: true,
+      exists: true,
+      size: headers['content-length'] ? Number(headers['content-length']) : undefined,
+      lastModified: headers['last-modified'],
+      etag: headers['etag']?.replace(/^"|"$/g, ''),
+      contentType: headers['content-type']
+    }
+  } catch (err: unknown) {
+    // 404 → 文件不存在（ali-oss 在 404 时也会抛错）
+    const msg = err instanceof Error ? err.message : String(err)
+    const status = (err as { status?: number })?.status ?? (err as { code?: string })?.code
+    if (status === 404 || /NoSuchKey|404/.test(msg)) {
+      return { ok: true, exists: false }
+    }
+    return { ok: false, error: `OSS head 失败：${msg}` }
+  }
+})
+
 // —— 数据导出 / 导入 ——
 
 /** 导出 zip 内的目录结构常量 */

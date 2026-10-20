@@ -38,6 +38,7 @@ import { manifest as httpRequestManifest } from './HttpRequestNode'
 import { manifest as crawlerManifest } from './CrawlerNode'
 import { manifest as browserManifest } from './BrowserNode'
 import { manifest as ossManifest } from './OssNode'
+import { manifest as ossExistsManifest } from './OssExistsNode'
 import { manifest as jsonDisplayManifest } from './JsonDisplayNode'
 import { manifest as imageCropManifest } from './ImageCropNode'
 import { manifest as imageToPdfManifest } from './ImageToPdfNode'
@@ -91,6 +92,7 @@ const functionalManifests: NodePluginManifest[] = [
   crawlerManifest,
   browserManifest,
   ossManifest,
+  ossExistsManifest,
   jsonDisplayManifest,
   imageCropManifest,
   imageToPdfManifest,

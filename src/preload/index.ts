@@ -241,7 +241,19 @@ const ossApi = {
   }): Promise<
     { ok: true; url: string; objectKey: string; etag?: string }
     | { ok: false; error: string }
-  > => ipcRenderer.invoke('oss:upload', args)
+  > => ipcRenderer.invoke('oss:upload', args),
+  head: (args: {
+    accessKeyId: string
+    accessKeySecret: string
+    region: string
+    bucket: string
+    endpoint?: string
+    objectKey: string
+  }): Promise<
+    { ok: true; exists: false }
+    | { ok: true; exists: true; size?: number; lastModified?: string; etag?: string; contentType?: string }
+    | { ok: false; error: string }
+  > => ipcRenderer.invoke('oss:head', args)
 }
 
 /**

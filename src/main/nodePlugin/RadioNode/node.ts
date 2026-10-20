@@ -173,6 +173,9 @@ export class RadioNode extends Node {
   /** 当前选中的选项 id（持久化）；undefined = 未选 */
   private selectedId: string | undefined
 
+  /** 是否把输入端口注入的选项自动缓存为手动配置（持久化；默认 false） */
+  private cacheInputOptions = false
+
   constructor(id: string) {
     super(id)
     this.manualOptions = RadioNode.defaultOptions()
@@ -270,6 +273,24 @@ export class RadioNode extends Node {
     return this.source
   }
 
+  /** 是否把输入端口注入的选项自动缓存为手动配置 */
+  get displayCacheInput(): boolean {
+    return this.cacheInputOptions
+  }
+
+  /** 切换"输入选项自动缓存"开关。
+   *  打开时若当前正由输入端口驱动，立即把最新解析结果写入 manualOptions；
+   *  后续每次 applyInputOptions 也会同步覆盖 manualOptions。 */
+  setCacheInput(v: boolean): void {
+    if (this.cacheInputOptions === v) return
+    this.cacheInputOptions = v
+    if (v && this.source === 'input') {
+      // 立即把当前输入选项也缓存一份（等下一次 receive 走 applyInputOptions 也会再写一次，幂等）
+      this.manualOptions = [...this.options]
+    }
+    this.notifyChanged()
+  }
+
   // —— 用户操作 ——
 
   /** 选中某个选项 → 立即按其 v 强转提交（转不动则清空输出） */
@@ -299,20 +320,29 @@ export class RadioNode extends Node {
     this.notifyChanged()
   }
 
-  /** 追加一个选项，命名接在末尾之后 */
+  /** 追加一个选项，命名接在末尾之后。source===manual 时同步写入 manualOptions（持久备份） */
   addOption(): void {
     const seq = this.options.length + 1
-    this.options.push({ id: RadioNode.newId(), label: `Option ${seq}`, value: `value${seq}` })
+    const newOpt: RadioOption = { id: RadioNode.newId(), label: `Option ${seq}`, value: `value${seq}` }
+    this.options.push(newOpt)
+    if (this.source === 'manual') {
+      this.manualOptions.push(newOpt)
+    }
     this.setBox(NODE_WIDTH, computeBoxHeight(this.options.length))
     this.notifyChanged()
   }
 
-  /** 移除某个选项；至少保留一个。若移除的是当前选中项，则清空输出 */
+  /** 移除某个选项；至少保留一个。若移除的是当前选中项，则清空输出。
+   *  source===manual 时同步从 manualOptions 删除 */
   removeOption(id: string): void {
     if (this.options.length <= 1) return
     const idx = this.options.findIndex(o => o.id === id)
     if (idx === -1) return
     this.options.splice(idx, 1)
+    if (this.source === 'manual') {
+      const mIdx = this.manualOptions.findIndex(o => o.id === id)
+      if (mIdx !== -1) this.manualOptions.splice(mIdx, 1)
+    }
     if (this.selectedId === id) {
       this.selectedId = undefined
       this.output.clear()
@@ -365,13 +395,21 @@ export class RadioNode extends Node {
   /**
    * 切到 number 前规整各选项的原始值：能转成有限数字的写成规范数字文本（如 "1.5"），
    * 否则清空为空串——数字输入框里不会残留非法内容。
+   *
+   * 同时规整 manualOptions，避免"当前选项是数字格式但持久备份还是原始字符串"
+   * 导致 restoreManual 或下次 cacheInput=true 时回退到不可解析的数值。
+   * 幂等且代价可忽略（通常 <10 个选项）。
    */
   private normalizeValuesToNumber(): void {
-    for (const opt of this.options) {
-      const trimmed = opt.value.trim()
-      const n = trimmed === '' ? Number.NaN : Number(trimmed)
-      opt.value = Number.isFinite(n) ? String(n) : ''
+    const doNorm = (list: RadioOption[]) => {
+      for (const opt of list) {
+        const trimmed = opt.value.trim()
+        const n = trimmed === '' ? Number.NaN : Number(trimmed)
+        opt.value = Number.isFinite(n) ? String(n) : ''
+      }
     }
+    doNorm(this.options)
+    doNorm(this.manualOptions)
   }
 
   /**
@@ -422,6 +460,10 @@ export class RadioNode extends Node {
   private applyInputOptions(parsed: RadioOption[]): void {
     this.source = 'input'
     this.options = parsed
+    // 如果开启了输入缓存，把解析结果同步写入手动配置的持久备份
+    if (this.cacheInputOptions) {
+      this.manualOptions = parsed
+    }
     // 尝试按 value 匹配保留选中态（JSON 不提供稳定 id，只能靠 value 值匹配）
     const prevValue = this.selectedId
       ? (this.options.find(o => o.id === this.selectedId)
@@ -463,8 +505,10 @@ export class RadioNode extends Node {
     return {
       kind: this.kind,
       // 只持久化手动配置的选项，输入驱动的选项由上游在 readState 后重新推送
+      // （开启 cacheInputOptions 时 applyInputOptions 已自动同步 manualOptions）
       options: this.manualOptions.map(o => ({ id: o.id, label: o.label, value: o.value })),
-      selectedId: this.selectedId ?? null
+      selectedId: this.selectedId ?? null,
+      cacheInputOptions: this.cacheInputOptions
     }
   }
 
@@ -498,6 +542,9 @@ export class RadioNode extends Node {
     this.options = [...this.manualOptions]
 
     this.selectedId = typeof state.selectedId === 'string' ? state.selectedId : undefined
+
+    // 恢复"输入选项自动缓存"开关
+    this.cacheInputOptions = state.cacheInputOptions === true
 
     // 端口建好后立刻把选中值提交一次，下游才能收到（哪怕与默认值相同）
     this.commitOption(this.options.find(o => o.id === this.selectedId))

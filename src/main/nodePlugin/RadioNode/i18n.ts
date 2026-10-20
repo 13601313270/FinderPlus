@@ -176,5 +176,39 @@ export const messages = {
     vi: 'Tùy chọn hiện được điều khiển bởi đầu vào JSON từ cổng đầu vào. Việc chỉnh sửa ở đây bị vô hiệu hóa — ngắt kết nối đầu vào để quay lại chế độ thủ công.',
     tr: 'Seçenekler şu anda giriş bağlantı noktasındaki JSON girişinden geliyor. Burada düzenleme devre dışı — manuel moda dönmek için girişi kesin.',
     it: 'Le opzioni sono attualmente guidate dall’input JSON della porta di input. La modifica qui è disabilitata — disconnetti l’input per tornare alla modalità manuale.'
+  },
+  cacheInputLabel: {
+    zh: '自动缓存输入选项',
+    en: 'Auto-cache input options',
+    ja: '入力オプションを自動キャッシュ',
+    ko: '입력 옵션 자동 캐시',
+    es: 'Auto-copiar opciones de entrada',
+    ar: 'تخزين خيارات الإدخال تلقائيًا',
+    fr: 'Mettre en cache automatiquement les options d’entrée',
+    pt: 'Auto-cache de opções de entrada',
+    ru: 'Автокэширование вариантов из входа',
+    hi: 'इनपुट विकल्प ऑटो-कैश',
+    id: 'Auto-cache opsi masukan',
+    de: 'Eingabeoptionen automatisch cachen',
+    vi: 'Tự động lưu tùy chọn đầu vào',
+    tr: 'Giriş seçeneklerini otomatik önbellekle',
+    it: 'Auto-cache delle opzioni di input'
+  },
+  cacheInputHint: {
+    zh: '开启后，输入端口 JSON 传入的选项会自动替换手动配置并持久保存；输入断开后仍保留这些选项作为新的"手动配置"。',
+    en: 'When enabled, options from JSON input will replace your manual settings and persist across restarts. Disconnecting the input will keep these as the new manual options.',
+    ja: '有効にすると、入力ポートの JSON から受け取ったオプションが手動設定を自動的に上書きし、再起動後も保持されます。',
+    ko: '활성화하면 입력 포트 JSON 옵션이 수동 설정을 자동으로 대체하고 재시작 후에도 유지됩니다.',
+    es: 'Al habilitarlo, las opciones de entrada JSON reemplazarán tu configuración manual y se conservarán al reiniciar.',
+    ar: 'عند التفعيل، ستحل خيارات إدخال JSON محل إعداداتك اليدوية وتستمر بعد إعادة التشغيل.',
+    fr: 'Lorsque c’est activé, les options d’entrée JSON remplaceront vos paramètres manuels et persisteront au redémarrage.',
+    pt: 'Quando ativado, as opções de entrada JSON substituirão suas configurações manuais e persistirão após reinícios.',
+    ru: 'Включено: варианты из входного JSON автоматически заменят ручную конфигурацию и сохранятся между перезапусками.',
+    hi: 'सक्षम होने पर JSON इनपुट विकल्प आपकी मैनुअल सेटिंग्स को बदल देंगे और पुनः आरंभ पर बने रहेंगे।',
+    id: 'Saat diaktifkan, opsi dari input JSON akan menggantikan pengaturan manual dan bertahan setelah restart.',
+    de: 'Aktiviert: Optionen aus JSON-Eingaben ersetzen automatisch die manuelle Konfiguration und bleiben nach Neustarts erhalten.',
+    vi: 'Khi bật, tùy chọn từ đầu vào JSON sẽ thay thế cài đặt thủ công và duy trì qua khởi động lại.',
+    tr: 'Etkinleştirildiğinde, JSON girişinden gelen seçenekler manuel ayarlarınızı otomatik olarak değiştirir ve yeniden başlatmalarda korunur.',
+    it: 'Quando abilitato, le opzioni di input JSON sostituiranno le impostazioni manuali e persisteranno dopo il riavvio.'
   }
 } satisfies Record<string, LocalizedText>

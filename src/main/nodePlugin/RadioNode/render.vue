@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { nextTick, onMounted, onUnmounted, ref, shallowRef } from 'vue'
+import { onMounted, onUnmounted, ref, shallowRef } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
-import { RadioNode, type RadioOption, type RadioValueKind, type RadioOptionsSource } from './node'
+import { RadioNode, type RadioOption } from './node'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
+import { useNodeDetail } from '@renderer/composables/useNodeDetail'
 import { messages } from './i18n'
 import GearIcon from '@renderer/components/icons/GearIcon.vue'
 import HelpDialog from '@renderer/components/HelpDialog.vue'
@@ -14,10 +15,11 @@ import RadioHelpDialog from './RadioHelpDialog.vue'
  * 单选枚举节点渲染组件。
  *
  * 主视图：竖向排列的一组单选框（k/v 选项里的 k），点中即把该项的 v 按输出类型提交。
- * 输出类型与选项的增删改走右上角「齿轮」设置面板（popover），不占用主界面。
+ * 输出类型与选项的增删改走右上角「齿轮」按钮——点击后打开全局 NodeDetailDialog
+ * （中间栏的 RadioDetailPanel 负责渲染设置面板），不占用主界面。
  *
  * 节点现在有一个输入端口（接受 JsonValue），当收到有效 JSON 时，选项列表被覆盖——
- * 此时齿轮面板里的「选项编辑」区域会被禁用，仅保留输出类型切换；
+ * 此时详情面板里的「选项编辑」区域会被禁用，仅保留输出类型切换；
  * 输入端口断开后自动回退到手动配置，选项编辑恢复可用。
  *
  * 定位、右侧输出端口由 NodeShell 兜底；节点不在场景里时退化为只读。
@@ -32,13 +34,14 @@ const nodeTitle = useNodeTitle(() => radioNode.value, '?')
 // 卡片内文案走节点本地的 i18n.ts（放在节点文件夹里，便于插件化替换），跟随界面语言
 const t = useLocalizedMessages(messages)
 
+// 齿轮按钮 → 打开全局详情弹窗
+const { openNodeDetail } = useNodeDetail()
+
 // 帮助浮层开关（弹窗壳由 HelpDialog 负责）
 const showHelp = ref(false)
 
 const options = ref<readonly RadioOption[]>([])
-const kind = ref<RadioValueKind>('string')
 const selectedId = ref<string | undefined>(undefined)
-const source = ref<RadioOptionsSource>('manual')
 
 let unsubscribe: (() => void) | undefined
 
@@ -47,9 +50,7 @@ let unsubscribe: (() => void) | undefined
 function syncFromNode(node: RadioNode): void {
   // 浅拷贝，避免与 node 内部同一数组引用导致 Vue 跳过后重建
   options.value = [...node.displayOptions]
-  kind.value = node.displayKind
   selectedId.value = node.displaySelectedId
-  source.value = node.displaySource
 }
 
 onMounted(() => {
@@ -63,72 +64,11 @@ onMounted(() => {
 
 onUnmounted(() => {
   unsubscribe?.()
-  document.removeEventListener('click', onDocClick, true)
 })
 
 /** 选中某个选项 → 提交到输出端口 */
 function onSelect(id: string): void {
   radioNode.value?.select(id)
-}
-
-// —— 选项操作 ——
-
-function onAddOption(): void {
-  radioNode.value?.addOption()
-}
-
-function onRemoveOption(id: string): void {
-  radioNode.value?.removeOption(id)
-}
-
-function onLabelInput(id: string, e: Event): void {
-  radioNode.value?.setOptionLabel(id, (e.target as HTMLInputElement).value)
-}
-
-function onValueInput(id: string, e: Event): void {
-  radioNode.value?.setOptionValue(id, (e.target as HTMLInputElement).value)
-}
-
-/** 切换输出端口数据类型 */
-function onKindChange(e: Event): void {
-  radioNode.value?.setKind((e.target as HTMLSelectElement).value as RadioValueKind)
-}
-
-// —— 齿轮设置面板（popover，Teleport 到 body 避免被节点 overflow 裁剪）——
-
-const gearBtn = ref<HTMLButtonElement | null>(null)
-const popoverVisible = ref(false)
-const popoverPos = ref<{ top: number; left: number }>({ top: 0, left: 0 })
-
-function openSettings(): void {
-  nextTick(() => {
-    const rect = gearBtn.value?.getBoundingClientRect()
-    if (rect) {
-      popoverPos.value = { top: rect.bottom + 6, left: Math.max(8, rect.right - 280) }
-    }
-    popoverVisible.value = true
-    document.addEventListener('click', onDocClick, true)
-  })
-}
-
-function closeSettings(): void {
-  popoverVisible.value = false
-  document.removeEventListener('click', onDocClick, true)
-}
-
-function onGearClick(e: MouseEvent): void {
-  e.stopPropagation()
-  if (popoverVisible.value) {
-    closeSettings()
-    return
-  }
-  openSettings()
-}
-
-function onDocClick(e: MouseEvent): void {
-  const pop = document.querySelector('.radio-popover')
-  if (pop && pop.contains(e.target as Node)) return
-  closeSettings()
 }
 </script>
 
@@ -138,12 +78,11 @@ function onDocClick(e: MouseEvent): void {
       <template #actions>
         <button
           v-if="radioNode"
-          ref="gearBtn"
           class="node__gear"
           type="button"
           :title="t('settingsTitle')"
           @pointerdown.stop
-          @click.stop="onGearClick"
+          @click.stop="openNodeDetail(props.id)"
         >
           <GearIcon />
         </button>
@@ -171,76 +110,6 @@ function onDocClick(e: MouseEvent): void {
   <HelpDialog :visible="showHelp" :title="t('helpDialogTitle')" @close="showHelp = false">
     <RadioHelpDialog />
   </HelpDialog>
-
-  <!-- 齿轮设置面板：输出类型 + 选项增删改 -->
-  <Teleport to="body">
-    <div
-      v-if="popoverVisible"
-      class="radio-popover"
-      :style="{ top: popoverPos.top + 'px', left: popoverPos.left + 'px' }"
-      @click.stop
-    >
-      <div class="radio-popover__title">{{ t('settingsTitle') }}</div>
-
-      <label class="radio-popover__type">
-        <span class="radio-popover__type-label">{{ t('outputTypeLabel') }}</span>
-        <select class="radio-popover__select" :value="kind" @change="onKindChange">
-          <option value="string">string</option>
-          <option value="number">number</option>
-        </select>
-      </label>
-
-      <!-- JSON 输入覆盖中的提示条 -->
-      <div v-if="source === 'input'" class="radio-popover__input-banner">
-        <span class="radio-popover__input-banner-icon">⚡</span>
-        <span>{{ t('inputOverrideHint') }}</span>
-      </div>
-
-      <div class="radio-popover__section">
-        <div class="radio-popover__section-head">
-          <span>{{ t('optionsTitle') }}</span>
-          <button
-            class="radio-popover__add"
-            type="button"
-            :title="t('addOptionHint')"
-            :disabled="source === 'input'"
-            :class="{ 'radio-popover__add--disabled': source === 'input' }"
-            @click="onAddOption"
-          >＋</button>
-        </div>
-        <div class="radio-popover__list">
-          <div v-for="opt in options" :key="opt.id" class="radio-popover__row">
-            <input
-              class="radio-popover__input"
-              type="text"
-              :value="opt.label"
-              :placeholder="t('labelPlaceholder')"
-              :disabled="source === 'input'"
-              @input="(e) => onLabelInput(opt.id, e)"
-            />
-            <input
-              class="radio-popover__input"
-              :type="kind === 'number' ? 'number' : 'text'"
-              step="any"
-              :value="opt.value"
-              :placeholder="t('valuePlaceholder')"
-              :disabled="source === 'input'"
-              @input="(e) => onValueInput(opt.id, e)"
-            />
-            <button
-              class="radio-popover__remove"
-              type="button"
-              :title="t('removeOptionHint')"
-              :disabled="options.length <= 1 || source === 'input'"
-              @click="onRemoveOption(opt.id)"
-            >×</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="radio-popover__hint">{{ t('valueHint') }}</div>
-    </div>
-  </Teleport>
 </template>
 
 <style scoped lang="less">
@@ -352,179 +221,6 @@ function onDocClick(e: MouseEvent): void {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-  }
-}
-
-// 设置面板 popover（Teleport 到 body）
-.radio-popover {
-  position: fixed;
-  z-index: 2000;
-  width: 280px;
-  padding: 10px;
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-
-  &__title {
-    font-size: 12px;
-    color: #6b7280;
-  }
-
-  &__type {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-  }
-
-  &__type-label {
-    font-size: 12px;
-    color: #6b7280;
-  }
-
-  &__select {
-    flex: 1;
-    box-sizing: border-box;
-    padding: 4px 6px;
-    font-size: 12px;
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    color: #1f2937;
-    border: 1px solid @node-border-color;
-    border-radius: 6px;
-    background: #fff;
-    outline: none;
-    cursor: pointer;
-
-    &:focus {
-      border-color: #3b82f6;
-    }
-  }
-
-  &__section {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    border-top: 1px dashed #e5e7eb;
-    padding-top: 8px;
-  }
-
-  &__section-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    font-size: 12px;
-    color: #6b7280;
-  }
-
-  &__add {
-    all: unset;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 20px;
-    height: 20px;
-    border-radius: 4px;
-    background: #f3f4f6;
-    color: #374151;
-    font-size: 13px;
-    font-weight: 700;
-    line-height: 1;
-
-    &:hover {
-      background: #e5e7eb;
-    }
-  }
-
-  &__list {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    max-height: 220px;
-    overflow: auto;
-  }
-
-  &__row {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-  }
-
-  &__input {
-    flex: 1;
-    min-width: 0;
-    box-sizing: border-box;
-    padding: 4px 6px;
-    font-size: 12px;
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    color: #1f2937;
-    border: 1px solid @node-border-color;
-    border-radius: 6px;
-    background: #fff;
-    outline: none;
-    cursor: text;
-
-    &:focus {
-      border-color: #3b82f6;
-    }
-  }
-
-  &__remove {
-    all: unset;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 20px;
-    height: 20px;
-    border-radius: 4px;
-    color: #9aa2ad;
-    font-size: 14px;
-    line-height: 1;
-    flex-shrink: 0;
-
-    &:hover:not(:disabled) {
-      color: #dc2626;
-      background: #fee2e2;
-    }
-
-    &:disabled {
-      cursor: not-allowed;
-      opacity: 0.3;
-    }
-  }
-
-  &__hint {
-    font-size: 10px;
-    line-height: 1.5;
-    color: #9aa2ad;
-  }
-
-  // JSON 输入覆盖提示条
-  &__input-banner {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 8px;
-    font-size: 11px;
-    line-height: 1.5;
-    color: #b45309;
-    background: #fef3c7;
-    border: 1px solid #fcd34d;
-    border-radius: 6px;
-  }
-
-  &__input-banner-icon {
-    flex-shrink: 0;
-  }
-
-  &__add--disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
   }
 }
 </style>

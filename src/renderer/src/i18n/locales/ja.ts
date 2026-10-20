@@ -134,6 +134,7 @@ const ja: Language = {
     'txt-file': 'テキストファイル',
     'img-file': '画像ファイル',
     'pdf-file': 'PDFファイル',
+    'audio-file': '音声ファイル',
     'img-file-collection': '画像コレクション'
   },
   intro: {
@@ -332,6 +333,7 @@ const ja: Language = {
     errorEmptyName: 'Please enter a column name',
     errorInvalidName: 'Column name must start with a letter or underscore, followed by letters, digits or underscores',
     errorDuplicateName: 'Column "{name}" already exists',
+    refreshTooltip: 'Refresh data',
     resizeTooltip: 'Drag to resize',
     nodeFallback: 'Table'
   }

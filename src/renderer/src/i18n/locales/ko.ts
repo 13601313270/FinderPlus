@@ -134,6 +134,7 @@ const ko: Language = {
     'txt-file': '텍스트 파일',
     'img-file': '이미지 파일',
     'pdf-file': 'PDF 파일',
+    'audio-file': '음성 파일',
     'img-file-collection': '이미지 컬렉션'
   },
   intro: {
@@ -250,9 +251,7 @@ const ko: Language = {
       desc: 'By combining different nodes and connecting them, you can build all kinds of automated workflows. Happy exploring!',
       start: 'Start exploring'
     }
-  }
-
-,
+  },
   table: {
     columnSettings: 'Column settings',
     sqlPort: 'SQL ports',
@@ -332,6 +331,7 @@ const ko: Language = {
     errorEmptyName: 'Please enter a column name',
     errorInvalidName: 'Column name must start with a letter or underscore, followed by letters, digits or underscores',
     errorDuplicateName: 'Column "{name}" already exists',
+    refreshTooltip: 'Refresh data',
     resizeTooltip: 'Drag to resize',
     nodeFallback: 'Table'
   }

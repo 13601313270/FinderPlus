@@ -147,6 +147,7 @@ const en: Language = {
     'txt-file': 'Text File',
     'img-file': 'Image File',
     'pdf-file': 'PDF File',
+    'audio-file': 'Audio File',
     'img-file-collection': 'Image Collection'
   },
   intro: {

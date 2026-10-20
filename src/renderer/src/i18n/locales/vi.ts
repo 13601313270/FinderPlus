@@ -134,6 +134,7 @@ const vi: Language = {
     'txt-file': 'Tệp văn bản',
     'img-file': 'Tệp hình ảnh',
     'pdf-file': 'Tệp PDF',
+    'audio-file': 'Tệp âm thanh',
     'img-file-collection': 'Bộ sưu tập ảnh'
   },
   intro: {
@@ -250,9 +251,7 @@ const vi: Language = {
       desc: 'By combining different nodes and connecting them, you can build all kinds of automated workflows. Happy exploring!',
       start: 'Start exploring'
     }
-  }
-
-,
+  },
   table: {
     columnSettings: 'Column settings',
     sqlPort: 'SQL ports',
@@ -332,6 +331,7 @@ const vi: Language = {
     errorEmptyName: 'Please enter a column name',
     errorInvalidName: 'Column name must start with a letter or underscore, followed by letters, digits or underscores',
     errorDuplicateName: 'Column "{name}" already exists',
+    refreshTooltip: 'Refresh data',
     resizeTooltip: 'Drag to resize',
     nodeFallback: 'Table'
   }

@@ -152,6 +152,7 @@ const zh: Language = {
     'txt-file': '文本文件',
     'img-file': '图片文件',
     'pdf-file': 'PDF文件',
+    'audio-file': '音频文件',
     'img-file-collection': '图片文件集合'
   },
   intro: {

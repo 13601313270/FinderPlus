@@ -134,6 +134,7 @@ const tr: Language = {
     'txt-file': 'Metin Dosyası',
     'img-file': 'Görsel Dosyası',
     'pdf-file': 'PDF Dosyası',
+    'audio-file': 'Ses Dosyası',
     'img-file-collection': 'Görsel Koleksiyonu'
   },
   intro: {
@@ -250,9 +251,7 @@ const tr: Language = {
       desc: 'By combining different nodes and connecting them, you can build all kinds of automated workflows. Happy exploring!',
       start: 'Start exploring'
     }
-  }
-
-,
+  },
   table: {
     columnSettings: 'Column settings',
     sqlPort: 'SQL ports',
@@ -332,6 +331,7 @@ const tr: Language = {
     errorEmptyName: 'Please enter a column name',
     errorInvalidName: 'Column name must start with a letter or underscore, followed by letters, digits or underscores',
     errorDuplicateName: 'Column "{name}" already exists',
+    refreshTooltip: 'Refresh data',
     resizeTooltip: 'Drag to resize',
     nodeFallback: 'Table'
   }

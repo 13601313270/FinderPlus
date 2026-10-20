@@ -134,6 +134,7 @@ const hi: Language = {
     'txt-file': 'टेक्स्ट फ़ाइल',
     'img-file': 'छवि फ़ाइल',
     'pdf-file': 'PDF फ़ाइल',
+    'audio-file': 'सौप फ़ाइल',
     'img-file-collection': 'छवि संग्रह'
   },
   intro: {
@@ -332,6 +333,7 @@ const hi: Language = {
     errorEmptyName: 'Please enter a column name',
     errorInvalidName: 'Column name must start with a letter or underscore, followed by letters, digits or underscores',
     errorDuplicateName: 'Column "{name}" already exists',
+    refreshTooltip: 'Refresh data',
     resizeTooltip: 'Drag to resize',
     nodeFallback: 'Table'
   }

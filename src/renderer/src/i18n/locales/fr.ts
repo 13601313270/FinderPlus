@@ -133,6 +133,7 @@ const fr: Language = {
     'txt-file': 'Fichier texte',
     'img-file': 'Fichier image',
     'pdf-file': 'Fichier PDF',
+    'audio-file': 'Fichier audio',
     "img-file-collection": "Collection d'images"
   },
   intro: {
@@ -331,6 +332,7 @@ const fr: Language = {
     errorEmptyName: 'Please enter a column name',
     errorInvalidName: 'Column name must start with a letter or underscore, followed by letters, digits or underscores',
     errorDuplicateName: 'Column "{name}" already exists',
+    refreshTooltip: 'Refresh data',
     resizeTooltip: 'Drag to resize',
     nodeFallback: 'Table'
   }

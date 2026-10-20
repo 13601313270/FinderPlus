@@ -159,5 +159,22 @@ export const messages = {
     vi: 'Nhãn được hiển thị trên thẻ; giá trị là nội dung được gửi đến hạ nguồn sau khi chuyển đổi sang kiểu đầu ra.',
     tr: 'Etiket kartta gösterilir; değer ise çıkış türüne dönüştürüldükten sonra aşağı akışa gönderilen içeriktir.',
     it: 'L’etichetta è mostrata sulla scheda; il valore è ciò che viene inviato ai nodi a valle dopo la conversione nel tipo di output.'
+  },
+  inputOverrideHint: {
+    zh: '当前选项由输入端口 JSON 驱动，齿轮面板的编辑功能已禁用。断开输入即可恢复手动配置。',
+    en: 'Options are currently driven by JSON input from the input port. Editing here is disabled — disconnect the input to resume manual mode.',
+    ja: '現在のオプションは入力ポートの JSON によって駆動されています。ここでの編集は無効です——入力を切断すると手動モードに戻ります。',
+    ko: '현재 옵션은 입력 포트의 JSON 입력으로 구동되고 있습니다. 여기서 편집은 비활성화되어 있습니다 — 입력을 분리하면 수동 모드로 돌아갑니다.',
+    es: 'Las opciones son impulsadas actualmente por la entrada JSON del puerto de entrada. La edición aquí está deshabilitada: desconecte la entrada para volver al modo manual.',
+    ar: 'الخيارات تُحرَّك حاليًا بواسطة JSON منفذ الإدخال. التحرير هنا معطّل — افصل الإدخال للعودة إلى الوضع اليدوي.',
+    fr: 'Les options sont actuellement pilotées par l’entrée JSON du port d’entrée. L’édition ici est désactivée — déconnectez l’entrée pour reprendre le mode manuel.',
+    pt: 'As opções são atualmente impulsionadas pela entrada JSON da porta de entrada. A edição aqui está desativada — desconecte a entrada para retomar o modo manual.',
+    ru: 'Варианты в данный момент задаются JSON из входного порта. Редактирование здесь отключено — отключите вход, чтобы вернуться к ручному режиму.',
+    hi: 'विकल्प वर्तमान में इनपुट पोर्ट से JSON इनपुट द्वारा संचालित हैं। यहां संपादन अक्षम है — मैनुअल मोड में वापस आने के लिए इनपुट को डिस्कनेक्ट करें।',
+    id: 'Opsi saat ini digerakkan oleh input JSON dari port masukan. Pengeditan di sini dinonaktifkan — putuskan masukan untuk kembali ke mode manual.',
+    de: 'Die Optionen werden aktuell durch JSON-Eingaben vom Eingangsport gesteuert. Die Bearbeitung hier ist deaktiviert — trennen Sie den Eingang, um zum manuellen Modus zurückzukehren.',
+    vi: 'Tùy chọn hiện được điều khiển bởi đầu vào JSON từ cổng đầu vào. Việc chỉnh sửa ở đây bị vô hiệu hóa — ngắt kết nối đầu vào để quay lại chế độ thủ công.',
+    tr: 'Seçenekler şu anda giriş bağlantı noktasındaki JSON girişinden geliyor. Burada düzenleme devre dışı — manuel moda dönmek için girişi kesin.',
+    it: 'Le opzioni sono attualmente guidate dall’input JSON della porta di input. La modifica qui è disabilitata — disconnetti l’input per tornare alla modalità manuale.'
   }
 } satisfies Record<string, LocalizedText>

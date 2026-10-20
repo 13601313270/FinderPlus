@@ -1,9 +1,10 @@
 import { NumberValue } from '../../engine/data/NumberValue'
 import { StringValue } from '../../engine/data/StringValue'
 import { Value, type ValueKind } from '../../engine/data/Value'
+import { JsonValue } from '../../engine/data/JsonValue'
 import { OutputPort } from '../../engine/port/OutputPort'
+import { InputPort } from '../../engine/port/InputPort'
 import { Node } from '../../engine/node/Node'
-import type { InputPort } from '../../engine/port/InputPort'
 
 /** 输出端口可选的数据类型：枚举节点目前只产出 string / number 两种标量 */
 export type RadioValueKind = 'string' | 'number'
@@ -20,6 +21,94 @@ export interface RadioOption {
   label: string
   /** 原始值（v），提交前按输出类型强转 */
   value: string
+}
+
+/** 选项来源：manual = 齿轮面板手动配置，input = 输入端口 JSON 注入 */
+export type RadioOptionsSource = 'manual' | 'input'
+
+/**
+ * 把上游传来的 JSON 值解析成 RadioOption[]。
+ * 支持多种灵活格式：
+ *   1) ["a", "b", "c"]                          → label = value = 元素字符串
+ *   2) [{ label: "A", value: "a" }, ...]        → 完整对象数组
+ *   3) [{ name: "A", val: "a" }, ...]           → 简写对象数组
+ *   4) { "a": "A", "b": "B" }                   → 对象，key=value, val=label
+ *   5) { options: [...] }                        → 带 options 包一层的对象
+ *
+ * 解析失败或值不是数组/对象时返回 null（调用方据此走回退逻辑）。
+ */
+function parseOptionsFromJson(raw: unknown): RadioOption[] | null {
+  if (raw === null || raw === undefined) return null
+
+  let payload: unknown = raw
+
+  // 如果是 { options: [...] } 形式，剥开一层
+  if (typeof raw === 'object' && !Array.isArray(raw)) {
+    const obj = raw as Record<string, unknown>
+    if (Array.isArray(obj.options)) {
+      payload = obj.options
+    } else if (Array.isArray(obj.items)) {
+      payload = obj.items
+    }
+  }
+
+  // 纯字符串数组 → label = value
+  if (Array.isArray(payload) && payload.length > 0 && typeof payload[0] === 'string') {
+    return (payload as string[]).map(s => ({
+      id: RadioNode.newId(),
+      label: s,
+      value: s
+    }))
+  }
+
+  // 对象数组 → 逐行提取 label/value
+  if (Array.isArray(payload)) {
+    const list: RadioOption[] = []
+    for (const item of payload) {
+      if (typeof item !== 'object' || item === null) continue
+      const obj = item as Record<string, unknown>
+      const label = (
+        typeof obj.label === 'string' ? obj.label :
+        typeof obj.name === 'string' ? obj.name :
+        typeof obj.key === 'string' ? obj.key :
+        typeof obj.title === 'string' ? obj.title :
+        null
+      )
+      const value = (
+        typeof obj.value === 'string' ? obj.value :
+        typeof obj.val === 'string' ? obj.val :
+        typeof obj.v === 'string' ? obj.v :
+        typeof obj.id === 'string' ? obj.id :
+        null
+      )
+      // value 可以是 number / boolean，转成字符串
+      const valueStr = value !== null
+        ? String(value)
+        : (typeof obj.value === 'number' || typeof obj.value === 'boolean'
+            ? String(obj.value)
+            : null)
+      const labelStr = label !== null ? label : valueStr
+      if (labelStr && valueStr) {
+        list.push({ id: RadioNode.newId(), label: labelStr, value: valueStr })
+      }
+    }
+    return list.length > 0 ? list : null
+  }
+
+  // 对象形式 { value: label, ... }
+  if (typeof payload === 'object' && payload !== null) {
+    const entries = Object.entries(payload as Record<string, unknown>)
+    if (entries.length === 0) return null
+    const list: RadioOption[] = []
+    for (const [key, val] of entries) {
+      if (typeof val === 'string' || typeof val === 'number') {
+        list.push({ id: RadioNode.newId(), label: String(val), value: key })
+      }
+    }
+    return list.length > 0 ? list : null
+  }
+
+  return null
 }
 
 /** OutputPort 构造所需的 Value 子类形状（与 OutputPort.ts 内的 ValueClass 同构但未导出，这里内联） */
@@ -49,10 +138,12 @@ function computeBoxHeight(optionCount: number): number {
 }
 
 /**
- * 单选枚举节点：源头节点，把一组 <b>k/v</b> 选项以竖向单选列表呈现，
+ * 单选枚举节点：把一组 <b>k/v</b> 选项以竖向单选列表呈现，
  * 点中哪一项就把该项的 v 按节点选定的输出类型强转后提交给下游。
  *
- * - 没有输入端口，只有一个输出端口；输出类型由齿轮设置面板切换（string / number）。
+ * - 支持一个输入端口（接受 JsonValue），传入 JSON 数组/对象可以**覆盖**齿轮面板手动配置的选项列表。
+ * - 输入端口断开或清空后，自动回退到上一次手动配置的选项（或默认选项）。
+ * - 输出类型由齿轮设置面板切换（string / number），不随 JSON 输入自动推断。
  * - 「同一组 v 只能用同一个输出类型」：整份选项列表共用**一个**输出端口类型。
  * - 输出端口的 valueClass 是 readonly 的，切换类型时按 CodeNode/SwitchNode 的同构做法
  *   拆旧端口、建新端口（旧端口连的下游边随之断开），并立即把当前选中值按新类型重发。
@@ -61,11 +152,20 @@ export class RadioNode extends Node {
   static readonly TYPE = 'radio'
   readonly type = RadioNode.TYPE
 
+  /** 选项来源：manual = 齿轮面板手动配置，input = 输入端口 JSON 注入 */
+  private source: RadioOptionsSource = 'manual'
+
+  /** 手动配置的选项备份（输入端口覆盖后仍保留，断开时回退用） */
+  private manualOptions: RadioOption[]
+
+  /** 当前生效的选项列表（source=input 时来自 JSON 解析，否则等于 manualOptions） */
+  private options: RadioOption[]
+
   /** 输出端口：类型随 kind 动态重建 */
   private output: OutputPort
 
-  /** 选项列表（持久化） */
-  private options: RadioOption[]
+  /** 输入端口：接受 JsonValue，传入枚举选项 JSON */
+  private readonly inputPort: InputPort
 
   /** 输出端口数据类型（持久化） */
   private kind: RadioValueKind = 'string'
@@ -75,7 +175,30 @@ export class RadioNode extends Node {
 
   constructor(id: string) {
     super(id)
-    this.options = RadioNode.defaultOptions()
+    this.manualOptions = RadioNode.defaultOptions()
+    this.options = [...this.manualOptions]
+    this.inputPort = new InputPort('options', {
+      accepts: [JsonValue],
+      required: false,
+      label: {
+        zh: '选项 JSON',
+        en: 'Options JSON',
+        ja: 'オプション JSON',
+        ko: '옵션 JSON',
+        es: 'Opciones JSON',
+        ar: 'خيارات JSON',
+        fr: 'JSON des options',
+        pt: 'JSON das opções',
+        ru: 'JSON вариантов',
+        hi: 'विकल्प JSON',
+        id: 'JSON Opsi',
+        de: 'Optionen JSON',
+        vi: 'JSON tùy chọn',
+        tr: 'Seçenekler JSON',
+        it: 'JSON opzioni'
+      }
+    })
+    super.addInput(this.inputPort)
     this.output = this.buildOutput()
     super.addOutput(this.output)
     this.setBox(NODE_WIDTH, computeBoxHeight(this.options.length))
@@ -91,7 +214,7 @@ export class RadioNode extends Node {
   }
 
   /** 生成一个选项 id */
-  private static newId(): string {
+  static newId(): string {
     return `opt-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
   }
 
@@ -140,6 +263,11 @@ export class RadioNode extends Node {
   /** 当前选中的选项 id */
   get displaySelectedId(): string | undefined {
     return this.selectedId
+  }
+
+  /** 当前选项来源：manual = 齿轮面板手动配置，input = 输入端口 JSON 注入 */
+  get displaySource(): RadioOptionsSource {
+    return this.source
   }
 
   // —— 用户操作 ——
@@ -246,15 +374,96 @@ export class RadioNode extends Node {
     }
   }
 
-  /** 没有输入端口，永远收不到通知 */
-  inputPortReceiveValue(_ports: InputPort[]): void {}
+  /**
+   * 选项输入端口回调：上游 JSON 变化 → 重建选项；断开 → 回退手动配置。
+   *
+   * 解析成功（receive + 有效 JSON）时：
+   *   - source 切到 'input'
+   *   - 用解析出的选项替换 this.options
+   *   - 尝试按 value 匹配保留 selectedId（输入选项不提供稳定 id，只能靠 value 值匹配）
+   *   - 按匹配结果 commit 输出（匹配不到就清空）
+   *   - 调整节点高度
+   *
+   * receiveClear / unbindEdge 时（输入断了）：
+   *   - source 切回 'manual'
+   *   - 恢复 this.options = manualOptions 的浅拷贝
+   *   - 按恢复后的选中态重发输出
+   */
+  inputPortReceiveValue(
+    ports: InputPort[],
+    source: 'receive' | 'receiveClear' | 'bindEdge' | 'unbindEdge'
+  ): void {
+    const port = ports.find(p => p.id === 'options')
+    if (!port) return
+
+    if (source === 'receive') {
+      const val = port.lastReceiveValue
+      if (val instanceof JsonValue && !val.isNull) {
+        const parsed = parseOptionsFromJson(val.value)
+        if (parsed && parsed.length > 0) {
+          this.applyInputOptions(parsed)
+          return
+        }
+        // 解析失败 → 不覆盖现有选项，保持 manual 模式
+      }
+      // 收到 null / 无效 JSON → 等同清空
+      this.restoreManual()
+      return
+    }
+
+    // receiveClear / unbindEdge → 输入断了，回退手动
+    if (source === 'receiveClear' || source === 'unbindEdge') {
+      this.restoreManual()
+    }
+    // bindEdge：新连线但上游还没补送值，等 receive 再说
+  }
+
+  /** 输入端口 JSON 解析成功 → 覆盖选项列表 */
+  private applyInputOptions(parsed: RadioOption[]): void {
+    this.source = 'input'
+    this.options = parsed
+    // 尝试按 value 匹配保留选中态（JSON 不提供稳定 id，只能靠 value 值匹配）
+    const prevValue = this.selectedId
+      ? (this.options.find(o => o.id === this.selectedId)
+          ? this.options.find(o => o.id === this.selectedId)!.value
+          : undefined)
+      : undefined
+    // 重新匹配：先按 value 精确匹配
+    let matched = parsed.find(o => o.value === prevValue)
+    if (!matched && this.selectedId) {
+      // value 对不上（比如输出类型切换过或值被规范化了），尝试在原始 parsed 里找到 selectedId
+      matched = parsed.find(o => o.id === this.selectedId)
+    }
+    if (matched) {
+      this.selectedId = matched.id
+      this.commitOption(matched)
+    } else {
+      // 没匹配到 → 清空选中
+      this.selectedId = undefined
+      this.output.clear()
+    }
+    this.setBox(NODE_WIDTH, computeBoxHeight(this.options.length))
+    this.notifyChanged()
+  }
+
+  /** 输入端口断开 → 回退手动配置 */
+  private restoreManual(): void {
+    if (this.source === 'manual') return
+    this.source = 'manual'
+    this.options = [...this.manualOptions]
+    // 恢复选中态（manualOptions 里的 id 是原来自己生成的，selectedId 应该能直接匹配）
+    this.setBox(NODE_WIDTH, computeBoxHeight(this.options.length))
+    this.commitOption(this.options.find(o => o.id === this.selectedId))
+    this.notifyChanged()
+  }
 
   // —— 持久化 ——
 
   saveState(): Record<string, unknown> {
     return {
       kind: this.kind,
-      options: this.options.map(o => ({ id: o.id, label: o.label, value: o.value })),
+      // 只持久化手动配置的选项，输入驱动的选项由上游在 readState 后重新推送
+      options: this.manualOptions.map(o => ({ id: o.id, label: o.label, value: o.value })),
       selectedId: this.selectedId ?? null
     }
   }
@@ -269,6 +478,7 @@ export class RadioNode extends Node {
     this.output = this.buildOutput()
     super.addOutput(this.output)
 
+    // 恢复手动配置的选项
     const savedOptions = state.options
     if (Array.isArray(savedOptions) && savedOptions.length > 0) {
       const list: RadioOption[] = []
@@ -278,8 +488,14 @@ export class RadioNode extends Node {
           list.push({ id: obj.id, label: obj.label, value: obj.value })
         }
       }
-      if (list.length > 0) this.options = list
+      if (list.length > 0) {
+        this.manualOptions = list
+      }
     }
+
+    // 默认 manual 模式；如果输入端口已有值（从 connect 恢复过来的），等 receive 会自动覆盖
+    this.source = 'manual'
+    this.options = [...this.manualOptions]
 
     this.selectedId = typeof state.selectedId === 'string' ? state.selectedId : undefined
 

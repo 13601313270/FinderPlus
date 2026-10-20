@@ -36,6 +36,16 @@ const t = useLocalizedMessages(helpMessages)
       </ul>
     </section>
 
+    <!-- 输入端口 -->
+    <section class="help-section">
+      <h4 class="help-section__title">{{ t('inputPortTitle') }}</h4>
+      <ul class="help-list">
+        <li v-html="t('inputPortLi1')"></li>
+        <li v-html="t('inputPortLi2')"></li>
+        <li v-html="t('inputPortLi3')"></li>
+      </ul>
+    </section>
+
     <!-- 输出端口 -->
     <section class="help-section">
       <h4 class="help-section__title">{{ t('outputTitle') }}</h4>

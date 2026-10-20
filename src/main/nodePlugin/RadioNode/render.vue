@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { nextTick, onMounted, onUnmounted, ref, shallowRef } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
-import { RadioNode, type RadioOption, type RadioValueKind } from './node'
+import { RadioNode, type RadioOption, type RadioValueKind, type RadioOptionsSource } from './node'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
 import { messages } from './i18n'
@@ -15,6 +15,10 @@ import RadioHelpDialog from './RadioHelpDialog.vue'
  *
  * 主视图：竖向排列的一组单选框（k/v 选项里的 k），点中即把该项的 v 按输出类型提交。
  * 输出类型与选项的增删改走右上角「齿轮」设置面板（popover），不占用主界面。
+ *
+ * 节点现在有一个输入端口（接受 JsonValue），当收到有效 JSON 时，选项列表被覆盖——
+ * 此时齿轮面板里的「选项编辑」区域会被禁用，仅保留输出类型切换；
+ * 输入端口断开后自动回退到手动配置，选项编辑恢复可用。
  *
  * 定位、右侧输出端口由 NodeShell 兜底；节点不在场景里时退化为只读。
  */
@@ -34,6 +38,7 @@ const showHelp = ref(false)
 const options = ref<readonly RadioOption[]>([])
 const kind = ref<RadioValueKind>('string')
 const selectedId = ref<string | undefined>(undefined)
+const source = ref<RadioOptionsSource>('manual')
 
 let unsubscribe: (() => void) | undefined
 
@@ -44,6 +49,7 @@ function syncFromNode(node: RadioNode): void {
   options.value = [...node.displayOptions]
   kind.value = node.displayKind
   selectedId.value = node.displaySelectedId
+  source.value = node.displaySource
 }
 
 onMounted(() => {
@@ -184,6 +190,12 @@ function onDocClick(e: MouseEvent): void {
         </select>
       </label>
 
+      <!-- JSON 输入覆盖中的提示条 -->
+      <div v-if="source === 'input'" class="radio-popover__input-banner">
+        <span class="radio-popover__input-banner-icon">⚡</span>
+        <span>{{ t('inputOverrideHint') }}</span>
+      </div>
+
       <div class="radio-popover__section">
         <div class="radio-popover__section-head">
           <span>{{ t('optionsTitle') }}</span>
@@ -191,6 +203,8 @@ function onDocClick(e: MouseEvent): void {
             class="radio-popover__add"
             type="button"
             :title="t('addOptionHint')"
+            :disabled="source === 'input'"
+            :class="{ 'radio-popover__add--disabled': source === 'input' }"
             @click="onAddOption"
           >＋</button>
         </div>
@@ -201,6 +215,7 @@ function onDocClick(e: MouseEvent): void {
               type="text"
               :value="opt.label"
               :placeholder="t('labelPlaceholder')"
+              :disabled="source === 'input'"
               @input="(e) => onLabelInput(opt.id, e)"
             />
             <input
@@ -209,13 +224,14 @@ function onDocClick(e: MouseEvent): void {
               step="any"
               :value="opt.value"
               :placeholder="t('valuePlaceholder')"
+              :disabled="source === 'input'"
               @input="(e) => onValueInput(opt.id, e)"
             />
             <button
               class="radio-popover__remove"
               type="button"
               :title="t('removeOptionHint')"
-              :disabled="options.length <= 1"
+              :disabled="options.length <= 1 || source === 'input'"
               @click="onRemoveOption(opt.id)"
             >×</button>
           </div>
@@ -486,6 +502,29 @@ function onDocClick(e: MouseEvent): void {
     font-size: 10px;
     line-height: 1.5;
     color: #9aa2ad;
+  }
+
+  // JSON 输入覆盖提示条
+  &__input-banner {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 8px;
+    font-size: 11px;
+    line-height: 1.5;
+    color: #b45309;
+    background: #fef3c7;
+    border: 1px solid #fcd34d;
+    border-radius: 6px;
+  }
+
+  &__input-banner-icon {
+    flex-shrink: 0;
+  }
+
+  &__add--disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
   }
 }
 </style>

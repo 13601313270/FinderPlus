@@ -4,6 +4,7 @@ import { AudioFileValue } from '../../engine/data/AudioFileValue'
 import { NumberValue } from '../../engine/data/NumberValue'
 import { OutputPort } from '../../engine/port/OutputPort'
 import { InputPort } from '../../engine/port/InputPort'
+import { MethodPort } from '../../engine/port/MethodPort'
 import { FileNode } from '../FileNode/node'
 import { inferAudioMime } from './mime'
 
@@ -81,11 +82,45 @@ export class AudioFileNode extends FileNode {
     }
   })
 
+  /** 方法端口：上游 commit 任意值即触发一次播放（从头开始） */
+  readonly playPort = new MethodPort('play', {
+    label: {
+      zh: '播放',
+      en: 'Play',
+      ja: '再生',
+      ko: '재생',
+      es: 'Reproducir',
+      ar: 'تشغيل',
+      fr: 'Lecture',
+      pt: 'Reproduzir',
+      ru: 'Воспроизвести',
+      hi: 'चलाएँ',
+      id: 'Putar',
+      de: 'Abspielen',
+      vi: 'Phát',
+      tr: 'Oynat',
+      it: 'Riproduci'
+    }
+  })
+
+  /** MethodPort play 触发 → 递增此序号；render.vue 比对序号变化后执行 DOM 播放 */
+  private playRequestSeq = 0
+
+  /** render.vue 消费序号，与上次比对判断是否需要从头播放 */
+  consumePlayRequestSeq(): number {
+    return this.playRequestSeq
+  }
+
   constructor(id: string) {
     super(id)
     this.addOutput(this.fileOutput)
     this.addOutput(this.durationOutput)
     this.addOutput(this.pathOutput)
+    this.addMethod(this.playPort)
+    this.playPort.onTrigger(() => {
+      this.playRequestSeq += 1
+      this.notifyChanged()
+    })
     this.bindFileInput(this.fileInput)
     this.setBox(140, 150)
   }

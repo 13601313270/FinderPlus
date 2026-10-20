@@ -1,6 +1,7 @@
 import { NumberValue } from '../../engine/data/NumberValue'
 import { StringValue } from '../../engine/data/StringValue'
 import { InputPort } from '../../engine/port/InputPort'
+import { MethodPort } from '../../engine/port/MethodPort'
 import { OutputPort } from '../../engine/port/OutputPort'
 import { Node } from '../../engine/node/Node'
 
@@ -39,6 +40,27 @@ export class StringConcatNode extends Node {
     it: 'Risultato'
   })
 
+  /** 方法端口：外部触发 → 忽略指纹缓存，强制把当前拼接结果重发到下游 */
+  readonly resendPort = new MethodPort('resend', {
+    label: {
+      zh: '重发',
+      en: 'Resend',
+      ja: '再送信',
+      ko: '재전송',
+      es: 'Reenviar',
+      ar: 'إعادة الإرسال',
+      fr: 'Renvoyer',
+      pt: 'Reenviar',
+      ru: 'Повторная отправка',
+      hi: 'पुनः भेजें',
+      id: 'Kirim Ulang',
+      de: 'Erneut senden',
+      vi: 'Gửi lại',
+      tr: 'Yeniden gönder',
+      it: 'Rinvia'
+    }
+  })
+
   /** 模板字符串 */
   private template = ''
 
@@ -51,6 +73,8 @@ export class StringConcatNode extends Node {
   constructor(id: string) {
     super(id)
     this.addOutput(this.textOutput)
+    this.addMethod(this.resendPort)
+    this.resendPort.onTrigger(() => this.resend())
     // 默认给一个输入端口，方便直接开用
     this.addInputPort()
     // 内容区硬约束：手柄 + 模板框 + 底部端口控制栏 + 结果预览
@@ -121,6 +145,14 @@ export class StringConcatNode extends Node {
     this.notifyChanged()
     // 同步节点：重算 + commit 输出就算消化完输入 → 回 stable
     this.completeRun()
+  }
+
+  /**
+   * 方法端口触发：强制把当前拼接结果重发到下游，绕过 fingerprint 去重。
+   * 典型场景：下游节点因同值没被触发，手动补一次推送。
+   */
+  private resend(): void {
+    this.textOutput.commit(new StringValue(this.result), { force: true })
   }
 
   /**

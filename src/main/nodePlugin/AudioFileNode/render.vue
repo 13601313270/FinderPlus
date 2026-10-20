@@ -44,6 +44,7 @@ const isSeeking = ref(false)
 
 let seqCounter = 0  // 防竞态：多次 watch 触发时，只保留最后一次读文件结果
 let unsubscribe: (() => void) | undefined
+let lastPlaySeq = 0  // MethodPort play 请求序号，用于 diff 触发从头播放
 
 // —— 节点拖到空白位置（useNodePosition）+ OS native drag 拖出软件（useFileDragOut）——
 const { dragOutOpts, cleanup: cleanupDragOut } = useFileDragOut(() => fileNode.value)
@@ -114,6 +115,17 @@ function refresh(): void {
   fileRevision.value = n.fileRevision
   fileSizeFormatted.value = n.fileSize ? formatSize(n.fileSize) : ''
   fileFormat.value = n.displayFormat
+
+  // —— MethodPort play 触发：序号变了 → 从头播放 ——
+  const curSeq = n.consumePlayRequestSeq()
+  if (curSeq !== lastPlaySeq) {
+    lastPlaySeq = curSeq
+    const el = audioEl.value
+    if (el && previewUrl.value) {
+      el.currentTime = 0
+      void el.play()
+    }
+  }
 }
 
 // —— 音频事件监听 ——

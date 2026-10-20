@@ -113,10 +113,8 @@ export interface QueryPortPair {
   readonly output: OutputPort
 }
 
-let nextQuerySeq = 0
-
 function makeQueryId(): string {
-  return `q_${++nextQuerySeq}`
+  return `q_${Math.random().toString(36).slice(2, 10)}`
 }
 
 /** 给输入端口单独的 label，明确提示用户 SQL 里用 `{table}` 占位符 */

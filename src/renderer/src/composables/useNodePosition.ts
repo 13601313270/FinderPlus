@@ -23,6 +23,10 @@ export interface NodeLike {
   onChanged(fn: () => void): () => void
   /** 被拖节点视觉态：正被某个可接收节点悬停命中时变 true */
   readonly nodeDropAcceptedValue?: boolean
+  /** 节点是否最小化（缩到 80×80 图标）。引擎 Node 提供，渲染层据此切换显示 */
+  readonly minimized?: boolean
+  /** 切换最小化状态 */
+  toggleMinimized?: () => void
 }
 
 /**
@@ -110,6 +114,8 @@ export interface NodePositionView {
   readonly nodeState: Ref<NodeState>
   /** 脏的输入端口 id 集合，NodePorts / NodePort 据此画端口级视觉标记 */
   readonly dirtyInputPortIds: Ref<ReadonlySet<string>>
+  /** 节点是否最小化，NodeHeader 的按钮据此切换图标/文案 */
+  readonly minimized: Ref<boolean>
   /** 接到拖拽手柄的 pointerdown 上 */
   startDrag(e: PointerEvent): void
 }
@@ -134,6 +140,7 @@ export function useNodePosition(
   const accepted = ref<boolean>(false)
   const nodeState = ref<NodeState>('stable')
   const dirtyInputPortIds = ref<ReadonlySet<string>>(new Set())
+  const minimized = ref<boolean>(false)
 
   let lastNode: NodeLike | undefined
   let unsubscribe: (() => void) | undefined
@@ -157,6 +164,7 @@ export function useNodePosition(
       accepted.value = !!lastNode.nodeDropAcceptedValue
       nodeState.value = lastNode.state
       dirtyInputPortIds.value = lastNode.getDirtyInputPortIds?.() ?? new Set()
+      minimized.value = !!lastNode.minimized
     }
   }
 
@@ -243,5 +251,5 @@ export function useNodePosition(
     window.addEventListener('pointerup', end)
   }
 
-  return { position, box, accepted, nodeState, dirtyInputPortIds, startDrag }
+  return { position, box, accepted, nodeState, dirtyInputPortIds, minimized, startDrag }
 }

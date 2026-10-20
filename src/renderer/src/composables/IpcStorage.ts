@@ -25,6 +25,7 @@ export class IpcStorage implements NodeStorage {
       type: node.type,
       posX: node.position[0],
       posY: node.position[1],
+      minimized: node.minimized ? 1 : 0,
       paramsJson: JSON.stringify(node.saveState()),
       canvasId: this.canvasId
     })

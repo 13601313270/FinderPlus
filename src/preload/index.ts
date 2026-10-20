@@ -37,6 +37,7 @@ const canvasDeskDb = {
     type: string
     posX: number
     posY: number
+    minimized: number
     paramsJson: string
     canvasId?: string
   }): Promise<boolean> => ipcRenderer.invoke('db:saveNode', args),
@@ -64,7 +65,7 @@ const canvasDeskDb = {
     ipcRenderer.invoke('db:clearCanvas', args ?? {}),
 
   loadCanvas: (args?: { canvasId?: string }): Promise<{
-    nodes: Array<{ id: string; type: string; posX: number; posY: number; paramsJson: string }>
+    nodes: Array<{ id: string; type: string; posX: number; posY: number; minimized: boolean; paramsJson: string }>
     edges: Array<{
       id: string
       startNodeId: string

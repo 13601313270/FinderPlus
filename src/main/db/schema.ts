@@ -3,14 +3,11 @@
  * 保证幂等——新库直接建，已有库跑过也不会报错。
  */
 
-/** 当前数据库 schema 版本。迁移时先比对这个值，决定要不要跑升级脚本 */
-export const SCHEMA_VERSION = 1
-
 /** 建表语句，按执行顺序排列（有外键依赖） */
 export const SCHEMA_SQL = `
 PRAGMA foreign_keys = ON;
 
--- schema_version：单列表，存当前 schema 版本号。启动时读它决定要不要迁移
+-- meta：预留的扩展表（目前无用途，保留以备将来做 schema 版本迁移 / 用户偏好）
 CREATE TABLE IF NOT EXISTS meta (
   key   TEXT PRIMARY KEY,
   value TEXT NOT NULL
@@ -33,6 +30,7 @@ CREATE TABLE IF NOT EXISTS nodes (
   type       TEXT NOT NULL,
   pos_x      REAL NOT NULL,
   pos_y      REAL NOT NULL,
+  minimized  INTEGER NOT NULL DEFAULT 0,
   params     TEXT NOT NULL DEFAULT '{}',
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL
@@ -51,7 +49,4 @@ CREATE TABLE IF NOT EXISTS edges (
 );
 
 CREATE INDEX IF NOT EXISTS idx_edges_canvas ON edges(canvas_id);
-
--- 写入 schema 版本（REPLACE 保证幂等）
-INSERT OR REPLACE INTO meta (key, value) VALUES ('schema_version', '${SCHEMA_VERSION}');
 `

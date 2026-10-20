@@ -11,7 +11,6 @@ import * as cheerio from 'cheerio'
 import * as iconv from 'iconv-lite'
 import OSS from 'ali-oss'
 import { openDatabase, closeDatabase, getDatabase, persist } from './db/database'
-import { SCHEMA_VERSION } from './db/schema'
 import { SqliteStorage } from './db/SqliteStorage'
 import { ensureCanvasDir, getCanvasDir, getCanvasRootDir, migrateLegacyRootFiles } from './paths'
 import type { MenuLabels } from '../preload'
@@ -692,6 +691,7 @@ function registerIpcHandlers(): void {
     type: string
     posX: number
     posY: number
+    minimized: number
     paramsJson: string
     canvasId?: string
   }) => {
@@ -700,14 +700,15 @@ function registerIpcHandlers(): void {
     const db = getDatabase()
     const now = Date.now()
     db.run(
-      `INSERT INTO nodes (id, canvas_id, type, pos_x, pos_y, params, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `INSERT INTO nodes (id, canvas_id, type, pos_x, pos_y, minimized, params, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(id) DO UPDATE SET
          pos_x = excluded.pos_x,
          pos_y = excluded.pos_y,
+         minimized = excluded.minimized,
          params = excluded.params,
          updated_at = excluded.updated_at`,
-      [args.id, canvasId, args.type, args.posX, args.posY, args.paramsJson, now, now]
+      [args.id, canvasId, args.type, args.posX, args.posY, args.minimized, args.paramsJson, now, now]
     )
     persist()
     return true
@@ -2124,22 +2125,7 @@ ipcMain.handle('app:importData', async (_e, args: {
       return { ok: false, error: '导出文件损坏：缺少 config.json' }
     }
 
-    // schemaVersion 校验（只警告不拒绝，兼容旧版本备份没有 meta.json 的情况）
-    const metaPath = join(tmpDir, EXPORT_META_NAME)
-    if (existsSync(metaPath)) {
-      try {
-        const meta = JSON.parse(readFileSync(metaPath, 'utf-8')) as { schemaVersion?: number }
-        if (typeof meta.schemaVersion === 'number' && meta.schemaVersion > SCHEMA_VERSION) {
-          rmSync(tmpDir, { recursive: true, force: true })
-          return {
-            ok: false,
-            error: `备份文件 schema 版本 (${meta.schemaVersion}) 高于当前应用支持的版本 (${SCHEMA_VERSION})，请先升级应用。`
-          }
-        }
-      } catch {
-        // meta.json 解析失败——忽略，继续导入
-      }
-    }
+    // schemaVersion 校验已废弃（无线上历史版本，备份文件一律兼容导入）
 
     // —— 阶段二：备份旧数据 ——
     const userDataDir = app.getPath('userData')

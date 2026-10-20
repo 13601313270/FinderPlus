@@ -21,11 +21,12 @@ export class SqliteStorage implements NodeStorage {
 
   saveNode(node: Node): void {
     this.db.run(
-      `INSERT INTO nodes (id, canvas_id, type, pos_x, pos_y, params, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `INSERT INTO nodes (id, canvas_id, type, pos_x, pos_y, minimized, params, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(id) DO UPDATE SET
          pos_x = excluded.pos_x,
          pos_y = excluded.pos_y,
+         minimized = excluded.minimized,
          params = excluded.params,
          updated_at = excluded.updated_at`,
       [
@@ -34,6 +35,7 @@ export class SqliteStorage implements NodeStorage {
         node.type,
         node.position[0],
         node.position[1],
+        node.minimized ? 1 : 0,
         JSON.stringify(node.saveState()),
         NOW(),
         NOW()
@@ -100,16 +102,17 @@ export class SqliteStorage implements NodeStorage {
   // —— 启动时读取：不在 NodeStorage 接口里，主进程 IPC handler（db:loadCanvas）会调 ——
 
   /** 读 nodes 表，返回纯数据；canvasId 未传则用构造时绑定的 */
-  loadNodes(canvasId?: string): Array<{ id: string; type: string; posX: number; posY: number; paramsJson: string }> {
+  loadNodes(canvasId?: string): Array<{ id: string; type: string; posX: number; posY: number; minimized: boolean; paramsJson: string }> {
     const id = canvasId ?? this.canvasId
-    const rows = this.db.exec('SELECT id, type, pos_x, pos_y, params FROM nodes WHERE canvas_id = ?', [id])
+    const rows = this.db.exec('SELECT id, type, pos_x, pos_y, minimized, params FROM nodes WHERE canvas_id = ?', [id])
     if (!rows.length) return []
     return rows[0].values.map((row) => ({
       id: String(row[0]),
       type: String(row[1]),
       posX: Number(row[2]),
       posY: Number(row[3]),
-      paramsJson: String(row[4])
+      minimized: Number(row[4]) === 1,
+      paramsJson: String(row[5])
     }))
   }
 

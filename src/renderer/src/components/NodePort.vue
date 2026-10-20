@@ -316,7 +316,7 @@ function updateTooltipPosition(): void {
   align-items: center;
   position: relative;
   // 两行 label + 圆点：11px + 8px + 间距 ≈ 22px，留一点余量
-  min-height: 28px;
+  min-height: 12px;
 
   &--left {
     justify-content: flex-end;

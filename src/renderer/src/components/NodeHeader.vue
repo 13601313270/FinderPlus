@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { inject } from 'vue'
+import { inject, ref, type Ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 /**
@@ -56,6 +56,10 @@ const { t } = useI18n()
 // 默认从外层外壳注入 startDrag — render.vue 不用再自己调 useNodePosition
 const injectedDrag = inject<(e: PointerEvent) => void>('nodeStartDrag')
 
+// 最小化：状态 + 切换函数由 NodeShell/NodeWire provide，这里默认关闭/空操作兜底
+const nodeMinimized = inject<Ref<boolean>>('nodeMinimized', ref(false))
+const toggleNodeMinimize = inject<() => void>('toggleNodeMinimize', () => {})
+
 /** 最终生效的拖拽处理器：显式传入优先，否则用注入的 */
 const effectiveDrag = (e: PointerEvent) => {
   const h = props.dragHandler ?? injectedDrag
@@ -83,6 +87,13 @@ const effectiveHelpTitle = () => props.helpTitle ?? t('nodeHeader.helpTitle')
     <span class="node-header__handle" :title="effectiveTitleHint()">{{ title }}</span>
     <div class="node-header__actions">
       <slot name="actions" />
+      <button
+        class="node-header__minimize"
+        type="button"
+        :title="nodeMinimized ? '还原' : '最小化'"
+        @pointerdown.stop
+        @click.stop="toggleNodeMinimize()"
+      >{{ nodeMinimized ? '▢' : '–' }}</button>
       <button
         v-if="!hideHelp"
         class="node-header__help"
@@ -123,7 +134,8 @@ const effectiveHelpTitle = () => props.helpTitle ?? t('nodeHeader.helpTitle')
     flex-shrink: 0;
   }
 
-  &__help {
+  &__help,
+  &__minimize {
     all: unset;
     cursor: pointer;
     width: 18px;

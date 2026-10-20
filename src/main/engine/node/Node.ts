@@ -87,6 +87,9 @@ export abstract class Node {
    */
   private boxValue: [number, number] = [0, 0]
 
+  /** 节点是否处于最小化状态。true 时渲染层只显示固定尺寸（80×80）的图标 */
+  private minimizedValue: boolean = false
+
   /** 变化订阅者。UI 靠它把引擎里的普通字段同步成 Vue 响应式状态 */
   private readonly listeners = new Set<() => void>()
 
@@ -311,6 +314,23 @@ export abstract class Node {
     if (w === this.boxValue[0] && h === this.boxValue[1]) return
     this.boxValue = [w, h]
     this.notifyChanged()
+  }
+
+  /** 节点是否处于最小化状态（只读）。true 时渲染层只显示 80×80 图标 */
+  get minimized(): boolean {
+    return this.minimizedValue
+  }
+
+  /** 切换最小化状态并通知观察者 */
+  setMinimized(value: boolean): void {
+    if (value === this.minimizedValue) return
+    this.minimizedValue = value
+    this.notifyChanged()
+  }
+
+  /** 便捷方法：在 true/false 之间翻转 */
+  toggleMinimized(): void {
+    this.setMinimized(!this.minimizedValue)
   }
 
   /** 订阅节点变化，返回取消订阅函数 */

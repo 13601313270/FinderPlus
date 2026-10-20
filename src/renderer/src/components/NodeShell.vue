@@ -2,7 +2,21 @@
 import { computed, onMounted, onUnmounted, provide, ref, type Component } from 'vue'
 import { useNodePosition, type NodeLike } from '@renderer/composables/useNodePosition'
 import { nodeElementRef, type PortsOwnerLike } from '@renderer/canvas/elements'
+import { getNodeManifest } from '../../../main/nodePlugin'
 import NodePorts from './NodePorts.vue'
+
+/** 最小化状态下的固定尺寸（世界像素） */
+const MINIMIZED_SIZE = 80
+
+/**
+ * 最小化时的外壳尺寸：高度按端口数量自适应，保证圆点不溢出。
+ * 12px/端口 = 12px 圆点直径（.port width/height）的紧凑排布，比正常态的 34px 宽松得多。
+ */
+const minimizedSizeStyle = computed(() => {
+  const count = Math.max(inputPortCount.value, outputPortCount.value)
+  const h = Math.max(MINIMIZED_SIZE, count * 12)
+  return { width: `${MINIMIZED_SIZE}px`, height: `${h}px` }
+})
 
 /**
  * 节点外壳：所有节点在画布上共用的「容器层」。
@@ -34,11 +48,14 @@ const emit = defineEmits<{
   (e: 'contextmenu', nodeId: string, clientX: number, clientY: number): void
 }>()
 
-const { position, box, accepted, nodeState, dirtyInputPortIds, startDrag } = useNodePosition(() => props.node)
+const { position, box, accepted, nodeState, dirtyInputPortIds, minimized, startDrag } = useNodePosition(() => props.node)
 
 // 把 startDrag + box 传给 NodeHeader（render.vue 里不用再各自调 useNodePosition）
 provide('nodeStartDrag', startDrag)
 provide('nodeBox', box)
+// 最小化：NodeHeader 的按钮读状态 + 触发切换
+provide('nodeMinimized', minimized)
+provide('toggleNodeMinimize', () => props.node.toggleMinimized?.())
 
 // 外壳根元素登记进测量注册表
 const shellEl = nodeElementRef(props.node.id)
@@ -54,6 +71,11 @@ const stateClass = computed(() => {
   if (nodeState.value === 'running') return 'node-shell--running'
   if (nodeState.value === 'error') return 'node-shell--error'
   return ''
+})
+
+/** 最小化时用的图标 paths：从 manifest 拿 iconPaths，没有就 null 渲染兜底字母 */
+const minimizedIconPaths = computed<readonly string[] | null>(() => {
+  return getNodeManifest(props.node.type)?.iconPaths ?? null
 })
 
 /** 鼠标悬停时显示的状态说明文案 */
@@ -122,41 +144,62 @@ function onContextMenu(e: MouseEvent): void {
 </script>
 
 <template>
-  <div
-    :ref="shellEl"
-    class="node-shell"
-    :class="[
-      stateClass,
-      {
-        'node-shell--floating': floating,
-        'node-shell--accepted': acceptedForDrop
-      }
-    ]"
-    :data-node-id="node.id"
-    :data-node-type="node.type"
-    :title="stateTooltip"
-    :style="{ left: `${position[0]}px`, top: `${position[1]}px` }"
-    @contextmenu="onContextMenu"
-  >
+  <div :ref="shellEl" class="node-shell" :class="[
+    stateClass,
+    {
+      'node-shell--floating': floating,
+      'node-shell--accepted': acceptedForDrop,
+      'node-shell--minimized': minimized
+    }
+  ]" :data-node-id="node.id" :data-node-type="node.type" :title="stateTooltip" :style="{
+    left: `${position[0]}px`,
+    top: `${position[1]}px`,
+    ...(minimized ? { width: `${MINIMIZED_SIZE}px`, height: `${Math.max(MINIMIZED_SIZE, Math.max(inputPortCount, outputPortCount) * 12)}px` } : {})
+  }" @contextmenu="onContextMenu">
+    <!-- 两侧端口列：始终渲染（最小化/展开都要显示端口圆点），hide-label 让 label 消失 -->
     <div class="ports-col ports-col--left">
-      <NodePorts :node-id="node.id" :node="node" side="in" :dirty-ids="dirtyInputPortIds" />
-    </div>
-    <div class="node-body">
-      <div class="node-content" :style="contentStyle">
-        <component :is="render" :id="node.id" />
-        <!-- running 状态的 loading 覆层 -->
-        <div v-if="nodeState === 'running'" class="node-loading" aria-hidden="true">
-          <div class="node-loading__spinner" />
-        </div>
-      </div>
-      <!-- 底部方法端口行：只有存在方法端口时才渲染 -->
-      <div v-if="node.methodPorts && node.methodPorts.length > 0" class="ports-row ports-row--bottom">
-        <NodePorts :node-id="node.id" :node="node" side="method" />
-      </div>
+      <NodePorts :node-id="node.id" :node="node" side="in" :dirty-ids="dirtyInputPortIds" :hide-label="minimized" />
     </div>
     <div class="ports-col ports-col--right">
-      <NodePorts :node-id="node.id" :node="node" side="out" />
+      <NodePorts :node-id="node.id" :node="node" side="out" :hide-label="minimized" />
     </div>
+
+    <!-- 中间内容区：最小化 → 80×80 图标 + 还原按钮；正常态 → node-body + render.vue -->
+    <template v-if="minimized">
+      <div class="node-minimized-icon" :style="minimizedSizeStyle" @pointerdown="startDrag">
+        <!-- 还原按钮：最小化时 NodeHeader 被隐藏了，这里叠一个小号还原入口 -->
+        <button class="node-minimized-icon__restore" type="button" title="还原" @pointerdown.stop
+          @click.stop="props.node.toggleMinimized?.()">▢</button>
+        <svg v-if="minimizedIconPaths" class="node-minimized-icon__svg" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path v-for="(d, i) in minimizedIconPaths" :key="i" :d="d" />
+        </svg>
+        <span v-else class="node-minimized-icon__fallback">{{ node.type.slice(0, 2).toUpperCase() }}</span>
+      </div>
+      <!-- 底部方法端口行：最小化态也要保留，hide-label 只留三角形；用 absolute 钉在 icon 底部，不参与 flex 流 -->
+      <div v-if="node.methodPorts && node.methodPorts.length > 0"
+        class="ports-row ports-row--bottom ports-row--minimized">
+        <NodePorts :node-id="node.id" :node="node" side="method" :hide-label="true" />
+      </div>
+      <div v-if="nodeState === 'running'" class="node-loading" aria-hidden="true">
+        <div class="node-loading__spinner" />
+      </div>
+    </template>
+    <template v-else>
+      <div class="node-body">
+        <div class="node-content" :style="contentStyle">
+          <component :is="render" :id="node.id" />
+          <!-- running 状态的 loading 覆层 -->
+          <div v-if="nodeState === 'running'" class="node-loading" aria-hidden="true">
+            <div class="node-loading__spinner" />
+          </div>
+        </div>
+        <!-- 底部方法端口行：只有存在方法端口时才渲染 -->
+        <div v-if="node.methodPorts && node.methodPorts.length > 0" class="ports-row ports-row--bottom">
+          <NodePorts :node-id="node.id" :node="node" side="method" />
+        </div>
+      </div>
+    </template>
   </div>
 </template>
 
@@ -165,7 +208,7 @@ function onContextMenu(e: MouseEvent): void {
   position: absolute;
   display: flex;
   align-items: stretch; // 两侧 ports-col 高度跟随 content
-  z-index: 2;
+  z-index: 3;
 
   &--floating {
     pointer-events: none;
@@ -187,9 +230,23 @@ function onContextMenu(e: MouseEvent): void {
     outline-offset: 2px;
   }
 
+  &--dirty .node-minimized-icon {
+    outline: 2px dashed #f0a020;
+    outline-offset: 2px;
+  }
+
   &--error .node-content {
     outline: 4px dashed #e01c1c;
     outline-offset: 2px;
+  }
+
+  &--error .node-minimized-icon {
+    outline: 4px dashed #e01c1c;
+    outline-offset: 2px;
+  }
+
+  .node-shell--minimized {
+    z-index: 2;
   }
 }
 
@@ -251,6 +308,17 @@ function onContextMenu(e: MouseEvent): void {
       min-height: 0;
     }
   }
+
+  // 最小化态：absolute 钉在 icon 下方壳外，不参与 flex 流，跟 ports-col 同级
+  &--minimized {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -14px; // 三角形高 12px + 2px 间隙
+    padding-top: 0;
+    padding-bottom: 0;
+    z-index: 11;
+  }
 }
 
 .node-content {
@@ -269,7 +337,7 @@ function onContextMenu(e: MouseEvent): void {
 .node-loading {
   position: absolute;
   inset: 0;
-  background: rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.65);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -277,8 +345,8 @@ function onContextMenu(e: MouseEvent): void {
   pointer-events: none; // 不拦截交互：节点自己会按 status 禁用/启用按钮
 
   &__spinner {
-    width: 22px;
-    height: 22px;
+    width: 32px;
+    height: 32px;
     border: 2.5px solid rgba(59, 124, 255, 0.2);
     border-top-color: @color-primary;
     border-radius: 50%;
@@ -287,6 +355,65 @@ function onContextMenu(e: MouseEvent): void {
 }
 
 @keyframes node-spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// —— 最小化状态 ——
+// 外壳宽高由内联 style 动态指定（MINIMIZED_SIZE 宽 + 端口数自适应高）
+
+.node-minimized-icon {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  box-shadow: 0 0 17px 0px rgb(0 0 0 / 25%);
+  background: @color-surface;
+  border: 1px solid #a4aab3;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #4b5563; // 图标默认灰色
+  position: relative;
+
+  &__restore {
+    all: unset;
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #f3f4f6;
+    border: 1px solid #a4aab3;
+    color: #6b7280;
+    font-size: 12px;
+    line-height: 1;
+    cursor: pointer;
+    z-index: 20;
+    transition: background 0.15s, color 0.15s;
+
+    &:hover {
+      background: #dbeafe;
+      color: #2563eb;
+    }
+  }
+
+  &__svg {
+    width: 48px;
+    height: 48px;
+    pointer-events: none;
+  }
+
+  &__fallback {
+    font-size: 20px;
+    font-weight: 600;
+    color: #9ca3af;
+    letter-spacing: 1px;
+  }
 }
 </style>

@@ -826,6 +826,7 @@ async function bootstrapScene(): Promise<void> {
     }
     const node = new manifest.nodeClass(row.id)
     node.setPosition(row.posX, row.posY)
+    node.setMinimized(!!row.minimized)
     workspaceScene.addNode(node)
   }
 

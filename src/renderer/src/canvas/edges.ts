@@ -128,12 +128,18 @@ function sideOfPort(port: OutputPort | InputPort): PortSide {
 /**
  * 端口锚点：圆点中心；圆点还没登记（节点刚挂载、或该节点类型没渲染 NodePorts）时，
  * 退回卡片对应侧边的中点——宁可端点粗略，也别让线凭空消失。
+ *
+ * 最小化节点特判：node.box 存的是展开状态的硬尺寸（比如 220×0），
+ * 但外壳已被 CSS 压成 80×80；此时 measureNodeBox 不能走 box 硬约束分支，
+ * 必须退回 DOM offsetWidth/offsetHeight 才能拿到真实外壳尺寸。
  */
 function portAnchor(node: Node, port: OutputPort | InputPort, side: PortSide): Vec2 {
   const measured = measurePortCenter(node.id, node.worldPosition, side, port)
   if (measured) return measured
 
-  const box = measureNodeBox(node.id, node.worldPosition, node.box)
+  // 最小化时不传 box，让 measureNodeBox 走 DOM 测量路径（外壳此时被 CSS 压成 80×80）
+  const minimizedBox = (node as unknown as { minimized?: boolean }).minimized ? undefined : node.box
+  const box = measureNodeBox(node.id, node.worldPosition, minimizedBox)
   if (side === 'out') {
     return { x: box.x + box.width, y: box.y + box.height / 2 }
   } else if (side === 'method') {

@@ -40,7 +40,7 @@ export async function openDatabase(): Promise<Database> {
   db = new SQL.Database(data)
 
   // 每次打开都跑一遍 schema：CREATE TABLE IF NOT EXISTS 保证幂等，
-  // 新库建表、已有库跳过，顺带写入 schema_version
+  // 新库建表、已有库跳过
   db.run(SCHEMA_SQL)
 
   // 立刻落盘，保证刚建的表不会因为意外退出丢

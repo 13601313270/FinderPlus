@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { debounce } from 'lodash-es'
-import { computed, onMounted, onUnmounted, ref, shallowRef } from 'vue'
+import { onMounted, onUnmounted, ref, shallowRef } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { LLMNode, type ChatMessage } from './node'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import { useNodeDetail } from '@renderer/composables/useNodeDetail'
-import { LLM_PROVIDERS, type LLMProvider } from '@renderer/composables/useLLMSettings'
+import { type LLMProvider } from '@renderer/composables/useLLMSettings'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
 import { messages } from './i18n'
 import GearIcon from '@renderer/components/icons/GearIcon.vue'
@@ -47,10 +47,10 @@ const chatHistory = ref<ChatMessage[]>([])
 let unsubscribe: (() => void) | undefined
 
 
-const providers = Object.entries(LLM_PROVIDERS) as [LLMProvider, typeof LLM_PROVIDERS[LLMProvider]][]
+// const providers = Object.entries(LLM_PROVIDERS) as [LLMProvider, typeof LLM_PROVIDERS[LLMProvider]][]
 
 /** 当前 provider 的默认 model（model 为空时显示） */
-const currentDefaultModel = computed(() => LLM_PROVIDERS[provider.value].defaultModel)
+// const currentDefaultModel = computed(() => LLM_PROVIDERS[provider.value].defaultModel)
 
 // 防抖 300ms：textarea 输入过程中不频繁触发 notifyChanged
 const debouncedSetPrompt = debounce((val: string) => {
@@ -98,31 +98,31 @@ function onGearClick(e: MouseEvent): void {
   openNodeDetail(props.id)
 }
 
-function onProviderChange(val: LLMProvider): void {
-  provider.value = val
-  llmNode.value?.setProvider(val)
-}
+// function onProviderChange(val: LLMProvider): void {
+//   provider.value = val
+//   llmNode.value?.setProvider(val)
+// }
 
-function onModelChange(val: string): void {
-  model.value = val
-  llmNode.value?.setModel(val)
-}
+// function onModelChange(val: string): void {
+//   model.value = val
+//   llmNode.value?.setModel(val)
+// }
 
-function onJsonModeChange(e: Event): void {
-  const target = e.target as HTMLInputElement
-  jsonMode.value = target.checked
-  llmNode.value?.setJsonMode(target.checked)
-}
+// function onJsonModeChange(e: Event): void {
+//   const target = e.target as HTMLInputElement
+//   jsonMode.value = target.checked
+//   llmNode.value?.setJsonMode(target.checked)
+// }
 
 function onAutoCallChange(e: Event): void {
   const target = e.target as HTMLInputElement
   llmNode.value?.setAutoCall(target.checked)
 }
 
-function onChatModeChange(e: Event): void {
-  const target = e.target as HTMLInputElement
-  llmNode.value?.setChatMode(target.checked)
-}
+// function onChatModeChange(e: Event): void {
+//   const target = e.target as HTMLInputElement
+//   llmNode.value?.setChatMode(target.checked)
+// }
 
 function onClearHistory(): void {
   llmNode.value?.clearHistory()

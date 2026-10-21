@@ -57,7 +57,6 @@ export class RecorderNode extends Node {
   private errorMessage = ''
   private recordingSeconds = 0
   private lastFile: File | null = null
-  private lastHash = ''
 
   constructor(id: string) {
     super(id)
@@ -87,7 +86,6 @@ export class RecorderNode extends Node {
     this.durationOutput.commit(new NumberValue(Number(durationSec.toFixed(3))))
 
     this.lastFile = file
-    this.lastHash = hash
     this.recordingSeconds = durationSec
     this.status = 'done'
     this.errorMessage = ''
@@ -111,7 +109,6 @@ export class RecorderNode extends Node {
   /** 清除上次录音结果 */
   clearResult(): void {
     this.lastFile = null
-    this.lastHash = ''
     this.recordingSeconds = 0
     this.status = 'idle'
     this.errorMessage = ''

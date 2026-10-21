@@ -1,4 +1,4 @@
-import { base64ToBytes, bytesToBase64 } from '../../engine/data/base64'
+import { base64ToBytes } from '../../engine/data/base64'
 import { djb2 } from '../../engine/data/hash'
 import { ImgFileValue } from '../../engine/data/ImgFileValue'
 import { OutputPort } from '../../engine/port/OutputPort'
@@ -7,7 +7,6 @@ import { FileNode } from '../FileNode/node'
 import { inferImageMime } from './mime'
 import {
   readImageEndpoint,
-  readImageProviderKey,
   IMAGE_PROVIDERS,
   type ImageProviderId
 } from '../ImageGenNode/providers'

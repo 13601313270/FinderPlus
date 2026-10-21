@@ -198,10 +198,13 @@ export class TableNode extends Node {
           // @ts-ignore
           const res = await window.tableApi.executeRawSql({ nodeId: this.id, sql })
           if (res.ok) {
+            // @ts-ignore
             if (res.changes > 0) {
               // —— DML（INSERT/UPDATE/DELETE）：带副作用信息 ——
               pair.output.commit(new JsonValue({
+                // @ts-ignore
                 changes: res.changes,
+                // @ts-ignore
                 lastInsertRowid: res.lastInsertRowid,
                 sql
               }))

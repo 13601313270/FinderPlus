@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, shallowRef } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { BrowserNode, type ScriptItem } from './node'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
@@ -48,8 +48,8 @@ const scripts = ref<ScriptItem[]>([])
 /** 当前 webview 使用的 partition 字符串（用于检测 identity 变化） */
 const partition = ref('')
 /** 最近一次显示用的身份信息（供 header 视觉标记使用） */
-const displayIdentityLabel = ref<string>('')
-const displayIsIsolated = ref<boolean>(true)
+// const displayIdentityLabel = ref<string>('')
+// const displayIsIsolated = ref<boolean>(true)
 /** 最近一次脚本执行结果，显示在脚本按钮条下方 */
 const lastScriptResult = ref<{ ok: boolean; text: string } | null>(null)
 
@@ -161,9 +161,9 @@ function onSelectIdentity(id: string | undefined): void {
 }
 
 /** 点外部关闭下拉框 */
-function closeIdentityMenu(): void {
-  identityMenuOpen.value = false
-}
+// function closeIdentityMenu(): void {
+//   identityMenuOpen.value = false
+// }
 
 /** 文档级点击监听（onMounted 注册，onUnmounted 清理，需提升到外层作用域） */
 const onDocClickForIdentity = (): void => {
@@ -414,7 +414,7 @@ function handleNewWindow(e: any): void {
 /** 导航即将发生时的日志钩子——帮助排查"点击链接无反应"是拦截在 Electron 层还是 Vue 层 */
 function handleWillNavigate(e: any, url: string): void {
   // eslint-disable-next-line no-console
-  console.log('[BrowserNode] 🧭 will-navigate:', url)
+  console.log('[BrowserNode] 🧭 will-navigate:', e, url)
 }
 
 // —— 生命周期 ——

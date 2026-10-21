@@ -136,6 +136,8 @@ const de: Language = {
     'txt-file': 'Textdatei',
     'img-file': 'Bilddatei',
     'pdf-file': 'PDF-Datei',
+    'audio-file': 'Audio-Datei',
+    'video-file': 'Video-Datei',
     'img-file-collection': 'Bildsammlung'
   },
   intro: {
@@ -252,9 +254,7 @@ const de: Language = {
       desc: 'By combining different nodes and connecting them, you can build all kinds of automated workflows. Happy exploring!',
       start: 'Start exploring'
     }
-  }
-
-,
+  },
   table: {
     columnSettings: 'Column settings',
     sqlPort: 'SQL ports',
@@ -335,7 +335,8 @@ const de: Language = {
     errorInvalidName: 'Column name must start with a letter or underscore, followed by letters, digits or underscores',
     errorDuplicateName: 'Column "{name}" already exists',
     resizeTooltip: 'Drag to resize',
-    nodeFallback: 'Table'
+    nodeFallback: 'Table',
+    refreshTooltip: 'Refresh table data'
   }
 }
 

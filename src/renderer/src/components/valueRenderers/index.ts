@@ -37,6 +37,8 @@ import FileValueRenderer from './FileValueRenderer.vue'
 import TxtFileValueRenderer from './TxtFileValueRenderer.vue'
 import ImgFileValueRenderer from './ImgFileValueRenderer.vue'
 import PdfFileValueRenderer from './PdfFileValueRenderer.vue'
+import AudioFileValueRenderer from './AudioFileValueRenderer.vue'
+import VideoFileValueRenderer from './VideoFileValueRenderer.vue'
 import ImgFileCollectionValueRenderer from './ImgFileCollectionValueRenderer.vue'
 
 /**
@@ -54,6 +56,8 @@ const builtinRenderers = {
   'txt-file':            TxtFileValueRenderer,
   'img-file':            ImgFileValueRenderer,
   'pdf-file':            PdfFileValueRenderer,
+  'audio-file':          AudioFileValueRenderer,
+  'video-file':          VideoFileValueRenderer,
   'img-file-collection': ImgFileCollectionValueRenderer
 } satisfies BuiltinRendererMap
 

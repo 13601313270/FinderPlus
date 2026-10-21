@@ -246,7 +246,6 @@ export class S2VNode extends Node {
   private errorMessage = ''
   private resultFile: File | null = null
   private resultHash = ''
-  private taskId = ''
   /** 轮询时的中间状态提示（如 "PENDING: 排队中..."） */
   private statusHint = ''
 
@@ -481,7 +480,6 @@ export class S2VNode extends Node {
       if (!taskId) {
         throw new Error('提交成功但未拿到 task_id')
       }
-      this.taskId = taskId
 
       // —— Step 4: 轮询任务状态 ——
       this.status = 'polling'

@@ -259,9 +259,6 @@ async function ensureAndLoad(): Promise<void> {
 
   errorMsg.value = ''
 
-  // 1. 确保物理表存在（CREATE TABLE IF NOT EXISTS）
-  const colNames = node.columns.map((c) => c.name).join(', ') || t('table.noCustomColumns')
-
   // @ts-ignore — 只在 renderer 里有 window.tableApi
   const ensureResult = await window.tableApi.ensure({
     nodeId: node.id,

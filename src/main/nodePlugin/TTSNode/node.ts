@@ -5,7 +5,7 @@ import { InputPort } from '../../engine/port/InputPort'
 import { MethodPort } from '../../engine/port/MethodPort'
 import { OutputPort } from '../../engine/port/OutputPort'
 import { Node, type InputPortChangeSource } from '../../engine/node/Node'
-import { bytesToBase64, base64ToBytes } from '../../engine/data/base64'
+import { bytesToBase64 } from '../../engine/data/base64'
 import { readImageProviderKey } from '../ImageGenNode/providers'
 import {
   resolveTtsEndpoint,
@@ -19,7 +19,6 @@ import {
   type TtsModelId,
   type TtsLanguageType,
   type TtsSampleRate,
-  type ResolvedTtsEndpoint
 } from './providers'
 
 type TtsStatus = 'idle' | 'loading' | 'done' | 'error'

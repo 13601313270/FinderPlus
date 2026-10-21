@@ -30,7 +30,8 @@ export const manifest: NodePluginManifest = {
     'M9 3l1 1',
     'M15 3l-1 1'
   ],
-  category: 'flow'
+  category: 'flow',
+  common: false
 }
 
 export default manifest

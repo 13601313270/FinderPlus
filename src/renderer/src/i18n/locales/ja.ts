@@ -116,7 +116,9 @@ const ja: Language = {
     searchPlaceholder: 'ノードを検索…',
     noResult: '一致するノードがありません',
     nodeHelp: 'このノードの説明を見る',
-    paletteSettings: 'パレット設定…'
+    paletteSettings: 'パレット設定…',
+    more: 'その他のコンポーネント…',
+    less: 'よく使うものだけ表示',
   },
   connection: {
     selfLoop: '同じノードのポート同士は接続できません',

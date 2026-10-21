@@ -116,7 +116,9 @@ const id: Language = {
     searchPlaceholder: 'Cari node…',
     noResult: 'Tidak ada node yang cocok',
     nodeHelp: 'Lihat dokumentasi node',
-    paletteSettings: 'Pengaturan palet…'
+    paletteSettings: 'Pengaturan palet…',
+    more: 'Lebih banyak komponen…',
+    less: 'Tampilkan hanya yang umum',
   },
   connection: {
     selfLoop: 'Port pada node yang sama tidak dapat dihubungkan',

@@ -116,7 +116,9 @@ const vi: Language = {
     searchPlaceholder: 'Tìm nút…',
     noResult: 'Không có nút phù hợp',
     nodeHelp: 'Xem tài liệu về nút',
-    paletteSettings: 'Cài đặt bảng nút…'
+    paletteSettings: 'Cài đặt bảng nút…',
+    more: 'Thêm thành phần…',
+    less: 'Chỉ hiển thị cái thường dùng',
   },
   connection: {
     selfLoop: 'Không thể kết nối các cổng trên cùng một nút',

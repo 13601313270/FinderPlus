@@ -116,7 +116,9 @@ const it: Language = {
     searchPlaceholder: 'Cerca nodi…',
     noResult: 'Nessun nodo corrispondente',
     nodeHelp: 'Visualizza la documentazione del nodo',
-    paletteSettings: 'Impostazioni palette…'
+    paletteSettings: 'Impostazioni palette…',
+    more: 'Altri componenti…',
+    less: 'Mostra solo quelli comuni',
   },
   connection: {
     selfLoop: 'Le porte sullo stesso nodo non possono essere collegate',

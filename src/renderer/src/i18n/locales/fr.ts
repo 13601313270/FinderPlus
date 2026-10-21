@@ -115,7 +115,9 @@ const fr: Language = {
     searchPlaceholder: 'Rechercher des nœuds…',
     noResult: 'Aucun nœud correspondant',
     nodeHelp: 'Voir la documentation du nœud',
-    paletteSettings: 'Paramètres de la palette…'
+    paletteSettings: 'Paramètres de la palette…',
+    more: 'Plus de composants…',
+    less: 'Afficher uniquement les courants',
   },
   connection: {
     selfLoop: 'Les ports d\'un même nœud ne peuvent pas être reliés',

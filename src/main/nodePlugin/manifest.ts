@@ -50,6 +50,16 @@ export interface NodePluginManifest {
    */
   readonly category?: NodeCategory
   /**
+   * 是否为常用组件（可选，缺省视为 true）。
+   *
+   * 设为 false 的节点在调色板默认视图中隐藏，用户点击底部「更多」后才展示。
+   * 这样节点类型可以自由增长，不常用的高级组件不会把常用列表挤得过长。
+   *
+   * 搜索模式下始终会命中所有节点，不受此字段过滤——主动搜索 = 用户确实在找。
+   * 设置页（SettingsDialog）也不受影响，始终展示全部节点供用户管理。
+   */
+  readonly common?: boolean
+  /**
    * 帮助文档组件（可选）。
    * 异步加载函数形式，如 `help: () => import('./CodeHelpDialog.vue')`。
    * 点击节点上的帮助按钮时会 resolve 这个函数，把默认导出的组件嵌进 HelpDialog 弹窗。

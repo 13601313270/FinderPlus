@@ -43,6 +43,8 @@ const query = ref('');
 const searchFocused = ref(false);
 /** 键盘高亮的项下标（对应打平后的列表，-1 表示无高亮） */
 const activeIndex = ref(-1);
+/** 当前打开「更多」弹窗的分类 key；null 表示没有弹窗 */
+const activeMoreCategory = ref<string | null>(null);
 const rootEl = ref<HTMLElement | null>(null);
 const menuEl = ref<HTMLElement | null>(null);
 let closeTimer: ReturnType<typeof setTimeout> | undefined;
@@ -64,6 +66,7 @@ function closeMenu(): void {
  query.value = '';
  searchFocused.value = false;
  activeIndex.value = -1;
+ activeMoreCategory.value = null;
 }
 
 function scheduleClose(): void {
@@ -101,6 +104,22 @@ function onOpenPaletteSettings(): void {
  openSettings('nodes');
 }
 
+/** 打开某分类的「更多」弹窗 */
+function openMore(categoryKey: string): void {
+ activeMoreCategory.value = categoryKey;
+}
+
+/** 关闭「更多」弹窗（保留主菜单打开） */
+function closeMore(): void {
+ activeMoreCategory.value = null;
+}
+
+/** 弹窗里点了一个节点：关弹窗 + 关菜单 + emit */
+function onSelectTypeFromMore(type: string): void {
+ closeMenu();
+ emit('select-type', type);
+}
+
 interface PaletteItem {
  type: string;
  label: string;
@@ -108,13 +127,18 @@ interface PaletteItem {
  category: NodeCategory;
  /** 该节点是否注册了 manifest.help；没注册就不渲染帮助入口 */
  hasHelp: boolean;
+ /** 常用组件（缺省 true）；false 时默认视图隐藏，点「更多」才展示 */
+ common: boolean;
 }
 interface PaletteGroup {
  /** 分组标识，搜索模式下固定为 'search' */
  key: string;
  /** 分组标题；搜索模式下为空串，模板据此不渲染标题 */
  label: string;
- items: PaletteItem[];
+ /** 默认视图显示的常用组件 */
+ shownItems: PaletteItem[];
+ /** 被 common=false 隐藏的组件，有值时网格末尾会追加一个「更多」按钮瓦片 */
+ hiddenItems: PaletteItem[];
 }
 
 // 下拉项文案取自各个插件 manifest 自己声明的多语言 title；
@@ -130,29 +154,55 @@ const allItems = computed<PaletteItem[]>(() => paletteManifests
  label: resolveNodeTitle(m, language.value),
  iconPaths: m.iconPaths ?? [],
  category: m.category ?? DEFAULT_NODE_CATEGORY,
- hasHelp: m.help != null
+ hasHelp: m.help != null,
+ common: m.common ?? true
 })));
 
 const keyword = computed(() => query.value.trim().toLowerCase());
 
-/** 分类展示顺序固定按 NODE_CATEGORIES；空搜索时分组，有搜索时打平成单一结果列表 */
+/**
+ * 分类展示顺序固定按 NODE_CATEGORIES。
+ *
+ * 空搜索时：每分类只展示常用组件，hiddenItems 留着给「更多」弹窗用；
+ * 有搜索时：全部命中打平成单一结果列表，不分组、不做 common 过滤
+ * （主动搜索 = 用户确实在找，不该藏）。
+ */
 const groups = computed<PaletteGroup[]>(() => {
  const kw = keyword.value;
+ const fullList = allItems.value;
  if (kw) {
- // 同时匹配显示名和 type：中文界面下输入 image 也能筛出图像类节点
- const hits = allItems.value.filter(
+ // 搜索模式：打平，全部命中（包括 common=false）
+ const hits = fullList.filter(
  (i) => i.label.toLowerCase().includes(kw) || i.type.toLowerCase().includes(kw)
  );
- // 无命中时返回空数组，模板据此显示「无匹配」提示
- return hits.length ? [{ key: 'search', label: '', items: hits }] : [];
+ return hits.length
+ ? [{ key: 'search', label: '', shownItems: hits, hiddenItems: [] }]
+ : [];
  }
  return NODE_CATEGORIES
- .map((category) => ({
+ .map((category) => {
+ const all = fullList.filter((i) => i.category === category);
+ return {
  key: category as string,
  label: resolveLocalizedText(CATEGORY_LABELS[category], language.value, category),
- items: allItems.value.filter((i) => i.category === category)
- }))
- .filter((g) => g.items.length > 0); // 空组不渲染
+ shownItems: all.filter((i) => i.common),
+ hiddenItems: all.filter((i) => !i.common)
+ };
+ })
+ .filter((g) => g.shownItems.length > 0); // 默认视图里完全空白的分类直接不渲染
+});
+
+/** 当前「更多」弹窗要展示的节点列表——只显示外面没露出来的非常用组件 */
+const activeMoreItems = computed<PaletteItem[]>(() => {
+ if (!activeMoreCategory.value) return [];
+ const g = groups.value.find((g) => g.key === activeMoreCategory.value);
+ return g ? g.hiddenItems : [];
+});
+
+/** 当前「更多」弹窗的分类标题 */
+const activeMoreLabel = computed(() => {
+ if (!activeMoreCategory.value) return '';
+ return groups.value.find((g) => g.key === activeMoreCategory.value)?.label ?? '';
 });
 
 /** 每行瓦片数，必须与 CSS 里 .palette__grid 的 grid-template-columns 一致 */
@@ -176,7 +226,7 @@ interface NavEntry {
 const navEntries = computed<NavEntry[]>(() => {
  const list: NavEntry[] = [];
  groups.value.forEach((group, groupIndex) => {
- group.items.forEach((item, i) => {
+ group.shownItems.forEach((item, i) => {
  list.push({
  type: item.type,
  groupIndex,
@@ -243,12 +293,12 @@ function moveActive(dx: number, dy: number): void {
 
  const group = groups.value[entry.groupIndex];
  const target = entry.row * GRID_COLUMNS + entry.col + dy * GRID_COLUMNS;
- const inGroup = group.items[target];
+ const inGroup = group.shownItems[target];
  if (inGroup) {
  activeIndex.value = indexOf(inGroup.type);
  } else {
  const neighbour = groups.value[entry.groupIndex + dy];
- const anchor = neighbour && (dy > 0 ? neighbour.items[0] : neighbour.items[neighbour.items.length - 1]);
+ const anchor = neighbour && (dy > 0 ? neighbour.shownItems[0] : neighbour.shownItems[neighbour.shownItems.length - 1]);
  if (!anchor) return;
  activeIndex.value = indexOf(anchor.type);
  }
@@ -283,7 +333,11 @@ function onSearchKeydown(e: KeyboardEvent): void {
  }
  case 'Escape':
  e.preventDefault();
+ if (activeMoreCategory.value) {
+ closeMore(); // 弹窗打开时先关弹窗
+ } else {
  closeMenu();
+ }
  break;
  }
 }
@@ -377,7 +431,7 @@ onBeforeUnmount(() => {
             </div>
             <div class="palette__grid" role="presentation">
               <div
-                v-for="item in group.items"
+                v-for="item in group.shownItems"
                 :key="item.type"
                 class="palette__item"
                 :class="{ 'palette__item--active': indexOf(item.type) === activeIndex }"
@@ -415,9 +469,83 @@ onBeforeUnmount(() => {
                   ?
                 </button>
               </div>
+              <!-- 该分类有隐藏组件时，在网格末尾追加一个「更多」瓦片 -->
+              <button
+                v-if="group.hiddenItems.length > 0 && !keyword"
+                class="palette__item palette__item--more"
+                type="button"
+                :title="t('palette.more')"
+                @click.stop="openMore(group.key)"
+              >
+                <svg
+                  class="palette__icon"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  aria-hidden="true"
+                >
+                  <circle cx="12" cy="12" r="1" />
+                  <circle cx="19" cy="12" r="1" />
+                  <circle cx="5" cy="12" r="1" />
+                </svg>
+                <span class="palette__label">{{ t('palette.more') }}</span>
+              </button>
             </div>
           </div>
         </div>
+
+        <!-- 「更多」弹窗浮层：覆盖在主菜单上方，展示某个分类的全部组件 -->
+        <transition name="palette-fade">
+          <div
+            v-if="activeMoreCategory"
+            class="palette__overlay"
+            @click.self="closeMore"
+          >
+            <div class="palette__overlay-panel">
+              <div class="palette__overlay-header">
+                <span>{{ activeMoreLabel }}</span>
+                <button
+                  class="palette__overlay-close"
+                  type="button"
+                  :title="t('palette.less')"
+                  @click.stop="closeMore"
+                >
+                  ×
+                </button>
+              </div>
+              <div class="palette__overlay-grid">
+                <div
+                  v-for="item in activeMoreItems"
+                  :key="item.type"
+                  class="palette__item"
+                  :title="item.label"
+                  @click.stop="onSelectTypeFromMore(item.type)"
+                >
+                  <svg
+                    v-if="item.iconPaths.length"
+                    class="palette__icon"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path v-for="(d, i) in item.iconPaths" :key="i" :d="d" />
+                  </svg>
+                  <span class="palette__label">{{ item.label }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </transition>
       </div>
     </transition>
   </div>
@@ -557,6 +685,95 @@ onBeforeUnmount(() => {
         border-top: 1px solid #eef1f5;
       }
     }
+  }
+
+  // 「更多/收起」按钮的旧样式已删除，见下方 palette__overlay
+
+  // 「更多」瓦片：长得跟节点瓦片一模一样，但内部是灰底 + 省略号图标 + 「更多」文字
+  &__item--more {
+    background: #f5f7fa;
+    color: #8a919c;
+    border-style: dashed;
+    border-color: #c0c6d0;
+
+    &:hover {
+      background: #eef1f5;
+      border-style: solid;
+      color: @color-primary;
+
+      .palette__icon {
+        color: @color-primary;
+      }
+    }
+  }
+
+  // 弹窗遮罩：覆盖整个 palette__menu，点击空白关闭
+  &__overlay {
+    position: absolute;
+    inset: 0; // 覆盖 palette__menu 的全部区域
+    z-index: 2;
+    display: flex;
+    align-items: flex-start; // 从顶部开始，跟主菜单视觉对齐
+    justify-content: center;
+    padding: 40px 16px 16px; // 给弹窗面板让出空间，顶部留点给主菜单的搜索框露出
+    background: rgba(255, 255, 255, 0.75);
+    backdrop-filter: blur(2px);
+  }
+
+  &__overlay-panel {
+    display: flex;
+    flex-direction: column;
+    width: 480px;
+    max-height: 80%;
+    border: 1px solid #c0c6d0;
+    border-radius: 8px;
+    background: @color-surface;
+    box-shadow:
+      0 2px 8px rgba(0, 0, 0, 0.12),
+      0 8px 32px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+  }
+
+  &__overlay-header {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    border-bottom: 1px solid #eef1f5;
+    font-size: 12px;
+    font-weight: 600;
+    color: #8a919c;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  &__overlay-close {
+    padding: 0;
+    width: 22px;
+    height: 22px;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: #8a919c;
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+
+    &:hover {
+      background: #eef1f5;
+      color: @color-primary;
+    }
+  }
+
+  &__overlay-grid {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 10px;
   }
 
   // 组内 4 列网格：高度不再随节点数线性增长，7 组 22 项只占 8 行左右。

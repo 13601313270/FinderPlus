@@ -134,7 +134,9 @@ const zh: Language = {
     searchPlaceholder: '搜索节点…',
     noResult: '没有匹配的节点',
     nodeHelp: '查看该节点的使用说明',
-    paletteSettings: '调色板设置…'
+    paletteSettings: '调色板设置…',
+    more: '更多组件…',
+    less: '收起常用组件'
   },
   connection: {
     selfLoop: '同一个节点的端口之间不能连线',

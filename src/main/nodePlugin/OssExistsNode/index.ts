@@ -28,6 +28,7 @@ export const manifest: NodePluginManifest = {
     'M9 12l2 2 4-4'
   ],
   category: 'tool',
+  common: false,
   detailPanel: () => import('./OssExistsDetailPanel.vue')
 }
 

@@ -116,7 +116,9 @@ const es: Language = {
     searchPlaceholder: 'Buscar nodos…',
     noResult: 'No hay nodos coincidentes',
     nodeHelp: 'Ver la documentación del nodo',
-    paletteSettings: 'Ajustes de paleta…'
+    paletteSettings: 'Ajustes de paleta…',
+    more: 'Más componentes…',
+    less: 'Solo mostrar los comunes',
   },
   connection: {
     selfLoop: 'No se pueden conectar puertos del mismo nodo',

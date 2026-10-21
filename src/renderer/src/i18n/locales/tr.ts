@@ -116,7 +116,9 @@ const tr: Language = {
     searchPlaceholder: 'Düğüm ara…',
     noResult: 'Eşleşen düğüm yok',
     nodeHelp: 'Düğüm belgelerini görüntüle',
-    paletteSettings: 'Palet ayarları…'
+    paletteSettings: 'Palet ayarları…',
+    more: 'Daha fazla bileşen…',
+    less: 'Sadece yaygın olanları göster',
   },
   connection: {
     selfLoop: 'Aynı düğümdeki bağlantı noktaları birbirine bağlanamaz',

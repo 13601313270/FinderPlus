@@ -116,7 +116,9 @@ const ar: Language = {
     searchPlaceholder: 'ابحث عن العقد…',
     noResult: 'لا توجد عقد مطابقة',
     nodeHelp: 'عرض وثائق العقدة',
-    paletteSettings: 'إعدادات اللوحة…'
+    paletteSettings: 'إعدادات اللوحة…',
+    more: 'المزيد من المكونات…',
+    less: 'عرض الشائعة فقط',
   },
   connection: {
     selfLoop: 'لا يمكن ربط المنافذ ضمن العقدة نفسها',

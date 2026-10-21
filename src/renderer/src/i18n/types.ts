@@ -157,6 +157,10 @@ export type Language = {
     nodeHelp: string
     /** trigger 右下角齿轮按钮的 hover 提示 */
     paletteSettings: string
+    /** 调色板底部「更多组件」按钮文案，展开后显示非常用组件 */
+    more: string
+    /** 展开后的「收起」按钮文案 */
+    less: string
   }
   connection: {
     /** 端口自环 */

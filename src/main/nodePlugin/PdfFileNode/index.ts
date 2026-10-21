@@ -24,6 +24,7 @@ export const manifest: NodePluginManifest = {
   },
   iconPaths: ['M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z', 'M14 2v6h6', 'M9 13h1a2 2 0 1 1 0 4H9v-4Z', 'M14 17v-6h3a1.5 1.5 0 0 1 0 3h-1.5'],
   category: 'file',
+  common: false,
   render,
   help: () => import('./PdfFileHelpDialog.vue')
 }

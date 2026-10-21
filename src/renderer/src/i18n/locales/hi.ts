@@ -116,7 +116,9 @@ const hi: Language = {
     searchPlaceholder: 'नोड खोजें…',
     noResult: 'कोई मेल खाता नोड नहीं',
     nodeHelp: 'नोड दस्तावेज़ देखें',
-    paletteSettings: 'पैलेट सेटिंग्स…'
+    paletteSettings: 'पैलेट सेटिंग्स…',
+    more: 'और अधिक घटक…',
+    less: 'केवल सामान्य दिखाएं',
   },
   connection: {
     selfLoop: 'एक ही नोड के पोर्ट आपस में जोड़े नहीं जा सकते',

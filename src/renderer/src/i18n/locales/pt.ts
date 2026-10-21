@@ -116,7 +116,9 @@ const pt: Language = {
     searchPlaceholder: 'Buscar nós…',
     noResult: 'Nenhum nó correspondente',
     nodeHelp: 'Ver a documentação do nó',
-    paletteSettings: 'Configurações da paleta…'
+    paletteSettings: 'Configurações da paleta…',
+    more: 'Mais componentes…',
+    less: 'Mostrar apenas comuns',
   },
   connection: {
     selfLoop: 'As portas do mesmo nó não podem ser conectadas',

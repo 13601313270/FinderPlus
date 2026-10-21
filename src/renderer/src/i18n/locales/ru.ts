@@ -116,7 +116,9 @@ const ru: Language = {
     searchPlaceholder: 'Поиск узлов…',
     noResult: 'Нет подходящих узлов',
     nodeHelp: 'Открыть справку по узлу',
-    paletteSettings: 'Настройки палитры…'
+    paletteSettings: 'Настройки палитры…',
+    more: 'Еще компоненты…',
+    less: 'Показывать только обычные',
   },
   connection: {
     selfLoop: 'Порты одного узла нельзя соединить между собой',

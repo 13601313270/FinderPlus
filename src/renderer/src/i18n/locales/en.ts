@@ -129,7 +129,9 @@ const en: Language = {
     searchPlaceholder: 'Search nodes…',
     noResult: 'No matching nodes',
     nodeHelp: 'View node documentation',
-    paletteSettings: 'Palette settings…'
+    paletteSettings: 'Palette settings…',
+    more: 'More components…',
+    less: 'Show common only'
   },
   connection: {
     selfLoop: 'Ports on the same node cannot be connected',

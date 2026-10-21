@@ -116,7 +116,9 @@ const de: Language = {
     searchPlaceholder: 'Knoten suchen…',
     noResult: 'Keine passenden Knoten',
     nodeHelp: 'Knotendokumentation ansehen',
-    paletteSettings: 'Paletteneinstellungen…'
+    paletteSettings: 'Paletteneinstellungen…',
+    more: 'Mehr Komponenten…',
+    less: 'Nur gängige anzeigen',
   },
   connection: {
     selfLoop: 'Ports am selben Knoten können nicht verbunden werden',

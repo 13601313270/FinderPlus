@@ -116,7 +116,9 @@ const ko: Language = {
     searchPlaceholder: '노드 검색…',
     noResult: '일치하는 노드가 없습니다',
     nodeHelp: '노드 설명 보기',
-    paletteSettings: '팔레트 설정…'
+    paletteSettings: '팔레트 설정…',
+    more: '더 많은 컴포넌트…',
+    less: '자주 쓰는 것만 표시',
   },
   connection: {
     selfLoop: '같은 노드의 포트끼리는 연결할 수 없습니다',

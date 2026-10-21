@@ -39,6 +39,35 @@ const showHelp = ref(false)
 // 全屏预览浮层开关
 const showPreview = ref(false)
 
+// 复制按钮反馈状态
+const copied = ref(false)
+
+/** 预览弹窗里可复制的真实文本（无占位符），空值时按钮禁用 */
+const previewRawText = () => text.value
+
+/** 复制当前文本到剪贴板，成功后短暂显示"已复制"提示 */
+async function onCopyText(): Promise<void> {
+  const rawText = previewRawText()
+  if (!rawText) return
+  try {
+    await navigator.clipboard?.writeText(rawText)
+    copied.value = true
+    setTimeout(() => { copied.value = false }, 1500)
+  } catch {
+    // 兜底：execCommand 兼容旧环境
+    const ta = document.createElement('textarea')
+    ta.value = rawText
+    ta.style.position = 'fixed'
+    ta.style.opacity = '0'
+    document.body.appendChild(ta)
+    ta.select()
+    document.execCommand('copy')
+    document.body.removeChild(ta)
+    copied.value = true
+    setTimeout(() => { copied.value = false }, 1500)
+  }
+}
+
 // —— 虚拟滚动条相关状态 ——
 const renderDisplayRef = ref<HTMLElement | null>(null)
 const contentScrollTop = ref(0)
@@ -200,6 +229,22 @@ function onResizePointerDown(e: PointerEvent): void {
     <NodeHeader :title="nodeTitle" @help="showHelp = true">
       <template #actions>
         <button
+          class="node__copy-btn"
+          type="button"
+          :disabled="!text"
+          :title="copied ? t('copiedHint') : t('copyButton')"
+          @pointerdown.stop
+          @click.stop="onCopyText"
+        >
+          <svg v-if="!copied" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+          </svg>
+          <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+        </button>
+        <button
           class="node__preview-btn"
           type="button"
           :title="t('previewHint')"
@@ -251,6 +296,24 @@ function onResizePointerDown(e: PointerEvent): void {
 
   <!-- 全屏文本预览：宽 90vw，dialog body 自带 overflow-y:auto 可滚动 -->
   <HelpDialog :visible="showPreview" :title="t('previewDialogTitle')" width="90vw" @close="showPreview = false">
+    <div class="preview-toolbar">
+      <button
+        class="preview-toolbar__copy"
+        type="button"
+        :disabled="!text"
+        :title="t('copyButton')"
+        @click="onCopyText"
+      >
+        <svg v-if="!copied" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+          <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+        </svg>
+        <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+        {{ copied ? t('copiedHint') : t('copyButton') }}
+      </button>
+    </div>
     <pre class="preview-content">{{ text || (displayNode ? t('empty') : t('nodeMissing')) }}</pre>
   </HelpDialog>
 </template>
@@ -268,6 +331,7 @@ function onResizePointerDown(e: PointerEvent): void {
   padding: 8px;
   padding-top: 0;
 
+  &__copy-btn,
   &__preview-btn {
     all: unset;
     cursor: pointer;
@@ -289,10 +353,20 @@ function onResizePointerDown(e: PointerEvent): void {
       height: 12px;
     }
 
-    &:hover {
+    &:hover:not(:disabled) {
       background: #dbeafe;
       color: #2563eb;
     }
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.45;
+    }
+  }
+
+  // 两个按钮之间加一点间距
+  &__copy-btn {
+    margin-right: 6px;
   }
 
   &__resize-handle {
@@ -375,6 +449,42 @@ function onResizePointerDown(e: PointerEvent): void {
 }
 
 // 全屏预览弹窗里的文本：pre-wrap 保留换行/空格，清除 pre 默认 margin
+.preview-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+
+  &__copy {
+    all: unset;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #374151;
+    background: #f3f4f6;
+    border-radius: 6px;
+    transition: background 0.15s, color 0.15s;
+    user-select: none;
+
+    &:hover:not(:disabled) {
+      background: #dbeafe;
+      color: #2563eb;
+    }
+
+    &:active:not(:disabled) {
+      background: #bfdbfe;
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.45;
+    }
+  }
+}
+
 .preview-content {
   margin: 0;
   padding: 0;

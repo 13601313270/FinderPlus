@@ -108,5 +108,39 @@ export const messages = {
     vi: 'Xem trước văn bản',
     tr: 'Metin önizleme',
     it: 'Anteprima testo'
+  },
+  copyButton: {
+    zh: '复制',
+    en: 'Copy',
+    ja: 'コピー',
+    ko: '복사',
+    es: 'Copiar',
+    ar: 'نسخ',
+    fr: 'Copier',
+    pt: 'Copiar',
+    ru: 'Копировать',
+    hi: 'कॉपी',
+    id: 'Salin',
+    de: 'Kopieren',
+    vi: 'Sao chép',
+    tr: 'Kopyala',
+    it: 'Copia'
+  },
+  copiedHint: {
+    zh: '已复制',
+    en: 'Copied',
+    ja: 'コピーしました',
+    ko: '복사됨',
+    es: 'Copiado',
+    ar: 'تم النسخ',
+    fr: 'Copié',
+    pt: 'Copiado',
+    ru: 'Скопировано',
+    hi: 'कॉपी हो गया',
+    id: 'Disalin',
+    de: 'Kopiert',
+    vi: 'Đã sao chép',
+    tr: 'Kopyalandı',
+    it: 'Copiato'
   }
 } satisfies Record<string, LocalizedText>

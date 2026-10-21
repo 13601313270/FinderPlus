@@ -135,6 +135,7 @@ const id: Language = {
     'img-file': 'Berkas Gambar',
     'pdf-file': 'Berkas PDF',
     'audio-file': 'Berkas Audio',
+    'video-file': 'Video File',
     'img-file-collection': 'Koleksi Gambar'
   },
   intro: {

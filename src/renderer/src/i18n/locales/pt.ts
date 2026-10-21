@@ -135,6 +135,7 @@ const pt: Language = {
     'img-file': 'Arquivo de imagem',
     'pdf-file': 'Arquivo PDF',
     'audio-file': 'Arquivo de áudio',
+    'video-file': 'Video File',
     'img-file-collection': 'Coleção de imagens'
   },
   intro: {

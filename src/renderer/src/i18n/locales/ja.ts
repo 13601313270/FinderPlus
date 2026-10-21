@@ -135,6 +135,7 @@ const ja: Language = {
     'img-file': '画像ファイル',
     'pdf-file': 'PDFファイル',
     'audio-file': '音声ファイル',
+    'video-file': 'Video File',
     'img-file-collection': '画像コレクション'
   },
   intro: {

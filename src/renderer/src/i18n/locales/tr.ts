@@ -135,6 +135,7 @@ const tr: Language = {
     'img-file': 'Görsel Dosyası',
     'pdf-file': 'PDF Dosyası',
     'audio-file': 'Ses Dosyası',
+    'video-file': 'Video File',
     'img-file-collection': 'Görsel Koleksiyonu'
   },
   intro: {

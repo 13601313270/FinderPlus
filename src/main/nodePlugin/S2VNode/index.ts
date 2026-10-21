@@ -1,0 +1,31 @@
+import type { NodePluginManifest } from '../manifest'
+import { S2VNode } from './node'
+import render from './render.vue'
+
+export const manifest: NodePluginManifest = {
+  type: S2VNode.TYPE,
+  nodeClass: S2VNode,
+  title: {
+    zh: '数字人对口型',
+    en: 'Digital Human Lip-sync',
+    ja: 'デジタルヒューマン リップシンク',
+    ko: '디지털 휴먼 립싱크',
+    es: 'Humano Digital Lip-sync',
+    ar: 'إنسان رقمي مزامنة الشفاه',
+    fr: 'Humain Numérique Synchronisation Labiale',
+    pt: 'Humano Digital Sincronização Labial',
+    ru: 'Цифровой Человек Синхронизация Губ',
+    hi: 'डिजिटल ह्यूमन लिप-सिंक',
+    id: 'Manusia Digital Sinkronisasi Bibir',
+    de: 'Digitaler Mensch Lippensynchronisation',
+    vi: 'Người số đồng bộ môi',
+    tr: 'Dijital İnsan Dudak Senkronizasyonu',
+    it: 'Umano Digitale Sincronizzazione Labiale'
+  },
+  render,
+  // 图标：视频录制 / 播放 两笔
+  iconPaths: ['M4 4h12v16H4z', 'M16 10l4-3v10l-4-3z'],
+  category: 'ai'
+}
+
+export default manifest

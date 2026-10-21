@@ -135,6 +135,7 @@ const ko: Language = {
     'img-file': '이미지 파일',
     'pdf-file': 'PDF 파일',
     'audio-file': '음성 파일',
+    'video-file': 'Video File',
     'img-file-collection': '이미지 컬렉션'
   },
   intro: {

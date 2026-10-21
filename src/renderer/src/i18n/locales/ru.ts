@@ -135,6 +135,7 @@ const ru: Language = {
     'img-file': 'Файл изображения',
     'pdf-file': 'PDF-файл',
     'audio-file': 'Аудиофайл',
+    'video-file': 'Video File',
     'img-file-collection': 'Коллекция изображений'
   },
   intro: {

@@ -148,6 +148,7 @@ const en: Language = {
     'img-file': 'Image File',
     'pdf-file': 'PDF File',
     'audio-file': 'Audio File',
+    'video-file': 'Video File',
     'img-file-collection': 'Image Collection'
   },
   intro: {

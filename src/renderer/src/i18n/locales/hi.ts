@@ -135,6 +135,7 @@ const hi: Language = {
     'img-file': 'छवि फ़ाइल',
     'pdf-file': 'PDF फ़ाइल',
     'audio-file': 'सौप फ़ाइल',
+    'video-file': 'Video File',
     'img-file-collection': 'छवि संग्रह'
   },
   intro: {

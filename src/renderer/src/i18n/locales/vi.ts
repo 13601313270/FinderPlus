@@ -135,6 +135,7 @@ const vi: Language = {
     'img-file': 'Tệp hình ảnh',
     'pdf-file': 'Tệp PDF',
     'audio-file': 'Tệp âm thanh',
+    'video-file': 'Video File',
     'img-file-collection': 'Bộ sưu tập ảnh'
   },
   intro: {

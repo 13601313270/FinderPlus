@@ -135,6 +135,7 @@ const ar: Language = {
     'img-file': 'ملف صورة',
     'pdf-file': 'PDF ملف',
     'audio-file': 'ملف صوت',
+    'video-file': 'Video File',
     'img-file-collection': 'مجموعة الصور'
   },
   intro: {

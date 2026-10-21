@@ -135,6 +135,7 @@ const it: Language = {
     'img-file': 'File immagine',
     'pdf-file': 'File PDF',
     'audio-file': 'File audio',
+    'video-file': 'Video File',
     'img-file-collection': 'Raccolta di immagini'
   },
   intro: {

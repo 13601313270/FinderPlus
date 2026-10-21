@@ -480,9 +480,6 @@ export class TTSNode extends Node {
       this.audioOutput.commit(new AudioFileValue(file, hash))
       const duration = parseWavDuration(bytes)
       console.log('[TTS] parseWavDuration result:', duration, 'format=', actualExt)
-      if (duration !== null) {
-        this.durationOutput.commit(new NumberValue(Number(duration.toFixed(3))))
-      }
       this.resultFile = file
       this.resultHash = hash
       this.status = 'done'

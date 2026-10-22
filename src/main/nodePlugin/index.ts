@@ -11,6 +11,7 @@ import { manifest as txtFileManifest } from './TxtFileNode'
 import { manifest as htmlFileManifest } from './HtmlFileNode'
 import { manifest as imgFileManifest } from './ImgFileNode'
 import { manifest as audioFileManifest } from './AudioFileNode'
+import { manifest as videoFileManifest } from './VideoFileNode'
 import { manifest as pdfFileManifest } from './PdfFileNode'
 import { manifest as anyFileManifest } from './AnyFileNode'
 import { manifest as fileInfoManifest } from './FileInfoNode'
@@ -110,6 +111,7 @@ const fileManifests: NodePluginManifest[] = [
   htmlFileManifest,
   imgFileManifest,
   audioFileManifest,
+  videoFileManifest,
   pdfFileManifest
 ]
 

@@ -449,5 +449,30 @@ export const messages = {
     vi: 'Mô hình hiện tại không hỗ trợ ảnh sang ảnh (ảnh tham chiếu). Vui lòng đổi mô hình.',
     tr: 'Mevcut model görüntüden görüntüye (referans görüntüler) özelliğini desteklemiyor. Lütfen modeli değiştirin.',
     it: 'Il modello corrente non supporta l’immagine su immagine (immagini di riferimento). Cambia modello.'
+  },
+  // —— detailPanel 配置面板 ——
+  providerLabel: {
+    zh: '图像服务（Provider）',
+    en: 'Image Provider'
+  },
+  modelLabel: {
+    zh: '模型',
+    en: 'Model'
+  },
+  presetDefault: {
+    zh: '预设默认',
+    en: 'Preset default'
+  },
+  asyncTag: {
+    zh: '异步（较慢）',
+    en: 'Async (slower)'
+  },
+  refImagesTag: {
+    zh: '参考图 × {n}',
+    en: 'Ref images × {n}'
+  },
+  effectiveModel: {
+    zh: '当前生效：{model}',
+    en: 'Effective: {model}'
   }
 } satisfies Record<string, LocalizedText>

@@ -25,7 +25,8 @@ export const manifest: NodePluginManifest = {
   render,
   iconPaths: ['M12 3l2 5 5 2-5 2-2 5-2-5-5-2 5-2Z', 'M18 15v4', 'M16 17h4'],
   category: 'ai',
-  help: () => import('./ImageGenHelpDialog.vue')
+  help: () => import('./ImageGenHelpDialog.vue'),
+  detailPanel: () => import('./ImageGenDetailPanel.vue')
 }
 
 export default manifest

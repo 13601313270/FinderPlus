@@ -26,6 +26,7 @@ import { manifest as ttsManifest } from './TTSNode'
 import { manifest as s2vManifest } from './S2VNode'
 import { manifest as recorderManifest } from './RecorderNode'
 import { manifest as audioTrimManifest } from './AudioTrimNode'
+import { manifest as audioSpeedManifest } from './AudioSpeedNode'
 import { manifest as humanReviewManifest } from './HumanReviewNode'
 import { manifest as stringConcatManifest } from './StringConcatNode'
 import { manifest as commandManifest } from './CommandNode'
@@ -82,6 +83,7 @@ const functionalManifests: NodePluginManifest[] = [
   s2vManifest,
   recorderManifest,
   audioTrimManifest,
+  audioSpeedManifest,
   humanReviewManifest,
   stringConcatManifest,
   commandManifest,

@@ -44,6 +44,8 @@ const fr: Language = {
     save: 'Enregistrer',
     clear: 'Effacer',
     saved: 'Enregistré',
+    showKey: 'Afficher la clé',
+    hideKey: 'Masquer la clé',
     canvasesTitle: "Mes toiles",
     canvasesHint: "Toutes les toiles et leurs informations de base sont listées ici. Cliquez sur \"Ouvrir\" pour ouvrir une toile dans une nouvelle fenêtre ; plusieurs fenêtres peuvent fonctionner en parallèle.",
     canvasesLoading: "Chargement…",

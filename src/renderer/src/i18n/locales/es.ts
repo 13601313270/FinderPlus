@@ -45,6 +45,8 @@ const es: Language = {
     save: 'Guardar',
     clear: 'Borrar',
     saved: 'Guardado',
+    showKey: 'Mostrar clave',
+    hideKey: 'Ocultar clave',
     canvasesTitle: "Mis lienzos",
     canvasesHint: "Aquí se muestran todos los lienzos y su información básica. Haz clic en \"Abrir\" para abrir un lienzo en una ventana nueva; varias ventanas pueden funcionar en paralelo.",
     canvasesLoading: "Cargando…",

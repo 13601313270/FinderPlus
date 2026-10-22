@@ -61,6 +61,8 @@ const zh: Language = {
     save: '保存',
     clear: '清除',
     saved: '已保存',
+    showKey: '显示密钥',
+    hideKey: '隐藏密钥',
     canvasesTitle: "我的画布",
     canvasesHint: "这里列出了所有画布及其基本信息。点击「打开」会在新窗口中打开该画布，多个窗口可以并行操作。",
     canvasesLoading: "加载中…",

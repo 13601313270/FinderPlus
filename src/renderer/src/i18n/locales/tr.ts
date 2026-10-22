@@ -45,6 +45,8 @@ const tr: Language = {
     save: 'Kaydet',
     clear: 'Temizle',
     saved: 'Kaydedildi',
+    showKey: 'Anahtarı göster',
+    hideKey: 'Anahtarı gizle',
     canvasesTitle: "Benim tuvalim",
     canvasesHint: "Tüm tuvaller ve temel bilgileri burada listelenir. Bir tuvali yeni pencerede açmak için \"Aç\" seçeneğine tıklayın; birden fazla pencere paralel olarak çalışabilir.",
     canvasesLoading: "Yükleniyor…",

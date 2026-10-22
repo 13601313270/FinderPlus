@@ -45,6 +45,8 @@ const ko: Language = {
     save: '저장',
     clear: '지우기',
     saved: '저장됨',
+    showKey: '키 표시',
+    hideKey: '키 숨기기',
     canvasesTitle: "내 캔버스",
     canvasesHint: "모든 캔버스와 기본 정보가 여기에 나열됩니다. \"열기\"를 클릭하면 새 창에서 해당 캔버스가 열리며, 여러 창을 동시에 조작할 수 있습니다.",
     canvasesLoading: "불러오는 중…",

@@ -45,6 +45,8 @@ const de: Language = {
     save: 'Speichern',
     clear: 'Leeren',
     saved: 'Gespeichert',
+    showKey: 'Schlüssel anzeigen',
+    hideKey: 'Schlüssel verbergen',
     canvasesTitle: "Meine Leinwände",
     canvasesHint: "Alle Leinwände und ihre Basisinformationen sind hier aufgelistet. Klicken Sie auf \"Öffnen\", um eine Leinwand in einem neuen Fenster zu öffnen; mehrere Fenster können parallel arbeiten.",
     canvasesLoading: "Laden…",

@@ -45,6 +45,8 @@ const vi: Language = {
     save: 'Lưu',
     clear: 'Xóa',
     saved: 'Đã lưu',
+    showKey: 'Hiển thị khóa',
+    hideKey: 'Ẩn khóa',
     canvasesTitle: "Canvas của tôi",
     canvasesHint: "Tất cả canvas và thông tin cơ bản của chúng được liệt kê ở đây. Nhấp vào \"Mở\" để mở một canvas trong cửa sổ mới; nhiều cửa sổ có thể hoạt động song song.",
     canvasesLoading: "Đang tải…",

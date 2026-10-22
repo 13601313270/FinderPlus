@@ -45,6 +45,8 @@ const it: Language = {
     save: 'Salva',
     clear: 'Cancella',
     saved: 'Salvato',
+    showKey: 'Mostra chiave',
+    hideKey: 'Nascondi chiave',
     canvasesTitle: "I miei canvas",
     canvasesHint: "Tutti i canvas e le loro informazioni di base sono elencati qui. Fai clic su \"Apri\" per aprire un canvas in una nuova finestra; più finestre possono funzionare in parallelo.",
     canvasesLoading: "Caricamento…",

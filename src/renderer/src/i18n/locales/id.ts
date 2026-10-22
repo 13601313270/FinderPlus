@@ -45,6 +45,8 @@ const id: Language = {
     save: 'Simpan',
     clear: 'Hapus',
     saved: 'Tersimpan',
+    showKey: 'Tampilkan kunci',
+    hideKey: 'Sembunyikan kunci',
     canvasesTitle: "Kanvas Saya",
     canvasesHint: "Semua kanvas dan informasi dasarnya tercantum di sini. Klik \"Buka\" untuk membuka kanvas di jendela baru; beberapa jendela dapat beroperasi secara paralel.",
     canvasesLoading: "Memuat…",

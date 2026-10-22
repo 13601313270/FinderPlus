@@ -56,6 +56,8 @@ const en: Language = {
     save: 'Save',
     clear: 'Clear',
     saved: 'Saved',
+    showKey: 'Show key',
+    hideKey: 'Hide key',
     canvasesTitle: "My Canvases",
     canvasesHint: "All canvases and their basic info are listed here. Click \"Open\" to open a canvas in a new window; multiple windows can run in parallel.",
     canvasesLoading: "Loading…",

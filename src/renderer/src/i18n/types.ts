@@ -73,6 +73,9 @@ export type Language = {
     save: string
     clear: string
     saved: string
+    /** API Key 可见性切换 tooltip */
+    showKey: string
+    hideKey: string
     /** 我的画布 section */
     canvasesTitle: string
     canvasesHint: string

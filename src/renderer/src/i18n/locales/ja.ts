@@ -45,6 +45,8 @@ const ja: Language = {
     save: '保存',
     clear: 'クリア',
     saved: '保存済み',
+    showKey: 'キーを表示',
+    hideKey: 'キーを非表示',
     canvasesTitle: "マイキャンバス",
     canvasesHint: "すべてのキャンバスと基本情報がここに一覧表示されます。「開く」をクリックすると新しいウィンドウでキャンバスが開き、複数のウィンドウを並行して操作できます。",
     canvasesLoading: "読み込み中…",

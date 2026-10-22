@@ -63,6 +63,17 @@ const {
 type SectionKey = 'general' | 'llm' | 'image' | 'nodes' | 'canvases' | 'browser'
 const activeSection = ref<SectionKey>('general')
 
+/** 各 provider API Key 是否以明文显示 */
+const llmKeyVisible = ref<Record<string, boolean>>({})
+const imageKeyVisible = ref<Record<string, boolean>>({})
+
+function toggleLLMKeyVisible(key: string): void {
+  llmKeyVisible.value[key] = !llmKeyVisible.value[key]
+}
+function toggleImageKeyVisible(key: string): void {
+  imageKeyVisible.value[key] = !imageKeyVisible.value[key]
+}
+
 const SECTION_ORDER: SectionKey[] = ['general', 'llm', 'image', 'nodes', 'browser', 'canvases']
 
 function sectionLabel(key: SectionKey): string {
@@ -84,6 +95,10 @@ watch(visible, (v) => {
     // 调用方可以在 openSettings('nodes') 时指定聚焦 section；否则兜底第一个
     const requested = targetSection.value as SectionKey | null
     activeSection.value = requested && SECTION_ORDER.includes(requested) ? requested : 'general'
+  } else {
+    // 关闭时重置密钥明文显示状态，避免下次打开意外泄露
+    llmKeyVisible.value = {}
+    imageKeyVisible.value = {}
   }
 })
 
@@ -646,14 +661,31 @@ async function onDeleteCanvas(id: string, name: string): Promise<void> {
                       <span class="gs-llm__key-label">{{ preset.label }}</span>
                     </div>
                     <div class="gs-llm__key-input-row">
-                      <input
-                        v-model="llmDraftKeys[key]"
-                        class="gs-llm__input"
-                        type="password"
-                        :placeholder="`${preset.label} API Key`"
-                        autocomplete="off"
-                        spellcheck="false"
-                      />
+                      <div class="gs-llm__input-wrap">
+                        <input
+                          v-model="llmDraftKeys[key]"
+                          class="gs-llm__input"
+                          :type="llmKeyVisible[key] ? 'text' : 'password'"
+                          :placeholder="`${preset.label} API Key`"
+                          autocomplete="off"
+                          spellcheck="false"
+                        />
+                        <button
+                          class="gs-llm__eye-btn"
+                          type="button"
+                          :title="llmKeyVisible[key] ? t('settingsDialog.hideKey') : t('settingsDialog.showKey')"
+                          @click.stop="toggleLLMKeyVisible(key)"
+                        >
+                          <svg v-if="llmKeyVisible[key]" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                            <circle cx="12" cy="12" r="3" />
+                          </svg>
+                          <svg v-else viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                            <line x1="1" y1="1" x2="23" y2="23" />
+                          </svg>
+                        </button>
+                      </div>
                       <button
                         class="gs-btn gs-btn--ghost gs-btn--clear-sm"
                         type="button"
@@ -688,14 +720,31 @@ async function onDeleteCanvas(id: string, name: string): Promise<void> {
                       <span class="gs-llm__key-label">{{ preset.label }}</span>
                     </div>
                     <div class="gs-llm__key-input-row">
-                      <input
-                        v-model="imageDraftKeys[key]"
-                        class="gs-llm__input"
-                        type="password"
-                        :placeholder="`${preset.label} API Key`"
-                        autocomplete="off"
-                        spellcheck="false"
-                      />
+                      <div class="gs-llm__input-wrap">
+                        <input
+                          v-model="imageDraftKeys[key]"
+                          class="gs-llm__input"
+                          :type="imageKeyVisible[key] ? 'text' : 'password'"
+                          :placeholder="`${preset.label} API Key`"
+                          autocomplete="off"
+                          spellcheck="false"
+                        />
+                        <button
+                          class="gs-llm__eye-btn"
+                          type="button"
+                          :title="imageKeyVisible[key] ? t('settingsDialog.hideKey') : t('settingsDialog.showKey')"
+                          @click.stop="toggleImageKeyVisible(key)"
+                        >
+                          <svg v-if="imageKeyVisible[key]" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                            <circle cx="12" cy="12" r="3" />
+                          </svg>
+                          <svg v-else viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                            <line x1="1" y1="1" x2="23" y2="23" />
+                          </svg>
+                        </button>
+                      </div>
                       <button
                         class="gs-btn gs-btn--ghost gs-btn--clear-sm"
                         type="button"
@@ -1026,6 +1075,7 @@ async function onDeleteCanvas(id: string, name: string): Promise<void> {
 
 .gs-btn {
   all: unset;
+  height: 23px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1078,9 +1128,15 @@ async function onDeleteCanvas(id: string, name: string): Promise<void> {
 
 // —— LLM 设置分区样式 ——
 .gs-llm {
-  &__input {
+  &__input-wrap {
+    position: relative;
     flex: 1;
-    padding: 8px 10px;
+    min-width: 0;
+  }
+
+  &__input {
+    width: 100%;
+    padding: 8px 34px 8px 10px;
     font-size: 13px;
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     border: 1px solid #d1d5db;
@@ -1093,6 +1149,35 @@ async function onDeleteCanvas(id: string, name: string): Promise<void> {
     &:focus {
       border-color: #3b82f6;
       box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+    }
+  }
+
+  &__eye-btn {
+    position: absolute;
+    right: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: transparent;
+    color: #6b7280;
+    border-radius: 4px;
+    cursor: pointer;
+    padding: 0;
+    transition: color 0.15s, background 0.15s;
+
+    &:hover {
+      color: #374151;
+      background: #f3f4f6;
+    }
+
+    &:focus-visible {
+      outline: 2px solid #3b82f6;
+      outline-offset: 1px;
     }
   }
 

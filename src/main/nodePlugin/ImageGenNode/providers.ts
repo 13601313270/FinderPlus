@@ -18,7 +18,7 @@
  * 默认值必须跟着模型走，不能全局写死一个。尺寸表按各家官方文档整理，按需增删。
  */
 
-export type ImageProviderId = 'siliconflow' | 'openai' | 'glm' | 'dashscope'
+export type ImageProviderId = 'siliconflow' | 'openai' | 'glm' | 'dashscope' | 'tokenplan'
 
 export type ImageRequestShape = 'openai' | 'siliconflow' | 'zhipu' | 'dashscope-sync' | 'dashscope-async'
 
@@ -211,6 +211,45 @@ export const IMAGE_PROVIDERS: Readonly<Record<ImageProviderId, ImageProviderPres
         sizes: ['1024x1024', '720x1280', '1280x720', '768x1344', '1344x768']
       }
     }
+  },
+
+  // —— 千问 Token Plan（sk-sp- 前缀 Key，独立计费，端点完全不同于 DashScope）——
+  // host 固定：token-plan.cn-beijing.maas.aliyuncs.com
+  // 支持的图像模型：qwen-image-3.0-pro / 3.0 / 2.1-pro / 2.1-turbo 等（同步 multimodal-generation）
+  // 异步端点 / tasks 路径结构与 DashScope 完全一致，只是 host 换了
+  tokenplan: {
+    label: '千问 Token Plan',
+    url: 'https://token-plan.cn-beijing.maas.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation',
+    asyncUrl: 'https://token-plan.cn-beijing.maas.aliyuncs.com/api/v1/services/aigc/text2image/image-synthesis',
+    taskUrlPrefix: 'https://token-plan.cn-beijing.maas.aliyuncs.com/api/v1/tasks/',
+    shape: 'dashscope-sync',
+    defaultModel: 'qwen-image-3.0-pro',
+    models: {
+      'qwen-image-3.0-pro': {
+        sizes: ['1024x1024', '1328x1328', '1536x1024', '1024x1536', '1664x928', '928x1664', '2048x2048']
+      },
+      'qwen-image-3.0': {
+        sizes: ['1024x1024', '1328x1328', '1536x1024', '1024x1536', '1664x928', '928x1664', '2048x2048']
+      },
+      'qwen-image-2.1-pro': {
+        sizes: ['1024x1024', '1328x1328', '1536x1024', '1024x1536', '1664x928', '928x1664', '2048x2048'],
+        maxReferenceImages: 10
+      },
+      'qwen-image-2.1-turbo': {
+        sizes: ['1024x1024', '1328x1328', '1536x1024', '1024x1536', '1664x928', '928x1664', '2048x2048'],
+        maxReferenceImages: 10
+      },
+      'wan2.7-image-pro': {
+        sizes: ['1280x1280', '1440x1440', '1600x1280', '1280x1600', '2048x2048'],
+        maxReferenceImages: 4,
+        dashscopeEnableInterleave: 'interleave'
+      },
+      'wan2.7-image': {
+        sizes: ['1280x1280', '1440x1440', '1600x1280', '1280x1600'],
+        maxReferenceImages: 4,
+        dashscopeEnableInterleave: 'interleave'
+      }
+    }
   }
 }
 
@@ -333,16 +372,6 @@ export function readImageEndpoint(
 
   let requestUrl = isAsyncTask ? preset.asyncUrl ?? preset.url : preset.url
   let taskUrlPrefix = isAsyncTask ? preset.taskUrlPrefix ?? '' : ''
-
-  // 百炼 Token Plan 兼容：Key 前缀 sk-sp- 必须发到 Token Plan 专属 host，
-  // 路径（multimodal-generation / image-synthesis / tasks）与按量付费完全一致。
-  if (providerId === 'dashscope') {
-    const target = key.trim().startsWith('sk-sp-')
-      ? 'https://token-plan.cn-beijing.maas.aliyuncs.com'
-      : 'https://dashscope.aliyuncs.com'
-    requestUrl = requestUrl.replace('https://dashscope.aliyuncs.com', target)
-    if (taskUrlPrefix) taskUrlPrefix = taskUrlPrefix.replace('https://dashscope.aliyuncs.com', target)
-  }
 
   return {
     provider: providerId,

@@ -546,6 +546,18 @@ export class TTSNode extends Node {
       } else {
         this.status = 'error'
         this.errorMessage = (err as Error).message || String(err)
+        // 系统通知（仅真实错误，用户主动取消不弹）
+        const w = window as unknown as {
+          notificationApi?: { show: (t: string, b?: string, m?: Record<string, unknown>) => Promise<unknown> }
+          getCurrentCanvasId?: () => string
+        }
+        if (w.notificationApi) {
+          const canvasId = w.getCurrentCanvasId?.()
+          w.notificationApi.show('语音合成失败', this.errorMessage, {
+            ...(canvasId ? { canvasId } : {}),
+            nodeId: this.id
+          }).catch(() => { /* noop */ })
+        }
       }
     } finally {
       if (this.abortController === controller) this.abortController = null

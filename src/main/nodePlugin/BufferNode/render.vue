@@ -176,7 +176,7 @@ function onTake(): void {
   }
 
   &__count-value {
-    font-size: 15px;
+    font-size: 20px;
     font-weight: 600;
     line-height: 1;
     color: @color-primary;

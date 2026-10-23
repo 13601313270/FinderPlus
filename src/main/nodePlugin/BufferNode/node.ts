@@ -30,7 +30,7 @@ const ALL_KINDS: readonly BufferKind[] = ['number', 'string', 'bool', 'file', 'i
 
 /** 内容区尺寸：选中类型 + 计数 + 「出」按钮 */
 const NODE_WIDTH = 190
-const NODE_HEIGHT = 135
+const NODE_HEIGHT = 142
 
 /**
  * 缓冲区节点抽象基类：给栈 / 队列两种结构共用的一套读写逻辑。

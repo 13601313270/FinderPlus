@@ -231,7 +231,8 @@ export class TableNode extends Node {
   saveState(): Record<string, unknown> {
     return {
       columns: this.columns,
-      queryPortIds: this.queryPorts.map((p) => p.id)
+      queryPortIds: this.queryPorts.map((p) => p.id),
+      box: this.box as readonly [number, number]
     }
   }
 
@@ -249,6 +250,12 @@ export class TableNode extends Node {
           this.addQueryPort(pid)
         }
       }
+    }
+
+    // 恢复用户拖过的尺寸；老存档没存 box，保持构造默认值
+    const box = state.box
+    if (Array.isArray(box) && box.length === 2 && typeof box[0] === 'number' && typeof box[1] === 'number') {
+      this.setBox(Math.round(box[0]), Math.round(box[1]))
     }
   }
 

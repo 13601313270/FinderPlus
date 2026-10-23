@@ -13,6 +13,9 @@ import HelpDialog from '@renderer/components/HelpDialog.vue'
 import NodeHeader from '@renderer/components/NodeHeader.vue'
 import HumanReviewHelpDialog from './HumanReviewHelpDialog.vue'
 
+// @ts-ignore — Vite 专用 ?url 语法，产物是字符串 URL；项目尚无 .wav 类型声明
+import reviewAlertUrl from './audio.wav?url'
+
 const props = defineProps<{ id: string }>()
 
 const reviewNode = shallowRef<HumanReviewNode | undefined>(undefined)
@@ -48,6 +51,15 @@ const labelText = computed(() => (hasCurrent.value ? currentLabel.value : t('awa
 
 let unsubscribe: (() => void) | undefined
 
+/** 提示音实例（模块级单例，复用浏览器 audio 元素避免重复加载） */
+const alertAudio = new Audio(reviewAlertUrl)
+alertAudio.preload = 'auto'
+
+/** 上一次 currentValue 的引用；用来检测"有新的待审核项"触发提示音 */
+let prevCurrent: Value | undefined
+/** 是否首次同步（组件挂载时跳过播放，避免画布加载就被吓一跳） */
+let isFirstSync = true
+
 /** 同步节点状态到渲染层：核心只存 currentValue（Value 实例）和 currentKind */
 function syncCurrent() {
   const n = reviewNode.value
@@ -58,6 +70,21 @@ function syncCurrent() {
   const cv = n.currentValue
   currentValue.value = cv
   currentKind.value = cv ? ((cv.constructor as unknown) as { VALUE_NAME: string }).VALUE_NAME : ''
+
+  if (isFirstSync) {
+    // 首次同步只做初始化，不播放——画布加载时可能已有 pending 项，不该触发提示音
+    isFirstSync = false
+    prevCurrent = cv
+    return
+  }
+
+  // 有新的待审核项 → 播放提示音（queue 首次入队、override 覆盖、advance 取下一项 都会触发）
+  if (cv !== undefined && cv !== prevCurrent) {
+    alertAudio.currentTime = 0
+    // catch 吞掉浏览器自动播放策略拦截的异常
+    alertAudio.play().catch(() => { /* noop */ })
+  }
+  prevCurrent = cv
 }
 
 onMounted(() => {

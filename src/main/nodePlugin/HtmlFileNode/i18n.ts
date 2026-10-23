@@ -74,6 +74,23 @@ export const messages = {
     tr: 'Yardım',
     it: 'Guida'
   },
+  previewTitle: {
+    zh: '预览 HTML',
+    en: 'Preview HTML',
+    ja: 'HTML をプレビュー',
+    ko: 'HTML 미리보기',
+    es: 'Vista previa de HTML',
+    ar: 'معاينة HTML',
+    fr: 'Aperçu HTML',
+    pt: 'Pré-visualizar HTML',
+    ru: 'Предпросмотр HTML',
+    hi: 'HTML पूर्वावलोकन',
+    id: 'Pratinjau HTML',
+    de: 'HTML-Vorschau',
+    vi: 'Xem trước HTML',
+    tr: 'HTML önizleme',
+    it: 'Anteprima HTML'
+  },
   helpDialogTitle: {
     zh: 'HTML文件节点使用说明',
     en: 'HTML file node help',

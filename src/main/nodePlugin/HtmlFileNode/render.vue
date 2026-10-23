@@ -6,6 +6,7 @@ import { useNodePosition } from '@renderer/composables/useNodePosition'
 import { useFileDragOut } from '@renderer/composables/useFileDragOut'
 import { useFileOpenInSystem } from '@renderer/composables/useFileOpenInSystem'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
+import { useNodeDetail } from '@renderer/composables/useNodeDetail'
 import HelpDialog from '@renderer/components/HelpDialog.vue'
 import { messages } from './i18n'
 import HtmlFileHelpDialog from './HtmlFileHelpDialog.vue'
@@ -14,6 +15,7 @@ const props = defineProps<{ id: string }>()
 
 // 卡片内文案走节点本地的 i18n.ts（放在节点文件夹里，便于插件化替换），跟随界面语言
 const t = useLocalizedMessages(messages)
+const { openNodeDetail } = useNodeDetail()
 
 // 帮助浮层开关（弹窗壳由 HelpDialog 负责）
 const showHelp = ref(false)
@@ -112,6 +114,17 @@ function formatSize(bytes: number): string {
     </div>
 
     <!-- 帮助入口：悬浮在卡片右上角 -->
+    <button
+      class="file-card__help"
+      type="button"
+      :title="t('previewTitle')"
+      style="right: 28px"
+      @pointerdown.stop
+      @dblclick.stop
+      @click.stop="openNodeDetail(props.id)"
+    >
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+    </button>
     <button
       class="file-card__help"
       type="button"

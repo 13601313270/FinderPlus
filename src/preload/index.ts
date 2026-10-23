@@ -348,6 +348,14 @@ const fileApi = {
     ipcRenderer.invoke('file:showItemInFolder', { fileName, canvasId: fillCanvasId(canvasId) }),
 
   /**
+   * 把 HTML 文本写到应用临时目录，返回 file:// 绝对路径。
+   * 给 HtmlFileDetailPanel 用：iframe srcdoc 会继承 renderer 进程 CSP，
+   * 换成 src="file://..." 后 iframe 有独立 origin，不再被 CSP 拦截本地资源加载。
+   */
+  writePreviewHtml: (nodeId: string, htmlContent: string): Promise<string> =>
+    ipcRenderer.invoke('html:writePreview', { nodeId, htmlContent }),
+
+  /**
    * 监听画布目录下文件变化。
    * 主进程 fs.watch 监听到变化后 debounce 300ms 推送 { canvasId, fileName }。
    * fileName 是相对于**该画布子目录**的纯文件名（如 'notes.txt'），

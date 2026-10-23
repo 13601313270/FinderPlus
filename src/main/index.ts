@@ -970,6 +970,24 @@ function registerIpcHandlers(): void {
   })
 
   /**
+   * 把 HTML 文本写到应用临时目录，返回 file:// 绝对路径。
+   * 给 HtmlFileDetailPanel 用：iframe srcdoc 会继承 renderer 进程的 CSP，
+   * 用户 HTML 里加载本地相对路径资源（CSS / JS / img）会被 style-src / script-src 等指令拦截。
+   * 换成 src="file://..." 后 iframe 有独立 origin，不继承 renderer CSP。
+   *
+   * 临时文件以 nodeId 命名，每次覆盖写，节点删除或应用退出时留着不会影响功能。
+   */
+  ipcMain.handle('html:writePreview', (_e, args: { nodeId: string; htmlContent: string }): string => {
+    const previewDir = join(app.getPath('temp'), 'canvasdesk-preview')
+    mkdirSync(previewDir, { recursive: true })
+    const safeName = args.nodeId.replace(/[^\w\-]/g, '_')
+    const targetPath = join(previewDir, `${safeName}.html`)
+    writeFileSync(targetPath, args.htmlContent, 'utf-8')
+    // file:// URL 需要把反斜杠转正斜杠
+    return 'file://' + targetPath.replace(/\\/g, '/')
+  })
+
+  /**
    * 执行一条 shell 命令，回传 stdout / stderr / 退出码（给命令行节点用）。
    *
    * 用 exec（走系统默认 shell）而非 spawn：命令是用户自己写的整串（含管道、重定向），

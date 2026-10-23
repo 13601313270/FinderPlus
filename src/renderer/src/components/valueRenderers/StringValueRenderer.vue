@@ -7,13 +7,15 @@ defineProps<{
 </script>
 
 <template>
-  <span class="v-string">{{ value.displayLabel }}</span>
+  <div class="v-string">{{ value.displayLabel }}</div>
 </template>
 
 <style scoped lang="less">
 .v-string {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   color: #16a34a;
+  max-height: 400px;
+  overflow: auto;
   font-size: 10px;
 }
 </style>

@@ -114,6 +114,25 @@ export class TTSNode extends Node {
     it: 'Durata (s)'
   })
 
+  /** 输出端口：失败原因（API 出错时 commit 错误字符串；成功时 clear） */
+  readonly errorOutput = new OutputPort('error', StringValue, {
+    zh: '错误信息',
+    en: 'Error',
+    ja: 'エラー',
+    ko: '오류',
+    es: 'Error',
+    ar: 'خطأ',
+    fr: 'Erreur',
+    pt: 'Erro',
+    ru: 'Ошибка',
+    hi: 'त्रुटि',
+    id: 'Kesalahan',
+    de: 'Fehler',
+    vi: 'Lỗi',
+    tr: 'Hata',
+    it: 'Errore'
+  })
+
   /** 方法端口：外部触发一次合成 */
   readonly generateMethod = new MethodPort('generate', {
     label: {
@@ -167,6 +186,7 @@ export class TTSNode extends Node {
     this.addInput(this.referenceAudioInput)
     this.addOutput(this.audioOutput)
     this.addOutput(this.durationOutput)
+    this.addOutput(this.errorOutput)
     this.addMethod(this.generateMethod)
     this.generateMethod.onTrigger(() => this.manualTrigger())
     this.setBox(240, 240)
@@ -325,6 +345,7 @@ export class TTSNode extends Node {
     if (!text) {
       this.status = 'error'
       this.errorMessage = '请输入要合成的文本'
+      this.errorOutput.commit(new StringValue(this.errorMessage))
       this.notifyChanged()
       return
     }
@@ -332,6 +353,7 @@ export class TTSNode extends Node {
     if (this.isMaasMode && !this.workspaceId) {
       this.status = 'error'
       this.errorMessage = '请先填写业务空间 ID（Workspace ID）——可在百炼控制台「业务空间」页面找到'
+      this.errorOutput.commit(new StringValue(this.errorMessage))
       this.notifyChanged()
       return
     }
@@ -533,6 +555,7 @@ export class TTSNode extends Node {
 
       // 5. commit
       this.audioOutput.commit(new AudioFileValue(file, hash))
+      this.errorOutput.clear()
       const duration = parseWavDuration(bytes)
       console.log('[TTS] parseWavDuration result:', duration, 'format=', actualExt)
       this.resultFile = file
@@ -543,9 +566,11 @@ export class TTSNode extends Node {
       if ((err as Error).name === 'AbortError') {
         this.status = 'idle'
         this.errorMessage = ''
+        this.errorOutput.clear()
       } else {
         this.status = 'error'
         this.errorMessage = (err as Error).message || String(err)
+        this.errorOutput.commit(new StringValue(this.errorMessage))
         // 系统通知（仅真实错误，用户主动取消不弹）
         const w = window as unknown as {
           notificationApi?: { show: (t: string, b?: string, m?: Record<string, unknown>) => Promise<unknown> }

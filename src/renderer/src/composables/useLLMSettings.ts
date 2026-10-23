@@ -10,6 +10,7 @@ export type LLMProvider =
   | 'groq'
   | 'mistral'
   | 'siliconflow'
+  | 'tokenplan'
 
 /**
  * Provider 预设：端点 URL + 默认 model。
@@ -77,6 +78,13 @@ export const LLM_PROVIDERS: Record<LLMProvider, {
     url: 'https://api.siliconflow.cn/v1/chat/completions',
     modelsUrl: 'https://api.siliconflow.cn/v1/models',
     defaultModel: 'Qwen/Qwen2.5-7B-Instruct'
+  },
+  // 千问 Token Plan（sk-sp- 前缀 Key，独立计费，端点完全不同于 DashScope）
+  tokenplan: {
+    label: '千问 Token Plan',
+    url: 'https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1/chat/completions',
+    modelsUrl: 'https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1/models',
+    defaultModel: 'qwen3.7-plus'
   }
 }
 

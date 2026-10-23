@@ -29,7 +29,7 @@ export interface ChatMessage {
 
 export type LLMProviderId =
   | 'deepseek' | 'openai' | 'kimi' | 'qwen' | 'glm'
-  | 'minimax' | 'groq' | 'mistral' | 'siliconflow'
+  | 'minimax' | 'groq' | 'mistral' | 'siliconflow' | 'tokenplan'
 
 const CONFIG_KEY = 'canvasdesk.llm.config'
 const LEGACY_KEY = 'canvasdesk.llm.api_key'
@@ -44,7 +44,9 @@ const PROVIDER_PRESETS: Record<LLMProviderId, { url: string; defaultModel: strin
   minimax:     { url: 'https://api.minimax.chat/v1/text/chatcompletion_v2',                   defaultModel: 'abab6.5s-chat' },
   groq:        { url: 'https://api.groq.com/openai/v1/chat/completions',                       defaultModel: 'llama-3.3-70b-versatile' },
   mistral:     { url: 'https://api.mistral.ai/v1/chat/completions',                            defaultModel: 'mistral-small-latest' },
-  siliconflow: { url: 'https://api.siliconflow.cn/v1/chat/completions',                        defaultModel: 'Qwen/Qwen2.5-7B-Instruct' }
+  siliconflow: { url: 'https://api.siliconflow.cn/v1/chat/completions',                        defaultModel: 'Qwen/Qwen2.5-7B-Instruct' },
+  // 千问 Token Plan（sk-sp- 前缀 Key，独立计费，端点完全不同于 DashScope）
+  tokenplan:   { url: 'https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1/chat/completions', defaultModel: 'qwen3.7-plus' }
 }
 
 /** 节点可用的 provider 列表（遍历这个就行） */

@@ -8,7 +8,7 @@ import NodeHeader from '@renderer/components/NodeHeader.vue'
 import GearIcon from '@renderer/components/icons/GearIcon.vue'
 import { useNodeDetail } from '@renderer/composables/useNodeDetail'
 import { messages } from './i18n'
-import { isAudioGenModel, isMaasModel } from './providers'
+import { supportsReferenceAudio } from './providers'
 
 const nodeTitle = useNodeTitle(TTSNode.TYPE)
 const t = useLocalizedMessages(messages)
@@ -22,17 +22,10 @@ const errorMessage = ref('')
 const localText = ref('')
 
 // —— 只留画布上真正需要的状态 ——
-const hasDashscopeKey = ref(true)
-const hasWorkspaceId = ref(true)
+const hasProviderConfig = ref(true)
 const textConnected = ref(false)
 
-const isMaas = computed(() => isMaasModel(node.value?.displayModel ?? 'qwen-audio-3.1-tts-flash'))
-const isAudioGen = computed(() => isAudioGenModel(node.value?.displayModel ?? 'qwen-audio-3.1-tts-flash'))
-const hasProviderConfig = computed(() =>
-  isMaas.value
-    ? hasDashscopeKey.value && hasWorkspaceId.value
-    : hasDashscopeKey.value
-)
+const supportsRefAudio = computed(() => supportsReferenceAudio(node.value?.displayModel ?? 'qwen-audio-3.1-tts-next'))
 
 let previewUrl: string | null = null
 let lastPreviewHash = ''
@@ -65,8 +58,7 @@ function refresh(): void {
   status.value = n.displayStatus
   errorMessage.value = n.displayError
   localText.value = n.displayText
-  hasDashscopeKey.value = n.hasDashscopeKey
-  hasWorkspaceId.value = n.hasWorkspaceId
+  hasProviderConfig.value = n.hasProviderKey
   textConnected.value = n.textInput.incomingEdgeCount > 0
 
   const f = n.previewFile
@@ -129,11 +121,8 @@ function onCancel(): void { node.value?.cancel() }
 
     <!-- 鉴权警告 -->
     <template v-if="status !== 'loading'">
-      <div v-if="!hasDashscopeKey" class="tts-warning">
+      <div v-if="!hasProviderConfig" class="tts-warning">
         {{ t('apiKeyMissing') }}
-      </div>
-      <div v-else-if="isMaas && !hasWorkspaceId" class="tts-warning">
-        {{ t('workspaceIdMissing') }}
       </div>
     </template>
 
@@ -142,7 +131,7 @@ function onCancel(): void { node.value?.cancel() }
       <textarea
         :value="localText"
         class="tts-textarea"
-        :placeholder="isAudioGen ? t('textPlaceholder') + '（prompt 里用 @voice1 引用参考音频）' : t('textPlaceholder')"
+        :placeholder="supportsRefAudio ? t('textPlaceholder') + '（prompt 里用 @voice1 引用参考音频）' : t('textPlaceholder')"
         :disabled="textConnected"
         @input="(e: Event) => onLocalTextInput((e.target as HTMLTextAreaElement).value)"
       />

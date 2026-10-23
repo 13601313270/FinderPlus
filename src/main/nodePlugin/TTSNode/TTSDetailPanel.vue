@@ -5,12 +5,12 @@ import { TTSNode } from './node'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
 import { messages } from './i18n'
 import {
-  isAudioGenModel,
   isMaasModel,
   TTS_SAMPLE_RATES,
   type TtsLanguageType,
   type TtsModelId,
-  type TtsSampleRate
+  type TtsSampleRate,
+  type TtsProviderId
 } from './providers'
 
 /**
@@ -27,7 +27,8 @@ const node = computed(() => {
   return n instanceof TTSNode ? n : undefined
 })
 
-const model = ref<TtsModelId>('qwen-audio-3.1-tts-flash')
+const provider = ref<TtsProviderId>('dashscope')
+const model = ref<TtsModelId>('qwen3-tts-flash')
 const voice = ref('')
 const languageType = ref<TtsLanguageType>('Chinese')
 const instructions = ref('')
@@ -36,23 +37,16 @@ const sampleRate = ref<TtsSampleRate>(24000)
 const localRefAudioName = ref('')
 const status = ref<'idle' | 'loading' | 'done' | 'error'>('idle')
 const errorMessage = ref('')
-const hasDashscopeKey = ref(true)
-const hasWorkspaceId = ref(true)
+const hasProviderConfig = ref(true)
 
 let offChanged: (() => void) | undefined
 
 // —— 模式判定（和 render.vue 一致）——
-const isAudioGen = computed(() => isAudioGenModel(model.value))
-const isMaasSimple = computed(() => model.value === 'qwen-audio-3.1-tts-flash')
 const isMaas = computed(() => isMaasModel(model.value))
-const isDashscope = computed(() => !isMaas.value)
+const isTokenPlan = computed(() => provider.value === 'tokenplan')
+const supportsRefAudio = computed(() => node.value?.supportsRefAudio ?? false)
 const supportsInstructions = computed(() =>
   node.value?.modelSupportsInstructions ?? false
-)
-const hasProviderConfig = computed(() =>
-  isMaas.value
-    ? hasDashscopeKey.value && hasWorkspaceId.value
-    : hasDashscopeKey.value
 )
 
 onMounted(() => {
@@ -74,6 +68,7 @@ watch(() => props.nodeId, () => {
 })
 
 function sync(n: TTSNode): void {
+  provider.value = n.displayProvider
   model.value = n.displayModel
   voice.value = n.displayVoice
   languageType.value = n.displayLanguage
@@ -82,11 +77,11 @@ function sync(n: TTSNode): void {
   sampleRate.value = n.displaySampleRate
   status.value = n.displayStatus
   errorMessage.value = n.displayError
-  hasDashscopeKey.value = n.hasDashscopeKey
-  hasWorkspaceId.value = n.hasWorkspaceId
+  hasProviderConfig.value = n.hasProviderKey
 }
 
 // —— UI → Node ——
+function onProviderChange(v: string): void { node.value?.setProvider(v as TtsProviderId) }
 function onModelChange(v: string): void { node.value?.setModel(v as TtsModelId) }
 function onVoiceChange(v: string): void { node.value?.setVoice(v) }
 function onLanguageChange(v: string): void { node.value?.setLanguage(v as TtsLanguageType) }
@@ -126,6 +121,22 @@ function onClearReferenceAudio(): void {
 
 <template>
   <div class="detail-panel">
+    <!-- Provider -->
+    <div class="detail-panel__section">
+      <label class="detail-panel__label">{{ t('providerLabel', { default: '服务商' }) }}</label>
+      <select
+        class="detail-panel__select"
+        :value="provider"
+        @change="(e: Event) => onProviderChange((e.target as HTMLSelectElement).value)"
+      >
+        <option value="dashscope">阿里云百炼</option>
+        <option value="tokenplan">千问 Token Plan</option>
+      </select>
+      <div class="detail-panel__hint" v-if="isTokenPlan">
+        Token Plan 端点能力有限：不支持参考音频音色克隆，仅提供系统音色合成。
+      </div>
+    </div>
+
     <!-- 模型 -->
     <div class="detail-panel__section">
       <label class="detail-panel__label">{{ t('modelLabel') }}</label>
@@ -136,13 +147,10 @@ function onClearReferenceAudio(): void {
       >
         <option v-for="m in node?.availableModels ?? []" :key="m" :value="m">{{ m }}</option>
       </select>
-      <div class="detail-panel__hint" v-if="isDashscope">
-        {{ t('legacyModelHint') }}
-      </div>
     </div>
 
-    <!-- Workspace ID（MAAS 端点必填） -->
-    <div v-if="isMaas" class="detail-panel__section">
+    <!-- Workspace ID（仅 DashScope MAAS 端点需要） -->
+    <div v-if="isMaas && !isTokenPlan" class="detail-panel__section">
       <label class="detail-panel__label">{{ t('workspaceIdLabel') }}</label>
       <input
         class="detail-panel__input"
@@ -152,8 +160,8 @@ function onClearReferenceAudio(): void {
       />
     </div>
 
-    <!-- 音色（dashscope 或 MAAS simple 显示；tts-next 音色来自参考音频） -->
-    <div v-if="isDashscope || isMaasSimple" class="detail-panel__section">
+    <!-- 音色（DashScope 旧端点 / MAAS simple / Token Plan 都显示） -->
+    <div v-if="!supportsRefAudio" class="detail-panel__section">
       <label class="detail-panel__label">{{ t('voiceLabel') }}</label>
       <select
         class="detail-panel__select"
@@ -164,8 +172,8 @@ function onClearReferenceAudio(): void {
       </select>
     </div>
 
-    <!-- 语言（仅 DashScope 模型） -->
-    <div v-if="isDashscope" class="detail-panel__section">
+    <!-- 语言（仅 DashScope 旧端点 qwen3-tts-flash） -->
+    <div v-if="!isTokenPlan && !isMaas" class="detail-panel__section">
       <label class="detail-panel__label">{{ t('languageLabel') }}</label>
       <select
         class="detail-panel__select"
@@ -176,8 +184,8 @@ function onClearReferenceAudio(): void {
       </select>
     </div>
 
-    <!-- 采样率（仅 MAAS 端点可配） -->
-    <div v-if="isMaas" class="detail-panel__section">
+    <!-- 采样率（MAAS 端点可配） -->
+    <div v-if="isMaas || isTokenPlan" class="detail-panel__section">
       <label class="detail-panel__label">{{ t('sampleRateLabel') }}</label>
       <select
         class="detail-panel__select"
@@ -199,8 +207,8 @@ function onClearReferenceAudio(): void {
       />
     </div>
 
-    <!-- 参考音频（仅 tts-next 有） -->
-    <template v-if="isAudioGen">
+    <!-- 参考音频（仅 DashScope qwen-audio-3.1-tts-next 支持） -->
+    <template v-if="supportsRefAudio">
       <div class="detail-panel__section">
         <label class="detail-panel__label">{{ t('referenceAudioLabel') }}</label>
         <div v-if="node?.referenceAudioInput.incomingEdgeCount" class="detail-panel__connected">
@@ -223,11 +231,8 @@ function onClearReferenceAudio(): void {
     </template>
 
     <!-- 鉴权警告 -->
-    <div v-if="status !== 'loading' && !hasDashscopeKey" class="detail-panel__warn">
+    <div v-if="status !== 'loading' && !hasProviderConfig" class="detail-panel__warn">
       {{ t('apiKeyMissing') }}
-    </div>
-    <div v-else-if="status !== 'loading' && isMaas && !hasWorkspaceId" class="detail-panel__warn">
-      {{ t('workspaceIdMissing') }}
     </div>
 
     <div style="flex-grow: 1;"></div>

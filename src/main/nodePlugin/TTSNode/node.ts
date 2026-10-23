@@ -9,13 +9,16 @@ import { bytesToBase64 } from '../../engine/data/base64'
 import { readImageProviderKey } from '../ImageGenNode/providers'
 import {
   resolveTtsEndpoint,
-  TTS_MODEL_IDS,
-  DEFAULT_TTS_MODEL,
+  getTtsModelIdsByProvider,
+  getDefaultTtsModel,
   TTS_LANGUAGE_TYPES,
   TTS_SAMPLE_RATES,
   DEFAULT_SAMPLE_RATE,
-  isAudioGenModel,
   isMaasModel,
+  isTokenPlanModel,
+  supportsReferenceAudio,
+  TTS_MODELS,
+  type TtsProviderId,
   type TtsModelId,
   type TtsLanguageType,
   type TtsSampleRate,
@@ -134,7 +137,8 @@ export class TTSNode extends Node {
 
   // —— 节点级配置 ——
 
-  private model: TtsModelId = DEFAULT_TTS_MODEL
+  private provider: TtsProviderId = 'dashscope'
+  private model: TtsModelId = getDefaultTtsModel('dashscope')
   private voice = 'Cherry'
   private languageType: TtsLanguageType = 'Chinese'
   private instructions = '' // 仅 qwen3-tts-instruct-flash 有效
@@ -170,12 +174,24 @@ export class TTSNode extends Node {
 
   // —— UI 读写 ——
 
+  get displayProvider(): TtsProviderId { return this.provider }
+  setProvider(v: TtsProviderId): void {
+    if (this.provider === v) return
+    this.provider = v
+    // 切 provider 时模型要落到新 provider 支持的范围内
+    const valid = getTtsModelIdsByProvider(v)
+    if (!valid.includes(this.model)) {
+      this.model = getDefaultTtsModel(v)
+    }
+    this.notifyChanged()
+  }
+
   get displayModel(): TtsModelId { return this.model }
   setModel(v: TtsModelId): void {
-    if (!TTS_MODEL_IDS.includes(v)) return
+    const valid = getTtsModelIdsByProvider(this.provider)
+    if (!valid.includes(v)) return
     if (this.model === v) return
     this.model = v
-    // 切到不支持 instructions 的模型时清空
     if (v !== 'qwen3-tts-instruct-flash') this.instructions = ''
     this.notifyChanged()
   }
@@ -255,42 +271,40 @@ export class TTSNode extends Node {
   get previewFile(): File | null { return this.resultFile }
   get previewHash(): string { return this.resultHash }
 
-  /** 百炼 API Key 是否配了（DashScope key，两个模型共用） */
-  get hasDashscopeKey(): boolean {
-    return readImageProviderKey('dashscope').length > 0
-  }
-
-  /** 业务空间 ID 是否配了（所有 MAAS 端点模型都需要） */
-  get hasWorkspaceId(): boolean {
-    return this.workspaceId.length > 0
-  }
-
-  /** 综合：当前模型的鉴权配置是否完整 */
+  /** 当前 provider 是否配了 Key */
   get hasProviderKey(): boolean {
+    const key = readImageProviderKey(this.provider)
+    if (!key) return false
+    // DashScope MAAS 端点还需要 WorkspaceId（Token Plan 不需要）
     if (isMaasModel(this.model)) {
-      return this.hasDashscopeKey && this.hasWorkspaceId
+      return this.workspaceId.length > 0
     }
-    return this.hasDashscopeKey
+    return true
   }
 
-  /** 是否使用 MAAS 端点 */
+  /** 是否使用 MAAS 端点（DashScope 按量付费的 qwen-audio-3.1 系列，需要 WorkspaceId） */
   get isMaasMode(): boolean {
     return isMaasModel(this.model)
   }
 
-  /** 是否使用 Audiogen（支持参考音频音色克隆） */
-  get isAudioGenMode(): boolean {
-    return isAudioGenModel(this.model)
+  /** 是否 Token Plan 模型（SpeechSynthesizer 端点，不需要 WorkspaceId） */
+  get isTokenPlanMode(): boolean {
+    return isTokenPlanModel(this.model)
+  }
+
+  /** 当前模型是否支持参考音频音色克隆（仅 DashScope qwen-audio-3.1-tts-next） */
+  get supportsRefAudio(): boolean {
+    return supportsReferenceAudio(this.model)
   }
 
   /** 当前模型是否支持 instructions */
   get modelSupportsInstructions(): boolean {
-    return resolveTtsEndpoint(this.model).supportsInstructions
+    return resolveTtsEndpoint(this.provider, this.model).supportsInstructions
   }
 
-  /** 可用音色选项（根据模型自动切换 MAAS / DashScope 列表） */
+  /** 可用音色选项 */
   get availableVoices(): readonly { id: string; label: string }[] {
-    const preset = resolveTtsEndpoint(this.model)
+    const preset = resolveTtsEndpoint(this.provider, this.model)
     const voices = preset.voices ?? []
     return voices.map(v => ({
       id: v.id,
@@ -301,8 +315,8 @@ export class TTSNode extends Node {
   /** 可用语言选项 */
   get availableLanguages(): readonly string[] { return TTS_LANGUAGE_TYPES }
 
-  /** 可用模型选项 */
-  get availableModels(): readonly TtsModelId[] { return TTS_MODEL_IDS }
+  /** 当前 provider 下可用的模型选项 */
+  get availableModels(): readonly TtsModelId[] { return getTtsModelIdsByProvider(this.provider) }
 
   // —— 触发生成 ——
 
@@ -314,12 +328,17 @@ export class TTSNode extends Node {
       this.notifyChanged()
       return
     }
+    // DashScope MAAS 端点（qwen-audio-3.1 系列）需要 WorkspaceId；Token Plan 和旧 DashScope 端点不需要
     if (this.isMaasMode && !this.workspaceId) {
       this.status = 'error'
       this.errorMessage = '请先填写业务空间 ID（Workspace ID）——可在百炼控制台「业务空间」页面找到'
       this.notifyChanged()
       return
     }
+    // Token Plan 下参考音频音色克隆不可用——如果用户选了 DashScope 的 3.1-next 模型
+    // 但 provider 是 tokenplan（不应该发生，因为 setModel 会过滤），
+    // 或者接了参考音频端口但当前模型不支持。
+    // 这里做个防御性清理：Token Plan 模型直接不读取 referenceAudio。
     this.fetchAndCommit(text)
   }
 
@@ -348,10 +367,20 @@ export class TTSNode extends Node {
     this.notifyChanged()
 
     try {
-      const endpoint = resolveTtsEndpoint(this.model, this.workspaceId)
+      const endpoint = resolveTtsEndpoint(this.provider, this.model, this.workspaceId)
       if (!endpoint.key) {
-        throw new Error('百炼 API Key 未配置。请先在图片生成节点的设置里填写阿里云百炼的 API Key（两个节点共用同一个 key）。')
+        const label = this.provider === 'tokenplan'
+          ? '千问 Token Plan API Key 未配置。请先在设置页填写千问 Token Plan 的 API Key。'
+          : '阿里云百炼 API Key 未配置。请先在设置页填写阿里云百炼的 API Key。'
+        throw new Error(label)
       }
+
+      // voice 兜底：节点里存的 voice 可能来自旧端点（如 DashScope 3.1 的 longanhuan_v3.1），
+      // 切到 Token Plan 后 3.0 系列 voice 列表完全不同。校验一下，不在列表里就用默认音色。
+      const availableVoiceIds = new Set((endpoint.voices ?? []).map(v => v.id))
+      const effectiveVoice = (this.voice && availableVoiceIds.has(this.voice))
+        ? this.voice
+        : (endpoint.defaultVoice ?? this.voice)
 
       // —— 1. 构造请求体（根据 requestFormat 走不同分支） ——
       let bodyStr: string
@@ -359,30 +388,56 @@ export class TTSNode extends Node {
       let outExt = 'wav'
 
       if (endpoint.requestFormat === 'dashscope-sync') {
-        // 旧模型：qwen3-tts-flash / qwen3-tts-instruct-flash
+        // DashScope 旧端点 multimodal-generation：qwen3-tts-flash / qwen3-tts-instruct-flash
         const body: Record<string, unknown> = {
-          model: this.model,
-          input: { text, voice: this.voice, language_type: this.languageType }
+          model: endpoint.model,
+          input: { text, voice: effectiveVoice, language_type: this.languageType }
         }
         if (endpoint.supportsInstructions && this.instructions.trim()) {
           body.input = { ...(body.input as Record<string, unknown>), instructions: this.instructions.trim() }
           body.parameters = { optimize_instructions: true }
         }
         bodyStr = JSON.stringify(body)
-      } else if (endpoint.requestFormat === 'maas-simple') {
-        // MAAS 简单文生语音：qwen-audio-3.1-tts-flash
+      } else if (endpoint.requestFormat === 'dashscope-maas') {
+        // DashScope MAAS SpeechSynthesizer simple：qwen-audio-3.1-tts-flash
         const input: Record<string, unknown> = {
           text,
-          voice: this.voice,
+          voice: effectiveVoice,
           format: endpoint.defaultFormat ?? 'wav',
           sample_rate: this.sampleRate
         }
         if (endpoint.supportsInstructions && this.instructions.trim()) {
           input.instruction = this.instructions.trim()
         }
-        bodyStr = JSON.stringify({ model: this.model, input })
+        bodyStr = JSON.stringify({ model: endpoint.model, input })
+      } else if (endpoint.requestFormat === 'tokenplan-simple') {
+        // Token Plan SpeechSynthesizer：qwen-audio-3.0-tts-flash / qwen-audio-3.0-tts-plus
+        // 仅支持 text + voice + format + sample_rate，无 instruction 等扩展字段
+        const audiogenInput: Record<string, unknown> = {
+          text,
+          voice: effectiveVoice,
+          format: endpoint.defaultFormat ?? 'wav',
+          sample_rate: this.sampleRate
+        };
+        // 收集参考音频：优先 referenceAudioInput 端口，fallback 本地
+        const refAudios: Array<{ audio_data: string }> = []
+        const portAudio = this.displayReferenceAudio
+        if (portAudio?.file) {
+          const refBytes = new Uint8Array(await portAudio.file.arrayBuffer())
+          const refB64 = bytesToBase64(refBytes)
+          const refMime = portAudio.file.type || 'audio/wav'
+          refAudios.push({ audio_data: `data:${refMime};base64,${refB64}` })
+        } else if (this.localReferenceAudioBase64) {
+          refAudios.push({ audio_data: `data:audio/wav;base64,${this.localReferenceAudioBase64}` })
+        }
+        if (refAudios.length > 0) audiogenInput.references = refAudios
+
+        bodyStr = JSON.stringify({
+          model: endpoint.model,
+          input: audiogenInput
+        })
       } else {
-        // MAAS Audiogen：qwen-audio-3.1-tts-next —— 支持参考音频音色克隆
+        // DashScope MAAS Audiogen：qwen-audio-3.1-tts-next（支持参考音频音色克隆）
         const audiogenInput: Record<string, unknown> = {
           text_prompt: text,
           format: endpoint.defaultFormat ?? 'wav',
@@ -402,7 +457,7 @@ export class TTSNode extends Node {
         }
         if (refAudios.length > 0) audiogenInput.references = refAudios
 
-        bodyStr = JSON.stringify({ model: this.model, input: audiogenInput })
+        bodyStr = JSON.stringify({ model: endpoint.model, input: audiogenInput })
       }
 
       const res = await fetch(endpoint.url, {
@@ -515,6 +570,7 @@ export class TTSNode extends Node {
 
   saveState(): Record<string, unknown> {
     return {
+      provider: this.provider,
       model: this.model,
       voice: this.voice,
       languageType: this.languageType,
@@ -526,8 +582,24 @@ export class TTSNode extends Node {
   }
 
   readState(state: Record<string, unknown>): void {
+    // provider：有存就用存的；没有存（兼容旧数据），根据 model 反推
+    const storedProvider = state.provider as TtsProviderId | undefined
+    if (storedProvider === 'dashscope' || storedProvider === 'tokenplan') {
+      this.provider = storedProvider
+    } else {
+      // 旧数据无 provider 字段：按 model 名推断
+      const m = state.model as TtsModelId | undefined
+      if (m && TTS_MODELS[m]?.provider === 'tokenplan') this.provider = 'tokenplan'
+    }
+
+    // model：必须属于当前 provider 的可用列表
     const m = state.model as TtsModelId | undefined
-    if (m && TTS_MODEL_IDS.includes(m)) this.model = m
+    if (m && getTtsModelIdsByProvider(this.provider).includes(m)) {
+      this.model = m
+    } else {
+      this.model = getDefaultTtsModel(this.provider)
+    }
+
     if (typeof state.voice === 'string') this.voice = state.voice
     if (typeof state.languageType === 'string') this.languageType = state.languageType as TtsLanguageType
     if (typeof state.instructions === 'string') this.instructions = state.instructions

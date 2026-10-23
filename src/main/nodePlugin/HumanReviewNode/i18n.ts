@@ -1,5 +1,24 @@
 import type { LocalizedText } from '../../../shared/language'
 
+/** 清空队列方法端口标签 */
+export const clearQueueLabel: LocalizedText = {
+  zh: '清空队列',
+  en: 'Clear Queue',
+  ja: 'キューをクリア',
+  ko: '큐 비우기',
+  es: 'Limpiar cola',
+  ar: 'مسح الطابور',
+  fr: 'Vider la file',
+  pt: 'Limpar fila',
+  ru: 'Очистить очередь',
+  hi: 'कतार साफ़ करें',
+  id: 'Kosongkan antrean',
+  de: 'Warteschlange leeren',
+  vi: 'Xóa hàng đợi',
+  tr: 'Kuyruğu temizle',
+  it: 'Svuota coda',
+}
+
 /**
  * HumanReview 节点卡片内的全部文案。
  *

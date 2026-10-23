@@ -4,8 +4,10 @@ import { FileValue } from '../../engine/data/FileValue'
 import { JsonValue } from '../../engine/data/JsonValue'
 import { InputPort } from '../../engine/port/InputPort'
 import { OutputPort } from '../../engine/port/OutputPort'
+import { MethodPort } from '../../engine/port/MethodPort'
 import { Node } from '../../engine/node/Node'
 import type { Value } from '../../engine/data/Value'
+import { clearQueueLabel } from './i18n'
 
 const NODE_HEIGHT = 220
 
@@ -69,6 +71,10 @@ export class HumanReviewNode extends Node {
   constructor(id: string) {
     super(id)
     this.addInput(this.input)
+    // 清空队列方法端口
+    const clearQueuePort = new MethodPort('clear-queue', { label: clearQueueLabel })
+    this.addMethod(clearQueuePort)
+    clearQueuePort.onTrigger(() => this.clearQueue())
     // 注意：构造时不加输出端口——等上游连上才动态创建
     this.setBox(220, NODE_HEIGHT)
   }
@@ -336,6 +342,15 @@ export class HumanReviewNode extends Node {
     if (this.current === undefined) {
       this.completeRun()
     }
+  }
+
+  /** 清空当前审核项 + 积压队列，回到等待输入状态 */
+  clearQueue(): void {
+    if (this.current === undefined && this.queue.length === 0) return
+    this.current = undefined
+    this.queue.length = 0
+    this.notifyChanged()
+    this.completeRun()
   }
 
   // —— 持久化 ——

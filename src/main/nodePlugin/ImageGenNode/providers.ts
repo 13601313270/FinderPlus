@@ -68,8 +68,22 @@ export const IMAGE_PROVIDERS: Readonly<Record<ImageProviderId, ImageProviderPres
     label: '硅基流动 (SiliconFlow)',
     url: 'https://api.siliconflow.cn/v1/images/generations',
     shape: 'siliconflow',
-    defaultModel: 'Kwai-Kolors/Kolors',
+    defaultModel: 'black-forest-labs/FLUX.2-pro',
     models: {
+      // FLUX.2：Black Forest Labs 2025 新系列，高质量 + 精确文字渲染 + 4MP 编辑
+      'black-forest-labs/FLUX.2-pro': {
+        sizes: ['1024x1024', '1024x1536', '1536x1024', '768x1344', '1344x768']
+      },
+      'black-forest-labs/FLUX.2-flex': {
+        sizes: ['1024x1024', '1024x1536', '1536x1024', '768x1344', '1344x768']
+      },
+      // Z-Image / Z-Image-Turbo：阿里通义开源 6B 模型，2025-12 上线硅基流动
+      'Tongyi-MAI/Z-Image': {
+        sizes: ['1024x1024', '1024x1536', '1536x1024', '768x1344', '1344x768']
+      },
+      'Tongyi-MAI/Z-Image-Turbo': {
+        sizes: ['1024x1024', '1024x1536', '1536x1024', '768x1344', '1344x768']
+      },
       'Kwai-Kolors/Kolors': {
         sizes: ['1024x1024', '960x1280', '768x1024', '720x1440', '720x1280']
       },
@@ -82,11 +96,15 @@ export const IMAGE_PROVIDERS: Readonly<Record<ImageProviderId, ImageProviderPres
     }
   },
   openai: {
-    label: 'OpenAI (DALL·E / GPT-Image)',
+    label: 'OpenAI (GPT-Image)',
     url: 'https://api.openai.com/v1/images/generations',
     shape: 'openai',
-    defaultModel: 'dall-e-3',
+    // 注：dall-e-3 / dall-e-2 分别于 2026-03-04 / 2025-11-05 下线，不再推荐
+    defaultModel: 'gpt-image-1',
     models: {
+      'gpt-image-1': {
+        sizes: ['1024x1024', '1536x1024', '1024x1536', 'auto']
+      },
       'dall-e-3': {
         sizes: ['1024x1024', '1792x1024', '1024x1792'],
         supportsBase64Response: true
@@ -94,22 +112,23 @@ export const IMAGE_PROVIDERS: Readonly<Record<ImageProviderId, ImageProviderPres
       'dall-e-2': {
         sizes: ['256x256', '512x512', '1024x1024'],
         supportsBase64Response: true
-      },
-      'gpt-image-1': {
-        sizes: ['1024x1024', '1536x1024', '1024x1536', 'auto']
       }
     }
   },
   glm: {
-    label: '智谱 (CogView)',
+    label: '智谱 (GLM-Image / CogView)',
     url: 'https://open.bigmodel.cn/api/paas/v4/images/generations',
     shape: 'zhipu',
-    defaultModel: 'cogview-3-flash',
+    defaultModel: 'glm-image',
     models: {
-      'cogview-3-flash': {
+      // GLM-Image：智谱 2025-12 新旗舰，国产芯片训练，自回归 + 扩散混合架构
+      'glm-image': {
         sizes: ['1024x1024', '768x1344', '864x1152', '1344x768', '1152x864', '1440x720', '720x1440']
       },
       'cogview-4': {
+        sizes: ['1024x1024', '768x1344', '864x1152', '1344x768', '1152x864', '1440x720', '720x1440']
+      },
+      'cogview-3-flash': {
         sizes: ['1024x1024', '768x1344', '864x1152', '1344x768', '1152x864', '1440x720', '720x1440']
       }
     }
@@ -121,20 +140,48 @@ export const IMAGE_PROVIDERS: Readonly<Record<ImageProviderId, ImageProviderPres
     asyncUrl: 'https://dashscope.aliyuncs.com/api/v1/services/aigc/text2image/image-synthesis',
     taskUrlPrefix: 'https://dashscope.aliyuncs.com/api/v1/tasks/',
     shape: 'dashscope-sync',
-    defaultModel: 'qwen-image-2.0-pro',
+    defaultModel: 'qwen-image-3.0-pro',
     models: {
       // —— 同步（multimodal-generation，messages 协议）——
-      // 2.0-pro 文档默认 2048*2048，这里把 1024x1024 放首位当默认值，省额度，且仍在 512*512~2048*2048 的合法区间
+
+      // Qwen-Image 3.0：新旗舰，支持复杂版面 / 10px 小字渲染 / 12 国语言，尺寸 512~2048 任取
+      'qwen-image-3.0-pro': {
+        sizes: ['1024x1024', '1328x1328', '1536x1024', '1024x1536', '1664x928', '928x1664', '2048x2048']
+      },
+      'qwen-image-3.0': {
+        sizes: ['1024x1024', '1328x1328', '1536x1024', '1024x1536', '1664x928', '928x1664', '2048x2048']
+      },
+      // Qwen-Image 2.1：T2I + I2I，**图生图/编辑最多 10 张参考图**（文档明确）
+      'qwen-image-2.1-pro': {
+        sizes: ['1024x1024', '1328x1328', '1536x1024', '1024x1536', '1664x928', '928x1664', '2048x2048'],
+        maxReferenceImages: 10
+      },
+      'qwen-image-2.1-turbo': {
+        sizes: ['1024x1024', '1328x1328', '1536x1024', '1024x1536', '1664x928', '928x1664', '2048x2048'],
+        maxReferenceImages: 10
+      },
+
+      // Wan 2.7：同步协议（multimodal-generation），支持文生图 / 文生组图 / 图生图 / 多图参考
+      'wan2.7-image-pro': {
+        sizes: ['1280x1280', '1440x1440', '1600x1280', '1280x1600', '2048x2048'],
+        maxReferenceImages: 4,
+        dashscopeEnableInterleave: 'interleave'
+      },
+      'wan2.7-image': {
+        sizes: ['1280x1280', '1440x1440', '1600x1280', '1280x1600'],
+        maxReferenceImages: 4,
+        dashscopeEnableInterleave: 'interleave'
+      },
+
+      // —— 存量 2.0 系列（保留兼容存量配置）——
       'qwen-image-2.0-pro': {
         sizes: ['1024x1024', '1328x1328', '1536x1024', '1024x1536', '1664x928', '928x1664', '2048x2048'],
         maxReferenceImages: 3
       },
-      // 2in1 = 文生图 + 图生图一体版本；尺寸与 pro 一致，参考图上限 3
       'qwen-image-2.0-2in1': {
         sizes: ['1024x1024', '1328x1328', '1536x1024', '1024x1536', '1664x928', '928x1664', '2048x2048'],
         maxReferenceImages: 3
       },
-      // 2.0 加速版，也支持图生图/编辑
       'qwen-image-2.0': {
         sizes: ['1024x1024', '1328x1328', '1536x1024', '1024x1536', '1664x928', '928x1664', '2048x2048'],
         maxReferenceImages: 3
@@ -145,19 +192,16 @@ export const IMAGE_PROVIDERS: Readonly<Record<ImageProviderId, ImageProviderPres
       'qwen-image-max': {
         sizes: ['1024x1024', '1664x928', '1472x1140', '1328x1328', '1140x1472', '928x1664']
       },
-      // Wan2.6 图生图/编辑模型：支持 1~4 张参考图（编辑模式）或纯文生图（交错模式）
-      // 百炼强制要求：编辑模式必须带图、enable_interleave=false；纯文生图/交错输出时 enable_interleave=true
       'wan2.6-image': {
         sizes: ['1280x1280', '1440x1440', '1600x1280', '1280x1600'],
         maxReferenceImages: 4,
         dashscopeEnableInterleave: 'edit'
       },
-      // Wan2.6 纯文生图（t2i = text to image）：走 messages 协议但不允许 image 内容项
-      // 百炼报错 "For t2i model, the last message should not contain any image content items"
       'wan2.6-t2i': {
         sizes: ['1280x1280', '1440x1440', '1600x1280', '1280x1600']
       },
-      // —— 异步（提交任务 + 轮询）——
+
+      // —— 异步（提交任务 + 轮询；仅旧模型走异步，新 Wan 2.7 已支持同步）——
       'wan2.5-t2i-preview': {
         shape: 'dashscope-async',
         sizes: ['1280x1280', '1440x1440', '1600x1280', '1280x1600']
@@ -287,11 +331,24 @@ export function readImageEndpoint(
   const shape = modelPreset?.shape ?? preset.shape
   const isAsyncTask = shape === 'dashscope-async'
 
+  let requestUrl = isAsyncTask ? preset.asyncUrl ?? preset.url : preset.url
+  let taskUrlPrefix = isAsyncTask ? preset.taskUrlPrefix ?? '' : ''
+
+  // 百炼 Token Plan 兼容：Key 前缀 sk-sp- 必须发到 Token Plan 专属 host，
+  // 路径（multimodal-generation / image-synthesis / tasks）与按量付费完全一致。
+  if (providerId === 'dashscope') {
+    const target = key.trim().startsWith('sk-sp-')
+      ? 'https://token-plan.cn-beijing.maas.aliyuncs.com'
+      : 'https://dashscope.aliyuncs.com'
+    requestUrl = requestUrl.replace('https://dashscope.aliyuncs.com', target)
+    if (taskUrlPrefix) taskUrlPrefix = taskUrlPrefix.replace('https://dashscope.aliyuncs.com', target)
+  }
+
   return {
     provider: providerId,
     label: preset.label,
-    requestUrl: isAsyncTask ? preset.asyncUrl ?? preset.url : preset.url,
-    taskUrlPrefix: isAsyncTask ? preset.taskUrlPrefix ?? '' : '',
+    requestUrl,
+    taskUrlPrefix,
     shape,
     key,
     model,

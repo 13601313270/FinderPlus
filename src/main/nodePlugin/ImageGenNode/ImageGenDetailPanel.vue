@@ -365,7 +365,7 @@ async function onStopClick(): Promise<void> {
     color: #1f2937;
     position: relative;
 
-    &__redraw {
+    .detail-panel__redraw {
       position: absolute;
       top: 8px;
       right: 8px;
@@ -391,7 +391,7 @@ async function onStopClick(): Promise<void> {
       }
     }
 
-    &__img {
+    .detail-panel__img {
       max-width: 100%;
       max-height: 100%;
       object-fit: contain;
@@ -504,6 +504,8 @@ async function onStopClick(): Promise<void> {
 }
 
 @keyframes dpSpin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>

@@ -29,6 +29,7 @@ const options = ref<readonly RadioOption[]>([])
 const kind = ref<RadioValueKind>('string')
 const source = ref<RadioOptionsSource>('manual')
 const cacheInput = ref(false)
+const autoSend = ref(true)
 
 let offChanged: (() => void) | undefined
 
@@ -55,6 +56,7 @@ function sync(node: RadioNode): void {
   kind.value = node.displayKind
   source.value = node.displaySource
   cacheInput.value = node.displayCacheInput
+  autoSend.value = node.displayAutoSend
 }
 
 // —— UI → Node ——
@@ -65,6 +67,10 @@ function onKindChange(e: Event): void {
 
 function onCacheInputChange(v: boolean): void {
   radioNode.value?.setCacheInput(v)
+}
+
+function onAutoSendChange(v: boolean): void {
+  radioNode.value?.setAutoSend(v)
 }
 
 function onAddOption(): void {
@@ -94,6 +100,19 @@ function onValueInput(id: string, e: Event): void {
         <option value="number">number</option>
       </select>
     </div>
+
+    <!-- 自动发送开关 -->
+    <label class="detail-panel__toggle">
+      <input
+        class="detail-panel__toggle-input"
+        type="checkbox"
+        :checked="autoSend"
+        :disabled="!radioNode"
+        @change="(e) => onAutoSendChange((e.target as HTMLInputElement).checked)"
+      />
+      <span class="detail-panel__toggle-label">{{ t('autoSendLabel') }}</span>
+    </label>
+    <div class="detail-panel__hint">{{ t('autoSendHint') }}</div>
 
     <!-- 输入选项自动缓存开关（永远可交互，不受 source===input 限制） -->
     <label class="detail-panel__toggle">

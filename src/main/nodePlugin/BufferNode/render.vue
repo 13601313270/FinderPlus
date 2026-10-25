@@ -4,6 +4,7 @@ import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { BufferNode, type BufferKind } from './node'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
+import { useNodeDetail } from '@renderer/composables/useNodeDetail'
 import { messages } from './i18n'
 import HelpDialog from '@renderer/components/HelpDialog.vue'
 import NodeHeader from '@renderer/components/NodeHeader.vue'
@@ -26,6 +27,9 @@ const nodeTitle = useNodeTitle(() => bufferNode.value, '?')
 
 // 卡片内文案走节点本地的 i18n.ts（栈 / 队列共用一份），跟随界面语言
 const t = useLocalizedMessages(messages)
+
+// 详情弹窗：点数量区域查看队列 / 栈里每一项的内容
+const { openNodeDetail } = useNodeDetail()
 
 // 帮助浮层开关（弹窗壳由 HelpDialog 负责）
 const showHelp = ref(false)
@@ -91,9 +95,27 @@ function onTake(): void {
       </select>
     </div>
 
-    <div class="buffer__count">
+    <div
+      class="buffer__count"
+      :title="t('countDetailHint')"
+      @pointerdown.stop.prevent
+      @click.stop="openNodeDetail(id)"
+    >
       <span class="buffer__label">{{ t('countLabel') }}</span>
       <span class="buffer__count-value">{{ count }}</span>
+      <svg
+        class="buffer__chevron"
+        viewBox="0 0 20 20"
+        fill="currentColor"
+        width="12"
+        height="12"
+      >
+        <path
+          fill-rule="evenodd"
+          d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
+          clip-rule="evenodd"
+        />
+      </svg>
     </div>
 
     <button
@@ -169,10 +191,29 @@ function onTake(): void {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 6px;
     padding: 4px 8px;
     border: 1px solid #e5e8ee;
     border-radius: 6px;
     flex-shrink: 0;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+
+    &:hover {
+      border-color: #2563eb;
+      background: #eff6ff;
+    }
+  }
+
+  &__chevron {
+    flex-shrink: 0;
+    color: #9ca3af;
+    margin-left: auto;
+    transition: color 0.15s;
+
+    .buffer__count:hover & {
+      color: #2563eb;
+    }
   }
 
   &__count-value {

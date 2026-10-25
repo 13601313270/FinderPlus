@@ -176,6 +176,16 @@ export class RadioNode extends Node {
   /** 是否把输入端口注入的选项自动缓存为手动配置（持久化；默认 false） */
   private cacheInputOptions = false
 
+  /** 自动发送开关（持久化；默认 true 保持向后兼容）。
+   *  true：状态变更立即 commit 下游；false：仅更新本地草稿，等用户点"发送"按钮才 commit */
+  private autoSend = true
+
+  /** 非 autoSend 模式下，当前草稿与上次已发送值不一致时为 true。
+   *  每次会改变"下一次 commit 会产出什么值"的操作（select / setKind / setOptionValue /
+   *  removeOption（删当前选中）/ applyInputOptions / restoreManual）都会置 true；
+   *  commitOption / commitNow / setAutoSend 从 false→true 时自动置 false。 */
+  private dirty = false
+
   constructor(id: string) {
     super(id)
     this.manualOptions = RadioNode.defaultOptions()
@@ -278,6 +288,16 @@ export class RadioNode extends Node {
     return this.cacheInputOptions
   }
 
+  /** 是否开启自动发送 */
+  get displayAutoSend(): boolean {
+    return this.autoSend
+  }
+
+  /** 非 autoSend 模式下，本地草稿与上次已发送值不一致时为 true（用于"发送"按钮高亮） */
+  get displayDirty(): boolean {
+    return this.dirty
+  }
+
   /** 切换"输入选项自动缓存"开关。
    *  打开时若当前正由输入端口驱动，立即把最新解析结果写入 manualOptions；
    *  后续每次 applyInputOptions 也会同步覆盖 manualOptions。 */
@@ -293,12 +313,13 @@ export class RadioNode extends Node {
 
   // —— 用户操作 ——
 
-  /** 选中某个选项 → 立即按其 v 强转提交（转不动则清空输出） */
+  /** 选中某个选项 → autoSend 开则立即提交；否则仅更新草稿（置 dirty=true），等手动发送 */
   select(id: string): void {
     const opt = this.options.find(o => o.id === id)
     if (!opt) return
     this.selectedId = id
-    this.commitOption(opt)
+    if (this.autoSend) this.commitOption(opt)
+    else this.dirty = true
     this.notifyChanged()
   }
 
@@ -316,7 +337,8 @@ export class RadioNode extends Node {
     super.removeOutput(this.output)
     this.output = this.buildOutput()
     super.addOutput(this.output)
-    this.commitOption(this.options.find(o => o.id === this.selectedId))
+    if (this.autoSend) this.commitOption(this.options.find(o => o.id === this.selectedId))
+    else this.dirty = true
     this.notifyChanged()
   }
 
@@ -345,7 +367,8 @@ export class RadioNode extends Node {
     }
     if (this.selectedId === id) {
       this.selectedId = undefined
-      this.output.clear()
+      if (this.autoSend) this.output.clear()
+      else this.dirty = true
     }
     this.setBox(NODE_WIDTH, computeBoxHeight(this.options.length))
     this.notifyChanged()
@@ -365,7 +388,8 @@ export class RadioNode extends Node {
     if (!opt || opt.value === value) return
     opt.value = value
     if (this.selectedId === id) {
-      this.commitOption(opt)
+      if (this.autoSend) this.commitOption(opt)
+      else this.dirty = true
     }
     this.notifyChanged()
   }
@@ -385,11 +409,31 @@ export class RadioNode extends Node {
     return new StringValue(raw)
   }
 
-  /** 提交某个选项：能强转就 commit，转不动（undefined）或选项不存在则清空输出 */
+  /** 提交某个选项：能强转就 commit，转不动（undefined）或选项不存在则清空输出；
+   *  清 dirty 标记 */
   private commitOption(opt: RadioOption | undefined): void {
     const value = opt ? this.coerce(opt.value) : undefined
     if (value) this.output.commit(value)
     else this.output.clear()
+    this.dirty = false
+  }
+
+  /** 手动发送按钮处理——把当前选中态 commit 下游（不管 autoSend 开不开） */
+  commitNow(): void {
+    this.commitOption(this.options.find(o => o.id === this.selectedId))
+    this.notifyChanged()
+  }
+
+  /** 切换自动发送开关。
+   *  从 false → true：立即把当前草稿 commit 一次，保证自动发送刚开上就是最新值。 */
+  setAutoSend(v: boolean): void {
+    if (this.autoSend === v) return
+    this.autoSend = v
+    if (v) {
+      // 开启自动发送 → 立即把当前草稿推出去
+      this.commitOption(this.options.find(o => o.id === this.selectedId))
+    }
+    this.notifyChanged()
   }
 
   /**
@@ -478,11 +522,13 @@ export class RadioNode extends Node {
     }
     if (matched) {
       this.selectedId = matched.id
-      this.commitOption(matched)
+      if (this.autoSend) this.commitOption(matched)
+      else this.dirty = true
     } else {
       // 没匹配到 → 清空选中
       this.selectedId = undefined
-      this.output.clear()
+      if (this.autoSend) this.output.clear()
+      else this.dirty = true
     }
     this.setBox(NODE_WIDTH, computeBoxHeight(this.options.length))
     this.notifyChanged()
@@ -495,7 +541,8 @@ export class RadioNode extends Node {
     this.options = [...this.manualOptions]
     // 恢复选中态（manualOptions 里的 id 是原来自己生成的，selectedId 应该能直接匹配）
     this.setBox(NODE_WIDTH, computeBoxHeight(this.options.length))
-    this.commitOption(this.options.find(o => o.id === this.selectedId))
+    if (this.autoSend) this.commitOption(this.options.find(o => o.id === this.selectedId))
+    else this.dirty = true
     this.notifyChanged()
   }
 
@@ -508,7 +555,8 @@ export class RadioNode extends Node {
       // （开启 cacheInputOptions 时 applyInputOptions 已自动同步 manualOptions）
       options: this.manualOptions.map(o => ({ id: o.id, label: o.label, value: o.value })),
       selectedId: this.selectedId ?? null,
-      cacheInputOptions: this.cacheInputOptions
+      cacheInputOptions: this.cacheInputOptions,
+      autoSend: this.autoSend
     }
   }
 
@@ -546,8 +594,20 @@ export class RadioNode extends Node {
     // 恢复"输入选项自动缓存"开关
     this.cacheInputOptions = state.cacheInputOptions === true
 
-    // 端口建好后立刻把选中值提交一次，下游才能收到（哪怕与默认值相同）
-    this.commitOption(this.options.find(o => o.id === this.selectedId))
+    // 恢复自动发送开关；未配置（旧节点）时默认 true，保持向后兼容
+    this.autoSend = state.autoSend !== false
+
+    // 端口建好后把选中值提交一次，下游才能收到（哪怕与默认值相同）；
+    // 非 autoSend 模式下不自动 commit，等用户手动点"发送"
+    if (this.autoSend) {
+      this.commitOption(this.options.find(o => o.id === this.selectedId))
+      // autoSend 开启时 commitOption 已自动清 dirty=false
+    } else {
+      // 非 autoSend：启动时认为当前草稿是"未发送"态（dirty=true），
+      // 因为持久化恢复的 selectedId 从未被 commit 给下游——
+      // 让用户一眼看到有草稿待发送。
+      this.dirty = true
+    }
 
     this.setBox(NODE_WIDTH, computeBoxHeight(this.options.length))
     this.notifyChanged()

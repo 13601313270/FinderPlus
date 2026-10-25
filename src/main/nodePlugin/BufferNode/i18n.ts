@@ -97,6 +97,23 @@ export const messages = {
     tr: 'Depolanan',
     it: 'Memorizzati',
   },
+  countDetailHint: {
+    zh: '点击查看队列详情',
+    en: 'Click to view details',
+    ja: 'クリックして詳細を表示',
+    ko: '클릭하여 자세히 보기',
+    es: 'Haz clic para ver detalles',
+    ar: 'انقر لعرض التفاصيل',
+    fr: 'Cliquez pour voir les détails',
+    pt: 'Clique para ver detalhes',
+    ru: 'Нажмите для просмотра деталей',
+    hi: 'विवरण देखने के लिए क्लिक करें',
+    id: 'Klik untuk melihat detail',
+    de: 'Klicken Sie für Details',
+    vi: 'Nhấp để xem chi tiết',
+    tr: 'Ayrıntıları görmek için tıklayın',
+    it: 'Clicca per vedere i dettagli'
+  },
   take: {
     zh: '出',
     en: 'Out',

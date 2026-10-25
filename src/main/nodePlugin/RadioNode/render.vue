@@ -42,6 +42,8 @@ const showHelp = ref(false)
 
 const options = ref<readonly RadioOption[]>([])
 const selectedId = ref<string | undefined>(undefined)
+const autoSend = ref(true)
+const dirty = ref(false)
 
 let unsubscribe: (() => void) | undefined
 
@@ -51,6 +53,8 @@ function syncFromNode(node: RadioNode): void {
   // 浅拷贝，避免与 node 内部同一数组引用导致 Vue 跳过后重建
   options.value = [...node.displayOptions]
   selectedId.value = node.displaySelectedId
+  autoSend.value = node.displayAutoSend
+  dirty.value = node.displayDirty
 }
 
 onMounted(() => {
@@ -69,6 +73,11 @@ onUnmounted(() => {
 /** 选中某个选项 → 提交到输出端口 */
 function onSelect(id: string): void {
   radioNode.value?.select(id)
+}
+
+/** 手动发送按钮 */
+function onCommitNow(): void {
+  radioNode.value?.commitNow()
 }
 </script>
 
@@ -104,6 +113,20 @@ function onSelect(id: string): void {
         <span class="node__label" :title="opt.label">{{ opt.label }}</span>
       </button>
     </div>
+
+    <!-- 非 autoSend 模式下，显示"发送"按钮；dirty 时高亮 -->
+    <button
+      v-if="radioNode && !autoSend"
+      class="node__commit"
+      :class="{ 'node__commit--dirty': dirty }"
+      type="button"
+      :disabled="!dirty"
+      :title="t('commitButtonHint')"
+      @click="onCommitNow"
+    >
+      {{ t('commitButtonLabel') }}
+      <span v-if="dirty" class="node__commit-dot">●</span>
+    </button>
   </div>
 
   <!-- 帮助弹窗 -->
@@ -221,6 +244,49 @@ function onSelect(id: string): void {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  // 非 autoSend 模式下底部的"发送"按钮
+  &__commit {
+    all: unset;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    margin-top: 6px;
+    height: 24px;
+    border-radius: 5px;
+    font-size: 11px;
+    font-weight: 500;
+    color: #9aa2ad;
+    background: #f3f4f6;
+    transition: background 0.15s, color 0.15s;
+
+    &:hover:not(:disabled) {
+      color: #2563eb;
+      background: #dbeafe;
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.4;
+    }
+
+    &--dirty {
+      color: #fff;
+      background: #2563eb;
+
+      &:hover:not(:disabled) {
+        background: #1d4ed8;
+      }
+    }
+  }
+
+  &__commit-dot {
+    font-size: 8px;
+    line-height: 1;
+    opacity: 0.9;
   }
 }
 </style>

@@ -109,6 +109,11 @@ export abstract class BufferNode extends Node {
     return this.items.length === 0
   }
 
+  /** 暴露缓冲区内所有条目（只读引用，供 detailPanel 等渲染层读取） */
+  get bufferedItems(): readonly Value[] {
+    return this.items
+  }
+
   // —— 用户操作 ——
 
   /** 切换数据类型：输入 / 输出端口同步重建，旧连接随端口移除自动断开 */

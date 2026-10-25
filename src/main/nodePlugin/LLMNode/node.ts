@@ -234,7 +234,7 @@ export class LLMNode extends Node {
     this.clearHistoryPort.onTrigger(() => { this.clearHistory() })
     this.addMethod(this.sendPort)
     this.sendPort.onTrigger(() => { this.manualTrigger() })
-    this.setBox(320, 280)
+    this.setBox(320, 300)
   }
 
   /** 按 jsonMode 构建对应 Value 类型的输出端口 */
@@ -393,7 +393,10 @@ export class LLMNode extends Node {
    * 仅当 autoCall 为 true 时才自动触发（300ms 防抖窗口合并快速到达的输入），
    * 否则等用户手动点发送按钮。
    */
-  inputPortReceiveValue(_ports: InputPort[]): void {
+  inputPortReceiveValue(ports: InputPort[]): void {
+    // MethodPort（clearHistory / send）是触发器，不参与 autoCall 计算路径，
+    // 它们走各自的 onTrigger 回调（clearHistory / manualTrigger）
+    if (ports.every(p => p instanceof MethodPort)) return
     if (!this.autoCall) return
     if (this.debounceTimer) {
       clearTimeout(this.debounceTimer)

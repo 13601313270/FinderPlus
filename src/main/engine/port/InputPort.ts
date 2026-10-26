@@ -285,7 +285,7 @@ export class InputPort {
     }
   }
 
-  private notifyEdgeBinding(kind: 'bind' | 'unbind', edge: Edge): void {
+  protected notifyEdgeBinding(kind: 'bind' | 'unbind', edge: Edge): void {
     const event: EdgeBindingEvent = kind === 'bind'
       ? { kind: 'bind', edge }
       : { kind: 'unbind', edge }

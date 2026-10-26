@@ -19,12 +19,11 @@ export interface MethodPortOptions {
  * - 跳过 fingerprint 去重——每次上游 commit 都视为一次新的触发
  *
  * 实现上继承 InputPort，复用 Edge / EdgeBinder / EdgeBinding 的全部基础设施。
- * 有两处行为差异：
+ * 与 InputPort 的行为差异：
  * 1. canBindEdge 跳过类型检查——接受任何 OutputPort
- * 2. 重写 receive 绕过 fingerprint 去重 + 派发 trigger 回调
- *
- * 方法端口不参与 dirty/stable 追踪——它是触发器，不是计算链路的一环。
- * 所属 Node 在 _onInputPortChanged 里收到通知后应直接触发回调（而非走脏标记流程）。
+ * 2. 四个入口（receive / receiveClear / bindEdge / unbindEdge）全部不走 owner._onInputPortChanged ——
+ *    方法端口不参与 dirty/stable 追踪，它是触发器，不是计算链路的一环。
+ *    receive 直接派发 trigger 回调，其余三个只维护拓扑（notifyEdgeBinding）。
  */
 export class MethodPort extends InputPort {
   /** 订阅本端口触发事件的回调集合 */
@@ -51,22 +50,37 @@ export class MethodPort extends InputPort {
 
   /**
    * 重写 receive：每次上游 commit 都视为一次新的触发——跳过 fingerprint 比对，
-   * 每次都通知 owner 并派发 trigger 回调。
+   * 不走 owner._onInputPortChanged，直接派发 trigger 回调。
    *
-   * InputPort 的 fingerprint 去重针对的是"值没变就不用重算"的计算型语义，
-   * 而方法端口是"每次信号都触发一次动作"，所以必须绕过。
+   * InputPort 的 _onInputPortChanged 链路会触发 dirty 标记 + inputPortReceiveValue，
+   * 这是"输入变了需要重算"的计算型语义；方法端口是"每次信号触发一次动作"，
+   * 不该参与 dirty/stable 追踪。
    */
   override receive(edge: Edge, value: Value, _force = false): void {
     this.lastReceiveValue = value
     this.lastReceiveEdge = edge
-    // 每次都通知 owner——不等 fingerprint 比对
-    if (this.locked) {
-      this.pendingNotify = true
-    } else {
-      this.owner?._onInputPortChanged([this], 'receive')
-    }
-    // 派发 trigger 回调
     this.notifyTrigger()
+  }
+
+  /** 上游清空值——方法端口没有"持有的值"语义，静默忽略 */
+  override receiveClear(_edge: Edge): void {
+    // no-op：方法端口不缓存值，也不走 dirty 链路
+  }
+
+  /** 绑边——维护拓扑即可，不走 owner._onInputPortChanged */
+  override bindEdge(edge: Edge): void {
+    this.allBindEdge.add(edge)
+    this.notifyEdgeBinding('bind', edge)
+  }
+
+  /** 断边——维护拓扑即可，不走 owner._onInputPortChanged */
+  override unbindEdge(edge: Edge): { result: true } | { result: false; message: string } {
+    if (!this.allBindEdge.has(edge)) {
+      return { result: false, message: 'edge not bound to this port' }
+    }
+    this.allBindEdge.delete(edge)
+    this.notifyEdgeBinding('unbind', edge)
+    return { result: true }
   }
 
   /**

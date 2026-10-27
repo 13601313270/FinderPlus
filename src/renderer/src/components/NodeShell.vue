@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, provide, ref, type Component } from 'vue'
+import { computed, onMounted, onUnmounted, provide, ref, watch, type Component } from 'vue'
 import { useNodePosition, type NodeLike } from '@renderer/composables/useNodePosition'
 import { nodeElementRef, type PortsOwnerLike } from '@renderer/canvas/elements'
 import { getNodeManifest } from '../../../main/nodePlugin'
@@ -87,6 +87,30 @@ const stateTooltip = computed(() => {
     default: return ''
   }
 })
+
+// —— running 耗时计时 ——
+const runElapsed = ref(0)   // 秒
+let runTimer: ReturnType<typeof setInterval> | null = null
+
+function formatElapsed(sec: number): string {
+  if (sec < 60) return `${sec}s`
+  const m = Math.floor(sec / 60)
+  const s = sec % 60
+  return `${m}m${String(s).padStart(2, '0')}s`
+}
+
+watch(nodeState, (s) => {
+  if (s === 'running') {
+    runElapsed.value = Math.floor((Date.now() - (props.node.displayRunStartAt ?? 0)) / 1000)
+    runTimer = setInterval(() => {
+      const since = props.node.displayRunStartAt
+      if (since) runElapsed.value = Math.floor((Date.now() - since) / 1000)
+    }, 500)
+  } else {
+    if (runTimer) { clearInterval(runTimer); runTimer = null }
+    runElapsed.value = 0
+  }
+}, { immediate: true })
 
 /**
  * 端口数量镜像：引擎的 inputPorts / outputPorts 是普通数组（push/splice 不会触发 Vue reactivity），
@@ -183,6 +207,7 @@ function onContextMenu(e: MouseEvent): void {
       </div>
       <div v-if="nodeState === 'running'" class="node-loading" aria-hidden="true">
         <div class="node-loading__spinner" />
+        <span class="node-loading__elapsed">{{ formatElapsed(runElapsed) }}</span>
       </div>
     </template>
     <template v-else>
@@ -192,6 +217,7 @@ function onContextMenu(e: MouseEvent): void {
           <!-- running 状态的 loading 覆层 -->
           <div v-if="nodeState === 'running'" class="node-loading" aria-hidden="true">
             <div class="node-loading__spinner" />
+            <span class="node-loading__elapsed">{{ formatElapsed(runElapsed) }}</span>
           </div>
         </div>
         <!-- 底部方法端口行：只有存在方法端口时才渲染 -->
@@ -341,6 +367,7 @@ function onContextMenu(e: MouseEvent): void {
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
   z-index: 10; // 盖在 render.vue 之上
   pointer-events: none; // 不拦截交互：节点自己会按 status 禁用/启用按钮
 
@@ -351,6 +378,15 @@ function onContextMenu(e: MouseEvent): void {
     border-top-color: @color-primary;
     border-radius: 50%;
     animation: node-spin 0.8s linear infinite;
+    flex-shrink: 0;
+  }
+
+  &__elapsed {
+    font-size: 12px;
+    font-weight: 500;
+    color: @color-text-weak;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
   }
 }
 

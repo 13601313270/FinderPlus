@@ -17,6 +17,8 @@ export interface NodeLike {
   readonly box: readonly [number, number]
   /** 引擎层因果状态：stable = 输出匹配输入，dirty = 输入变了输出没跟上，running = 正在异步重算 */
   readonly state: NodeState
+  /** running 开始的时间戳（ms）；非 running 态为 0，渲染层展示已耗时用 */
+  readonly displayRunStartAt?: number
   /** 当前脏的输入端口 id 集合，渲染层给对应端口加视觉标记 */
   readonly getDirtyInputPortIds?: () => ReadonlySet<string>
   setPosition(x: number, y: number): void

@@ -99,6 +99,12 @@ export abstract class Node {
    */
   private nodeState: NodeState = 'stable'
 
+  /** running 开始的时间戳（ms）；非 running 态为 0。渲染层展示已耗时用 */
+  private runStartAt = 0
+
+  /** 对外只读：running 起始时间戳，渲染层据此算已耗时 */
+  get displayRunStartAt(): number { return this.runStartAt }
+
   /** @ts-expect-error 先写入不读取——后续 _onInputPortChanged 的 fingerprint 比对会用到 */
   private stableInputFingerprint: string | null = null
 
@@ -175,6 +181,7 @@ export abstract class Node {
     // 锁住所有输入端口——running 期间上游变化被缓冲，解锁时统一 flush
     this.inputs.forEach(p => p.lock())
     this.nodeState = 'running'
+    this.runStartAt = Date.now()
     this.notifyChanged()
   }
 
@@ -192,6 +199,7 @@ export abstract class Node {
     // 先解锁端口，收集期间缓冲的变化（同步节点从未 lock 过，flush 回来是空数组）
     const dirtyPorts = this.flushLockedInputPorts()
     this.stableInputFingerprint = this.computeInputFingerprint()
+    this.runStartAt = 0
     if (dirtyPorts.length === 0) {
       // 消化完毕、期间没新变化 → stable，清空脏集合
       this.dirtyInputs.clear()
@@ -219,6 +227,7 @@ export abstract class Node {
    */
   protected failRun(): void {
     if (this.nodeState !== 'stable') {
+      this.runStartAt = 0
       const dirtyPorts = this.flushLockedInputPorts()
       dirtyPorts.forEach(p => this.dirtyInputs.add(p.id))
       if (dirtyPorts.length === 0) {

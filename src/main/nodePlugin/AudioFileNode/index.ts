@@ -25,7 +25,8 @@ export const manifest: NodePluginManifest = {
   // 图标：喇叭（和 TTS 一样的喇叭形，区分开图片/文本节点）
   iconPaths: ['M3 10v4h4l5 4V6L7 10H3Z', 'M16 8a4 4 0 0 1 0 8'],
   category: 'file',
-  render
+  render,
+  platforms: ["mac"]
 }
 
 export default manifest

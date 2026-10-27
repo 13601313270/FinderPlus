@@ -31,7 +31,8 @@ export const manifest: NodePluginManifest = {
     'M15 3l-1 1'
   ],
   category: 'flow',
-  common: false
+  common: false,
+  platforms: ["mac"]
 }
 
 export default manifest

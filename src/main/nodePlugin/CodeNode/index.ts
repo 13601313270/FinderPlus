@@ -26,7 +26,8 @@ export const manifest: NodePluginManifest = {
   iconPaths: ['m8 6-6 6 6 6', 'm16 6 6 6-6 6'],
   category: 'tool',
   help: () => import('./CodeHelpDialog.vue'),
-  detailPanel: () => import('./CodeDetailPanel.vue')
+  detailPanel: () => import('./CodeDetailPanel.vue'),
+  platforms: ["mac"]
 }
 
 export default manifest

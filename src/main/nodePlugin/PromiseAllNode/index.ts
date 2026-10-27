@@ -31,7 +31,8 @@ export const manifest: NodePluginManifest = {
     'M20 8l-4 4 4 4'
   ],
   category: 'flow',
-  help: () => import('./PromiseAllHelpDialog.vue')
+  help: () => import('./PromiseAllHelpDialog.vue'),
+  platforms: ["mac"]
 }
 
 export default manifest

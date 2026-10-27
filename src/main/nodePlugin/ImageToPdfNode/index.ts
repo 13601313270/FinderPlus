@@ -26,7 +26,8 @@ export const manifest: NodePluginManifest = {
   category: 'image',
   render,
   help: () => import('./ImageToPdfHelpDialog.vue'),
-  detailPanel: () => import('./ImageToPdfDetailPanel.vue')
+  detailPanel: () => import('./ImageToPdfDetailPanel.vue'),
+  platforms: ["mac"]
 }
 
 export default manifest

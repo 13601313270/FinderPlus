@@ -31,7 +31,8 @@ export const manifest: NodePluginManifest = {
   ],
   category: 'tool',
   help: () => import('./CrawlerHelpDialog.vue'),
-  detailPanel: () => import('./CrawlerDetailPanel.vue')
+  detailPanel: () => import('./CrawlerDetailPanel.vue'),
+  platforms: ["mac"]
 }
 
 export default manifest

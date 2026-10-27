@@ -30,7 +30,8 @@ export const manifest: NodePluginManifest = {
     'M17 7A3 3 0 0 1 17 13A3 3 0 0 1 17 19'
   ],
   category: 'text-data',
-  help: () => import('./NumberDisplayHelpDialog.vue')
+  help: () => import('./NumberDisplayHelpDialog.vue'),
+  platforms: ["mac"]
 }
 
 export default manifest

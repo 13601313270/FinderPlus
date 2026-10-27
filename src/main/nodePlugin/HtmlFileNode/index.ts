@@ -26,7 +26,8 @@ export const manifest: NodePluginManifest = {
   category: 'file',
   render,
   detailPanel: () => import('./HtmlFileDetailPanel.vue'),
-  help: () => import('./HtmlFileHelpDialog.vue')
+  help: () => import('./HtmlFileHelpDialog.vue'),
+  platforms: ["mac"]
 }
 
 export default manifest

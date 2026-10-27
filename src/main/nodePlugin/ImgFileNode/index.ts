@@ -25,7 +25,8 @@ export const manifest: NodePluginManifest = {
   iconPaths: ['M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7l-5-5Z', 'M14 2v5h5', 'm4 16 4-4 3 3 2-2 5 5', 'M15 11m-1 0a1 1 0 1 0 2 0a1 1 0 1 0-2 0'],
   category: 'file',
   render,
-  help: () => import('./ImgFileHelpDialog.vue')
+  help: () => import('./ImgFileHelpDialog.vue'),
+  platforms: ["mac"]
 }
 
 export default manifest

@@ -30,7 +30,8 @@ export const manifest: NodePluginManifest = {
     'M10 6h1'
   ],
   category: 'tool',
-  detailPanel: () => import('./BrowserDetailPanel.vue')
+  detailPanel: () => import('./BrowserDetailPanel.vue'),
+  platforms: ["mac"]
 }
 
 export default manifest

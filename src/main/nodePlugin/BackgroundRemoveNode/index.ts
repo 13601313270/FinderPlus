@@ -25,7 +25,8 @@ export const manifest: NodePluginManifest = {
   render,
   iconPaths: ['M6 9m-3 0a3 3 0 1 0 6 0a3 3 0 1 0-6 0', 'M6 15m-3 0a3 3 0 1 0 6 0a3 3 0 1 0-6 0', 'M20 4 8.12 15.88', 'M14.47 14.48 20 20', 'M8.12 8.12 12 12'],
   category: 'image',
-  help: () => import('./BackgroundRemoveHelpDialog.vue')
+  help: () => import('./BackgroundRemoveHelpDialog.vue'),
+  platforms: ["mac"]
 }
 
 export default manifest

@@ -26,7 +26,8 @@ export const manifest: NodePluginManifest = {
   iconPaths: ['M10 13a5 5 0 0 0 7.1 0l2.4-2.4a5 5 0 0 0-7.1-7.1L11 4.9', 'M14 11a5 5 0 0 0-7.1 0l-2.4 2.4a5 5 0 0 0 7.1 7.1L13 19.1'],
   category: 'text-data',
   help: () => import('./StringConcatHelpDialog.vue'),
-  detailPanel: () => import('./StringConcatDetailPanel.vue')
+  detailPanel: () => import('./StringConcatDetailPanel.vue'),
+  platforms: ["mac"]
 }
 
 export default manifest

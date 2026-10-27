@@ -25,7 +25,8 @@ export const manifest: NodePluginManifest = {
   render,
   /** 简单的"接线卡子"图标：两条短横线中间一个点 */
   iconPaths: ['M3 12h6', 'M15 12h6', 'M12 12m-1.5 0a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0'],
-  category: 'flow'
+  category: 'flow',
+  platforms: ["mac"]
 }
 
 export default manifest

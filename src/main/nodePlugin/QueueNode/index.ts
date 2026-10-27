@@ -26,7 +26,8 @@ export const manifest: NodePluginManifest = {
   iconPaths: ['M3 12h13', 'M12 7l5 5-5 5', 'M21 6v12'],
   category: 'flow',
   help: () => import('../BufferNode/BufferHelpDialog.vue'),
-  detailPanel: () => import('../BufferNode/BufferDetailPanel.vue')
+  detailPanel: () => import('../BufferNode/BufferDetailPanel.vue'),
+  platforms: ["mac"]
 }
 
 export default manifest

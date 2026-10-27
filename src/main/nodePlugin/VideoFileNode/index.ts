@@ -25,7 +25,8 @@ export const manifest: NodePluginManifest = {
   // 图标：播放 / 暂停 两笔（与音频节点的喇叭形区分开）
   iconPaths: ['M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z', 'M10 8l6 4-6 4z'],
   category: 'file',
-  render
+  render,
+  platforms: ["mac"]
 }
 
 export default manifest

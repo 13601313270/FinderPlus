@@ -27,7 +27,8 @@ export const manifest: NodePluginManifest = {
   // 图标：视频录制 / 播放 两笔
   iconPaths: ['M4 4h12v16H4z', 'M16 10l4-3v10l-4-3z'],
   category: 'ai',
-  common: false
+  common: false,
+  platforms: ["mac"]
 }
 
 export default manifest

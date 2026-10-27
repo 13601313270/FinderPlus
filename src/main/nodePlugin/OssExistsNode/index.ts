@@ -29,7 +29,8 @@ export const manifest: NodePluginManifest = {
   ],
   category: 'tool',
   common: false,
-  detailPanel: () => import('./OssExistsDetailPanel.vue')
+  detailPanel: () => import('./OssExistsDetailPanel.vue'),
+  platforms: ["mac"]
 }
 
 export default manifest

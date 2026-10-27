@@ -29,7 +29,8 @@ export const manifest: NodePluginManifest = {
     'M10 5v14'
   ],
   category: 'text-data',
-  help: () => import('./TableHelpDialog.vue')
+  help: () => import('./TableHelpDialog.vue'),
+  platforms: ["mac"]
 }
 
 export default manifest

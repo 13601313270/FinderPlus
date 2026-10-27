@@ -30,7 +30,8 @@ export const manifest: NodePluginManifest = {
     'M8 22h8'
   ],
   category: 'input',
-  render
+  render,
+  platforms: ["mac"]
 }
 
 export default manifest

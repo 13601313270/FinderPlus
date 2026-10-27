@@ -26,7 +26,8 @@ export const manifest: NodePluginManifest = {
   category: 'file',
   common: false,
   render,
-  help: () => import('./PdfFileHelpDialog.vue')
+  help: () => import('./PdfFileHelpDialog.vue'),
+  platforms: ["mac"]
 }
 
 export default manifest

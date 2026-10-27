@@ -3,6 +3,9 @@ import type { Node } from '../engine/node/Node'
 import type { LanguageCode, LocalizedText } from '../../shared/language'
 import type { NodeCategory } from './category'
 
+/** 节点插件可以运行的平台。'mac' 指 Electron 桌面端（macOS/Windows/Linux），'web' 指浏览器端 */
+export type Platform = 'mac' | 'web'
+
 /**
  * 节点显示名的多语言表。
  *
@@ -79,6 +82,14 @@ export interface NodePluginManifest {
    * 异步加载函数形式，如 `detailPanel: () => import('./StringConcatDetailPanel.vue')`。
    */
   readonly detailPanel?: () => Promise<{ default: Component }>
+  /**
+   * 该节点可运行的目标平台（必填）。
+   *
+   * 用于在构建浏览器端时过滤掉 BrowserNode / CommandNode 等 Electron 独占插件——
+   * 构建脚本根据此字段裁剪插件注册表，不让不可用的节点进入产物。
+   * 默认所有插件先写 ['mac'] 占位，逐个验证浏览器端兼容性后再追加 'web'。
+   */
+  readonly platforms: readonly Platform[]
 }
 
 /**

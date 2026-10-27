@@ -30,7 +30,8 @@ export const manifest: NodePluginManifest = {
     'M12 12v9'
   ],
   category: 'tool',
-  detailPanel: () => import('./OssDetailPanel.vue')
+  detailPanel: () => import('./OssDetailPanel.vue'),
+  platforms: ["mac"]
 }
 
 export default manifest

@@ -18,7 +18,8 @@ export const manifest: NodePluginManifest = {
     'M14.8 14.8 20 20'
   ],
   category: 'tool',
-  render
+  render,
+  platforms: ["mac"]
 }
 
 export default manifest

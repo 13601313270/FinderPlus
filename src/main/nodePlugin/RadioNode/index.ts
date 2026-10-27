@@ -26,7 +26,8 @@ export const manifest: NodePluginManifest = {
   iconPaths: ['M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0-18 0', 'M12 12m-4 0a4 4 0 1 0 8 0a4 4 0 1 0-8 0'],
   category: 'input',
   help: () => import('./RadioHelpDialog.vue'),
-  detailPanel: () => import('./RadioDetailPanel.vue')
+  detailPanel: () => import('./RadioDetailPanel.vue'),
+  platforms: ["mac"]
 }
 
 export default manifest

@@ -28,7 +28,8 @@ export const manifest: NodePluginManifest = {
     'M12 7v5l3 2',
     'M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z'
   ],
-  category: 'flow'
+  category: 'flow',
+  platforms: ["mac"]
 }
 
 export default manifest

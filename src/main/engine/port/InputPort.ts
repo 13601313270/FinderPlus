@@ -240,6 +240,17 @@ export class InputPort {
     return { result: true };
   }
 
+  /**
+   * 运行时校验：某个具体的 Value 实例能不能被本端口接收。
+   * 同样用类引用 + prototype chain 比较，与 canBindEdge 规则一致，只是参数从 OutputPort 换成 Value 实例。
+   */
+  canReceiveValue(value: Value): boolean {
+    const valueCls = value.constructor as new (...args: any[]) => Value
+    return this.options.accepts.some(
+      cls => valueCls === cls || valueCls.prototype instanceof cls
+    )
+  }
+
   /** 绑定Edge：只挂拓扑关系，不清值；上游 onOutputPortBind 会按需补送 */
   bindEdge(edge: Edge) {
     this.allBindEdge.add(edge)

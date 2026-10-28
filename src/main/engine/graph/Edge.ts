@@ -10,8 +10,11 @@ import type { OutputPort } from '../port/OutputPort'
  *
  * id 可选传入（从 DB 恢复时必须用存储的 id 重建），不传则自动生成（正常运行时）。
  */
+export type EdgeState = 'normal' | 'error'
+
 export class Edge {
   readonly id: string
+  state: EdgeState
 
   constructor(
     readonly startPort: OutputPort,
@@ -19,10 +22,17 @@ export class Edge {
     id?: string
   ) {
     this.id = id ?? `${startPort.id}→${endPort.id}-${Math.random().toString(36).slice(2, 8)}`
+    this.state = 'normal'
   }
 
-  // 把数据从startPort端口传到endPort端口。force=true 时跳过 InputPort 的 fingerprint 排重
+  // 把数据从startPort端口传到endPort端口。force=true 时跳过 InputPort 的 fingerprint 排重。
+  // 如果 Value 类型不被 endPort 接受，则把本 Edge 标记为 error 状态，不调用 receive。
   transferData(value: Value, force = false): void {
+    if (!this.endPort.canReceiveValue(value)) {
+      this.state = 'error'
+      return
+    }
+    this.state = 'normal'
     this.endPort.receive(this, value, force)
   }
 

@@ -112,6 +112,7 @@ function removeEdge(edge: Edge): void {
       v-for="line in lines"
       :key="`line-${keyOf(line.edge)}`"
       class="edges__line"
+      :class="{ error: line.edge.state === 'error' }"
       :d="bezierPath(line.from, line.to, { fromSide: line.fromSide, toSide: line.toSide })"
     />
   </svg>
@@ -154,6 +155,10 @@ function removeEdge(edge: Edge): void {
     stroke: @color-edge;
     stroke-width: 2;
     stroke-linecap: round;
+
+    &.error {
+      stroke: @color-danger;
+    }
   }
 
   &__remove {

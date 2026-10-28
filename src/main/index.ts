@@ -1487,7 +1487,17 @@ function registerIpcHandlers(): void {
     body?: string | ArrayBuffer
     timeout?: number
   }): Promise<
-    { ok: true; status: number; statusText: string; headers: Record<string, string>; body: string }
+    {
+      ok: true
+      status: number
+      statusText: string
+      headers: Record<string, string>
+      body: string
+      /** 响应是图片类型时额外返回：body 的 base64 编码 + 真实 Content-Type + 推荐扩展名 */
+      bodyBase64?: string
+      contentType?: string
+      ext?: string
+    }
     | { ok: false; error: string }
   > => {
     const { url, method, headers, body, timeout } = args
@@ -1599,21 +1609,41 @@ function registerIpcHandlers(): void {
             }
             const dt = Date.now() - t0
             const bodyLen = buf.length
+            const contentType = flatHeaders['content-type'] ?? ''
+            const isImage = contentType.toLowerCase().startsWith('image/')
+            // 文本始终返回 utf-8 字符串（向后兼容）；图片额外返回 base64
             const resBodyStr = buf.toString('utf-8')
             const resHeadersStr = JSON.stringify(flatHeaders)
-            const resBodyPreview = bodyLen > 0 ? truncate(resBodyStr, 500) : '(empty)'
+            const resBodyPreview = bodyLen > 0
+              ? (isImage ? `<image ${bodyLen}B>` : truncate(resBodyStr, 500))
+              : '(empty)'
             forward(
-              `[http] ← ${res.statusCode} ${res.statusMessage ?? ''}  ${dt}ms  body=${bodyLen}B`,
+              `[http] ← ${res.statusCode} ${res.statusMessage ?? ''}  ${dt}ms  body=${bodyLen}B${isImage ? ' (image)' : ''}`,
               `[http]   res headers: ${resHeadersStr}`,
               bodyLen > 0 ? `[http]   res body (${bodyLen}B): ${resBodyPreview}` : ''
             )
-            resolve({
+            const result: {
+              ok: true
+              status: number
+              statusText: string
+              headers: Record<string, string>
+              body: string
+              bodyBase64?: string
+              contentType?: string
+              ext?: string
+            } = {
               ok: true,
               status: res.statusCode ?? 0,
               statusText: res.statusMessage ?? '',
               headers: flatHeaders,
               body: resBodyStr
-            })
+            }
+            if (isImage) {
+              result.bodyBase64 = buf.toString('base64')
+              result.contentType = contentType.split(';')[0] ?? contentType
+              result.ext = imageExtFromContentType(result.contentType)
+            }
+            resolve(result)
           })
         }
       )
@@ -1870,6 +1900,23 @@ function resolveNonCollidingName(dir: string, fileName: string): string {
 function truncate(str: string, max: number): string {
   if (str.length <= max) return str
   return `${str.slice(0, max)}…(+${str.length - max} chars)`
+}
+
+/** 从 Content-Type 推断图片扩展名（不带点），识别不到时默认 png */
+function imageExtFromContentType(contentType: string): string {
+  switch (contentType.toLowerCase()) {
+    case 'image/jpeg':
+    case 'image/jpg': return 'jpg'
+    case 'image/png': return 'png'
+    case 'image/webp': return 'webp'
+    case 'image/gif': return 'gif'
+    case 'image/bmp': return 'bmp'
+    case 'image/svg+xml': return 'svg'
+    case 'image/avif': return 'avif'
+    case 'image/tiff':
+    case 'image/tif': return 'tiff'
+    default: return 'png'
+  }
 }
 
 // —— 阿里云 OSS 上传 ——

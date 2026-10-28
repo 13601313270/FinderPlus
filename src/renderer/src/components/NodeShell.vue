@@ -363,13 +363,15 @@ function onContextMenu(e: MouseEvent): void {
 .node-loading {
   position: absolute;
   inset: 0;
-  background: rgba(255, 255, 255, 0.65);
+  background: rgba(255, 255, 255, 0.7);
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   z-index: 10; // 盖在 render.vue 之上
   pointer-events: none; // 不拦截交互：节点自己会按 status 禁用/启用按钮
+  display: flex;
+  flex-direction: column;
 
   &__spinner {
     width: 32px;

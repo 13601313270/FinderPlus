@@ -198,7 +198,16 @@ const httpApi = {
     body?: string | ArrayBuffer
     timeout?: number
   }): Promise<
-    { ok: true; status: number; statusText: string; headers: Record<string, string>; body: string }
+    {
+      ok: true
+      status: number
+      statusText: string
+      headers: Record<string, string>
+      body: string
+      bodyBase64?: string
+      contentType?: string
+      ext?: string
+    }
     | { ok: false; error: string }
   > => ipcRenderer.invoke('http:request', args)
 }

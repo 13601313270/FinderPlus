@@ -44,6 +44,7 @@ const bodySource = ref<'multipart' | 'text' | 'none'>('none')
 const fileBodyNames = ref<string[]>([])
 const resolvedUrl = ref('')
 const inputCount = ref(1)
+const outputMode = ref<'text' | 'image'>('text')
 const status = ref<'idle' | 'running' | 'done' | 'error'>('idle')
 const lastStatus = ref(0)
 const lastBody = ref('')
@@ -60,6 +61,7 @@ function syncFromNode(node: HttpRequestNode): void {
   fileBodyNames.value = [...node.displayFileBodyNames]
   resolvedUrl.value = node.displayResolvedUrl
   inputCount.value = node.inputCount
+  outputMode.value = node.displayOutputMode
   status.value = node.displayStatus
   lastStatus.value = node.displayLastStatus
   lastBody.value = node.displayLastBody

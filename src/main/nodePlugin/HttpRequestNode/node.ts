@@ -1,5 +1,8 @@
+import { ImgFileValue } from '../../engine/data/ImgFileValue'
 import { FileValue } from '../../engine/data/FileValue'
 import { StringValue } from '../../engine/data/StringValue'
+import { base64ToBytes } from '../../engine/data/base64'
+import { djb2 } from '../../engine/data/hash'
 import { InputPort } from '../../engine/port/InputPort'
 import { MethodPort } from '../../engine/port/MethodPort'
 import { OutputPort } from '../../engine/port/OutputPort'
@@ -10,6 +13,9 @@ export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD'
 
 /** 请求状态：UI 据此决定按钮可点 / 结果区样式 */
 export type HttpRequestStatus = 'idle' | 'running' | 'done' | 'error'
+
+/** 输出模式：text = 响应体文本（StringValue）；image = 图片文件（ImgFileValue） */
+export type HttpOutputMode = 'text' | 'image'
 
 /** 单个 header 条目（持久化 & UI 共用） */
 export type HeaderEntry = { key: string; value: string }
@@ -33,28 +39,33 @@ const DEFAULT_TIMEOUT = 15_000
  *
  * 输出端口把响应 body（string）发往下游。
  */
+/** 默认输出端口 label（多语言），重建时复用 */
+const OUTPUT_LABEL: import('../../../shared/language').LocalizedText = {
+  zh: '响应体',
+  en: 'Response Body',
+  ja: '応答本文',
+  ko: '응답 본문',
+  es: 'Cuerpo de respuesta',
+  ar: 'جسم الاستجابة',
+  fr: 'Corps de la réponse',
+  pt: 'Corpo da resposta',
+  ru: 'Тело ответа',
+  hi: 'प्रतिक्रिया body',
+  id: 'Body respons',
+  de: 'Antwort-body',
+  vi: 'Body phản hồi',
+  tr: 'Yanıt body’si',
+  it: 'Corpo della risposta'
+}
+
 export class HttpRequestNode extends Node {
   static readonly TYPE = 'http-request'
   readonly type = HttpRequestNode.TYPE
 
-  /** 输出端口：响应 body 文本 */
-  readonly textOutput = new OutputPort('text', StringValue, {
-    zh: '响应体',
-    en: 'Response Body',
-    ja: '応答本文',
-    ko: '응답 본문',
-    es: 'Cuerpo de respuesta',
-    ar: 'جسم الاستجابة',
-    fr: 'Corps de la réponse',
-    pt: 'Corpo da resposta',
-    ru: 'Тело ответа',
-    hi: 'प्रतिक्रिया body',
-    id: 'Body respons',
-    de: 'Antwort-body',
-    vi: 'Body phản hồi',
-    tr: 'Yanıt body’si',
-    it: 'Corpo della risposta'
-  })
+  /** 输出端口：响应体，类型随 outputMode 切换（StringValue ↔ ImgFileValue） */
+  private _textOutput: OutputPort
+
+  get textOutput(): OutputPort { return this._textOutput }
 
   /** 方法端口：上游 commit 任意值即触发一次发送 */
   readonly sendPort = new MethodPort('send', {
@@ -94,6 +105,9 @@ export class HttpRequestNode extends Node {
   /** 超时毫秒 */
   private timeoutMs = DEFAULT_TIMEOUT
 
+  /** 输出模式：text（默认，StringValue）/ image（ImgFileValue） */
+  private outputMode: HttpOutputMode = 'text'
+
   /** 端口 id 自增序号，保证 id 唯一（与 $N 的编号无关） */
   private portSeq = 0
 
@@ -128,7 +142,8 @@ export class HttpRequestNode extends Node {
 
   constructor(id: string) {
     super(id)
-    this.addOutput(this.textOutput)
+    this._textOutput = new OutputPort('text', StringValue, OUTPUT_LABEL)
+    this.addOutput(this._textOutput)
     this.addMethod(this.sendPort)
     this.sendPort.onTrigger(() => { void this.run() })
     // 默认给一个文件端口（fieldName 默认 'file'）和一个文本模板端口
@@ -169,6 +184,11 @@ export class HttpRequestNode extends Node {
     return this.resolvedUrl
   }
 
+  /** headers KV 模板替换后的值（UI 显示用） */
+  get displayResolvedHeaders(): readonly HeaderEntry[] {
+    return this.resolvedHeaders
+  }
+
   /** headers KV 列表（UI 直接绑定） */
   get displayHeaders(): HeaderEntry[] {
     return this.headers
@@ -182,6 +202,26 @@ export class HttpRequestNode extends Node {
   /** 超时毫秒 */
   get displayTimeout(): number {
     return this.timeoutMs
+  }
+
+  /** 当前输出模式：text 或 image */
+  get displayOutputMode(): HttpOutputMode {
+    return this.outputMode
+  }
+
+  /**
+   * 切换输出模式——removeOutput 删旧端口 → new OutputPort 新类型 → addOutput 插回 index 0。
+   * removeOutput 会自动断开下游 Edge，跟 PromiseAllNode 的 rebuildOutputPort 同构。
+   */
+  setOutputMode(mode: HttpOutputMode): void {
+    if (mode === this.outputMode) return
+    this.outputMode = mode
+    const newClass = mode === 'text' ? StringValue : ImgFileValue
+    const newPort = new OutputPort('text', newClass, OUTPUT_LABEL)
+    this.removeOutput(this._textOutput)
+    this._textOutput = newPort
+    this.addOutput(newPort, 0)
+    this.notifyChanged()
   }
 
   /** 当前模板输入端口数量（fileBodyPort 不计入） */
@@ -526,7 +566,16 @@ export class HttpRequestNode extends Node {
     const finalHasHeaders = Object.keys(parsedHeaders).length > 0
 
     let result:
-      | { ok: true; status: number; statusText: string; headers: Record<string, string>; body: string }
+      | {
+          ok: true
+          status: number
+          statusText: string
+          headers: Record<string, string>
+          body: string
+          bodyBase64?: string
+          contentType?: string
+          ext?: string
+        }
       | { ok: false; error: string }
     try {
       // @ts-ignore — tsconfig.node.json 编译本文件时不把 preload 的 Window 扩展带进来，
@@ -548,8 +597,29 @@ export class HttpRequestNode extends Node {
       this.lastStatusText = result.statusText
       this.lastBody = result.body
       this.lastError = ''
-      // 响应体发给下游（不管 2xx 还是 4xx/5xx）
-      this.textOutput.commit(new StringValue(result.body))
+      // 按 outputMode 构造对应 Value，commit 到同一个 textOutput（类型已由 setOutputMode 预先对齐）
+      if (this.outputMode === 'text') {
+        this.textOutput.commit(new StringValue(result.body))
+      } else {
+        // image 模式：只有主进程识别为 image/* 响应时才有 bodyBase64
+        if (result.bodyBase64) {
+          try {
+            const bytes = base64ToBytes(result.bodyBase64)
+            const ab = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer
+            const file = new File([ab], `http-response.${result.ext ?? 'png'}`, {
+              type: result.contentType ?? 'image/png'
+            })
+            const hash = djb2(result.bodyBase64)
+            this.textOutput.commit(new ImgFileValue(file, hash))
+          } catch (err) {
+            // eslint-disable-next-line no-console
+            console.warn('[http-request] imageOutput 构造失败：', err)
+          }
+        } else {
+          // 响应 Content-Type 不是 image/*，无 bodyBase64 → 不出值
+          this.textOutput.clear()
+        }
+      }
       this.completeRun()
     } else {
       this.status = 'error'
@@ -572,6 +642,7 @@ export class HttpRequestNode extends Node {
       bodyText: this.bodyText,
       timeoutMs: this.timeoutMs,
       collapsed: this.collapsed,
+      outputMode: this.outputMode,
       // 模板端口数量
       templateInputCount: this.templateInputPorts.length,
       // 文件端口数量 + 每个端口的 fieldName
@@ -591,6 +662,9 @@ export class HttpRequestNode extends Node {
     }
     if (typeof state.collapsed === 'boolean') {
       this.collapsed = state.collapsed
+    }
+    if (state.outputMode === 'text' || state.outputMode === 'image') {
+      this.outputMode = state.outputMode
     }
     // 新格式：headers 是 KV 数组
     if (Array.isArray(state.headers)) {

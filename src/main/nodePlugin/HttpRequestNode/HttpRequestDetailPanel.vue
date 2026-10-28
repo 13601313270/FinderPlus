@@ -30,9 +30,11 @@ const httpNode = computed(() => {
 const method = ref<HttpMethod>('GET')
 const urlTemplate = ref('')
 const headers = ref<HeaderEntry[]>([])
+const resolvedHeaders = ref<HeaderEntry[]>([])
 const bodyText = ref('')
 const timeout = ref(15000)
 const inputCount = ref(1)
+const outputMode = ref<'text' | 'image'>('text')
 
 const allowsBody = computed(() => method.value !== 'GET' && method.value !== 'HEAD')
 
@@ -55,9 +57,11 @@ function sync(node: HttpRequestNode): void {
   method.value = node.displayMethod
   urlTemplate.value = node.displayUrlTemplate
   headers.value = node.displayHeaders.map((h) => ({ key: h.key, value: h.value }))
+  resolvedHeaders.value = node.displayResolvedHeaders.map((h) => ({ key: h.key, value: h.value }))
   bodyText.value = node.displayBody
   timeout.value = node.displayTimeout
   inputCount.value = node.inputCount
+  outputMode.value = node.displayOutputMode
 }
 
 // 当 panel 激活时（nodeId 变化）重新 sync
@@ -98,6 +102,9 @@ function onTimeoutInput(e: Event): void {
   const v = Number((e.target as HTMLInputElement).value)
   if (Number.isFinite(v)) httpNode.value?.setTimeoutMs(v)
 }
+function onOutputModeChange(e: Event): void {
+  httpNode.value?.setOutputMode((e.target as HTMLSelectElement).value as 'text' | 'image')
+}
 function onAddPort(): void { httpNode.value?.addInputPort() }
 function onRemovePort(): void { httpNode.value?.removeLastInputPort() }
 </script>
@@ -105,18 +112,44 @@ function onRemovePort(): void { httpNode.value?.removeLastInputPort() }
 <template>
   <div class="detail-panel">
 
-    <!-- 方法 + URL 输入 -->
-    <div class="detail-panel__section">
-      <label class="detail-panel__label">{{ t('labelMethod') }}</label>
-      <select
-        class="detail-panel__method"
-        :value="method"
-        @change="onMethodChange"
-      >
-        <option v-for="m in httpNode?.availableMethods ?? []" :key="m" :value="m">{{ m }}</option>
-      </select>
+    <!-- 方法 + 输出类型 + 超时（一行） -->
+    <div class="detail-panel__row">
+      <div class="detail-panel__section detail-panel__section--flex">
+        <label class="detail-panel__label">{{ t('labelMethod') }}</label>
+        <select
+          class="detail-panel__method"
+          :value="method"
+          @change="onMethodChange"
+        >
+          <option v-for="m in httpNode?.availableMethods ?? []" :key="m" :value="m">{{ m }}</option>
+        </select>
+      </div>
+
+      <div class="detail-panel__section detail-panel__section--flex">
+        <label class="detail-panel__label">{{ t('outputModeLabel') }}</label>
+        <select
+          class="detail-panel__method"
+          :value="outputMode"
+          @change="onOutputModeChange"
+        >
+          <option value="text">{{ t('outputModeText') }}</option>
+          <option value="image">{{ t('outputModeImage') }}</option>
+        </select>
+      </div>
+
+      <div class="detail-panel__section detail-panel__section--flex">
+        <label class="detail-panel__label">{{ t('timeoutLabel') }}</label>
+        <input
+          class="detail-panel__timeout"
+          type="number"
+          min="1000" max="600000" step="1000"
+          :value="timeout"
+          @input="onTimeoutInput"
+        />
+      </div>
     </div>
 
+    <!-- URL 输入 -->
     <div class="detail-panel__section">
       <label class="detail-panel__label">URL</label>
       <input
@@ -157,6 +190,13 @@ function onRemovePort(): void { httpNode.value?.removeLastInputPort() }
           :title="t('deleteHeaderHint')"
           @click="onRemoveHeader(idx)"
         >－</button>
+        <!-- 模板替换后的最终值预览 -->
+        <div
+          v-if="(h.value.includes('$') || h.key.includes('$')) && resolvedHeaders[idx]"
+          class="detail-panel__kv-resolved"
+        >
+          {{ resolvedHeaders[idx]!.key }}: {{ resolvedHeaders[idx]!.value }}
+        </div>
       </div>
       <button
         class="detail-panel__kv-add"
@@ -177,18 +217,6 @@ function onRemovePort(): void { httpNode.value?.removeLastInputPort() }
         :disabled="!allowsBody"
         :placeholder="allowsBody ? t('bodyPlaceholder') : t('bodyPlaceholderDisabled', { method })"
         @input="onBodyInput"
-      />
-    </div>
-
-    <!-- 超时 -->
-    <div class="detail-panel__section">
-      <label class="detail-panel__label">{{ t('timeoutLabel') }}</label>
-      <input
-        class="detail-panel__timeout"
-        type="number"
-        min="1000" max="600000" step="1000"
-        :value="timeout"
-        @input="onTimeoutInput"
       />
     </div>
 
@@ -224,10 +252,28 @@ function onRemovePort(): void { httpNode.value?.removeLastInputPort() }
   flex-direction: column;
   gap: 14px;
 
+  &__row {
+    display: flex;
+    gap: 10px;
+
+    > * { flex: 1; min-width: 0; }
+  }
+
   &__section {
     display: flex;
     flex-direction: column;
     gap: 6px;
+
+    // 同行紧凑模式：label 和控件横排，给外层 __row 用
+    &--flex {
+      flex-direction: row;
+      align-items: center;
+      gap: 6px;
+
+      .detail-panel__label { flex-shrink: 0; }
+      .detail-panel__method,
+      .detail-panel__timeout { flex: 1; min-width: 0; }
+    }
   }
 
   &__label {
@@ -271,6 +317,18 @@ function onRemovePort(): void { httpNode.value?.removeLastInputPort() }
     display: flex;
     align-items: center;
     gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  &__kv-resolved {
+    flex: 0 0 100%;
+    padding-left: 126px; // 与 kv-val 左对齐（kv-key 120px + colon 6px）
+    font-size: 11px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    color: #9ca3af;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   &__kv-key {
@@ -387,6 +445,7 @@ function onRemovePort(): void { httpNode.value?.removeLastInputPort() }
     gap: 8px;
   }
 
+ // —— 端口按钮 ——
   &__btn {
     all: unset;
     cursor: pointer;

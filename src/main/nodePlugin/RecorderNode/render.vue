@@ -192,6 +192,17 @@ function onAudioLoaded(): void {
       <span class="rec-time">{{ formattedTime }}</span>
     </div>
 
+    <!-- 预览 -->
+    <div v-if="status === 'done' && previewAudioUrl" class="rec-preview">
+      <audio
+        ref="audioEl"
+        :src="previewAudioUrl"
+        controls
+        preload="metadata"
+        @loadedmetadata="onAudioLoaded"
+      />
+    </div>
+    <div style="flex-grow: 1;"></div>
     <!-- 按钮组 -->
     <div class="rec-actions">
       <button
@@ -223,17 +234,6 @@ function onAudioLoaded(): void {
         type="button"
         @click="onClear"
       >{{ t('clearButton') }}</button>
-    </div>
-
-    <!-- 预览 -->
-    <div v-if="status === 'done' && previewAudioUrl" class="rec-preview">
-      <audio
-        ref="audioEl"
-        :src="previewAudioUrl"
-        controls
-        preload="metadata"
-        @loadedmetadata="onAudioLoaded"
-      />
     </div>
   </div>
 </template>

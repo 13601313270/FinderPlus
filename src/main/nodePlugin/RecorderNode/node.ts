@@ -62,7 +62,7 @@ export class RecorderNode extends Node {
     super(id)
     this.addOutput(this.audioOutput)
     this.addOutput(this.durationOutput)
-    this.setBox(180, 130)
+    this.setBox(180, 172)
   }
 
   // —— UI 读写 ——

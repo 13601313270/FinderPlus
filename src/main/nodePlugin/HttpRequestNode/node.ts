@@ -1,3 +1,4 @@
+import { AudioFileValue } from '../../engine/data/AudioFileValue'
 import { ImgFileValue } from '../../engine/data/ImgFileValue'
 import { FileValue } from '../../engine/data/FileValue'
 import { StringValue } from '../../engine/data/StringValue'
@@ -14,8 +15,8 @@ export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD'
 /** 请求状态：UI 据此决定按钮可点 / 结果区样式 */
 export type HttpRequestStatus = 'idle' | 'running' | 'done' | 'error'
 
-/** 输出模式：text = 响应体文本（StringValue）；image = 图片文件（ImgFileValue） */
-export type HttpOutputMode = 'text' | 'image'
+/** 输出模式：text = 响应体文本；image = 图片文件；audio = 音频文件 */
+export type HttpOutputMode = 'text' | 'image' | 'audio'
 
 /** 单个 header 条目（持久化 & UI 共用） */
 export type HeaderEntry = { key: string; value: string }
@@ -216,7 +217,7 @@ export class HttpRequestNode extends Node {
   setOutputMode(mode: HttpOutputMode): void {
     if (mode === this.outputMode) return
     this.outputMode = mode
-    const newClass = mode === 'text' ? StringValue : ImgFileValue
+    const newClass = mode === 'text' ? StringValue : mode === 'image' ? ImgFileValue : AudioFileValue
     const newPort = new OutputPort('text', newClass, OUTPUT_LABEL)
     this.removeOutput(this._textOutput)
     this._textOutput = newPort
@@ -601,16 +602,19 @@ export class HttpRequestNode extends Node {
       if (this.outputMode === 'text') {
         this.textOutput.commit(new StringValue(result.body))
       } else {
-        // image 模式：只有主进程识别为 image/* 响应时才有 bodyBase64
+        // image / audio 模式：只有主进程识别为媒体类型响应时才有 bodyBase64
         if (result.bodyBase64) {
           try {
             const bytes = base64ToBytes(result.bodyBase64)
             const ab = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer
-            const file = new File([ab], `http-response.${result.ext ?? 'png'}`, {
-              type: result.contentType ?? 'image/png'
+            const defaultExt = this.outputMode === 'image' ? 'png' : 'wav'
+            const defaultCt = this.outputMode === 'image' ? 'image/png' : 'audio/wav'
+            const file = new File([ab], `http-response.${result.ext ?? defaultExt}`, {
+              type: result.contentType ?? defaultCt
             })
             const hash = djb2(result.bodyBase64)
-            this.textOutput.commit(new ImgFileValue(file, hash))
+            const FileValueCls = this.outputMode === 'image' ? ImgFileValue : AudioFileValue
+            this.textOutput.commit(new FileValueCls(file, hash))
           } catch (err) {
             // eslint-disable-next-line no-console
             console.warn('[http-request] imageOutput 构造失败：', err)
@@ -663,7 +667,7 @@ export class HttpRequestNode extends Node {
     if (typeof state.collapsed === 'boolean') {
       this.collapsed = state.collapsed
     }
-    if (state.outputMode === 'text' || state.outputMode === 'image') {
+    if (state.outputMode === 'text' || state.outputMode === 'image' || state.outputMode === 'audio') {
       this.outputMode = state.outputMode
     }
     // 新格式：headers 是 KV 数组

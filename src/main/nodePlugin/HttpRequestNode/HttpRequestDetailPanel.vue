@@ -34,7 +34,7 @@ const resolvedHeaders = ref<HeaderEntry[]>([])
 const bodyText = ref('')
 const timeout = ref(15000)
 const inputCount = ref(1)
-const outputMode = ref<'text' | 'image'>('text')
+const outputMode = ref<'text' | 'image' | 'audio'>('text')
 
 const allowsBody = computed(() => method.value !== 'GET' && method.value !== 'HEAD')
 
@@ -134,6 +134,7 @@ function onRemovePort(): void { httpNode.value?.removeLastInputPort() }
         >
           <option value="text">{{ t('outputModeText') }}</option>
           <option value="image">{{ t('outputModeImage') }}</option>
+          <option value="audio">{{ t('outputModeAudio') }}</option>
         </select>
       </div>
 

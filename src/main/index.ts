@@ -459,9 +459,9 @@ function buildApplicationMenu(): void {
     },
     ...(browserNodeList.length
       ? [{ type: 'separator' as const }, ...browserNodeList.map((n) => ({
-          label: `🌐 ${n.label}`,
-          click: () => openBrowserDevTools(n.id)
-        }))]
+        label: `🌐 ${n.label}`,
+        click: () => openBrowserDevTools(n.id)
+      }))]
       : [])
   ]
 
@@ -476,43 +476,43 @@ function buildApplicationMenu(): void {
     },
     ...(is.dev
       ? [
-          { type: 'separator' as const },
-          { label: menuLabels.viewToggleDevTools, submenu: devtoolsSubmenu }
-        ]
+        { type: 'separator' as const },
+        { label: menuLabels.viewToggleDevTools, submenu: devtoolsSubmenu }
+      ]
       : [])
   ]
 
   const template: Electron.MenuItemConstructorOptions[] = isMac
     ? [
-        {
-          label: app.name,
-          submenu: [
-            { role: 'about' },
-            { type: 'separator' },
-            settingsItem,
-            { type: 'separator' },
-            { role: 'services' },
-            { type: 'separator' },
-            { role: 'hide' },
-            { role: 'hideOthers' },
-            { role: 'unhide' },
-            { type: 'separator' },
-            { role: 'quit' }
-          ]
-        },
-        { role: 'editMenu' },
-        { label: menuLabels.view, submenu: viewSubmenu },
-        { role: 'windowMenu' }
-      ]
+      {
+        label: app.name,
+        submenu: [
+          { role: 'about' },
+          { type: 'separator' },
+          settingsItem,
+          { type: 'separator' },
+          { role: 'services' },
+          { type: 'separator' },
+          { role: 'hide' },
+          { role: 'hideOthers' },
+          { role: 'unhide' },
+          { type: 'separator' },
+          { role: 'quit' }
+        ]
+      },
+      { role: 'editMenu' },
+      { label: menuLabels.view, submenu: viewSubmenu },
+      { role: 'windowMenu' }
+    ]
     : [
-        {
-          label: menuLabels.file,
-          submenu: [settingsItem, { type: 'separator' }, { role: 'quit' }]
-        },
-        { role: 'editMenu' },
-        { label: menuLabels.view, submenu: viewSubmenu },
-        { role: 'windowMenu' }
-      ]
+      {
+        label: menuLabels.file,
+        submenu: [settingsItem, { type: 'separator' }, { role: 'quit' }]
+      },
+      { role: 'editMenu' },
+      { label: menuLabels.view, submenu: viewSubmenu },
+      { role: 'windowMenu' }
+    ]
 
   Menu.setApplicationMenu(Menu.buildFromTemplate(template))
 }
@@ -1044,8 +1044,7 @@ function registerIpcHandlers(): void {
   }
 
   /** 校验列定义，返回 { ok, error?, columns } */
-  function validateColumns(cols: Array<{ name: string; type: string }>):
-    { ok: true; columns: Array<{ name: string; sqlType: string }> }
+  function validateColumns(cols: Array<{ name: string; type: string }>): { ok: true; columns: Array<{ name: string; sqlType: string }> }
     | { ok: false; error: string } {
     if (!Array.isArray(cols)) return { ok: false, error: 'columns 必须是数组' }
     if (cols.length === 0) return { ok: false, error: '至少需要一个自定义列' }
@@ -1610,15 +1609,29 @@ function registerIpcHandlers(): void {
             const dt = Date.now() - t0
             const bodyLen = buf.length
             const contentType = flatHeaders['content-type'] ?? ''
-            const isImage = contentType.toLowerCase().startsWith('image/')
-            // 文本始终返回 utf-8 字符串（向后兼容）；图片额外返回 base64
+            const ctLower = contentType.toLowerCase()
+            // 媒体类型响应（image/audio）额外返回 base64；文本一律 utf-8 保留向后兼容
+            const mediaKind = (() => {
+              if (ctLower.startsWith('image/')) {
+                return 'image'
+              } else if (ctLower.startsWith('audio/')) {
+                return 'audio'
+              } else {
+                return null
+              }
+            })();
+            const isMedia = mediaKind !== null
+
+            // —— 日志预览：媒体类型不 dump 二进制，文本截断 ——
             const resBodyStr = buf.toString('utf-8')
             const resHeadersStr = JSON.stringify(flatHeaders)
-            const resBodyPreview = bodyLen > 0
-              ? (isImage ? `<image ${bodyLen}B>` : truncate(resBodyStr, 500))
-              : '(empty)'
+            let resBodyPreview: string
+            if (bodyLen === 0) resBodyPreview = '(empty)'
+            else if (isMedia) resBodyPreview = `<${mediaKind} ${bodyLen}B>`
+            else resBodyPreview = truncate(resBodyStr, 500)
+            const metaTag = isMedia ? ` (${mediaKind})` : ''
             forward(
-              `[http] ← ${res.statusCode} ${res.statusMessage ?? ''}  ${dt}ms  body=${bodyLen}B${isImage ? ' (image)' : ''}`,
+              `[http] ← ${res.statusCode} ${res.statusMessage ?? ''}  ${dt}ms  body=${bodyLen}B${metaTag}`,
               `[http]   res headers: ${resHeadersStr}`,
               bodyLen > 0 ? `[http]   res body (${bodyLen}B): ${resBodyPreview}` : ''
             )
@@ -1638,10 +1651,14 @@ function registerIpcHandlers(): void {
               headers: flatHeaders,
               body: resBodyStr
             }
-            if (isImage) {
+            if (isMedia) {
               result.bodyBase64 = buf.toString('base64')
-              result.contentType = contentType.split(';')[0] ?? contentType
-              result.ext = imageExtFromContentType(result.contentType)
+              result.contentType = ctLower.split(';')[0] ?? ctLower
+              if (mediaKind === 'audio') {
+                result.ext = audioExtFromContentType(result.contentType);
+              } else if (mediaKind === 'image') {
+                result.ext = imageExtFromContentType(result.contentType)
+              }
             }
             resolve(result)
           })
@@ -1916,6 +1933,24 @@ function imageExtFromContentType(contentType: string): string {
     case 'image/tiff':
     case 'image/tif': return 'tiff'
     default: return 'png'
+  }
+}
+
+/** 从 Content-Type 推断音频扩展名（不带点），识别不到时默认 wav */
+function audioExtFromContentType(contentType: string): string {
+  switch (contentType.toLowerCase()) {
+    case 'audio/mpeg':
+    case 'audio/mp3': return 'mp3'
+    case 'audio/wav':
+    case 'audio/x-wav': return 'wav'
+    case 'audio/ogg':
+    case 'audio/vorbis': return 'ogg'
+    case 'audio/webm': return 'webm'
+    case 'audio/flac': return 'flac'
+    case 'audio/aac':
+    case 'audio/mp4': return 'm4a'
+    case 'audio/opus': return 'opus'
+    default: return 'wav'
   }
 }
 

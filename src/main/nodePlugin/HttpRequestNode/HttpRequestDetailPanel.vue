@@ -35,8 +35,11 @@ const bodyText = ref('')
 const timeout = ref(15000)
 const inputCount = ref(1)
 const outputMode = ref<'text' | 'image' | 'audio'>('text')
+const status = ref<'idle' | 'running' | 'done' | 'error'>('idle')
 
 const allowsBody = computed(() => method.value !== 'GET' && method.value !== 'HEAD')
+const running = computed(() => status.value === 'running')
+const hasUrl = computed(() => urlTemplate.value.trim().length > 0)
 
 let offChanged: (() => void) | undefined
 
@@ -62,6 +65,7 @@ function sync(node: HttpRequestNode): void {
   timeout.value = node.displayTimeout
   inputCount.value = node.inputCount
   outputMode.value = node.displayOutputMode
+  status.value = node.displayStatus
 }
 
 // 当 panel 激活时（nodeId 变化）重新 sync
@@ -103,10 +107,11 @@ function onTimeoutInput(e: Event): void {
   if (Number.isFinite(v)) httpNode.value?.setTimeoutMs(v)
 }
 function onOutputModeChange(e: Event): void {
-  httpNode.value?.setOutputMode((e.target as HTMLSelectElement).value as 'text' | 'image')
+  httpNode.value?.setOutputMode((e.target as HTMLSelectElement).value as 'text' | 'image' | 'audio')
 }
 function onAddPort(): void { httpNode.value?.addInputPort() }
 function onRemovePort(): void { httpNode.value?.removeLastInputPort() }
+function onSend(): void { httpNode.value?.run() }
 </script>
 
 <template>
@@ -239,6 +244,16 @@ function onRemovePort(): void { httpNode.value?.removeLastInputPort() }
         >＋</button>
       </div>
     </div>
+
+    <!-- 发送按钮 -->
+    <button
+      class="detail-panel__send"
+      type="button"
+      :disabled="running || !hasUrl || !httpNode"
+      @click="onSend"
+    >
+      {{ running ? t('sending') : t('send') }}
+    </button>
 
   </div>
 </template>
@@ -482,6 +497,34 @@ function onRemovePort(): void { httpNode.value?.removeLastInputPort() }
         border-color: #1d4ed8;
         color: #fff;
       }
+    }
+  }
+
+  // —— 发送按钮 ——
+  &__send {
+    all: unset;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    box-sizing: border-box;
+    height: 36px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #fff;
+    background: #3b82f6;
+    border-radius: 8px;
+    white-space: nowrap;
+    margin-top: auto;
+    flex-shrink: 0;
+    transition: background 0.15s;
+
+    &:hover:not(:disabled) { background: #2563eb; }
+    &:active:not(:disabled) { background: #1d4ed8; }
+    &:disabled {
+      cursor: not-allowed;
+      background: #93c5fd;
     }
   }
 }

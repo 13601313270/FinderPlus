@@ -217,12 +217,19 @@ export class HttpRequestNode extends Node {
   setOutputMode(mode: HttpOutputMode): void {
     if (mode === this.outputMode) return
     this.outputMode = mode
-    const newClass = mode === 'text' ? StringValue : mode === 'image' ? ImgFileValue : AudioFileValue
+    this.rebuildOutputPortForMode()
+    this.notifyChanged()
+  }
+
+  /** 根据当前 this.outputMode 重建 textOutput 的 Value 类型（readState 恢复时也需要调） */
+  private rebuildOutputPortForMode(): void {
+    const newClass = this.outputMode === 'text' ? StringValue
+      : this.outputMode === 'image' ? ImgFileValue
+      : AudioFileValue
     const newPort = new OutputPort('text', newClass, OUTPUT_LABEL)
     this.removeOutput(this._textOutput)
     this._textOutput = newPort
     this.addOutput(newPort, 0)
-    this.notifyChanged()
   }
 
   /** 当前模板输入端口数量（fileBodyPort 不计入） */
@@ -670,6 +677,9 @@ export class HttpRequestNode extends Node {
     if (state.outputMode === 'text' || state.outputMode === 'image' || state.outputMode === 'audio') {
       this.outputMode = state.outputMode
     }
+    // outputMode 恢复后，同步重建 OutputPort 的 Value 类型——端口构造时默认 StringValue，
+    // 只设字段值不会动端口类型，导致重启后节点认为自己还是 text 模式。
+    this.rebuildOutputPortForMode()
     // 新格式：headers 是 KV 数组
     if (Array.isArray(state.headers)) {
       this.headers = state.headers

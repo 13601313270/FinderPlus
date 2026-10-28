@@ -134,7 +134,7 @@ const PADDING = 16
 
 /** 内容区高度：随选项数量增长，至少容下一行 */
 function computeBoxHeight(optionCount: number): number {
-  return Math.max(84, HEADER_HEIGHT + Math.max(1, optionCount) * ROW_HEIGHT + PADDING)
+  return Math.max(84, HEADER_HEIGHT + Math.max(1, optionCount) * ROW_HEIGHT + PADDING + 24)
 }
 
 /**

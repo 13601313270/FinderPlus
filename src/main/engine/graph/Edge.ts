@@ -1,5 +1,6 @@
 import { Value } from '../data/Value'
 import type { InputPort } from '../port/InputPort'
+import { MethodPort } from '../port/MethodPort'
 import type { OutputPort } from '../port/OutputPort'
 
 /**
@@ -28,7 +29,8 @@ export class Edge {
   // 把数据从startPort端口传到endPort端口。force=true 时跳过 InputPort 的 fingerprint 排重。
   // 如果 Value 类型不被 endPort 接受，则把本 Edge 标记为 error 状态，不调用 receive。
   transferData(value: Value, force = false): void {
-    if (!this.endPort.canReceiveValue(value)) {
+    // MethodPort 是触发型入口（按钮/方法调用），类型检查不适用于它，直接透传
+    if (!(this.endPort instanceof MethodPort) && !this.endPort.canReceiveValue(value)) {
       this.state = 'error'
       return
     }

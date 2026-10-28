@@ -3,6 +3,7 @@ import { JsonValue } from '../../engine/data/JsonValue'
 import { InputPort } from '../../engine/port/InputPort'
 import { MethodPort } from '../../engine/port/MethodPort'
 import { OutputPort } from '../../engine/port/OutputPort'
+import type { InputPortChangeSource } from '../../engine/node/Node'
 import { Node } from '../../engine/node/Node'
 
 /**
@@ -218,6 +219,9 @@ export class LLMNode extends Node {
   /** 是否自动调用：收到上游输入时自动触发 fetch；默认 false，需用户手动点发送按钮 */
   private autoCall = false
 
+  /** autoCall 开启时，system 端口变化是否也触发自动 fetch；默认 false，仅 prompt 触发 */
+  private autoCallOnSystem = false
+
   /** 是否开启连续对话模式：每次 prompt 追加到 history，下次请求带上完整历史 */
   private chatMode = false
 
@@ -283,6 +287,18 @@ export class LLMNode extends Node {
   setAutoCall(value: boolean): void {
     if (this.autoCall === value) return
     this.autoCall = value
+    this.notifyChanged()
+  }
+
+  /** 当前 autoCall 开启时，system 端口变化是否也触发自动 fetch */
+  get displayAutoCallOnSystem(): boolean {
+    return this.autoCallOnSystem
+  }
+
+  /** 设置 autoCallOnSystem 开关；UI 切换时调用 */
+  setAutoCallOnSystem(value: boolean): void {
+    if (this.autoCallOnSystem === value) return
+    this.autoCallOnSystem = value
     this.notifyChanged()
   }
 
@@ -393,8 +409,14 @@ export class LLMNode extends Node {
    * 仅当 autoCall 为 true 时才自动触发（300ms 防抖窗口合并快速到达的输入），
    * 否则等用户手动点发送按钮。
    */
-  inputPortReceiveValue(_ports: InputPort[]): void {
+  inputPortReceiveValue(ports: InputPort[], _source: InputPortChangeSource): void {
     if (!this.autoCall) return
+    // 默认只有 promptInput 变化才自动触发；autoCallOnSystem 开启时 systemInput 也触发
+    let shouldTrigger = ports.includes(this.promptInput)
+    if (!shouldTrigger && this.autoCallOnSystem) {
+      shouldTrigger = ports.includes(this.systemInput)
+    }
+    if (!shouldTrigger) return
     if (this.debounceTimer) {
       clearTimeout(this.debounceTimer)
     }
@@ -570,6 +592,7 @@ export class LLMNode extends Node {
       model: this.model,
       jsonMode: this.jsonMode,
       autoCall: this.autoCall,
+      autoCallOnSystem: this.autoCallOnSystem,
       localPrompt: this.localPrompt,
       chatMode: this.chatMode,
       chatHistory: this.chatHistory.slice()
@@ -591,6 +614,9 @@ export class LLMNode extends Node {
     }
     if (typeof state.autoCall === 'boolean') {
       this.autoCall = state.autoCall
+    }
+    if (typeof state.autoCallOnSystem === 'boolean') {
+      this.autoCallOnSystem = state.autoCallOnSystem
     }
     if (typeof state.localPrompt === 'string') {
       this.localPrompt = state.localPrompt

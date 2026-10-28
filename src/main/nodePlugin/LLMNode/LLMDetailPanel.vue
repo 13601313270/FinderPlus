@@ -39,6 +39,7 @@ const model = ref('')
 const jsonMode = ref(false)
 const chatMode = ref(false)
 const autoCall = ref(false)
+const autoCallOnSystem = ref(false)
 const localPrompt = ref('')
 const promptConnected = ref(false)
 const response = ref('')
@@ -90,6 +91,7 @@ function sync(node: LLMNode): void {
   jsonMode.value = node.displayJsonMode
   chatMode.value = node.displayChatMode
   autoCall.value = node.displayAutoCall
+  autoCallOnSystem.value = node.displayAutoCallOnSystem
   localPrompt.value = node.displayLocalPrompt
   promptConnected.value = node.displayPromptConnected
   response.value = node.displayResponse
@@ -127,6 +129,12 @@ function onAutoCallChange(e: Event): void {
   const val = (e.target as HTMLInputElement).checked
   autoCall.value = val
   llmNode.value?.setAutoCall(val)
+}
+
+function onAutoCallOnSystemChange(e: Event): void {
+  const val = (e.target as HTMLInputElement).checked
+  autoCallOnSystem.value = val
+  llmNode.value?.setAutoCallOnSystem(val)
 }
 
 function onPromptInput(e: Event): void {
@@ -254,6 +262,10 @@ function onPickModel(e: Event): void {
         <label class="detail-panel__toggle">
           <input type="checkbox" :checked="autoCall" @change="onAutoCallChange" />
           <span>{{ t('autoCall') }}{{ promptConnected ? '' : '（仅端口接边时生效）' }}</span>
+        </label>
+        <label v-if="autoCall" class="detail-panel__toggle">
+          <input type="checkbox" :checked="autoCallOnSystem" @change="onAutoCallOnSystemChange" />
+          <span>{{ t('autoCallOnSystem') }}</span>
         </label>
       </div>
     </div>

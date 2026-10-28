@@ -26,10 +26,12 @@ import PromptDialog from './components/PromptDialog.vue'
 import CanvasPicker from './components/CanvasPicker.vue'
 import HelpIcon from './components/icons/HelpIcon.vue'
 import GearIcon from './components/icons/GearIcon.vue'
+import AuthDialog from './components/AuthDialog.vue'
 import { useHelpCenter } from '@renderer/composables/useHelpCenter'
 import { useGlobalSettings } from '@renderer/composables/useGlobalSettings'
 import { useLanguageSettings } from '@renderer/composables/useLanguageSettings'
 import { useOnboarding } from '@renderer/composables/useOnboarding'
+import { useAuth } from '@renderer/composables/useAuth'
 import { IpcStorage } from '@renderer/composables/IpcStorage'
 import { isSelfDragDrop, clearSelfDragDrop } from '@renderer/composables/useFileDragOut'
 import { getDraggingNode, getDraggingNodeStartPos, clearDraggingNode } from '@renderer/composables/useNodePosition'
@@ -64,6 +66,40 @@ const { openCenter: openHelpCenter } = useHelpCenter()
 
 // 全局设置：工具栏按钮和系统应用菜单（macOS 顶部菜单栏「设置…」）共享同一弹窗
 const { openSettings } = useGlobalSettings()
+
+// 认证状态：登录 / 注册 / 退出
+const { isLoggedIn, user, openLogin, doLogout } = useAuth()
+
+// 用户下拉菜单显隐（右上角头像点击展开）
+const showUserMenu = ref(false)
+let userMenuRef: HTMLElement | null = null
+function setUserMenuRef(ref: unknown): void {
+  // v-if 切换时 Vue 会先以 null 调用；组件挂载时传入组件实例
+  if (ref === null || ref === undefined) {
+    userMenuRef = null
+    return
+  }
+  // template 里用 :ref="setUserMenuRef" 绑定到按钮容器
+  userMenuRef = ref as HTMLElement
+}
+
+function toggleUserMenu(): void {
+  showUserMenu.value = !showUserMenu.value
+}
+
+function closeUserMenu(): void {
+  showUserMenu.value = false
+}
+
+async function handleLogout(): Promise<void> {
+  closeUserMenu()
+  await doLogout()
+}
+
+function handleLoginClick(): void {
+  closeUserMenu()
+  openLogin()
+}
 
 // 新手引导：首次启动时自动弹出，完成或跳过后不再触发
 const onboarding = useOnboarding()
@@ -781,9 +817,13 @@ async function openCanvas(id: string): Promise<void> {
 /** 点击画布选择器外部时关闭下拉 */
 function onCanvasMenuDocClick(e: MouseEvent): void {
   const target = e.target as unknown as HTMLElement
-  if (!canvasMenuRef.value) return
-  if (!canvasMenuRef.value.contains(target)) {
+  // 画布选择器外部点击关闭
+  if (canvasMenuRef.value && !canvasMenuRef.value.contains(target)) {
     showCanvasMenu.value = false
+  }
+  // 用户下拉菜单外部点击关闭
+  if (showUserMenu.value && userMenuRef && !userMenuRef.contains(target)) {
+    showUserMenu.value = false
   }
 }
 
@@ -1014,6 +1054,28 @@ onUnmounted(() => {
           <HelpIcon :size="14" />
           <span>{{ t('app.help') }}</span>
         </button>
+        <!-- 登录入口：未登录显示登录/注册按钮；已登录显示用户头像 + 下拉菜单 -->
+        <template v-if="!isLoggedIn">
+          <button class="stage__help-btn" type="button" title="登录" @click="handleLoginClick">
+            <span>登录</span>
+          </button>
+        </template>
+        <template v-else>
+          <div class="stage__user-menu" :ref="setUserMenuRef">
+            <button class="stage__user-btn" type="button" title="我的账号" @click.stop="toggleUserMenu">
+              <span class="stage__user-avatar">{{ (user?.email ?? '?').charAt(0).toUpperCase() }}</span>
+            </button>
+            <transition name="stage__canvas-fade">
+              <ul v-if="showUserMenu" class="stage__user-dropdown">
+                <li class="stage__user-info">
+                  <span class="stage__user-info-email">{{ user?.email }}</span>
+                </li>
+                <li class="stage__user-separator" />
+                <li class="stage__user-item" @click="handleLogout">退出登录</li>
+              </ul>
+            </transition>
+          </div>
+        </template>
       </div>
     </header>
 
@@ -1068,6 +1130,9 @@ onUnmounted(() => {
 
   <!-- 全局 prompt / confirm / alert 替代组件：必须在 v-if/v-else 外面，picker 模式也要用 -->
   <PromptDialog />
+
+  <!-- 登录 / 注册弹窗：独立 Teleport 到 body -->
+  <AuthDialog />
 </template>
 
 <style scoped lang="less">
@@ -1127,6 +1192,82 @@ onUnmounted(() => {
     &:hover {
       background: rgba(0, 0, 0, 0.08);
       color: @color-primary;
+    }
+  }
+
+  // —— 用户菜单（已登录后的头像 + 下拉菜单） ——
+  &__user-menu {
+    position: relative;
+    -webkit-app-region: no-drag;
+    flex-shrink: 0;
+  }
+
+  &__user-btn {
+    all: unset;
+    cursor: pointer;
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(37, 99, 235, 0.12);
+    transition: background 0.15s ease;
+
+    &:hover {
+      background: rgba(37, 99, 235, 0.2);
+    }
+  }
+
+  &__user-avatar {
+    font-size: 11px;
+    font-weight: 600;
+    color: #2563eb;
+  }
+
+  &__user-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    min-width: 180px;
+    margin: 0;
+    padding: 4px;
+    list-style: none;
+    background: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12), 0 1px 3px rgba(0, 0, 0, 0.08);
+    z-index: 9999;
+  }
+
+  &__user-info {
+    padding: 8px 10px 6px;
+    font-size: 11px;
+  }
+
+  &__user-info-email {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: @color-text;
+    word-break: break-all;
+  }
+
+  &__user-separator {
+    height: 1px;
+    margin: 4px 8px;
+    background: rgba(0, 0, 0, 0.08);
+  }
+
+  &__user-item {
+    padding: 6px 10px;
+    border-radius: 5px;
+    font-size: 12px;
+    color: @color-text;
+    cursor: pointer;
+    transition: background 0.1s ease;
+
+    &:hover {
+      background: rgba(0, 0, 0, 0.06);
     }
   }
 

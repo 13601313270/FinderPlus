@@ -29,6 +29,44 @@ export function clearToken(): void {
  * 成功时返回响应中 ok=true 的 data（后端可以直接返回业务字段）；
  * 失败时 throw Error(error)。
  */
+/**
+ * 发一个 GET 请求到指定路径。
+ * 路径相对于 API_BASE（例如 '/user/info'）。
+ * 成功时返回响应中 ok=true 的 data；失败时 throw Error(error)。
+ */
+export async function get<T = Record<string, unknown>>(path: string, auth = true): Promise<T> {
+  const headers: Record<string, string> = {}
+  if (auth) {
+    const token = getToken()
+    if (token) headers['token'] = token
+  }
+
+  let res: Response
+  try {
+    res = await fetch(API_BASE + path, { method: 'GET', headers })
+  } catch (err) {
+    throw new Error(err instanceof Error ? err.message : '网络请求失败')
+  }
+
+  if (!res.ok) {
+    throw new Error(`HTTP ${res.status}: ${res.statusText}`)
+  }
+
+  let json: { ok: boolean; error?: string; [key: string]: unknown }
+  try {
+    json = (await res.json()) as { ok: boolean; error?: string; [key: string]: unknown }
+  } catch {
+    throw new Error('响应格式错误')
+  }
+
+  if (!json.ok) {
+    throw new Error(json.error || '接口请求失败')
+  }
+
+  const { ...rest } = json
+  return rest as T
+}
+
 export async function post<T = Record<string, unknown>>(path: string, body?: unknown, auth = true): Promise<T> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json'
@@ -65,6 +103,6 @@ export async function post<T = Record<string, unknown>>(path: string, body?: unk
   }
 
   // ok=true 时剥离 ok/error 字段，把剩余业务字段作为 data 返回
-  const { ok: _ok, error: _err, ...rest } = json
+  const { ...rest } = json
   return rest as T
 }

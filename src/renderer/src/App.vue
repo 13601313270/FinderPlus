@@ -32,6 +32,7 @@ import { useGlobalSettings } from '@renderer/composables/useGlobalSettings'
 import { useLanguageSettings } from '@renderer/composables/useLanguageSettings'
 import { useOnboarding } from '@renderer/composables/useOnboarding'
 import { useAuth } from '@renderer/composables/useAuth'
+import { fetchUserInfo } from '@renderer/api/auth'
 import { IpcStorage } from '@renderer/composables/IpcStorage'
 import { isSelfDragDrop, clearSelfDragDrop } from '@renderer/composables/useFileDragOut'
 import { getDraggingNode, getDraggingNodeStartPos, clearDraggingNode } from '@renderer/composables/useNodePosition'
@@ -99,6 +100,35 @@ async function handleLogout(): Promise<void> {
 function handleLoginClick(): void {
   closeUserMenu()
   openLogin()
+}
+
+// —— 用户信息弹窗 ——
+const showUserInfoDialog = ref(false)
+const userInfoLoading = ref(false)
+const userInfoError = ref<string | null>(null)
+const userInfoResponse = ref<unknown>(null)
+
+async function onViewUserInfo(): Promise<void> {
+  closeUserMenu()
+  showUserInfoDialog.value = true
+  userInfoLoading.value = true
+  userInfoError.value = null
+  userInfoResponse.value = null
+  try {
+    const data = await fetchUserInfo()
+    userInfoResponse.value = data
+    console.log('[fetchUserInfo] success:', data)
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : '请求失败'
+    userInfoError.value = msg
+    console.error('[fetchUserInfo] failed:', msg)
+  } finally {
+    userInfoLoading.value = false
+  }
+}
+
+function closeUserInfoDialog(): void {
+  showUserInfoDialog.value = false
 }
 
 // 新手引导：首次启动时自动弹出，完成或跳过后不再触发
@@ -1045,7 +1075,7 @@ onUnmounted(() => {
       </div>
       <!-- 右侧可拖动区（stretch 撑满） -->
       <span class="stage__dragbar-drag-area stage__dragbar-drag-area--right" />
-      <div>
+      <div style="display: flex;align-items: center;">
         <button class="stage__settings-btn" type="button" :title="t('app.settings')" @click="openSettings()">
           <GearIcon :size="14" />
           <span>{{ t('app.settings') }}</span>
@@ -1067,8 +1097,9 @@ onUnmounted(() => {
             </button>
             <transition name="stage__canvas-fade">
               <ul v-if="showUserMenu" class="stage__user-dropdown">
-                <li class="stage__user-info">
+                <li class="stage__user-info" @click="onViewUserInfo">
                   <span class="stage__user-info-email">{{ user?.email }}</span>
+                  <span class="stage__user-info-arrow">›</span>
                 </li>
                 <li class="stage__user-separator" />
                 <li class="stage__user-item" @click="handleLogout">退出登录</li>
@@ -1133,6 +1164,26 @@ onUnmounted(() => {
 
   <!-- 登录 / 注册弹窗：独立 Teleport 到 body -->
   <AuthDialog />
+
+  <!-- 用户信息弹窗：点下拉菜单「我的账号」时打开，测试 /user/info 接口 -->
+  <Teleport to="body">
+    <div v-if="showUserInfoDialog" class="user-info-mask" @click.self="closeUserInfoDialog">
+      <div class="user-info-dialog">
+        <div class="user-info-dialog__header">
+          <span>我的账号</span>
+          <button class="user-info-dialog__close" type="button" @click="closeUserInfoDialog">×</button>
+        </div>
+        <div class="user-info-dialog__body">
+          <div v-if="userInfoLoading" class="user-info-loading">加载中…</div>
+          <div v-else-if="userInfoError" class="user-info-error">❌ {{ userInfoError }}</div>
+          <div v-else class="user-info-ok">
+            <div class="user-info-ok-title">接口返回：</div>
+            <pre class="user-info-pre">{{ JSON.stringify(userInfoResponse, null, 2) }}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </Teleport>
 </template>
 
 <style scoped lang="less">
@@ -1200,6 +1251,7 @@ onUnmounted(() => {
     position: relative;
     -webkit-app-region: no-drag;
     flex-shrink: 0;
+    display: inline-block;
   }
 
   &__user-btn {
@@ -1242,6 +1294,12 @@ onUnmounted(() => {
   &__user-info {
     padding: 8px 10px 6px;
     font-size: 11px;
+    cursor: pointer;
+    border-radius: 5px;
+
+    &:hover {
+      background: rgba(0, 0, 0, 0.04);
+    }
   }
 
   &__user-info-email {
@@ -1250,6 +1308,13 @@ onUnmounted(() => {
     font-weight: 500;
     color: @color-text;
     word-break: break-all;
+  }
+
+  &__user-info-arrow {
+    float: right;
+    font-size: 14px;
+    color: rgba(0, 0, 0, 0.35);
+    line-height: 1;
   }
 
   &__user-separator {
@@ -1501,5 +1566,95 @@ onUnmounted(() => {
     transform-origin: 0 0;
     will-change: transform;
   }
+}
+
+// —— 用户信息弹窗 ——
+.user-info-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 2100;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.user-info-dialog {
+  width: 420px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid #e5e7eb;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1a1a1a;
+  }
+
+  &__close {
+    all: unset;
+    cursor: pointer;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    color: #9ca3af;
+    font-size: 20px;
+    line-height: 1;
+
+    &:hover {
+      background: #f3f4f6;
+      color: #374151;
+    }
+  }
+
+  &__body {
+    padding: 16px;
+    max-height: 400px;
+    overflow-y: auto;
+  }
+}
+
+.user-info-loading {
+  font-size: 13px;
+  color: #6b7280;
+  text-align: center;
+  padding: 20px 0;
+}
+
+.user-info-error {
+  font-size: 13px;
+  color: #dc2626;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  padding: 10px 14px;
+}
+
+.user-info-ok-title {
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 8px;
+}
+
+.user-info-pre {
+  margin: 0;
+  padding: 12px;
+  font-size: 12px;
+  font-family: Menlo, Monaco, Consolas, monospace;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  white-space: pre-wrap;
+  word-break: break-all;
+  color: #1a1a1a;
 }
 </style>

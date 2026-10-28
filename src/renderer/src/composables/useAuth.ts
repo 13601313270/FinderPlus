@@ -82,6 +82,7 @@ export function useAuth() {
   /** 登录 */
   async function doLogin(email: string, password: string): Promise<void> {
     const result = await login(email, password)
+    console.log('login result', result)
     saveAuth(result.token, result.user)
   }
 

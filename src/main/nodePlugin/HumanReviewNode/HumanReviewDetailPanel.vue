@@ -5,7 +5,7 @@ import { HumanReviewNode, type ReviewMode } from './node'
 import type { Value } from '../../engine/data/Value'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
 import { messages } from './i18n'
-import JsonTreeNode from '@renderer/components/JsonTreeNode.vue'
+import { resolveRenderer } from '@renderer/components/valueRenderers'
 
 const props = defineProps<{ nodeId: string }>()
 
@@ -23,28 +23,17 @@ const currentValue = ref<Value | undefined>(undefined)
 /** 当前审核项的 kind（即 VALUE_NAME，字符串，便于模板做 === 判断） */
 const currentKind = ref<string>('')
 
-// —— 审核专用（renderer 组件 detail 模式只有缩略图/预览，这里需要大图/完整文本） ——
-const fsImageUrl = ref<string | null>(null)
-let fsRevokeUrl: (() => void) | null = null
-const fsTextContent = ref<string>('')
+// —— 审核模式 ——
+const currentMode = ref<ReviewMode>('queue')
 
 // —— 拒绝理由对话框 ——
 const showRejectDialog = ref(false)
 const rejectReasonInput = ref('')
 
-// —— 审核模式 ——
-const currentMode = ref<ReviewMode>('queue')
-
-/** 从 currentValue 取 File（img-file / txt-file / file / pdf-file 通用） */
+/** 从 currentValue 取 File（meta 条统一展示文件名/大小/类型） */
 const fsFile = computed<File | undefined>(() => {
   const cv = currentValue.value as { file?: File } | undefined
   return cv?.file
-})
-
-/** 从 currentValue 取 JsonValue 的 value 字段 */
-const fsJsonContent = computed<unknown>(() => {
-  const cv = currentValue.value as { value?: unknown } | undefined
-  return cv?.value
 })
 
 /** 字节数 → 可读体积 */
@@ -54,28 +43,9 @@ function formatSize(bytes: number): string {
   return `${(bytes / 1024 / 1024).toFixed(2)} MB`
 }
 
-/** 释放全屏图片 objectURL */
-function clearFsImage(): void {
-  if (fsRevokeUrl) {
-    fsRevokeUrl()
-    fsRevokeUrl = null
-  }
-  fsImageUrl.value = null
-}
-
-/** File → 文本（Promise） */
-function readFileAsText(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve(String(reader.result ?? ''))
-    reader.onerror = () => reject(reader.error)
-    reader.readAsText(file)
-  })
-}
-
 let unsubscribe: (() => void) | undefined
 
-/** 同步节点状态到渲染层：核心只存 currentValue（Value 实例）和 currentKind */
+/** 同步节点状态到渲染层——内容预览全由各 renderer 组件 detail 模式负责 */
 function syncCurrent() {
   const n = reviewNode.value
   if (!n) return
@@ -86,26 +56,6 @@ function syncCurrent() {
   const cv = n.currentValue
   currentValue.value = cv
   currentKind.value = cv ? ((cv.constructor as unknown) as { VALUE_NAME: string }).VALUE_NAME : ''
-
-  // —— 审核面板的定制数据（卡片内 renderer 组件自己管，这里只给 detailPanel 用） ——
-  clearFsImage()
-  fsTextContent.value = ''
-  if (cv && currentKind.value === 'img-file') {
-    const file = (cv as { file?: File }).file
-    if (file) {
-      fsImageUrl.value = URL.createObjectURL(file)
-      fsRevokeUrl = () => URL.revokeObjectURL(fsImageUrl.value!)
-    }
-  } else if (cv && currentKind.value === 'txt-file') {
-    const file = (cv as { file?: File }).file
-    if (file) {
-      readFileAsText(file).then((text) => {
-        fsTextContent.value = text
-      }).catch(() => {
-        fsTextContent.value = '(Failed to read file)'
-      })
-    }
-  }
 }
 
 onMounted(() => {
@@ -119,7 +69,6 @@ onMounted(() => {
 
 onUnmounted(() => {
   unsubscribe?.()
-  clearFsImage()
 })
 
 // —— 审核操作 ——
@@ -172,58 +121,18 @@ function onRejectMaskClick(): void {
         {{ t('fullscreenNoData') }}
       </div>
 
-      <!-- 图片 -->
-      <template v-else-if="currentKind === 'img-file'">
-        <div class="review-panel__meta">
-          <span>{{ fsFile?.name }}</span>
-          <span v-if="fsFile">{{ formatSize(fsFile.size) }}</span>
-          <span v-if="fsFile">{{ fsFile.type }}</span>
-        </div>
-        <div class="review-panel__image-wrap">
-          <img v-if="fsImageUrl" class="review-panel__image" :src="fsImageUrl" :alt="fsFile?.name" />
-        </div>
-      </template>
-
-      <!-- JSON -->
-      <template v-else-if="currentKind === 'json'">
-        <div class="review-panel__meta">
-          <span>{{ currentLabel }}</span>
-        </div>
-        <div class="review-panel__json">
-          <JsonTreeNode :value="fsJsonContent" :default-expanded="true" />
-        </div>
-      </template>
-
-      <!-- 文本文件 -->
-      <template v-else-if="currentKind === 'txt-file'">
-        <div class="review-panel__meta">
-          <span>{{ fsFile?.name }}</span>
-          <span v-if="fsFile">{{ formatSize(fsFile.size) }}</span>
-        </div>
-        <pre class="review-panel__text">{{ fsTextContent }}</pre>
-      </template>
-
-      <!-- 其他文件类（file / pdf-file / img-file-collection 等） -->
-      <template v-else-if="['file', 'pdf-file', 'img-file-collection'].includes(currentKind)">
-        <div class="review-panel__meta">
-          <span>{{ fsFile?.name ?? currentLabel }}</span>
-          <span v-if="fsFile">{{ formatSize(fsFile.size) }}</span>
-          <span v-if="fsFile">{{ fsFile.type }}</span>
-        </div>
-        <div class="review-panel__file-placeholder">📄 {{ fsFile?.name ?? currentLabel }}</div>
-      </template>
-
-      <!-- null 值 -->
-      <template v-else-if="currentValue?.isNull">
-        <pre class="review-panel__text review-panel__text--simple">(null)</pre>
-      </template>
-
-      <!-- 简单值（String / Number / Bool）或兜底 -->
+      <!-- 有值：文件类统一 meta 条 + renderer 组件 detail 模式 -->
       <template v-else>
-        <div class="review-panel__meta">
-          <span>{{ currentKind }}</span>
+        <div v-if="fsFile" class="review-panel__meta">
+          <span>{{ fsFile.name }}</span>
+          <span>{{ formatSize(fsFile.size) }}</span>
+          <span>{{ fsFile.type }}</span>
         </div>
-        <pre class="review-panel__text review-panel__text--simple">{{ currentLabel }}</pre>
+        <component
+          :is="resolveRenderer(currentKind)"
+          :value="currentValue!"
+          context="detail"
+        />
       </template>
     </div>
 
@@ -353,70 +262,6 @@ function onRejectMaskClick(): void {
     color: #9aa2ad;
     font-size: 15px;
     font-style: italic;
-  }
-
-  &__image-wrap {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: #f4f5f7;
-    border-radius: 8px;
-    min-height: 200px;
-    overflow: auto;
-  }
-
-  &__image {
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
-    display: block;
-  }
-
-  &__json {
-    flex: 1;
-    overflow: auto;
-    padding: 14px 16px;
-    background: #fafbfc;
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
-    font-size: 13px;
-    line-height: 1.5;
-  }
-
-  &__text {
-    flex: 1;
-    overflow: auto;
-    padding: 16px 18px;
-    background: #1e1e1e;
-    border-radius: 8px;
-    color: #e0e0e0;
-    font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
-    font-size: 13px;
-    line-height: 1.6;
-    white-space: pre-wrap;
-    word-break: break-word;
-    margin: 0;
-
-    &--simple {
-      background: #fafbfc;
-      color: #1a1a1a;
-      border: 1px solid #e5e7eb;
-      white-space: pre-wrap;
-    }
-  }
-
-  &__file-placeholder {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: #f3f4f6;
-    border-radius: 8px;
-    color: #6b7280;
-    font-size: 14px;
-    gap: 8px;
   }
 
   &__footer {

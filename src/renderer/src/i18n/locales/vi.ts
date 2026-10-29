@@ -140,6 +140,7 @@ const vi: Language = {
     'pdf-file': 'Tệp PDF',
     'audio-file': 'Tệp âm thanh',
     'video-file': 'Video File',
+    'html-file': 'Tệp HTML',
     'img-file-collection': 'Bộ sưu tập ảnh'
   },
   intro: {

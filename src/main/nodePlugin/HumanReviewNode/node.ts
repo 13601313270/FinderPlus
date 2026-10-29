@@ -1,6 +1,7 @@
 import { NumberValue } from '../../engine/data/NumberValue'
 import { StringValue } from '../../engine/data/StringValue'
 import { FileValue } from '../../engine/data/FileValue'
+import { HtmlFileValue } from '../../engine/data/HtmlFileValue'
 import { JsonValue } from '../../engine/data/JsonValue'
 import { InputPort } from '../../engine/port/InputPort'
 import { OutputPort } from '../../engine/port/OutputPort'
@@ -33,7 +34,7 @@ export class HumanReviewNode extends Node {
 
   /** 输入端口：列出所有现有 Value 子类 */
   readonly input = new InputPort('input', {
-    accepts: [NumberValue, StringValue, FileValue, JsonValue],
+    accepts: [NumberValue, StringValue, FileValue, HtmlFileValue, JsonValue],
     label: {
       zh: '输入',
       en: 'Input',

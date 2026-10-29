@@ -139,6 +139,7 @@ const fr: Language = {
     'pdf-file': 'Fichier PDF',
     'audio-file': 'Fichier audio',
     'video-file': 'Video File',
+    "html-file": "Fichier HTML",
     "img-file-collection": "Collection d'images"
   },
   intro: {

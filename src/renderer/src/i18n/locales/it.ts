@@ -140,6 +140,7 @@ const it: Language = {
     'pdf-file': 'File PDF',
     'audio-file': 'File audio',
     'video-file': 'Video File',
+    'html-file': 'File HTML',
     'img-file-collection': 'Raccolta di immagini'
   },
   intro: {

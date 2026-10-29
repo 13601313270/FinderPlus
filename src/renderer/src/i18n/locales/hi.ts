@@ -140,6 +140,7 @@ const hi: Language = {
     'pdf-file': 'PDF फ़ाइल',
     'audio-file': 'सौप फ़ाइल',
     'video-file': 'Video File',
+    'html-file': 'HTML फ़ाइल',
     'img-file-collection': 'छवि संग्रह'
   },
   intro: {

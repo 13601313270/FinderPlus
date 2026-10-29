@@ -1,27 +1,29 @@
 <!doctype html>
 <html lang="zh-CN">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Finder+</title>
-    <!--
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Finder+</title>
+  <!--
       渲染进程 CSP。
       connect-src 用 https: 放开而不是逐个列域名：LLM / 文生图节点支持多家可切换的 Provider，
       且生成的图片是各家 CDN 的临时 URL（aliyuncs.com、blob.core.windows.net 等），
       逐个维护既会漏（新增 Provider 就报 CSP 拦截），也没法枚举 CDN 域名。
       脚本注入这条线仍由 script-src 'self' 守住。
     -->
-    <meta
-      http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self' blob: file: 'unsafe-eval'; worker-src 'self' blob:; style-src 'self' blob: file: 'unsafe-inline'; img-src 'self' blob: data: file:; media-src 'self' blob: file:; connect-src 'self' https: blob:"
-    />
-    <style>
-      body {
-        user-select: none;   /* 不能选中 */
-      }
-    </style>
-  </head>
-  <body>
-    <div id="app"></div>
-    <script type="module" src="./src/main.ts"></script>
-  </body>
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'self'; frame-src 'self' blob:; script-src 'self' blob: file: 'unsafe-eval'; worker-src 'self' blob:; style-src 'self' blob: file: 'unsafe-inline'; style-src-elem 'self' blob: file: 'unsafe-inline'; img-src 'self' blob: data: file:; media-src 'self' blob: file:; connect-src 'self' https: blob:" />
+  <style>
+    body {
+      user-select: none;
+      /* 不能选中 */
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app"></div>
+  <script type="module" src="./src/main.ts"></script>
+</body>
+
 </html>

@@ -140,6 +140,7 @@ const tr: Language = {
     'pdf-file': 'PDF Dosyası',
     'audio-file': 'Ses Dosyası',
     'video-file': 'Video File',
+    'html-file': 'HTML Dosyası',
     'img-file-collection': 'Görsel Koleksiyonu'
   },
   intro: {

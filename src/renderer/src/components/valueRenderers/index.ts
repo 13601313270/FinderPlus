@@ -35,6 +35,7 @@ import StringValueRenderer from './StringValueRenderer.vue'
 import JsonValueRenderer from './JsonValueRenderer.vue'
 import FileValueRenderer from './FileValueRenderer.vue'
 import TxtFileValueRenderer from './TxtFileValueRenderer.vue'
+import HtmlFileValueRenderer from './HtmlFileValueRenderer.vue'
 import ImgFileValueRenderer from './ImgFileValueRenderer.vue'
 import PdfFileValueRenderer from './PdfFileValueRenderer.vue'
 import AudioFileValueRenderer from './AudioFileValueRenderer.vue'
@@ -54,6 +55,7 @@ const builtinRenderers = {
   'json':                JsonValueRenderer,
   'file':                FileValueRenderer,
   'txt-file':            TxtFileValueRenderer,
+  'html-file':           HtmlFileValueRenderer,
   'img-file':            ImgFileValueRenderer,
   'pdf-file':            PdfFileValueRenderer,
   'audio-file':          AudioFileValueRenderer,

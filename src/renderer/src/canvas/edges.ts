@@ -78,7 +78,7 @@ export function bezierControls(
   // 不按 dx 或 dy 单独算——因为端口方向可能不同（右 + 上），
   // 用总距离的比例更统一，曲线形状自然
   const dist = Math.hypot(to.x - from.x, to.y - from.y)
-  const handleLength = Math.max(dist * 0.3, minHandle)
+  const handleLength = Math.min(Math.max(dist * 0.3, minHandle), 300)
 
   const dFrom = SIDE_DIRECTION[fromSide]
   const dTo = SIDE_DIRECTION[toSide]
@@ -109,16 +109,54 @@ export function bezierPath(
   }
 ): string {
   const { c1, c2 } = bezierControls(from, to, opts)
-  // if (opts?.toType === 'wire') {
+  // if (opts?.toType === 'wire' && opts?.fromType === 'wire') {
+  //   return `M ${from.x} ${from.y} L ${to.x} ${to.y}`
+  // } else if (opts?.toType === 'wire') {
   //   return `M ${from.x} ${from.y} Q ${c1.x} ${c1.y}, ${to.x} ${to.y}`
+  // } else if (opts?.fromType === 'wire') {
+  //   return `M ${from.x} ${from.y} Q ${c2.x} ${c2.y}, ${to.x} ${to.y}`
+  // } else {
+  //   return `M ${from.x} ${from.y} C ${c1.x} ${c1.y}, ${c2.x} ${c2.y}, ${to.x} ${to.y}`
   // }
   return `M ${from.x} ${from.y} C ${c1.x} ${c1.y}, ${c2.x} ${c2.y}, ${to.x} ${to.y}`
 }
 
 /** 三次贝塞尔曲线的中点（参数 t=0.5） */
-export function bezierMid(from: Vec2, to: Vec2, opts?: { fromSide?: PortSide; toSide?: PortSide; minHandle?: number }): Vec2 {
+export function bezierMid(
+  from: Vec2,
+  to: Vec2,
+  opts?: {
+    fromSide?: PortSide;
+    toSide?: PortSide;
+    minHandle?: number;
+    fromType: string;
+    toType: string;
+  }): Vec2 {
   const { c1, c2 } = bezierControls(from, to, opts)
-  // t=0.5 时：P = 0.125*from + 0.375*c1 + 0.375*c2 + 0.125*to
+  // if (opts?.toType === 'wire' && opts?.fromType === 'wire') {
+  //   return {
+  //     x: 0.5 * from.x + 0.5 * to.x,
+  //     y: 0.5 * from.y + 0.5 * to.y
+  //   }
+  // } else if (opts?.toType === 'wire') {
+  //   // 二次贝塞尔 t=0.5：P = 0.25*from + 0.5*c1 + 0.25*to
+  //   return {
+  //     x: 0.25 * from.x + 0.5 * c1.x + 0.25 * to.x,
+  //     y: 0.25 * from.y + 0.5 * c1.y + 0.25 * to.y
+  //   }
+  // } else if (opts?.fromType === 'wire') {
+  //   return {
+  //     x: 0.25 * from.x + 0.5 * c2.x + 0.25 * to.x,
+  //     y: 0.25 * from.y + 0.5 * c2.y + 0.25 * to.y
+  //   }
+  // } else {
+  //   // 三次贝塞尔 t=0.5：P = 0.125*from + 0.375*c1 + 0.375*c2 + 0.125*to
+  //   return {
+  //     x: 0.125 * from.x + 0.375 * c1.x + 0.375 * c2.x + 0.125 * to.x,
+  //     y: 0.125 * from.y + 0.375 * c1.y + 0.375 * c2.y + 0.125 * to.y
+  //   }
+  // }
+  // 三次贝塞尔 t=0.5：P = 0.125*from + 0.375*c1 + 0.375*c2 + 0.125*to
   return {
     x: 0.125 * from.x + 0.375 * c1.x + 0.375 * c2.x + 0.125 * to.x,
     y: 0.125 * from.y + 0.375 * c1.y + 0.375 * c2.y + 0.125 * to.y
@@ -165,7 +203,11 @@ function portAnchor(node: Node, port: OutputPort | InputPort, side: PortSide): V
   const minimizedBox = (node as unknown as { minimized?: boolean }).minimized ? undefined : node.box
   const box = measureNodeBox(node.id, node.worldPosition, minimizedBox)
   if (side === 'out') {
-    return { x: box.x + box.width, y: box.y + box.height / 2 }
+    if (node.type === 'wire') {
+      return { x: 0, y: 0 }
+    } else {
+      return { x: box.x + box.width, y: box.y + box.height / 2 }
+    }
   } else if (side === 'method') {
     // 底部方法端口兜底：卡片底部中点
     return { x: box.x + box.width / 2, y: box.y + box.height }
@@ -190,7 +232,7 @@ export function edgeGeometry(scene: Scene, edge: Edge): EdgeGeometry | undefined
     edge,
     from,
     to,
-    mid: bezierMid(from, to, { fromSide, toSide: endSide }),
+    mid: bezierMid(from, to, { fromSide, toSide: endSide, fromType: startNode.type || '', toType: endNode.type || '' }),
     fromSide,
     toSide: endSide,
     fromType: edge.startPort.getOwner()?.type || '',

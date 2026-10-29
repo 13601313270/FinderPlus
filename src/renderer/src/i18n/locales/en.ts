@@ -163,6 +163,7 @@ const en: Language = {
     'pdf-file': 'PDF File',
     'audio-file': 'Audio File',
     'video-file': 'Video File',
+    'html-file': 'HTML File',
     'img-file-collection': 'Image Collection'
   },
   intro: {

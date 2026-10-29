@@ -140,6 +140,7 @@ const ja: Language = {
     'pdf-file': 'PDFファイル',
     'audio-file': '音声ファイル',
     'video-file': 'Video File',
+    'html-file': 'HTMLファイル',
     'img-file-collection': '画像コレクション'
   },
   intro: {

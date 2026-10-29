@@ -140,6 +140,7 @@ const es: Language = {
     'pdf-file': 'Archivo PDF',
     'audio-file': 'Archivo de audio',
     'video-file': 'Video File',
+    'html-file': 'Archivo HTML',
     'img-file-collection': 'Colección de imágenes'
   },
   intro: {

@@ -140,6 +140,7 @@ const ar: Language = {
     'pdf-file': 'PDF ملف',
     'audio-file': 'ملف صوت',
     'video-file': 'Video File',
+    'html-file': 'ملف HTML',
     'img-file-collection': 'مجموعة الصور'
   },
   intro: {

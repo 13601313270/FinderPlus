@@ -30,6 +30,7 @@ export const BUILTIN_VALUE_KINDS = [
   'json',
   'file',
   'txt-file',
+  'html-file',
   'img-file',
   'pdf-file',
   'audio-file',

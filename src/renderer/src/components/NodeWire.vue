@@ -34,7 +34,7 @@ const emit = defineEmits<{
   (e: 'contextmenu', nodeId: string, clientX: number, clientY: number): void
 }>()
 
-const { position, box, accepted, nodeState, dirtyInputPortIds, minimized, startDrag } = useNodePosition(() => props.node)
+const { position, box, accepted, nodeState, dirtyInputPortIds, minimized, displayName, startDrag } = useNodePosition(() => props.node)
 
 // 把 startDrag + box 传给 NodeHeader（render.vue 里不用再各自调 useNodePosition）
 provide('nodeStartDrag', startDrag)
@@ -42,6 +42,8 @@ provide('nodeBox', box)
 // 最小化：NodeHeader 的按钮读状态 + 触发切换
 provide('nodeMinimized', minimized)
 provide('toggleNodeMinimize', () => props.node.toggleMinimized?.())
+// 显示名称：NodeHeader 标题右侧展示
+provide('nodeDisplayName', displayName)
 
 // 外壳根元素登记进测量注册表
 const shellEl = nodeElementRef(props.node.id)

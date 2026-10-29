@@ -29,6 +29,8 @@ export interface NodeLike {
   readonly minimized?: boolean
   /** 切换最小化状态 */
   toggleMinimized?: () => void
+  /** 节点显示名称（用户在详情面板输入的自定义名称） */
+  readonly displayName?: string
 }
 
 /**
@@ -118,6 +120,8 @@ export interface NodePositionView {
   readonly dirtyInputPortIds: Ref<ReadonlySet<string>>
   /** 节点是否最小化，NodeHeader 的按钮据此切换图标/文案 */
   readonly minimized: Ref<boolean>
+  /** 节点显示名称（用户自定义），NodeHeader 标题右侧显示 */
+  readonly displayName: Ref<string>
   /** 接到拖拽手柄的 pointerdown 上 */
   startDrag(e: PointerEvent): void
 }
@@ -143,6 +147,7 @@ export function useNodePosition(
   const nodeState = ref<NodeState>('stable')
   const dirtyInputPortIds = ref<ReadonlySet<string>>(new Set())
   const minimized = ref<boolean>(false)
+  const displayName = ref<string>('')
 
   let lastNode: NodeLike | undefined
   let unsubscribe: (() => void) | undefined
@@ -167,6 +172,7 @@ export function useNodePosition(
       nodeState.value = lastNode.state
       dirtyInputPortIds.value = lastNode.getDirtyInputPortIds?.() ?? new Set()
       minimized.value = !!lastNode.minimized
+      displayName.value = lastNode.displayName ?? ''
     }
   }
 
@@ -253,5 +259,5 @@ export function useNodePosition(
     window.addEventListener('pointerup', end)
   }
 
-  return { position, box, accepted, nodeState, dirtyInputPortIds, minimized, startDrag }
+  return { position, box, accepted, nodeState, dirtyInputPortIds, minimized, displayName, startDrag }
 }

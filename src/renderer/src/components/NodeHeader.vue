@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { inject, ref, type Ref } from 'vue'
+import { inject, ref, type ComputedRef, type Ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 /**
@@ -60,6 +60,9 @@ const injectedDrag = inject<(e: PointerEvent) => void>('nodeStartDrag')
 const nodeMinimized = inject<Ref<boolean>>('nodeMinimized', ref(false))
 const toggleNodeMinimize = inject<() => void>('toggleNodeMinimize', () => {})
 
+// 显示名称：由 NodeShell provide；空字符串时不显示
+const nodeDisplayName = inject<ComputedRef<string> | Ref<string>>('nodeDisplayName', ref(''))
+
 /** 最终生效的拖拽处理器：显式传入优先，否则用注入的 */
 const effectiveDrag = (e: PointerEvent) => {
   const h = props.dragHandler ?? injectedDrag
@@ -84,7 +87,10 @@ const effectiveHelpTitle = () => props.helpTitle ?? t('nodeHeader.helpTitle')
     }"
     @pointerdown="effectiveDrag"
   >
-    <span class="node-header__handle" :title="effectiveTitleHint()">{{ title }}</span>
+    <span class="node-header__handle" :title="effectiveTitleHint()">
+      <span class="node-header__title">{{ title }}</span>
+      <span v-if="nodeDisplayName" class="node-header__display-name">· {{ nodeDisplayName }}</span>
+    </span>
     <div class="node-header__actions">
       <slot name="actions" />
       <button
@@ -126,6 +132,24 @@ const effectiveHelpTitle = () => props.helpTitle ?? t('nodeHeader.helpTitle')
     flex: 1; // 撑满空间，让 actions 靠右
     cursor: grab;
     user-select: none;
+    text-wrap: nowrap;
+    overflow: hidden;
+    min-width: 0; // 让子 span 能 overflow ellipsis
+
+    &__title {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    &__display-name {
+      font-size: 12px;
+      // color: @color-text-strong;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
   }
 
   &__actions {

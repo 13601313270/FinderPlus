@@ -273,6 +273,8 @@ export class ImageCompressNode extends Node {
   }
 
   readState(state: Record<string, unknown>): void {
+    super.readState(state)
+
     // 只恢复格式偏好——压缩结果等用户再拖一次 / 上游值变化
     if (state.format === 'jpg' || state.format === 'png') this.format = state.format
   }

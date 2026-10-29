@@ -479,6 +479,8 @@ export class BrowserNode extends Node {
   }
 
   readState(state: Record<string, unknown>): void {
+    super.readState(state)
+
     if (typeof state.homeUrl === 'string') {
       this.homeUrl = state.homeUrl.slice(0, MAX_URL_LEN)
     }

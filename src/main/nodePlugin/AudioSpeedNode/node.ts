@@ -183,6 +183,8 @@ export class AudioSpeedNode extends Node {
   }
 
   readState(state: Record<string, unknown>): void {
+    super.readState(state)
+
     if (typeof state.speed === 'number') {
       this.speedValue = Math.round(
         Math.max(MIN_SPEED, Math.min(MAX_SPEED, state.speed)) * 100

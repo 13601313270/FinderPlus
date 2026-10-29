@@ -562,6 +562,8 @@ export class RadioNode extends Node {
   }
 
   readState(state: Record<string, unknown>): void {
+    super.readState(state)
+
     if (typeof state.kind === 'string' && ALL_KINDS.includes(state.kind as RadioValueKind)) {
       this.kind = state.kind as RadioValueKind
     }

@@ -643,13 +643,19 @@ export abstract class Node {
   /**
    * 从 saveState 返回的 plain object 里恢复节点内部状态。
    *
+   * displayName 是基类通用字段，这里自动恢复。子类 override 时应当先调 super.readState(state)
+   * 再读自己的字段，避免丢掉 displayName 的恢复。
+   *
    * 实现时要考虑：
    * - 字段可能缺失（老版本存的数据），要给默认值或做类型守卫；
    * - 恢复源头节点的值时**应该触发输出 commit**——下游需要收到值才能正常显示；
    * - 恢复展示/计算节点的值通常是冗余的（连好边后上游 commit 会自动刷新），
    *   但写进去可以让「断开状态下也能看到上次结果」。
    */
-  abstract readState(state: Record<string, unknown>): void
+  readState(state: Record<string, unknown>): void {
+    const name = typeof state.displayName === 'string' ? state.displayName : ''
+    this.setDisplayName(name)
+  }
 
   /**
    * 节点就绪钩子，异步。画布启动时由 bootstrapScene 在 addNode + readState + connect 全部完成后

@@ -638,6 +638,8 @@ export class TTSNode extends Node {
   }
 
   readState(state: Record<string, unknown>): void {
+    super.readState(state)
+
     // provider：有存就用存的；没有存（兼容旧数据），根据 model 反推
     const storedProvider = state.provider as TtsProviderId | undefined
     if (storedProvider === 'dashscope' || storedProvider === 'tokenplan') {

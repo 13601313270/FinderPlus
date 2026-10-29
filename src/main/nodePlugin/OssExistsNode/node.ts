@@ -203,6 +203,8 @@ export class OssExistsNode extends Node {
   }
 
   readState(state: Record<string, unknown>): void {
+    super.readState(state)
+
     if (typeof state.accessKeyId === 'string') this.accessKeyId = state.accessKeyId
     if (typeof state.accessKeySecret === 'string') this.accessKeySecret = state.accessKeySecret
     if (typeof state.region === 'string') this.region = state.region

@@ -198,6 +198,8 @@ export abstract class BufferNode extends Node {
   }
 
   readState(state: Record<string, unknown>): void {
+    super.readState(state)
+
     const kind = state.kind
     if (typeof kind === 'string' && ALL_KINDS.includes(kind as BufferKind) && kind !== this.kindValue) {
       this.kindValue = kind as BufferKind

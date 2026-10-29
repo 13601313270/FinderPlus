@@ -198,6 +198,8 @@ export class MergeNode extends Node {
   }
 
   readState(state: Record<string, unknown>): void {
+    super.readState(state)
+
     // 先处理 kind
     const kind = state.kind
     let kindChanged = false

@@ -480,6 +480,8 @@ export class CrawlerNode extends Node {
   }
 
   readState(state: Record<string, unknown>): void {
+    super.readState(state)
+
     if (typeof state.urlTemplate === 'string') this.urlTemplate = state.urlTemplate
     if (typeof state.selector === 'string') this.selector = state.selector
     if (typeof state.extractMode === 'string' && ALL_MODES.includes(state.extractMode as ExtractMode)) {

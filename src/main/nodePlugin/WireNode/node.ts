@@ -146,6 +146,8 @@ export class WireNode extends Node {
   }
 
   readState(_state: Record<string, unknown>): void {
+    super.readState(_state)
+
     // 端口在构造函数里已经建好了，边接上后上游类型一来就会对齐
   }
 }

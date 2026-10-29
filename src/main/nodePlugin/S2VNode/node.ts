@@ -624,6 +624,8 @@ export class S2VNode extends Node {
   }
 
   readState(state: Record<string, unknown>): void {
+    super.readState(state)
+
     if (typeof state.workspaceId === 'string') this.workspaceId = state.workspaceId.trim()
     if (typeof state.resolution === 'string' && RESOLUTIONS.includes(state.resolution as S2VResolution)) {
       this.resolution = state.resolution as S2VResolution

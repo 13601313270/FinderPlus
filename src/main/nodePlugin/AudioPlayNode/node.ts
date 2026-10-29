@@ -69,6 +69,8 @@ export class AudioPlayNode extends Node {
   }
 
   readState(state: Record<string, unknown>): void {
+    super.readState(state)
+
     const box = state.box as [number, number] | undefined
     if (box !== undefined) {
       this.setBox(Math.round(box[0]), Math.round(box[1]))

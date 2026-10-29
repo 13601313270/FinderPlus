@@ -216,6 +216,8 @@ export class ImageCropNode extends Node {
   }
 
   readState(state: Record<string, unknown>): void {
+    super.readState(state)
+
     const rect = state.cropRect as CropRect | null | undefined
     if (rect && typeof rect.x === 'number' && typeof rect.y === 'number'
       && typeof rect.w === 'number' && typeof rect.h === 'number') {

@@ -352,8 +352,7 @@ onUnmounted(() => {
 }
 
 .detail-display-name-input {
-  flex: 1;
-  min-width: 0;
+  min-width: 100px;
   height: 28px;
   padding: 0 10px;
   font-size: 13px;

@@ -238,6 +238,8 @@ export class TableNode extends Node {
   }
 
   readState(state: Record<string, unknown>): void {
+    super.readState(state)
+
     if (Array.isArray(state.columns)) {
       this.columns = state.columns.filter(
         (c: unknown) => typeof c === 'object' && c !== null && typeof (c as ColumnDef).name === 'string'

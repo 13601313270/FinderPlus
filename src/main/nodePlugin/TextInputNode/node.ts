@@ -183,6 +183,8 @@ export class TextInputNode extends Node {
   }
 
   readState(state: Record<string, unknown>): void {
+    super.readState(state)
+
     if (state.autoSend === true) {
       this.autoSend = true
     }

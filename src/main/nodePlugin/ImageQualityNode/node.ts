@@ -235,6 +235,8 @@ export class ImageQualityNode extends Node {
   }
 
   readState(state: Record<string, unknown>): void {
+    super.readState(state)
+
     const q = state.quality
     if (typeof q === 'number' && Number.isFinite(q)) {
       this.quality = Math.min(100, Math.max(1, Math.round(q)))

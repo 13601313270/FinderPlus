@@ -87,6 +87,8 @@ export class NotifyNode extends Node {
   }
 
   readState(_state: Record<string, unknown>): void {
+    super.readState(_state)
+
     // 无配置项需要恢复
   }
 }

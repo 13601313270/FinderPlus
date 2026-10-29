@@ -225,6 +225,8 @@ export class DelayNode extends Node {
   }
 
   readState(state: Record<string, unknown>): void {
+    super.readState(state)
+
     if (typeof state.delayMs === 'number') {
       this.delayMs = Math.max(MIN_DELAY_MS, Math.min(MAX_DELAY_MS, Math.round(state.delayMs)))
     }

@@ -255,6 +255,7 @@ export abstract class FileNode extends Node {
   }
 
   readState(state: Record<string, unknown>): void {
+    super.readState(state)
     const name = typeof state.fileName === 'string' ? state.fileName : ''
     if (!name) return
     // 只恢复文件名和大小；内容由子类 onReady / reloadFileContent 从磁盘补读

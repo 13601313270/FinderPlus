@@ -192,6 +192,7 @@ function onContextMenu(e: MouseEvent): void {
 
     <!-- 中间内容区：最小化 → 80×80 图标 + 还原按钮；正常态 → node-body + render.vue -->
     <template v-if="minimized">
+      <div v-if="displayName" class="node-minimized-name">{{ displayName }}</div>
       <div class="node-minimized-icon" :style="minimizedSizeStyle" @pointerdown="startDrag">
         <!-- 还原按钮：最小化时 NodeHeader 被隐藏了，这里叠一个小号还原入口 -->
         <button class="node-minimized-icon__restore" type="button" title="还原" @pointerdown.stop
@@ -460,5 +461,20 @@ function onContextMenu(e: MouseEvent): void {
     color: #9ca3af;
     letter-spacing: 1px;
   }
+}
+
+.node-minimized-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #000000;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 4px;
+  position: absolute;
+  background: #ffffff52;
+  top: -22px;
+  transform: translateX(calc(-50% + 40px));
 }
 </style>

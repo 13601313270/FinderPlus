@@ -35,7 +35,11 @@ export const connectionDrag = reactive({
   /** 候选端口的 side（命中时才有；悬空或没命中端口时默认 'in'） */
   targetSide: 'in' as 'in' | 'method',
   /** 候选端口接不接得上（引擎的判定结果），接不上时预览线画成红的 */
-  targetOk: false
+  targetOk: false,
+  /** 起点端口类型（用于画曲线时决定控制点方向） */
+  fromType: '',
+  /** 终点端口类型（用于画曲线时决定控制点方向） */
+  toType: ''
 })
 
 /**

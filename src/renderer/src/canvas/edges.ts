@@ -30,6 +30,10 @@ export interface EdgeGeometry {
   readonly fromSide: PortSide
   /** 终点端口 side（用于画曲线时决定控制点方向） */
   readonly toSide: PortSide
+  /** 起点端口类型（用于画曲线时决定控制点方向） */
+  readonly fromType: string
+  /** 终点端口类型（用于画曲线时决定控制点方向） */
+  readonly toType: string
 }
 
 /** 主画布贝塞尔的控制距离下限：节点挨太近时曲线也能看出弧度 */
@@ -66,9 +70,9 @@ export function bezierControls(
     minHandle?: number
   }
 ): { c1: Vec2; c2: Vec2 } {
-  const fromSide = opts?.fromSide ?? 'out'
-  const toSide = opts?.toSide ?? 'in'
-  const minHandle = opts?.minHandle ?? BEZIER_HANDLE_MIN
+  const fromSide: PortSide = opts?.fromSide ?? 'out'
+  const toSide: PortSide = opts?.toSide ?? 'in'
+  const minHandle: number = opts?.minHandle ?? BEZIER_HANDLE_MIN
 
   // 控制距离：两端点欧氏距离的 30%，下限 minHandle
   // 不按 dx 或 dy 单独算——因为端口方向可能不同（右 + 上），
@@ -78,15 +82,33 @@ export function bezierControls(
 
   const dFrom = SIDE_DIRECTION[fromSide]
   const dTo = SIDE_DIRECTION[toSide]
+  // sadf
 
   return {
-    c1: { x: from.x + dFrom.dx * handleLength, y: from.y + dFrom.dy * handleLength },
-    c2: { x: to.x + dTo.dx * handleLength,       y: to.y + dTo.dy * handleLength }
+    c1: {
+      x: from.x + dFrom.dx * handleLength,
+      y: from.y + dFrom.dy * handleLength
+    },
+    c2: {
+      x: to.x + dTo.dx * handleLength,
+      y: to.y + dTo.dy * handleLength
+    }
   }
 }
 
 /** 生成三次贝塞尔曲线的 SVG d 属性 */
-export function bezierPath(from: Vec2, to: Vec2, opts?: { fromSide?: PortSide; toSide?: PortSide; minHandle?: number }): string {
+export function bezierPath(
+  from: Vec2,
+  to: Vec2,
+  opts?: {
+    fromSide?: PortSide;
+    toSide?: PortSide;
+    fromType: string;
+    toType: string;
+    minHandle?: number
+  }
+): string {
+  console.log('sssss', opts?.fromType, opts?.toType)
   const { c1, c2 } = bezierControls(from, to, opts)
   return `M ${from.x} ${from.y} C ${c1.x} ${c1.y}, ${c2.x} ${c2.y}, ${to.x} ${to.y}`
 }
@@ -168,7 +190,9 @@ export function edgeGeometry(scene: Scene, edge: Edge): EdgeGeometry | undefined
     to,
     mid: bezierMid(from, to, { fromSide, toSide: endSide }),
     fromSide,
-    toSide: endSide
+    toSide: endSide,
+    fromType: edge.startPort.getOwner()?.type || '',
+    toType: edge.endPort.getOwner()?.type || ''
   }
 }
 

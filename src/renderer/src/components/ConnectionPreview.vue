@@ -25,7 +25,7 @@ const line = computed(() => {
   const to = { x: connectionDrag.toClient.x - rect.left, y: connectionDrag.toClient.y - rect.top }
 
   return {
-    d: bezierPath(from, to, { fromSide: 'out', toSide: connectionDrag.targetSide })
+    d: bezierPath(from, to, { fromSide: 'out', toSide: connectionDrag.targetSide, fromType: connectionDrag.fromType, toType: connectionDrag.toType })
   }
 })
 

@@ -113,7 +113,7 @@ function removeEdge(edge: Edge): void {
       :key="`line-${keyOf(line.edge)}`"
       class="edges__line"
       :class="{ error: line.edge.state === 'error' }"
-      :d="bezierPath(line.from, line.to, { fromSide: line.fromSide, toSide: line.toSide })"
+      :d="bezierPath(line.from, line.to, { fromSide: line.fromSide, toSide: line.toSide, fromType: line.fromType, toType: line.toType })"
     />
   </svg>
 

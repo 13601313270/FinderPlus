@@ -39,12 +39,22 @@ const en: Language = {
 
     // Sidebar groups
     groupGeneral: 'General',
+    groupAppearance: 'Appearance',
     groupLLM: 'LLM Settings',
     groupImage: 'Image Generation',
 
     groupNodes: 'Node Palette',
 
     groupCanvases: "My Canvases",
+
+    // Appearance / theme settings
+    appearanceTitle: 'Canvas Appearance Theme',
+    appearanceHint: 'Customize the canvas background, grid dots, edge lines and node border colors. Changes take effect immediately and are saved automatically.',
+    themeCanvasBg: 'Canvas background',
+    themeCanvasDot: 'Grid dot color',
+    themeEdgeLine: 'Edge line color',
+    themeNodeBorder: 'Node border color',
+    themeReset: 'Reset to defaults',
 
     // LLM / Image section titles and hints (previously hardcoded)
     llmTitle: 'LLM API Key',

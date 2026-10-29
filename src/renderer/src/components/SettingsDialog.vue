@@ -18,6 +18,7 @@ import {
 } from '../../../main/nodePlugin/ImageGenNode/providers'
 import { useImageSettings } from '@renderer/composables/useImageSettings'
 import { usePaletteSettings } from '@renderer/composables/usePaletteSettings'
+import { useThemeSettings } from '@renderer/composables/useThemeSettings'
 import {
   useBrowserIdentities,
   type BrowserIdentity
@@ -52,6 +53,7 @@ const {
   clearKey: clearImageKey
 } = useImageSettings()
 const { hiddenTypes, toggleHidden, showAll } = usePaletteSettings()
+const { theme, resetTheme } = useThemeSettings()
 const {
   identities: browserIdentities,
   add: addBrowserIdentity,
@@ -60,7 +62,7 @@ const {
 } = useBrowserIdentities()
 
 /** 左侧选中的分类 */
-type SectionKey = 'general' | 'llm' | 'image' | 'nodes' | 'canvases' | 'browser'
+type SectionKey = 'general' | 'appearance' | 'llm' | 'image' | 'nodes' | 'browser' | 'canvases'
 const activeSection = ref<SectionKey>('general')
 
 /** 各 provider API Key 是否以明文显示 */
@@ -74,16 +76,17 @@ function toggleImageKeyVisible(key: string): void {
   imageKeyVisible.value[key] = !imageKeyVisible.value[key]
 }
 
-const SECTION_ORDER: SectionKey[] = ['general', 'llm', 'image', 'nodes', 'browser', 'canvases']
+const SECTION_ORDER: SectionKey[] = ['general', 'appearance', 'llm', 'image', 'nodes', 'browser', 'canvases']
 
 function sectionLabel(key: SectionKey): string {
   switch (key) {
-    case 'general':   return t('settingsDialog.groupGeneral')
-    case 'llm':       return t('settingsDialog.groupLLM')
-    case 'image':     return t('settingsDialog.groupImage')
-    case 'nodes':     return t('settingsDialog.groupNodes')
-    case 'browser':   return t('settingsDialog.groupBrowser')
-    case 'canvases':  return t('settingsDialog.groupCanvases')
+    case 'general':    return t('settingsDialog.groupGeneral')
+    case 'appearance': return t('settingsDialog.groupAppearance')
+    case 'llm':        return t('settingsDialog.groupLLM')
+    case 'image':      return t('settingsDialog.groupImage')
+    case 'nodes':      return t('settingsDialog.groupNodes')
+    case 'browser':    return t('settingsDialog.groupBrowser')
+    case 'canvases':   return t('settingsDialog.groupCanvases')
   }
 }
 
@@ -641,6 +644,88 @@ async function onDeleteCanvas(id: string, name: string): Promise<void> {
                     @click="handleClearCanvas"
                   >{{ t('settingsDialog.clearButton') }}</button>
                   <span v-if="canvasIsEmpty" class="gs-clear__empty">{{ t('settingsDialog.clearAlreadyEmpty') }}</span>
+                </div>
+              </section>
+            </template>
+
+            <!-- ========== 外观 ========== -->
+            <template v-if="activeSection === 'appearance'">
+              <section class="gs-section">
+                <h4 class="gs-section__title">{{ t('settingsDialog.appearanceTitle') }}</h4>
+                <p class="gs-section__hint">{{ t('settingsDialog.appearanceHint') }}</p>
+
+                <div class="gs-theme__grid">
+                  <label class="gs-theme__item">
+                    <span class="gs-theme__label">{{ t('settingsDialog.themeCanvasBg') }}</span>
+                    <div class="gs-theme__picker-wrap">
+                      <input
+                        type="color"
+                        class="gs-theme__picker"
+                        v-model="theme.canvasBg"
+                      />
+                      <input
+                        type="text"
+                        class="gs-theme__hex"
+                        v-model="theme.canvasBg"
+                      />
+                    </div>
+                  </label>
+
+                  <label class="gs-theme__item">
+                    <span class="gs-theme__label">{{ t('settingsDialog.themeCanvasDot') }}</span>
+                    <div class="gs-theme__picker-wrap">
+                      <input
+                        type="color"
+                        class="gs-theme__picker"
+                        v-model="theme.canvasDot"
+                      />
+                      <input
+                        type="text"
+                        class="gs-theme__hex"
+                        v-model="theme.canvasDot"
+                      />
+                    </div>
+                  </label>
+
+                  <label class="gs-theme__item">
+                    <span class="gs-theme__label">{{ t('settingsDialog.themeEdgeLine') }}</span>
+                    <div class="gs-theme__picker-wrap">
+                      <input
+                        type="color"
+                        class="gs-theme__picker"
+                        v-model="theme.edgeLine"
+                      />
+                      <input
+                        type="text"
+                        class="gs-theme__hex"
+                        v-model="theme.edgeLine"
+                      />
+                    </div>
+                  </label>
+
+                  <label class="gs-theme__item">
+                    <span class="gs-theme__label">{{ t('settingsDialog.themeNodeBorder') }}</span>
+                    <div class="gs-theme__picker-wrap">
+                      <input
+                        type="color"
+                        class="gs-theme__picker"
+                        v-model="theme.nodeBorder"
+                      />
+                      <input
+                        type="text"
+                        class="gs-theme__hex"
+                        v-model="theme.nodeBorder"
+                      />
+                    </div>
+                  </label>
+                </div>
+
+                <div class="gs-transfer__actions" style="margin-top: 12px;">
+                  <button
+                    class="gs-btn"
+                    type="button"
+                    @click="resetTheme"
+                  >{{ t('settingsDialog.themeReset') }}</button>
                 </div>
               </section>
             </template>
@@ -1574,6 +1659,77 @@ async function onDeleteCanvas(id: string, name: string): Promise<void> {
         color: #b91c1c;
         border-color: #fecaca;
       }
+    }
+  }
+}
+
+// —— 外观主题设置 ——
+.gs-theme {
+  &__grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  &__item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 14px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background: #f9fafb;
+    cursor: default;
+  }
+
+  &__label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #374151;
+    flex-shrink: 0;
+  }
+
+  &__picker-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  &__picker {
+    width: 32px;
+    height: 28px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    cursor: pointer;
+    padding: 2px;
+    background: #fff;
+
+    &::-webkit-color-swatch-wrapper {
+      padding: 0;
+    }
+    &::-webkit-color-swatch {
+      border: none;
+      border-radius: 4px;
+    }
+  }
+
+  &__hex {
+    width: 90px;
+    padding: 4px 8px;
+    font-size: 12px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    outline: none;
+    background: #fff;
+    color: #374151;
+    text-transform: uppercase;
+
+    &:focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
     }
   }
 }

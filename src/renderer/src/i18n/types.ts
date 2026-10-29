@@ -64,6 +64,15 @@ export type Language = {
     groupImage: string
     groupNodes: string
     groupCanvases: string
+    /** 外观主题设置 */
+    groupAppearance: string
+    appearanceTitle: string
+    appearanceHint: string
+    themeCanvasBg: string
+    themeCanvasDot: string
+    themeEdgeLine: string
+    themeNodeBorder: string
+    themeReset: string
     /** LLM / 文生图 section 标题与提示（原硬编码） */
     llmTitle: string
     llmHint: string

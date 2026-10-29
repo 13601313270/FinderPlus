@@ -1548,8 +1548,8 @@ onUnmounted(() => {
     overflow: hidden;
     cursor: grab;
     touch-action: none; // 阻止触摸默认滚动/缩放，让 pointer 事件接管平移
-    background-color: #f6faff;
-    background-image: radial-gradient(circle, #cfd4dc 1px, transparent 1px);
+    background-color: var(--theme-canvas-bg);
+    background-image: radial-gradient(circle, var(--theme-canvas-dot) 1px, transparent 1px);
     background-repeat: repeat;
 
     &:active {

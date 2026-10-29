@@ -498,7 +498,7 @@ onUnmounted(() => {
 
   &__edge {
     fill: none;
-    stroke: @color-edge;
+    stroke: var(--theme-edge-line);
     stroke-width: 1;
   }
 
@@ -552,7 +552,7 @@ onUnmounted(() => {
     width: 26px;
     height: 26px;
     padding: 0;
-    border: 1px solid @node-border-color;
+    border: 1px solid var(--theme-node-border);
     border-radius: 6px;
     background: @color-surface;
     color: @color-text;
@@ -577,7 +577,7 @@ onUnmounted(() => {
     margin-left: auto;
     height: 26px;
     padding: 0 8px;
-    border: 1px solid @node-border-color;
+    border: 1px solid var(--theme-node-border);
     border-radius: 6px;
     background: @color-surface;
     color: @color-text;

@@ -354,7 +354,7 @@ function onContextMenu(e: MouseEvent): void {
   box-shadow: 0 0 17px 0px rgb(0 0 0 / 25%);
   background: @color-surface;
   position: relative; // loading 覆层绝对定位的参照
-  border: 1px solid #a4aab3;
+  border: 1px solid var(--theme-node-border);
   // border: 1px solid red;
   border-radius: 8px;
 }
@@ -368,6 +368,7 @@ function onContextMenu(e: MouseEvent): void {
   align-items: center;
   justify-content: center;
   gap: 8px;
+  border-radius: 8px;
   z-index: 10; // 盖在 render.vue 之上
   pointer-events: none; // 不拦截交互：节点自己会按 status 禁用/启用按钮
   display: flex;
@@ -407,7 +408,7 @@ function onContextMenu(e: MouseEvent): void {
   box-sizing: border-box;
   box-shadow: 0 0 17px 0px rgb(0 0 0 / 25%);
   background: @color-surface;
-  border: 1px solid #a4aab3;
+  border: 2px solid var(--theme-node-border);
   border-radius: 8px;
   display: flex;
   align-items: center;
@@ -427,7 +428,7 @@ function onContextMenu(e: MouseEvent): void {
     justify-content: center;
     border-radius: 50%;
     background: #f3f4f6;
-    border: 1px solid #a4aab3;
+    border: 1px solid var(--theme-node-border);
     color: #6b7280;
     font-size: 12px;
     line-height: 1;

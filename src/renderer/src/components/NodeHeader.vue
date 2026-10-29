@@ -110,7 +110,7 @@ const effectiveHelpTitle = () => props.helpTitle ?? t('nodeHeader.helpTitle')
 .node-header {
   position: relative;
   display: flex;
-  border-bottom: 1px dashed @node-border-color;
+  border-bottom: 1px dashed var(--theme-node-border);
   cursor: grab;
   user-select: none;
   flex-shrink: 0;

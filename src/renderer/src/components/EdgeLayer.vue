@@ -152,7 +152,7 @@ function removeEdge(edge: Edge): void {
 
   &__line {
     fill: none;
-    stroke: @color-edge;
+    stroke: var(--theme-edge-line);
     stroke-width: 2;
     stroke-linecap: round;
 
@@ -172,7 +172,7 @@ function removeEdge(edge: Edge): void {
     // 让圆心落在连线中点上（世界坐标）。这里只做居中，不再乘 1/scale 补偿缩放
     transform: translate(-50%, -50%);
     padding: 0;
-    border: 1px solid @node-border-color;
+    border: 1px solid var(--theme-node-border);
     border-radius: 50%;
     background: @color-surface;
     color: @color-text-weak;

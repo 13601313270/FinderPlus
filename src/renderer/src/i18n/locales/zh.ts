@@ -44,12 +44,22 @@ const zh: Language = {
 
     // 侧边栏分类
     groupGeneral: '通用',
+    groupAppearance: '外观',
     groupLLM: '大语言模型设置',
     groupImage: '生图模型',
 
     groupNodes: '节点调色板',
 
     groupCanvases: "我的画布",
+
+    // 外观主题设置
+    appearanceTitle: '画布外观主题',
+    appearanceHint: '自定义画布背景、连线和节点边框的颜色。修改后即时生效并自动保存。',
+    themeCanvasBg: '画布背景色',
+    themeCanvasDot: '背景点点色',
+    themeEdgeLine: '连线颜色',
+    themeNodeBorder: '节点边框颜色',
+    themeReset: '恢复默认配色',
 
     // LLM / 文生图 section 标题与提示（原硬编码）
     llmTitle: '大语言模型 API Key',

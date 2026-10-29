@@ -108,8 +108,10 @@ export function bezierPath(
     minHandle?: number
   }
 ): string {
-  console.log('sssss', opts?.fromType, opts?.toType)
   const { c1, c2 } = bezierControls(from, to, opts)
+  // if (opts?.toType === 'wire') {
+  //   return `M ${from.x} ${from.y} Q ${c1.x} ${c1.y}, ${to.x} ${to.y}`
+  // }
   return `M ${from.x} ${from.y} C ${c1.x} ${c1.y}, ${c2.x} ${c2.y}, ${to.x} ${to.y}`
 }
 

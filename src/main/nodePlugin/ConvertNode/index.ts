@@ -23,11 +23,14 @@ export const manifest: NodePluginManifest = {
     it: 'Converti'
   },
   render,
-  /** 转换图标：一个 T 型加箭头 */
+  /** 转换图标：圆（源类型）→ 方（目标类型）弯箭头 */
   iconPaths: [
-    'M4 7h16',
-    'M12 7v10',
-    'M9 14l3 3 3-3'
+    // 源类型：圆
+    'M8 4a4 4 0 1 0 0 8a4 4 0 1 0 0-8z',
+    // 目标类型：方
+    'M14 14h7v7h-7z',
+    // 弯箭头 + 箭头尖
+    'M11 11 Q 12.5 12 14 14 M12 13 L14 14 L13 12'
   ],
   category: 'text-data',
   platforms: ["mac"]

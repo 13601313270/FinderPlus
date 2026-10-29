@@ -67,7 +67,7 @@ const MIN_PORT_COUNT = 2
  * 中间这段时间渲染层读到 triggering=true，能在卡片内画"圆点从左飞到右"的动画。
  * 渲染层 animateMotion duration 必须和这里一致，视觉与语义才同步。
  */
-const ANIMATION_MS = 500
+const ANIMATION_MS = 300
 
 /**
  * PromiseAll 汇合节点：等所有 N 个输入端口都收到了值，才把它们同时 commit 到 N 个输出端口。
@@ -305,15 +305,17 @@ export class PromiseAllNode extends Node {
     }
 
     // 第三步：分发——桶里 ≥2 条走 EdgeBatch，1 条走单条路径
-    for (const [, group] of byOwner) {
-      if (group.edges.length >= 2) {
-        new EdgeBatch(group.edges).transferData(group.values, force)
-      } else {
-        const edge = group.edges[0]!
-        const value = group.values[0]!
-        edge.transferData(value, force)
+    setTimeout(() => {
+      for (const [, group] of byOwner) {
+        if (group.edges.length >= 2) {
+          new EdgeBatch(group.edges).transferData(group.values, force)
+        } else {
+          const edge = group.edges[0]!
+          const value = group.values[0]!
+          edge.transferData(value, force)
+        }
       }
-    }
+    }, ANIMATION_MS + 1)
   }
 
   /**

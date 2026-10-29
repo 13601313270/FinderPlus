@@ -35,7 +35,9 @@ export class Edge {
       return
     }
     this.state = 'normal'
-    this.endPort.receive(this, value, force)
+    setTimeout(() => {
+      this.endPort.receive(this, value, force)
+    }, 1)
   }
 
   // 把"清空值"信号从startPort传到endPort

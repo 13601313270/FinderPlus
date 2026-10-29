@@ -9,7 +9,7 @@ import { StringValue } from '../../engine/data/StringValue'
 import type { Value } from '../../engine/data/Value'
 import { InputPort } from '../../engine/port/InputPort'
 import { OutputPort } from '../../engine/port/OutputPort'
-import { Node } from '../../engine/node/Node'
+import { InputPortChangeSource, Node } from '../../engine/node/Node'
 import { inLabel, outLabel } from './i18n'
 
 /** 支持的转换目标类型 */
@@ -26,7 +26,7 @@ const TARGET_TO_CLASS: Record<ConvertTarget, ValueClass> = {
 }
 
 /** 通用 Value 子类类型（带静态 VALUE_NAME） */
-type ValueClass = { readonly VALUE_NAME: string; prototype: Value; new (...args: any[]): Value }
+type ValueClass = { readonly VALUE_NAME: string; prototype: Value; new(...args: any[]): Value }
 
 /** 所有接受的输入 Value 子类（FileValue 作为基类覆盖所有文件子类） */
 const ACCEPTS: ValueClass[] = [
@@ -101,7 +101,7 @@ export class ConvertNode extends Node {
 
   // —— 输入：对齐 + 转换 ——
 
-  inputPortReceiveValue(): void {
+  inputPortReceiveValue(ports: InputPort[], source: InputPortChangeSource): void {
     const hasEdges = this.inputPort.incomingEdgeCount > 0
     if (!hasEdges) {
       // 上游完全断开
@@ -112,7 +112,9 @@ export class ConvertNode extends Node {
       this.completeRun()
       return
     }
-    this.triggerConvert()
+    if (source === 'receive') {
+      this.triggerConvert()
+    }
   }
 
   /** 执行转换；内部区分同步/异步路径 */
@@ -122,6 +124,7 @@ export class ConvertNode extends Node {
     const [value] = this.inputPort.value
     if (value === undefined || value.isNull) {
       // 上游还没值 或 主动 null → 推送 null 目标值
+      console.trace('ccccc')
       this.outputPort.commit(this.makeNullValue(this.targetType))
       this.notifyChanged()
       this.completeRun()

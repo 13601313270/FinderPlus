@@ -33,14 +33,6 @@ const previewAudioUrl = ref<string | null>(null)
 const audioEl = ref<HTMLAudioElement | null>(null)
 let unsubscribe: (() => void) | undefined
 
-function onAudioLoaded(): void {
-  if (!audioEl.value) return
-  const d = audioEl.value.duration || 0
-  console.log('[TTS-render] loadedmetadata duration=', d, 'readyState=', audioEl.value.readyState, 'src=', audioEl.value.currentSrc?.slice(0, 60))
-  if (d > 0 && isFinite(d)) {
-    node.value?.commitDuration(Number(d.toFixed(3)))
-  }
-}
 function onAudioDurationChange(): void {
   console.log('[TTS-render] durationchange:', audioEl.value?.duration, 'readyState=', audioEl.value?.readyState)
 }
@@ -170,7 +162,6 @@ function onCancel(): void { node.value?.cancel() }
         :src="previewAudioUrl"
         controls
         preload="auto"
-        @loadedmetadata="onAudioLoaded"
         @durationchange="onAudioDurationChange"
         @error="onAudioError"
         @canplay="onAudioCanPlay"

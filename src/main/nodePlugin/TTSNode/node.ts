@@ -346,6 +346,7 @@ export class TTSNode extends Node {
       this.status = 'error'
       this.errorMessage = '请输入要合成的文本'
       this.errorOutput.commit(new StringValue(this.errorMessage))
+      this.failRun()
       this.notifyChanged()
       return
     }
@@ -354,6 +355,7 @@ export class TTSNode extends Node {
       this.status = 'error'
       this.errorMessage = '请先填写业务空间 ID（Workspace ID）——可在百炼控制台「业务空间」页面找到'
       this.errorOutput.commit(new StringValue(this.errorMessage))
+      this.failRun()
       this.notifyChanged()
       return
     }
@@ -374,6 +376,7 @@ export class TTSNode extends Node {
       this.status = 'idle'
       this.errorMessage = ''
       this.resultFile = null
+      this.failRun()
       this.notifyChanged()
     }
   }
@@ -384,6 +387,7 @@ export class TTSNode extends Node {
     const controller = new AbortController()
     this.abortController = controller
 
+    this.beginRun()
     this.status = 'loading'
     this.errorMessage = ''
     this.notifyChanged()
@@ -554,14 +558,27 @@ export class TTSNode extends Node {
       }
 
       // 5. commit
-      this.audioOutput.commit(new AudioFileValue(file, hash))
-      this.errorOutput.clear()
-      const duration = parseWavDuration(bytes)
-      console.log('[TTS] parseWavDuration result:', duration, 'format=', actualExt)
-      this.resultFile = file
-      this.resultHash = hash
-      this.status = 'done'
-      this.errorMessage = ''
+      const callBack = (duration: number) => {
+        this.errorOutput.clear()
+        this.audioOutput.commit(new AudioFileValue(file, hash))
+        console.log('11111', duration)
+        if (duration != null && duration > 0 && isFinite(duration)) {
+          this.durationOutput.commit(new NumberValue(Number(duration.toFixed(3))))
+        }
+        this.resultFile = file
+        this.resultHash = hash
+        this.status = 'done'
+        this.errorMessage = ''
+        if (this.requestId === myRequestId) this.completeRun()
+      }
+      const audioObj = new Audio();
+      audioObj.src = URL.createObjectURL(file);
+      audioObj.onloadedmetadata = () => {
+        const d = audioObj.duration || 0
+        if (d > 0 && isFinite(d)) {
+          callBack(Number(d.toFixed(3)))
+        }
+      }
     } catch (err) {
       if ((err as Error).name === 'AbortError') {
         this.status = 'idle'
@@ -584,6 +601,7 @@ export class TTSNode extends Node {
           }).catch(() => { /* noop */ })
         }
       }
+      if (this.requestId === myRequestId) this.failRun()
     } finally {
       if (this.abortController === controller) this.abortController = null
       if (this.requestId === myRequestId) this.notifyChanged()

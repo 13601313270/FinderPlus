@@ -94,7 +94,7 @@ watch([fileName, fileRevision], async ([newName]) => {
     if (mySeq !== seqCounter) return  // 过期结果，丢弃
 
     // 1. commit 端口（fileOutput + durationOutput）
-    node.setContent(b64)
+    // node.setContent(b64)
 
     // 2. 生成播放器用的 blob URL
     const mime = inferAudioMime(newName)
@@ -128,17 +128,6 @@ function refresh(): void {
   }
 }
 
-// —— 音频事件监听 ——
-function onAudioLoaded(): void {
-  if (!audioEl.value) return
-  const d = audioEl.value.duration || 0
-  duration.value = d
-  // 把真实时长回写到 durationOutput 端口（覆盖 setContent 里的 null 占位）
-  if (d > 0 && isFinite(d)) {
-    const node = fileNode.value
-    if (node) node.commitDuration(Number(d.toFixed(3)))
-  }
-}
 function onAudioTimeUpdate(): void {
   if (isSeeking.value || !audioEl.value) return
   currentTime.value = audioEl.value.currentTime
@@ -242,7 +231,7 @@ async function onSelectFile(): Promise<void> {
       <div class="af-filename" :title="fileName">{{ fileName }}</div>
 
       <div v-if="previewUrl" class="af-player">
-        <audio ref="audioEl" :src="previewUrl" preload="metadata" @loadedmetadata="onAudioLoaded"
+        <audio ref="audioEl" :src="previewUrl" preload="metadata"
           @timeupdate="onAudioTimeUpdate" @play="onAudioPlay" @pause="onAudioPause" @ended="onAudioEnded" />
         <button type="button" class="af-play-btn" :aria-label="isPlaying ? 'Pause' : 'Play'" @click.stop="togglePlay">
           <svg v-if="!isPlaying" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">

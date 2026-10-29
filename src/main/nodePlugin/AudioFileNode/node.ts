@@ -125,6 +125,18 @@ export class AudioFileNode extends FileNode {
     this.setBox(140, 150)
   }
 
+  /**
+   * 画布启动就绪时：先调基类注册文件系统监听，再主动读一次磁盘文件
+   * commit fileOutput——确保节点即使处于 minimized 状态（render.vue 不渲染、watch 不触发），
+   * 下游连边也能拿到值。durationOutput 仍需等 render.vue 的 audio loadedmetadata 回写。
+   */
+  override onReady(): void {
+    super.onReady()
+    if (this.fileNameValue) {
+      void this.reloadFileContent()
+    }
+  }
+
   /** 文件被替换后：重读二进制并 commit fileOutput */
   override async reloadFileContent(): Promise<void> {
     if (!this.fileName) return
@@ -138,9 +150,9 @@ export class AudioFileNode extends FileNode {
   }
 
   /**
-   * 写入音频二进制并 commit fileOutput。
-   * 时长由 render.vue 在 audio loadedmetadata 时通过 commitDuration 回写
-   * （浏览器能解任何格式，比自己写文件头解析靠谱得多）。
+   * 写入音频二进制并 commit fileOutput；同时用 Web Audio API 异步解码时长，
+   * 解码成功后 commit durationOutput——即使节点处于 minimized 状态（render.vue 不渲染）
+   * 也能让下游拿到时长。render.vue 的 audio loadedmetadata 仍可通过 commitDuration 回写覆盖。
    */
   setContent(base64: string): void {
     if (!this.fileName) return
@@ -151,6 +163,27 @@ export class AudioFileNode extends FileNode {
     const hash = djb2(base64)
     this.fileOutput.commit(new AudioFileValue(file, hash))
     this.notifyChanged()
+    // 异步解码时长：fire-and-forget，失败不影响 fileOutput 已 commit 的值
+    void this.decodeAndCommitDuration(ab)
+  }
+
+  /** 用 Web Audio API 解码 ArrayBuffer，拿到时长后 commit durationOutput */
+  private async decodeAndCommitDuration(ab: ArrayBuffer): Promise<void> {
+    try {
+      const ctx = new AudioContext()
+      try {
+        const audioBuffer = await ctx.decodeAudioData(ab.slice(0))
+        const seconds = Number(audioBuffer.duration.toFixed(3))
+        if (seconds > 0 && isFinite(seconds)) {
+          this.durationOutput.commit(new NumberValue(seconds))
+          this.notifyChanged()
+        }
+      } finally {
+        await ctx.close()
+      }
+    } catch (err) {
+      console.warn('[AudioFileNode] 解码音频时长失败：', this.fileName, err)
+    }
   }
 
   /** 展示用格式名 */
@@ -179,13 +212,4 @@ export class AudioFileNode extends FileNode {
   }
 
   onFileDrop(_sourcePath: string): void { /* 不处理 */ }
-
-  /**
-   * 由 render.vue 在 audio loadedmetadata 时调：用浏览器解码出的真实时长（支持所有格式）
-   * 覆盖 setContent 里文件头解析的结果（wav 精确、其他格式兜底 null）。
-   */
-  commitDuration(seconds: number): void {
-    this.durationOutput.commit(new NumberValue(seconds))
-    this.notifyChanged()
-  }
 }

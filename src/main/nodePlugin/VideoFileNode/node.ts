@@ -125,6 +125,18 @@ export class VideoFileNode extends FileNode {
     this.setBox(220, 200)
   }
 
+  /**
+   * 画布启动就绪时：先调基类注册文件系统监听，再主动读一次磁盘文件
+   * commit fileOutput——确保节点即使处于 minimized 状态（render.vue 不渲染、watch 不触发），
+   * 下游连边也能拿到值。durationOutput 仍需等 render.vue 的 video loadedmetadata 回写。
+   */
+  override onReady(): void {
+    super.onReady()
+    if (this.fileNameValue) {
+      void this.reloadFileContent()
+    }
+  }
+
   /** 文件被替换后：重读二进制并 commit fileOutput */
   override async reloadFileContent(): Promise<void> {
     if (!this.fileName) return

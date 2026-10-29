@@ -146,6 +146,10 @@ export class OssNode extends Node {
   inputPortReceiveValue(_ports: InputPort[]): void {
     this.notifyChanged()
     if (this.autoSend) {
+      const [first] = this.fileInput.value
+      if (!(first instanceof FileValue) || first.isNull || !first.file) {
+        return
+      }
       void this.run()
     }
   }
@@ -158,6 +162,7 @@ export class OssNode extends Node {
    */
   async run(): Promise<void> {
     // 1. 取源文件
+    console.trace('ddddd')
     const [first] = this.fileInput.value
     if (!(first instanceof FileValue) || first.isNull || !first.file) {
       this.status = 'error'

@@ -52,7 +52,7 @@ import { manifest as tableManifest } from './TableNode'
 import { manifest as scheduleManifest } from './ScheduleNode'
 import { manifest as mergeManifest } from './MergeNode'
 import { manifest as notifyManifest } from './NotifyNode'
-import { manifest as stringToHtmlManifest } from './StringToHtmlNode'
+import { manifest as convertManifest } from './ConvertNode'
 
 /**
  * 插件注册表：所有节点插件的 manifest 汇总。
@@ -89,7 +89,7 @@ const functionalManifests: NodePluginManifest[] = [
   audioPlayManifest,
   humanReviewManifest,
   stringConcatManifest,
-  stringToHtmlManifest,
+  convertManifest,
   commandManifest,
   codeManifest,
   switchManifest,

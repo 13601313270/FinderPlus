@@ -271,7 +271,7 @@ function onContextMenu(e: MouseEvent): void {
     outline-offset: 2px;
   }
 
-  .node-shell--minimized {
+  &.node-shell--minimized {
     z-index: 2;
   }
 }
@@ -354,7 +354,7 @@ function onContextMenu(e: MouseEvent): void {
   box-shadow: 0 0 17px 0px rgb(0 0 0 / 25%);
   background: @color-surface;
   position: relative; // loading 覆层绝对定位的参照
-  border: 1px solid var(--theme-node-border);
+  border: 2px solid var(--theme-node-border);
   // border: 1px solid red;
   border-radius: 8px;
 }
@@ -373,6 +373,10 @@ function onContextMenu(e: MouseEvent): void {
   pointer-events: none; // 不拦截交互：节点自己会按 status 禁用/启用按钮
   display: flex;
   flex-direction: column;
+  left: 2px;
+  right: 2px;
+  top: 2px;
+  bottom: 2px;
 
   &__spinner {
     width: 32px;

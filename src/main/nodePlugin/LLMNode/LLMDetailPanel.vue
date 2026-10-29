@@ -653,7 +653,7 @@ function onPickModel(e: Event): void {
     word-break: break-word;
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     display: flex;
-    align-items: center;
+    // align-items: center;
     gap: 8px;
 
     &--empty {

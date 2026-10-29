@@ -188,7 +188,7 @@ function onContextMenu(e: MouseEvent): void {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   position: relative; // loading 覆层绝对定位的参照
   background: @color-surface;
-  border: 1px solid #a4aab3;
+  border: 2px solid #a4aab3;
   border-radius: 8px;
 }
 

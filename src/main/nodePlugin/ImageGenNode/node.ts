@@ -617,6 +617,7 @@ export class ImageGenNode extends Node {
 
   saveState(): Record<string, unknown> {
     return {
+      ...super.saveState(),
       provider: this.provider,
       model: this.model,
       localSize: this.localSize

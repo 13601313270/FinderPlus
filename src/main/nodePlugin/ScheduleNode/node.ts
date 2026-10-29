@@ -225,6 +225,7 @@ export class ScheduleNode extends Node {
   saveState(): Record<string, unknown> {
     const [w, h] = this.box
     return {
+      ...super.saveState(),
       schedule: [...this.schedule],
       enabled: this.enabled,
       box: [w, h]

@@ -223,7 +223,7 @@ export class SwitchNode extends Node {
 
   saveState(): Record<string, unknown> {
     // 没有可配置字段；lastCondition 是派生态，恢复时上游一来就重算填上
-    return {}
+    return { ...super.saveState() }
   }
 
   readState(_state: Record<string, unknown>): void {

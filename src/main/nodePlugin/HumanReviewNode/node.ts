@@ -360,7 +360,7 @@ export class HumanReviewNode extends Node {
    * 队列不持久化，恢复时上游重新 commit 自动重建；输出端口动态重建。
    */
   saveState(): Record<string, unknown> {
-    return { box: [...this.box], mode: this.mode }
+    return { ...super.saveState(), box: [...this.box], mode: this.mode }
   }
 
   readState(state: Record<string, unknown>): void {

@@ -268,6 +268,7 @@ export class OssNode extends Node {
 
   saveState(): Record<string, unknown> {
     return {
+      ...super.saveState(),
       accessKeyId: this.accessKeyId,
       accessKeySecret: this.accessKeySecret,
       region: this.region,

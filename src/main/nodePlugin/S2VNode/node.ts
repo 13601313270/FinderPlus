@@ -616,6 +616,7 @@ export class S2VNode extends Node {
 
   saveState(): Record<string, unknown> {
     return {
+      ...super.saveState(),
       workspaceId: this.workspaceId,
       resolution: this.resolution,
       enableDetect: this.enableDetect

@@ -625,6 +625,7 @@ export class TTSNode extends Node {
 
   saveState(): Record<string, unknown> {
     return {
+      ...super.saveState(),
       provider: this.provider,
       model: this.model,
       voice: this.voice,

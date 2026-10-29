@@ -221,7 +221,7 @@ export class DelayNode extends Node {
   // —— 持久化 ——
 
   saveState(): Record<string, unknown> {
-    return { delayMs: this.delayMs }
+    return { ...super.saveState(), delayMs: this.delayMs }
   }
 
   readState(state: Record<string, unknown>): void {

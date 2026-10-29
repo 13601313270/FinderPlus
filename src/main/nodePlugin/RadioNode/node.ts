@@ -550,6 +550,7 @@ export class RadioNode extends Node {
 
   saveState(): Record<string, unknown> {
     return {
+      ...super.saveState(),
       kind: this.kind,
       // 只持久化手动配置的选项，输入驱动的选项由上游在 readState 后重新推送
       // （开启 cacheInputOptions 时 applyInputOptions 已自动同步 manualOptions）

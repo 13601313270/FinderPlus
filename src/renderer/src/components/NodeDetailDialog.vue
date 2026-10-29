@@ -126,6 +126,14 @@ const outputPortDisplays = computed(() => {
   }))
 })
 
+// —— 显示名称输入 ——
+function onDisplayNameInput(e: Event): void {
+  const n = node.value
+  if (!n) return
+  const val = (e.target as HTMLInputElement).value
+  n.setDisplayName(val)
+}
+
 // —— 关闭逻辑 ——
 function onMaskClick(): void {
   closeNodeDetail()
@@ -180,7 +188,17 @@ onUnmounted(() => {
             <!-- 中间栏：顶部 title+close，下面 detailPanel -->
             <main class="detail-col detail-col--center">
               <div class="detail-header">
-                <h3 class="detail-title">{{ title }}</h3>
+                <div class="detail-header__left">
+                  <h3 class="detail-title">{{ title }}</h3>
+                  <input
+                    v-if="node"
+                    class="detail-display-name-input"
+                    type="text"
+                    :value="node.displayName"
+                    @input="onDisplayNameInput"
+                    placeholder="输入节点名称…"
+                  />
+                </div>
                 <button class="detail-close" type="button" @click="closeNodeDetail">×</button>
               </div>
               <div class="detail-center__panel">
@@ -315,6 +333,14 @@ onUnmounted(() => {
   padding: 14px 20px;
   border-bottom: 1px solid #e5e7eb;
   background: #fafbfc;
+
+  &__left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0; // 让 input 的 flex:1 能正确收缩
+    flex: 1;
+  }
 }
 
 .detail-title {
@@ -322,6 +348,30 @@ onUnmounted(() => {
   font-size: 15px;
   font-weight: 600;
   color: #1a1a1a;
+  flex-shrink: 0; // 标题不被输入框挤扁
+}
+
+.detail-display-name-input {
+  flex: 1;
+  min-width: 0;
+  height: 28px;
+  padding: 0 10px;
+  font-size: 13px;
+  color: #1a1a1a;
+  background: #fff;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+
+  &::placeholder {
+    color: #9ca3af;
+  }
+
+  &:focus {
+    border-color: #3b7cff;
+    box-shadow: 0 0 0 2px rgba(59, 124, 255, 0.15);
+  }
 }
 
 .detail-close {

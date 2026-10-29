@@ -194,7 +194,7 @@ export class MergeNode extends Node {
   // —— 持久化 ——
 
   saveState(): Record<string, unknown> {
-    return { kind: this.kindValue, portCount: this.portCount }
+    return { ...super.saveState(), kind: this.kindValue, portCount: this.portCount }
   }
 
   readState(state: Record<string, unknown>): void {

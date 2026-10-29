@@ -65,7 +65,7 @@ export class AudioPlayNode extends Node {
   }
 
   saveState(): Record<string, unknown> {
-    return { box: this.box }
+    return { ...super.saveState(), box: this.box }
   }
 
   readState(state: Record<string, unknown>): void {

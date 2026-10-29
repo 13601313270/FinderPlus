@@ -469,6 +469,7 @@ export class BrowserNode extends Node {
 
   saveState(): Record<string, unknown> {
     return {
+      ...super.saveState(),
       homeUrl: this.homeUrl,
       inputCount: this.inputPorts.length,
       zoomFactor: this.zoomFactor,

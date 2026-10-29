@@ -230,6 +230,7 @@ export class TableNode extends Node {
 
   saveState(): Record<string, unknown> {
     return {
+      ...super.saveState(),
       columns: this.columns,
       queryPortIds: this.queryPorts.map((p) => p.id),
       box: this.box as readonly [number, number]

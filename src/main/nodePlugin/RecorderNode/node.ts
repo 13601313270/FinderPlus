@@ -124,7 +124,7 @@ export class RecorderNode extends Node {
   onFileDrop(_path: string): void { /* 不处理 */ }
   inputPortReceiveValue(_ports: InputPort[], _source: InputPortChangeSource): void { /* 无输入端口 */ }
 
-  saveState(): Record<string, unknown> { return {} }
+  saveState(): Record<string, unknown> { return { ...super.saveState() } }
   readState(_state: Record<string, unknown>): void { /* 无持久化配置 */ }
 
   beforeDestroy(): void {

@@ -142,7 +142,7 @@ export class WireNode extends Node {
 
   saveState(): Record<string, unknown> {
     // 无配置字段；outputPort 由上游连线动态重建
-    return {}
+    return { ...super.saveState() }
   }
 
   readState(_state: Record<string, unknown>): void {

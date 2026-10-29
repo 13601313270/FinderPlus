@@ -170,7 +170,7 @@ export class AudioTrimNode extends Node {
   // —— 持久化 ——
 
   saveState(): Record<string, unknown> {
-    return { startTime: this.startTimeValue, endTime: this.endTimeValue }
+    return { ...super.saveState(), startTime: this.startTimeValue, endTime: this.endTimeValue }
   }
 
   readState(state: Record<string, unknown>): void {

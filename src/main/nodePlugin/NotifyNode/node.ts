@@ -83,7 +83,7 @@ export class NotifyNode extends Node {
 
   /** 无配置项，无需持久化 */
   saveState(): Record<string, unknown> {
-    return {}
+    return { ...super.saveState() }
   }
 
   readState(_state: Record<string, unknown>): void {

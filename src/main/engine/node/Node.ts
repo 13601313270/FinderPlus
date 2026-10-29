@@ -90,6 +90,9 @@ export abstract class Node {
   /** 节点是否处于最小化状态。true 时渲染层只显示固定尺寸（80×80）的图标 */
   private minimizedValue: boolean = false
 
+  /** 节点显示名称。空字符串时渲染层退回 type 做标题 */
+  private displayNameValue: string = ''
+
   /** 变化订阅者。UI 靠它把引擎里的普通字段同步成 Vue 响应式状态 */
   private readonly listeners = new Set<() => void>()
 
@@ -340,6 +343,18 @@ export abstract class Node {
   /** 便捷方法：在 true/false 之间翻转 */
   toggleMinimized(): void {
     this.setMinimized(!this.minimizedValue)
+  }
+
+  /** 节点显示名称（只读）。空字符串时渲染层退回 type 做标题 */
+  get displayName(): string {
+    return this.displayNameValue
+  }
+
+  /** 设置节点显示名称并通知观察者 */
+  setDisplayName(value: string): void {
+    if (value === this.displayNameValue) return
+    this.displayNameValue = value
+    this.notifyChanged()
   }
 
   /** 订阅节点变化，返回取消订阅函数 */
@@ -613,11 +628,17 @@ export abstract class Node {
    *
    * 只存节点自己独有的字段（比如 TextInputNode 的 content、NumberInputNode 的 number）。
    * 基类字段（id、type、position、端口形状）由外层持久化层统一读写，子类不用管。
+   * displayName 是基类通用字段，这里自动带上。子类 override 时应当先调 super.saveState()
+   * 再合并自己的字段，避免丢掉 displayName。
    *
    * 返回值必须是 JSON-safe 的（string / number / boolean / null / array / 嵌套 object），
    * 不能包含 class instance、function、undefined。
    */
-  abstract saveState(): Record<string, unknown>
+  saveState(): Record<string, unknown> {
+    return {
+      displayName: this.displayNameValue
+    }
+  }
 
   /**
    * 从 saveState 返回的 plain object 里恢复节点内部状态。

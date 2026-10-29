@@ -663,6 +663,7 @@ export class CodeNode extends Node {
 
   saveState(): Record<string, unknown> {
     return {
+      ...super.saveState(),
       code: this.code,
       inputs: this.inputMetas,
       outputs: this.outputMetas,

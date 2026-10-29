@@ -647,6 +647,7 @@ export class HttpRequestNode extends Node {
 
   saveState(): Record<string, unknown> {
     return {
+      ...super.saveState(),
       method: this.method,
       urlTemplate: this.urlTemplate,
       headers: this.headers,

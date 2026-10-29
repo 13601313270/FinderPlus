@@ -174,6 +174,7 @@ export class TextInputNode extends Node {
   saveState(): Record<string, unknown> {
     const [w, h] = this.box
     return {
+      ...super.saveState(),
       content: this.content,
       autoSend: this.autoSend,
       width: w,

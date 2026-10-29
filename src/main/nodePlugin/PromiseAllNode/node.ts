@@ -361,7 +361,7 @@ export class PromiseAllNode extends Node {
   // —— 持久化 ——
 
   saveState(): Record<string, unknown> {
-    return { portCount: this.portCount }
+    return { ...super.saveState(), portCount: this.portCount }
   }
 
   readState(state: Record<string, unknown>): void {

@@ -588,6 +588,7 @@ export class LLMNode extends Node {
 
   saveState(): Record<string, unknown> {
     return {
+      ...super.saveState(),
       provider: this.provider,
       model: this.model,
       jsonMode: this.jsonMode,

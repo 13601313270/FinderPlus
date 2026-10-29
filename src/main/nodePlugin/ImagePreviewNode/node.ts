@@ -96,6 +96,7 @@ export class ImagePreviewNode extends Node {
 
   saveState(): Record<string, unknown> {
     return {
+      ...super.saveState(),
       box: this.box
     }
   }

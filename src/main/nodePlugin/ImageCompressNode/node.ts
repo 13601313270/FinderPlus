@@ -269,7 +269,7 @@ export class ImageCompressNode extends Node {
 
   /** 一次性工作：压缩结果不持久化，只记住用户的导出格式偏好 */
   saveState(): Record<string, unknown> {
-    return { format: this.format }
+    return { ...super.saveState(), format: this.format }
   }
 
   readState(state: Record<string, unknown>): void {

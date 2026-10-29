@@ -335,6 +335,7 @@ export class ImageToPdfNode extends Node {
   saveState(): Record<string, unknown> {
     const [w, h] = this.box
     return {
+      ...super.saveState(),
       box: [w, h],
       portCount: this.inputPorts.length,
       pageSize: this.pageSize,

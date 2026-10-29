@@ -375,6 +375,7 @@ export class ImageOverlayNode extends Node {
     this.layerStates.forEach((v, k) => { states[k] = { ...v } })
     const [w, h] = this.box
     return {
+      ...super.saveState(),
       box: [w, h],
       zoomFactor: this.previewZoomFactor,
       portCount: this.inputPorts.length,

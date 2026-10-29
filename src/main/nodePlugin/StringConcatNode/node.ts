@@ -181,6 +181,7 @@ export class StringConcatNode extends Node {
 
   saveState(): Record<string, unknown> {
     return {
+      ...super.saveState(),
       template: this.template,
       // 端口数量：恢复时按此重建端口，边才能重新接上
       inputCount: this.inputPorts.length,

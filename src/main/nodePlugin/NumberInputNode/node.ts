@@ -69,7 +69,7 @@ export class NumberInputNode extends Node {
   inputPortReceiveValue(_ports: InputPort[]): void {}
 
   saveState(): Record<string, unknown> {
-    return { content: this.content }
+    return { ...super.saveState(), content: this.content }
   }
 
   readState(state: Record<string, unknown>): void {

@@ -66,9 +66,12 @@ export async function login(email: string, password: string): Promise<AuthResult
 
   // 第二步：证明知道密码（传输里没有 K，没有密码）
   const response = await hmacResponse(k, challengeRes.nonce)
+  const hardwareIdPromise = window.systemApi.getHardwareId()
+  const deviceNamePromise = window.systemApi.getDeviceName()
+  const [hardwareId, deviceName] = await Promise.all([hardwareIdPromise, deviceNamePromise])
   return post<AuthResult>(
     '/auth/login',
-    { email, nonce: challengeRes.nonce, response },
+    { email, nonce: challengeRes.nonce, response, hardware_id: hardwareId, device_name: deviceName },
     false
   )
 }

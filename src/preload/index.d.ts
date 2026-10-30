@@ -9,6 +9,7 @@ import type {
   CrawlerApi,
   OssApi,
   WasmApi,
+  SystemApi,
   AppMenuApi,
   DialogApi,
   TransferApi,
@@ -31,6 +32,8 @@ declare global {
     crawlerApi: CrawlerApi
     ossApi: OssApi
     wasmApi: WasmApi
+    /** 系统信息 API：硬件指纹等渲染进程拿不到的数据 */
+    systemApi: SystemApi
     appMenuApi: AppMenuApi
     dialogApi: DialogApi
     transferApi: TransferApi

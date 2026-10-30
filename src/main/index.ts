@@ -1,7 +1,9 @@
 import { app, shell, BrowserWindow, ipcMain, Menu, dialog, Notification } from 'electron'
 import { join, basename, extname, parse } from 'node:path'
 import { copyFileSync, existsSync, readFileSync, readdirSync, rmSync, mkdirSync, statSync, unlinkSync, watch, writeFileSync } from 'node:fs'
-import { exec, spawn } from 'node:child_process'
+import { exec, execSync, spawn } from 'node:child_process'
+import os from 'node:os'
+import crypto from 'node:crypto'
 import http from 'node:http'
 import https from 'node:https'
 import { URL } from 'node:url'
@@ -176,6 +178,126 @@ ipcMain.handle('code:listPackages', (): Array<{ name: string; version: string }>
 })
 
 ipcMain.handle('code:getModulesDir', (): string => CODE_MODULES_DIR)
+
+// —— 硬件指纹（启动时一次性算好，跨进程生命周期不变）——
+
+/**
+ * 基于 CPU 型号 + 总内存 + 主板 UUID 拼出原始串，再 SHA-256 摘要。
+ * macOS 下用 ioreg 取 IOPlatformUUID；其他平台 boardSerial 为空串，退化为 CPU + 内存 两因子指纹。
+ * 所有字段都取自系统只读信息源，不含可配置项或用户输入，跨重启稳定。
+ */
+function getHardwareId(): string {
+  let boardSerial = ''
+  try {
+    if (process.platform === 'darwin') {
+      boardSerial = execSync(
+        "ioreg -rd1 -c IOPlatformExpertDevice | awk -F'\"' '/IOPlatformUUID/{print $4}'",
+        { stdio: ['ignore', 'pipe', 'ignore'] }
+      ).toString().trim()
+    }
+  } catch { /* ioreg 失败就跳过 boardSerial，不阻断启动 */ }
+  const raw = [
+    os.cpus()[0]?.model ?? '',
+    os.totalmem(),
+    boardSerial
+  ].join('|')
+  return crypto.createHash('sha256').update(raw).digest('hex')
+}
+
+/** 模块级缓存：启动时只算一次，后续所有 IPC 直接返回 */
+const HARDWARE_ID = getHardwareId()
+
+// —— 人类可读设备名（启动时一次性拼好，给服务器展示用）——
+
+/**
+ * 跨平台取"电脑型号"字符串。
+ * - macOS: 优先 system_profiler 拿友好名（如 "MacBook Pro (14-inch, 2023)"），
+ *         退化为 IOPlatformProductIdentifier（如 "MacBookPro14,1"）
+ * - Windows: PowerShell Get-CimInstance 拿 Manufacturer + Model
+ * - Linux: 读 /sys/class/dmi/id/product_name + sys_vendor，或 os.type() 兜底
+ */
+function getMachineLabel(): string {
+  const pl = process.platform
+  if (pl === 'darwin') {
+    // system_profiler 虽然慢（首次 ~300ms），但机器启动时一次可接受
+    try {
+      const out = execSync(
+        'system_profiler SPHardwareDataType | awk -F": " \'/Model Name/{print $2; exit}\'',
+        { stdio: ['ignore', 'pipe', 'ignore'], timeout: 3000 }
+      ).toString().trim()
+      if (out) return out
+    } catch { /* 超时或命令失败 → 继续退化 */ }
+    // 退化：ioreg 拿 ProductIdentifier（如 MacBookPro14,1）
+    try {
+      const out = execSync(
+        "ioreg -rd1 -c IOPlatformExpertDevice | awk -F'\"' '/IOPlatformProductIdentifier/{print $4}'",
+        { stdio: ['ignore', 'pipe', 'ignore'] }
+      ).toString().trim()
+      if (out) return out
+    } catch { /* 忽略 */ }
+    return 'Apple'
+  }
+  if (pl === 'win32') {
+    try {
+      const out = execSync(
+        "powershell -NoProfile -Command \"(Get-CimInstance Win32_ComputerSystem | Select-Object -First 1 Manufacturer,Model) | Format-List\"",
+        { stdio: ['ignore', 'pipe', 'ignore'], timeout: 3000, encoding: 'utf-8' }
+      ).toString().trim()
+      const mfr = (out.match(/Manufacturer\s*:\s*(.+)/i)?.[1] ?? '').trim()
+      const model = (out.match(/Model\s*:\s*(.+)/i)?.[1] ?? '').trim()
+      if (mfr && model) return `${mfr} ${model}`
+      if (model) return model
+    } catch { /* 忽略 */ }
+    return os.hostname()
+  }
+  // Linux 及其他：读 sysfs DMI 或直接 hostname
+  try {
+    const vendor = readFileSync('/sys/class/dmi/id/sys_vendor', 'utf-8').trim()
+    const prod = readFileSync('/sys/class/dmi/id/product_name', 'utf-8').trim()
+    if (vendor && prod) return `${vendor} ${prod}`
+    if (prod) return prod
+  } catch { /* sysfs 不可读（容器等场景）→ 忽略 */ }
+  return os.hostname()
+}
+
+/**
+ * 人类可读设备名：机器型号 · OS 名 + 版本 · CPU 型号。
+ * 例: "MacBook Pro (14-inch, 2023) · macOS 14.3.1 · Apple M3 Max"
+ *      "LENOVO ThinkPad X1 Carbon · Windows 11 Pro · Intel Core i7-1260P"
+ *
+ * 纯展示用途，不做哈希/比对，字段缺失时优雅降级不会报错。
+ */
+function getDeviceName(): string {
+  const machine = getMachineLabel()
+  // OS 名 + 版本：macOS 用 sw_vers（拿 "macOS" + 版本），其他用 os.type() + os.release()
+  let osLabel = ''
+  if (process.platform === 'darwin') {
+    try {
+      const name = execSync('sw_vers -productName', { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim()
+      const ver = execSync('sw_vers -productVersion', { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim()
+      osLabel = [name, ver].filter(Boolean).join(' ')
+    } catch {
+      osLabel = `${os.type()} ${os.release()}`
+    }
+  } else if (process.platform === 'win32') {
+    try {
+      const out = execSync(
+        "powershell -NoProfile -Command \"(Get-CimInstance Win32_OperatingSystem | Select-Object -First 1 Caption,Version) | Format-List\"",
+        { stdio: ['ignore', 'pipe', 'ignore'], timeout: 3000, encoding: 'utf-8' }
+      ).toString().trim()
+      const caption = (out.match(/Caption\s*:\s*(.+)/i)?.[1] ?? '').trim()
+      if (caption) osLabel = caption
+    } catch { /* 忽略 */ }
+    if (!osLabel) osLabel = `Windows ${os.release()}`
+  } else {
+    osLabel = `${os.type()} ${os.release()}`
+  }
+  const cpu = os.cpus()[0]?.model ?? ''
+  return [machine, osLabel, cpu].filter(Boolean).join(' · ')
+}
+
+/** 模块级缓存：启动时只算一次，后续所有 IPC 直接返回 */
+const DEVICE_NAME = getDeviceName()
 
 let storage: SqliteStorage | null = null
 let canvasWatcher: ReturnType<typeof watch> | null = null
@@ -518,6 +640,10 @@ function buildApplicationMenu(): void {
 }
 
 function registerIpcHandlers(): void {
+  // —— 系统信息：硬件指纹 + 人类可读设备名（启动时已预计算，直接返回缓存值）——
+  ipcMain.handle('system:getHardwareId', (): string => HARDWARE_ID)
+  ipcMain.handle('system:getDeviceName', (): string => DEVICE_NAME)
+
   // 渲染进程推来当前语言的菜单文案 → 重建应用菜单
   ipcMain.on('app-menu:set-labels', (_e, labels: MenuLabels) => {
     menuLabels = labels

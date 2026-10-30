@@ -311,6 +311,24 @@ const wasmApi = {
   readCompressor: (): Promise<string> => ipcRenderer.invoke('wasm:readImageCompressor')
 }
 
+/**
+ * 系统信息 API：硬件指纹等渲染进程拿不到的系统级数据。
+ */
+const systemApi = {
+  /**
+   * 返回启动时主进程预计算好的硬件指纹（SHA-256 hex）。
+   * 同一台机器跨重启稳定，用于设备绑定 / 防滥用场景。
+   */
+  getHardwareId: (): Promise<string> => ipcRenderer.invoke('system:getHardwareId'),
+
+  /**
+   * 返回人类可读的设备描述字符串。
+   * 格式: "机器型号 · OS 名 + 版本 · CPU 型号"
+   * 用于服务器展示 / 设备列表，纯展示用途不做比对。
+   */
+  getDeviceName: (): Promise<string> => ipcRenderer.invoke('system:getDeviceName')
+}
+
 // —— 当前窗口绑定的 canvasId（启动时 URL query 里已拼好）——
 // fileApi / canvasDeskDb 所有方法的 canvasId 参数可选，
 // 渲染进程（节点内部、drop handler 等）经常忘了传，这里自动兜底成当前窗口绑定的画布。
@@ -716,6 +734,7 @@ if (process.contextIsolated) {
     contextBridge.exposeInMainWorld('crawlerApi', crawlerApi)
     contextBridge.exposeInMainWorld('ossApi', ossApi)
     contextBridge.exposeInMainWorld('wasmApi', wasmApi)
+    contextBridge.exposeInMainWorld('systemApi', systemApi)
     contextBridge.exposeInMainWorld('appMenuApi', appMenuApi)
     contextBridge.exposeInMainWorld('dialogApi', dialogApi)
     contextBridge.exposeInMainWorld('transferApi', transferApi)
@@ -749,6 +768,8 @@ if (process.contextIsolated) {
   // @ts-ignore (define in dts)
   window.wasmApi = wasmApi
   // @ts-ignore (define in dts)
+  window.systemApi = systemApi
+  // @ts-ignore (define in dts)
   window.appMenuApi = appMenuApi
   // @ts-ignore (define in dts)
   window.dialogApi = dialogApi
@@ -775,6 +796,7 @@ export type HttpApi = typeof httpApi
 export type CrawlerApi = typeof crawlerApi
 export type OssApi = typeof ossApi
 export type WasmApi = typeof wasmApi
+export type SystemApi = typeof systemApi
 export type AppMenuApi = typeof appMenuApi
 export type DialogApi = typeof dialogApi
 export type TransferApi = typeof transferApi

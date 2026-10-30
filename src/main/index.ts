@@ -806,8 +806,38 @@ function registerIpcHandlers(): void {
     return {
       nodes: storage.loadNodes(args.canvasId),
       edges: storage.loadEdges(args.canvasId),
-      viewport: storage.loadViewport(args.canvasId)
+      viewport: storage.loadViewport(args.canvasId),
+      decors: storage.loadDecors(args.canvasId)
     }
+  })
+
+  ipcMain.handle('db:saveDecor', (_e, args: { decor: {
+    id: string
+    canvasId?: string
+    type: string
+    x: number
+    y: number
+    width: number
+    height: number
+    fill: string
+    stroke: string
+    strokeWidth: number
+    radius: number
+    title: string
+    titleColor: string
+  }; canvasId?: string }) => {
+    if (importInProgress) return false
+    if (!storage) throw new Error('[db] storage 尚未初始化')
+    // 外部 args.canvasId 优先，decor.canvasId 次之，最后 storage 默认
+    storage.saveDecor({ ...args.decor, canvasId: args.canvasId ?? args.decor.canvasId })
+    return true
+  })
+
+  ipcMain.handle('db:deleteDecor', (_e, args: { id: string; canvasId?: string }) => {
+    if (importInProgress) return false
+    if (!storage) throw new Error('[db] storage 尚未初始化')
+    storage.deleteDecor(args.id)
+    return true
   })
 
   // —— 文件操作：给文件节点用 ——

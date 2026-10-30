@@ -23,6 +23,25 @@ CREATE TABLE IF NOT EXISTS canvases (
   updated_at    INTEGER NOT NULL
 );
 
+-- 装饰元素（矩形等）：画布布局设计用，不参与节点数据流
+CREATE TABLE IF NOT EXISTS decors (
+  id          TEXT PRIMARY KEY,
+  canvas_id   TEXT NOT NULL REFERENCES canvases(id) ON DELETE CASCADE,
+  type        TEXT NOT NULL,
+  x           REAL NOT NULL,
+  y           REAL NOT NULL,
+  width       REAL NOT NULL,
+  height      REAL NOT NULL,
+  fill        TEXT NOT NULL DEFAULT '',
+  stroke      TEXT NOT NULL DEFAULT '',
+  stroke_width REAL NOT NULL DEFAULT 1,
+  radius      REAL NOT NULL DEFAULT 0,
+  title       TEXT NOT NULL DEFAULT '',
+  title_color TEXT NOT NULL DEFAULT '#6b7280'
+);
+
+CREATE INDEX IF NOT EXISTS idx_decors_canvas ON decors(canvas_id);
+
 -- 节点
 CREATE TABLE IF NOT EXISTS nodes (
   id         TEXT PRIMARY KEY,

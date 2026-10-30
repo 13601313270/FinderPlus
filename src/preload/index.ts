@@ -74,7 +74,42 @@ const canvasDeskDb = {
       endPortId: string
     }>
     viewport: { x: number; y: number; scale: number }
-  }> => ipcRenderer.invoke('db:loadCanvas', args ?? {})
+    decors: Array<{
+      id: string
+      type: string
+      x: number
+      y: number
+      width: number
+      height: number
+      fill: string
+      stroke: string
+      strokeWidth: number
+      radius: number
+      title: string
+      titleColor: string
+    }>
+  }> => ipcRenderer.invoke('db:loadCanvas', args ?? {}),
+
+  /** 单个装饰元素 upsert */
+  saveDecor: (args: { decor: {
+    id: string
+    canvasId?: string
+    type: string
+    x: number
+    y: number
+    width: number
+    height: number
+    fill: string
+    stroke: string
+    strokeWidth: number
+    radius: number
+    title: string
+    titleColor: string
+  }; canvasId?: string }): Promise<boolean> => ipcRenderer.invoke('db:saveDecor', args),
+
+  /** 单个装饰元素删除 */
+  deleteDecor: (args: { id: string; canvasId?: string }): Promise<boolean> =>
+    ipcRenderer.invoke('db:deleteDecor', args)
 }
 
 /**

@@ -35,6 +35,7 @@ const { hiddenTypes } = usePaletteSettings();
 const { openSettings } = useGlobalSettings();
 const emit = defineEmits<{
  (e: 'select-type', type: string): void;
+ (e: 'select-decor', type: 'rect'): void;
 }>();
 const expanded = ref(false);
 /** 搜索关键词 */
@@ -85,6 +86,12 @@ function scheduleClose(): void {
 function onSelectType(type: string): void {
  closeMenu();
  emit('select-type', type);
+}
+
+/** 装饰入口：矩形绘制 */
+function onSelectDecorRect(): void {
+ closeMenu();
+ emit('select-decor', 'rect');
 }
 
 /**
@@ -490,9 +497,27 @@ onBeforeUnmount(() => {
               </button>
             </div>
           </div>
-        </div>
 
-        <!-- 「更多」弹窗浮层：覆盖在主菜单上方，展示某个分类的全部组件 -->
+          <!-- 装饰元素：与节点分类平级 -->
+          <div class="groupItem">
+            <div class="palette__group" role="presentation">
+              <span>装饰</span>
+            </div>
+            <div class="palette__grid" role="presentation">
+              <button
+                class="palette__item palette__item--decor"
+                type="button"
+                title="绘制矩形装饰"
+                @click.stop="onSelectDecorRect"
+              >
+                <svg class="palette__icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <rect x="2.5" y="4.5" width="11" height="7" rx="1.5" stroke="currentColor" stroke-width="1.5" />
+                </svg>
+                <span class="palette__label">矩形</span>
+              </button>
+            </div>
+          </div>
+        </div>
         <transition name="palette-fade">
           <div
             v-if="activeMoreCategory"

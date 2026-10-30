@@ -150,4 +150,107 @@ export class SqliteStorage implements NodeStorage {
     const row = rows[0].values[0]
     return { x: Number(row[0]), y: Number(row[1]), scale: Number(row[2]) }
   }
+
+  /** 单个装饰元素 upsert：调用方负责逐行写 */
+  saveDecor(decor: {
+    id: string
+    canvasId?: string
+    type: string
+    x: number
+    y: number
+    width: number
+    height: number
+    fill: string
+    stroke: string
+    strokeWidth: number
+    radius: number
+    title: string
+    titleColor: string
+  }): void {
+    const id = decor.canvasId ?? this.canvasId
+    // eslint-disable-next-line no-console
+    console.log('[sqlite] saveDecor', decor.id, 'canvasId=', id, { x: decor.x, y: decor.y })
+    this.db.run(
+      `INSERT INTO decors (id, canvas_id, type, x, y, width, height, fill, stroke, stroke_width, radius, title, title_color)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT(id) DO UPDATE SET
+         canvas_id   = excluded.canvas_id,
+         type        = excluded.type,
+         x           = excluded.x,
+         y           = excluded.y,
+         width       = excluded.width,
+         height      = excluded.height,
+         fill        = excluded.fill,
+         stroke      = excluded.stroke,
+         stroke_width = excluded.stroke_width,
+         radius      = excluded.radius,
+         title       = excluded.title,
+         title_color = excluded.title_color`,
+      [
+        decor.id, id, decor.type,
+        decor.x, decor.y, decor.width, decor.height,
+        decor.fill, decor.stroke, decor.strokeWidth, decor.radius,
+        decor.title, decor.titleColor
+      ]
+    )
+    persist()
+  }
+
+  /** 单个装饰元素删除 */
+  deleteDecor(id: string): void {
+    this.db.run('DELETE FROM decors WHERE id = ?', [id])
+    persist()
+  }
+
+  /** 清空指定画布的所有装饰 */
+  clearDecors(canvasId?: string): void {
+    const id = canvasId ?? this.canvasId
+    this.db.run('DELETE FROM decors WHERE canvas_id = ?', [id])
+    persist()
+  }
+
+  /** 读装饰元素，返回纯对象数组 */
+  loadDecors(canvasId?: string): Array<{
+    id: string
+    type: string
+    x: number
+    y: number
+    width: number
+    height: number
+    fill: string
+    stroke: string
+    strokeWidth: number
+    radius: number
+    title: string
+    titleColor: string
+  }> {
+    const id = canvasId ?? this.canvasId
+    const rows = this.db.exec(
+      `SELECT id, type, x, y, width, height, fill, stroke, stroke_width, radius, title, title_color
+       FROM decors WHERE canvas_id = ?`,
+      [id]
+    )
+    if (!rows.length) {
+      // eslint-disable-next-line no-console
+      console.log('[sqlite] loadDecors', id, '→ decors 表空')
+      return []
+    }
+    const result = rows[0].values.map((row) => ({
+      id: String(row[0]),
+      type: String(row[1]),
+      x: Number(row[2]),
+      y: Number(row[3]),
+      width: Number(row[4]),
+      height: Number(row[5]),
+      fill: String(row[6] ?? ''),
+      stroke: String(row[7] ?? ''),
+      strokeWidth: Number(row[8]),
+      radius: Number(row[9]),
+      title: String(row[10] ?? ''),
+      titleColor: String(row[11] ?? '#6b7280')
+    }))
+    // eslint-disable-next-line no-console
+    console.log('[sqlite] loadDecors', id, '→', result.length, 'rows', result)
+    return result
+  }
 }

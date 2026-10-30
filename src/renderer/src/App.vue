@@ -9,7 +9,19 @@ import { FileInfoNode } from '../../main/nodePlugin/FileInfoNode/node'
 import { FolderNode } from '../../main/nodePlugin/FolderNode/node'
 import { viewport, panViewport, zoomViewportAt, screenToWorld, setCanvasContainer, centerViewportOn, getCanvasContainer } from '@renderer/canvas/viewport'
 import { measureNodeBox } from '@renderer/canvas/elements'
+import {
+  drawingMode,
+  drawingPreview,
+  enterDrawingMode,
+  exitDrawingMode,
+  addRect,
+  clearDecorSelection,
+  removeDecor,
+  selectedDecorIds,
+  restoreDecors
+} from '@renderer/canvas/decor'
 import EdgeLayer from './components/EdgeLayer.vue'
+import DecorLayer from './components/DecorLayer.vue'
 import NodeShell from './components/NodeShell.vue'
 import NodeWire from './components/NodeWire.vue'
 import ConnectionPreview from './components/ConnectionPreview.vue'
@@ -298,6 +310,13 @@ function onSelectType(type: string): void {
 
   // 放置模式下，画布光标提示可以点击固定
   document.body.style.cursor = 'crosshair'
+}
+
+/** 从调色板选了装饰元素 → 进入绘制模式 */
+function onSelectDecor(type: 'rect'): void {
+  if (type === 'rect') {
+    enterDrawingMode('rect')
+  }
 }
 
 /** 跟随模式下，鼠标移动实时更新节点位置 */
@@ -623,6 +642,116 @@ function onDocumentMouseDown(e: MouseEvent): void {
   closeContextMenu()
 }
 
+// —— 绘制装饰元素（矩形）——
+let drawingActive = false
+let drawStartX = 0
+let drawStartY = 0
+
+function onDrawPointerDown(e: PointerEvent): void {
+  if (!drawingMode.value) return
+  // 绘制模式只认画布空白处：避免和节点/装饰元素的点击冲突
+  if (e.target !== canvasEl.value) return
+
+  e.preventDefault()
+  drawingActive = true
+  const canvasRect = canvasEl.value?.getBoundingClientRect()
+  if (!canvasRect) return
+  const [wx, wy] = screenToWorld(e.clientX - canvasRect.left, e.clientY - canvasRect.top)
+  drawStartX = wx
+  drawStartY = wy
+  drawingPreview.value = { startX: wx, startY: wy, endX: wx, endY: wy }
+}
+
+function onDrawPointerMove(e: PointerEvent): void {
+  if (!drawingActive || !drawingPreview.value) return
+  const canvasRect = canvasEl.value?.getBoundingClientRect()
+  if (!canvasRect) return
+  const [wx, wy] = screenToWorld(e.clientX - canvasRect.left, e.clientY - canvasRect.top)
+  drawingPreview.value = { ...drawingPreview.value, endX: wx, endY: wy }
+}
+
+function onDrawPointerUp(_e: PointerEvent): void {
+  if (!drawingActive || !drawingPreview.value) return
+  drawingActive = false
+  const p = drawingPreview.value
+  const x = Math.min(p.startX, p.endX)
+  const y = Math.min(p.startY, p.endY)
+  const w = Math.abs(p.endX - p.startX)
+  const h = Math.abs(p.endY - p.startY)
+  // 太小就当作误触，不创建
+  if (w >= 4 && h >= 4) {
+    addRect({ x, y, width: w, height: h })
+  }
+  drawingPreview.value = null
+  // 画完一个就退出绘制模式，避免连续画造成困惑
+  exitDrawingMode()
+}
+
+// —— 装饰元素右键菜单 ——
+const decorContextMenu = ref<{
+  visible: boolean
+  x: number
+  y: number
+  decorId: string | null
+}>({ visible: false, x: 0, y: 0, decorId: null })
+
+function onDecorContextMenu(e: MouseEvent): void {
+  if (!selectedDecorIds || selectedDecorIds.size === 0) return
+  // 只处理单个选中的情况
+  const decorId = Array.from(selectedDecorIds)[0]
+  if (!decorId) return
+
+  // 计算装饰元素的世界坐标 → 屏幕坐标
+  const canvasRect = canvasEl.value?.getBoundingClientRect()
+  if (!canvasRect) return
+
+  decorContextMenu.value = { visible: true, x: e.clientX, y: e.clientY, decorId }
+  e.preventDefault()
+  e.stopPropagation()
+}
+
+function closeDecorContextMenu(): void {
+  decorContextMenu.value.visible = false
+  decorContextMenu.value.decorId = null
+}
+
+function deleteSelectedDecor(): void {
+  if (decorContextMenu.value.decorId) {
+    removeDecor(decorContextMenu.value.decorId)
+  }
+  closeDecorContextMenu()
+}
+
+// —— 键盘快捷键 ——
+function onWindowKeyDown(e: KeyboardEvent): void {
+  // Escape：退出绘制模式
+  if (e.key === 'Escape') {
+    if (drawingMode.value) {
+      exitDrawingMode()
+      e.preventDefault()
+    } else if (selectedDecorIds.size > 0) {
+      clearDecorSelection()
+      e.preventDefault()
+    }
+    return
+  }
+
+  // Delete / Backspace：删除选中的装饰元素
+  if ((e.key === 'Delete' || e.key === 'Backspace') && selectedDecorIds.size > 0) {
+    // 不删除正在输入框里的文本
+    const target = e.target as HTMLElement | null
+    if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+      return
+    }
+    const ids = Array.from(selectedDecorIds)
+    for (const id of ids) {
+      removeDecor(id)
+    }
+    e.preventDefault()
+    return
+  }
+}
+
 // —— 拖拽空白处平移 ——
 // 注意：平移的位移缓存必须独立于全局 lastClientX/Y——
 // onWindowPointerMove（onMounted 注册）会先于 onPanMove 执行，
@@ -632,6 +761,12 @@ let panLastClientX = 0
 let panLastClientY = 0
 
 function onCanvasPointerDown(e: PointerEvent): void {
+  // 绘制模式：只认画布空白处（target === canvasEl）开始画矩形
+  if (drawingMode.value) {
+    onDrawPointerDown(e)
+    return
+  }
+
   // 放置模式：点击画布空白处 → 固定当前跟随节点
   if (trackingNode.value && e.target === canvasEl.value) {
     stopTracking()
@@ -684,6 +819,12 @@ function onPanEnd(): void {
 // onNodeDrop 返回 true 表示"本节点接管了"——App 不再把这当普通移动处理（包括跳过文件夹释放）。
 // 返回 false 表示"我没接管"——按普通移动走后续逻辑。
 function onGlobalPointerUp(e: PointerEvent): void {
+  // 绘制模式下：完成矩形绘制
+  if (drawingActive) {
+    onDrawPointerUp(e)
+    return
+  }
+
   const dragged = getDraggingNode()
   const startPos = getDraggingNodeStartPos()
   if (!dragged) return
@@ -757,6 +898,13 @@ let lastClientY = 0
 function onWindowPointerMove(e: PointerEvent): void {
   lastClientX = e.clientX
   lastClientY = e.clientY
+
+  // 绘制模式下：更新矩形预览，不做其他处理
+  if (drawingActive) {
+    onDrawPointerMove(e)
+    return
+  }
+
   onTrackingMove(e)
 
   // —— dragover 扫描：被拖节点悬停在某个接收目标上时，双方同步视觉态 ——
@@ -936,6 +1084,8 @@ async function bootstrapScene(): Promise<void> {
     viewport.y = data.viewport.y
     viewport.scale = data.viewport.scale
   }
+  // 恢复装饰元素（矩形等）
+  restoreDecors(data?.decors ?? [])
 
   // 重建完成后才 attachStorage——期间 addNode/connect 里的 storage?.xxx() 都是空转，
   // 不然会把刚从 DB 读出来的东西再写回去（重复且浪费 IO）
@@ -999,6 +1149,8 @@ onMounted(() => {
     // 画布上的业务逻辑仍由 stage__canvas 的 @dragover / @drop 处理
     document.addEventListener('dragover', onGlobalDragOver)
     document.addEventListener('drop', onGlobalDrop)
+    // Escape 退出绘制模式；Delete/Backspace 删除选中的装饰元素
+    window.addEventListener('keydown', onWindowKeyDown)
     unsubscribeScene = workspaceScene.onChanged(onSceneChanged)
     unsubscribeOnboardingCheck = workspaceScene.onChanged(onSceneChangedForOnboarding)
     // 系统通知点击 → 把触发通知的节点滚到画布中心
@@ -1012,6 +1164,7 @@ onUnmounted(() => {
   canvasEl.value?.removeEventListener('wheel', onWheel)
   window.removeEventListener('pointermove', onWindowPointerMove)
   window.removeEventListener('pointerup', onGlobalPointerUp)
+  window.removeEventListener('keydown', onWindowKeyDown)
   document.removeEventListener('mousedown', onDocumentMouseDown)
   document.removeEventListener('contextmenu', onDocumentContextMenu, true)
   document.removeEventListener('dragover', onGlobalDragOver)
@@ -1114,7 +1267,7 @@ onUnmounted(() => {
     <div ref="canvasEl" class="stage__canvas" :style="gridStyle" @pointerdown="onCanvasPointerDown"
       @dragover="onCanvasDragOver" @drop="onCanvasDrop">
       <!-- 节点调色板：画布左上角的「＋」按钮，悬浮展开可选类型 -->
-      <NodePalette @select-type="onSelectType" />
+      <NodePalette @select-type="onSelectType" @select-decor="onSelectDecor" />
 
       <!-- 连线失败的一次性提示（类型不匹配 / 端口已占用 / 自环）：浮在画布顶层，
            不占布局、不挡指针，引擎只给判定，文案在 connectionDrag 里翻译。 -->
@@ -1123,6 +1276,8 @@ onUnmounted(() => {
       </p>
 
       <div class="stage__world" :style="worldStyle">
+        <!-- 装饰元素层：最底层，矩形本体在连线之下 -->
+        <DecorLayer />
         <!-- 连线层排在节点之前：线画在卡片下面，不会盖住节点内容 -->
         <EdgeLayer />
         <!-- 每个节点 = 外壳（定位 + 端口，通用）+ 内容（render.vue，节点自定义）
@@ -1243,6 +1398,17 @@ onUnmounted(() => {
     &:hover {
       background: rgba(0, 0, 0, 0.08);
       color: @color-primary;
+    }
+
+    // 绘制按钮的激活态
+    &--active {
+      background: @color-primary;
+      color: #fff;
+
+      &:hover {
+        background: darken(@color-primary, 8%);
+        color: #fff;
+      }
     }
   }
 

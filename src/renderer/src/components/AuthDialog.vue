@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { useAuth } from '@renderer/composables/useAuth'
+import { ElMessage } from 'element-plus'
 
 /**
  * 登录 / 注册弹窗。
@@ -122,8 +123,13 @@ async function onSubmit(): Promise<void> {
     }
     try {
       loading.value = true
-      await doRegister(email.value, code.value, password.value)
-      closeDialog()
+      const result = await doRegister(email.value, code.value, password.value)
+      if (!result.ok) {
+        throw new Error(result.error ?? '注册失败')
+      } else {
+        ElMessage.success('注册成功')
+        closeDialog()
+      }
     } catch (err) {
       errorMsg.value = err instanceof Error ? err.message : '注册失败'
     } finally {

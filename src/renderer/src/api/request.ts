@@ -34,12 +34,10 @@ export function clearToken(): void {
  * 路径相对于 API_BASE（例如 '/user/info'）。
  * 成功时返回响应中 ok=true 的 data；失败时 throw Error(error)。
  */
-export async function get<T = Record<string, unknown>>(path: string, auth = true): Promise<T> {
+export async function get(path: string): Promise<any> {
   const headers: Record<string, string> = {}
-  if (auth) {
-    const token = getToken()
-    if (token) headers['token'] = token
-  }
+  const token = getToken()
+  if (token) headers['token'] = token
 
   let res: Response
   try {
@@ -52,29 +50,21 @@ export async function get<T = Record<string, unknown>>(path: string, auth = true
     throw new Error(`HTTP ${res.status}: ${res.statusText}`)
   }
 
-  let json: { ok: boolean; error?: string; [key: string]: unknown }
+  let json: any;
   try {
     json = (await res.json()) as { ok: boolean; error?: string; [key: string]: unknown }
   } catch {
     throw new Error('响应格式错误')
   }
-
-  if (!json.ok) {
-    throw new Error(json.error || '接口请求失败')
-  }
-
-  const { ...rest } = json
-  return rest as T
+  return json
 }
 
-export async function post<T = Record<string, unknown>>(path: string, body?: unknown, auth = true): Promise<T> {
+export async function post(path: string, body?: unknown): Promise<any> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json'
   }
-  if (auth) {
-    const token = getToken()
-    if (token) headers['token'] = token
-  }
+  const token = getToken()
+  if (token) headers['token'] = token
 
   let res: Response
   try {
@@ -91,18 +81,11 @@ export async function post<T = Record<string, unknown>>(path: string, body?: unk
     throw new Error(`HTTP ${res.status}: ${res.statusText}`)
   }
 
-  let json: { ok: boolean; error?: string; [key: string]: unknown }
+  let json: any
   try {
     json = (await res.json()) as { ok: boolean; error?: string; [key: string]: unknown }
   } catch {
     throw new Error('响应格式错误')
   }
-
-  if (!json.ok) {
-    throw new Error(json.error || '接口请求失败')
-  }
-
-  // ok=true 时剥离 ok/error 字段，把剩余业务字段作为 data 返回
-  const { ...rest } = json
-  return rest as T
+  return json
 }

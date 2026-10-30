@@ -31,7 +31,7 @@ export interface AuthResult {
  * @param purpose 验证码用途：'register' 注册（后续可以扩展 'reset' 找回密码）
  */
 export function sendCode(email: string, purpose = 'register'): Promise<unknown> {
-  return post('/auth/sendCode', { email, purpose }, false)
+  return post('/auth/sendCode', { email, purpose })
 }
 
 /**
@@ -40,10 +40,9 @@ export function sendCode(email: string, purpose = 'register'): Promise<unknown> 
  * @param code  验证码
  * @param password 密码
  */
-export async function register(email: string, code: string, password: string): Promise<AuthResult> {
+export async function register(email: string, code: string, password: string): Promise<{ok: boolean; error?: string}> {
   const k = await deriveK(email, password)
-  return post<AuthResult>('/auth/register', { email, code, k }, false)
-  // return post<AuthResult>('/auth/register', { email, code, password }, false)
+  return post('/auth/register', { email, code, k })
 }
 
 /**
@@ -55,10 +54,9 @@ export async function login(email: string, password: string): Promise<AuthResult
   const k = await deriveK(email, password)
 
   // 第一步：拿一次性挑战（120 秒有效）
-  const challengeRes = await post<{ ok: boolean; nonce: string; error?: string }>(
+  const challengeRes = await post(
     '/auth/challenge',
     { email },
-    false
   )
   if (!challengeRes.ok) {
     throw new Error(challengeRes.error ?? '获取登录挑战失败')
@@ -69,10 +67,9 @@ export async function login(email: string, password: string): Promise<AuthResult
   const hardwareIdPromise = window.systemApi.getHardwareId()
   const deviceNamePromise = window.systemApi.getDeviceName()
   const [hardwareId, deviceName] = await Promise.all([hardwareIdPromise, deviceNamePromise])
-  return post<AuthResult>(
+  return post(
     '/auth/login',
-    { email, nonce: challengeRes.nonce, response, hardware_id: hardwareId, device_name: deviceName },
-    false
+    { email, nonce: challengeRes.nonce, response, hardware_id: hardwareId, device_name: deviceName }
   )
 }
 
@@ -81,7 +78,7 @@ export async function login(email: string, password: string): Promise<AuthResult
  * 即使后端返回 401，前端也要清本地 token——所以上层应 catch 后正常退出。
  */
 export function logout(): Promise<unknown> {
-  return post('/auth/logout', {}, true).catch(() => null)
+  return post('/auth/logout', {}).catch(() => null)
 }
 
 /**
@@ -89,5 +86,121 @@ export function logout(): Promise<unknown> {
  * 需要在 header 里带 token（默认 auth=true）。
  */
 export function fetchUserInfo(): Promise<UserInfo> {
-  return get<UserInfo>('/user/info', true)
+  return get('/user/info')
+}
+
+/** 协作者：被授予我调用权限的用户（/access/list 返回的项） */
+export interface Collaborator {
+  id: number
+  /** 授权人（协作者）邮箱 */
+  grantor_user_email: string
+  /** 授权人（协作者）用户 ID */
+  grantor_user_id: number
+  /** 授权画布 ID（空字符串表示全局授权） */
+  scope_canvas_id: string
+  /** 授权创建时间（Unix 秒级时间戳） */
+  created_at: number
+  /** 过期时间（Unix 秒级时间戳，0 表示永不过期） */
+  expires_at: number
+}
+
+/**
+ * 拉取我被授予调用权限的所有协作者列表（/access/list）。
+ * 这些协作者是 grantor（授权人），我是 grantee（被授权人）。
+ */
+export function fetchCollaborators(): Promise<{ count: number; res: Collaborator[] }> {
+  return get('/access/list')
+}
+
+/** 申请协作的接口返回结构 */
+export interface AccessRequestResult {
+  ok: boolean
+  request_id?: number
+  expires_at?: number
+  error?: string
+}
+
+/**
+ * 向指定邮箱发送协作申请。
+ * POST /access/request，body { email, message }
+ */
+export function requestCollaboration(email: string, message: string): Promise<AccessRequestResult> {
+  return post('/access/request', { email, message })
+}
+
+/** 我发起的协作申请记录 */
+export interface MyAccessRequest {
+  id: number
+  target_user_id: number
+  targetEmail: string
+}
+
+/** 我收到的（别人发起的）协作申请记录 */
+export interface ReceivedAccessRequest {
+  id: number
+  requester_user_email: string
+  requester_user_id: number
+}
+
+/**
+ * 查询我发起的全部协作申请。
+ * GET /access/myRequests
+ */
+export function fetchMyRequests(): Promise<MyAccessRequest[]> {
+  return get('/access/myRequests')
+}
+
+/**
+ * 撤销一条我发起的协作申请。
+ * POST /access/cancel，body { requestId }
+ */
+export function cancelAccessRequest(requestId: number): Promise<{ ok: boolean; error?: string }> {
+  return post('/access/cancel', { requestId })
+}
+
+/**
+ * 查询我收到的（别人发起的）协作申请列表。
+ * GET /access/myBeReceived
+ */
+export function fetchMyBeReceived(): Promise<ReceivedAccessRequest[]> {
+  return get('/access/myBeReceived')
+}
+
+/**
+ * 拒绝一条我收到的协作申请。
+ * POST /access/reject，body { requestId }
+ */
+export function rejectAccessRequest(requestId: number): Promise<{ ok: boolean; error?: string }> {
+  return post('/access/reject', { requestId })
+}
+
+/**
+ * 同意一条我收到的协作申请。
+ * POST /access/resolve，body { requestId }
+ */
+export function resolveAccessRequest(requestId: number): Promise<{ ok: boolean; error?: string }> {
+  return post('/access/resolve', { requestId })
+}
+
+/** 我授权出去的已授权记录（/access/resolveList 返回的项） */
+export interface GrantedAccess {
+  id: number
+  grantee_user_id: number
+  grantee_user_email: string
+  /** 授权画布 ID（空字符串表示全局授权） */
+  scope_canvas_id: string
+  /** 授权状态（推测：1=有效） */
+  status: number
+  /** 创建时间（Unix 秒级时间戳） */
+  created_at: number
+  /** 过期时间（Unix 秒级时间戳，0 表示永不过期） */
+  expires_at: number
+}
+
+/**
+ * 查询我授权出去的已授权列表。
+ * GET /access/resolveList
+ */
+export function fetchResolveList(): Promise<GrantedAccess[]> {
+  return get('/access/resolveList')
 }

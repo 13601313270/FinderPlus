@@ -87,9 +87,9 @@ export function useAuth() {
   }
 
   /** 注册并自动登录（后端 register 返回 token + user） */
-  async function doRegister(email: string, code: string, password: string): Promise<void> {
+  async function doRegister(email: string, code: string, password: string): Promise<{ok: boolean; error?: string}> {
     const result = await register(email, code, password)
-    saveAuth(result.token, result.user)
+    return result
   }
 
   /** 退出登录：先通知后端，再清本地状态。后端报错也不影响本地清理。 */

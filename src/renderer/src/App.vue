@@ -44,7 +44,7 @@ import { useGlobalSettings } from '@renderer/composables/useGlobalSettings'
 import { useLanguageSettings } from '@renderer/composables/useLanguageSettings'
 import { useOnboarding } from '@renderer/composables/useOnboarding'
 import { useAuth } from '@renderer/composables/useAuth'
-import { fetchUserInfo } from '@renderer/api/auth'
+import { fetchUserInfo, fetchCollaborators, requestCollaboration, fetchMyRequests, cancelAccessRequest, fetchMyBeReceived, rejectAccessRequest, resolveAccessRequest, fetchResolveList, type Collaborator, type MyAccessRequest, type ReceivedAccessRequest, type GrantedAccess } from '@renderer/api/auth'
 import { IpcStorage } from '@renderer/composables/IpcStorage'
 import { isSelfDragDrop, clearSelfDragDrop } from '@renderer/composables/useFileDragOut'
 import { getDraggingNode, getDraggingNodeStartPos, clearDraggingNode } from '@renderer/composables/useNodePosition'
@@ -141,6 +141,231 @@ async function onViewUserInfo(): Promise<void> {
 
 function closeUserInfoDialog(): void {
   showUserInfoDialog.value = false
+}
+
+// —— 协作工作流弹窗 ——
+const showCollabDialog = ref(false)
+const collabLoading = ref(false)
+const collabError = ref<string | null>(null)
+/** 弹窗当前激活的 tab：我的协作者 / 我授权出去 */
+const collabTab = ref<'mine' | 'granted'>('mine')
+const collaborators = ref<Collaborator[]>([])
+const grantedList = ref<GrantedAccess[]>([])
+const receivedRequests = ref<ReceivedAccessRequest[]>([])
+
+async function onOpenCollabWorkflows(): Promise<void> {
+  closeUserMenu()
+  showCollabDialog.value = true
+  collabLoading.value = true
+  collabError.value = null
+  collaborators.value = []
+  grantedList.value = []
+  receivedRequests.value = []
+  try {
+    // 并行拉取三个接口：我拥有的协作者 / 我授权出去的已授权记录 / 收到的申请
+    const [collabData, resolveData, receivedData] = await Promise.all([
+      fetchCollaborators().catch(() => null),
+      fetchResolveList().catch(() => null),
+      fetchMyBeReceived().catch(() => null)
+    ])
+    if (collabData) collaborators.value = collabData.res ?? []
+    if (resolveData) grantedList.value = Array.isArray(resolveData) ? resolveData : []
+    if (receivedData) receivedRequests.value = Array.isArray(receivedData) ? receivedData : []
+    // 三个接口全败才报错
+    if (!collabData && !resolveData && !receivedData) {
+      collabError.value = '加载失败，请重试'
+    }
+  } catch (err) {
+    collabError.value = err instanceof Error ? err.message : '请求失败'
+  } finally {
+    collabLoading.value = false
+  }
+}
+
+function closeCollabDialog(): void {
+  showCollabDialog.value = false
+}
+
+function switchCollabTab(tab: 'mine' | 'granted'): void {
+  collabTab.value = tab
+}
+
+// —— 添加协作申请弹窗 ——
+const showAddRequestDialog = ref(false)
+const reqEmail = ref('')
+const reqMessage = ref('')
+const reqSending = ref(false)
+const reqError = ref<string | null>(null)
+const reqSuccess = ref(false)
+
+function openAddRequestDialog(): void {
+  reqEmail.value = ''
+  reqMessage.value = ''
+  reqError.value = null
+  reqSuccess.value = false
+  showAddRequestDialog.value = true
+}
+
+function closeAddRequestDialog(): void {
+  showAddRequestDialog.value = false
+}
+
+async function onSubmitRequest(): Promise<void> {
+  const email = reqEmail.value.trim()
+  const message = reqMessage.value.trim()
+  reqError.value = null
+
+  if (!email) {
+    reqError.value = '请输入对方邮箱'
+    return
+  }
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  if (!emailRegex.test(email)) {
+    reqError.value = '邮箱格式不正确'
+    return
+  }
+  if (!message) {
+    reqError.value = '请输入申请理由'
+    return
+  }
+
+  reqSending.value = true
+  try {
+    const res = await requestCollaboration(email, message)
+    if (!res.ok) {
+      reqError.value = res.error || '申请失败，请重试'
+      return
+    }
+    reqSuccess.value = true
+    // 成功后刷新协作者列表
+    await refreshCollaborators()
+  } catch (err) {
+    reqError.value = err instanceof Error ? err.message : '网络请求失败'
+  } finally {
+    reqSending.value = false
+  }
+}
+
+/** 重新拉取三个列表（申请成功 / 同意申请后调用） */
+async function refreshCollaborators(): Promise<void> {
+  collabLoading.value = true
+  collabError.value = null
+  try {
+    const [collabData, resolveData, receivedData] = await Promise.all([
+      fetchCollaborators().catch(() => null),
+      fetchResolveList().catch(() => null),
+      fetchMyBeReceived().catch(() => null)
+    ])
+    if (collabData) collaborators.value = collabData.res ?? []
+    if (resolveData) grantedList.value = Array.isArray(resolveData) ? resolveData : []
+    if (receivedData) receivedRequests.value = Array.isArray(receivedData) ? receivedData : []
+    if (!collabData && !resolveData && !receivedData) {
+      collabError.value = '刷新失败，请重试'
+    }
+  } catch (err) {
+    collabError.value = err instanceof Error ? err.message : '请求失败'
+  } finally {
+    collabLoading.value = false
+  }
+}
+
+// —— 我发起的申请弹窗 ——
+const showMyReqDialog = ref(false)
+const myReqLoading = ref(false)
+const myReqError = ref<string | null>(null)
+const myRequests = ref<MyAccessRequest[]>([])
+
+async function openMyRequests(): Promise<void> {
+  showMyReqDialog.value = true
+  myReqLoading.value = true
+  myReqError.value = null
+  try {
+    const data = await fetchMyRequests()
+    myRequests.value = Array.isArray(data) ? data : []
+  } catch (err) {
+    myReqError.value = err instanceof Error ? err.message : '请求失败'
+  } finally {
+    myReqLoading.value = false
+  }
+}
+
+function closeMyReqDialog(): void {
+  showMyReqDialog.value = false
+}
+
+/** 撤销某条申请：先二次确认，再调接口，成功后刷新列表 */
+async function onCancelRequest(req: MyAccessRequest): Promise<void> {
+  const ok = await window.showConfirm('撤销申请', `确定要撤销向 ${req.targetEmail} 发起的协作申请吗？撤销后对方将无法看到此申请。`)
+  if (!ok) return
+
+  try {
+    const res = await cancelAccessRequest(req.id)
+    if (!res.ok) {
+      alert(res.error || '撤销失败，请重试')
+      return
+    }
+    // 乐观移除，然后刷新
+    myRequests.value = myRequests.value.filter((r) => r.id !== req.id)
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : '网络请求失败'
+    alert(msg)
+  }
+}
+
+/** 拒绝一条收到的申请：先二次确认，再调接口，成功后乐观移除 */
+async function onRejectRequest(req: ReceivedAccessRequest): Promise<void> {
+  const ok = await window.showConfirm('拒绝申请', `确定要拒绝 ${req.requester_user_email} 发来的协作申请吗？`)
+  if (!ok) return
+
+  try {
+    const res = await rejectAccessRequest(req.id)
+    if (!res.ok) {
+      alert(res.error || '拒绝失败，请重试')
+      return
+    }
+    // 乐观移除
+    receivedRequests.value = receivedRequests.value.filter((r) => r.id !== req.id)
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : '网络请求失败'
+    alert(msg)
+  }
+}
+
+/** 同意一条收到的申请：先二次确认，再调接口，成功后刷新列表（协作者列表也要更新） */
+async function onResolveRequest(req: ReceivedAccessRequest): Promise<void> {
+  const ok = await window.showConfirm('同意申请', `同意后 ${req.requester_user_email} 将可以调用你的工作流，确定同意吗？`)
+  if (!ok) return
+
+  try {
+    const res = await resolveAccessRequest(req.id)
+    if (!res.ok) {
+      alert(res.error || '操作失败，请重试')
+      return
+    }
+    // 乐观移除 + 刷新协作者列表
+    receivedRequests.value = receivedRequests.value.filter((r) => r.id !== req.id)
+    await refreshCollaborators()
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : '网络请求失败'
+    alert(msg)
+  }
+}
+
+/** 格式化日期：兼容 ISO 字符串和 Unix 秒级时间戳（数字） */
+function formatDate(value: string | number): string {
+  if (!value && value !== 0) return ''
+  let d: Date
+  if (typeof value === 'number') {
+    // 后端可能给的是秒级时间戳，需要乘 1000
+    d = new Date(value * 1000)
+  } else {
+    d = new Date(value)
+  }
+  if (isNaN(d.getTime())) return String(value)
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
 }
 
 // 新手引导：首次启动时自动弹出，完成或跳过后不再触发
@@ -1216,6 +1441,7 @@ onUnmounted(() => {
                   <span class="stage__user-info-arrow">›</span>
                 </li>
                 <li class="stage__user-separator" />
+                <li class="stage__user-item" @click="onOpenCollabWorkflows">协作工作流</li>
                 <li class="stage__user-item" @click="handleLogout">退出登录</li>
               </ul>
             </transition>
@@ -1296,6 +1522,194 @@ onUnmounted(() => {
             <div class="user-info-ok-title">接口返回：</div>
             <pre class="user-info-pre">{{ JSON.stringify(userInfoResponse, null, 2) }}</pre>
           </div>
+        </div>
+      </div>
+    </div>
+  </Teleport>
+
+  <!-- 协作工作流弹窗：点下拉菜单「协作工作流」时打开，列出已授权的协作者 -->
+  <Teleport to="body">
+    <div v-if="showCollabDialog" class="user-info-mask" @click.self="closeCollabDialog">
+      <div class="user-info-dialog collab-dialog">
+        <div class="user-info-dialog__header">
+          <span>协作工作流</span>
+          <div class="collab-dialog__header-actions">
+            <button class="collab-myreq-btn" type="button" @click="openMyRequests">我的申请</button>
+            <button class="collab-add-btn" type="button" @click="openAddRequestDialog">+ 添加协作工作流</button>
+            <button class="user-info-dialog__close" type="button" @click="closeCollabDialog">×</button>
+          </div>
+        </div>
+        <div class="user-info-dialog__body collab-dialog__body">
+          <div v-if="collabLoading" class="user-info-loading">加载中…</div>
+          <div v-else-if="collabError" class="user-info-error">❌ {{ collabError }}</div>
+          <template v-else>
+            <!-- Tab bar -->
+            <div class="collab-tabs">
+              <button
+                class="collab-tabs__item"
+                :class="{ 'collab-tabs__item--active': collabTab === 'mine' }"
+                type="button"
+                @click="switchCollabTab('mine')"
+              >
+                我的协作者
+                <span v-if="collaborators.length > 0" class="collab-tabs__badge">{{ collaborators.length }}</span>
+              </button>
+              <button
+                class="collab-tabs__item"
+                :class="{ 'collab-tabs__item--active': collabTab === 'granted' }"
+                type="button"
+                @click="switchCollabTab('granted')"
+              >
+                我授权出去
+                <span v-if="grantedList.length + receivedRequests.length > 0" class="collab-tabs__badge">{{ grantedList.length + receivedRequests.length }}</span>
+                <span v-if="receivedRequests.length > 0" class="collab-tabs__dot" />
+              </button>
+            </div>
+
+            <!-- Tab 1: 我的协作者 -->
+            <div v-show="collabTab === 'mine'" class="collab-tab-panel">
+              <template v-if="collaborators.length > 0">
+                <ul class="collab-list">
+                  <li v-for="c in collaborators" :key="c.id" class="collab-item">
+                    <span class="collab-item__avatar">{{ c.grantor_user_email.charAt(0).toUpperCase() }}</span>
+                    <div class="collab-item__info">
+                      <div class="collab-item__name">{{ c.grantor_user_email }}</div>
+                      <div class="collab-item__email">授权 ID: {{ c.id }}</div>
+                    </div>
+                    <div class="collab-item__meta">
+                      <span class="collab-item__count">{{ c.scope_canvas_id ? '画布授权' : '全局授权' }}</span>
+                      <span class="collab-item__time">授权于 {{ formatDate(c.created_at) }}</span>
+                    </div>
+                  </li>
+                </ul>
+              </template>
+              <div v-else class="collab-empty">
+                <div class="collab-empty__icon">🤝</div>
+                <div class="collab-empty__title">还没有协作者</div>
+                <div class="collab-empty__desc">添加其他用户为协作者后，你将可以调用他们的工作流</div>
+              </div>
+            </div>
+
+            <!-- Tab 2: 我授权出去（已授权 + 收到的申请） -->
+            <div v-show="collabTab === 'granted'" class="collab-tab-panel">
+              <!-- 已授权列表 -->
+              <section v-if="grantedList.length > 0" class="collab-section">
+                <div class="collab-section__title">已授权（{{ grantedList.length }}）</div>
+                <ul class="collab-list">
+                  <li v-for="g in grantedList" :key="g.id" class="collab-item">
+                    <span class="collab-item__avatar">{{ (g.grantee_user_email ?? '?').charAt(0).toUpperCase() }}</span>
+                    <div class="collab-item__info">
+                      <div class="collab-item__name">{{ g.grantee_user_email }}</div>
+                      <div class="collab-item__email">授权 ID: {{ g.id }}</div>
+                    </div>
+                    <div class="collab-item__meta">
+                      <span class="collab-item__count">{{ g.scope_canvas_id ? '画布授权' : '全局授权' }}</span>
+                      <span class="collab-item__time">授权于 {{ formatDate(g.created_at) }}</span>
+                    </div>
+                  </li>
+                </ul>
+              </section>
+
+              <!-- 收到的申请（待处理） -->
+              <section v-if="receivedRequests.length > 0" class="collab-section">
+                <div class="collab-section__title">待处理申请（{{ receivedRequests.length }}）</div>
+                <ul class="collab-list">
+                  <li v-for="r in receivedRequests" :key="r.id" class="collab-item">
+                    <span class="collab-item__avatar collab-item__avatar--inbound">📨</span>
+                    <div class="collab-item__info">
+                      <div class="collab-item__name">{{ r.requester_user_email }}</div>
+                      <div class="collab-item__email">申请 ID: {{ r.id }}</div>
+                    </div>
+                    <div class="collab-item__actions">
+                      <span class="collab-item__count collab-item__count--pending">待处理</span>
+                      <button class="collab-approve-btn" type="button" @click.stop="onResolveRequest(r)">同意</button>
+                      <button class="collab-cancel-btn" type="button" @click.stop="onRejectRequest(r)">拒绝</button>
+                    </div>
+                  </li>
+                </ul>
+              </section>
+
+              <!-- 都空 -->
+              <div v-if="grantedList.length === 0 && receivedRequests.length === 0" class="collab-empty">
+                <div class="collab-empty__icon">🔐</div>
+                <div class="collab-empty__title">还没有授权给任何人</div>
+                <div class="collab-empty__desc">通过「+ 添加协作工作流」可以向他人发送协作申请</div>
+              </div>
+            </div>
+          </template>
+        </div>
+      </div>
+    </div>
+  </Teleport>
+
+  <!-- 添加协作申请弹窗：点击「+ 添加协作工作流」时弹出 -->
+  <Teleport to="body">
+    <div v-if="showAddRequestDialog" class="user-info-mask collab-submask" @click.self="!reqSending && closeAddRequestDialog">
+      <div class="user-info-dialog collab-request-dialog">
+        <div class="user-info-dialog__header">
+          <span>添加协作工作流</span>
+          <button class="user-info-dialog__close" type="button" :disabled="reqSending" @click="closeAddRequestDialog">×</button>
+        </div>
+        <div class="user-info-dialog__body collab-request-dialog__body">
+          <template v-if="reqSuccess">
+            <div class="collab-request-success">
+              <div class="collab-request-success__icon">✅</div>
+              <div class="collab-request-success__title">申请已发送</div>
+              <div class="collab-request-success__desc">对方将在 7 天内收到并处理你的申请</div>
+            </div>
+          </template>
+          <template v-else>
+            <div class="collab-request-form">
+              <label class="collab-request-form__label" for="req-email">对方邮箱</label>
+              <input id="req-email" v-model="reqEmail" class="collab-request-form__input" type="text" placeholder="例如 friend@example.com" :disabled="reqSending" />
+
+              <label class="collab-request-form__label" for="req-message">申请理由</label>
+              <textarea id="req-message" v-model="reqMessage" class="collab-request-form__textarea" rows="4" placeholder="简单说明你要协作的内容，方便对方快速决策…" :disabled="reqSending"></textarea>
+
+              <div v-if="reqError" class="collab-request-form__error">❌ {{ reqError }}</div>
+
+              <div class="collab-request-form__actions">
+                <button class="collab-request-form__cancel" type="button" :disabled="reqSending" @click="closeAddRequestDialog">取消</button>
+                <button class="collab-request-form__submit" type="button" :disabled="reqSending" @click="onSubmitRequest">
+                  {{ reqSending ? '发送中…' : '发送申请' }}
+                </button>
+              </div>
+            </div>
+          </template>
+        </div>
+      </div>
+    </div>
+  </Teleport>
+
+  <!-- 我发起的申请弹窗：点击「我的申请」时弹出 -->
+  <Teleport to="body">
+    <div v-if="showMyReqDialog" class="user-info-mask collab-submask" @click.self="closeMyReqDialog">
+      <div class="user-info-dialog collab-myreq-dialog">
+        <div class="user-info-dialog__header">
+          <span>我发起的申请</span>
+          <button class="user-info-dialog__close" type="button" @click="closeMyReqDialog">×</button>
+        </div>
+        <div class="user-info-dialog__body collab-myreq-dialog__body">
+          <div v-if="myReqLoading" class="user-info-loading">加载中…</div>
+          <div v-else-if="myReqError" class="user-info-error">❌ {{ myReqError }}</div>
+          <div v-else-if="myRequests.length === 0" class="collab-empty">
+            <div class="collab-empty__icon">📬</div>
+            <div class="collab-empty__title">暂无申请记录</div>
+            <div class="collab-empty__desc">你还没有向任何人发起过协作申请</div>
+          </div>
+          <ul v-else class="collab-list">
+            <li v-for="r in myRequests" :key="r.id" class="collab-item">
+              <span class="collab-item__avatar">{{ r.targetEmail.charAt(0).toUpperCase() }}</span>
+              <div class="collab-item__info">
+                <div class="collab-item__name">{{ r.targetEmail }}</div>
+                <div class="collab-item__email">申请 ID: {{ r.id }}</div>
+              </div>
+              <div class="collab-item__actions">
+                <span class="collab-item__count">待处理</span>
+                <button class="collab-cancel-btn" type="button" @click.stop="onCancelRequest(r)">撤销</button>
+              </div>
+            </li>
+          </ul>
         </div>
       </div>
     </div>
@@ -1783,5 +2197,431 @@ onUnmounted(() => {
   white-space: pre-wrap;
   word-break: break-all;
   color: #1a1a1a;
+}
+
+// —— 协作工作流弹窗 ——
+.collab-dialog {
+  width: 520px;
+
+  &__body {
+    padding: 0;
+    max-height: 440px;
+    overflow-y: auto;
+  }
+}
+
+.collab-empty {
+  padding: 48px 24px;
+  text-align: center;
+
+  &__icon {
+    font-size: 40px;
+    margin-bottom: 12px;
+  }
+
+  &__title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-bottom: 6px;
+  }
+
+  &__desc {
+    font-size: 12px;
+    color: #9ca3af;
+  }
+}
+
+// —— Tab 切换 ——
+.collab-tabs {
+  display: flex;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 0 8px;
+}
+
+.collab-tabs__item {
+  all: unset;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #6b7280;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color 0.15s ease, border-color 0.15s ease;
+  position: relative;
+
+  &:hover {
+    color: #374151;
+  }
+
+  &--active {
+    color: #4f46e5;
+    border-bottom-color: #4f46e5;
+  }
+}
+
+.collab-tabs__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  font-size: 11px;
+  font-weight: 600;
+  background: #e5e7eb;
+  color: #4b5563;
+}
+
+.collab-tabs__item--active .collab-tabs__badge {
+  background: #eef2ff;
+  color: #4f46e5;
+}
+
+.collab-tabs__dot {
+  position: absolute;
+  top: 6px;
+  right: 4px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ef4444;
+  box-shadow: 0 0 0 2px #fff;
+}
+
+.collab-tab-panel {
+  padding: 4px 0 8px;
+}
+
+.collab-section {
+  margin-bottom: 4px;
+
+  &__title {
+    font-size: 11px;
+    font-weight: 600;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 12px 16px 2px;
+  }
+}
+
+.collab-list {
+  list-style: none;
+  margin: 0;
+  padding: 4px 0;
+}
+
+.collab-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: #f9fafb;
+  }
+
+  &__avatar {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: #e0e7ff;
+    color: #4f46e5;
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &--inbound {
+      background: #fef3c7;
+      font-size: 16px;
+      color: #d97706;
+    }
+  }
+
+  &__info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__name {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1a1a1a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__email {
+    font-size: 12px;
+    color: #9ca3af;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__meta {
+    flex-shrink: 0;
+    text-align: right;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  &__count {
+    font-size: 12px;
+    font-weight: 500;
+    color: #4f46e5;
+
+    &--pending {
+      color: #d97706;
+      background: #fef3c7;
+      padding: 1px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+  }
+
+  &__time {
+    font-size: 11px;
+    color: #9ca3af;
+  }
+}
+
+// —— 协作弹窗头部右侧按钮组 ——
+.collab-dialog {
+  &__header-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+}
+
+.collab-myreq-btn {
+  all: unset;
+  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #6b7280;
+  background: #f3f4f6;
+  transition: background 0.15s ease, color 0.15s ease;
+  margin-right: 2px;
+
+  &:hover {
+    background: #e5e7eb;
+    color: #374151;
+  }
+}
+
+.collab-item__actions {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.collab-approve-btn {
+  all: unset;
+  cursor: pointer;
+  padding: 3px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #16a34a;
+  background: #f0fdf4;
+  border: 1px solid transparent;
+  transition: background 0.15s ease, border-color 0.15s ease;
+
+  &:hover {
+    background: #dcfce7;
+    border-color: #bbf7d0;
+  }
+}
+
+.collab-cancel-btn {
+  all: unset;
+  cursor: pointer;
+  padding: 3px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #dc2626;
+  background: #fef2f2;
+  border: 1px solid transparent;
+  transition: background 0.15s ease, border-color 0.15s ease;
+
+  &:hover {
+    background: #fee2e2;
+    border-color: #fecaca;
+  }
+}
+
+.collab-add-btn {
+  all: unset;
+  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #4f46e5;
+  background: #eef2ff;
+  transition: background 0.15s ease;
+  margin-right: 4px;
+
+  &:hover {
+    background: #e0e7ff;
+  }
+}
+
+// —— 二次弹窗遮罩叠在主遮罩之上 ——
+.collab-submask {
+  z-index: 2200;
+}
+
+// —— 申请协作弹窗 ——
+.collab-request-dialog {
+  width: 440px;
+
+  &__body {
+    padding: 20px 20px 16px;
+  }
+}
+
+.collab-request-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  &__label {
+    font-size: 12px;
+    font-weight: 500;
+    color: #374151;
+    margin-top: 4px;
+  }
+
+  &__input,
+  &__textarea {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 13px;
+    color: #1a1a1a;
+    background: #fff;
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    resize: vertical;
+
+    &:focus {
+      border-color: #4f46e5;
+      box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.15);
+    }
+
+    &:disabled {
+      background: #f9fafb;
+      color: #9ca3af;
+      cursor: not-allowed;
+    }
+  }
+
+  &__textarea {
+    font-family: inherit;
+  }
+
+  &__error {
+    font-size: 12px;
+    color: #dc2626;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 6px;
+    padding: 8px 10px;
+    margin-top: 4px;
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  &__cancel {
+    all: unset;
+    cursor: pointer;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #6b7280;
+    border: 1px solid #d1d5db;
+    transition: background 0.15s ease, color 0.15s ease;
+
+    &:hover:not(:disabled) {
+      background: #f3f4f6;
+      color: #374151;
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+
+  &__submit {
+    all: unset;
+    cursor: pointer;
+    padding: 6px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #fff;
+    background: #4f46e5;
+    transition: background 0.15s ease;
+
+    &:hover:not(:disabled) {
+      background: #4338ca;
+    }
+
+    &:disabled {
+      background: #a5b4fc;
+      cursor: not-allowed;
+    }
+  }
+}
+
+// —— 申请成功提示 ——
+.collab-request-success {
+  text-align: center;
+  padding: 24px 0;
+
+  &__icon {
+    font-size: 36px;
+    margin-bottom: 12px;
+  }
+
+  &__title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-bottom: 4px;
+  }
+
+  &__desc {
+    font-size: 12px;
+    color: #6b7280;
+  }
 }
 </style>

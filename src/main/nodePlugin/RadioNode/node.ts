@@ -410,17 +410,19 @@ export class RadioNode extends Node {
   }
 
   /** 提交某个选项：能强转就 commit，转不动（undefined）或选项不存在则清空输出；
-   *  清 dirty 标记 */
-  private commitOption(opt: RadioOption | undefined): void {
+   *  清 dirty 标记。
+   *  force=true 时绕过 fingerprint 比对，强制把当前值推送给下游——给手动点"发送"按钮的场景用。 */
+  private commitOption(opt: RadioOption | undefined, force = false): void {
     const value = opt ? this.coerce(opt.value) : undefined
-    if (value) this.output.commit(value)
+    if (value) this.output.commit(value, { force })
     else this.output.clear()
     this.dirty = false
   }
 
-  /** 手动发送按钮处理——把当前选中态 commit 下游（不管 autoSend 开不开） */
+  /** 手动发送按钮处理——把当前选中态 commit 下游（不管 autoSend 开不开）；
+   *  传 force=true 绕过 fingerprint 比对，确保相同值的重复点击也能触发下游 */
   commitNow(): void {
-    this.commitOption(this.options.find(o => o.id === this.selectedId))
+    this.commitOption(this.options.find(o => o.id === this.selectedId), true)
     this.notifyChanged()
   }
 

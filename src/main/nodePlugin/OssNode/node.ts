@@ -198,16 +198,7 @@ export class OssNode extends Node {
     // 清洗：去掉开头的 /（OSS key 不应以 / 开头）
     objectKey = objectKey.replace(/^\/+/, '')
 
-    // 5. 去重：相同文件指纹 + 相同 objectKey 不重复上传
-    if (this.lastUploadedFingerprint === first.fingerprint && this.lastObjectKey === objectKey) {
-      if (this.lastUrl) {
-        this.urlOutput.commit(new StringValue(this.lastUrl))
-      }
-      this.notifyChanged()
-      return
-    }
-
-    // 6. 读文件 → base64（分块避免 reduce 拼接 O(n²)）
+    // 5. 读文件 → base64（分块避免 reduce 拼接 O(n²)）
     let base64 = ''
     try {
       const bytes = new Uint8Array(await first.file.arrayBuffer())

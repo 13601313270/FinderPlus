@@ -38,6 +38,16 @@ const ko: Language = {
     groupNodes: '노드 팔레트',
 
     groupCanvases: "내 캔버스",
+
+    groupAppearance: 'Appearance',
+    appearanceTitle: 'Canvas Appearance Theme',
+    appearanceHint: 'Customize the canvas background, grid dots, edge lines and node border colors. Changes take effect immediately and are saved automatically.',
+    themeCanvasBg: 'Canvas background',
+    themeCanvasDot: 'Grid dot color',
+    themeEdgeLine: 'Edge line color',
+    themeNodeBorder: 'Node border color',
+    themeReset: 'Reset to defaults',
+
     llmTitle: 'LLM API 키',
     llmHint: '각 공급자의 API 키를 여기서 구성하세요. 각 LLM 노드는 사용할 공급자와 모델을 독립적으로 선택할 수 있습니다.',
     imageTitle: '이미지 생성 API 키',

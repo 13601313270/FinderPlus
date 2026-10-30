@@ -36,8 +36,18 @@ const ar: Language = {
     groupLLM: 'إعدادات نماذج اللغة الكبيرة',
     groupImage: 'توليد الصور',
     groupNodes: 'لوحة العقد',
-
     groupCanvases: "لوحاتي",
+
+    /** 外观主题设置 */
+    groupAppearance: 'Appearance',
+    appearanceTitle: 'Canvas Appearance Theme',
+    appearanceHint: 'Customize the canvas background, grid dots, edge lines and node border colors. Changes take effect immediately and are saved automatically.',
+    themeCanvasBg: 'Canvas background',
+    themeCanvasDot: 'Grid dot color',
+    themeEdgeLine: 'Edge line color',
+    themeNodeBorder: 'Node border color',
+    themeReset: 'Reset to defaults',
+
     llmTitle: 'مفتاح API لنموذج اللغة',
     llmHint: 'قم بتكوين مفاتيح API لكل مزود هنا. يمكن لكل عقدة نموذج لغة اختيار المزود والنموذج بشكل مستقل.',
     imageTitle: 'مفتاح API لتوليد الصور',

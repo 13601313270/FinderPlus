@@ -38,6 +38,16 @@ const ja: Language = {
     groupNodes: 'ノードパレット',
 
     groupCanvases: "マイキャンバス",
+
+    groupAppearance: 'Appearance',
+    appearanceTitle: 'Canvas Appearance Theme',
+    appearanceHint: 'Customize the canvas background, grid dots, edge lines and node border colors. Changes take effect immediately and are saved automatically.',
+    themeCanvasBg: 'Canvas background',
+    themeCanvasDot: 'Grid dot color',
+    themeEdgeLine: 'Edge line color',
+    themeNodeBorder: 'Node border color',
+    themeReset: 'Reset to defaults',
+
     llmTitle: 'LLM APIキー',
     llmHint: '各プロバイダーのAPIキーをここで設定してください。各LLMノードはどのプロバイダーとモデルを使用するか独立して選択できます。',
     imageTitle: '画像生成 APIキー',

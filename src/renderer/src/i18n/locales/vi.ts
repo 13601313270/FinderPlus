@@ -36,8 +36,18 @@ const vi: Language = {
     groupLLM: 'Cài đặt LLM',
     groupImage: 'Tạo ảnh',
     groupNodes: 'Bảng nút',
-
     groupCanvases: "Canvas của tôi",
+
+    /** 外观主题设置 */
+    groupAppearance: 'Giao diện',
+    appearanceTitle: 'Canvas Appearance Theme',
+    appearanceHint: 'Customize the canvas background, grid dots, edge lines and node border colors. Changes take effect immediately and are saved automatically.',
+    themeCanvasBg: 'Canvas Background',
+    themeCanvasDot: 'Canvas Dots',
+    themeEdgeLine: 'Edge Lines',
+    themeNodeBorder: 'Node Border Colors',
+    themeReset: 'Reset',
+
     llmTitle: 'Khóa API LLM',
     llmHint: 'Cấu hình khóa API cho từng nhà cung cấp tại đây. Mỗi nút LLM có thể chọn độc lập nhà cung cấp và mô hình nào để sử dụng.',
     imageTitle: 'Khóa API tạo ảnh',

@@ -38,6 +38,16 @@ const es: Language = {
     groupNodes: 'Paleta de nodos',
 
     groupCanvases: "Mis lienzos",
+
+    groupAppearance: 'Appearance',
+    appearanceTitle: 'Canvas Appearance Theme',
+    appearanceHint: 'Customize the canvas background, grid dots, edge lines and node border colors. Changes take effect immediately and are saved automatically.',
+    themeCanvasBg: 'Canvas background',
+    themeCanvasDot: 'Grid dot color',
+    themeEdgeLine: 'Edge line color',
+    themeNodeBorder: 'Node border color',
+    themeReset: 'Reset to defaults',
+
     llmTitle: 'Clave API de LLM',
     llmHint: 'Configura aquí las claves API de cada proveedor. Cada nodo LLM puede elegir de forma independiente qué proveedor y modelo utilizar.',
     imageTitle: 'Clave API de generación de imágenes',

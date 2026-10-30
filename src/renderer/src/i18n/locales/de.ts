@@ -38,6 +38,16 @@ const de: Language = {
     groupNodes: 'Knotenpalette',
 
     groupCanvases: "Meine Leinwände",
+
+    groupAppearance: 'Appearance',
+    appearanceTitle: 'Canvas Appearance Theme',
+    appearanceHint: 'Customize the canvas background, grid dots, edge lines and node border colors. Changes take effect immediately and are saved automatically.',
+    themeCanvasBg: 'Canvas background',
+    themeCanvasDot: 'Grid dot color',
+    themeEdgeLine: 'Edge line color',
+    themeNodeBorder: 'Node border color',
+    themeReset: 'Reset to defaults',
+
     llmTitle: 'LLM-API-Schlüssel',
     llmHint: 'Konfigurieren Sie hier die API-Schlüssel für jeden Anbieter. Jeder LLM-Knoten kann unabhängig wählen, welchen Anbieter und welches Modell er verwendet.',
     imageTitle: 'API-Schlüssel für Bildgenerierung',

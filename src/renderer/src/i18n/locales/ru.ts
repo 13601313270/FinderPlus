@@ -38,6 +38,16 @@ const ru: Language = {
     groupNodes: 'Палитра узлов',
 
     groupCanvases: "Мои холсты",
+
+    groupAppearance: 'Appearance',
+    appearanceTitle: 'Canvas Appearance Theme',
+    appearanceHint: 'Customize the canvas background, grid dots, edge lines and node border colors. Changes take effect immediately and are saved automatically.',
+    themeCanvasBg: 'Canvas background',
+    themeCanvasDot: 'Grid dot color',
+    themeEdgeLine: 'Edge line color',
+    themeNodeBorder: 'Node border color',
+    themeReset: 'Reset to defaults',
+
     llmTitle: 'API-ключ LLM',
     llmHint: 'Настройте API-ключи каждого провайдера здесь. Каждый узел LLM может независимо выбирать, какого провайдера и какую модель использовать.',
     imageTitle: 'API-ключ генерации изображений',

@@ -39,7 +39,6 @@ const en: Language = {
 
     // Sidebar groups
     groupGeneral: 'General',
-    groupAppearance: 'Appearance',
     groupLLM: 'LLM Settings',
     groupImage: 'Image Generation',
 
@@ -48,6 +47,7 @@ const en: Language = {
     groupCanvases: "My Canvases",
 
     // Appearance / theme settings
+    groupAppearance: 'Appearance',
     appearanceTitle: 'Canvas Appearance Theme',
     appearanceHint: 'Customize the canvas background, grid dots, edge lines and node border colors. Changes take effect immediately and are saved automatically.',
     themeCanvasBg: 'Canvas background',

@@ -37,6 +37,16 @@ const fr: Language = {
     groupImage: "Génération d'images",
     groupNodes: 'Palette de nœuds',
     groupCanvases: 'Mes toiles',
+
+    groupAppearance: 'Appearance',
+    appearanceTitle: 'Canvas Appearance Theme',
+    appearanceHint: 'Customize the canvas background, grid dots, edge lines and node border colors. Changes take effect immediately and are saved automatically.',
+    themeCanvasBg: 'Canvas background',
+    themeCanvasDot: 'Grid dot color',
+    themeEdgeLine: 'Edge line color',
+    themeNodeBorder: 'Node border color',
+    themeReset: 'Reset to defaults',
+
     llmTitle: 'Clé API LLM',
     llmHint: 'Configurez ici les clés API de chaque fournisseur. Chaque nœud LLM peut choisir indépendamment le fournisseur et le modèle à utiliser.',
     imageTitle: "Clé API de génération d'images",

@@ -38,6 +38,16 @@ const id: Language = {
     groupNodes: 'Palet Node',
 
     groupCanvases: "Kanvas Saya",
+
+    groupAppearance: 'Appearance',
+    appearanceTitle: 'Canvas Appearance Theme',
+    appearanceHint: 'Customize the canvas background, grid dots, edge lines and node border colors. Changes take effect immediately and are saved automatically.',
+    themeCanvasBg: 'Canvas background',
+    themeCanvasDot: 'Grid dot color',
+    themeEdgeLine: 'Edge line color',
+    themeNodeBorder: 'Node border color',
+    themeReset: 'Reset to defaults',
+
     llmTitle: 'Kunci API LLM',
     llmHint: 'Konfigurasikan kunci API untuk setiap penyedia di sini. Setiap node LLM dapat memilih secara mandiri penyedia dan model yang digunakan.',
     imageTitle: 'Kunci API Pembuatan Gambar',

@@ -36,8 +36,17 @@ const tr: Language = {
     groupLLM: 'LLM Ayarları',
     groupImage: 'Görüntü Oluşturma',
     groupNodes: 'Düğüm Paleti',
-
     groupCanvases: "Benim tuvalim",
+
+    groupAppearance: 'Appearance',
+    appearanceTitle: 'Canvas Appearance Theme',
+    appearanceHint: 'Customize the canvas background, grid dots, edge lines and node border colors. Changes take effect immediately and are saved automatically.',
+    themeCanvasBg: 'Canvas background',
+    themeCanvasDot: 'Grid dot color',
+    themeEdgeLine: 'Edge line color',
+    themeNodeBorder: 'Node border color',
+    themeReset: 'Reset to defaults',
+
     llmTitle: 'LLM API Anahtarı',
     llmHint: 'Her sağlayıcının API anahtarlarını burada yapılandırın. Her LLM düğümü hangi sağlayıcıyı ve modeli kullanacağını bağımsız olarak seçebilir.',
     imageTitle: 'Görüntü Oluşturma API Anahtarı',

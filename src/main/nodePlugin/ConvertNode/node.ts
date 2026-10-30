@@ -100,7 +100,7 @@ export class ConvertNode extends Node {
   }
 
   // —— 输入：对齐 + 转换 ——
-
+  // @ts-ignore
   inputPortReceiveValue(ports: InputPort[], source: InputPortChangeSource): void {
     const hasEdges = this.inputPort.incomingEdgeCount > 0
     if (!hasEdges) {

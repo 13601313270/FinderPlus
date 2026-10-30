@@ -644,8 +644,6 @@ function onDocumentMouseDown(e: MouseEvent): void {
 
 // —— 绘制装饰元素（矩形）——
 let drawingActive = false
-let drawStartX = 0
-let drawStartY = 0
 
 function onDrawPointerDown(e: PointerEvent): void {
   if (!drawingMode.value) return
@@ -657,8 +655,6 @@ function onDrawPointerDown(e: PointerEvent): void {
   const canvasRect = canvasEl.value?.getBoundingClientRect()
   if (!canvasRect) return
   const [wx, wy] = screenToWorld(e.clientX - canvasRect.left, e.clientY - canvasRect.top)
-  drawStartX = wx
-  drawStartY = wy
   drawingPreview.value = { startX: wx, startY: wy, endX: wx, endY: wy }
 }
 
@@ -685,41 +681,6 @@ function onDrawPointerUp(_e: PointerEvent): void {
   drawingPreview.value = null
   // 画完一个就退出绘制模式，避免连续画造成困惑
   exitDrawingMode()
-}
-
-// —— 装饰元素右键菜单 ——
-const decorContextMenu = ref<{
-  visible: boolean
-  x: number
-  y: number
-  decorId: string | null
-}>({ visible: false, x: 0, y: 0, decorId: null })
-
-function onDecorContextMenu(e: MouseEvent): void {
-  if (!selectedDecorIds || selectedDecorIds.size === 0) return
-  // 只处理单个选中的情况
-  const decorId = Array.from(selectedDecorIds)[0]
-  if (!decorId) return
-
-  // 计算装饰元素的世界坐标 → 屏幕坐标
-  const canvasRect = canvasEl.value?.getBoundingClientRect()
-  if (!canvasRect) return
-
-  decorContextMenu.value = { visible: true, x: e.clientX, y: e.clientY, decorId }
-  e.preventDefault()
-  e.stopPropagation()
-}
-
-function closeDecorContextMenu(): void {
-  decorContextMenu.value.visible = false
-  decorContextMenu.value.decorId = null
-}
-
-function deleteSelectedDecor(): void {
-  if (decorContextMenu.value.decorId) {
-    removeDecor(decorContextMenu.value.decorId)
-  }
-  closeDecorContextMenu()
 }
 
 // —— 键盘快捷键 ——

@@ -38,6 +38,16 @@ const hi: Language = {
     groupNodes: 'नोड पैलेट',
 
     groupCanvases: "मेरे कैनवास",
+
+    groupAppearance: 'Appearance',
+    appearanceTitle: 'Canvas Appearance Theme',
+    appearanceHint: 'Customize the canvas background, grid dots, edge lines and node border colors. Changes take effect immediately and are saved automatically.',
+    themeCanvasBg: 'Canvas background',
+    themeCanvasDot: 'Grid dot color',
+    themeEdgeLine: 'Edge line color',
+    themeNodeBorder: 'Node border color',
+    themeReset: 'Reset to defaults',
+
     llmTitle: 'LLM API कुंजी',
     llmHint: 'यहां प्रत्येक प्रदाता की API कुंजियाँ कॉन्फ़िगर करें। प्रत्येक LLM नोड स्वतंत्र रूप से चुन सकता है कि कौन सा प्रदाता और मॉडल उपयोग करना है।',
     imageTitle: 'छवि निर्माण API कुंजी',

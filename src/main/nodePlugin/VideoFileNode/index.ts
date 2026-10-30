@@ -2,6 +2,8 @@ import type { NodePluginManifest } from '../manifest'
 import { VideoFileNode } from './node'
 import render from './render.vue'
 
+import VideoFileIcon from '@renderer/assets/node-icons/VideoFileNode.svg'
+
 export const manifest: NodePluginManifest = {
   type: VideoFileNode.TYPE,
   nodeClass: VideoFileNode,
@@ -23,7 +25,7 @@ export const manifest: NodePluginManifest = {
     it: 'File video'
   },
   // 图标：播放 / 暂停 两笔（与音频节点的喇叭形区分开）
-  iconPaths: ['M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z', 'M10 8l6 4-6 4z'],
+  iconImage: VideoFileIcon,
   category: 'file',
   render,
   platforms: ["mac"]

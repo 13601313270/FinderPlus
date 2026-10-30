@@ -2,6 +2,8 @@ import type { NodePluginManifest } from '../manifest'
 import { ImageToPdfNode } from './node'
 import render from './render.vue'
 
+import ImageToPdfIcon from '@renderer/assets/node-icons/ImageToPdfNode.svg'
+
 export const manifest: NodePluginManifest = {
   type: ImageToPdfNode.TYPE,
   nodeClass: ImageToPdfNode,
@@ -22,7 +24,7 @@ export const manifest: NodePluginManifest = {
     tr: 'Görüntülerden PDF',
     it: 'Immagini in PDF'
   },
-  iconPaths: ['M4 4h12l4 4v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z', 'M16 4v4h4', 'M8 14h8', 'M8 18h5'],
+  iconImage: ImageToPdfIcon,
   category: 'image',
   render,
   help: () => import('./ImageToPdfHelpDialog.vue'),

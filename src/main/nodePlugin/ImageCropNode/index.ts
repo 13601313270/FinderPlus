@@ -2,6 +2,8 @@ import type { NodePluginManifest } from '../manifest'
 import { ImageCropNode } from './node'
 import render from './render.vue'
 
+import ImageCropIcon from '@renderer/assets/node-icons/ImageCropNode.svg'
+
 export const manifest: NodePluginManifest = {
   type: ImageCropNode.TYPE,
   nodeClass: ImageCropNode,
@@ -23,7 +25,7 @@ export const manifest: NodePluginManifest = {
     it: 'Ritaglio immagine'
   },
   render,
-  iconPaths: ['M6 2v14a2 2 0 0 0 2 2h14', 'M2 6h14a2 2 0 0 1 2 2v14'],
+  iconImage: ImageCropIcon,
   category: 'image',
   help: () => import('./ImageCropHelpDialog.vue'),
   platforms: ["mac"]

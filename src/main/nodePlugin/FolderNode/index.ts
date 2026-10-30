@@ -2,6 +2,8 @@ import type { NodePluginManifest } from '../manifest'
 import { FolderNode } from './node'
 import render from './render.vue'
 
+import FolderIcon from '@renderer/assets/node-icons/FolderNode.svg'
+
 export const manifest: NodePluginManifest = {
   type: FolderNode.TYPE,
   nodeClass: FolderNode,
@@ -23,7 +25,7 @@ export const manifest: NodePluginManifest = {
     it: 'Cartella'
   },
   render,
-  iconPaths: ['M3 8a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.6.8l.9 1.2H19a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z'],
+  iconImage: FolderIcon,
   category: 'file',
   help: () => import('./FolderHelpDialog.vue'),
   platforms: ["mac"]

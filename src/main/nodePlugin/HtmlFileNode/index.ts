@@ -2,6 +2,8 @@ import type { NodePluginManifest } from '../manifest'
 import { HtmlFileNode } from './node'
 import render from './render.vue'
 
+import HtmlFileIcon from '@renderer/assets/node-icons/HtmlFileNode.svg'
+
 export const manifest: NodePluginManifest = {
   type: HtmlFileNode.TYPE,
   nodeClass: HtmlFileNode,
@@ -22,7 +24,7 @@ export const manifest: NodePluginManifest = {
     tr: 'HTML dosyası',
     it: 'File HTML'
   },
-  iconPaths: ['M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7l-5-5Z', 'M14 2v5h5', 'M8 13h8', 'M8 17h5'],
+  iconImage: HtmlFileIcon,
   category: 'file',
   render,
   detailPanel: () => import('./HtmlFileDetailPanel.vue'),

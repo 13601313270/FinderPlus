@@ -2,6 +2,8 @@ import type { NodePluginManifest } from '../manifest'
 import { TextInputNode } from './node'
 import render from './render.vue'
 
+import TextInputIcon from '@renderer/assets/node-icons/TextInputNode.svg'
+
 export const manifest: NodePluginManifest = {
   type: TextInputNode.TYPE,
   nodeClass: TextInputNode,
@@ -23,7 +25,7 @@ export const manifest: NodePluginManifest = {
     it: 'Input di testo'
   },
   render,
-  iconPaths: ['M4 7V5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2', 'M12 4v16', 'M9 20h6'],
+  iconImage: TextInputIcon,
   category: 'input',
   help: () => import('./TextInputHelpDialog.vue'),
   platforms: ["mac"]

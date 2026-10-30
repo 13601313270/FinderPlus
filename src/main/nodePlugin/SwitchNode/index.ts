@@ -2,6 +2,8 @@ import type { NodePluginManifest } from '../manifest'
 import { SwitchNode } from './node'
 import render from './render.vue'
 
+import SwitchIcon from '@renderer/assets/node-icons/SwitchNode.svg'
+
 export const manifest: NodePluginManifest = {
   type: SwitchNode.TYPE,
   nodeClass: SwitchNode,
@@ -23,7 +25,7 @@ export const manifest: NodePluginManifest = {
     it: 'Ramo condizionale'
   },
   render,
-  iconPaths: ['M6 15V3', 'M6 18m-3 0a3 3 0 1 0 6 0a3 3 0 1 0-6 0', 'M18 6m-3 0a3 3 0 1 0 6 0a3 3 0 1 0-6 0', 'M18 9a9 9 0 0 1-9 9'],
+  iconImage: SwitchIcon,
   category: 'flow',
   help: () => import('./SwitchHelpDialog.vue'),
   platforms: ["mac"]

@@ -2,6 +2,8 @@ import type { NodePluginManifest } from '../manifest'
 import { ImageCompressNode } from './node'
 import render from './render.vue'
 
+import ImageCompressIcon from '@renderer/assets/node-icons/ImageCompressNode.svg'
+
 export const manifest: NodePluginManifest = {
   type: ImageCompressNode.TYPE,
   nodeClass: ImageCompressNode,
@@ -23,7 +25,7 @@ export const manifest: NodePluginManifest = {
     it: 'Comprimi immagine'
   },
   render,
-  iconPaths: ['M4 4l6 6', 'M4 10V4h6', 'M20 20l-6-6', 'M20 14v6h-6'],
+  iconImage: ImageCompressIcon,
   category: 'image',
   help: () => import('./ImageCompressHelpDialog.vue'),
   platforms: ["mac"]

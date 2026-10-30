@@ -7,3 +7,25 @@ declare module '*.vue' {
   const component: Component
   export default component
 }
+
+/** 让主进程 tsconfig 能通过 import aliyunLogo from '@renderer/assets/images/aliyun.png' 等图片模块。 */
+declare module '*.png' {
+  const src: string
+  export default src
+}
+declare module '*.jpg' {
+  const src: string
+  export default src
+}
+declare module '*.jpeg' {
+  const src: string
+  export default src
+}
+declare module '*.svg' {
+  const src: string
+  export default src
+}
+declare module '*.gif' {
+  const src: string
+  export default src
+}

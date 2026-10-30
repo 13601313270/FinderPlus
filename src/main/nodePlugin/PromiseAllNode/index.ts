@@ -2,6 +2,8 @@ import type { NodePluginManifest } from '../manifest'
 import { PromiseAllNode } from './node'
 import render from './render.vue'
 
+import PromiseAllIcon from '@renderer/assets/node-icons/PromiseAllNode.svg'
+
 export const manifest: NodePluginManifest = {
   type: PromiseAllNode.TYPE,
   nodeClass: PromiseAllNode,
@@ -24,12 +26,7 @@ export const manifest: NodePluginManifest = {
   },
   render,
   // 图标：一个分叉的箭头汇合到一起，再分叉出去（表达"多入多出 + 汇合等待"的语义）
-  iconPaths: [
-    'M4 6h4', 'M4 12h4', 'M4 18h4',
-    'M12 12h4',
-    'M10 6l2 6-2 6',
-    'M20 8l-4 4 4 4'
-  ],
+  iconImage: PromiseAllIcon,
   category: 'flow',
   help: () => import('./PromiseAllHelpDialog.vue'),
   platforms: ["mac"]

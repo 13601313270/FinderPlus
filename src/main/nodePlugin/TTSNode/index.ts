@@ -2,6 +2,8 @@ import type { NodePluginManifest } from '../manifest'
 import { TTSNode } from './node'
 import render from './render.vue'
 
+import TTSIcon from '@renderer/assets/node-icons/TTSNode.svg'
+
 export const manifest: NodePluginManifest = {
   type: TTSNode.TYPE,
   nodeClass: TTSNode,
@@ -25,7 +27,7 @@ export const manifest: NodePluginManifest = {
   render,
   detailPanel: () => import('./TTSDetailPanel.vue'),
   // 图标：喇叭 / 声波 两笔
-  iconPaths: ['M3 10v4h4l5 4V6L7 10H3Z', 'M16 8a4 4 0 0 1 0 8', 'M19 5a7 7 0 0 1 0 14'],
+  iconImage: TTSIcon,
   category: 'ai',
   platforms: ["mac"]
 }

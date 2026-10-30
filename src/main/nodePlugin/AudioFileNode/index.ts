@@ -2,6 +2,8 @@ import type { NodePluginManifest } from '../manifest'
 import { AudioFileNode } from './node'
 import render from './render.vue'
 
+import AudioFileIcon from '@renderer/assets/node-icons/AudioFileNode.svg'
+
 export const manifest: NodePluginManifest = {
   type: AudioFileNode.TYPE,
   nodeClass: AudioFileNode,
@@ -23,7 +25,7 @@ export const manifest: NodePluginManifest = {
     it: 'File audio'
   },
   // 图标：喇叭（和 TTS 一样的喇叭形，区分开图片/文本节点）
-  iconPaths: ['M3 10v4h4l5 4V6L7 10H3Z', 'M16 8a4 4 0 0 1 0 8'],
+  iconImage: AudioFileIcon,
   category: 'file',
   render,
   platforms: ["mac"]

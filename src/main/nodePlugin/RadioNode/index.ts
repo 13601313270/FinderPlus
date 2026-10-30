@@ -2,6 +2,8 @@ import type { NodePluginManifest } from '../manifest'
 import { RadioNode } from './node'
 import render from './render.vue'
 
+import RadioIcon from '@renderer/assets/node-icons/RadioNode.svg'
+
 export const manifest: NodePluginManifest = {
   type: RadioNode.TYPE,
   nodeClass: RadioNode,
@@ -23,7 +25,7 @@ export const manifest: NodePluginManifest = {
     it: 'Opzione singola'
   },
   render,
-  iconPaths: ['M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0-18 0', 'M12 12m-4 0a4 4 0 1 0 8 0a4 4 0 1 0-8 0'],
+  iconImage: RadioIcon,
   category: 'input',
   help: () => import('./RadioHelpDialog.vue'),
   detailPanel: () => import('./RadioDetailPanel.vue'),

@@ -2,6 +2,8 @@ import type { NodePluginManifest } from '../manifest'
 import { CrawlerNode } from './node'
 import render from './render.vue'
 
+import CrawlerIcon from '@renderer/assets/node-icons/CrawlerNode.svg'
+
 export const manifest: NodePluginManifest = {
   type: CrawlerNode.TYPE,
   nodeClass: CrawlerNode,
@@ -23,12 +25,7 @@ export const manifest: NodePluginManifest = {
     it: 'Crawler'
   },
   render,
-  iconPaths: [
-    'M4 6h16v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6z',
-    'M4 6l8 5 8-5',
-    'M9 13h6',
-    'M9 17h4'
-  ],
+  iconImage: CrawlerIcon,
   category: 'tool',
   help: () => import('./CrawlerHelpDialog.vue'),
   detailPanel: () => import('./CrawlerDetailPanel.vue'),

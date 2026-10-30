@@ -2,6 +2,8 @@ import type { NodePluginManifest } from '../manifest'
 import { CommandNode } from './node'
 import render from './render.vue'
 
+import CommandIcon from '@renderer/assets/node-icons/CommandNode.svg'
+
 export const manifest: NodePluginManifest = {
   type: CommandNode.TYPE,
   nodeClass: CommandNode,
@@ -23,7 +25,7 @@ export const manifest: NodePluginManifest = {
     it: 'Comando'
   },
   render,
-  iconPaths: ['m5 7 5 5-5 5', 'M13 17h6'],
+  iconImage: CommandIcon,
   category: 'tool',
   help: () => import('./CommandHelpDialog.vue'),
   platforms: ["mac"]

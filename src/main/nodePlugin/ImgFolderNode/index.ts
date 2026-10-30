@@ -2,6 +2,8 @@ import type { NodePluginManifest } from '../manifest'
 import { ImgFolderNode } from './node'
 import render from './render.vue'
 
+import ImgFolderIcon from '@renderer/assets/node-icons/ImgFolderNode.svg'
+
 export const manifest: NodePluginManifest = {
   type: ImgFolderNode.TYPE,
   nodeClass: ImgFolderNode,
@@ -23,7 +25,7 @@ export const manifest: NodePluginManifest = {
     it: 'Cartella immagini'
   },
   render,
-  iconPaths: ['M3 8a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.6.8l.9 1.2H19a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z', 'M9 15.5m-1.2 0a1.2 1.2 0 1 0 2.4 0a1.2 1.2 0 1 0-2.4 0', 'm5.5 19.5 4-4 3 3 2.5-2.5 3.5 3.5'],
+  iconImage: ImgFolderIcon,
   category: 'file',
   help: () => import('./ImgFolderHelpDialog.vue'),
   platforms: ["mac"]

@@ -123,7 +123,7 @@ function onSelectTypeFromMore(type: string): void {
 interface PaletteItem {
  type: string;
  label: string;
- iconPaths: readonly string[];
+ iconImage?: string;
  category: NodeCategory;
  /** 该节点是否注册了 manifest.help；没注册就不渲染帮助入口 */
  hasHelp: boolean;
@@ -144,7 +144,7 @@ interface PaletteGroup {
 // 下拉项文案取自各个插件 manifest 自己声明的多语言 title；
 // 插件没配当前语言时由 resolveNodeTitle 兜底（en → zh → 已配的第一种 → type）。
 // 这样新增/第三方插件不用改 Finder+ 的中央词条表就能带上自己的显示名。
-// 图标同理：manifest.iconPaths 由插件自己声明，缺省时列表项只显示文字。
+// 图标同理：manifest.iconImage 由插件自己声明（SVG/PNG），缺省时列表项只显示文字。
 // 分类同理：manifest.category 缺省时归入「其他」，第三方老插件不会从菜单里消失。
 // 用户在全局设置里取消勾选的节点类型会被隐藏，不参与调色板渲染。
 const allItems = computed<PaletteItem[]>(() => paletteManifests
@@ -152,7 +152,7 @@ const allItems = computed<PaletteItem[]>(() => paletteManifests
   .map((m) => ({
  type: m.type,
  label: resolveNodeTitle(m, language.value),
- iconPaths: m.iconPaths ?? [],
+ iconImage: m.iconImage,
  category: m.category ?? DEFAULT_NODE_CATEGORY,
  hasHelp: m.help != null,
  common: m.common ?? true
@@ -442,21 +442,15 @@ onBeforeUnmount(() => {
                 @click.stop="onSelectType(item.type)"
                 @mouseenter="setActive(item.type)"
               >
-                <svg
-                  v-if="item.iconPaths.length"
+                <img
+                  v-if="item.iconImage"
                   class="palette__icon"
+                  :src="item.iconImage"
                   width="16"
                   height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.8"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
+                  alt=""
                   aria-hidden="true"
-                >
-                  <path v-for="(d, i) in item.iconPaths" :key="i" :d="d" />
-                </svg>
+                />
                 <span class="palette__label">{{ item.label }}</span>
                 <button
                   v-if="item.hasHelp"
@@ -525,22 +519,16 @@ onBeforeUnmount(() => {
                   :title="item.label"
                   @click.stop="onSelectTypeFromMore(item.type)"
                 >
-                  <svg
-                    v-if="item.iconPaths.length"
-                    class="palette__icon"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.8"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    aria-hidden="true"
-                  >
-                    <path v-for="(d, i) in item.iconPaths" :key="i" :d="d" />
-                  </svg>
-                  <span class="palette__label">{{ item.label }}</span>
+                <img
+                  v-if="item.iconImage"
+                  class="palette__icon"
+                  :src="item.iconImage"
+                  width="16"
+                  height="16"
+                  alt=""
+                  aria-hidden="true"
+                />
+                <span class="palette__label">{{ item.label }}</span>
                 </div>
               </div>
             </div>
@@ -883,6 +871,7 @@ onBeforeUnmount(() => {
     width: 20px;
     height: 20px;
     transition: color 0.1s ease;
+    object-fit: contain;
   }
 
   // 长名字（英文 Background Remove、德文 Bildverarbeitung）截断显示，

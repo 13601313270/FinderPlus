@@ -75,9 +75,9 @@ const stateClass = computed(() => {
   return ''
 })
 
-/** 最小化时用的图标 paths：从 manifest 拿 iconPaths，没有就 null 渲染兜底字母 */
-const minimizedIconPaths = computed<readonly string[] | null>(() => {
-  return getNodeManifest(props.node.type)?.iconPaths ?? null
+/** 最小化时用的图标（图片路径）；没有就渲染兜底字母 */
+const minimizedIconImage = computed<string | null>(() => {
+  return getNodeManifest(props.node.type)?.iconImage ?? null
 })
 
 /** 鼠标悬停时显示的状态说明文案 */
@@ -197,10 +197,7 @@ function onContextMenu(e: MouseEvent): void {
         <!-- 还原按钮：最小化时 NodeHeader 被隐藏了，这里叠一个小号还原入口 -->
         <button class="node-minimized-icon__restore" type="button" title="还原" @pointerdown.stop
           @click.stop="props.node.toggleMinimized?.()">▢</button>
-        <svg v-if="minimizedIconPaths" class="node-minimized-icon__svg" viewBox="0 0 24 24" fill="none"
-          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path v-for="(d, i) in minimizedIconPaths" :key="i" :d="d" />
-        </svg>
+        <img v-if="minimizedIconImage" class="node-minimized-icon__img" :src="minimizedIconImage" alt="" aria-hidden="true" />
         <span v-else class="node-minimized-icon__fallback">{{ node.type.slice(0, 2).toUpperCase() }}</span>
       </div>
       <!-- 底部方法端口行：最小化态也要保留，hide-label 只留三角形；用 absolute 钉在 icon 底部，不参与 flex 流 -->
@@ -449,9 +446,10 @@ function onContextMenu(e: MouseEvent): void {
     }
   }
 
-  &__svg {
+  &__img {
     width: 48px;
     height: 48px;
+    object-fit: contain;
     pointer-events: none;
   }
 

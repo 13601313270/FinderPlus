@@ -2,6 +2,8 @@ import type { NodePluginManifest } from '../manifest'
 import { TextDisplayNode } from './node'
 import render from './render.vue'
 
+import TextDisplayIcon from '@renderer/assets/node-icons/TextDisplayNode.svg'
+
 export const manifest: NodePluginManifest = {
   type: TextDisplayNode.TYPE,
   nodeClass: TextDisplayNode,
@@ -23,7 +25,7 @@ export const manifest: NodePluginManifest = {
     it: 'Visualizzazione testo'
   },
   render,
-  iconPaths: ['M4 6h16', 'M4 11h16', 'M4 16h10'],
+  iconImage: TextDisplayIcon,
   category: 'text-data',
   help: () => import('./TextDisplayHelpDialog.vue'),
   platforms: ["mac"]

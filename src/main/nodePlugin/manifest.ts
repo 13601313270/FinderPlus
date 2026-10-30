@@ -38,13 +38,13 @@ export interface NodePluginManifest {
    */
   readonly title?: NodeTitle
   /**
-   * 调色板图标（可选）：24×24 视图盒内的一组 SVG path 的 d 字符串，
-   * 由渲染方统一以描边风格（stroke=currentColor）绘制，因此不写死颜色、自动跟随主题。
-   *
-   * 与 title 同理，图标由插件自己声明，第三方插件不必去改渲染进程的中央图标表。
-   * 不配时调色板项只显示文字（与加入本字段之前的行为一致）。
+   * 调色板图标（可选）：图片资源路径（PNG/SVG 等）。
+   * 支持两类来源：
+   *   - SVG 文件（通过 import 引入 @renderer/assets/node-icons/*.svg）
+   *   - PNG 等品牌 logo（例如 @renderer/assets/images/aliyun.png）
+   * 不配时调色板项只显示文字。
    */
-  readonly iconPaths?: readonly string[]
+  readonly iconImage?: string
   /**
    * 调色板分组（可选）。取值见 category.ts 的 NodeCategory。
    *

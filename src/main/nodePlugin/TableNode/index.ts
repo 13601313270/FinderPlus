@@ -2,6 +2,8 @@ import type { NodePluginManifest } from '../manifest'
 import { TableNode } from './node'
 import render from './render.vue'
 
+import TableIcon from '@renderer/assets/node-icons/TableNode.svg'
+
 export const manifest: NodePluginManifest = {
   type: TableNode.TYPE,
   nodeClass: TableNode,
@@ -23,11 +25,7 @@ export const manifest: NodePluginManifest = {
     it: 'Tabella'
   },
   render,
-  iconPaths: [
-    'M3 5h18v14H3z',
-    'M3 10h18',
-    'M10 5v14'
-  ],
+  iconImage: TableIcon,
   category: 'text-data',
   help: () => import('./TableHelpDialog.vue'),
   platforms: ["mac"]

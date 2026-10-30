@@ -2,6 +2,8 @@ import type { NodePluginManifest } from '../manifest'
 import { BoolInputNode } from './node'
 import render from './render.vue'
 
+import BoolInputIcon from '@renderer/assets/node-icons/BoolInputNode.svg'
+
 export const manifest: NodePluginManifest = {
   type: BoolInputNode.TYPE,
   nodeClass: BoolInputNode,
@@ -23,7 +25,7 @@ export const manifest: NodePluginManifest = {
     it: 'Input booleano'
   },
   render,
-  iconPaths: ['M6 7h12a5 5 0 0 1 0 10H6a5 5 0 0 1 0-10Z', 'M16.5 12m-2.5 0a2.5 2.5 0 1 0 5 0a2.5 2.5 0 1 0-5 0'],
+  iconImage: BoolInputIcon,
   category: 'input',
   help: () => import('./BoolInputHelpDialog.vue'),
   platforms: ["mac"]

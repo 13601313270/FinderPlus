@@ -2,6 +2,8 @@ import type { NodePluginManifest } from '../manifest'
 import { CodeNode } from './node'
 import render from './render.vue'
 
+import CodeIcon from '@renderer/assets/node-icons/CodeNode.svg'
+
 export const manifest: NodePluginManifest = {
   type: CodeNode.TYPE,
   nodeClass: CodeNode,
@@ -23,7 +25,7 @@ export const manifest: NodePluginManifest = {
     it: 'Codice'
   },
   render,
-  iconPaths: ['m8 6-6 6 6 6', 'm16 6 6 6-6 6'],
+  iconImage: CodeIcon,
   category: 'tool',
   help: () => import('./CodeHelpDialog.vue'),
   detailPanel: () => import('./CodeDetailPanel.vue'),

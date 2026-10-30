@@ -2,6 +2,8 @@ import type { NodePluginManifest } from '../manifest'
 import { RecorderNode } from './node'
 import render from './render.vue'
 
+import RecorderIcon from '@renderer/assets/node-icons/RecorderNode.svg'
+
 export const manifest: NodePluginManifest = {
   type: RecorderNode.TYPE,
   nodeClass: RecorderNode,
@@ -23,12 +25,7 @@ export const manifest: NodePluginManifest = {
     it: 'Registratore audio'
   },
   // 图标：麦克风（纯前端录音，和 TTSNode 的喇叭区分）
-  iconPaths: [
-    'M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z',
-    'M5 10a7 7 0 0 0 14 0',
-    'M12 19v3',
-    'M8 22h8'
-  ],
+  iconImage: RecorderIcon,
   category: 'input',
   render,
   platforms: ["mac"]

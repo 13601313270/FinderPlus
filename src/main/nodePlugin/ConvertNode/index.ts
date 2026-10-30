@@ -2,6 +2,8 @@ import type { NodePluginManifest } from '../manifest'
 import { ConvertNode } from './node'
 import render from './render.vue'
 
+import ConvertIcon from '@renderer/assets/node-icons/ConvertNode.svg'
+
 export const manifest: NodePluginManifest = {
   type: ConvertNode.TYPE,
   nodeClass: ConvertNode,
@@ -24,14 +26,7 @@ export const manifest: NodePluginManifest = {
   },
   render,
   /** 转换图标：圆（源类型）→ 方（目标类型）弯箭头 */
-  iconPaths: [
-    // 源类型：圆
-    'M8 4a4 4 0 1 0 0 8a4 4 0 1 0 0-8z',
-    // 目标类型：方
-    'M14 14h7v7h-7z',
-    // 弯箭头 + 箭头尖
-    'M11 11 Q 12.5 12 14 14 M12 13 L14 14 L13 12'
-  ],
+  iconImage: ConvertIcon,
   category: 'text-data',
   platforms: ["mac"]
 }

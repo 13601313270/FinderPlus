@@ -2,6 +2,8 @@ import type { NodePluginManifest } from '../manifest'
 import { MergeNode } from './node'
 import render from './render.vue'
 
+import MergeIcon from '@renderer/assets/node-icons/MergeNode.svg'
+
 export const manifest: NodePluginManifest = {
   type: MergeNode.TYPE,
   nodeClass: MergeNode,
@@ -24,7 +26,7 @@ export const manifest: NodePluginManifest = {
   },
   render,
   /** 三条线汇到一条：左侧一个节点接三条入线，右侧一条出线 */
-  iconPaths: ['M3 6h4', 'M3 12h8', 'M3 18h4', 'M11 6v12', 'M11 12h10'],
+  iconImage: MergeIcon,
   category: 'flow',
   platforms: ["mac"]
 }

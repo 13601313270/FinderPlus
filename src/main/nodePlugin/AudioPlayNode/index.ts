@@ -2,6 +2,8 @@ import type { NodePluginManifest } from '../manifest'
 import { AudioPlayNode } from './node'
 import render from './render.vue'
 
+import AudioPlayIcon from '@renderer/assets/node-icons/AudioPlayNode.svg'
+
 export const manifest: NodePluginManifest = {
   type: AudioPlayNode.TYPE,
   nodeClass: AudioPlayNode,
@@ -23,7 +25,7 @@ export const manifest: NodePluginManifest = {
     it: 'Lettore audio'
   },
   // 喇叭图标（和 AudioFileNode 一致，区分开文件类型节点）
-  iconPaths: ['M3 10v4h4l5 4V6L7 10H3Z', 'M16 8a4 4 0 0 1 0 8'],
+  iconImage: AudioPlayIcon,
   category: 'tool',
   render,
   platforms: ["mac"]

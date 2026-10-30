@@ -2,6 +2,8 @@ import type { NodePluginManifest } from '../manifest'
 import { AudioSpeedNode } from './node'
 import render from './render.vue'
 
+import AudioSpeedIcon from '@renderer/assets/node-icons/AudioSpeedNode.svg'
+
 export const manifest: NodePluginManifest = {
   type: AudioSpeedNode.TYPE,
   nodeClass: AudioSpeedNode,
@@ -23,10 +25,7 @@ export const manifest: NodePluginManifest = {
     it: 'Velocità audio'
   },
   // 图标：仪表盘指针（速度调节）
-  iconPaths: [
-    'M12 3a9 9 0 1 0 9 9',
-    'M12 12l6-4'
-  ],
+  iconImage: AudioSpeedIcon,
   common: false,
   category: 'tool',
   render,

@@ -2,6 +2,8 @@ import type { NodePluginManifest } from '../manifest'
 import { BrowserNode } from './node'
 import render from './render.vue'
 
+import BrowserIcon from '@renderer/assets/node-icons/BrowserNode.svg'
+
 export const manifest: NodePluginManifest = {
   type: BrowserNode.TYPE,
   nodeClass: BrowserNode,
@@ -23,12 +25,7 @@ export const manifest: NodePluginManifest = {
     it: 'Browser'
   },
   render,
-  iconPaths: [
-    'M4 5h16v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5z',
-    'M4 9h16',
-    'M7 6h1',
-    'M10 6h1'
-  ],
+  iconImage: BrowserIcon,
   category: 'tool',
   detailPanel: () => import('./BrowserDetailPanel.vue'),
   platforms: ["mac"]

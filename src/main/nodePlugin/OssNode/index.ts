@@ -1,6 +1,7 @@
 import type { NodePluginManifest } from '../manifest'
 import { OssNode } from './node'
 import render from './render.vue'
+import aliyunLogo from '@renderer/assets/images/aliyun.png'
 
 export const manifest: NodePluginManifest = {
   type: OssNode.TYPE,
@@ -23,12 +24,7 @@ export const manifest: NodePluginManifest = {
     it: 'Caricamento OSS'
   },
   render,
-  iconPaths: [
-    'M12 3 4 7v10l8 4 8-4V7z',
-    'M12 12l8-5',
-    'M12 12 4 7',
-    'M12 12v9'
-  ],
+  iconImage: aliyunLogo,
   category: 'tool',
   detailPanel: () => import('./OssDetailPanel.vue'),
   platforms: ["mac"]

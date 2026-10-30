@@ -2,6 +2,8 @@ import type { NodePluginManifest } from '../manifest'
 import { OssExistsNode } from './node'
 import render from './render.vue'
 
+import OssExistsIcon from '@renderer/assets/node-icons/OssExistsNode.svg'
+
 export const manifest: NodePluginManifest = {
   type: OssExistsNode.TYPE,
   nodeClass: OssExistsNode,
@@ -23,10 +25,7 @@ export const manifest: NodePluginManifest = {
     it: 'File OSS esistente'
   },
   render,
-  iconPaths: [
-    'M12 3 4 7v10l8 4 8-4V7z',
-    'M9 12l2 2 4-4'
-  ],
+  iconImage: OssExistsIcon,
   category: 'tool',
   common: false,
   detailPanel: () => import('./OssExistsDetailPanel.vue'),

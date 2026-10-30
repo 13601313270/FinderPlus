@@ -2,6 +2,8 @@ import type { NodePluginManifest } from '../manifest'
 import { S2VNode } from './node'
 import render from './render.vue'
 
+import S2VIcon from '@renderer/assets/node-icons/S2VNode.svg'
+
 export const manifest: NodePluginManifest = {
   type: S2VNode.TYPE,
   nodeClass: S2VNode,
@@ -25,7 +27,7 @@ export const manifest: NodePluginManifest = {
   render,
   detailPanel: () => import('./S2VDetailPanel.vue'),
   // 图标：视频录制 / 播放 两笔
-  iconPaths: ['M4 4h12v16H4z', 'M16 10l4-3v10l-4-3z'],
+  iconImage: S2VIcon,
   category: 'ai',
   common: false,
   platforms: ["mac"]

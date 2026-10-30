@@ -2,6 +2,8 @@ import type { NodePluginManifest } from '../manifest'
 import { NumberDisplayNode } from './node'
 import render from './render.vue'
 
+import NumberDisplayIcon from '@renderer/assets/node-icons/NumberDisplayNode.svg'
+
 export const manifest: NodePluginManifest = {
   type: NumberDisplayNode.TYPE,
   nodeClass: NumberDisplayNode,
@@ -24,11 +26,7 @@ export const manifest: NodePluginManifest = {
   },
   render,
   // 「123」三个数字：直接点明「数字」，且与数字输入的「#」区分开
-  iconPaths: [
-    'M3.5 10 6 7V19',
-    'M9.5 9.5a2.5 2.5 0 0 1 5 0c0 2.2-2.2 3.6-3.4 5.2L9 19h6',
-    'M17 7A3 3 0 0 1 17 13A3 3 0 0 1 17 19'
-  ],
+  iconImage: NumberDisplayIcon,
   category: 'text-data',
   help: () => import('./NumberDisplayHelpDialog.vue'),
   platforms: ["mac"]

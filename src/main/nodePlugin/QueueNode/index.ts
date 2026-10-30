@@ -2,6 +2,8 @@ import type { NodePluginManifest } from '../manifest'
 import { QueueNode } from './node'
 import render from '../BufferNode/render.vue'
 
+import QueueIcon from '@renderer/assets/node-icons/QueueNode.svg'
+
 export const manifest: NodePluginManifest = {
   type: QueueNode.TYPE,
   nodeClass: QueueNode,
@@ -23,7 +25,7 @@ export const manifest: NodePluginManifest = {
     it: 'Coda (FIFO)'
   },
   render,
-  iconPaths: ['M3 12h13', 'M12 7l5 5-5 5', 'M21 6v12'],
+  iconImage: QueueIcon,
   category: 'flow',
   help: () => import('../BufferNode/BufferHelpDialog.vue'),
   detailPanel: () => import('../BufferNode/BufferDetailPanel.vue'),

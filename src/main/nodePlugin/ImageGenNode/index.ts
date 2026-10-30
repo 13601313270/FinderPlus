@@ -2,6 +2,8 @@ import type { NodePluginManifest } from '../manifest'
 import { ImageGenNode } from './node'
 import render from './render.vue'
 
+import ImageGenIcon from '@renderer/assets/node-icons/ImageGenNode.svg'
+
 export const manifest: NodePluginManifest = {
   type: ImageGenNode.TYPE,
   nodeClass: ImageGenNode,
@@ -23,7 +25,7 @@ export const manifest: NodePluginManifest = {
     it: 'Generazione immagine'
   },
   render,
-  iconPaths: ['M12 3l2 5 5 2-5 2-2 5-2-5-5-2 5-2Z', 'M18 15v4', 'M16 17h4'],
+  iconImage: ImageGenIcon,
   category: 'ai',
   help: () => import('./ImageGenHelpDialog.vue'),
   detailPanel: () => import('./ImageGenDetailPanel.vue'),

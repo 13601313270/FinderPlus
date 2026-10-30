@@ -129,6 +129,10 @@ export abstract class FileNode extends Node {
     this.fileSizeValue = fileSize
     void this.commitPath()
     this.notifyChanged()
+    // 主动补读文件内容并 commit 业务输出端口。replaceFile 里显式调了，
+    // setFile 也必须调——否则新拖入/新选的文件，输出端口要等 render.vue 的 watch 才能补上，
+    // minimized 态 render.vue 不渲染就永远补不上。
+    void this.reloadFileContent()
   }
 
   /**

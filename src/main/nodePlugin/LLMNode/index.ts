@@ -2,6 +2,8 @@ import type { NodePluginManifest } from '../manifest'
 import { LLMNode } from './node'
 import render from './render.vue'
 
+import LLMIcon from '@renderer/assets/node-icons/LLMNode.svg'
+
 export const manifest: NodePluginManifest = {
   type: LLMNode.TYPE,
   nodeClass: LLMNode,
@@ -23,7 +25,7 @@ export const manifest: NodePluginManifest = {
     it: 'Grande modello linguistico'
   },
   render,
-  iconPaths: ['M6 6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2Z', 'M10 10h4v4h-4Z', 'M9 2v2', 'M15 2v2', 'M9 20v2', 'M15 20v2', 'M2 9h2', 'M2 15h2', 'M20 9h2', 'M20 15h2'],
+  iconImage: LLMIcon,
   category: 'ai',
   help: () => import('./LLMHelpDialog.vue'),
   detailPanel: () => import('./LLMDetailPanel.vue'),

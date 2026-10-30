@@ -128,7 +128,7 @@ const groupedNodes = computed(() => {
   const rows = paletteManifests.map((m) => ({
     type: m.type,
     label: resolveNodeTitle(m, language.value),
-    iconPaths: m.iconPaths ?? [],
+    iconImage: m.iconImage,
     category: (m.category ?? DEFAULT_NODE_CATEGORY) as NodeCategory
   }))
   return NODE_CATEGORIES
@@ -879,21 +879,15 @@ async function onDeleteCanvas(id: string, name: string): Promise<void> {
                           class="gs-nodes__checkbox"
                           @change="onToggleNode(item.type, ($event.target as HTMLInputElement).checked)"
                         />
-                        <svg
-                          v-if="item.iconPaths.length"
+                        <img
+                          v-if="item.iconImage"
                           class="gs-nodes__icon"
+                          :src="item.iconImage"
                           width="20"
                           height="20"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          stroke-width="1.8"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
+                          alt=""
                           aria-hidden="true"
-                        >
-                          <path v-for="(d, i) in item.iconPaths" :key="i" :d="d" />
-                        </svg>
+                        />
                         <span class="gs-nodes__tile-label">{{ item.label }}</span>
                       </label>
                     </div>
@@ -1496,6 +1490,7 @@ async function onDeleteCanvas(id: string, name: string): Promise<void> {
     height: 20px;
     color: #8a919c;
     transition: color 0.1s ease;
+    object-fit: contain;
   }
 
   &__tile-label {

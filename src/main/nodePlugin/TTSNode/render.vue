@@ -24,6 +24,7 @@ const localText = ref('')
 // —— 只留画布上真正需要的状态 ——
 const hasProviderConfig = ref(true)
 const textConnected = ref(false)
+const autoGenerate = ref(false)
 
 const supportsRefAudio = computed(() => supportsReferenceAudio(node.value?.displayModel ?? 'qwen-audio-3.1-tts-next'))
 
@@ -52,6 +53,7 @@ function refresh(): void {
   localText.value = n.displayText
   hasProviderConfig.value = n.hasProviderKey
   textConnected.value = n.textInput.incomingEdgeCount > 0
+  autoGenerate.value = n.displayAutoGenerate
 
   const f = n.previewFile
   const h = n.previewHash
@@ -92,6 +94,7 @@ onBeforeUnmount(() => {
 
 // —— UI → Node ——
 function onLocalTextInput(v: string): void { node.value?.setLocalText(v) }
+function onAutoGenerateChange(v: boolean): void { node.value?.setAutoGenerate(v) }
 function onGenerate(): void { node.value?.manualTrigger() }
 function onCancel(): void { node.value?.cancel() }
 </script>
@@ -129,6 +132,16 @@ function onCancel(): void { node.value?.cancel() }
       />
       <div v-if="textConnected" class="tts-port-badge">↗</div>
     </div>
+
+    <!-- 自动触发开关 -->
+    <label class="tts-auto-switch">
+      <input
+        type="checkbox"
+        :checked="autoGenerate"
+        @change="(e: Event) => onAutoGenerateChange((e.target as HTMLInputElement).checked)"
+      />
+      <span>收到文本时自动合成</span>
+    </label>
 
     <div style="flex-grow: 1;"></div>
 
@@ -246,6 +259,24 @@ function onCancel(): void { node.value?.cancel() }
   font-size: 14px;
   color: #6366f1;
   pointer-events: none;
+}
+
+.tts-auto-switch {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #6b7280;
+  cursor: pointer;
+  user-select: none;
+  padding: 2px 0;
+
+  input[type="checkbox"] {
+    width: 12px;
+    height: 12px;
+    cursor: pointer;
+    accent-color: #4f46e5;
+  }
 }
 
 .tts-action {

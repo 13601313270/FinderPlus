@@ -2,6 +2,8 @@ import type { NodePluginManifest } from '../manifest'
 import { AnyFileNode } from './node'
 import render from './render.vue'
 
+import AnyFileIcon from '@renderer/assets/node-icons/AnyFileNode.svg'
+
 export const manifest: NodePluginManifest = {
   type: AnyFileNode.TYPE,
   nodeClass: AnyFileNode,
@@ -22,7 +24,7 @@ export const manifest: NodePluginManifest = {
     tr: 'Herhangi bir dosya',
     it: 'File qualsiasi'
   },
-  iconPaths: ['M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7l-5-5Z', 'M14 2v5h5', 'M10 13h4', 'M12 11v4'],
+  iconImage: AnyFileIcon,
   category: 'file',
   common: false,
   render,

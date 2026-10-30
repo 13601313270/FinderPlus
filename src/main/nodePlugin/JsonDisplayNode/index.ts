@@ -2,6 +2,8 @@ import type { NodePluginManifest } from '../manifest'
 import { JsonDisplayNode } from './node'
 import render from './render.vue'
 
+import JsonDisplayIcon from '@renderer/assets/node-icons/JsonDisplayNode.svg'
+
 export const manifest: NodePluginManifest = {
   type: JsonDisplayNode.TYPE,
   nodeClass: JsonDisplayNode,
@@ -23,7 +25,7 @@ export const manifest: NodePluginManifest = {
     it: 'Visualizzazione JSON'
   },
   render,
-  iconPaths: ['M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2 2 2 0 0 1 2 2v5a2 2 0 0 0 2 2h1', 'M16 3h1a2 2 0 0 1 2 2v5a2 2 0 0 0 2 2 2 2 0 0 0-2 2v5a2 2 0 0 1-2 2h-1'],
+  iconImage: JsonDisplayIcon,
   category: 'text-data',
   help: () => import('./JsonDisplayHelpDialog.vue'),
   platforms: ["mac"]

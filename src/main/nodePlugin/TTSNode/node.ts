@@ -168,6 +168,8 @@ export class TTSNode extends Node {
   private localText = ''
   /** 本地参考音频 base64（referenceAudioInput 未接线时用这个） */
   private localReferenceAudioBase64 = ''
+  /** 是否自动触发：textInput 收到字符串值时立即调用合成 */
+  private autoGenerate = false
 
   // —— 运行态 ——
 
@@ -283,6 +285,13 @@ export class TTSNode extends Node {
   setLocalText(v: string): void {
     if (this.localText === v) return
     this.localText = v
+    this.notifyChanged()
+  }
+
+  get displayAutoGenerate(): boolean { return this.autoGenerate }
+  setAutoGenerate(v: boolean): void {
+    if (this.autoGenerate === v) return
+    this.autoGenerate = v
     this.notifyChanged()
   }
 
@@ -616,9 +625,15 @@ export class TTSNode extends Node {
 
   // —— 端口变化 ——
 
-  /** 只刷新 UI，不自动生成——生成按次调用，等用户点按钮 */
   inputPortReceiveValue(_ports: InputPort[], _source: InputPortChangeSource): void {
     this.notifyChanged()
+    // 自动触发模式：每次收到字符串值立即合成
+    if (this.autoGenerate && this.status !== 'loading') {
+      const text = this.displayText.trim()
+      if (text) {
+        this.manualTrigger()
+      }
+    }
   }
 
   // —— 持久化 ——
@@ -633,7 +648,8 @@ export class TTSNode extends Node {
       instructions: this.instructions,
       localText: this.localText,
       workspaceId: this.workspaceId,
-      sampleRate: this.sampleRate
+      sampleRate: this.sampleRate,
+      autoGenerate: this.autoGenerate
     }
   }
 
@@ -665,6 +681,7 @@ export class TTSNode extends Node {
     if (typeof state.workspaceId === 'string') this.workspaceId = state.workspaceId.trim()
     const sr = state.sampleRate as number | undefined
     if (sr && TTS_SAMPLE_RATES.includes(sr as TtsSampleRate)) this.sampleRate = sr as TtsSampleRate
+    if (typeof state.autoGenerate === 'boolean') this.autoGenerate = state.autoGenerate
   }
 
   beforeDestroy(): void {

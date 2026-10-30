@@ -2,6 +2,8 @@ import type { NodePluginManifest } from '../manifest'
 import { BackgroundRemoveNode } from './node'
 import render from './render.vue'
 
+import BackgroundRemoveIcon from '@renderer/assets/node-icons/BackgroundRemoveNode.svg'
+
 export const manifest: NodePluginManifest = {
   type: BackgroundRemoveNode.TYPE,
   nodeClass: BackgroundRemoveNode,
@@ -23,7 +25,7 @@ export const manifest: NodePluginManifest = {
     it: 'Rimuovi sfondo'
   },
   render,
-  iconPaths: ['M6 9m-3 0a3 3 0 1 0 6 0a3 3 0 1 0-6 0', 'M6 15m-3 0a3 3 0 1 0 6 0a3 3 0 1 0-6 0', 'M20 4 8.12 15.88', 'M14.47 14.48 20 20', 'M8.12 8.12 12 12'],
+  iconImage: BackgroundRemoveIcon,
   category: 'image',
   help: () => import('./BackgroundRemoveHelpDialog.vue'),
   platforms: ["mac"]

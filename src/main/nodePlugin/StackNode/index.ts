@@ -2,6 +2,8 @@ import type { NodePluginManifest } from '../manifest'
 import { StackNode } from './node'
 import render from '../BufferNode/render.vue'
 
+import StackIcon from '@renderer/assets/node-icons/StackNode.svg'
+
 export const manifest: NodePluginManifest = {
   type: StackNode.TYPE,
   nodeClass: StackNode,
@@ -23,7 +25,7 @@ export const manifest: NodePluginManifest = {
     it: 'Pila (LIFO)'
   },
   render,
-  iconPaths: ['M12 3 2 8l10 5 10-5-10-5Z', 'M2 13l10 5 10-5'],
+  iconImage: StackIcon,
   category: 'flow',
   help: () => import('../BufferNode/BufferHelpDialog.vue'),
   detailPanel: () => import('../BufferNode/BufferDetailPanel.vue'),

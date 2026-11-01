@@ -53,6 +53,7 @@ import { manifest as scheduleManifest } from './ScheduleNode'
 import { manifest as mergeManifest } from './MergeNode'
 import { manifest as notifyManifest } from './NotifyNode'
 import { manifest as convertManifest } from './ConvertNode'
+import { manifest as externalCallManifest } from './ExternalCallNode'
 
 /**
  * 插件注册表：所有节点插件的 manifest 汇总。
@@ -92,6 +93,7 @@ const functionalManifests: NodePluginManifest[] = [
   convertManifest,
   commandManifest,
   codeManifest,
+  externalCallManifest,
   switchManifest,
   wireManifest,
   delayManifest,

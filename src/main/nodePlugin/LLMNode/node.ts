@@ -516,20 +516,48 @@ export class LLMNode extends Node {
         body.response_format = { type: 'json_object' }
       }
 
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${key}`
-        },
-        body: JSON.stringify(body),
-        signal
-      })
+      // 最多尝试 3 次（含首次），AbortError（用户主动取消）不重试，4xx 客户端错误不重试
+      const MAX_ATTEMPTS = 3
+      let res: Response | null = null
+      for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+        try {
+          res = await fetch(url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${key}`
+            },
+            body: JSON.stringify(body),
+            signal
+          })
+        } catch (e) {
+          console.error('eeeee-2', e)
+          if ((e as Error).name === 'AbortError') throw e // 用户取消，直接透传到外层 catch
+          res = null
+          if (attempt < MAX_ATTEMPTS) {
+            console.warn(`[LLM] 请求第 ${attempt} 次网络异常，${MAX_ATTEMPTS - attempt} 次重试剩余`)
+            await new Promise(r => setTimeout(r, 500))
+            continue
+          } else {
+            throw e
+          }
+        }
 
-      const data = await res.json()
+        // 拿到响应：2xx 直接跳出；4xx 客户端错误不重试；5xx 可重试
+        if (res.ok) break
+        if (res.status < 500) break
+        if (attempt < MAX_ATTEMPTS) {
+          console.warn(`[LLM] 请求第 ${attempt} 次返回 ${res.status}，${MAX_ATTEMPTS - attempt} 次重试剩余`)
+          res = null
+          await new Promise(r => setTimeout(r, 500))
+        }
+      }
+      const fetchRes = res as Response
 
-      if (!res.ok) {
-        errMsg = data?.error?.message ?? `请求失败（${res.status} ${res.statusText}）`
+      const data = await fetchRes.json()
+
+      if (!fetchRes.ok) {
+        errMsg = data?.error?.message ?? `请求失败（${fetchRes.status} ${fetchRes.statusText}）`
       } else {
         const content: string | undefined = data?.choices?.[0]?.message?.content
         if (typeof content === 'string') {

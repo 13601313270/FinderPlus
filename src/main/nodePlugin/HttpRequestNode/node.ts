@@ -225,7 +225,7 @@ export class HttpRequestNode extends Node {
   private rebuildOutputPortForMode(): void {
     const newClass = this.outputMode === 'text' ? StringValue
       : this.outputMode === 'image' ? ImgFileValue
-      : AudioFileValue
+        : AudioFileValue
     const newPort = new OutputPort('text', newClass, OUTPUT_LABEL)
     this.removeOutput(this._textOutput)
     this._textOutput = newPort
@@ -575,15 +575,15 @@ export class HttpRequestNode extends Node {
 
     let result:
       | {
-          ok: true
-          status: number
-          statusText: string
-          headers: Record<string, string>
-          body: string
-          bodyBase64?: string
-          contentType?: string
-          ext?: string
-        }
+        ok: true
+        status: number
+        statusText: string
+        headers: Record<string, string>
+        body: string
+        bodyBase64?: string
+        contentType?: string
+        ext?: string
+      }
       | { ok: false; error: string }
     try {
       // @ts-ignore — tsconfig.node.json 编译本文件时不把 preload 的 Window 扩展带进来，
@@ -607,7 +607,7 @@ export class HttpRequestNode extends Node {
       this.lastError = ''
       // 按 outputMode 构造对应 Value，commit 到同一个 textOutput（类型已由 setOutputMode 预先对齐）
       if (this.outputMode === 'text') {
-        this.textOutput.commit(new StringValue(result.body))
+        this.textOutput.commit(new StringValue(result.body), { force: true })
       } else {
         // image / audio 模式：只有主进程识别为媒体类型响应时才有 bodyBase64
         if (result.bodyBase64) {
@@ -621,7 +621,7 @@ export class HttpRequestNode extends Node {
             })
             const hash = djb2(result.bodyBase64)
             const FileValueCls = this.outputMode === 'image' ? ImgFileValue : AudioFileValue
-            this.textOutput.commit(new FileValueCls(file, hash))
+            this.textOutput.commit(new FileValueCls(file, hash), { force: true })
           } catch (err) {
             // eslint-disable-next-line no-console
             console.warn('[http-request] imageOutput 构造失败：', err)

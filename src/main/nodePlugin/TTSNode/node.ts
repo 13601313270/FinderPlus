@@ -495,15 +495,45 @@ export class TTSNode extends Node {
         bodyStr = JSON.stringify({ model: endpoint.model, input: audiogenInput })
       }
 
-      const res = await fetch(endpoint.url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${endpoint.key}`
-        },
-        body: bodyStr,
-        signal: controller.signal
-      })
+      // 最多尝试 3 次（含首次），AbortError（用户主动取消）不重试，4xx 客户端错误不重试
+      const MAX_ATTEMPTS = 3
+      let fetchRes: Response | null = null
+      for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+        try {
+          fetchRes = await fetch(endpoint.url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${endpoint.key}`
+            },
+            body: bodyStr,
+            signal: controller.signal
+          })
+        } catch (e) {
+          console.error('aaaaa-1', e)
+          if ((e as Error).name === 'AbortError') throw e // 用户取消，直接透传
+          fetchRes = null
+          if (attempt < MAX_ATTEMPTS) {
+            console.warn(`[TTS] 请求第 ${attempt} 次网络异常，${MAX_ATTEMPTS - attempt} 次重试剩余`)
+            await new Promise(r => setTimeout(r, 1000))
+            continue
+          } else {
+            throw e
+          }
+        }
+
+        // 拿到响应：2xx 直接跳出；4xx 客户端错误不重试，直接失败；5xx 可重试
+        if (fetchRes.ok) break
+        if (fetchRes.status < 500) break // 4xx 直接跳出，后面统一抛错
+        // 5xx 服务端错误，还有次数就重试
+        if (attempt < MAX_ATTEMPTS) {
+          console.warn(`[TTS] 请求第 ${attempt} 次返回 ${fetchRes.status}，${MAX_ATTEMPTS - attempt} 次重试剩余`)
+          fetchRes = null
+          await new Promise(r => setTimeout(r, 500))
+        }
+      }
+      // fetchRes 此时一定不为 null，要么从 ok 跳出，要么从 4xx/最后一次 5xx 跳出，要么 throw 了
+      const res = fetchRes as Response
 
       if (this.requestId !== myRequestId) return // stale
 
@@ -572,7 +602,7 @@ export class TTSNode extends Node {
         this.audioOutput.commit(new AudioFileValue(file, hash))
         console.log('11111', duration)
         if (duration != null && duration > 0 && isFinite(duration)) {
-          this.durationOutput.commit(new NumberValue(Number(duration.toFixed(3))))
+          this.durationOutput.commit(new NumberValue(Number(duration.toFixed(3))), { force: true })
         }
         this.resultFile = file
         this.resultHash = hash

@@ -585,7 +585,7 @@ async function onStopClick(): Promise<void> {
   flex: 1;
   min-height: 60px;
   display: flex;
-  align-items: center;
+  // align-items: center;
   gap: 8px;
   color: #1f2937;
   overflow: auto;

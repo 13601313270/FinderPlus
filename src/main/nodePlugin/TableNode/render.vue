@@ -1370,8 +1370,8 @@ function removeQueryPortFromUI(id: string, idx: number): void {
   }
 
   &__total {
-    font-size: 11px;
-    color: #64748b;
+    font-size: 13px;
+    color: #303b4a;
   }
 
   &__pager {

@@ -11,6 +11,7 @@ import {
 } from '@renderer/canvas/viewport'
 import { canvasLayoutVersion, measureNodeBox } from '@renderer/canvas/elements'
 import { edgeGeometry, isEdgeGeometry, bezierPath } from '@renderer/canvas/edges'
+import { decorList, decorTick } from '@renderer/canvas/decor'
 
 /**
  * 小地图面板（画布右下角浮层，屏幕层、不吃世界缩放），自上而下三段：
@@ -116,6 +117,8 @@ interface MapRect {
   readonly height: number
   /** 节点运行状态：决定小方块的边框颜色；视口框没有状态 */
   readonly state?: NodeState
+  /** 装饰矩形专属：主画布配置的背景色 */
+  readonly fill?: string
 }
 
 interface MapLine {
@@ -131,6 +134,7 @@ interface MinimapLayout {
   readonly worldMinX: number
   readonly worldMinY: number
   readonly nodeRects: readonly MapRect[]
+  readonly decorRects: readonly MapRect[]
   readonly lines: readonly MapLine[]
   readonly frameRect: MapRect
 }
@@ -145,6 +149,7 @@ const layout = computed<MinimapLayout | null>(() => {
   viewport.scale
   canvasW.value
   canvasH.value
+  decorTick.value
 
   const w = canvasW.value
   const h = canvasH.value
@@ -178,7 +183,7 @@ const layout = computed<MinimapLayout | null>(() => {
     height: h / viewport.scale
   }
 
-  // 世界范围 = 节点包围盒 ∪ 当前视口框，再外扩边距
+  // 世界范围 = 节点包围盒 ∪ 装饰矩形 ∪ 当前视口框，再外扩边距
   let minX = frame.x
   let minY = frame.y
   let maxX = frame.x + frame.width
@@ -188,6 +193,12 @@ const layout = computed<MinimapLayout | null>(() => {
     minY = Math.min(minY, box.y)
     maxX = Math.max(maxX, box.x + box.width)
     maxY = Math.max(maxY, box.y + box.height)
+  }
+  for (const d of decorList) {
+    minX = Math.min(minX, d.x)
+    minY = Math.min(minY, d.y)
+    maxX = Math.max(maxX, d.x + d.width)
+    maxY = Math.max(maxY, d.y + d.height)
   }
   minX -= WORLD_MARGIN
   minY -= WORLD_MARGIN
@@ -218,6 +229,13 @@ const layout = computed<MinimapLayout | null>(() => {
       width: toW(box.width),
       height: toW(box.height),
       state
+    })),
+    decorRects: decorList.map((d) => ({
+      x: toX(d.x),
+      y: toY(d.y),
+      width: toW(d.width),
+      height: toW(d.height),
+      fill: d.fill || undefined
     })),
     lines: edgeGeoms.map((geom) => ({
       d: bezierPath(
@@ -394,6 +412,17 @@ onUnmounted(() => {
         class="minimap__edge"
         :d="line.d"
       />
+      <!-- 装饰矩形：在连线之上、节点之下 -->
+      <rect
+        v-for="(rect, index) in layout?.decorRects ?? []"
+        :key="`mini-decor-${index}`"
+        class="minimap__decor"
+        :x="rect.x"
+        :y="rect.y"
+        :width="rect.width"
+        :height="rect.height"
+        :fill="rect.fill || 'rgba(180, 190, 210, 0.25)'"
+      />
       <rect
         v-for="(rect, index) in layout?.nodeRects ?? []"
         :key="`mini-node-${index}`"
@@ -505,6 +534,11 @@ onUnmounted(() => {
   &__edge {
     fill: none;
     stroke: var(--theme-edge-line);
+    stroke-width: 1;
+  }
+
+  &__decor {
+    stroke: #a0a8b8;
     stroke-width: 1;
   }
 

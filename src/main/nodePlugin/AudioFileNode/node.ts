@@ -103,13 +103,25 @@ export class AudioFileNode extends FileNode {
     }
   })
 
-  /** MethodPort play 触发 → 递增此序号；render.vue 比对序号变化后执行 DOM 播放 */
-  private playRequestSeq = 0
+  // —— 运行时播放引擎（不持久化）——
+  // 放在模型层：minimized 时 render.vue 销毁，Audio 仍存活，播放状态不丢失。
 
-  /** render.vue 消费序号，与上次比对判断是否需要从头播放 */
-  consumePlayRequestSeq(): number {
-    return this.playRequestSeq
-  }
+  /** 播放引擎：play / pause / seek */
+  private audio: HTMLAudioElement | null = null
+
+  /** src blob URL，重建或销毁时 revoke */
+  private blobUrl: string | null = null
+
+  /** 当前 File 引用，给 Audio 做 blobUrl 用 */
+  private _currentFile: File | undefined
+
+  // 播放时状态——render.vue 通过 snapshot() 读
+  private _isPlaying = false
+  private _currentTime = 0
+  private _duration = 0
+
+  /** UI 状态订阅者 */
+  private playerSubscribers = new Set<() => void>()
 
   constructor(id: string) {
     super(id)
@@ -118,17 +130,15 @@ export class AudioFileNode extends FileNode {
     this.addOutput(this.pathOutput)
     this.addMethod(this.playPort)
     this.playPort.onTrigger(() => {
-      this.playRequestSeq += 1
-      this.notifyChanged()
+      this.playFromStart()
     })
     this.bindFileInput(this.fileInput)
-    this.setBox(140, 150)
+    this.setBox(140, 160)
   }
 
   /**
-   * 画布启动就绪时：先调基类注册文件系统监听，再主动读一次磁盘文件
-   * commit fileOutput——确保节点即使处于 minimized 状态（render.vue 不渲染、watch 不触发），
-   * 下游连边也能拿到值。durationOutput 仍需等 render.vue 的 audio loadedmetadata 回写。
+   * 画布启动就绪时：先调基类注册文件系统监听，再主动读一次磁盘文件。
+   * Audio 引擎也一起重建。
    */
   override onReady(): void {
     super.onReady()
@@ -137,22 +147,18 @@ export class AudioFileNode extends FileNode {
     }
   }
 
-  /** 文件被替换后：重读二进制并 commit fileOutput */
+  /** 文件被替换后：重读二进制 → setContent 会重建 Audio + commit 端口 */
   override async reloadFileContent(): Promise<void> {
     if (!this.fileName) return
     try {
       // @ts-ignore
       const base64 = await window.fileApi.readBinary(this.fileName)
       this.setContent(base64)
-    } catch (err) {
-      console.warn('[AudioFileNode] 读取替换后的文件失败：', this.fileName, err)
-    }
+    } catch { /* 文件可能已被删，静默忽略 */ }
   }
 
   /**
-   * 写入音频二进制并 commit fileOutput；同时用 Web Audio API 异步解码时长，
-   * 解码成功后 commit durationOutput——即使节点处于 minimized 状态（render.vue 不渲染）
-   * 也能让下游拿到时长。render.vue 的 audio loadedmetadata 仍可通过 commitDuration 回写覆盖。
+   * 写入音频二进制：commit 端口 → 重建 Audio 播放引擎 → 异步解码时长。
    */
   setContent(base64: string): void {
     if (!this.fileName) return
@@ -161,13 +167,19 @@ export class AudioFileNode extends FileNode {
     const ab = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer
     const file = new File([ab], this.fileName, { type: mime })
     const hash = djb2(base64)
+    this._currentFile = file
     this.fileOutput.commit(new AudioFileValue(file, hash))
     this.notifyChanged()
-    // 异步解码时长：fire-and-forget，失败不影响 fileOutput 已 commit 的值
+    // 重建 Audio 播放引擎
+    this.rebuildAudio()
+    // 异步解码时长 → 同时 commit durationOutput 端口 + 更新 _duration 供 UI 显示
     void this.decodeAndCommitDuration(ab)
   }
 
-  /** 用 Web Audio API 解码 ArrayBuffer，拿到时长后 commit durationOutput */
+  /**
+   * Web Audio API 解码 → commit durationOutput + 更新 _duration 供 UI。
+   * 解码是跨格式的可靠方式，不依赖 Audio.duration（webm live 会返回 Infinity）。
+   */
   private async decodeAndCommitDuration(ab: ArrayBuffer): Promise<void> {
     try {
       const ctx = new AudioContext()
@@ -176,17 +188,124 @@ export class AudioFileNode extends FileNode {
         const seconds = Number(audioBuffer.duration.toFixed(3))
         if (seconds > 0 && isFinite(seconds)) {
           this.durationOutput.commit(new NumberValue(seconds))
+          // 同时写内部状态，通知 UI 刷新总时长显示
+          this._duration = seconds
+          this.notifyPlayerChanged()
           this.notifyChanged()
         }
       } finally {
         await ctx.close()
       }
-    } catch (err) {
-      console.warn('[AudioFileNode] 解码音频时长失败：', this.fileName, err)
+    } catch { /* 解码失败静默忽略 */ }
+  }
+
+  // —— Audio 引擎生命周期 ——
+
+  private rebuildAudio(): void {
+    this.disposeAudio()
+    if (!this._currentFile) {
+      this.notifyPlayerChanged()
+      return
+    }
+
+    this.blobUrl = URL.createObjectURL(this._currentFile)
+    const audio = new Audio()
+    audio.preload = 'metadata'
+
+    audio.addEventListener('timeupdate', () => {
+      this._currentTime = audio.currentTime
+      this.notifyPlayerChanged()
+    })
+    audio.addEventListener('play', () => {
+      this._isPlaying = true
+      this.notifyPlayerChanged()
+    })
+    audio.addEventListener('pause', () => {
+      this._isPlaying = false
+      this.notifyPlayerChanged()
+    })
+    audio.addEventListener('ended', () => {
+      this._isPlaying = false
+      this._currentTime = 0
+      this.notifyPlayerChanged()
+    })
+
+    audio.src = this.blobUrl
+    this.audio = audio
+  }
+
+  private disposeAudio(): void {
+    if (this.audio) {
+      this.audio.pause()
+      this.audio.removeAttribute('src')
+      this.audio.load()
+      this.audio = null
+    }
+    if (this.blobUrl) {
+      URL.revokeObjectURL(this.blobUrl)
+      this.blobUrl = null
+    }
+    this._isPlaying = false
+    this._currentTime = 0
+  }
+
+  // —— 对外 API ——
+
+  /** 播放状态快照，render.vue 每次订阅回调里读 */
+  snapshot(): {
+    fileName: string | undefined
+    fileRevision: number
+    fileSize: number | undefined
+    displayFormat: string
+    isPlaying: boolean
+    currentTime: number
+    duration: number
+  } {
+    return {
+      fileName: this.fileName,
+      fileRevision: this.fileRevision,
+      fileSize: this.fileSize,
+      displayFormat: this.displayFormat,
+      isPlaying: this._isPlaying,
+      currentTime: this._currentTime,
+      duration: this._duration
     }
   }
 
-  /** 展示用格式名 */
+  /** 订阅播放状态变化，返回取消函数 */
+  subscribePlayer(fn: () => void): () => void {
+    this.playerSubscribers.add(fn)
+    return () => this.playerSubscribers.delete(fn)
+  }
+
+  private notifyPlayerChanged(): void {
+    this.playerSubscribers.forEach(fn => fn())
+  }
+
+  togglePlay(): void {
+    if (!this.audio) return
+    if (this.audio.paused) {
+      void this.audio.play().catch(() => { /* 用户手势缺失 */ })
+    } else {
+      this.audio.pause()
+    }
+  }
+
+  playFromStart(): void {
+    if (!this.audio) return
+    this.audio.currentTime = 0
+    void this.audio.play().catch(() => { /* 用户手势缺失 */ })
+  }
+
+  seekTo(sec: number): void {
+    if (!this.audio || !isFinite(sec)) return
+    this.audio.currentTime = sec
+    this._currentTime = sec
+    this.notifyPlayerChanged()
+  }
+
+  // —— 展示用元数据 ——
+
   get displayFormat(): string {
     const mime = this.fileName ? inferAudioMime(this.fileName) : ''
     const map: Record<string, string> = {
@@ -207,9 +326,13 @@ export class AudioFileNode extends FileNode {
     return this.fileName ? inferAudioMime(this.fileName) : ''
   }
 
-  isPositionAcceptFileDrop(_relativeX: number, _relativeY: number): boolean {
-    return false
-  }
+  // —— Node 基类钩子 ——
 
+  isPositionAcceptFileDrop(_relativeX: number, _relativeY: number): boolean { return false }
   onFileDrop(_sourcePath: string): void { /* 不处理 */ }
+
+  override async beforeDestroy(): Promise<void> {
+    this.disposeAudio()
+    this.playerSubscribers.clear()
+  }
 }

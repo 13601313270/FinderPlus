@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { AudioPlayNode } from './node'
 import { useNodePosition } from '@renderer/composables/useNodePosition'
@@ -15,108 +15,67 @@ const node = computed(() => {
   return n instanceof AudioPlayNode ? n : undefined
 })
 
-// —— 播放器状态 ——
-const audioEl = ref<HTMLAudioElement | null>(null)
-const isPlaying = ref(false)
-const currentTime = ref(0)
-const duration = ref(0)
-const progressPct = computed(() => (duration.value ? (currentTime.value / duration.value) * 100 : 0))
+// —— UI 状态（从 node.subscribePlayer 同步过来，让 Vue 能响应）——
+const state = reactive({
+  fileName: undefined as string | undefined,
+  isPlaying: false,
+  currentTime: 0,
+  duration: 0
+})
+const hasSource = computed(() => !!state.fileName)
+const progressPct = computed(() => (state.duration ? (state.currentTime / state.duration) * 100 : 0))
 
 // —— 进度条拖拽 ——
 const isSeeking = ref(false)
 
-// —— 文件与 blob URL ——
-const sourceFile = ref<File | undefined>(undefined)
-let blobUrl: string | null = null
-const previewUrl = ref<string | null>(null)
-/** 源文件刚变 → 等 loadedmetadata 后自动播一次（flag 方式避免 canplay 多次触发反复播） */
-let shouldAutoPlay = false
-
-let unsubscribe: (() => void) | undefined
+let unsubscribeNode: (() => void) | undefined
+let unsubscribePlayer: (() => void) | undefined
 const { startDrag } = useNodePosition(() => node.value)
 
-/** 从 inputPort 取值刷进 sourceFile */
-function refresh(): void {
+onMounted(() => {
   const n = node.value
-  if (!n) {
-    sourceFile.value = undefined
-    return
-  }
-  const [first] = n.audioInput.value
-  sourceFile.value = first && 'file' in first ? (first as { file?: File }).file : undefined
-}
+  if (!n) return
 
-/** File 变时 → 重建 blob URL → 重置播放态 */
-watch(sourceFile, (file) => {
-  // 释放旧 blob URL
-  if (blobUrl) {
-    URL.revokeObjectURL(blobUrl)
-    blobUrl = null
-  }
-  previewUrl.value = null
-
-  // 暂停当前播放（元素 src 会跟着变）
-  if (audioEl.value) {
-    audioEl.value.pause()
-  }
-  isPlaying.value = false
-  currentTime.value = 0
-  duration.value = 0
-  shouldAutoPlay = !!file  // 有新源文件 → 等 loadedmetadata 自动播
-
-  if (!file) return
-
-  // 新 blob URL
-  blobUrl = URL.createObjectURL(file)
-  previewUrl.value = blobUrl
+  unsubscribeNode = n.onChanged(() => syncSnapshot())
+  unsubscribePlayer = n.subscribePlayer(() => syncSnapshot())
+  syncSnapshot()
 })
 
-// —— 音频元素事件 ——
-function onAudioLoaded(): void {
-  if (!audioEl.value) return
-  duration.value = audioEl.value.duration || 0
-  // 源文件刚换过 → 自动播放一次（loadedmetadata 只在 src 切换时首次触发）
-  if (shouldAutoPlay) {
-    shouldAutoPlay = false
-    void audioEl.value.play().catch(() => { /* autoplay 策略兜底：静默失败 */ })
-  }
-}
-function onAudioTimeUpdate(): void {
-  if (isSeeking.value || !audioEl.value) return
-  currentTime.value = audioEl.value.currentTime
-}
-function onAudioPlay(): void { isPlaying.value = true }
-function onAudioPause(): void { isPlaying.value = false }
-function onAudioEnded(): void {
-  isPlaying.value = false
-  currentTime.value = 0
+/** 从 node 读最新快照进 reactive state，Vue 会自动刷新模板 */
+function syncSnapshot(): void {
+  const n = node.value
+  if (!n) return
+  const snap = n.snapshot()
+  state.fileName = snap.fileName
+  state.isPlaying = snap.isPlaying
+  state.currentTime = snap.currentTime
+  state.duration = snap.duration
 }
 
-// —— 播放控制 ——
+onBeforeUnmount(() => {
+  unsubscribeNode?.()
+  unsubscribePlayer?.()
+})
+
+// —— 播放控制：转发给 node ——
 function togglePlay(): void {
-  const el = audioEl.value
-  if (!el || !previewUrl.value) return
-  if (el.paused) {
-    void el.play()
-  } else {
-    el.pause()
-  }
+  node.value?.togglePlay()
 }
 
 // —— 进度条跳转 ——
 function seekFromEvent(e: PointerEvent): void {
+  if (!node.value || !state.duration) return
   const el = e.currentTarget as HTMLElement
   const rect = el.getBoundingClientRect()
   const ratio = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width))
-  const targetSec = ratio * duration.value
-  if (audioEl.value && isFinite(targetSec)) {
-    audioEl.value.currentTime = targetSec
-    currentTime.value = targetSec
+  const targetSec = ratio * state.duration
+  if (isFinite(targetSec)) {
+    node.value.seekTo(targetSec)
   }
 }
 
 function onSeekPointerDown(e: PointerEvent): void {
-  if (!duration.value) return
+  if (!state.duration) return
   isSeeking.value = true
   seekFromEvent(e)
   const move = (ev: PointerEvent) => seekFromEvent(ev)
@@ -136,53 +95,23 @@ function formatTime(sec: number): string {
   const s = Math.floor(sec % 60)
   return `${m}:${s.toString().padStart(2, '0')}`
 }
-
-onMounted(() => {
-  const n = node.value
-  if (!n) return
-  unsubscribe = n.onChanged(() => refresh())
-  refresh()
-})
-
-onBeforeUnmount(() => {
-  unsubscribe?.()
-  if (audioEl.value) {
-    audioEl.value.pause()
-    audioEl.value = null
-  }
-  if (blobUrl) {
-    URL.revokeObjectURL(blobUrl)
-    blobUrl = null
-  }
-})
 </script>
 
 <template>
   <div class="ap-card" @pointerdown="startDrag">
     <NodeHeader :title="nodeTitle" />
 
-    <div v-if="!sourceFile" class="ap-empty">
+    <div v-if="!hasSource" class="ap-empty">
       <span class="ap-empty-icon">🔊</span>
       <span class="ap-empty-hint">等待音频输入...</span>
     </div>
 
     <div v-else class="ap-body">
-      <div class="ap-filename" :title="sourceFile.name">{{ sourceFile.name }}</div>
+      <div class="ap-filename" :title="state.fileName">{{ state.fileName }}</div>
 
-      <div v-if="previewUrl" class="ap-player">
-        <!-- 隐藏 audio 元素，只做播放引擎 -->
-        <audio
-          ref="audioEl"
-          :src="previewUrl"
-          preload="metadata"
-          @loadedmetadata="onAudioLoaded"
-          @timeupdate="onAudioTimeUpdate"
-          @play="onAudioPlay"
-          @pause="onAudioPause"
-          @ended="onAudioEnded"
-        />
-        <button type="button" class="ap-play-btn" :aria-label="isPlaying ? 'Pause' : 'Play'" @click.stop="togglePlay">
-          <svg v-if="!isPlaying" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+      <div class="ap-player">
+        <button type="button" class="ap-play-btn" :aria-label="state.isPlaying ? 'Pause' : 'Play'" @click.stop="togglePlay">
+          <svg v-if="!state.isPlaying" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
             <path d="M8 5v14l11-7z" />
           </svg>
           <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
@@ -190,16 +119,16 @@ onBeforeUnmount(() => {
           </svg>
         </button>
         <div class="ap-times">
-          <span class="ap-time">{{ formatTime(currentTime) }}</span>
+          <span class="ap-time">{{ formatTime(state.currentTime) }}</span>
           <span class="ap-time-sep">/</span>
-          <span class="ap-time">{{ formatTime(duration) }}</span>
+          <span class="ap-time">{{ formatTime(state.duration) }}</span>
         </div>
       </div>
     </div>
 
     <!-- 底部进度条 -->
     <div
-      v-if="previewUrl && duration"
+      v-if="hasSource && state.duration"
       class="ap-progress"
       :style="{ '--progress': progressPct + '%' }"
       @pointerdown.stop="onSeekPointerDown"
@@ -265,10 +194,6 @@ onBeforeUnmount(() => {
   justify-content: center;
   flex-grow: 1;
   gap: 8px;
-
-  audio {
-    display: none;
-  }
 }
 
 .ap-play-btn {

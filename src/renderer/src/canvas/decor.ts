@@ -58,6 +58,9 @@ export const selectedDecorIds = reactive<Set<string>>(new Set())
 /** 装饰元素的选中状态版本号——供选中框组件订阅 */
 export const decorSelectionVersion = { value: 0 }
 
+/** 装饰元素的结构/位置/属性版本号——供小地图等订阅 */
+export const decorTick = ref(0)
+
 /**
  * 当前绘制模式：
  * - null：非绘制模式（正常画布交互）
@@ -175,6 +178,7 @@ export function addRect(opts: {
     radius: opts.radius ?? 4
   }
   decorList.push(decor)
+  decorTick.value++
   // eslint-disable-next-line no-console
   console.log('[decor] addRect → saveDecor IPC', decor.id, { x: decor.x, y: decor.y, w: decor.width, h: decor.height })
   // 新元素立即持久化（不走 debounce，一次 IPC）
@@ -196,6 +200,7 @@ export function removeDecor(id: string): void {
       persistTimers.delete(id)
     }
     decorList.splice(idx, 1)
+    decorTick.value++
     selectedDecorIds.delete(id)
     decorSelectionVersion.value++
     // 立即 DELETE，不走 debounce
@@ -209,6 +214,7 @@ export function clearAllDecors(): void {
   if (decorList.length > 0) {
     cancelPersist()
     decorList.splice(0, decorList.length)
+    decorTick.value++
     selectedDecorIds.clear()
     decorSelectionVersion.value++
   }
@@ -255,6 +261,7 @@ export function hitTestDecor(worldX: number, worldY: number): Decor | null {
 export function decorChanged(decor: Decor): void {
   // eslint-disable-next-line no-console
   console.log('[decor] decorChanged called', decor.id)
+  decorTick.value++
   schedulePersist(decor)
 }
 
@@ -294,6 +301,7 @@ export function restoreDecors(rows: Array<{
     titleColor: r.titleColor
   } as Decor))
   decorList.splice(0, decorList.length, ...arr)
+  decorTick.value++
   // eslint-disable-next-line no-console
   console.log('[decor] restoreDecors done, decorList.length =', decorList.length)
 }

@@ -29,7 +29,7 @@ export const manifest: NodePluginManifest = {
   iconImage: HumanReviewIcon,
   category: 'flow',
   help: () => import('./HumanReviewHelpDialog.vue'),
-  platforms: ["mac"]
+  platforms: ["mac"],
 }
 
 export default manifest

@@ -179,6 +179,7 @@ function onResizePointerDown(e: PointerEvent): void {
     <NodeHeader
       :title="nodeTitle"
       @help="showHelp = true"
+      :disableMinimize="true"
     >
       <template #actions>
         <button

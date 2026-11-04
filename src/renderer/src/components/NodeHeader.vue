@@ -37,14 +37,17 @@ interface Props {
   /** 固定高度，不传则由内容撑开 */
   height?: string
   /** align-items，默认 'center' */
-  alignItems?: 'center' | 'baseline'
+  alignItems?: 'center' | 'baseline',
+  /** 是否禁用最小化 */
+  disableMinimize?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   justify: 'space-between',
   padding: '4px 0',
   alignItems: 'center',
-  hideHelp: false
+  hideHelp: false,
+  disableMinimize: false
 })
 
 const emit = defineEmits<{
@@ -97,6 +100,7 @@ const effectiveHelpTitle = () => props.helpTitle ?? t('nodeHeader.helpTitle')
         class="node-header__minimize"
         type="button"
         :title="nodeMinimized ? '还原' : '最小化'"
+        v-if="!disableMinimize"
         @pointerdown.stop
         @click.stop="toggleNodeMinimize()"
       >{{ nodeMinimized ? '▢' : '–' }}</button>

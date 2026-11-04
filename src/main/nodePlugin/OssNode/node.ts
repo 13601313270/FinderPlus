@@ -88,7 +88,6 @@ export class OssNode extends Node {
   private lastError = ''
   private lastUrl = ''
   private lastObjectKey = ''
-  private lastUploadedFingerprint: string | null = null
 
   constructor(id: string) {
     super(id)
@@ -248,7 +247,6 @@ export class OssNode extends Node {
       this.status = 'done'
       this.lastUrl = result.url
       this.lastObjectKey = result.objectKey
-      this.lastUploadedFingerprint = first.fingerprint
       this.urlOutput.commit(new StringValue(result.url))
       this.completeRun()
     } else {

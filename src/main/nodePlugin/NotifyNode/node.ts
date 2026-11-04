@@ -14,7 +14,7 @@ import { inLabel } from './i18n'
  *
  * 行为：
  * - 单输入端口，接受所有内置 Value 子类
- * - 值到达时，提取 displayLabel 作为通知标题/正文，调用 window.notificationApi.show
+ * - 值到达时，优先使用用户在 detailPanel 中配置的通知文字；未配置则取 value.displayLabel
  * - 无输出端口——通知是终端语义，不向下游传播
  * - 同步节点：发完通知立即 completeRun()
  */
@@ -30,6 +30,9 @@ export class NotifyNode extends Node {
   /** 输入端口 */
   private readonly inputPort: InputPort
 
+  /** 用户配置的通知文字模板；为空时 fallback 到 value.displayLabel */
+  private textTemplate = ''
+
   constructor(id: string) {
     super(id)
     this.inputPort = new InputPort('in', {
@@ -40,6 +43,17 @@ export class NotifyNode extends Node {
     this.addInput(this.inputPort)
     // header(~24px) + 内容区(~32px)
     this.setBox(120, 56)
+  }
+
+  /** detailPanel 读取当前模板 */
+  getTextTemplate(): string {
+    return this.textTemplate
+  }
+
+  /** detailPanel 写入模板 */
+  setTextTemplate(template: string): void {
+    this.textTemplate = template
+    this.notifyChanged()
   }
 
   isPositionAcceptFileDrop(_relativeX: number, _relativeY: number): boolean {
@@ -60,7 +74,12 @@ export class NotifyNode extends Node {
       return
     }
 
-    const body = value.displayLabel || '收到一条消息'
+    let body: string
+    if (this.textTemplate.trim().length > 0) {
+      body = this.textTemplate
+    } else {
+      body = value.displayLabel || '收到一条消息'
+    }
     // bracket 访问绕过 node tsconfig 的 Window 类型差异（web tsconfig 正常）
     const w = window as unknown as {
       notificationApi?: { show: (t: string, b?: string, m?: Record<string, unknown>) => Promise<unknown> }
@@ -81,14 +100,19 @@ export class NotifyNode extends Node {
 
   // —— 持久化 ——
 
-  /** 无配置项，无需持久化 */
   saveState(): Record<string, unknown> {
-    return { ...super.saveState() }
+    return {
+      ...super.saveState(),
+      textTemplate: this.textTemplate
+    }
   }
 
   readState(_state: Record<string, unknown>): void {
     super.readState(_state)
 
-    // 无配置项需要恢复
+    const tpl = _state.textTemplate
+    if (typeof tpl === 'string') {
+      this.textTemplate = tpl
+    }
   }
 }

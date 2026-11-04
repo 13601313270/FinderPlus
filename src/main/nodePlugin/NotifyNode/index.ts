@@ -27,6 +27,7 @@ export const manifest: NodePluginManifest = {
   render,
   /** 铃铛图标：铃身 + 底部小锤 */
   iconImage: NotifyIcon,
+  detailPanel: () => import('./NotifyDetailPanel.vue'),
   category: 'flow',
   platforms: ["mac"]
 }

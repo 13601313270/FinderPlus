@@ -19,6 +19,25 @@ export const inLabel: LocalizedText = {
   it: 'Ingresso'
 }
 
+/** 端口标签（引擎构造端口时用；队列专属：队列清空时触发） */
+export const onEmptyLabel: LocalizedText = {
+  zh: '已空',
+  en: 'Emptied',
+  ja: '空になった',
+  ko: '비워짐',
+  es: 'Vaciado',
+  ar: 'تم الإفراغ',
+  fr: 'Vidé',
+  pt: 'Esvaziado',
+  ru: 'Опустел',
+  hi: 'खाली हुआ',
+  id: 'Kosong',
+  de: 'Geleert',
+  vi: 'Đã trống',
+  tr: 'Boşaltıldı',
+  it: 'Svuotato'
+}
+
 /** 端口标签（引擎构造端口时用；栈 / 队列共用） */
 export const clearLabel: LocalizedText = {
   zh: '清空',

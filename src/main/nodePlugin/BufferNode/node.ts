@@ -10,7 +10,7 @@ import { MethodPort } from '../../engine/port/MethodPort'
 import type { InputPortChangeSource } from '../../engine/node/Node'
 import { OutputPort } from '../../engine/port/OutputPort'
 import { Node } from '../../engine/node/Node'
-import { inLabel, outLabel } from './i18n'
+import { inLabel, onEmptyLabel, outLabel } from './i18n'
 
 /** 缓冲区可选的数据类型（进出共用同一套 Value 子类） */
 export type BufferKind = 'number' | 'string' | 'bool' | 'file' | 'imgfile' | 'json'
@@ -58,6 +58,9 @@ export abstract class BufferNode extends Node {
   /** 方法端口：外部连线触发 take() 操作 */
   private methodPort: MethodPort
 
+  /** 「已空」输出端口：缓冲区从非空变为空时 commit 一次 true */
+  protected readonly emptyPort: OutputPort
+
   /** 已进入缓冲区的数据，按进入顺序排列 */
   private readonly items: Value[] = []
 
@@ -72,9 +75,11 @@ export abstract class BufferNode extends Node {
     super(id)
     this.inputPort = this.buildInputPort(this.kindValue)
     this.outputPort = this.buildOutputPort(this.kindValue)
+    this.emptyPort = new OutputPort('onEmpty', BoolValue, onEmptyLabel)
     this.methodPort = new MethodPort('take', { label: outLabel })
     this.addInput(this.inputPort)
     this.addOutput(this.outputPort)
+    this.addOutput(this.emptyPort)
     this.addMethod(this.methodPort)
     // 方法端口被触发 → 执行 take()
     this.methodPort.onTrigger(() => this.take())
@@ -126,21 +131,29 @@ export abstract class BufferNode extends Node {
     this.notifyChanged()
   }
 
-  /** 出操作：取出一项 commit 到输出端口 */
+  /** 出操作：取出一项 commit 到输出端口；若取完变空，额外触发 emptyPort */
   take(): void {
     if (this.items.length === 0) return
+    const wasEmpty = this.items.length === 0
     const [value] = this.items.splice(this.takeIndex(), 1)
     if (value !== undefined) {
       this.outputPort.commit(value, { force: true })
     }
+    if (!wasEmpty && this.items.length === 0) {
+      this.emptyPort.commit(new BoolValue(true), { force: true })
+    }
     this.notifyChanged()
   }
 
-  /** 清空缓冲区：移除所有条目并重置去重标记 */
+  /** 清空缓冲区：移除所有条目并重置去重标记；非空队列被清空时触发 emptyPort */
   protected clear(): void {
-    if (this.items.length === 0 && this.lastEnqueued === undefined) return
+    const wasEmpty = this.items.length === 0 && this.lastEnqueued === undefined
+    if (wasEmpty) return
     this.items.length = 0
     this.lastEnqueued = undefined
+    if (!wasEmpty) {
+      this.emptyPort.commit(new BoolValue(true), { force: true })
+    }
     this.notifyChanged()
   }
 
@@ -183,11 +196,13 @@ export abstract class BufferNode extends Node {
   /** 按给定 kind 拆旧建新输入 / 输出端口（同 id，便于边重建时按 id 匹配） */
   private rebuildPorts(kind: BufferKind): void {
     this.removeInput(this.inputPort)
+    this.removeOutput(this.emptyPort)
     this.removeOutput(this.outputPort)
     this.inputPort = this.buildInputPort(kind)
     this.outputPort = this.buildOutputPort(kind)
     this.addInput(this.inputPort)
     this.addOutput(this.outputPort)
+    this.addOutput(this.emptyPort)
   }
 
   // —— 持久化 ——

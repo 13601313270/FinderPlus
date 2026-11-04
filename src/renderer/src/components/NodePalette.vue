@@ -648,7 +648,7 @@ onBeforeUnmount(() => {
     flex: 0 0 auto;
     align-items: center;
     gap: 6px;
-    padding: 8px 12px;
+    padding: 0 12px;
     border-bottom: 1px solid #eef1f5;
     color: #8a919c;
   }
@@ -661,6 +661,7 @@ onBeforeUnmount(() => {
     flex: 1;
     min-width: 0;
     padding: 0;
+    height: 43px;
     border: none;
     background: transparent;
     font-size: 13px;

@@ -2,6 +2,7 @@ import { AudioFileValue } from '../../engine/data/AudioFileValue'
 import { VideoFileValue } from '../../engine/data/VideoFileValue'
 import { FileValue } from '../../engine/data/FileValue'
 import { InputPort } from '../../engine/port/InputPort'
+import { MethodPort } from '../../engine/port/MethodPort'
 import { Node } from '../../engine/node/Node'
 
 /**
@@ -65,9 +66,34 @@ export class AudioPlayNode extends Node {
   /** 订阅者 */
   private playerSubscribers = new Set<() => void>()
 
+  /** 方法端口：上游 commit 任意值即触发停止播放（暂停并归零进度） */
+  readonly stopPort = new MethodPort('stop', {
+    label: {
+      zh: '停止播放',
+      en: 'Stop',
+      ja: '停止',
+      ko: '중지',
+      es: 'Detener',
+      ar: 'إيقاف',
+      fr: 'Arrêter',
+      pt: 'Parar',
+      ru: 'Остановить',
+      hi: 'रोकें',
+      id: 'Berhenti',
+      de: 'Stoppen',
+      vi: 'Dừng',
+      tr: 'Durdur',
+      it: 'Ferma'
+    }
+  })
+
   constructor(id: string) {
     super(id)
     this.addInput(this.audioInput)
+    this.addMethod(this.stopPort)
+    this.stopPort.onTrigger(() => {
+      this.stop()
+    })
     this.setBox(160, 160)
   }
 
@@ -195,6 +221,15 @@ export class AudioPlayNode extends Node {
     } else {
       this.audio.pause()
     }
+  }
+
+  /** 停止播放：暂停并将进度归零，保留 src 供再次播放 */
+  stop(): void {
+    if (!this.audio) return
+    this.audio.pause()
+    this.audio.currentTime = 0
+    this._currentTime = 0
+    this.notifyPlayerChanged()
   }
 
   seekTo(sec: number): void {

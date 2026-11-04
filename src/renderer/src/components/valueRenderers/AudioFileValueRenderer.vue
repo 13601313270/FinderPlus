@@ -34,14 +34,14 @@ const sizeClass = computed(() => ({
   'v-audio--detail': props.context === 'detail'
 }))
 
-const isDetail = computed(() => props.context === 'detail')
+const isShowAudio = computed(() => props.context === 'detail' || props.context === 'tooltip')
 </script>
 
 <template>
   <div class="v-audio" :class="sizeClass">
-    <div v-if="isDetail" class="v-audio__wrap">
-      <audio v-if="url" :src="url" controls preload="metadata"
-        class="v-audio__player" @loadedmetadata="emit('resize')" />
+    <div v-if="isShowAudio" class="v-audio__wrap">
+      <audio v-if="url" :src="url" controls preload="metadata" class="v-audio__player"
+        @loadedmetadata="emit('resize')" />
       <span v-else class="v-audio__placeholder">🎵</span>
     </div>
     <div v-else class="v-audio__wrap v-audio__wrap--thumb">

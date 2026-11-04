@@ -26,6 +26,9 @@ const currentKind = ref<string>('')
 // —— 审核模式 ——
 const currentMode = ref<ReviewMode>('queue')
 
+// —— 音频自动播放开关 ——
+const currentAutoPlayAudio = ref(false)
+
 // —— 拒绝理由对话框 ——
 const showRejectDialog = ref(false)
 const rejectReasonInput = ref('')
@@ -53,6 +56,7 @@ function syncCurrent() {
   pendingCount.value = n.pendingCount
   hasCurrent.value = n.hasCurrent
   currentMode.value = n.reviewMode
+  currentAutoPlayAudio.value = n.autoPlayAudioEnabled
   const cv = n.currentValue
   currentValue.value = cv
   currentKind.value = cv ? ((cv.constructor as unknown) as { VALUE_NAME: string }).VALUE_NAME : ''
@@ -76,6 +80,11 @@ onUnmounted(() => {
 function onModeChange(e: Event): void {
   const v = (e.target as HTMLSelectElement).value as ReviewMode
   reviewNode.value?.setReviewMode(v)
+}
+
+function onAutoPlayToggle(e: Event): void {
+  const v = (e.target as HTMLInputElement).checked
+  reviewNode.value?.setAutoPlayAudio(v)
 }
 
 function onApprove(): void {
@@ -106,13 +115,17 @@ function onRejectMaskClick(): void {
 
 <template>
   <div class="review-panel">
-    <!-- 顶部：模式选择器 -->
+    <!-- 顶部：模式选择器 + 音频自动播放开关 -->
     <div class="review-panel__mode">
       <label class="review-panel__mode-label">{{ t('modeLabel') }}</label>
       <select class="review-panel__mode-select" :value="currentMode" @change="onModeChange">
         <option value="queue">{{ t('modeQueue') }}</option>
         <option value="override">{{ t('modeOverride') }}</option>
       </select>
+      <label class="review-panel__checkbox">
+        <input type="checkbox" :checked="currentAutoPlayAudio" @change="onAutoPlayToggle" />
+        <span>{{ t('autoPlayAudioLabel') }}</span>
+      </label>
     </div>
 
     <div class="review-panel__body">
@@ -227,6 +240,24 @@ function onRejectMaskClick(): void {
 
     &:hover { border-color: #9ca3af; }
     &:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12); }
+  }
+
+  &__checkbox {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #374151;
+    cursor: pointer;
+    flex-shrink: 0;
+    user-select: none;
+
+    input[type="checkbox"] {
+      margin: 0;
+      width: 14px;
+      height: 14px;
+      cursor: pointer;
+    }
   }
 
   &__body {

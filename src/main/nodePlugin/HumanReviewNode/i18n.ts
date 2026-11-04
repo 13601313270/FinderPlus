@@ -331,5 +331,22 @@ export const messages = {
     vi: 'Ghi đè (chỉ cái mới nhất)',
     tr: 'Üzerine yaz (sadece en yeni)',
     it: 'Sovrascrivi (solo l’ultimo)',
+  },
+  autoPlayAudioLabel: {
+    zh: '收到音频时自动播放',
+    en: 'Auto-play audio on arrival',
+    ja: '音声到着時に自動再生',
+    ko: '오디오 도착 시 자동 재생',
+    es: 'Reproducir audio automáticamente',
+    ar: 'تشغيل الصوت تلقائياً عند الوصول',
+    fr: 'Lecture audio automatique à l’arrivée',
+    pt: 'Reproduzir áudio automaticamente',
+    ru: 'Автовоспроизведение аудио при поступлении',
+    hi: 'आने पर ऑडियो स्वचालित रूप से चलाएं',
+    id: 'Putar audio otomatis saat tiba',
+    de: 'Audio bei Empfang automatisch abspielen',
+    vi: 'Tự động phát âm thanh khi nhận',
+    tr: 'Geldiğinde sesi otomatik çal',
+    it: 'Riproduci audio automaticamente all’arrivo',
   }
 } satisfies Record<string, LocalizedText>

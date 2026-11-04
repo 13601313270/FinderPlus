@@ -142,9 +142,10 @@ export class OssNode extends Node {
 
   // —— 输入端口回调 ——
 
-  inputPortReceiveValue(_ports: InputPort[]): void {
+  inputPortReceiveValue(ports: InputPort[]): void {
     this.notifyChanged()
-    if (this.autoSend) {
+    // autoSend 只在文件输入端口变更时触发——单独收到文件名变更不触发上传
+    if (this.autoSend && ports.includes(this.fileInput)) {
       const [first] = this.fileInput.value
       if (!(first instanceof FileValue) || first.isNull || !first.file) {
         return

@@ -3,6 +3,7 @@ import { computed, onMounted, onUnmounted, ref, shallowRef } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { HumanReviewNode } from './node'
 import type { Value } from '../../engine/data/Value'
+import { AudioFileValue } from '../../engine/data/AudioFileValue'
 import { viewport } from '@renderer/canvas/viewport'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
@@ -55,6 +56,18 @@ let unsubscribe: (() => void) | undefined
 const alertAudio = new Audio(reviewAlertUrl)
 alertAudio.preload = 'auto'
 
+/** 自动播放的待审核音频实例（approve/reject/新值到来时停止上一个） */
+let autoPlayAudio: HTMLAudioElement | undefined
+
+/** 停止正在自动播放的待审核音频（pause + 撤销 blob URL） */
+function stopAutoPlayAudio(): void {
+  if (!autoPlayAudio) return
+  autoPlayAudio.pause()
+  const src = autoPlayAudio.src
+  if (src.startsWith('blob:')) URL.revokeObjectURL(src)
+  autoPlayAudio = undefined
+}
+
 /** 上一次 currentValue 的引用；用来检测"有新的待审核项"触发提示音 */
 let prevCurrent: Value | undefined
 /** 是否首次同步（组件挂载时跳过播放，避免画布加载就被吓一跳） */
@@ -64,6 +77,8 @@ let isFirstSync = true
 function syncCurrent() {
   const n = reviewNode.value
   if (!n) return
+  // 任何状态变化（approve/reject/队列取下一项/新值覆盖）都先停掉上一个自动播放音频
+  stopAutoPlayAudio()
   currentLabel.value = n.currentLabel
   pendingCount.value = n.pendingCount
   hasCurrent.value = n.hasCurrent
@@ -81,8 +96,27 @@ function syncCurrent() {
   // 有新的待审核项 → 播放提示音（queue 首次入队、override 覆盖、advance 取下一项 都会触发）
   if (cv !== undefined && cv !== prevCurrent) {
     alertAudio.currentTime = 0
-    // catch 吞掉浏览器自动播放策略拦截的异常
-    alertAudio.play().catch(() => { /* noop */ })
+    // 提示音播完再自动播放待审核音频；提示音被拦截则直接放音频
+    const playPromise = alertAudio.play()
+
+    const tryPlayAudio = () => {
+      if (!(n.autoPlayAudioEnabled && cv instanceof AudioFileValue && cv.file)) return
+      const blobUrl = URL.createObjectURL(cv.file)
+      const audio = new Audio(blobUrl)
+      autoPlayAudio = audio
+      audio.addEventListener('ended', () => {
+        URL.revokeObjectURL(blobUrl)
+        if (autoPlayAudio === audio) autoPlayAudio = undefined
+      }, { once: true })
+      audio.play().catch(() => { /* noop */ })
+    }
+
+    playPromise.then(() => {
+      alertAudio.addEventListener('ended', tryPlayAudio, { once: true })
+    }).catch(() => {
+      // 浏览器自动播放策略拦截了提示音 → 直接尝试放音频
+      tryPlayAudio()
+    })
   }
   prevCurrent = cv
 }
@@ -98,6 +132,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   unsubscribe?.()
+  stopAutoPlayAudio()
 })
 
 function onApprove(): void {

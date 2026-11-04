@@ -69,6 +69,9 @@ export class HumanReviewNode extends Node {
   /** 审核模式：默认 queue（兼容旧数据） */
   private mode: ReviewMode = 'queue'
 
+  /** 收到音频类型待审核项时是否自动播放音频：默认 false（兼容旧数据） */
+  private autoPlayAudio = false
+
   constructor(id: string) {
     super(id)
     this.addInput(this.input)
@@ -129,6 +132,18 @@ export class HumanReviewNode extends Node {
       // 切到覆盖模式 → 清掉积压的队列，只保留 current
       this.queue.length = 0
     }
+    this.notifyChanged()
+  }
+
+  /** 收到音频类型待审核项时是否自动播放音频 */
+  get autoPlayAudioEnabled(): boolean {
+    return this.autoPlayAudio
+  }
+
+  /** 切换音频自动播放开关 */
+  setAutoPlayAudio(enabled: boolean): void {
+    if (enabled === this.autoPlayAudio) return
+    this.autoPlayAudio = enabled
     this.notifyChanged()
   }
 
@@ -361,7 +376,12 @@ export class HumanReviewNode extends Node {
    * 队列不持久化，恢复时上游重新 commit 自动重建；输出端口动态重建。
    */
   saveState(): Record<string, unknown> {
-    return { ...super.saveState(), box: [...this.box], mode: this.mode }
+    return {
+      ...super.saveState(),
+      box: [...this.box],
+      mode: this.mode,
+      autoPlayAudio: this.autoPlayAudio
+    }
   }
 
   readState(state: Record<string, unknown>): void {
@@ -376,6 +396,11 @@ export class HumanReviewNode extends Node {
     const mode = state.mode as unknown
     if (mode === 'queue' || mode === 'override') {
       this.mode = mode
+    }
+    // 恢复音频自动播放开关；老版本没有 autoPlayAudio 字段，默认 false（向后兼容）
+    const autoPlayAudio = state.autoPlayAudio as unknown
+    if (typeof autoPlayAudio === 'boolean') {
+      this.autoPlayAudio = autoPlayAudio
     }
     // 队列和输出端口都由上游重新 commit 时自动重建
   }

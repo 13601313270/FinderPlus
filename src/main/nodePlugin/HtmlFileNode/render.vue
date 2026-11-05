@@ -10,6 +10,7 @@ import { useNodeDetail } from '@renderer/composables/useNodeDetail'
 import HelpDialog from '@renderer/components/HelpDialog.vue'
 import { messages } from './i18n'
 import HtmlFileHelpDialog from './HtmlFileHelpDialog.vue'
+import { globalMonaco } from '@renderer/services/globalMonaco'
 
 const props = defineProps<{ id: string }>()
 
@@ -72,6 +73,19 @@ function formatSize(bytes: number): string {
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
   return `${(bytes / 1024 / 1024).toFixed(2)} MB`
 }
+
+/** 唤醒全局 Monaco 编辑器，HTML 语法高亮模式 */
+function onEdit(): void {
+  const node = fileNode.value
+  if (!node) return
+  globalMonaco.open({
+    title: node.fileName || node.type,
+    language: 'html',
+    content: node.content,
+    readOnly: false,
+    onSave: (text) => node.applyContent(text)
+  })
+}
 </script>
 
 <template>
@@ -113,9 +127,24 @@ function formatSize(bytes: number): string {
       </span>
     </div>
 
-    <!-- 帮助入口：悬浮在卡片右上角 -->
+    <!-- 右上角按钮组：编辑 · 预览 · 帮助 -->
     <button
-      class="file-card__help"
+      class="file-card__btn"
+      type="button"
+      :disabled="!fileNode"
+      :title="t('editHint')"
+      style="right: 50px"
+      @pointerdown.stop
+      @dblclick.stop
+      @click.stop="onEdit"
+    >
+      <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M11 2.5l2.5 2.5-7 7H4.5V9.5l6.5-7z" />
+      </svg>
+    </button>
+
+    <button
+      class="file-card__btn"
       type="button"
       :title="t('previewTitle')"
       style="right: 28px"
@@ -126,7 +155,7 @@ function formatSize(bytes: number): string {
       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
     </button>
     <button
-      class="file-card__help"
+      class="file-card__btn"
       type="button"
       :title="t('helpTitle')"
       @pointerdown.stop
@@ -197,7 +226,7 @@ function formatSize(bytes: number): string {
     font-size: 11px;
   }
 
-  &__help {
+  &__btn {
     all: unset;
     position: absolute;
     top: 6px;
@@ -216,9 +245,14 @@ function formatSize(bytes: number): string {
     line-height: 1;
     transition: background 0.15s, color 0.15s;
 
-    &:hover {
+    &:hover:not(:disabled) {
       background: #dbeafe;
       color: #2563eb;
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.4;
     }
   }
 }

@@ -6,6 +6,23 @@ import type { LocalizedText } from '../../../shared/language'
  * 若将来新增语言码未补齐，仍由 useLocalizedMessages → resolveLocalizedText 兜底到英语。
  */
 export const messages = {
+  editHint: {
+    zh: '编辑源码（IDE 模式）',
+    en: 'Edit source (IDE mode)',
+    ja: 'ソースを編集（IDE モード）',
+    ko: '소스 편집 (IDE 모드)',
+    es: 'Editar código fuente (modo IDE)',
+    ar: 'تحرير المصدر (وضع IDE)',
+    fr: 'Modifier le code source (mode IDE)',
+    pt: 'Editar código-fonte (modo IDE)',
+    ru: 'Редактировать код (IDE-режим)',
+    hi: 'स्रोत संपादित करें (IDE मोड)',
+    id: 'Edit sumber (mode IDE)',
+    de: 'Quellcode bearbeiten (IDE-Modus)',
+    vi: 'Chỉnh sửa mã nguồn (chế độ IDE)',
+    tr: 'Kaynağı düzenle (IDE modu)',
+    it: 'Modifica sorgente (modalità IDE)'
+  },
   dragHint: {
     zh: '拖动节点 · 拖出窗口移动文件 · 双击用系统默认应用打开',
     en: 'Drag node · drag out of the window to move the file · double-click to open with the system default app',

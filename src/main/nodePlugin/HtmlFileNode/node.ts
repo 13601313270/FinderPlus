@@ -141,8 +141,10 @@ export class HtmlFileNode extends FileNode {
    * 把字符串写入节点内容并同步落盘。
    * 先写磁盘，成功了再改内存——确保 contentValue 始终等于磁盘文件内容。
    * 没有 fileName 时先创建文件再写入，主进程处理重名冲突。
+   *
+   * 对外公开：renderer 层的 Monaco 编辑器保存回调、以及输入端口 contentInput 都通过它写入。
    */
-  private async applyContent(text: string): Promise<void> {
+  async applyContent(text: string): Promise<void> {
     try {
       // @ts-ignore — 只在 renderer 里执行，window.fileApi 一定存在
       const base64 = bytesToBase64(new TextEncoder().encode(text))

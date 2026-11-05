@@ -6,6 +6,7 @@ import { manifest as textDisplayManifest } from './TextDisplayNode'
 import { manifest as numberDisplayManifest } from './NumberDisplayNode'
 import { manifest as numberInputManifest } from './NumberInputNode'
 import { manifest as boolInputManifest } from './BoolInputNode'
+import { manifest as boolDisplayManifest } from './BoolDisplayNode'
 import { manifest as radioManifest } from './RadioNode'
 import { manifest as txtFileManifest } from './TxtFileNode'
 import { manifest as htmlFileManifest } from './HtmlFileNode'
@@ -45,6 +46,7 @@ import { manifest as crawlerManifest } from './CrawlerNode'
 import { manifest as browserManifest } from './BrowserNode'
 import { manifest as ossManifest } from './OssNode'
 import { manifest as ossExistsManifest } from './OssExistsNode'
+import { manifest as ossDownloadManifest } from './OssDownloadNode'
 import { manifest as jsonDisplayManifest } from './JsonDisplayNode'
 import { manifest as imageCropManifest } from './ImageCropNode'
 import { manifest as imageToPdfManifest } from './ImageToPdfNode'
@@ -55,6 +57,7 @@ import { manifest as mergeManifest } from './MergeNode'
 import { manifest as notifyManifest } from './NotifyNode'
 import { manifest as convertManifest } from './ConvertNode'
 import { manifest as externalCallManifest } from './ExternalCallNode'
+import { manifest as manualTriggerManifest } from './ManualTriggerNode'
 
 /**
  * 插件注册表：所有节点插件的 manifest 汇总。
@@ -72,6 +75,7 @@ const functionalManifests: NodePluginManifest[] = [
   numberDisplayManifest,
   numberInputManifest,
   boolInputManifest,
+  boolDisplayManifest,
   radioManifest,
   fileInfoManifest,
   imagePreviewManifest,
@@ -107,12 +111,14 @@ const functionalManifests: NodePluginManifest[] = [
   browserManifest,
   ossManifest,
   ossExistsManifest,
+  ossDownloadManifest,
   jsonDisplayManifest,
   imageCropManifest,
   imageToPdfManifest,
   notifyManifest,
   tableManifest,
-  scheduleManifest
+  scheduleManifest,
+  manualTriggerManifest
 ]
 
 const fileManifests: NodePluginManifest[] = [

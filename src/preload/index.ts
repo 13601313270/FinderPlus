@@ -298,7 +298,18 @@ const ossApi = {
     { ok: true; exists: false }
     | { ok: true; exists: true; size?: number; lastModified?: string; etag?: string; contentType?: string }
     | { ok: false; error: string }
-  > => ipcRenderer.invoke('oss:head', args)
+  > => ipcRenderer.invoke('oss:head', args),
+  get: (args: {
+    accessKeyId: string
+    accessKeySecret: string
+    region: string
+    bucket: string
+    endpoint?: string
+    objectKey: string
+  }): Promise<
+    { ok: true; base64: string; contentType?: string; etag?: string; objectKey: string }
+    | { ok: false; error: string }
+  > => ipcRenderer.invoke('oss:get', args)
 }
 
 /**

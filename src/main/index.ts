@@ -2277,6 +2277,78 @@ ipcMain.handle('oss:head', async (_e, args: {
   }
 })
 
+// —— 阿里云 OSS 下载 ——
+
+/** 阿里云 OSS 下载 IPC handler。
+ *
+ * 用 ali-oss SDK 的 client.get(objectKey) 把对象内容读出来，Buffer 转 base64
+ * 返回给渲染进程。渲染进程拿到 base64 + contentType + objectKey 后可以
+ * 构造 Blob → File → FileValue，给下游文件类节点使用。
+ *
+ * 不走渲染进程直下——ali-oss 是 Node.js SDK，渲染进程没有 node:http。
+ */
+ipcMain.handle('oss:get', async (_e, args: {
+  accessKeyId: string
+  accessKeySecret: string
+  region: string
+  bucket: string
+  endpoint?: string
+  objectKey: string
+}): Promise<
+  { ok: true; base64: string; contentType?: string; etag?: string; objectKey: string }
+  | { ok: false; error: string }
+> => {
+  const { accessKeyId, accessKeySecret, region, bucket, endpoint, objectKey } = args
+
+  // —— 参数校验 ——
+  if (!accessKeyId?.trim()) return { ok: false, error: 'AccessKeyId 不能为空' }
+  if (!accessKeySecret?.trim()) return { ok: false, error: 'AccessKeySecret 不能为空' }
+  if (!region?.trim()) return { ok: false, error: 'Region 不能为空（如 oss-cn-hangzhou）' }
+  if (!bucket?.trim()) return { ok: false, error: 'Bucket 不能为空' }
+  if (!objectKey?.trim()) return { ok: false, error: '对象 Key 不能为空' }
+
+  // —— 构造 endpoint（和 upload handler 保持一致的策略）——
+  let effectiveEndpoint: string
+  if (endpoint?.trim()) {
+    const raw = endpoint.trim()
+    effectiveEndpoint = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`
+  } else {
+    effectiveEndpoint = `https://${region.trim()}.aliyuncs.com`
+  }
+
+  try {
+    const client = new OSS({
+      region: region.trim(),
+      accessKeyId: accessKeyId.trim(),
+      accessKeySecret: accessKeySecret.trim(),
+      bucket: bucket.trim(),
+      endpoint: effectiveEndpoint
+    })
+
+    const key = objectKey.trim()
+    const result = await client.get(key)
+    // result: { content: Buffer, res: { status, headers }, meta }
+
+    const buffer: Buffer = result.content
+    const headers = result.res?.headers ?? {}
+
+    return {
+      ok: true,
+      base64: buffer.toString('base64'),
+      contentType: headers['content-type'],
+      etag: headers['etag']?.replace(/^"|"$/g, ''),
+      objectKey: key
+    }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    const status = (err as { status?: number })?.status ?? (err as { code?: string })?.code
+    if (status === 404 || /NoSuchKey|404/.test(msg)) {
+      return { ok: false, error: '对象不存在（404）' }
+    }
+    return { ok: false, error: `OSS 下载失败：${msg}` }
+  }
+})
+
 // —— 数据导出 / 导入 ——
 
 /** 导出 zip 内的目录结构常量 */

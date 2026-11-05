@@ -1132,6 +1132,10 @@ function registerIpcHandlers(): void {
    * 换成 src="file://..." 后 iframe 有独立 origin，不继承 renderer CSP。
    *
    * 临时文件以 nodeId 命名，每次覆盖写，节点删除或应用退出时留着不会影响功能。
+   *
+   * 返回 URL 拼 `?_=<timestamp>` 防止浏览器 / Vue 缓存：
+   * applyContent 成功后覆盖同一个文件，但如果 URL 完全不变，Vue 不会触发 iframe src 更新，
+   * 浏览器也不会重新加载磁盘文件。拼一个时间戳就能强制刷新。
    */
   ipcMain.handle('html:writePreview', (_e, args: { nodeId: string; htmlContent: string }): string => {
     const previewDir = join(app.getPath('temp'), 'canvasdesk-preview')
@@ -1139,8 +1143,8 @@ function registerIpcHandlers(): void {
     const safeName = args.nodeId.replace(/[^\w\-]/g, '_')
     const targetPath = join(previewDir, `${safeName}.html`)
     writeFileSync(targetPath, args.htmlContent, 'utf-8')
-    // file:// URL 需要把反斜杠转正斜杠
-    return 'file://' + targetPath.replace(/\\/g, '/')
+    // file:// URL 需要把反斜杠转正斜杠；拼时间戳防止浏览器缓存
+    return 'file://' + targetPath.replace(/\\/g, '/') + `?_=${Date.now()}`
   })
 
   /**

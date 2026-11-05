@@ -248,7 +248,7 @@ export class OssNode extends Node {
       this.status = 'done'
       this.lastUrl = result.url
       this.lastObjectKey = result.objectKey
-      this.urlOutput.commit(new StringValue(result.url))
+      this.urlOutput.commit(new StringValue(result.url), { force: true })
       this.completeRun()
     } else {
       this.status = 'error'

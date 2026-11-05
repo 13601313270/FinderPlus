@@ -108,6 +108,23 @@ export const messages = {
     tr: 'HTML önizleme',
     it: 'Anteprima HTML'
   },
+  previewToggleLabel: {
+    zh: '卡片内预览',
+    en: 'Preview in card',
+    ja: 'カード内プレビュー',
+    ko: '카드 내 미리보기',
+    es: 'Vista previa en tarjeta',
+    ar: 'معاينة داخل البطاقة',
+    fr: 'Aperçu dans la carte',
+    pt: 'Pré-visualizar no cartão',
+    ru: 'Предпросмотр в карточке',
+    hi: 'कार्ड में पूर्वावलोकन',
+    id: 'Pratinjau di kartu',
+    de: 'Vorschau in Karte',
+    vi: 'Xem trước trong thẻ',
+    tr: 'Kart içinde önizleme',
+    it: 'Anteprima nella card'
+  },
   helpDialogTitle: {
     zh: 'HTML文件节点使用说明',
     en: 'HTML file node help',

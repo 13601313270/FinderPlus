@@ -2,6 +2,8 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { HtmlFileNode } from './node'
+import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
+import { messages } from './i18n'
 
 /**
  * HTML 文件节点的详情面板——纯预览。
@@ -9,12 +11,15 @@ import { HtmlFileNode } from './node'
  * 为什么不用 srcdoc：srcdoc iframe 会继承父页面 CSP，用户 HTML 里加载本地相对路径资源
  * （CSS / JS / img）会被 style-src / script-src 拦截。file:// origin 的 iframe 有独立 CSP，不受影响。
  * 支持 4 种常见视口比例：3:4、4:3、9:16、16:9。
+ * 工具栏额外带一个 switch，控制节点卡片内是否直接预览 HTML。
  */
 type AspectRatio = '3:4' | '4:3' | '9:16' | '16:9'
 
 const ASPECT_OPTIONS: readonly AspectRatio[] = ['16:9', '4:3', '9:16', '3:4']
 
 const props = defineProps<{ nodeId: string }>()
+
+const t = useLocalizedMessages(messages)
 
 const node = computed(() => {
   const n = workspaceScene.getNode(props.nodeId)
@@ -27,6 +32,8 @@ const aspect = ref<AspectRatio>('16:9')
 const stageRef = ref<HTMLElement | null>(null)
 const stageSize = ref<{ w: number; h: number }>({ w: 0, h: 0 })
 const previewUrl = ref('')
+// 卡片内预览开关状态（由 node.previewEnabledStatus 同步）
+const cardPreviewEnabled = ref(false)
 let offChanged: (() => void) | undefined
 let resizeObserver: ResizeObserver | null = null
 
@@ -66,6 +73,13 @@ watch(() => props.nodeId, () => {
 function syncFromNode(n: HtmlFileNode): void {
   htmlContent.value = n.content
   filePath.value = n.fileName
+  cardPreviewEnabled.value = n.previewEnabledStatus
+}
+
+/** 切换卡片内 HTML 预览开关 */
+function onToggleCardPreview(e: Event): void {
+  const v = (e.target as HTMLInputElement).checked
+  node.value?.setPreviewEnabled(v)
 }
 
 /**
@@ -161,6 +175,14 @@ const frameSizeStyle = computed(() => {
           @click="aspect = r"
         >{{ r }}</button>
       </div>
+
+      <!-- 卡片内预览开关 -->
+      <label class="html-preview__switch" :title="t('previewToggleLabel')">
+        <input type="checkbox" :checked="cardPreviewEnabled" @change="onToggleCardPreview" />
+        <span class="html-preview__switch-track"><span class="html-preview__switch-thumb" /></span>
+        <span class="html-preview__switch-label">{{ t('previewToggleLabel') }}</span>
+      </label>
+
       <button
         class="html-preview__reload-btn"
         type="button"
@@ -252,6 +274,55 @@ const frameSizeStyle = computed(() => {
     }
   }
 
+  // —— switch 开关（复用 LLMNode 同款视觉）——
+  &__switch {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #6b7280;
+    cursor: pointer;
+    user-select: none;
+    margin-left: auto;
+
+    input[type='checkbox'] {
+      display: none;
+    }
+
+    &-track {
+      position: relative;
+      width: 32px;
+      height: 18px;
+      background: #d1d5db;
+      border-radius: 10px;
+      transition: background 0.2s;
+    }
+
+    input:checked + &-track {
+      background: #3b82f6;
+    }
+
+    &-thumb {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 14px;
+      height: 14px;
+      background: #fff;
+      border-radius: 50%;
+      transition: transform 0.2s;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    }
+
+    input:checked + &-track &-thumb {
+      transform: translateX(14px);
+    }
+
+    &-label {
+      font-size: 12px;
+    }
+  }
+
   &__reload-btn {
     all: unset;
     cursor: pointer;
@@ -263,7 +334,6 @@ const frameSizeStyle = computed(() => {
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-left: auto;
     transition: all 0.12s;
 
     &:hover {

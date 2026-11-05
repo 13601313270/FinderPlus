@@ -108,6 +108,9 @@ export class HtmlFileNode extends FileNode {
   /** 当前 HTML 文本内容；空节点初始化为空串 */
   private contentValue = ''
 
+  /** 节点卡片内是否直接预览 HTML：默认 false（图标模式，兼容旧数据） */
+  private previewEnabled = false
+
   constructor(id: string) {
     super(id)
     this.addOutput(this.contentOutput)
@@ -116,7 +119,7 @@ export class HtmlFileNode extends FileNode {
     this.addOutput(this.pathOutput)
     this.bindFileInput(this.fileInput)
     this.addInput(this.contentInput)
-    // 内容区硬约束：文件图标 72px + 文件名行 + padding ≈ 122px 高，宽 180px
+    // 默认图标模式尺寸：文件图标 72px + 文件名行 + padding ≈ 122px 高，宽 180px
     this.setBox(180, 122)
   }
 
@@ -197,6 +200,27 @@ export class HtmlFileNode extends FileNode {
     return this.contentValue
   }
 
+  /** 节点卡片内是否直接预览 HTML */
+  get previewEnabledStatus(): boolean {
+    return this.previewEnabled
+  }
+
+  /**
+   * 切换节点卡片内 HTML 预览开关。
+   * 开 → 放大 box 到预览尺寸（280×220）
+   * 关 → 缩回图标模式尺寸（180×122）
+   */
+  setPreviewEnabled(enabled: boolean): void {
+    if (enabled === this.previewEnabled) return
+    this.previewEnabled = enabled
+    if (enabled) {
+      this.setBox(280, 220)
+    } else {
+      this.setBox(180, 122)
+    }
+    this.notifyChanged()
+  }
+
   /**
    * 写入内容并 commit 两个输出端口。
    * 内部方法，由 applyContent / onReady / reloadFileContent 调用。
@@ -217,7 +241,12 @@ export class HtmlFileNode extends FileNode {
   }
 
   saveState(): Record<string, unknown> {
-    return { ...super.saveState(), content: this.contentValue }
+    return {
+      ...super.saveState(),
+      content: this.contentValue,
+      previewEnabled: this.previewEnabled,
+      box: [...this.box]
+    }
   }
 
   readState(state: Record<string, unknown>): void {
@@ -232,6 +261,18 @@ export class HtmlFileNode extends FileNode {
         const hash = djb2(text)
         this.fileOutput.commit(new HtmlFileValue(file, hash))
       }
+    }
+    // 恢复预览开关；老版本没有 previewEnabled 字段，默认 false（向后兼容）
+    const previewEnabled = state.previewEnabled as unknown
+    if (typeof previewEnabled === 'boolean') {
+      this.previewEnabled = previewEnabled
+    }
+    // 恢复用户拖拽过的 box 尺寸（优先，覆盖构造默认值）；老存档没存 box 时按 previewEnabled 设默认
+    const box = state.box as unknown
+    if (Array.isArray(box) && box.length === 2 && typeof box[0] === 'number' && typeof box[1] === 'number') {
+      this.setBox(box[0], box[1])
+    } else if (this.previewEnabled) {
+      this.setBox(280, 220)
     }
   }
 }

@@ -168,16 +168,16 @@ function onRejectCancel(): void {
  * 逻辑同 JsonDisplayNode 的 onNodeWheel：顶部不能再滚时才允许向上冒泡，底部不能再滚时才允许向下冒泡。
  */
 function onReviewWheel(e: WheelEvent): void {
-  const el = e.currentTarget as HTMLElement
-  const { scrollTop, scrollHeight, clientHeight } = el
-  const atTop = scrollTop <= 0
-  const atBottom = scrollTop + clientHeight >= scrollHeight
+  // const el = e.currentTarget as HTMLElement
+  // const { scrollTop, scrollHeight, clientHeight } = el
+  // const atTop = scrollTop <= 0
+  // const atBottom = scrollTop + clientHeight >= scrollHeight
 
-  const scrollingUp = e.deltaY < 0
-  const scrollingDown = e.deltaY > 0
+  // const scrollingUp = e.deltaY < 0
+  // const scrollingDown = e.deltaY > 0
 
-  if ((scrollingUp && atTop) || (scrollingDown && atBottom)) return
-  e.stopPropagation()
+  // if ((scrollingUp && atTop) || (scrollingDown && atBottom)) return
+  // e.stopPropagation()
 }
 
 // —— resize handle 拖拽 ——
@@ -381,7 +381,6 @@ function updateSaveState(state: Record<string, unknown>): void {
   border: 1px solid #e5e8ee;
   border-radius: 6px;
   margin-bottom: 8px;
-  overflow: auto;
   font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
 
   &__label {

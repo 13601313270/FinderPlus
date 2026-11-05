@@ -78,6 +78,9 @@ export class HumanReviewNode extends Node {
   /** 卡片内 renderer 的 context：默认 tooltip（兼容旧数据） */
   private renderContext: RenderContext = 'tooltip'
 
+  /** 卡片内各 kind renderer 的视图状态（按 VALUE_NAME 存，结构由各 renderer 自行决定） */
+  private rendererSaveStates: Record<string, Record<string, unknown>> = {}
+
   constructor(id: string) {
     super(id)
     this.addInput(this.input)
@@ -162,6 +165,25 @@ export class HumanReviewNode extends Node {
   setCardRenderContext(ctx: RenderContext): void {
     if (ctx === this.renderContext) return
     this.renderContext = ctx
+    this.notifyChanged()
+  }
+
+  /** 取某 kind 的 renderer 视图状态（kind 不在表里返回空对象） */
+  getRendererSaveState(kind: string): Record<string, unknown> {
+    return this.rendererSaveStates[kind] ?? {}
+  }
+
+  /** 存某 kind 的 renderer 视图状态；state 为空对象则清掉该 kind 的条目 */
+  setRendererSaveState(kind: string, state: Record<string, unknown>): void {
+    if (Object.keys(state).length === 0) {
+      if (!(kind in this.rendererSaveStates)) return
+      delete this.rendererSaveStates[kind]
+    } else {
+      const prev = this.rendererSaveStates[kind]
+      // 深比较避免无意义 notifyChanged
+      if (prev && JSON.stringify(prev) === JSON.stringify(state)) return
+      this.rendererSaveStates[kind] = state
+    }
     this.notifyChanged()
   }
 
@@ -399,7 +421,8 @@ export class HumanReviewNode extends Node {
       box: [...this.box],
       mode: this.mode,
       autoPlayAudio: this.autoPlayAudio,
-      renderContext: this.renderContext
+      renderContext: this.renderContext,
+      rendererSaveStates: this.rendererSaveStates
     }
   }
 
@@ -425,6 +448,16 @@ export class HumanReviewNode extends Node {
     const renderContext = state.renderContext as unknown
     if (renderContext === 'tooltip' || renderContext === 'inline' || renderContext === 'detail') {
       this.renderContext = renderContext
+    }
+    // 恢复各 kind renderer 的视图状态；动态结构，只做"是纯对象"校验
+    const rendererSaveStates = state.rendererSaveStates as unknown
+    if (rendererSaveStates && typeof rendererSaveStates === 'object' && !Array.isArray(rendererSaveStates)) {
+      const obj = rendererSaveStates as Record<string, unknown>
+      for (const [k, v] of Object.entries(obj)) {
+        if (v && typeof v === 'object' && !Array.isArray(v)) {
+          this.rendererSaveStates[k] = v as Record<string, unknown>
+        }
+      }
     }
     // 队列和输出端口都由上游重新 commit 时自动重建
   }

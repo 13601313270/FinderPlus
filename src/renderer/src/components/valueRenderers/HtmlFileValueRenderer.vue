@@ -13,7 +13,11 @@ import { computed, onBeforeUnmount, ref, watch } from 'vue'
 
 const props = defineProps<{
   value: { file?: File; displayLabel: string; fingerprint?: string }
-  context?: 'tooltip' | 'detail' | 'inline'
+  context?: 'tooltip' | 'detail' | 'inline',
+  saveState?: {
+    detailView?: DetailView
+    aspect?: AspectRatio
+  }
 }>()
 
 type AspectRatio = '3:4' | '4:3' | '9:16' | '16:9'
@@ -25,11 +29,13 @@ const preview = ref<string>('')
 const fullSource = ref<string>('')
 const previewUrl = ref<string>('')
 
-const detailView = ref<DetailView>('preview')
-const aspect = ref<AspectRatio>('16:9')
+const detailView = ref<DetailView>(props.saveState?.detailView || 'preview')
+const aspect = ref<AspectRatio>(props.saveState?.aspect || '16:9')
 const stageRef = ref<HTMLElement | null>(null)
 const stageSize = ref<{ w: number; h: number }>({ w: 0, h: 0 })
 let resizeObserver: ResizeObserver | null = null
+
+const emits = defineEmits(['update:saveState'])
 
 const PREVIEW_TOOLTIP = 80
 const previewLen = computed(() => PREVIEW_TOOLTIP)
@@ -99,6 +105,8 @@ watch(
 watch(
   () => detailView.value,
   (view) => {
+    emits('update:saveState', { detailView: view, aspect: aspect.value })
+
     if (view === 'preview' && props.context === 'detail') {
       setTimeout(startResizeObserver, 0)
     }
@@ -135,6 +143,11 @@ async function loadContent(): Promise<void> {
   }
 }
 
+function updateAspect(value: AspectRatio): void {
+  aspect.value = value
+  emits('update:saveState', { detailView: detailView.value, aspect: aspect.value })
+}
+
 watch(() => props.value.file, loadContent, { immediate: true })
 watch(previewLen, loadContent)
 
@@ -149,14 +162,16 @@ onBeforeUnmount(() => {
     <template v-if="context === 'detail'">
       <!-- 顶部工具栏 -->
       <div class="v-html__toolbar">
-        <select class="v-html__select" :value="detailView" @change="detailView = ($event.target as HTMLSelectElement).value as DetailView">
+        <select class="v-html__select" :value="detailView"
+          @change="detailView = ($event.target as HTMLSelectElement).value as DetailView">
           <option value="preview">Preview</option>
           <option value="source">Source</option>
         </select>
         <!-- 比例下拉只在 Preview 显示 -->
         <template v-if="detailView === 'preview'">
           <div class="v-html__toolbar-spacer"></div>
-          <select class="v-html__select" :value="aspect" @change="aspect = ($event.target as HTMLSelectElement).value as AspectRatio">
+          <select class="v-html__select" :value="aspect"
+            @change="updateAspect(($event.target as HTMLSelectElement).value as AspectRatio)">
             <option value="16:9">16:9</option>
             <option value="4:3">4:3</option>
             <option value="9:16">9:16</option>
@@ -170,12 +185,8 @@ onBeforeUnmount(() => {
         <div ref="stageRef" class="v-html__stage">
           <template v-if="previewUrl">
             <div class="v-html__frame-wrap" :style="frameSizeStyle">
-              <iframe
-                class="v-html__frame"
-                :src="previewUrl"
-                sandbox="allow-scripts allow-forms allow-popups allow-same-origin"
-                frameborder="0"
-              />
+              <iframe class="v-html__frame" :src="previewUrl"
+                sandbox="allow-scripts allow-forms allow-popups allow-same-origin" frameborder="0" />
             </div>
           </template>
           <div v-else class="v-html__empty">暂无内容</div>

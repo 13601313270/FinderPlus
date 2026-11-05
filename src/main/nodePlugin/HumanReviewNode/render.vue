@@ -90,6 +90,8 @@ function syncCurrent() {
   currentValue.value = cv
   currentKind.value = cv ? ((cv.constructor as unknown) as { VALUE_NAME: string }).VALUE_NAME : ''
   currentContext.value = n.cardRenderContext
+  // kind 切换时，从节点取该 kind 上次保存的 renderer 视图状态
+  renderSaveState.value = currentKind.value ? n.getRendererSaveState(currentKind.value) : {}
 
   if (isFirstSync) {
     // 首次同步只做初始化，不播放——画布加载时可能已有 pending 项，不该触发提示音
@@ -180,9 +182,9 @@ function onReviewWheel(e: WheelEvent): void {
 
 // —— resize handle 拖拽 ——
 const MIN_WIDTH = 220
-const MAX_WIDTH = 600
+const MAX_WIDTH = 700
 const MIN_HEIGHT = 180
-const MAX_HEIGHT = 500
+const MAX_HEIGHT = 800
 
 function onResizePointerDown(e: PointerEvent): void {
   const n = reviewNode.value
@@ -212,34 +214,31 @@ function onResizePointerDown(e: PointerEvent): void {
   window.addEventListener('pointermove', move)
   window.addEventListener('pointerup', end)
 }
+const renderSaveState = ref<Record<string, unknown>>({})
+function updateSaveState(state: Record<string, unknown>): void {
+  renderSaveState.value = state
+  reviewNode.value?.setRendererSaveState(currentKind.value, state)
+}
 </script>
 
 <template>
   <div class="node">
-    <NodeHeader
-      :title="nodeTitle"
-      @help="showHelp = true"
-      :disableMinimize="true"
-    >
+    <NodeHeader :title="nodeTitle" @help="showHelp = true" :disableMinimize="true">
       <template #actions>
-        <button
-          class="node__fs"
-          type="button"
-          :title="t('fullscreenBtnTitle')"
-          @click.stop="openNodeDetail(id)"
-        >⛶</button>
+        <button class="node__fs" type="button" :title="t('fullscreenBtnTitle')"
+          @click.stop="openNodeDetail(id)">⛶</button>
       </template>
     </NodeHeader>
 
     <div class="review" @wheel="onReviewWheel">
       <div class="review__label">{{ t('reviewLabel') }}</div>
-
       <!-- 无值 → 占位文案 -->
       <div v-if="!hasCurrent" class="review__value">{{ labelText }}</div>
       <!-- null 值 → 直接显示 (null)，不用 NullValueRenderer（它的 prop 类型要求 { isNull: true } 收窄，模板里做不到） -->
       <div v-else-if="currentValue?.isNull" class="review__value">(null)</div>
       <!-- 有值 → 按 kind 从注册表找 renderer -->
-      <component v-else :is="resolveRenderer(currentKind)" :value="currentValue!" :context="currentContext" />
+      <component v-else :is="resolveRenderer(currentKind)" :saveState="renderSaveState" :value="currentValue!"
+        :context="currentContext" @update:saveState="updateSaveState" />
 
       <div class="review__queue" v-if="pendingCount > 0">
         {{ t('queueRemaining', { n: pendingCount }) }}
@@ -248,29 +247,15 @@ function onResizePointerDown(e: PointerEvent): void {
     </div>
 
     <div class="actions">
-      <button
-        class="actions__btn actions__btn--approve"
-        type="button"
-        :disabled="!hasCurrent"
-        @click="onApprove"
-      >
+      <button class="actions__btn actions__btn--approve" type="button" :disabled="!hasCurrent" @click="onApprove">
         {{ t('approve') }}
       </button>
-      <button
-        class="actions__btn actions__btn--reject"
-        type="button"
-        :disabled="!hasCurrent"
-        @click="onReject"
-      >
+      <button class="actions__btn actions__btn--reject" type="button" :disabled="!hasCurrent" @click="onReject">
         {{ t('reject') }}
       </button>
     </div>
 
-    <div
-      class="node__resize-handle"
-      @pointerdown.stop.prevent="onResizePointerDown"
-      title="拖动调整节点大小"
-    />
+    <div class="node__resize-handle" @pointerdown.stop.prevent="onResizePointerDown" title="拖动调整节点大小" />
   </div>
 
   <!-- 帮助弹窗 -->
@@ -286,12 +271,8 @@ function onResizePointerDown(e: PointerEvent): void {
           <h3 class="rd-title">{{ t('rejectReasonTitle') }}</h3>
         </div>
         <div class="rd-body">
-          <textarea
-            class="rd-textarea"
-            v-model="rejectReasonInput"
-            :placeholder="t('rejectReasonPlaceholder')"
-            rows="5"
-          ></textarea>
+          <textarea class="rd-textarea" v-model="rejectReasonInput" :placeholder="t('rejectReasonPlaceholder')"
+            rows="5"></textarea>
         </div>
         <div class="rd-footer">
           <button class="rd-btn rd-btn--cancel" type="button" @click="onRejectCancel">
@@ -492,13 +473,25 @@ function onResizePointerDown(e: PointerEvent): void {
 }
 
 @keyframes fsFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes fsPopIn {
-  from { opacity: 0; transform: translateY(-12px) scale(0.98); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(-12px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 /* 拒绝理由对话框样式 */

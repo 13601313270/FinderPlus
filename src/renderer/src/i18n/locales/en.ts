@@ -164,6 +164,7 @@ const en: Language = {
     'audio-file': 'Audio File',
     'video-file': 'Video File',
     'html-file': 'HTML File',
+    'json-file': 'JSON File',
     'img-file-collection': 'Image Collection'
   },
   intro: {

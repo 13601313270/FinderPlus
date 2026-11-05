@@ -151,6 +151,7 @@ const id: Language = {
     'audio-file': 'Berkas Audio',
     'video-file': 'Video File',
     'html-file': 'File HTML',
+    'json-file': 'Berkas JSON',
     'img-file-collection': 'Koleksi Gambar'
   },
   intro: {

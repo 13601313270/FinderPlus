@@ -151,6 +151,7 @@ const es: Language = {
     'audio-file': 'Archivo de audio',
     'video-file': 'Video File',
     'html-file': 'Archivo HTML',
+    'json-file': 'Archivo JSON',
     'img-file-collection': 'Colección de imágenes'
   },
   intro: {

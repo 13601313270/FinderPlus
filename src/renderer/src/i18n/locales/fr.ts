@@ -150,6 +150,7 @@ const fr: Language = {
     'audio-file': 'Fichier audio',
     'video-file': 'Video File',
     "html-file": "Fichier HTML",
+    "json-file": "Fichier JSON",
     "img-file-collection": "Collection d'images"
   },
   intro: {

@@ -151,6 +151,7 @@ const vi: Language = {
     'audio-file': 'Tệp âm thanh',
     'video-file': 'Video File',
     'html-file': 'Tệp HTML',
+    'json-file': 'Tệp JSON',
     'img-file-collection': 'Bộ sưu tập ảnh'
   },
   intro: {

@@ -151,6 +151,7 @@ const ko: Language = {
     'audio-file': '음성 파일',
     'video-file': 'Video File',
     'html-file': 'HTML 파일',
+    'json-file': 'JSON 파일',
     'img-file-collection': '이미지 컬렉션'
   },
   intro: {

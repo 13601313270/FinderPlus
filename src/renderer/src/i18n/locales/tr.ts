@@ -150,6 +150,7 @@ const tr: Language = {
     'audio-file': 'Ses Dosyası',
     'video-file': 'Video File',
     'html-file': 'HTML Dosyası',
+    'json-file': 'JSON dosyası',
     'img-file-collection': 'Görsel Koleksiyonu'
   },
   intro: {

@@ -169,6 +169,7 @@ const zh: Language = {
     'audio-file': '音频文件',
     'video-file': '视频文件',
     'html-file': 'HTML文件',
+    'json-file': 'JSON文件',
     'img-file-collection': '图片文件集合'
   },
   intro: {

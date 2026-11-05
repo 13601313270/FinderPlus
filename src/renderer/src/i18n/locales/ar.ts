@@ -151,6 +151,7 @@ const ar: Language = {
     'audio-file': 'ملف صوت',
     'video-file': 'Video File',
     'html-file': 'ملف HTML',
+    'json-file': 'ملف JSON',
     'img-file-collection': 'مجموعة الصور'
   },
   intro: {

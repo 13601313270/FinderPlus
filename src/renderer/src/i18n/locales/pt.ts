@@ -151,6 +151,7 @@ const pt: Language = {
     'audio-file': 'Arquivo de áudio',
     'video-file': 'Video File',
     'html-file': 'Arquivo HTML',
+    'json-file': 'Arquivo JSON',
     'img-file-collection': 'Coleção de imagens'
   },
   intro: {

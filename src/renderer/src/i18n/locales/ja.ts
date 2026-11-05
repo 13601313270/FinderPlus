@@ -151,6 +151,7 @@ const ja: Language = {
     'audio-file': '音声ファイル',
     'video-file': 'Video File',
     'html-file': 'HTMLファイル',
+    'json-file': 'JSONファイル',
     'img-file-collection': '画像コレクション'
   },
   intro: {

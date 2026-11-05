@@ -151,6 +151,7 @@ const hi: Language = {
     'audio-file': 'सौप फ़ाइल',
     'video-file': 'Video File',
     'html-file': 'HTML फ़ाइल',
+    'json-file': 'JSON फ़ाइल',
     'img-file-collection': 'छवि संग्रह'
   },
   intro: {

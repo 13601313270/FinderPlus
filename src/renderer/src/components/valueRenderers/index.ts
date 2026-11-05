@@ -28,7 +28,7 @@ type BuiltinKind = (typeof BUILTIN_VALUE_KINDS)[number]
 import NullValueRenderer from './NullValueRenderer.vue'
 import UnknownValueRenderer from './UnknownValueRenderer.vue'
 
-// ── 7 个内置 kind renderer ──
+// ── 内置 kind renderer ──
 import BoolValueRenderer from './BoolValueRenderer.vue'
 import NumberValueRenderer from './NumberValueRenderer.vue'
 import StringValueRenderer from './StringValueRenderer.vue'
@@ -36,6 +36,7 @@ import JsonValueRenderer from './JsonValueRenderer.vue'
 import FileValueRenderer from './FileValueRenderer.vue'
 import TxtFileValueRenderer from './TxtFileValueRenderer.vue'
 import HtmlFileValueRenderer from './HtmlFileValueRenderer.vue'
+import JsonFileValueRenderer from './JsonFileValueRenderer.vue'
 import ImgFileValueRenderer from './ImgFileValueRenderer.vue'
 import PdfFileValueRenderer from './PdfFileValueRenderer.vue'
 import AudioFileValueRenderer from './AudioFileValueRenderer.vue'
@@ -56,6 +57,7 @@ const builtinRenderers = {
   'file':                FileValueRenderer,
   'txt-file':            TxtFileValueRenderer,
   'html-file':           HtmlFileValueRenderer,
+  'json-file':           JsonFileValueRenderer,
   'img-file':            ImgFileValueRenderer,
   'pdf-file':            PdfFileValueRenderer,
   'audio-file':          AudioFileValueRenderer,

@@ -178,7 +178,7 @@ export class OssExistsNode extends Node {
       } else {
         this.lastMeta = null
       }
-      this.existsOutput.commit(new BoolValue(result.exists))
+      this.existsOutput.commit(new BoolValue(result.exists), { force: true })
       this.completeRun()
     } else {
       this.status = 'error'

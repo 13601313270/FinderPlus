@@ -3,8 +3,6 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { ManualTriggerNode } from './node'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
-import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
-import { messages } from './i18n'
 import NodeHeader from '@renderer/components/NodeHeader.vue'
 import GearIcon from '@renderer/components/icons/GearIcon.vue'
 import { useNodeDetail } from '@renderer/composables/useNodeDetail'
@@ -19,10 +17,8 @@ const node = computed(() => {
 })
 
 const nodeTitle = useNodeTitle(() => node.value, '?')
-const t = useLocalizedMessages(messages)
 
 const buttonConfigs = ref<ReadonlyArray<{ id: string; label: string; valueType: string }>>([])
-const hasInput = ref(false)
 
 let offChanged: (() => void) | undefined
 
@@ -31,7 +27,6 @@ onMounted(() => {
   if (!n) return
   const refresh = () => {
     buttonConfigs.value = n.buttonConfigs
-    hasInput.value = n.input.value.length > 0
   }
   refresh()
   offChanged = n.onChanged(refresh)
@@ -57,7 +52,10 @@ function onClickButton(buttonId: string): void {
     </NodeHeader>
     <div class="node__buttons">
       <button v-for="btn in buttonConfigs" :key="btn.id" class="node__btn" type="button"
-        :title="hasInput ? '' : t('noInputValue')" :disabled="!node" @click="onClickButton(btn.id)">
+        :disabled="!node" @click="onClickButton(btn.id)">
+        <svg class="node__btn-play" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M8 5v14l11-7z" />
+        </svg>
         <span class="node__btn-label">{{ btn.label }}</span>
         <span class="node__btn-type">{{ btn.valueType }}</span>
       </button>
@@ -92,7 +90,6 @@ function onClickButton(buttonId: string): void {
     flex-grow: 1;
     display: flex;
     align-items: center;
-    justify-content: space-between;
     padding: 6px 10px;
     border-radius: 6px;
     background: #f1f5f9;
@@ -116,7 +113,16 @@ function onClickButton(buttonId: string): void {
     }
   }
 
+  &__btn-play {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    color: #64748b;
+  }
+
   &__btn-label {
+    flex: 1;
+    text-align: center;
     font-weight: 500;
   }
 
@@ -126,6 +132,7 @@ function onClickButton(buttonId: string): void {
     background: #f8fafc;
     padding: 2px 6px;
     border-radius: 4px;
+    flex-shrink: 0;
   }
 }
 

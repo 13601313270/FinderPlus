@@ -12,9 +12,9 @@ import { StringValue } from '../../engine/data/StringValue'
 import { TxtFileValue } from '../../engine/data/TxtFileValue'
 import { VideoFileValue } from '../../engine/data/VideoFileValue'
 import { Value, type ValueKind } from '../../engine/data/Value'
+import { InputPortChangeSource, Node } from '../../engine/node/Node'
 import { InputPort } from '../../engine/port/InputPort'
 import { OutputPort } from '../../engine/port/OutputPort'
-import { InputPortChangeSource, Node } from '../../engine/node/Node'
 
 /** OutputPort 构造函数需要的 Value 子类形状 */
 type ValueClass = { readonly VALUE_NAME: ValueKind; prototype: Value; new(...args: any[]): Value }
@@ -60,15 +60,6 @@ export interface ButtonConfig {
   valueType: ButtonValueType
 }
 
-/** 所有具体 Value 子类（InputPort accepts 用） */
-const ALL_VALUE_CLASSES = [
-  StringValue,
-  NumberValue,
-  BoolValue,
-  JsonValue,
-  FileValue
-]
-
 /** 所有合法 ButtonValueType 数组（共享给类型守卫和 UI 下拉） */
 export const ALL_BUTTON_VALUE_TYPES: readonly ButtonValueType[] = [
   'bool', 'number', 'string', 'json', 'file',
@@ -94,13 +85,8 @@ function computeBoxHeight(btnCount: number): number {
 /**
  * 手动触发节点：配置多个按钮，每个按钮对应一个 OutputPort。
  *
- * - 可选输入端口：接收任意 Value 类型
  * - 多个输出端口：按按钮配置动态创建，每个端口可以是不同类型
- * - 手动语义：点击按钮才触发，输入变化不自动推送
- *
- * 点击按钮时：
- * - 输入端口有值 → commit 输入值到对应 OutputPort
- * - 输入端口无值 → commit 该类型的 null 值
+ * - 手动语义：点击按钮 → commit null 值到对应 OutputPort → 推送下游
  */
 export class ManualTriggerNode extends Node {
   static readonly TYPE = 'manual-trigger'
@@ -111,28 +97,6 @@ export class ManualTriggerNode extends Node {
     return `btn-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
   }
 
-  /** 输入端口：可选，接受所有 Value 子类 */
-  readonly input = new InputPort('input', {
-    accepts: ALL_VALUE_CLASSES,
-    label: {
-      zh: '输入',
-      en: 'Input',
-      ja: '入力',
-      ko: '입력',
-      es: 'Entrada',
-      ar: 'إدخال',
-      fr: 'Entrée',
-      pt: 'Entrada',
-      ru: 'Ввод',
-      hi: 'इनपुट',
-      id: 'Masukan',
-      de: 'Eingabe',
-      vi: 'Đầu vào',
-      tr: 'Giriş',
-      it: 'Input'
-    }
-  })
-
   /** 按钮配置数组 */
   private buttons: ButtonConfig[] = []
 
@@ -141,7 +105,6 @@ export class ManualTriggerNode extends Node {
 
   constructor(id: string) {
     super(id)
-    this.addInput(this.input)
     // 默认添加一个按钮作为初始配置
     this.buttons.push({
       id: ManualTriggerNode.newButtonId(),
@@ -351,9 +314,8 @@ export class ManualTriggerNode extends Node {
   // —— 手动触发 ——
 
   /**
-   * 点击按钮触发：commit 值到对应 OutputPort。
-   *
-   * @param buttonId 要触发的按钮 id
+   * 点击按钮触发：commit null 值到对应 OutputPort，force=true 推送下游。
+   * 没有输入端口，按钮就是纯信号——每次点击发一次触发。
    */
   trigger(buttonId: string): void {
     const btn = this.buttons.find(b => b.id === buttonId)
@@ -362,14 +324,7 @@ export class ManualTriggerNode extends Node {
     const port = this.portMap.get(buttonId)
     if (!port) return
 
-    const values = this.input.value
-    if (values.length > 0) {
-      // 有输入值 → commit 第一个输入值
-      port.commit(values[0], { force: true })
-    } else {
-      // 无输入值 → commit null 值
-      port.commit(this.makeNullValue(btn.valueType), { force: true })
-    }
+    port.commit(this.makeNullValue(btn.valueType), { force: true })
     this.notifyChanged()
   }
 

@@ -10,6 +10,7 @@
  *   - iframe 走主进程 IPC 写临时文件 → file:// URL 加载，绕过 blob: origin 安全限制
  */
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { viewport } from '@renderer/canvas/viewport'
 
 const props = defineProps<{
   value: { file?: File; displayLabel: string; fingerprint?: string }
@@ -74,12 +75,20 @@ function startResizeObserver(): void {
   const el = stageRef.value
   if (!el) return
   resizeObserver = new ResizeObserver(() => {
-    const r = el.getBoundingClientRect()
-    stageSize.value = { w: r.width - 16, h: r.height - 16 } // padding 8px × 2
+    measureStage()
   })
   resizeObserver.observe(el)
+  measureStage()
+}
+
+/** 读舞台逻辑尺寸——getBoundingClientRect 返回视觉像素（被 viewport.scale 放大过），
+ *  要除以 scale 还原成 CSS 像素，否则 iframe 尺寸会被 double-scale */
+function measureStage(): void {
+  const el = stageRef.value
+  if (!el) return
   const r = el.getBoundingClientRect()
-  stageSize.value = { w: r.width - 16, h: r.height - 16 }
+  const scale = viewport.scale || 1
+  stageSize.value = { w: r.width / scale - 16, h: r.height / scale - 16 }
 }
 
 function stopResizeObserver(): void {
@@ -109,6 +118,17 @@ watch(
 
     if (view === 'preview' && props.context === 'detail') {
       setTimeout(startResizeObserver, 0)
+    }
+  }
+)
+
+// 画布缩放变化不触发 ResizeObserver（transform scale 不影响 layout），
+// 但 getBoundingClientRect 返回的视觉像素会变，必须手动重量
+watch(
+  () => viewport.scale,
+  () => {
+    if (props.context === 'detail' && stageRef.value) {
+      measureStage()
     }
   }
 )

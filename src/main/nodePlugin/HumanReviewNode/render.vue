@@ -237,9 +237,10 @@ function updateSaveState(state: Record<string, unknown>): void {
       <!-- null 值 → 直接显示 (null)，不用 NullValueRenderer（它的 prop 类型要求 { isNull: true } 收窄，模板里做不到） -->
       <div v-else-if="currentValue?.isNull" class="review__value">(null)</div>
       <!-- 有值 → 按 kind 从注册表找 renderer -->
-      <component v-else :is="resolveRenderer(currentKind)" :saveState="renderSaveState" :value="currentValue!"
-        :context="currentContext" @update:saveState="updateSaveState" />
-
+      <div v-else-if="currentKind" class="review__render">
+        <component :is="resolveRenderer(currentKind)" :saveState="renderSaveState" :value="currentValue!"
+          :context="currentContext" @update:saveState="updateSaveState" />
+      </div>
       <div class="review__queue" v-if="pendingCount > 0">
         {{ t('queueRemaining', { n: pendingCount }) }}
       </div>
@@ -395,6 +396,14 @@ function updateSaveState(state: Record<string, unknown>): void {
     text-overflow: ellipsis;
     white-space: nowrap;
     font-family: inherit;
+  }
+
+  &__render {
+    flex-grow: 1;
+
+    /deep/ .v-html {
+      height: 100%;
+    }
   }
 
   &__queue {

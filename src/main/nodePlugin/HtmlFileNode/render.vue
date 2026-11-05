@@ -415,6 +415,7 @@ watch(contentStamp, async ({ c, p, on }) => {
   }
 
   &__preview-body {
+    width: 100%;
     flex: 1;
     min-height: 0; // 让 flex 子项正确收缩
     position: relative;

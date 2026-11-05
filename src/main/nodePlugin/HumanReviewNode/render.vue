@@ -2,6 +2,7 @@
 import { computed, onMounted, onUnmounted, ref, shallowRef } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { HumanReviewNode } from './node'
+import type { RenderContext } from './node'
 import type { Value } from '../../engine/data/Value'
 import { AudioFileValue } from '../../engine/data/AudioFileValue'
 import { viewport } from '@renderer/canvas/viewport'
@@ -47,6 +48,9 @@ const currentValue = ref<Value | undefined>(undefined)
 /** 当前审核项的 kind（即 VALUE_NAME，字符串，便于模板做 === 判断） */
 const currentKind = ref<string>('')
 
+/** 卡片内 renderer 的 context（从节点 getter 同步） */
+const currentContext = ref<RenderContext>('tooltip')
+
 // 无待审核项时 node 侧返回空串，这里兜底成多语言占位文案（读 language，切语言会重算）
 const labelText = computed(() => (hasCurrent.value ? currentLabel.value : t('awaitingInput')))
 
@@ -85,6 +89,7 @@ function syncCurrent() {
   const cv = n.currentValue
   currentValue.value = cv
   currentKind.value = cv ? ((cv.constructor as unknown) as { VALUE_NAME: string }).VALUE_NAME : ''
+  currentContext.value = n.cardRenderContext
 
   if (isFirstSync) {
     // 首次同步只做初始化，不播放——画布加载时可能已有 pending 项，不该触发提示音
@@ -234,7 +239,7 @@ function onResizePointerDown(e: PointerEvent): void {
       <!-- null 值 → 直接显示 (null)，不用 NullValueRenderer（它的 prop 类型要求 { isNull: true } 收窄，模板里做不到） -->
       <div v-else-if="currentValue?.isNull" class="review__value">(null)</div>
       <!-- 有值 → 按 kind 从注册表找 renderer -->
-      <component v-else :is="resolveRenderer(currentKind)" :value="currentValue!" context="tooltip" />
+      <component v-else :is="resolveRenderer(currentKind)" :value="currentValue!" :context="currentContext" />
 
       <div class="review__queue" v-if="pendingCount > 0">
         {{ t('queueRemaining', { n: pendingCount }) }}

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, shallowRef } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
-import { HumanReviewNode, type ReviewMode } from './node'
+import { HumanReviewNode, type ReviewMode, type RenderContext } from './node'
 import type { Value } from '../../engine/data/Value'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
 import { messages } from './i18n'
@@ -28,6 +28,9 @@ const currentMode = ref<ReviewMode>('queue')
 
 // —— 音频自动播放开关 ——
 const currentAutoPlayAudio = ref(false)
+
+// —— 卡片内 renderer context ——
+const currentContext = ref<RenderContext>('tooltip')
 
 // —— 拒绝理由对话框 ——
 const showRejectDialog = ref(false)
@@ -57,6 +60,7 @@ function syncCurrent() {
   hasCurrent.value = n.hasCurrent
   currentMode.value = n.reviewMode
   currentAutoPlayAudio.value = n.autoPlayAudioEnabled
+  currentContext.value = n.cardRenderContext
   const cv = n.currentValue
   currentValue.value = cv
   currentKind.value = cv ? ((cv.constructor as unknown) as { VALUE_NAME: string }).VALUE_NAME : ''
@@ -85,6 +89,11 @@ function onModeChange(e: Event): void {
 function onAutoPlayToggle(e: Event): void {
   const v = (e.target as HTMLInputElement).checked
   reviewNode.value?.setAutoPlayAudio(v)
+}
+
+function onContextChange(e: Event): void {
+  const v = (e.target as HTMLSelectElement).value as RenderContext
+  reviewNode.value?.setCardRenderContext(v)
 }
 
 function onApprove(): void {
@@ -126,6 +135,12 @@ function onRejectMaskClick(): void {
         <input type="checkbox" :checked="currentAutoPlayAudio" @change="onAutoPlayToggle" />
         <span>{{ t('autoPlayAudioLabel') }}</span>
       </label>
+      <label class="review-panel__mode-label">{{ t('renderContextLabel') }}</label>
+      <select class="review-panel__mode-select" :value="currentContext" @change="onContextChange">
+        <option value="tooltip">{{ t('renderContextTooltip') }}</option>
+        <option value="inline">{{ t('renderContextInline') }}</option>
+        <option value="detail">{{ t('renderContextDetail') }}</option>
+      </select>
     </div>
 
     <div class="review-panel__body">

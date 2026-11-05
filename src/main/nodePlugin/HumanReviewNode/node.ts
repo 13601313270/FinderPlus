@@ -15,6 +15,9 @@ const NODE_HEIGHT = 220
 /** 审核模式：queue（FIFO 队列逐条审核）/ override（只保留最新值覆盖） */
 export type ReviewMode = 'queue' | 'override'
 
+/** 卡片内 renderer 的 context：跟各 valueRenderer 组件的 context prop 保持一致 */
+export type RenderContext = 'tooltip' | 'inline' | 'detail'
+
 /**
  * 人工审核节点：接受所有现有 Value 子类，进入审核等待人工确认。
  *
@@ -71,6 +74,9 @@ export class HumanReviewNode extends Node {
 
   /** 收到音频类型待审核项时是否自动播放音频：默认 false（兼容旧数据） */
   private autoPlayAudio = false
+
+  /** 卡片内 renderer 的 context：默认 tooltip（兼容旧数据） */
+  private renderContext: RenderContext = 'tooltip'
 
   constructor(id: string) {
     super(id)
@@ -144,6 +150,18 @@ export class HumanReviewNode extends Node {
   setAutoPlayAudio(enabled: boolean): void {
     if (enabled === this.autoPlayAudio) return
     this.autoPlayAudio = enabled
+    this.notifyChanged()
+  }
+
+  /** 卡片内 renderer 的 context */
+  get cardRenderContext(): RenderContext {
+    return this.renderContext
+  }
+
+  /** 切换卡片内 renderer 的 context */
+  setCardRenderContext(ctx: RenderContext): void {
+    if (ctx === this.renderContext) return
+    this.renderContext = ctx
     this.notifyChanged()
   }
 
@@ -380,7 +398,8 @@ export class HumanReviewNode extends Node {
       ...super.saveState(),
       box: [...this.box],
       mode: this.mode,
-      autoPlayAudio: this.autoPlayAudio
+      autoPlayAudio: this.autoPlayAudio,
+      renderContext: this.renderContext
     }
   }
 
@@ -401,6 +420,11 @@ export class HumanReviewNode extends Node {
     const autoPlayAudio = state.autoPlayAudio as unknown
     if (typeof autoPlayAudio === 'boolean') {
       this.autoPlayAudio = autoPlayAudio
+    }
+    // 恢复卡片内 renderer context；老版本没有 renderContext 字段，默认 tooltip（向后兼容）
+    const renderContext = state.renderContext as unknown
+    if (renderContext === 'tooltip' || renderContext === 'inline' || renderContext === 'detail') {
+      this.renderContext = renderContext
     }
     // 队列和输出端口都由上游重新 commit 时自动重建
   }

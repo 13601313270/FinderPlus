@@ -39,6 +39,7 @@ import CanvasPicker from './components/CanvasPicker.vue'
 import HelpIcon from './components/icons/HelpIcon.vue'
 import GearIcon from './components/icons/GearIcon.vue'
 import AuthDialog from './components/AuthDialog.vue'
+import MonacoHost from './components/MonacoHost.vue'
 import { useHelpCenter } from '@renderer/composables/useHelpCenter'
 import { useGlobalSettings } from '@renderer/composables/useGlobalSettings'
 import { useLanguageSettings } from '@renderer/composables/useLanguageSettings'
@@ -1506,6 +1507,9 @@ onUnmounted(() => {
 
   <!-- 登录 / 注册弹窗：独立 Teleport 到 body -->
   <AuthDialog />
+
+  <!-- 全局 Monaco 编辑器：画布唯一实例，平时 v-show 隐藏，调用 globalMonaco.open() 唤醒 -->
+  <MonacoHost />
 
   <!-- 用户信息弹窗：点下拉菜单「我的账号」时打开，测试 /user/info 接口 -->
   <Teleport to="body">

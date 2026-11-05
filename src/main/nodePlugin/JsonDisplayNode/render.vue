@@ -10,6 +10,7 @@ import HelpDialog from '@renderer/components/HelpDialog.vue'
 import JsonDisplayHelpDialog from './JsonDisplayHelpDialog.vue'
 import JsonTreeNode from '@renderer/components/JsonTreeNode.vue'
 import NodeHeader from '@renderer/components/NodeHeader.vue'
+import { globalMonaco } from '@renderer/services/globalMonaco'
 
 const props = defineProps<{ id: string }>()
 
@@ -24,9 +25,6 @@ const t = useLocalizedMessages(messages)
 // 帮助浮层开关（弹窗壳由 HelpDialog 负责）
 const showHelp = ref(false)
 
-// JSON 全屏预览弹窗开关
-const showPreview = ref(false)
-
 const parsed = ref<unknown>(undefined)
 const parseError = ref<string | null>(null)
 const hasInput = ref(false)
@@ -34,9 +32,9 @@ const hasInput = ref(false)
 // 是否有可预览的 JSON（解析成功且 parsed 不是 undefined）
 const canPreview = computed(() => hasInput.value && !parseError.value && parsed.value !== undefined)
 
-// 格式化后的 JSON 字符串，供弹窗 <pre> 直接展示
+// 格式化后的 JSON 字符串，供 Monaco 预览弹窗
 const formattedJson = computed(() => {
-  if (!canPreview.value) return t('previewEmpty')
+  if (!canPreview.value) return ''
   try {
     return JSON.stringify(parsed.value, null, 2)
   } catch {
@@ -101,6 +99,17 @@ function onResizePointerDown(e: PointerEvent): void {
   window.addEventListener('pointerup', end)
 }
 
+/** 格式化 JSON 预览 → 唤醒全局 Monaco 编辑器（只读） */
+function onShowPreview(): void {
+  if (!canPreview.value) return
+  globalMonaco.open({
+    title: t('previewDialogTitle'),
+    language: 'json',
+    content: formattedJson.value,
+    readOnly: true
+  })
+}
+
 // collapse / expand hover 提示（来自 i18n）
 const collapseTitle = computed(() => t('collapse'))
 const expandTitle = computed(() => t('expand'))
@@ -119,7 +128,7 @@ const expandTitle = computed(() => t('expand'))
           :title="t('previewHint')"
           :disabled="!canPreview"
           @pointerdown.stop
-          @click.stop="showPreview = true"
+          @click.stop="onShowPreview"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M15 3h6v6" />
@@ -165,11 +174,6 @@ const expandTitle = computed(() => t('expand'))
   <!-- 帮助弹窗 -->
   <HelpDialog :visible="showHelp" :title="t('helpDialogTitle')" @close="showHelp = false">
     <JsonDisplayHelpDialog />
-  </HelpDialog>
-
-  <!-- JSON 全屏预览 -->
-  <HelpDialog :visible="showPreview" :title="t('previewDialogTitle')" width="90vw" @close="showPreview = false">
-    <pre class="preview-content">{{ formattedJson }}</pre>
   </HelpDialog>
 </template>
 
@@ -259,14 +263,5 @@ const expandTitle = computed(() => t('expand'))
     font-size: 12px;
     word-break: break-all;
   }
-}
-
-.preview-content {
-  margin: 0;
-  font-size: 13px;
-  font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
-  line-height: 1.6;
-  white-space: pre-wrap;
-  word-break: break-all;
 }
 </style>

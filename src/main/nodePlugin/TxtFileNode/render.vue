@@ -9,6 +9,7 @@ import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages
 import HelpDialog from '@renderer/components/HelpDialog.vue'
 import { messages } from './i18n'
 import TxtFileHelpDialog from './TxtFileHelpDialog.vue'
+import { globalMonaco } from '@renderer/services/globalMonaco'
 
 const props = defineProps<{ id: string }>()
 
@@ -70,6 +71,19 @@ function formatSize(bytes: number): string {
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
   return `${(bytes / 1024 / 1024).toFixed(2)} MB`
 }
+
+/** 唤醒全局 Monaco 编辑器，编辑当前 txt 文件 */
+function onEdit(): void {
+  const node = fileNode.value
+  if (!node) return
+  globalMonaco.open({
+    title: node.fileName || node.type,
+    language: 'plaintext',
+    content: node.content,
+    readOnly: false,
+    onSave: (text) => node.applyContent(text)
+  })
+}
 </script>
 
 <template>
@@ -111,7 +125,21 @@ function formatSize(bytes: number): string {
       </span>
     </div>
 
-    <!-- 帮助入口：悬浮在卡片右上角 -->
+    <!-- 右上角按钮组：编辑 · 帮助 -->
+    <button
+      class="file-card__edit"
+      type="button"
+      :disabled="!fileNode"
+      :title="t('editHint')"
+      @pointerdown.stop
+      @dblclick.stop
+      @click.stop="onEdit"
+    >
+      <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M11 2.5l2.5 2.5-7 7H4.5V9.5l6.5-7z" />
+      </svg>
+    </button>
+
     <button
       class="file-card__help"
       type="button"
@@ -182,6 +210,37 @@ function formatSize(bytes: number): string {
     display: block;
     color: @color-text-weak;
     font-size: 11px;
+  }
+
+  &__edit {
+    all: unset;
+    position: absolute;
+    top: 6px;
+    right: 28px; // 帮助按钮在 right: 6px，隔 4px gap
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #f3f4f6;
+    color: #6b7280;
+    transition: background 0.15s, color 0.15s;
+
+    svg {
+      display: block;
+    }
+
+    &:hover:not(:disabled) {
+      background: #dbeafe;
+      color: #2563eb;
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.4;
+    }
   }
 
   &__help {

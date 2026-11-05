@@ -94,12 +94,21 @@ export abstract class FileNode extends Node {
           }
         }
       }
+      // 手动重新读取文件内容（兜底：外部编辑器改了文件但 fs.watch 没触发时用）
+      const reloadItem = {
+        id: 'reloadFile',
+        label: '重新读取文件',
+        run: async () => {
+          await this.reloadFileContent()
+          this.completeRun()
+        }
+      }
       // 插到 delete（danger=true）之前，避免危险操作堆在中间
       const deleteIdx = items.findIndex((it: { danger?: boolean }) => it.danger)
       if (deleteIdx >= 0) {
-        items.splice(deleteIdx, 0, openFolderItem)
+        items.splice(deleteIdx, 0, openFolderItem, reloadItem)
       } else {
-        items.push(openFolderItem)
+        items.push(openFolderItem, reloadItem)
       }
     }
     return items

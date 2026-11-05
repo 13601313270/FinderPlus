@@ -112,6 +112,13 @@ watch(contentStamp, async ({ c, p }) => {
   previewUrl.value = await window.fileApi.writePreviewHtml(props.nodeId, withBase)
 }, { immediate: true })
 
+/** 手动从磁盘重新读取文件内容并刷新预览 */
+async function reloadFromDisk(): Promise<void> {
+  const n = node.value
+  if (!n) return
+  await n.reloadFileContent()
+}
+
 /**
  * 根据舞台可用尺寸 + 目标比例，算出能放下的最大矩形像素尺寸。
  * 纯 CSS aspect-ratio 只认一边（width:100% 时竖屏高度会溢出），
@@ -154,6 +161,17 @@ const frameSizeStyle = computed(() => {
           @click="aspect = r"
         >{{ r }}</button>
       </div>
+      <button
+        class="html-preview__reload-btn"
+        type="button"
+        :title="'重新读取文件'"
+        @click="reloadFromDisk"
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12a9 9 0 1 1-3-6.7"/>
+          <path d="M21 4v5h-5"/>
+        </svg>
+      </button>
     </div>
 
     <!-- 预览区 -->
@@ -231,6 +249,30 @@ const frameSizeStyle = computed(() => {
       background: #2563eb;
       border-color: #2563eb;
       color: #fff;
+    }
+  }
+
+  &__reload-btn {
+    all: unset;
+    cursor: pointer;
+    padding: 4px 6px;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    background: #fff;
+    color: #6b7280;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: auto;
+    transition: all 0.12s;
+
+    &:hover {
+      border-color: #2563eb;
+      color: #2563eb;
+    }
+
+    &:active {
+      transform: scale(0.95);
     }
   }
 

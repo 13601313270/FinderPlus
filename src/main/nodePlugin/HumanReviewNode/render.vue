@@ -167,7 +167,7 @@ function onRejectCancel(): void {
  * review 区域 wheel 事件：当 JSON 树可滚动时，阻止 wheel 事件冒泡到画布视口（否则滚 JSON 树会同时平移画布）。
  * 逻辑同 JsonDisplayNode 的 onNodeWheel：顶部不能再滚时才允许向上冒泡，底部不能再滚时才允许向下冒泡。
  */
-function onReviewWheel(e: WheelEvent): void {
+function onReviewWheel(): void {
   // const el = e.currentTarget as HTMLElement
   // const { scrollTop, scrollHeight, clientHeight } = el
   // const atTop = scrollTop <= 0

@@ -13,6 +13,17 @@ export type EdgeConnectionEvent =
 /** 订阅边接入/接出事件的回调签名 */
 export type EdgeConnectionListener = (event: EdgeConnectionEvent) => void
 
+export type CommitEvent = {
+  readonly value: Value
+  /** 本次 commit 是否真的让端口值变了（force 绕过或 fingerprint 不同） */
+  readonly changed: boolean
+  /** 调用方是否显式传了 force */
+  readonly force: boolean
+}
+
+/** 订阅 commit 事件的回调签名 */
+export type CommitListener = (event: CommitEvent) => void
+
 /**
  * 输出端口：节点产出值的出口。
  * 端口不持有字节，只记住「我的值是什么、是否过期、通向哪些连线」。
@@ -28,6 +39,9 @@ export class OutputPort {
 
   /** 边接入/接出事件的订阅者集合 */
   private readonly connectionListeners = new Set<EdgeConnectionListener>()
+
+  /** commit 事件的订阅者集合 */
+  private readonly commitListeners = new Set<CommitListener>()
 
   /** 当前值，undefined 表示该节点从未计算过 */
   private currentValue: Value | undefined
@@ -127,11 +141,36 @@ export class OutputPort {
     }
   }
 
+  /**
+   * 订阅本端口的 commit 事件，返回取消订阅函数。
+   * 每次 commit 被调用都会触发（无论 changed 与否），回调里带 value / changed / force。
+   */
+  onCommit(fn: CommitListener): () => void {
+    this.commitListeners.add(fn)
+    return () => {
+      this.commitListeners.delete(fn)
+    }
+  }
+
+  /**
+   * 显式解除某个 commit 监听器。
+   * 与 onCommit 返回的取消函数等价，二选一即可。
+   */
+  offCommit(fn: CommitListener): void {
+    this.commitListeners.delete(fn)
+  }
+
   private notifyConnection(kind: 'connect' | 'disconnect', edge: Edge): void {
     const event: EdgeConnectionEvent = kind === 'connect'
       ? { kind: 'connect', edge }
       : { kind: 'disconnect', edge }
     this.connectionListeners.forEach((fn) => fn(event))
+  }
+
+  private notifyCommit(value: Value, changed: boolean, force: boolean): void {
+    if (this.commitListeners.size === 0) return
+    const event: CommitEvent = { value, changed, force }
+    this.commitListeners.forEach((fn) => fn(event))
   }
 
   /**
@@ -143,15 +182,17 @@ export class OutputPort {
    *   自动计算节点（LLM、HTTP、图片处理等）一律用默认 false，靠指纹排重防连锁重算。
    */
   commit(value: Value, opts?: { force?: boolean }): boolean {
-    const changed = opts?.force === true || this.currentValue?.fingerprint !== value.fingerprint
+    const force = opts?.force === true
+    const changed = force || this.currentValue?.fingerprint !== value.fingerprint
     this.currentValue = value
     if (changed) {
       // 通知 Edge 有新的值；force 向下透传到 InputPort.receive，让整条链路跳过排重
-      this.edges.forEach(edge => edge.transferData(value, opts?.force === true))
+      this.edges.forEach(edge => edge.transferData(value, force))
       // 注意：**不在此处回 stable**——节点可能有多个 OutputPort，也可能在 running 期间多次 commit
       // （如 CodeNode 在用户代码的 Promise.then/setTimeout 里不断 callOutputPort）。
       // 何时从 running 回到 stable，由子类自己在 run 结束时显式调 completeRun()。
     }
+    this.notifyCommit(value, changed, force)
     return changed
   }
 

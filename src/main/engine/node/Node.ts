@@ -365,6 +365,11 @@ export abstract class Node {
     }
   }
 
+  /** 解除节点变化订阅 */
+  offChanged(fn: () => void): void {
+    this.listeners.delete(fn)
+  }
+
   /** 通知所有订阅者「我的可见状态变了」。子类和引擎内部组件（InputPort 绑定/解绑）都会调用 */
   notifyChanged(): void {
     this.listeners.forEach((fn) => fn())

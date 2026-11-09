@@ -138,11 +138,12 @@ class CanvasNodeTool implements HarnessTool {
       ;(sendPort as any).trigger()
     }
 
-    // Step 3: 等节点稳定
+    // Step 3: 等输出端口出值（最可靠的信号）或 state 变完成态（兜底）
+    const outPort = node.outputPorts.find(p => p.id === this.binding.outputPortId)
     try {
-      await waitForNodeStable(node, { timeoutMs: 30000 })
+      await waitForPortCommit(node, outPort)
     } catch (err) {
-      return JSON.stringify({ error: `等待节点超时：${err instanceof Error ? err.message : String(err)}` })
+      return JSON.stringify({ error: err instanceof Error ? err.message : String(err) })
     }
 
     // Step 4: 从输出端口读值
@@ -351,25 +352,47 @@ class HarnessLoop {
 
 // ─── 辅助函数 ───
 
-/** 等待节点 state 变成 stable / error / dirty（任一完成态） */
-function waitForNodeStable(node: Node, opts: { timeoutMs: number }): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => {
-      cleanup()
-      reject(new Error('timeout'))
-    }, opts.timeoutMs)
+/**
+ * 等待一个节点的 outputPort 产出值（commit）。
+ * 信号 1（主）：outputPort.onCommit → 端口一 commit 值就 resolve
+ * 信号 2（兜底）：node.onChanged → state 变 stable/error 也 resolve
+ * 为什么不单纯等 state？很多自动处理型节点不会自动调 completeRun，
+ * commit 了 outputPort 就跑完了，但 state 还在 dirty。
+ */
+function waitForPortCommit(node: Node, outputPort: OutputPort | undefined): Promise<void> {
+  return new Promise((resolve) => {
+    let settled = false
+    let portListener: (() => void) | null = null
+    let nodeUnsub: (() => void) | null = null
 
-    const unsub = node.onChanged(() => {
-      if (node.state === 'stable' || node.state === 'error' || node.state === 'dirty') {
+    function cleanup() {
+      if (settled) return
+      settled = true
+      if (outputPort && portListener) outputPort.offCommit(portListener)
+      nodeUnsub?.()
+    }
+
+    // 信号 1：outputPort commit（最可靠）
+    if (outputPort) {
+      // 如果端口已经有值了，直接 resolve
+      if (outputPort.value !== undefined) {
+        resolve()
+        return
+      }
+      portListener = () => {
+        cleanup()
+        resolve()
+      }
+      outputPort.onCommit(portListener)
+    }
+
+    // 信号 2（兜底）：node state 变成完成态
+    nodeUnsub = node.onChanged(() => {
+      if (node.state === 'stable' || node.state === 'error') {
         cleanup()
         resolve()
       }
     })
-
-    function cleanup() {
-      clearTimeout(timer)
-      unsub()
-    }
   })
 }
 

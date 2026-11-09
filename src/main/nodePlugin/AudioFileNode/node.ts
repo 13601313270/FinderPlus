@@ -334,5 +334,6 @@ export class AudioFileNode extends FileNode {
   override async beforeDestroy(): Promise<void> {
     this.disposeAudio()
     this.playerSubscribers.clear()
+    await super.beforeDestroy()
   }
 }

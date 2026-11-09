@@ -313,8 +313,17 @@ async function loadPage(): Promise<void> {
     })
 
     if (result.ok) {
+      const totalCount = result.total as number
+      // 数据被删后当前页可能越界，校正到合法范围
+      const maxPage = Math.max(1, Math.ceil(totalCount / pageSize))
+      if (page.value > maxPage) {
+        page.value = maxPage
+        // 页码变了，重新查才能拿到正确的 rows
+        await loadPage()
+        return
+      }
       rows.value = result.rows as Row[]
-      total.value = result.total
+      total.value = totalCount
     } else {
       errorMsg.value = result.error
     }

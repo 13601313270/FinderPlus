@@ -91,6 +91,37 @@ export function clearDraggingNode(): void {
 }
 
 /**
+ * 外部手动启动节点拖拽。用于 HarnessNode 卡槽卡片释放子节点等场景——
+ * 那些不是从真实 NodeShell DOM pointerdown 开始的拖拽，需要手动接管。
+ *
+ * 内部做三件事：
+ * 1. 设 draggingNode / draggingNodeStartPos（App.vue onGlobalPointerUp 结算时读取）
+ * 2. 加 window pointermove → 实时 setPosition（让节点视觉上跟着鼠标走）
+ * 3. 加 window pointerup → 清除 pointermove 监听，交回 App.vue 的全局结算
+ */
+export function manualBeginDrag(nodeLike: NodeLike, e: PointerEvent): void {
+  e.preventDefault()
+  const startClientX = e.clientX
+  const startClientY = e.clientY
+  draggingNode = nodeLike
+  draggingNodeStartPos = [...nodeLike.position] as [number, number]
+
+  const scale = viewport.scale || 1
+  const onMove = (ev: PointerEvent) => {
+    nodeLike.setPosition(
+      draggingNodeStartPos![0] + (ev.clientX - startClientX) / scale,
+      draggingNodeStartPos![1] + (ev.clientY - startClientY) / scale
+    )
+  }
+  const onUp = () => {
+    window.removeEventListener('pointermove', onMove)
+    // pointerup 监听自己清除，draggingNode 留给 App.vue 的 onGlobalPointerUp 结算
+  }
+  window.addEventListener('pointermove', onMove)
+  window.addEventListener('pointerup', onUp, { once: true })
+}
+
+/**
  * 「位置 + 拖拽」共用逻辑：两个节点视图都要把卡片拖来拖去、并把落点写回
  * node.setPosition。拖拽只认引擎里的 position 为单一真相源——
  * - startDrag 记录起点，pointermove 算出增量后实时 setPosition；

@@ -35,6 +35,18 @@ export type LLMProviderId =
 const CONFIG_KEY = 'canvasdesk.llm.config'
 const LEGACY_KEY = 'canvasdesk.llm.api_key'
 
+/** LLM 原始请求的返回结构，供 HarnessNode 等外部消费者使用 */
+export interface RawChatResponse {
+  /** assistant 的文本回复，可能为 null（只有 tool_calls 没有文本时） */
+  content: string | null
+  /** function calling 的工具调用列表，无工具调用时为 undefined */
+  tool_calls?: Array<{
+    id: string
+    type: 'function'
+    function: { name: string; arguments: string }
+  }>
+}
+
 /** Provider 预设（与渲染层 useLLMSettings 的 LLM_PROVIDERS 保持一致） */
 const PROVIDER_PRESETS: Record<LLMProviderId, { url: string; defaultModel: string }> = {
   deepseek:    { url: 'https://api.deepseek.com/chat/completions',                          defaultModel: 'deepseek-flash' },
@@ -484,16 +496,103 @@ export class LLMNode extends Node {
       return
     }
 
-    const { url, model } = resolveEndpoint(this.provider, this.model)
     const myRequestId = ++this.requestId
-    void this.fetchAndCommit(key, url, model, system, prompt, myRequestId)
+    void this.fetchAndCommit(system, prompt, myRequestId)
+  }
+
+  /** 抽出来的原始 fetch：provider + model 配置在本节点，messages + tools 由调用方传入 */
+  private async doRawFetch(
+    messages: Array<{ role: string; content: string; tool_call_id?: string; name?: string }>,
+    tools?: unknown[],
+    signal?: AbortSignal
+  ): Promise<RawChatResponse> {
+    const key = readProviderKey(this.provider)
+    if (!key) {
+      throw new Error(`LLM 节点未配置 API Key（provider: ${this.provider}）`)
+    }
+    const { url, model } = resolveEndpoint(this.provider, this.model)
+
+    const body: Record<string, unknown> = {
+      model,
+      messages,
+      stream: false
+    }
+    if (tools && tools.length > 0) {
+      body.tools = tools
+    }
+    if (this.provider === 'deepseek' && this.jsonMode) {
+      body.response_format = { type: 'json_object' }
+    }
+
+    // 最多尝试 3 次，AbortError 不重试，4xx 客户端错误不重试
+    const MAX_ATTEMPTS = 3
+    let res: Response | null = null
+    let lastErr: unknown = null
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+      try {
+        res = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${key}`
+          },
+          body: JSON.stringify(body),
+          signal
+        })
+      } catch (e) {
+        if ((e as Error).name === 'AbortError') throw e
+        res = null
+        lastErr = e
+        if (attempt < MAX_ATTEMPTS) {
+          console.warn(`[LLM] 请求第 ${attempt} 次网络异常，${MAX_ATTEMPTS - attempt} 次重试剩余`)
+          await new Promise(r => setTimeout(r, 500))
+          continue
+        } else {
+          throw e
+        }
+      }
+      if (res.ok) break
+      if (res.status < 500) break
+      lastErr = new Error(`HTTP ${res.status}`)
+      if (attempt < MAX_ATTEMPTS) {
+        console.warn(`[LLM] 请求第 ${attempt} 次返回 ${res.status}，${MAX_ATTEMPTS - attempt} 次重试剩余`)
+        res = null
+        await new Promise(r => setTimeout(r, 500))
+      }
+    }
+
+    if (!res) {
+      throw lastErr instanceof Error ? lastErr : new Error('网络请求异常')
+    }
+    const data = await res.json()
+    if (!res.ok) {
+      throw new Error(data?.error?.message ?? `请求失败（${res.status} ${res.statusText}）`)
+    }
+
+    const msg = data?.choices?.[0]?.message
+    return {
+      content: typeof msg?.content === 'string' ? msg.content : null,
+      tool_calls: Array.isArray(msg?.tool_calls) ? msg.tool_calls : undefined
+    }
+  }
+
+  /**
+   * 公共 chat 接口：供 HarnessNode 等外部消费者调用。
+   * 本方法只负责 fetch + 解析 response，不修改节点内部状态（status/response/chatHistory）、
+   * 不 commit 输出端口、不调 beginRun/completeRun。
+   *
+   * @param messages 完整的对话消息数组，HarnessNode 自行构建并维护历史
+   * @param tools    可选的 function calling 工具描述
+   */
+  async chat(
+    messages: Array<{ role: string; content: string; tool_call_id?: string; name?: string }>,
+    tools?: unknown[]
+  ): Promise<RawChatResponse> {
+    return this.doRawFetch(messages, tools)
   }
 
   /** 异步调用 Provider API，完成后写 response + commit 到输出端口 */
   private async fetchAndCommit(
-    key: string,
-    url: string,
-    model: string,
     system: string,
     prompt: string,
     myRequestId: number
@@ -503,96 +602,33 @@ export class LLMNode extends Node {
     this.errorMessage = ''
     this.notifyChanged()
 
-    // 每次请求 fresh controller；cancel() 会 abort 它并置 null
+    // 构建 messages：system 始终放最前面；chatMode 开启时带上历史；最后拼当前 prompt
+    const messages: Array<{ role: string; content: string }> = [
+      { role: 'system', content: system || 'You are a helpful assistant.' }
+    ]
+    if (this.chatMode) {
+      for (const msg of this.chatHistory) {
+        messages.push({ role: msg.role, content: msg.content })
+      }
+    }
+    messages.push({ role: 'user', content: prompt })
+
     const controller = new AbortController()
     this.abortController = controller
-    const signal = controller.signal
 
-    let resultText = ''
+    let content: string | null = null
     let errMsg = ''
-    let ok = false
     let aborted = false
 
     try {
-      // 构建 messages：system 始终放最前面；chatMode 开启时带上历史；最后拼当前 prompt
-      const messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
-        { role: 'system', content: system || 'You are a helpful assistant.' }
-      ]
-      if (this.chatMode) {
-        for (const msg of this.chatHistory) {
-          messages.push({ role: msg.role, content: msg.content })
-        }
-      }
-      messages.push({ role: 'user', content: prompt })
-
-      const body: Record<string, unknown> = {
-        model,
-        messages,
-        stream: false
-      }
-
-      if (this.provider === 'deepseek' && this.jsonMode) {
-        body.response_format = { type: 'json_object' }
-      }
-
-      // 最多尝试 3 次（含首次），AbortError（用户主动取消）不重试，4xx 客户端错误不重试
-      const MAX_ATTEMPTS = 3
-      let res: Response | null = null
-      for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-        try {
-          res = await fetch(url, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${key}`
-            },
-            body: JSON.stringify(body),
-            signal
-          })
-        } catch (e) {
-          console.error('eeeee-2', e)
-          if ((e as Error).name === 'AbortError') throw e // 用户取消，直接透传到外层 catch
-          res = null
-          if (attempt < MAX_ATTEMPTS) {
-            console.warn(`[LLM] 请求第 ${attempt} 次网络异常，${MAX_ATTEMPTS - attempt} 次重试剩余`)
-            await new Promise(r => setTimeout(r, 500))
-            continue
-          } else {
-            throw e
-          }
-        }
-
-        // 拿到响应：2xx 直接跳出；4xx 客户端错误不重试；5xx 可重试
-        if (res.ok) break
-        if (res.status < 500) break
-        if (attempt < MAX_ATTEMPTS) {
-          console.warn(`[LLM] 请求第 ${attempt} 次返回 ${res.status}，${MAX_ATTEMPTS - attempt} 次重试剩余`)
-          res = null
-          await new Promise(r => setTimeout(r, 500))
-        }
-      }
-      const fetchRes = res as Response
-
-      const data = await fetchRes.json()
-
-      if (!fetchRes.ok) {
-        errMsg = data?.error?.message ?? `请求失败（${fetchRes.status} ${fetchRes.statusText}）`
-      } else {
-        const content: string | undefined = data?.choices?.[0]?.message?.content
-        if (typeof content === 'string') {
-          resultText = content
-          ok = true
-        } else {
-          errMsg = '响应格式异常：未拿到 content 字段'
-        }
-      }
+      const resp = await this.doRawFetch(messages, undefined, controller.signal)
+      content = resp.content
     } catch (err) {
-      // 用户主动 cancel → AbortError 是预期行为，静默退出
       if (err instanceof DOMException && err.name === 'AbortError') {
         aborted = true
-        return
+      } else {
+        errMsg = err instanceof Error ? err.message : '网络请求异常'
       }
-      errMsg = err instanceof Error ? err.message : '网络请求异常'
     } finally {
       if (this.abortController === controller) this.abortController = null
     }
@@ -602,31 +638,31 @@ export class LLMNode extends Node {
     // —— Stale-call 守卫 ——
     if (this.requestId !== myRequestId) return
 
-    if (ok) {
-      this.response = resultText
+    if (content !== null && content.length > 0) {
+      this.response = content
       this.status = 'done'
 
       // 连续对话模式：追加 user + assistant 到历史
       if (this.chatMode) {
         this.chatHistory.push({ role: 'user', content: prompt })
-        this.chatHistory.push({ role: 'assistant', content: resultText })
+        this.chatHistory.push({ role: 'assistant', content })
       }
 
       if (this.jsonMode) {
         try {
-          const parsed = JSON.parse(resultText)
+          const parsed = JSON.parse(content)
           this.textOutput.commit(new JsonValue(parsed))
         } catch {
           // 模型没按 JSON 格式返回，降级为字符串
-          this.textOutput.commit(new StringValue(resultText))
+          this.textOutput.commit(new StringValue(content))
         }
       } else {
-        this.textOutput.commit(new StringValue(resultText))
+        this.textOutput.commit(new StringValue(content))
       }
       this.completeRun() // 成功产出 → stable
     } else {
       this.response = ''
-      this.errorMessage = errMsg
+      this.errorMessage = errMsg || '响应为空'
       this.status = 'error'
       this.failRun() // 失败 → running 兜底回到 dirty
     }

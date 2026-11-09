@@ -7,6 +7,7 @@ import { manifestFor, getNodeManifest, resolveByExtension } from '../../main/nod
 import { FileNode } from '../../main/nodePlugin/FileNode/node'
 import { FileInfoNode } from '../../main/nodePlugin/FileInfoNode/node'
 import { FolderNode } from '../../main/nodePlugin/FolderNode/node'
+import { HarnessNode } from '../../main/nodePlugin/HarnessNode/node'
 import { viewport, panViewport, zoomViewportAt, screenToWorld, setCanvasContainer, centerViewportOn, getCanvasContainer } from '@renderer/canvas/viewport'
 import { measureNodeBox } from '@renderer/canvas/elements'
 import {
@@ -1260,10 +1261,12 @@ async function bootstrapScene(): Promise<void> {
   }
 
   // —— 4. 恢复视口 + attachStorage ——
-  // （边已重建，端口已就绪）此时按各文件夹 readState 暂存的 pendingChildIds 收养子节点
+  // （边已重建，端口已就绪）此时按各文件夹/子容器 readState 暂存的 pendingChildIds 收养子节点
   for (const node of workspaceScene.allNodes) {
     if (node instanceof FolderNode) {
       node.adoptChildren(workspaceScene)
+    } else if (node instanceof HarnessNode) {
+      node.adoptAllChildren()
     }
   }
   if (data?.viewport) {

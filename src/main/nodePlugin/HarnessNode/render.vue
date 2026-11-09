@@ -203,6 +203,34 @@ const trajectoryForView = computed(() => {
   }
   return groups
 })
+
+// —— Tool 编辑弹窗 ——
+const editingTool = ref<{ toolName: string; toolNameInput: string; descInput: string } | null>(null)
+
+function openToolEditor(binding: CanvasToolBinding) {
+  editingTool.value = {
+    toolName: binding.toolName,
+    toolNameInput: binding.toolName,
+    descInput: binding.description
+  }
+}
+
+function saveToolEditor() {
+  if (!editingTool.value) return
+  const cur = editingTool.value
+  const trimmedName = cur.toolNameInput.trim()
+  const trimmedDesc = cur.descInput.trim()
+  if (!trimmedName || !trimmedDesc) return
+  harnessNode.value?.updateToolBinding(cur.toolName, {
+    toolName: trimmedName,
+    description: trimmedDesc
+  })
+  editingTool.value = null
+}
+
+function closeToolEditor() {
+  editingTool.value = null
+}
 </script>
 
 <template>
@@ -235,7 +263,9 @@ const trajectoryForView = computed(() => {
               :style="{ color: stateColor(modelSummary.state) }"
             >● {{ modelSummary.state }}</div>
           </div>
-          <button class="embedded-node__release" type="button" @click.stop="onReleaseModel" title="释放回画布">↩</button>
+          <button class="embedded-node__release" type="button"
+            @pointerdown.stop
+            @click.stop="onReleaseModel" title="释放回画布">↩</button>
         </div>
       </template>
       <template v-else>
@@ -265,7 +295,12 @@ const trajectoryForView = computed(() => {
                 ● {{ tool.childNode.state }}
               </div>
             </div>
-            <button class="embedded-node__release" type="button" @click.stop="onReleaseTool(tool.toolName)" title="释放回画布">↩</button>
+            <button class="embedded-node__edit" type="button"
+              @pointerdown.stop
+              @click.stop="openToolEditor(tool)" title="编辑 tool 名称和描述">⚙</button>
+            <button class="embedded-node__release" type="button"
+              @pointerdown.stop
+              @click.stop="onReleaseTool(tool.toolName)" title="释放回画布">↩</button>
           </div>
         </div>
       </template>
@@ -368,6 +403,32 @@ const trajectoryForView = computed(() => {
         @click="onSendClick"
       >{{ t('send') }}</button>
     </div>
+
+    <!-- ── Tool 编辑弹窗 ── -->
+    <Teleport to="body">
+      <div v-if="editingTool" class="harness-modal-backdrop" @click.self="closeToolEditor">
+        <div class="harness-modal">
+          <div class="harness-modal__header">
+            <span>Tool 配置</span>
+            <button class="harness-modal__close" type="button" @click="closeToolEditor">✕</button>
+          </div>
+          <div class="harness-modal__body">
+            <label class="harness-field">
+              <span class="harness-field__label">Tool Name（LLM 调用时的函数名）</span>
+              <input v-model="editingTool.toolNameInput" class="harness-input" spellcheck="false" />
+            </label>
+            <label class="harness-field">
+              <span class="harness-field__label">Description（告诉 LLM 这个工具能干啥）</span>
+              <textarea v-model="editingTool.descInput" class="harness-input harness-textarea--tool-desc" rows="6" spellcheck="false" />
+            </label>
+          </div>
+          <div class="harness-modal__footer">
+            <button class="btn harness-btn--ghost" type="button" @click="closeToolEditor">取消</button>
+            <button class="btn btn--primary" type="button" @click="saveToolEditor">保存</button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -456,6 +517,20 @@ const trajectoryForView = computed(() => {
     font-size: 10px;
     font-family: ui-monospace, Menlo, monospace;
   }
+  &__edit {
+    all: unset;
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    font-size: 12px;
+    color: #94a3b8;
+    &:hover { background: #dbeafe; color: #2563eb; }
+    flex-shrink: 0;
+  }
   &__release {
     all: unset;
     cursor: pointer;
@@ -538,7 +613,7 @@ const trajectoryForView = computed(() => {
     width: 10px; height: 10px;
     border: 2px solid #bfdbfe; border-top-color: #3b82f6;
     border-radius: 50%;
-    animation: spin 0.7s linear infinite;
+    animation: harness-spin 0.7s linear infinite;
     flex-shrink: 0;
   }
   .result-text { margin: 0; font-family: inherit; white-space: pre-wrap; word-break: break-all; }
@@ -619,6 +694,100 @@ const trajectoryForView = computed(() => {
     &:hover { background: #dc2626; }
   }
 }
+</style>
 
-@keyframes spin { to { transform: rotate(360deg); } }
+<!-- Teleport 到 body 的弹窗样式，必须非 scoped -->
+<style lang="less">
+.harness-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  pointer-events: auto;
+}
+.harness-modal {
+  background: #fff;
+  border-radius: 10px;
+  width: 420px;
+  max-width: 90vw;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  max-height: 80vh;
+  font-family: inherit;
+}
+.harness-modal__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+  border-bottom: 1px solid #e2e8f0;
+}
+.harness-modal__close {
+  all: unset;
+  cursor: pointer;
+  font-size: 18px;
+  color: #94a3b8;
+  padding: 2px 6px;
+  border-radius: 4px;
+  &:hover { background: #f1f5f9; color: #334155; }
+}
+.harness-modal__body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+}
+.harness-modal__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 10px 16px;
+  border-top: 1px solid #e2e8f0;
+  background: #fafafa;
+}
+.harness-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.harness-field__label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #475569;
+}
+.harness-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-family: ui-monospace, Menlo, monospace;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  outline: none;
+  transition: border-color 0.15s;
+  &:focus { border-color: #3b82f6; }
+}
+.harness-textarea--tool-desc {
+  resize: vertical;
+  min-height: 80px;
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.harness-btn--ghost {
+  background: transparent;
+  color: #64748b;
+  &:hover { background: #f1f5f9; color: #334155; }
+}
+
+@keyframes harness-spin { to { transform: rotate(360deg); } }
 </style>

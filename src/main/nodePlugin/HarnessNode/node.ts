@@ -129,7 +129,6 @@ class CanvasNodeTool implements HarnessTool {
       if (!port) continue
       const value = wrapArgValue(args[argName], port.acceptValueNames)
       port.lastReceiveValue = value
-      // 手动触发脏标记和计算
       node._onInputPortChanged([port], 'receive' as InputPortChangeSource)
     }
 
@@ -149,7 +148,6 @@ class CanvasNodeTool implements HarnessTool {
     // Step 4: 从输出端口读值
     const output = node.outputPorts.find(p => p.id === this.binding.outputPortId)
     if (!output) {
-      // 找不到指定 outputPort，尝试用第一个有值的
       const firstWithValue = node.outputPorts.find(p => (p as any).currentValue !== undefined)
       if (!firstWithValue) {
         return JSON.stringify({ error: '节点没有输出' })
@@ -182,6 +180,24 @@ class ToolRegistry {
 
   removeCanvasTool(toolName: string): void {
     this.canvas.delete(toolName)
+  }
+
+  /** 更新 Canvas 节点绑定的元数据（toolName / description）。toolName 变了要重新建 key。 */
+  updateBinding(oldToolName: string, patch: Partial<Pick<CanvasToolBinding, 'toolName' | 'description'>>): void {
+    const existing = this.canvas.get(oldToolName)
+    if (!existing) return
+    const oldBinding = existing['binding']
+
+    const newToolName = patch.toolName ?? oldBinding.toolName
+    const newBinding: CanvasToolBinding = {
+      ...oldBinding,
+      toolName: newToolName,
+      description: patch.description ?? oldBinding.description
+    }
+
+    this.canvas.delete(oldToolName)
+    const node = workspaceScene.getNode(oldBinding.nodeId) ?? null
+    this.canvas.set(newToolName, new CanvasNodeTool(newBinding, node))
   }
 
   /** 画布恢复后刷新所有 CanvasNodeTool 的节点引用 */
@@ -268,21 +284,22 @@ class HarnessLoop {
       let raw: RawChatResponse
       try {
         raw = await llmNode.chat(
-          this.messages.map(m => ({
-            role: m.role,
-            content: m.content,
-            tool_call_id: m.tool_call_id,
-            name: m.name
-          })),
+          this.messages.map(m => {
+            const out: any = { role: m.role, content: m.content }
+            if (m.tool_calls && m.tool_calls.length > 0) {
+              out.tool_calls = m.tool_calls
+            }
+            if (m.role === 'tool') {
+              out.tool_call_id = m.tool_call_id
+              out.name = m.name
+            }
+            return out
+          }),
           this.toolRegistry.getToolSchemas()
         )
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err)
-        // 把错误也追加到轨迹里，让 UI 可见
-        this.messages.push({
-          role: 'assistant',
-          content: `[LLM 调用失败: ${msg}]`
-        })
+        this.messages.push({ role: 'assistant', content: `[LLM 调用失败: ${msg}]` })
         throw err
       }
 
@@ -817,10 +834,35 @@ export class HarnessNode extends Node {
     }
     const firstOutput = node.outputPorts[0]
     const toolName = `${node.type.replace(/-/g, '_')}_${node.id.split('-').pop() ?? ''}`
+
+    // 根据节点 type 给出一个像样的默认 description（LLM 决定什么时候调这个 tool 全靠它）
+    const typeHints: Record<string, string> = {
+      'http-request': 'Send an HTTP request (GET/POST/PUT/DELETE) to a URL and return the response body as text',
+      'http': 'Send an HTTP request to a URL and return the response',
+      'code': 'Run a JavaScript snippet and return the result',
+      'table': 'Execute an SQL query (SELECT/INSERT/UPDATE/DELETE) against the embedded SQLite database',
+      'string-concat': 'Concatenate multiple string inputs into one',
+      'convert': 'Convert a value between types (number↔string↔boolean↔json)',
+      'switch': 'Conditionally select one of multiple inputs based on a boolean or match value',
+      'merge': 'Merge multiple string or JSON inputs together',
+      'json-value': 'Parse a JSON string into an object or output JSON as string',
+      'image-gen': 'Generate an image from a text prompt',
+      'code-gen': 'Generate code from a description',
+      'regex': 'Run a regular expression match or replace on text',
+      'text-split': 'Split text into parts',
+      'number-input': 'Output a predefined number value',
+      'text-input': 'Output a predefined text value'
+    }
+    let description = typeHints[node.type] ?? node.type.replace(/-/g, ' ')
+    // 追加输入输出端口的简要说明
+    const inputDesc = node.inputPorts.map(p => p.id).join(', ')
+    const outputDesc = firstOutput ? firstOutput.id : 'result'
+    description += `\nInputs: ${inputDesc || '(none)'}\nOutput: ${outputDesc}`
+
     return {
       nodeId: node.id,
       toolName,
-      description: node.constructor.name,
+      description,
       inputMapping: inputs,
       outputPortId: firstOutput?.id ?? 'result'
     }
@@ -842,6 +884,12 @@ export class HarnessNode extends Node {
 
   removeTool(toolName: string): void {
     this.toolRegistry.removeCanvasTool(toolName)
+    this.notifyChanged()
+  }
+
+  /** 更新一个 Canvas Tool 绑定的 toolName / description。toolName 变了会重新注册。 */
+  updateToolBinding(oldToolName: string, patch: { toolName?: string; description?: string }): void {
+    this.toolRegistry.updateBinding(oldToolName, patch)
     this.notifyChanged()
   }
 

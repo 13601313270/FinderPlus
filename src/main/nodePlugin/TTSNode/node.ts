@@ -576,27 +576,7 @@ export class TTSNode extends Node {
 
       if (this.requestId !== myRequestId) return // stale
 
-      // 4. 落盘
-      let diskName = `tts-${Date.now()}-${Math.random().toString(36).slice(2, 6)}.${outExt}`
-      try {
-        const reader = new FileReader()
-        const b64Promise = new Promise<string>((resolve, reject) => {
-          reader.onload = () => {
-            const url = reader.result as string
-            resolve(url.includes(',') ? url.split(',')[1] : url)
-          }
-          reader.onerror = () => reject(new Error('读取生成的音频失败'))
-          reader.readAsDataURL(file)
-        })
-        const pureB64 = await b64Promise
-        // @ts-ignore
-        const written = await window.fileApi.writeBuffer(diskName, pureB64, false)
-        diskName = written.fileName
-      } catch {
-        // 落盘失败静默忽略，内存 commit 仍能让下游拿到音频
-      }
-
-      // 5. commit
+      // 4. commit
       const callBack = (duration: number) => {
         this.errorOutput.clear()
         this.audioOutput.commit(new AudioFileValue(file, hash))

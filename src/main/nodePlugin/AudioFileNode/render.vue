@@ -42,6 +42,9 @@ const isSeeking = ref(false)
 let unsubscribeNode: (() => void) | undefined
 let unsubscribePlayer: (() => void) | undefined
 
+// window 级别 pointermove/pointerup 监听引用，供组件卸载时兜底清理
+let cleanupSeekPointerListeners: (() => void) | undefined
+
 // —— 节点拖到空白位置 + OS native drag 拖出软件 ——
 const { dragOutOpts, cleanup: cleanupDragOut } = useFileDragOut(() => node.value)
 const { startDrag } = useNodePosition(() => node.value, dragOutOpts)
@@ -95,6 +98,7 @@ onBeforeUnmount(() => {
   cleanupDragOut()
   unsubscribeNode?.()
   unsubscribePlayer?.()
+  cleanupSeekPointerListeners?.()
 })
 
 // —— 播放控制 ——
@@ -124,6 +128,12 @@ function onSeekPointerDown(e: PointerEvent): void {
     isSeeking.value = false
     window.removeEventListener('pointermove', move)
     window.removeEventListener('pointerup', up)
+    cleanupSeekPointerListeners = undefined
+  }
+  cleanupSeekPointerListeners = () => {
+    window.removeEventListener('pointermove', move)
+    window.removeEventListener('pointerup', up)
+    cleanupSeekPointerListeners = undefined
   }
   window.addEventListener('pointermove', move)
   window.addEventListener('pointerup', up)

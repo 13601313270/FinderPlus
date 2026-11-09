@@ -40,6 +40,8 @@ const jsonMode = ref(false)
 const chatMode = ref(false)
 const autoCall = ref(false)
 const autoCallOnSystem = ref(false)
+const localSystem = ref('')
+const systemConnected = ref(false)
 const localPrompt = ref('')
 const promptConnected = ref(false)
 const response = ref('')
@@ -62,6 +64,10 @@ const chatCount = computed(() => chatHistory.value.length)
 let offChanged: (() => void) | undefined
 
 // 防抖 300ms：textarea 输入过程中不频繁触发 notifyChanged
+const debouncedSetSystem = debounce((val: string) => {
+  llmNode.value?.setSystem(val)
+}, 300)
+
 const debouncedSetPrompt = debounce((val: string) => {
   llmNode.value?.setPrompt(val)
 }, 300)
@@ -92,6 +98,8 @@ function sync(node: LLMNode): void {
   chatMode.value = node.displayChatMode
   autoCall.value = node.displayAutoCall
   autoCallOnSystem.value = node.displayAutoCallOnSystem
+  localSystem.value = node.displayLocalSystem
+  systemConnected.value = node.displaySystemConnected
   localPrompt.value = node.displayLocalPrompt
   promptConnected.value = node.displayPromptConnected
   response.value = node.displayResponse
@@ -135,6 +143,11 @@ function onAutoCallOnSystemChange(e: Event): void {
   const val = (e.target as HTMLInputElement).checked
   autoCallOnSystem.value = val
   llmNode.value?.setAutoCallOnSystem(val)
+}
+
+function onSystemInput(e: Event): void {
+  localSystem.value = (e.target as HTMLTextAreaElement).value
+  debouncedSetSystem(localSystem.value)
 }
 
 function onPromptInput(e: Event): void {
@@ -268,6 +281,23 @@ function onPickModel(e: Event): void {
           <span>{{ t('autoCallOnSystem') }}</span>
         </label>
       </div>
+    </div>
+
+    <!-- System 编辑区 -->
+    <div class="detail-panel__section">
+      <label class="detail-panel__label">
+        System
+        <span v-if="systemConnected" class="detail-panel__muted">
+          （上游有输入，运行时会覆盖；无输入时使用本地内容）
+        </span>
+      </label>
+      <textarea
+        class="detail-panel__textarea detail-panel__system"
+        :value="localSystem"
+        :placeholder="t('systemPlaceholder')"
+        rows="3"
+        @input="onSystemInput"
+      />
     </div>
 
     <!-- Prompt 编辑区（大） -->

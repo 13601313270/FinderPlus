@@ -200,6 +200,9 @@ export class LLMNode extends Node {
     }
   })
 
+  /** 内部 system 文本（仅 systemInput 未接边或无值时使用） */
+  private localSystem = ''
+
   /** 内部 prompt 文本（仅 promptInput 未接边时使用） */
   private localPrompt = ''
 
@@ -336,6 +339,22 @@ export class LLMNode extends Node {
     this.notifyChanged()
   }
 
+  /** systemInput 是否接了边 —— UI 据此决定是否提示上游会覆盖内部内容 */
+  get displaySystemConnected(): boolean {
+    return this.systemInput.incomingEdgeCount > 0
+  }
+
+  /** 当前内部 system 内容（UI 渲染用） */
+  get displayLocalSystem(): string {
+    return this.localSystem
+  }
+
+  /** 设置内部 system；UI 文本框 change 事件调用 */
+  setSystem(text: string): void {
+    this.localSystem = text
+    this.notifyChanged()
+  }
+
   /** promptInput 是否接了边 —— UI 据此决定显示内部文本框还是隐藏 */
   get displayPromptConnected(): boolean {
     return this.promptInput.incomingEdgeCount > 0
@@ -427,19 +446,19 @@ export class LLMNode extends Node {
   }
 
   /**
-   * 解析 prompt：接了端口 → 用端口值；否则用内部文本框。
-   * system 始终从端口取（system 没有内部 fallback）。
+   * system / prompt 均支持两种来源：上游 InputPort（接了边且有值就用它）或节点内部文本框（没接边或无值时用）。
    */
   private resolveInputs(): { system: string; prompt: string } {
+    let system = this.localSystem
     const [sysFirst] = this.systemInput.value
-    const system = sysFirst instanceof StringValue && !sysFirst.isNull ? sysFirst.value! : ''
+    if (sysFirst instanceof StringValue && !sysFirst.isNull && sysFirst.value) {
+      system = sysFirst.value!
+    }
 
     let prompt = this.localPrompt
-    if (this.promptInput.incomingEdgeCount > 0) {
-      const [promptFirst] = this.promptInput.value
-      if (promptFirst instanceof StringValue && !promptFirst.isNull) {
-        prompt = promptFirst.value!
-      }
+    const [promptFirst] = this.promptInput.value
+    if (promptFirst instanceof StringValue && !promptFirst.isNull && promptFirst.value) {
+      prompt = promptFirst.value!
     }
     return { system, prompt }
   }
@@ -622,6 +641,7 @@ export class LLMNode extends Node {
       jsonMode: this.jsonMode,
       autoCall: this.autoCall,
       autoCallOnSystem: this.autoCallOnSystem,
+      localSystem: this.localSystem,
       localPrompt: this.localPrompt,
       chatMode: this.chatMode,
       chatHistory: this.chatHistory.slice()
@@ -648,6 +668,9 @@ export class LLMNode extends Node {
     }
     if (typeof state.autoCallOnSystem === 'boolean') {
       this.autoCallOnSystem = state.autoCallOnSystem
+    }
+    if (typeof state.localSystem === 'string') {
+      this.localSystem = state.localSystem
     }
     if (typeof state.localPrompt === 'string') {
       this.localPrompt = state.localPrompt

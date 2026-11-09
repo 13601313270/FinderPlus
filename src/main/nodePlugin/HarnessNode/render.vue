@@ -8,6 +8,7 @@ import { messages } from './i18n'
 import NodeHeader from '@renderer/components/NodeHeader.vue'
 import { manualBeginDrag } from '@renderer/composables/useNodePosition'
 import type { Node } from '../../engine/node/Node'
+import { viewport } from '@renderer/canvas/viewport'
 
 const props = defineProps<{ id: string }>()
 
@@ -94,10 +95,6 @@ function onSystemInput(val: string) {
   harnessNode.value?.setSystem(val)
 }
 
-function onSendClick() {
-  harnessNode.value?.manualTrigger()
-}
-
 function onStopClick() {
   harnessNode.value?.cancelRun()
 }
@@ -133,9 +130,8 @@ function startChildDrag(childNode: any, e: PointerEvent) {
   if (!childNode) return
   const n = harnessNode.value
   if (!n) return
-  e.stopPropagation() // 不要触发 HarnessNode 自身的 pointerdown
-  n.removeChild(childNode as Node) // 先释放，让子节点变成顶层画布节点
-  // 小延迟一帧，让 App.vue 的 filter 有机会放行 DOM 渲染
+  e.stopPropagation()
+  n.removeChild(childNode as Node)
   requestAnimationFrame(() => {
     manualBeginDrag(childNode, e)
   })
@@ -203,6 +199,47 @@ const trajectoryForView = computed(() => {
   }
   return groups
 })
+
+// —— resize handle ——
+const MIN_W = 320
+const MIN_H = 280
+let resizing = false
+let resizeStartX = 0
+let resizeStartY = 0
+let resizeStartW = 0
+let resizeStartH = 0
+
+function onResizeStart(e: PointerEvent): void {
+  if (!harnessNode.value) return
+  e.stopPropagation()
+  e.preventDefault()
+  resizing = true
+  resizeStartX = e.clientX
+  resizeStartY = e.clientY
+  const [w, h] = harnessNode.value.box
+  resizeStartW = w || 360
+  resizeStartH = h || 420
+  ;(e.target as HTMLElement).setPointerCapture(e.pointerId)
+  window.addEventListener('pointermove', onResizeMove)
+  window.addEventListener('pointerup', onResizeEnd)
+}
+
+function onResizeMove(e: PointerEvent): void {
+  if (!resizing || !harnessNode.value) return
+  const scale = viewport.scale || 1
+  const dw = (e.clientX - resizeStartX) / scale
+  const dh = (e.clientY - resizeStartY) / scale
+  harnessNode.value.setBox(
+    Math.max(MIN_W, Math.round(resizeStartW + dw)),
+    Math.max(MIN_H, Math.round(resizeStartH + dh))
+  )
+}
+
+function onResizeEnd(): void {
+  resizing = false
+  window.removeEventListener('pointermove', onResizeMove)
+  window.removeEventListener('pointerup', onResizeEnd)
+}
 
 // —— Tool 编辑弹窗 ——
 const editingTool = ref<{ toolName: string; toolNameInput: string; descInput: string } | null>(null)
@@ -387,22 +424,13 @@ function closeToolEditor() {
       </div>
     </div>
 
-    <!-- ── 底部按钮 ── -->
-    <div class="footer">
-      <button
-        v-if="status === 'loading'"
-        class="btn btn--danger"
-        type="button"
-        @click="onStopClick"
-      >{{ t('stop') }}</button>
-      <button
-        v-else
-        class="btn btn--primary"
-        type="button"
-        :disabled="!hasModel"
-        @click="onSendClick"
-      >{{ t('send') }}</button>
+    <!-- ── 取消按钮（只有 loading 时出现） ── -->
+    <div v-if="status === 'loading'" class="footer">
+      <button class="btn btn--danger" type="button" @click="onStopClick">{{ t('stop') }}</button>
     </div>
+
+    <!-- ── resize handle（右下角） ── -->
+    <div class="resize-handle" @pointerdown="onResizeStart" title="拖动调整尺寸" />
 
     <!-- ── Tool 编辑弹窗 ── -->
     <Teleport to="body">
@@ -459,7 +487,10 @@ function closeToolEditor() {
     box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
   }
   &--filled { border-style: solid; border-color: #22c55e; background: #f0fdf4; }
-  &--tool { min-height: 40px; }
+  &--tool {
+    min-height: 40px;
+    flex-shrink: 0;
+  }
 
   &__label {
     display: flex;
@@ -669,6 +700,25 @@ function closeToolEditor() {
 
 // ── Footer ──
 .footer { display: flex; justify-content: flex-end; }
+
+// ── Resize Handle ──
+.resize-handle {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  width: 14px;
+  height: 14px;
+  cursor: nwse-resize;
+  z-index: 10;
+  background:
+    linear-gradient(135deg, transparent 0 50%, #94a3b8 50% 60%, transparent 60% 70%, #94a3b8 70% 80%, transparent 80% 90%, #94a3b8 90% 100%);
+  border-radius: 2px;
+  pointer-events: auto;
+  opacity: 0.5;
+  transition: opacity 0.15s;
+
+  &:hover { opacity: 1; }
+}
 
 .btn {
   all: unset;

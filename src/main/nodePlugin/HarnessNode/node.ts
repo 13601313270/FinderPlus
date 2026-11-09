@@ -68,9 +68,18 @@ class BuiltinTool implements HarnessTool {
 /** Canvas 节点绑定的 Tool：commit → wait → read output */
 class CanvasNodeTool implements HarnessTool {
   constructor(
-    private binding: CanvasToolBinding,
-    private node: Node | null // null 表示节点已被删除
+    readonly binding: CanvasToolBinding,
+    private _node: Node | null // null 表示节点已被删除或尚未恢复
   ) {}
+
+  /** 恢复/更新底层节点引用（adoptAllChildren 时从 scene 拿到真实实例后调） */
+  setNode(node: Node | null): void {
+    this._node = node
+  }
+
+  get node(): Node | null {
+    return this._node
+  }
 
   get schema(): ToolSchema {
     const node = this.node
@@ -110,7 +119,7 @@ class CanvasNodeTool implements HarnessTool {
 
   /** 刷新节点引用（画布恢复后节点才会出现在 scene 里） */
   refreshNodeRef(): void {
-    this.node = workspaceScene.getNode(this.binding.nodeId) ?? null
+    this.setNode(workspaceScene.getNode(this.binding.nodeId) ?? null)
   }
 
   get isNodeAlive(): boolean {
@@ -181,6 +190,22 @@ class ToolRegistry {
 
   removeCanvasTool(toolName: string): void {
     this.canvas.delete(toolName)
+  }
+
+  removeCanvasToolByNodeId(nodeId: string): void {
+    for (const [toolName, tool] of this.canvas) {
+      if (tool.binding.nodeId === nodeId) {
+        this.canvas.delete(toolName)
+        return
+      }
+    }
+  }
+
+  /** 画布恢复后，批量把 scene 里的真实节点实例回填到 CanvasNodeTool._node */
+  refreshAllCanvasToolNodes(): void {
+    for (const tool of this.canvas.values()) {
+      tool.refreshNodeRef()
+    }
   }
 
   /** 更新 Canvas 节点绑定的元数据（toolName / description）。toolName 变了要重新建 key。 */
@@ -728,15 +753,14 @@ export class HarnessNode extends Node {
     this.notifyChanged()
   }
 
-  /** 释放子节点回画布：清 containerNode，补世界坐标让它原地留在画布上 */
+  /** 释放子节点回画布：清 containerNode 让它回到顶层画布渲染层。
+   * 注意：不需要补坐标——adoptNode 只改了 containerNode，没动 child.position，
+   * 它一直就是画布绝对坐标，释放后直接在原地可见。 */
   removeChild(child: Node): void {
-    const idx = this.children.indexOf(child)
-    if (idx < 0) return
+    const idx = this.children.findIndex(c => c.id === child.id)
+    if (idx < 0) { return }
     this.children.splice(idx, 1)
 
-    const [wx, wy] = this.worldPosition
-    const [lx, ly] = child.position
-    child.setPosition(wx + lx, wy + ly)
     child.containerNode = undefined
 
     // 如果是 Model 槽位，清 modelNode
@@ -744,8 +768,8 @@ export class HarnessNode extends Node {
       this.modelNode = null
       this.loop.setModelNode(null)
     }
-    // 如果是 Tool 槽位，清 binding
-    this.toolRegistry.removeCanvasTool(child.id)
+    // 如果是 Tool 槽位，清 binding（按 nodeId 找对应的 toolName 删）
+    this.toolRegistry.removeCanvasToolByNodeId(child.id)
 
     this.sceneRef?.notifyChanged()
     this.notifyChanged()
@@ -800,15 +824,20 @@ export class HarnessNode extends Node {
     if (this.modelNode && !this.children.includes(this.modelNode)) {
       this.adoptNode(this.modelNode)
     }
+
+    // 关键：把 toolRegistry 里 CanvasNodeTool._node 从 null 刷新成 scene 里的真实实例
+    this.toolRegistry.refreshAllCanvasToolNodes()
   }
 
   // ─── 端口输入变化 ───
 
-  inputPortReceiveValue(_ports: InputPort[], _source: InputPortChangeSource): void {
-    // 拖入 Tool 节点时，我们是直接改 port.lastReceiveValue + 调 _onInputPortChanged
-    // 那时 Node 自己的端口也可能也被监听，但这没关系——CanvasNodeTool 内部 await
-    // 等节点自己处理完就够了
+  inputPortReceiveValue(ports: InputPort[], _source: InputPortChangeSource): void {
     this.notifyChanged()
+    // promptInput 或 systemInput 变化 → 自动执行
+    const changedIds = ports.map(p => p.id)
+    if (changedIds.includes('prompt') || changedIds.includes('system')) {
+      this.manualTrigger()
+    }
   }
 
   /** 本节点不接收外部文件拖入 */
@@ -827,8 +856,8 @@ export class HarnessNode extends Node {
   }
 
   onNodeDrop(source: Node, _startPos: readonly [number, number]): boolean {
-    // 如果 source 已经在 children 里了，不重复收
-    if (this.children.includes(source)) return true
+    // 如果 source 已经在 children 里了，不重复收（按 id 匹配，避免 Vue Proxy !== 原始对象）
+    if (this.children.some(c => c.id === source.id)) return true
 
     if (source.type === 'llm') {
       // Model 槽位：先释放旧的（如果有），再收养新的

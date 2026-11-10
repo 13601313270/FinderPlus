@@ -14,7 +14,10 @@ import type { RawChatResponse, ChatMessage } from '../LLMNode/node'
 /** HarnessNode 内部使用的 message 格式 */
 export interface HarnessMessage {
   role: 'system' | 'user' | 'assistant' | 'tool'
-  content: string | Array<{ type: string; [k: string]: unknown }>
+  content: string | Array<{
+    type: string;
+    [k: string]: unknown
+  }>
   tool_calls?: ToolCallRecord[]
   tool_call_id?: string
   name?: string
@@ -60,7 +63,8 @@ class BuiltinTool implements HarnessTool {
   constructor(
     readonly schema: ToolSchema,
     private fn: (args: Record<string, unknown>) => Promise<string> | string
-  ) {}
+  ) {
+  }
   async execute(args: Record<string, unknown>): Promise<string> {
     const result = await this.fn(args)
     return typeof result === 'string' ? result : JSON.stringify(result)
@@ -72,7 +76,8 @@ class CanvasNodeTool implements HarnessTool {
   constructor(
     readonly binding: CanvasToolBinding,
     private _node: Node | null // null 表示节点已被删除或尚未恢复
-  ) {}
+  ) {
+  }
 
   /** 恢复/更新底层节点引用（adoptAllChildren 时从 scene 拿到真实实例后调） */
   setNode(node: Node | null): void {
@@ -146,7 +151,7 @@ class CanvasNodeTool implements HarnessTool {
     // Step 2: 如果节点有 sendPort（手动触发型），调 sendPort.trigger()
     const sendPort = node.methodPorts.find(m => m.id === 'send')
     if (sendPort && typeof (sendPort as any).trigger === 'function') {
-      ;(sendPort as any).trigger()
+      (sendPort as any).trigger()
     }
 
     // Step 3: 等输出端口出值（最可靠的信号）或 state 变完成态（兜底）
@@ -271,7 +276,10 @@ class ToolRegistry {
 /** 把 MultiModalValue 转成 OpenAI 兼容的 user message content */
 async function buildUserContent(
   mm: MultiModalValue
-): Promise<string | Array<{ type: string; [k: string]: unknown }>> {
+): Promise<string | Array<{
+  type: string;
+  [k: string]: unknown
+}>> {
   if (mm.isNull || mm.parts.length === 0) return ''
 
   // 只有纯文本 → content 直接 string
@@ -281,7 +289,10 @@ async function buildUserContent(
   }
 
   // 有图片 → content 是 array
-  const content: Array<{ type: string; [k: string]: unknown }> = []
+  const content: Array<{
+    type: string;
+    [k: string]: unknown
+  }> = []
   for (const part of mm.parts) {
     if (part.type === 'text') {
       content.push({ type: 'text', text: part.text })
@@ -305,7 +316,10 @@ function fileToDataURL(file: File): Promise<string> {
 
 /** 从 content（string 或 array）里提取纯文本 */
 function extractTextContent(
-  content: string | Array<{ type: string; [k: string]: unknown }> | undefined
+  content: string | Array<{
+    type: string;
+    [k: string]: unknown
+  }> | undefined
 ): string {
   if (!content) return ''
   if (typeof content === 'string') return content
@@ -324,7 +338,8 @@ class HarnessLoop {
   constructor(
     private toolRegistry: ToolRegistry,
     private maxIterations: number
-  ) {}
+  ) {
+  }
 
   setModelNode(node: Node | null): void {
     this.llmNode = node
@@ -394,10 +409,12 @@ class HarnessLoop {
         return raw.content ?? ''
       }
 
-      // Step 4: 并发执行所有 tool_calls
-      const toolResults = await Promise.all(
-        raw.tool_calls.map(call => this.executeOneTool(call))
-      )
+      // Step 4: 顺序执行所有 tool_calls
+      const toolResults: HarnessMessage[] = []
+      for (const call of raw.tool_calls) {
+        const result = await this.executeOneTool(call)
+        toolResults.push(result)
+      }
       this.messages.push(...toolResults)
     }
 
@@ -448,12 +465,9 @@ function waitForPortCommit(node: Node, outputPort: OutputPort | undefined): Prom
     }
 
     // 信号 1：outputPort commit（最可靠）
+    // 注意：不做"端口已有值就直接 resolve"的快捷路径——同一个节点被多次调用时，
+    // 上一次 commit 的值还在端口上，直接 resolve 会拿到旧值，必须等本次新的 commit 事件
     if (outputPort) {
-      // 如果端口已经有值了，直接 resolve
-      if (outputPort.value !== undefined) {
-        resolve()
-        return
-      }
       portListener = () => {
         cleanup()
         resolve()
@@ -1047,9 +1061,12 @@ export class HarnessNode extends Node {
       }
     }
     // 没连线 → 用内部文本框
-    return { system, promptMm: new MultiModalValue(
-      this.localPrompt ? [{ type: 'text', text: this.localPrompt }] : []
-    )}
+    return {
+      system,
+      promptMm: new MultiModalValue(
+        this.localPrompt ? [{ type: 'text', text: this.localPrompt }] : []
+      )
+    }
   }
 
   // ─── 执行控制 ───

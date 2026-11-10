@@ -30,6 +30,16 @@ const lines = computed<readonly EdgeGeometry[]>(() => {
   canvasLayoutVersion.value
 
   return workspaceScene.allEdges
+    .filter((edge) => {
+      // 只要两端节点有任意一个的父容器是 minimized ProxyNode，就跳过不画
+      const startOwner = edge.startPort.getOwner()
+      const endOwner = edge.endPort.getOwner()
+      const parentProxy = (n: typeof startOwner): boolean => {
+        const p = n?.containerNode
+        return !!p && p.type === 'proxy' && p.minimized
+      }
+      return !(parentProxy(startOwner) || parentProxy(endOwner))
+    })
     .map((edge) => edgeGeometry(workspaceScene, edge))
     .filter(isEdgeGeometry)
 })
@@ -168,7 +178,7 @@ function removeEdge(edge: Edge): void {
     line-height: 1;
     cursor: pointer;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
-    z-index: 1;
+    z-index: 2;
 
     &:hover {
       border-color: #e6a3a3;

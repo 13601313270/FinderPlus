@@ -8,6 +8,7 @@ import { FileNode } from '../../main/nodePlugin/FileNode/node'
 import { FileInfoNode } from '../../main/nodePlugin/FileInfoNode/node'
 import { FolderNode } from '../../main/nodePlugin/FolderNode/node'
 import { HarnessNode } from '../../main/nodePlugin/HarnessNode/node'
+import { ProxyNode } from '../../main/nodePlugin/ProxyNode/node'
 import { viewport, panViewport, zoomViewportAt, screenToWorld, setCanvasContainer, centerViewportOn, getCanvasContainer } from '@renderer/canvas/viewport'
 import { measureNodeBox } from '@renderer/canvas/elements'
 import {
@@ -1052,7 +1053,7 @@ function onGlobalPointerUp(e: PointerEvent): void {
       const outside =
         wx < rect.x - 12 || wx > rect.x + rect.width + 12 ||
         wy < rect.y - 12 || wy > rect.y + rect.height + 12
-      if (outside && holder instanceof FolderNode) {
+      if (outside && (holder instanceof FolderNode || holder instanceof ProxyNode)) {
         holder.removeChild(draggedNode)
       }
     }
@@ -1273,6 +1274,8 @@ async function bootstrapScene(): Promise<void> {
     if (node instanceof FolderNode) {
       node.adoptChildren(workspaceScene)
     } else if (node instanceof HarnessNode) {
+      node.adoptAllChildren()
+    } else if (node instanceof ProxyNode) {
       node.adoptAllChildren()
     }
   }

@@ -10,6 +10,7 @@ export const manifest: NodePluginManifest = {
     en: 'Proxy',
   },
   render,
+  detailPanel: () => import('./ProxyDetailPanel.vue'),
   category: 'flow',
   platforms: ["mac"]
 }

@@ -2,6 +2,7 @@
 import { computed, onMounted, onUnmounted, provide, ref, watch, type Component } from 'vue'
 import { useNodePosition, type NodeLike } from '@renderer/composables/useNodePosition'
 import { nodeElementRef, type PortsOwnerLike } from '@renderer/canvas/elements'
+import { viewport } from '@renderer/canvas/viewport'
 import { getNodeManifest } from '../../../main/nodePlugin'
 import NodePorts from './NodePorts.vue'
 
@@ -135,6 +136,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   portCountUnsub?.()
+  onResizeEnd()
 })
 
 /**
@@ -166,6 +168,42 @@ function onContextMenu(e: MouseEvent): void {
   e.preventDefault()
   e.stopPropagation()
   emit('contextmenu', props.node.id, e.clientX, e.clientY)
+}
+
+// —— 右下角 resize 手柄 ——
+
+/** resize 最小宽高（世界像素），避免节点缩没了 */
+const RESIZE_MIN_W = 60
+const RESIZE_MIN_H = 60
+
+let resizing = false
+let resizeStartX = 0
+let resizeStartY = 0
+let resizeStartBox: [number, number] = [0, 0]
+
+function startResize(e: PointerEvent): void {
+  e.preventDefault()
+  e.stopPropagation()
+  resizing = true
+  resizeStartX = e.clientX
+  resizeStartY = e.clientY
+  resizeStartBox = [box.value[0], box.value[1]]
+  window.addEventListener('pointermove', onResizeMove)
+  window.addEventListener('pointerup', onResizeEnd)
+}
+
+function onResizeMove(e: PointerEvent): void {
+  if (!resizing) return
+  const scale = viewport.scale || 1
+  const w = Math.max(RESIZE_MIN_W, resizeStartBox[0] + (e.clientX - resizeStartX) / scale)
+  const h = Math.max(RESIZE_MIN_H, resizeStartBox[1] + (e.clientY - resizeStartY) / scale)
+  props.node.setBox(w, h)
+}
+
+function onResizeEnd(): void {
+  resizing = false
+  window.removeEventListener('pointermove', onResizeMove)
+  window.removeEventListener('pointerup', onResizeEnd)
 }
 </script>
 
@@ -219,6 +257,8 @@ function onContextMenu(e: MouseEvent): void {
             <div class="node-loading__spinner" />
             <span class="node-loading__elapsed">{{ formatElapsed(runElapsed) }}</span>
           </div>
+          <!-- 右下角 resize 手柄 -->
+          <div class="node-resize" @pointerdown.stop="startResize" />
         </div>
         <!-- 底部方法端口行：只有存在方法端口时才渲染 -->
         <div v-if="node.methodPorts && node.methodPorts.length > 0" class="ports-row ports-row--bottom">
@@ -474,5 +514,28 @@ function onContextMenu(e: MouseEvent): void {
   background: #ffffff52;
   top: -22px;
   transform: translateX(calc(-50% + 40px));
+}
+
+.node-resize {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  width: 12px;
+  height: 12px;
+  cursor: nwse-resize;
+  background: linear-gradient(135deg, transparent 50%, #a0a0a0 50%);
+  z-index: 12;
+  opacity: 0;
+  transition: opacity 0.15s;
+
+  &:hover,
+  &:active {
+    opacity: 1;
+  }
+
+  // 内容区 hover 时让手柄也显一点
+  .node-content:hover & {
+    opacity: 0.5;
+  }
 }
 </style>

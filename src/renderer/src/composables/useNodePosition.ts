@@ -22,6 +22,8 @@ export interface NodeLike {
   /** 当前脏的输入端口 id 集合，渲染层给对应端口加视觉标记 */
   readonly getDirtyInputPortIds?: () => ReadonlySet<string>
   setPosition(x: number, y: number): void
+  /** 设置内容区宽高（resize 手柄拖动时用） */
+  setBox(width: number, height: number): void
   onChanged(fn: () => void): () => void
   /** 被拖节点视觉态：正被某个可接收节点悬停命中时变 true */
   readonly nodeDropAcceptedValue?: boolean

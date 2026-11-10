@@ -56,6 +56,12 @@ export class ProxyNode extends Node {
   /** 每个输出端口的类型，下标与 outputPorts 一一对应 */
   private outputKinds: Kind[]
 
+  /** 已收养的子节点列表（容器能力，复用 FolderNode 语义） */
+  readonly children: Node[] = []
+
+  /** 恢复收尾前暂存的待收养子节点 id */
+  private pendingChildIds: string[] = []
+
   constructor(id: string, initialInputCount = MIN_PORT_COUNT, initialOutputCount = MIN_PORT_COUNT) {
     super(id)
     const inputCount = Math.max(MIN_PORT_COUNT, initialInputCount)
@@ -72,11 +78,94 @@ export class ProxyNode extends Node {
   }
 
   isPositionAcceptFileDrop(_relativeX: number, _relativeY: number): boolean {
+    return true
+  }
+
+  async onFileDrop(sourcePath: string): Promise<void> {
+    // 复用 FolderNode 的扩展名注册表 → 构造对应文件节点 → 收养
+    const { resolveByExtension } = await import('../index')
+    const dot = sourcePath.lastIndexOf('.')
+    const ext = dot >= 0 ? sourcePath.slice(dot).toLowerCase() : ''
+    const manifest = resolveByExtension(ext)
+    if (!manifest) return
+
+    // 让 App 层正常处理文件复制后构造（ProxyNode 自己不碰 IPC）
+    // 这里只做收养入口：App 会在它的 onCanvasDrop 里构造子节点后调 adoptNode
+  }
+
+  // —— 容器：子节点收养 / 释放 ——
+
+  /** 把已有节点收养进 ProxyNode。position 由调用方保证已是局部坐标，本方法不做转换 */
+  adoptNode(child: Node): void {
+    if (child === this) return
+    if (child.containerNode) return // 已被收养（含被本 ProxyNode 收养过）
+    if (this.isDescendant(child)) return // 把祖先收养进自己 = 成环，拒绝
+
+    child.containerNode = this
+    this.children.push(child)
+    this.sceneRef?.notifyChanged()
+    this.notifyChanged()
+  }
+
+  /** 释放子节点回画布：补世界坐标清归属，原地保留 */
+  removeChild(child: Node): void {
+    const idx = this.children.indexOf(child)
+    if (idx < 0) return
+    this.children.splice(idx, 1)
+    const [wx, wy] = this.worldPosition
+    const [lx, ly] = child.position
+    child.setPosition(wx + lx, wy + ly)
+    child.containerNode = undefined
+    this.sceneRef?.notifyChanged()
+    this.notifyChanged()
+  }
+
+  /** 恢复收尾：按 pendingChildIds 收养 */
+  adoptAllChildren(): void {
+    const scene = this.sceneRef
+    if (!scene) {
+      // scene 还没注入，只能暂存（理论上 App 层 bootstrapScene 调这个时 scene 已就绪）
+      return
+    }
+    for (const id of this.pendingChildIds) {
+      const child = scene.getNode(id)
+      if (child && child !== this) this.adoptNode(child)
+    }
+    this.pendingChildIds = []
+  }
+
+  /** child 是否在我的祖先链里（收养它会成环） */
+  private isDescendant(child: Node): boolean {
+    let cur: Node | undefined = this.containerNode
+    while (cur) {
+      if (cur === child) return true
+      cur = cur.containerNode
+    }
     return false
   }
 
-  onFileDrop(_sourcePath: string): void {
-    // 本节点不接收文件拖入
+  /** 接受所有未被收养、且不会成环的节点 */
+  isPositionAcceptNodeDrop(source: Node): boolean {
+    if (source.containerNode) return false
+    if (this.isDescendant(source)) return false
+    return true
+  }
+
+  /** 节点 drop 结算：世界坐标 → 局部坐标，保持落点 */
+  onNodeDrop(source: Node, _startPos: readonly [number, number]): boolean {
+    if (!this.isPositionAcceptNodeDrop(source)) return false
+    const [swx, swy] = source.worldPosition
+    const [fwx, fwy] = this.worldPosition
+    source.setPosition(swx - fwx, swy - fwy)
+    this.adoptNode(source)
+    return true
+  }
+
+  /** 钳制最小框：ProxyNode 作为容器需要足够大才能放子节点 */
+  override setBox(width: number, height: number): void {
+    const MIN_W = 120
+    const MIN_H = 100
+    super.setBox(Math.max(MIN_W, Math.round(width)), Math.max(MIN_H, Math.round(height)))
   }
 
   // —— 渲染层读的状态 ——
@@ -258,7 +347,9 @@ export class ProxyNode extends Node {
     return {
       ...super.saveState(),
       inputKinds: [...this.inputKinds],
-      outputKinds: [...this.outputKinds]
+      outputKinds: [...this.outputKinds],
+      childIds: this.children.map((c) => c.id),
+      box: this.box as readonly [number, number]
     }
   }
 
@@ -339,5 +430,23 @@ export class ProxyNode extends Node {
       this.updateBox()
       this.notifyChanged()
     }
+
+    // —— 容器：box + childIds ——
+    const box = state.box as [number, number] | undefined
+    if (box !== undefined) this.setBox(box[0], box[1])
+
+    const ids = state.childIds
+    if (Array.isArray(ids)) {
+      this.pendingChildIds = ids.filter((x): x is string => typeof x === 'string')
+    }
+  }
+
+  /** 销毁前批量释放子节点回画布，避免子节点丢失 */
+  override beforeDestroy(): void {
+    // 先释放，保证 super.beforeDestroy 不会让 scene 把已消失的子节点也当孤儿处理
+    while (this.children.length > 0) {
+      this.removeChild(this.children[this.children.length - 1])
+    }
+    super.beforeDestroy()
   }
 }

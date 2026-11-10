@@ -2,10 +2,24 @@
 import { computed, onMounted, onUnmounted, provide, ref, watch, type Component } from 'vue'
 import { useNodePosition, type NodeLike } from '@renderer/composables/useNodePosition'
 import { nodeElementRef, type PortsOwnerLike } from '@renderer/canvas/elements'
+import { viewport } from '@renderer/canvas/viewport'
+import { getNodeManifest } from '../../../main/nodePlugin'
 import NodePorts from './NodePorts.vue'
 
 /** 最小化状态下的固定尺寸（世界像素） */
 const MINIMIZED_SIZE = 80
+
+/** 最小化态外壳高度：取 in/out/calls/callback 四组端口数量的最大值 × 12px */
+const minimizedSizeStyle = computed(() => {
+  const count = Math.max(inputPortCount.value, outputPortCount.value, callPortCount.value, callbackPortCount.value)
+  const h = Math.max(MINIMIZED_SIZE, count * 12)
+  return { width: `${MINIMIZED_SIZE}px`, height: `${h}px` }
+})
+
+/** 最小化时用的图标（图片路径）；没有就渲染兜底字母 */
+const minimizedIconImage = computed<string | null>(() => {
+  return getNodeManifest(props.node.type)?.iconImage ?? null
+})
 
 /**
  * 节点外壳：所有节点在画布上共用的「容器层」。
@@ -105,6 +119,8 @@ watch(nodeState, (s) => {
  */
 const inputPortCount = ref(0)
 const outputPortCount = ref(0)
+const callPortCount = ref(0)
+const callbackPortCount = ref(0)
 
 let portCountUnsub: (() => void) | undefined
 
@@ -112,6 +128,9 @@ onMounted(() => {
   const sync = () => {
     inputPortCount.value = props.node.inputPorts.length
     outputPortCount.value = props.node.outputPorts.length
+    const anyNode = props.node as unknown as { calls?: unknown[]; callbackPorts?: unknown[] }
+    callPortCount.value = anyNode.calls?.length ?? 0
+    callbackPortCount.value = anyNode.callbackPorts?.length ?? 0
   }
   sync()
   portCountUnsub = props.node.onChanged(sync)
@@ -119,6 +138,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   portCountUnsub?.()
+  onResizeEnd()
 })
 
 /**
@@ -151,6 +171,42 @@ function onContextMenu(e: MouseEvent): void {
   e.stopPropagation()
   emit('contextmenu', props.node.id, e.clientX, e.clientY)
 }
+
+// —— 右下角 resize 手柄 ——
+
+/** resize 最小宽高（世界像素），避免节点缩没了 */
+const RESIZE_MIN_W = 60
+const RESIZE_MIN_H = 60
+
+let resizing = false
+let resizeStartX = 0
+let resizeStartY = 0
+let resizeStartBox: [number, number] = [0, 0]
+
+function startResize(e: PointerEvent): void {
+  e.preventDefault()
+  e.stopPropagation()
+  resizing = true
+  resizeStartX = e.clientX
+  resizeStartY = e.clientY
+  resizeStartBox = [box.value[0], box.value[1]]
+  window.addEventListener('pointermove', onResizeMove)
+  window.addEventListener('pointerup', onResizeEnd)
+}
+
+function onResizeMove(e: PointerEvent): void {
+  if (!resizing) return
+  const scale = viewport.scale || 1
+  const w = Math.max(RESIZE_MIN_W, resizeStartBox[0] + (e.clientX - resizeStartX) / scale)
+  const h = Math.max(RESIZE_MIN_H, resizeStartBox[1] + (e.clientY - resizeStartY) / scale)
+  props.node.setBox(w, h)
+}
+
+function onResizeEnd(): void {
+  resizing = false
+  window.removeEventListener('pointermove', onResizeMove)
+  window.removeEventListener('pointerup', onResizeEnd)
+}
 </script>
 
 <template>
@@ -164,7 +220,7 @@ function onContextMenu(e: MouseEvent): void {
   ]" :data-node-id="node.id" :data-node-type="node.type" :title="stateTooltip" :style="{
     left: `${position[0]}px`,
     top: `${position[1]}px`,
-    ...(minimized ? { width: `${MINIMIZED_SIZE}px`, height: `${Math.max(MINIMIZED_SIZE, Math.max(inputPortCount, outputPortCount) * 12)}px` } : {})
+    ...(minimized ? minimizedSizeStyle : {})
   }" @contextmenu="onContextMenu">
     <!-- 两侧端口列：始终渲染（最小化/展开都要显示端口圆点），hide-label 让 label 消失 -->
     <div class="ports-col ports-col--left">
@@ -173,26 +229,50 @@ function onContextMenu(e: MouseEvent): void {
     <div class="ports-col ports-col--right">
       <NodePorts :node-id="node.id" :node="node" side="out" :hide-label="minimized" />
     </div>
-    <div class="ports-col" style="left: 20px">
-      <NodePorts :node-id="node.id" :node="node" side="calls" :dirty-ids="dirtyInputPortIds" :hide-label="minimized" />
+    <div v-if="!minimized" class="ports-col" style="left: 20px">
+      <NodePorts :node-id="node.id" :node="node" side="calls" :dirty-ids="dirtyInputPortIds" hide-label />
     </div>
-    <div class="ports-col" style="right: 20px">
-      <NodePorts :node-id="node.id" :node="node" side="callback" :hide-label="minimized" />
+    <div v-if="!minimized" class="ports-col" style="right: 20px" :hide-label="true">
+      <NodePorts :node-id="node.id" :node="node" side="callback" hide-label />
     </div>
-    <div class="node-body">
-      <div class="node-content" :style="contentStyle">
-        <component :is="render" :id="node.id" />
-        <!-- running 状态的 loading 覆层 -->
-        <div v-if="nodeState === 'running'" class="node-loading" aria-hidden="true">
-          <div class="node-loading__spinner" />
-          <span class="node-loading__elapsed">{{ formatElapsed(runElapsed) }}</span>
+    <!-- 中间内容区：最小化 → 80×80 图标 + 还原按钮；正常态 → node-body + render.vue -->
+    <template v-if="minimized">
+      <div v-if="displayName" class="node-minimized-name">{{ displayName }}</div>
+      <div class="node-minimized-icon" :style="minimizedSizeStyle" @pointerdown="startDrag">
+        <!-- 还原按钮：最小化时 NodeHeader 被隐藏了，这里叠一个小号还原入口 -->
+        <button class="node-minimized-icon__restore" type="button" title="还原" @pointerdown.stop
+          @click.stop="props.node.toggleMinimized?.()">▢</button>
+        <img v-if="minimizedIconImage" class="node-minimized-icon__img" :src="minimizedIconImage" alt="" aria-hidden="true" />
+        <span v-else class="node-minimized-icon__fallback">{{ node.type.slice(0, 2).toUpperCase() }}</span>
+      </div>
+      <!-- 底部方法端口行：最小化态也要保留 -->
+      <div v-if="node.methodPorts && node.methodPorts.length > 0"
+        class="ports-row ports-row--bottom ports-row--minimized">
+        <NodePorts :node-id="node.id" :node="node" side="method" :hide-label="true" />
+      </div>
+      <div v-if="nodeState === 'running'" class="node-loading" aria-hidden="true">
+        <div class="node-loading__spinner" />
+        <span class="node-loading__elapsed">{{ formatElapsed(runElapsed) }}</span>
+      </div>
+    </template>
+    <template v-else>
+      <div class="node-body">
+        <div class="node-content" :style="contentStyle">
+          <component :is="render" :id="node.id" />
+          <!-- running 状态的 loading 覆层 -->
+          <div v-if="nodeState === 'running'" class="node-loading" aria-hidden="true">
+            <div class="node-loading__spinner" />
+            <span class="node-loading__elapsed">{{ formatElapsed(runElapsed) }}</span>
+          </div>
+          <!-- 右下角 resize 手柄 -->
+          <div class="node-resize" @pointerdown.stop="startResize" />
+        </div>
+        <!-- 底部方法端口行：只有存在方法端口时才渲染 -->
+        <div v-if="node.methodPorts && node.methodPorts.length > 0" class="ports-row ports-row--bottom">
+          <NodePorts :node-id="node.id" :node="node" side="method" />
         </div>
       </div>
-      <!-- 底部方法端口行：只有存在方法端口时才渲染 -->
-      <div v-if="node.methodPorts && node.methodPorts.length > 0" class="ports-row ports-row--bottom">
-        <NodePorts :node-id="node.id" :node="node" side="method" />
-      </div>
-    </div>
+    </template>
   </div>
 </template>
 
@@ -201,7 +281,7 @@ function onContextMenu(e: MouseEvent): void {
   position: absolute;
   display: flex;
   align-items: stretch; // 两侧 ports-col 高度跟随 content
-  z-index: 3;
+  z-index: 1;
 
   &--floating {
     pointer-events: none;
@@ -441,5 +521,27 @@ function onContextMenu(e: MouseEvent): void {
   background: #ffffff52;
   top: -22px;
   transform: translateX(calc(-50% + 40px));
+}
+
+.node-resize {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  width: 12px;
+  height: 12px;
+  cursor: nwse-resize;
+  background: linear-gradient(135deg, transparent 50%, #a0a0a0 50%);
+  z-index: 12;
+  opacity: 0;
+  transition: opacity 0.15s;
+
+  &:hover,
+  &:active {
+    opacity: 1;
+  }
+
+  .node-content:hover & {
+    opacity: 0.5;
+  }
 }
 </style>

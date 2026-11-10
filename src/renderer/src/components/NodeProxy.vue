@@ -242,7 +242,8 @@ function onResizeEnd(): void {
         <!-- 还原按钮：最小化时 NodeHeader 被隐藏了，这里叠一个小号还原入口 -->
         <button class="node-minimized-icon__restore" type="button" title="还原" @pointerdown.stop
           @click.stop="props.node.toggleMinimized?.()">▢</button>
-        <img v-if="minimizedIconImage" class="node-minimized-icon__img" :src="minimizedIconImage" alt="" aria-hidden="true" />
+        <img v-if="minimizedIconImage" class="node-minimized-icon__img" :src="minimizedIconImage" alt=""
+          aria-hidden="true" />
         <span v-else class="node-minimized-icon__fallback">{{ node.type.slice(0, 2).toUpperCase() }}</span>
       </div>
       <!-- 底部方法端口行：最小化态也要保留 -->
@@ -399,7 +400,7 @@ function onResizeEnd(): void {
   overflow: hidden; // 硬约束：内容超出 box 被裁，render.vue 不会溢出
   box-sizing: border-box; // box 是内容区外包壳宽，border+padding 算在 box 内
   box-shadow: 0 0 17px 0px rgb(0 0 0 / 25%);
-  // background: @color-surface;
+  background: rgba(255, 255, 255, 0.3);
   position: relative; // loading 覆层绝对定位的参照
   border: 2px solid var(--theme-node-border);
   // border: 1px solid red;

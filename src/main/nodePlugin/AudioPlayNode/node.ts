@@ -4,6 +4,8 @@ import { FileValue } from '../../engine/data/FileValue'
 import { InputPort } from '../../engine/port/InputPort'
 import { MethodPort } from '../../engine/port/MethodPort'
 import { Node } from '../../engine/node/Node'
+import { OutputPort } from '../../engine/port/OutputPort'
+import { BoolValue } from '../../engine/data/BoolValue'
 
 /**
  * 音频播放节点：接收 FileValue 子类（AudioFileValue / VideoFileValue / FileValue），
@@ -66,6 +68,25 @@ export class AudioPlayNode extends Node {
   /** 订阅者 */
   private playerSubscribers = new Set<() => void>()
 
+  /** 输出端口：音频播放完毕后 commit BoolValue(true) */
+  readonly endedOutput = new OutputPort('ended', BoolValue, {
+    zh: '播放完成',
+    en: 'Ended',
+    ja: '再生終了',
+    ko: '재생 완료',
+    es: 'Terminó',
+    ar: 'انتهى',
+    fr: 'Terminé',
+    pt: 'Terminado',
+    ru: 'Завершено',
+    hi: 'समाप्त',
+    id: 'Berakhir',
+    de: 'Beendet',
+    vi: 'Kết thúc',
+    tr: 'Bitti',
+    it: 'Terminato'
+  })
+
   /** 方法端口：上游 commit 任意值即触发停止播放（暂停并归零进度） */
   readonly stopPort = new MethodPort('stop', {
     label: {
@@ -90,6 +111,7 @@ export class AudioPlayNode extends Node {
   constructor(id: string) {
     super(id)
     this.addInput(this.audioInput)
+    this.addOutput(this.endedOutput)
     this.addMethod(this.stopPort)
     this.stopPort.onTrigger(() => {
       this.stop()
@@ -144,6 +166,7 @@ export class AudioPlayNode extends Node {
       this._isPlaying = false
       this._currentTime = 0
       this.notifyPlayerChanged()
+      this.endedOutput.commit(new BoolValue(true), { force: true })
     })
     audio.src = this.blobUrl
     this.audio = audio

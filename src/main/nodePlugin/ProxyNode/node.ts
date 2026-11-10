@@ -78,6 +78,7 @@ export class ProxyNode extends Node {
   }
 
   isPositionAcceptFileDrop(_relativeX: number, _relativeY: number): boolean {
+    if (this.minimized) return false
     return true
   }
 
@@ -144,8 +145,9 @@ export class ProxyNode extends Node {
     return false
   }
 
-  /** 接受所有未被收养、且不会成环的节点 */
+  /** 接受所有未被收养、且不会成环的节点（mini 状态不接受） */
   isPositionAcceptNodeDrop(source: Node): boolean {
+    if (this.minimized) return false
     if (source.containerNode) return false
     if (this.isDescendant(source)) return false
     return true

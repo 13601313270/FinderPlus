@@ -22,6 +22,8 @@ const props = defineProps<{
     readonly inputPorts: readonly PortLike[]
     readonly outputPorts: readonly PortLike[]
     readonly methodPorts?: readonly PortLike[]
+    readonly callPorts?: readonly PortLike[]
+    readonly callbackPorts?: readonly PortLike[]
     onChanged(fn: () => void): () => void
   } | undefined
   side: PortSide
@@ -47,8 +49,14 @@ function sync(): void {
   }
   if (props.side === 'method') {
     portList.value = [...(props.node.methodPorts ?? [])]
+  } else if (props.side === 'calls') {
+    portList.value = [...(props.node.callPorts ?? [])]
+  } else if (props.side === 'callback') {
+    portList.value = [...(props.node.callbackPorts ?? [])]
+  } else if (props.side === 'in') {
+    portList.value = [...props.node.inputPorts]
   } else {
-    portList.value = props.side === 'in' ? [...props.node.inputPorts] : [...props.node.outputPorts]
+    portList.value = [...props.node.outputPorts]
   }
 }
 
@@ -72,14 +80,8 @@ const { language } = useLanguageSettings()
 </script>
 
 <template>
-  <NodePort
-    v-for="port in ports"
-    :key="port.id"
-    :node-id="nodeId"
-    :label="resolveLocalizedText(port.label, language, port.id)"
-    :port="port"
-    :side="side"
+  <NodePort v-for="port in ports" :key="port.id" :node-id="nodeId"
+    :label="resolveLocalizedText(port.label, language, port.id)" :port="port" :side="side"
     :is-dirty="side === 'in' ? (dirtyIds?.has(port.id) ?? false) : false"
-    :hide-label="port.isHiddenLabel || hideLabel"
-  />
+    :hide-label="port.isHiddenLabel || hideLabel" />
 </template>

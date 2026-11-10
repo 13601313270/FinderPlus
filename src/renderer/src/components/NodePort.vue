@@ -23,8 +23,11 @@ const props = defineProps<{
   hideLabel?: boolean
 }>()
 
-const isIn = props.side === 'in'
+const isOut = props.side === 'out'
+const isCall = props.side === 'calls'
+const isCallback = props.side === 'callback'
 const isMethod = props.side === 'method'
+const isIn = props.side === 'in' || isCallback
 
 const { t, te } = useI18n()
 
@@ -239,7 +242,7 @@ function updateTooltipPosition(): void {
   </div>
 
   <!-- in/out 侧：圆点 + 左右 label -->
-  <div v-else class="port-item" :class="{ 'port-item--left': isIn, 'port-item--right': !isIn }">
+  <div v-else class="port-item" :class="isIn?'port-item--left':'port-item--right'">
     <!-- 左列：label 在圆点左边，文本右对齐（靠近圆点） -->
     <div v-if="isIn && !hideLabel" class="port-label port-label--right-edge">
       <span class="port-label__main">{{ label }}</span>
@@ -263,7 +266,7 @@ function updateTooltipPosition(): void {
       ]"
       :data-port-id="port.id"
       :title="titleOf(port, isIn ? '输入' : '输出')"
-      @pointerdown="!isIn && onOutputPointerDown(port, $event)"
+      @pointerdown="(isOut || isCall) && onOutputPointerDown(port, $event)"
       @mouseenter="showTooltip"
       @mouseleave="hideTooltip"
     >

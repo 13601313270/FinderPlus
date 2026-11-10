@@ -50,7 +50,9 @@ const BEZIER_HANDLE_MIN = 40
 const SIDE_DIRECTION: Record<PortSide, { dx: number; dy: number }> = {
   out: { dx: 1, dy: 0 },
   in: { dx: -1, dy: 0 },
-  method: { dx: 0, dy: 1 }
+  method: { dx: 0, dy: 1 },
+  calls: { dx: 1, dy: 0 },
+  callback: { dx: -1, dy: 0 },
 }
 
 /**
@@ -165,8 +167,16 @@ export function bezierMid(
 
 function ownsPort(node: Node, port: OutputPort | InputPort): boolean {
   // MethodPort 不在 inputPorts 数组里，需要额外检查
-  const allInputLike = [...node.inputPorts, ...(node.methodPorts ?? [])]
-  return [...node.outputPorts, ...allInputLike].some((candidate) => candidate === port)
+  const allInputLike = [
+    ...node.inputPorts,
+    ...(node.methodPorts ?? []),
+    ...(node.callbackPorts ?? []),
+  ]
+  const allOutLlike = [
+    ...node.outputPorts,
+    ...(node.callPorts ?? []),
+  ]
+  return [...allOutLlike, ...allInputLike].some((candidate) => candidate === port)
 }
 
 /** 端口 -> 所属节点。节点已被移出场景时返回 undefined，调用方自然跳过这条边 */
@@ -211,6 +221,10 @@ function portAnchor(node: Node, port: OutputPort | InputPort, side: PortSide): V
   } else if (side === 'method') {
     // 底部方法端口兜底：卡片底部中点
     return { x: box.x + box.width / 2, y: box.y + box.height }
+  } else if (side === 'calls') {
+    return { x: box.x + box.width * 0.1, y: box.y + box.height / 2 }
+  } else if (side === 'callback') {
+    return { x: box.x + box.width * 0.9, y: box.y + box.height / 2 }
   } else {
     return { x: box.x, y: box.y + box.height / 2 }
   }
@@ -222,8 +236,10 @@ export function edgeGeometry(scene: Scene, edge: Edge): EdgeGeometry | undefined
   const endNode = ownerOfPort(scene, edge.endPort)
   if (!startNode || !endNode) return undefined
 
-  const fromSide: PortSide = 'out'
-  const endSide = sideOfPort(edge.endPort)
+  const startPort = edge.startPort;
+
+  const fromSide: PortSide = startPort.getOwner()?.callPorts?.includes(startPort) ? 'calls' : 'out';
+  const endSide: PortSide = edge.endPort.getOwner()?.callbackPorts?.includes(edge.endPort) ? 'callback' : sideOfPort(edge.endPort)
 
   const from = portAnchor(startNode, edge.startPort, fromSide)
   const to = portAnchor(endNode, edge.endPort, endSide)

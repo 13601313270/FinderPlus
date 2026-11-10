@@ -55,8 +55,8 @@ const REASON_KEY: Record<string, string> = {
 /** 端口命中半径（屏幕像素）：圆点才 12px，给点容错 */
 const PORT_HIT_RADIUS = 24
 
-/** 合法的连接目标侧：输入端口 + 方法端口 */
-const TARGET_SIDES = ['in', 'method'] as const
+/** 合法的连接目标侧：输入端口 + 方法端口 + 回调端口 */
+const TARGET_SIDES = ['in', 'method', 'callback'] as const
 
 // 拖拽期间要用的「源」，不属于展示状态，留在模块里即可
 let sourceNodeId: string | null = null
@@ -76,7 +76,10 @@ export function startConnectDrag(nodeId: string, portId: string, event: PointerE
   event.preventDefault()
   event.stopPropagation()
 
-  const port = resolveOutputPort(nodeId, portId)
+  let port = resolveOutputPort(nodeId, portId)
+  if (!port) {
+    port = resolveCallPort(nodeId, portId)
+  }
   if (!port) return
 
   const rect = dot.getBoundingClientRect()
@@ -120,15 +123,15 @@ function onPointerUp(event: PointerEvent): void {
   endDrag()
 
   if (!from || !fromNode || !hit) return // 松在空白处：什么都不做，等于取消
-
   if (hit.nodeId === fromNode) {
     showCanvasNotice(translate('connection.selfLoop'), 'error')
     return
   }
-
-  const target = resolveInputPort(hit.nodeId, hit.portId)
+  let target = resolveInputPort(hit.nodeId, hit.portId)
+  if (!target) {
+    target = resolveCallbackPort(hit.nodeId, hit.portId)
+  }
   if (!target) return
-
   // 唯一的写入入口；能不能连由引擎判（跟预览时用的是同一套规则）
   const result = workspaceScene.connect(from, target)
   if (!result.ok) {
@@ -173,7 +176,10 @@ function moveTo(clientX: number, clientY: number): void {
 function isConnectable(hit: { nodeId: string; portId: string }): boolean {
   if (!sourcePort || hit.nodeId === sourceNodeId) return false
 
-  const target = resolveInputPort(hit.nodeId, hit.portId)
+  let target = resolveInputPort(hit.nodeId, hit.portId)
+  if (!target) {
+    target = resolveCallbackPort(hit.nodeId, hit.portId)
+  }
   if (!target) return false
 
   return target.canBindEdge(sourcePort).result
@@ -204,4 +210,14 @@ function resolveOutputPort(nodeId: string, portId: string): OutputPort | undefin
 function resolveInputPort(nodeId: string, portId: string): InputPort | undefined {
   const node = workspaceScene.getNode(nodeId)
   return node?.findInputLikePort(portId)
+}
+
+function resolveCallPort(nodeId: string, portId: string): OutputPort | undefined {
+  const node = workspaceScene.getNode(nodeId)
+  return node?.callPorts.find((port) => port.id === portId)
+}
+
+function resolveCallbackPort(nodeId: string, portId: string): InputPort | undefined {
+  const node = workspaceScene.getNode(nodeId)
+  return node?.callbackPorts.find((port) => port.id === portId)
 }

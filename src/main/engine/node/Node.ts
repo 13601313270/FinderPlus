@@ -69,6 +69,8 @@ export abstract class Node {
   private readonly inputs: InputPort[] = []
   private readonly outputs: OutputPort[] = []
   private readonly methods: MethodPort[] = []
+  private readonly calls: OutputPort[] = [] // 也是一种向外发送数据，但是理解上更像是调用外部，本身状态不结束，属于运行中临时查询外部，或者调用外部节点
+  private readonly callbacks: InputPort[] = []// 也是一种接收消息数据，是calls的返回，属于运行中临时
 
   /**
    * 节点在画布上的坐标，语义是**相对直接父容器的局部坐标**：
@@ -387,6 +389,14 @@ export abstract class Node {
     return this.methods
   }
 
+  get callPorts(): readonly OutputPort[] {
+    return this.calls
+  }
+
+  get callbackPorts(): readonly InputPort[] {
+    return this.callbacks
+  }
+
   /**
    * 按 id 找一个「终点类端口」——普通输入端口或方法端口。
    * 边的 endPort 既可能是 InputPort 也可能是 MethodPort，调用方不用关心它混在哪个数组里。
@@ -394,6 +404,11 @@ export abstract class Node {
    */
   findInputLikePort(portId: string): InputPort | undefined {
     return this.inputs.find(p => p.id === portId) ?? this.methods.find(p => p.id === portId)
+  }
+
+  /** 按 id 找一个回调端口。找不到返回 undefined。 */
+  findCallbackPort(portId: string): InputPort | undefined {
+    return this.callbacks.find(p => p.id === portId)
   }
 
   /** 子类构造时登记自己的输入端口；运行时也可追加，会自动 notifyChanged 刷新 UI */
@@ -417,6 +432,20 @@ export abstract class Node {
     } else {
       this.outputs.push(port)
     }
+    this.notifyChanged()
+  }
+
+  /** 子类登记调用端口；运行时也可追加，会自动 notifyChanged 刷新 UI */
+  protected addCall(port: OutputPort): void {
+    port.setOwner(this)
+    this.calls.push(port)
+    this.notifyChanged()
+  }
+
+  /** 子类登记回调端口；运行时也可追加，会自动 notifyChanged 刷新 UI */
+  protected addCallback(port: InputPort): void {
+    port.setOwner(this)
+    this.callbacks.push(port)
     this.notifyChanged()
   }
 
@@ -471,6 +500,24 @@ export abstract class Node {
 
     this.outputs.splice(idx, 1)
     this.disconnectPortEdges(port.edges)
+    this.notifyChanged()
+  }
+
+  protected removeCall(port: OutputPort): void {
+    const idx = this.calls.indexOf(port)
+    if (idx === -1) return
+
+    this.calls.splice(idx, 1)
+    this.disconnectPortEdges(port.edges)
+    this.notifyChanged()
+  }
+
+  protected removeCallback(port: InputPort): void {
+    const idx = this.callbacks.indexOf(port)
+    if (idx === -1) return
+
+    this.callbacks.splice(idx, 1)
+    this.disconnectPortEdges(port.allBindEdge)
     this.notifyChanged()
   }
 

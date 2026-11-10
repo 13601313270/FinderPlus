@@ -108,13 +108,9 @@ function removeEdge(edge: Edge): void {
     pointer-events: none 让线不挡平移和节点拖拽——只有删除按钮可点。
   -->
   <svg class="edges" width="1" height="1" aria-hidden="true">
-    <path
-      v-for="line in lines"
-      :key="`line-${keyOf(line.edge)}`"
-      class="edges__line"
+    <path v-for="line in lines" :key="`line-${keyOf(line.edge)}`" class="edges__line"
       :class="{ error: line.edge.state === 'error' }"
-      :d="bezierPath(line.from, line.to, { fromSide: line.fromSide, toSide: line.toSide, fromType: line.fromType, toType: line.toType })"
-    />
+      :d="bezierPath(line.from, line.to, { fromSide: line.fromSide, toSide: line.toSide, fromType: line.fromType, toType: line.toType })" />
   </svg>
 
   <!--
@@ -124,17 +120,9 @@ function removeEdge(edge: Edge): void {
     留在线上只是噪声。连线本身照画，只是那会儿没有删除入口。
   -->
   <template v-if="showRemoveButtons">
-    <button
-      v-for="line in lines"
-      :key="`remove-${keyOf(line.edge)}`"
-      class="edges__remove"
-      type="button"
-      title="断开两个节点之间的连接"
-      aria-label="断开两个节点之间的连接"
-      :style="{ left: `${line.mid.x}px`, top: `${line.mid.y}px` }"
-      @pointerdown.stop
-      @click.stop="removeEdge(line.edge)"
-    >
+    <button v-for="line in lines" :key="`remove-${keyOf(line.edge)}`" class="edges__remove" type="button"
+      title="断开两个节点之间的连接" aria-label="断开两个节点之间的连接" :style="{ left: `${line.mid.x}px`, top: `${line.mid.y}px` }"
+      @pointerdown.stop @click.stop="removeEdge(line.edge)">
       ×
     </button>
   </template>

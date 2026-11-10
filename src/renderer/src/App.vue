@@ -24,6 +24,7 @@ import {
 import EdgeLayer from './components/EdgeLayer.vue'
 import DecorLayer from './components/DecorLayer.vue'
 import NodeShell from './components/NodeShell.vue'
+import NodeProxy from './components/NodeProxy.vue'
 import NodeWire from './components/NodeWire.vue'
 import ConnectionPreview from './components/ConnectionPreview.vue'
 import Minimap from './components/Minimap.vue'
@@ -770,8 +771,8 @@ async function onCanvasDrop(e: DragEvent): Promise<void> {
       const NODE_OFFSET = 40
       const node = new manifest.nodeClass(generateNodeId(manifest.type))
       node.setPosition(worldX + i * NODE_OFFSET, worldY + i * NODE_OFFSET)
-      // 用复制后的 fileName（可能加了 _1 后缀）写节点
-      ;(node as FileNode).setFile(copied.fileName, copied.size)
+        // 用复制后的 fileName（可能加了 _1 后缀）写节点
+        ; (node as FileNode).setFile(copied.fileName, copied.size)
 
       workspaceScene.addNode(node)
       console.log('[drop] 节点已加入 Scene：', node.id)
@@ -781,7 +782,7 @@ async function onCanvasDrop(e: DragEvent): Promise<void> {
         onboarding.nextStep()
       }
       firstCreated = false
-  }
+    }
   } finally {
     // 无论有没有命中自拖自，处理完都清掉缓存。
     clearSelfDragDrop()
@@ -1254,8 +1255,14 @@ async function bootstrapScene(): Promise<void> {
     const startNode = workspaceScene.getNode(row.startNodeId)
     const endNode = workspaceScene.getNode(row.endNodeId)
     if (!startNode || !endNode) continue
-    const startPort = startNode.outputPorts.find((p) => p.id === row.startPortId)
-    const endPort = endNode.findInputLikePort(row.endPortId)
+    let startPort = startNode.outputPorts.find((p) => p.id === row.startPortId)
+    if (!startPort) {
+      startPort = startNode.callPorts.find((p) => p.id === row.startPortId)
+    }
+    let endPort = endNode.findInputLikePort(row.endPortId)
+    if (!endPort) {
+      endPort = endNode.findCallbackPort(row.endPortId)
+    }
     if (!startPort || !endPort) continue
     workspaceScene.connect(startPort, endPort, row.id)
   }
@@ -1381,15 +1388,12 @@ onUnmounted(() => {
       <div class="left">
         <!-- 画布选择器：显示当前画布名 + 下拉箭头。no-drag，嵌在中间 -->
         <div ref="canvasMenuRef" class="stage__canvas-selector">
-          <button
-            class="stage__canvas-btn"
-            type="button"
-            :class="{ 'stage__canvas-btn--open': showCanvasMenu }"
-            @click.stop="toggleCanvasMenu"
-          >
+          <button class="stage__canvas-btn" type="button" :class="{ 'stage__canvas-btn--open': showCanvasMenu }"
+            @click.stop="toggleCanvasMenu">
             <span class="stage__canvas-btn-name">{{ currentCanvasName }}</span>
             <svg class="stage__canvas-btn-arrow" width="10" height="10" viewBox="0 0 10 10" fill="none">
-              <path d="M2 3L5 6L8 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+              <path d="M2 3L5 6L8 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                stroke-linejoin="round" />
             </svg>
           </button>
           <!-- 下拉菜单 -->
@@ -1401,13 +1405,8 @@ onUnmounted(() => {
                 <span>新建画布…</span>
               </li>
               <li v-if="canvasList.length > 0" class="stage__canvas-separator" />
-              <li
-                v-for="c in canvasList"
-                :key="c.id"
-                class="stage__canvas-item"
-                :class="{ 'stage__canvas-item--current': c.id === boundCanvasId }"
-                @click="openCanvas(c.id)"
-              >
+              <li v-for="c in canvasList" :key="c.id" class="stage__canvas-item"
+                :class="{ 'stage__canvas-item--current': c.id === boundCanvasId }" @click="openCanvas(c.id)">
                 <span class="stage__canvas-item-icon">📋</span>
                 <span class="stage__canvas-item-name">{{ c.name }}</span>
                 <span v-if="c.id === boundCanvasId" class="stage__canvas-item-check">✓</span>
@@ -1474,10 +1473,11 @@ onUnmounted(() => {
         <!-- 每个节点 = 外壳（定位 + 端口，通用）+ 内容（render.vue，节点自定义）
              nodes 来自 Scene，新增节点加进 Scene 后会自动出现在这里 -->
         <template v-for="node in nodes" :key="node.id">
-          <NodeWire :node="node" v-if="node.type === 'wire' || node.type === 'delay'" :render="manifestFor(node)?.render"
+          <NodeWire :node="node" v-if="node.type === 'wire' || node.type === 'delay'"
+            :render="manifestFor(node)?.render" :floating="trackingNode?.id === node.id" />
+          <NodeProxy v-else-if="node.type === 'proxy'" :node="node" :render="manifestFor(node)?.render"
             :floating="trackingNode?.id === node.id" />
-          <NodeShell v-else :node="node" :render="manifestFor(node)?.render"
-            :floating="trackingNode?.id === node.id" />
+          <NodeShell v-else :node="node" :render="manifestFor(node)?.render" :floating="trackingNode?.id === node.id" />
         </template>
       </div>
 
@@ -1552,23 +1552,16 @@ onUnmounted(() => {
           <template v-else>
             <!-- Tab bar -->
             <div class="collab-tabs">
-              <button
-                class="collab-tabs__item"
-                :class="{ 'collab-tabs__item--active': collabTab === 'mine' }"
-                type="button"
-                @click="switchCollabTab('mine')"
-              >
+              <button class="collab-tabs__item" :class="{ 'collab-tabs__item--active': collabTab === 'mine' }"
+                type="button" @click="switchCollabTab('mine')">
                 我的协作者
                 <span v-if="collaborators.length > 0" class="collab-tabs__badge">{{ collaborators.length }}</span>
               </button>
-              <button
-                class="collab-tabs__item"
-                :class="{ 'collab-tabs__item--active': collabTab === 'granted' }"
-                type="button"
-                @click="switchCollabTab('granted')"
-              >
+              <button class="collab-tabs__item" :class="{ 'collab-tabs__item--active': collabTab === 'granted' }"
+                type="button" @click="switchCollabTab('granted')">
                 我授权出去
-                <span v-if="grantedList.length + receivedRequests.length > 0" class="collab-tabs__badge">{{ grantedList.length + receivedRequests.length }}</span>
+                <span v-if="grantedList.length + receivedRequests.length > 0" class="collab-tabs__badge">{{
+                  grantedList.length + receivedRequests.length }}</span>
                 <span v-if="receivedRequests.length > 0" class="collab-tabs__dot" />
               </button>
             </div>
@@ -1651,11 +1644,13 @@ onUnmounted(() => {
 
   <!-- 添加协作申请弹窗：点击「+ 添加协作工作流」时弹出 -->
   <Teleport to="body">
-    <div v-if="showAddRequestDialog" class="user-info-mask collab-submask" @click.self="!reqSending && closeAddRequestDialog">
+    <div v-if="showAddRequestDialog" class="user-info-mask collab-submask"
+      @click.self="!reqSending && closeAddRequestDialog">
       <div class="user-info-dialog collab-request-dialog">
         <div class="user-info-dialog__header">
           <span>添加协作工作流</span>
-          <button class="user-info-dialog__close" type="button" :disabled="reqSending" @click="closeAddRequestDialog">×</button>
+          <button class="user-info-dialog__close" type="button" :disabled="reqSending"
+            @click="closeAddRequestDialog">×</button>
         </div>
         <div class="user-info-dialog__body collab-request-dialog__body">
           <template v-if="reqSuccess">
@@ -1668,16 +1663,20 @@ onUnmounted(() => {
           <template v-else>
             <div class="collab-request-form">
               <label class="collab-request-form__label" for="req-email">对方邮箱</label>
-              <input id="req-email" v-model="reqEmail" class="collab-request-form__input" type="text" placeholder="例如 friend@example.com" :disabled="reqSending" />
+              <input id="req-email" v-model="reqEmail" class="collab-request-form__input" type="text"
+                placeholder="例如 friend@example.com" :disabled="reqSending" />
 
               <label class="collab-request-form__label" for="req-message">申请理由</label>
-              <textarea id="req-message" v-model="reqMessage" class="collab-request-form__textarea" rows="4" placeholder="简单说明你要协作的内容，方便对方快速决策…" :disabled="reqSending"></textarea>
+              <textarea id="req-message" v-model="reqMessage" class="collab-request-form__textarea" rows="4"
+                placeholder="简单说明你要协作的内容，方便对方快速决策…" :disabled="reqSending"></textarea>
 
               <div v-if="reqError" class="collab-request-form__error">❌ {{ reqError }}</div>
 
               <div class="collab-request-form__actions">
-                <button class="collab-request-form__cancel" type="button" :disabled="reqSending" @click="closeAddRequestDialog">取消</button>
-                <button class="collab-request-form__submit" type="button" :disabled="reqSending" @click="onSubmitRequest">
+                <button class="collab-request-form__cancel" type="button" :disabled="reqSending"
+                  @click="closeAddRequestDialog">取消</button>
+                <button class="collab-request-form__submit" type="button" :disabled="reqSending"
+                  @click="onSubmitRequest">
                   {{ reqSending ? '发送中…' : '发送申请' }}
                 </button>
               </div>
@@ -2059,6 +2058,7 @@ onUnmounted(() => {
   &__canvas-fade-leave-active {
     transition: opacity 0.12s ease, transform 0.12s ease;
   }
+
   &__canvas-fade-enter-from,
   &__canvas-fade-leave-to {
     opacity: 0;

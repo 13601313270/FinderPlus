@@ -108,10 +108,12 @@ export interface PortsOwnerLike {
   readonly inputPorts: readonly PortLike[]
   readonly outputPorts: readonly PortLike[]
   readonly methodPorts?: readonly PortLike[]
+  readonly callPorts?: readonly PortLike[]
+  readonly callbackPorts?: readonly PortLike[]
 }
 
 /** 端口长在卡片哪一侧 */
-export type PortSide = 'in' | 'out' | 'method'
+export type PortSide = 'in' | 'out' | 'method' | 'calls' | 'callback'
 
 const nodeElements = new Map<string, HTMLElement>()
 

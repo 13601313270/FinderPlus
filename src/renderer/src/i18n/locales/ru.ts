@@ -152,6 +152,7 @@ const ru: Language = {
     'video-file': 'Video File',
     'html-file': 'HTML-файл',
     'json-file': 'JSON-файл',
+    'multimodal': 'Multimodal',
     'img-file-collection': 'Коллекция изображений'
   },
   intro: {

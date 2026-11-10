@@ -152,6 +152,7 @@ const hi: Language = {
     'video-file': 'Video File',
     'html-file': 'HTML फ़ाइल',
     'json-file': 'JSON फ़ाइल',
+    'multimodal': 'Multimodal',
     'img-file-collection': 'छवि संग्रह'
   },
   intro: {

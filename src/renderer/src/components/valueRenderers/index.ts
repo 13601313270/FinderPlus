@@ -62,7 +62,8 @@ const builtinRenderers = {
   'pdf-file':            PdfFileValueRenderer,
   'audio-file':          AudioFileValueRenderer,
   'video-file':          VideoFileValueRenderer,
-  'img-file-collection': ImgFileCollectionValueRenderer
+  'img-file-collection': ImgFileCollectionValueRenderer,
+  'multimodal':          StringValueRenderer  // 先复用，未来做混合展示
 } satisfies BuiltinRendererMap
 
 // ── 运行时注册表：从 builtinRenderers 批量初始化，支持插件扩展 ──

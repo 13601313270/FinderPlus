@@ -24,8 +24,15 @@ type LLMStatus = 'idle' | 'loading' | 'done' | 'error'
 
 /** 一条对话消息（连续对话历史的基本单元） */
 export interface ChatMessage {
-  role: 'user' | 'assistant'
-  content: string
+  role: 'system' | 'user' | 'assistant' | 'tool'
+  content: string | Array<{ type: string; [k: string]: unknown }>
+  tool_call_id?: string
+  name?: string
+  tool_calls?: Array<{
+    id: string
+    type: 'function'
+    function: { name: string; arguments: string }
+  }>
 }
 
 export type LLMProviderId =
@@ -502,7 +509,7 @@ export class LLMNode extends Node {
 
   /** 抽出来的原始 fetch：provider + model 配置在本节点，messages + tools 由调用方传入 */
   private async doRawFetch(
-    messages: Array<{ role: string; content: string; tool_call_id?: string; name?: string }>,
+    messages: ChatMessage[],
     tools?: unknown[],
     signal?: AbortSignal
   ): Promise<RawChatResponse> {
@@ -585,7 +592,7 @@ export class LLMNode extends Node {
    * @param tools    可选的 function calling 工具描述
    */
   async chat(
-    messages: Array<{ role: string; content: string; tool_call_id?: string; name?: string }>,
+    messages: ChatMessage[],
     tools?: unknown[]
   ): Promise<RawChatResponse> {
     return this.doRawFetch(messages, tools)
@@ -603,7 +610,7 @@ export class LLMNode extends Node {
     this.notifyChanged()
 
     // 构建 messages：system 始终放最前面；chatMode 开启时带上历史；最后拼当前 prompt
-    const messages: Array<{ role: string; content: string }> = [
+    const messages: ChatMessage[] = [
       { role: 'system', content: system || 'You are a helpful assistant.' }
     ]
     if (this.chatMode) {

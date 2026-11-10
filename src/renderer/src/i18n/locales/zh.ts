@@ -170,6 +170,7 @@ const zh: Language = {
     'video-file': '视频文件',
     'html-file': 'HTML文件',
     'json-file': 'JSON文件',
+    'multimodal': 'Multimodal',
     'img-file-collection': '图片文件集合'
   },
   intro: {

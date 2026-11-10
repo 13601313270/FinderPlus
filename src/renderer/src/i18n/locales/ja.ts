@@ -152,6 +152,7 @@ const ja: Language = {
     'video-file': 'Video File',
     'html-file': 'HTMLファイル',
     'json-file': 'JSONファイル',
+    'multimodal': 'Multimodal',
     'img-file-collection': '画像コレクション'
   },
   intro: {

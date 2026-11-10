@@ -152,6 +152,7 @@ const ar: Language = {
     'video-file': 'Video File',
     'html-file': 'ملف HTML',
     'json-file': 'ملف JSON',
+    'multimodal': 'Multimodal',
     'img-file-collection': 'مجموعة الصور'
   },
   intro: {

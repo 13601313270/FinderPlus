@@ -36,7 +36,8 @@ export const BUILTIN_VALUE_KINDS = [
   'pdf-file',
   'audio-file',
   'video-file',
-  'img-file-collection'
+  'img-file-collection',
+  'multimodal'
 ] as const
 
 export type BuiltinValueKind = (typeof BUILTIN_VALUE_KINDS)[number]

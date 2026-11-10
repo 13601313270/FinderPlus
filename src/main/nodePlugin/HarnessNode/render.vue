@@ -13,6 +13,16 @@ import { viewport } from '@renderer/canvas/viewport'
 const props = defineProps<{ id: string }>()
 
 const t = useLocalizedMessages(messages)
+/** 从 content（string 或 array）里提取纯文本 */
+function extractTextMm(content: string | Array<{ type: string; [k: string]: unknown }> | undefined): string {
+  if (!content) return ''
+  if (typeof content === 'string') return content
+  return content
+    .filter((p): p is { type: 'text'; text: string } => p.type === 'text' && typeof p.text === 'string')
+    .map(p => p.text)
+    .join('\n')
+}
+
 const harnessNode = shallowRef<HarnessNode | undefined>(undefined)
 
 const nodeTitle = useNodeTitle(() => harnessNode.value, '?')
@@ -28,6 +38,35 @@ const promptConnected = ref(false)
 const systemConnected = ref(false)
 const localPrompt = ref('')
 const localSystem = ref('')
+const attachedImages = ref<File[]>([])
+
+/** 图片选择回调：点 "+" 按钮触发（原生文件选择器） */
+function onPickImages(files: FileList | null) {
+  if (!files || files.length === 0) return
+  for (const f of files) {
+    if (f.type.startsWith('image/')) attachedImages.value.push(f)
+  }
+}
+
+/** 移除某张已选图片 */
+function removeImage(i: number) {
+  attachedImages.value.splice(i, 1)
+}
+
+/** 暴露给 template：File → object URL */
+function urlOf(file: File): string {
+  return URL.createObjectURL(file)
+}
+
+/** 本地草稿变更 → 组装 MultiModalValue → commit 到 promptInput 触发执行 */
+function commitLocalDraft() {
+  const parts: Array<{ type: 'text'; text: string } | { type: 'image'; file: File }> = []
+  const text = localPrompt.value.trim()
+  if (text) parts.push({ type: 'text', text })
+  for (const f of attachedImages.value) parts.push({ type: 'image', file: f })
+  if (parts.length === 0) return
+  harnessNode.value?.commitPromptMm(parts)
+}
 
 let unsubscribe: (() => void) | undefined
 
@@ -187,11 +226,11 @@ const trajectoryForView = computed(() => {
           groups.push({ kind: 'tool_call', content: tc.function.name, meta: tc.function.arguments })
         }
       } else if (msg.content) {
-        groups.push({ kind: 'final', content: msg.content })
+        groups.push({ kind: 'final', content: typeof msg.content === 'string' ? msg.content : extractTextMm(msg.content) })
       }
       i++
     } else if (msg.role === 'tool') {
-      groups.push({ kind: 'assistant', content: msg.content, meta: msg.name })
+      groups.push({ kind: 'assistant', content: typeof msg.content === 'string' ? msg.content : extractTextMm(msg.content), meta: msg.name })
       i++
     } else {
       i++
@@ -370,6 +409,26 @@ function closeToolEditor() {
         rows="2"
         @input="(e) => onPromptInput((e.target as HTMLTextAreaElement).value)"
       />
+      <!-- 多模态输入区（本地草稿才显示） -->
+      <template v-if="!promptConnected">
+        <!-- 已选图片预览 -->
+        <div v-if="attachedImages.length > 0" class="image-previews">
+          <div v-for="(f, i) in attachedImages" :key="i" class="image-chip">
+            <img :src="urlOf(f)" class="image-chip-thumb" />
+            <button class="image-chip-x" @click="removeImage(i)">×</button>
+          </div>
+        </div>
+        <!-- 图片选择按钮 + 发送按钮 -->
+        <div class="draft-actions">
+          <label class="btn btn--pick" :title="t('pickImage')">
+            <input type="file" accept="image/*" multiple hidden @change="(e) => onPickImages((e.target as HTMLInputElement).files)" />
+            ＋ {{ t('pickImage') }}
+          </label>
+          <button class="btn btn--send" :disabled="status === 'loading' || (!localPrompt.trim() && attachedImages.length === 0) || !hasModel" @click="commitLocalDraft">
+            {{ status === 'loading' ? t('loading') : t('send') }}
+          </button>
+        </div>
+      </template>
     </div>
 
     <!-- ── 结果区 ── -->
@@ -743,6 +802,77 @@ function closeToolEditor() {
     background: #ef4444;
     &:hover { background: #dc2626; }
   }
+}
+
+// ── 多模态输入区 ──
+.image-previews {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+.image-chip {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+.image-chip-thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.image-chip-x {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.6);
+  color: #fff;
+  font-size: 11px;
+  line-height: 16px;
+  text-align: center;
+  cursor: pointer;
+  border: none;
+  padding: 0;
+}
+.draft-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 6px;
+  gap: 8px;
+}
+.btn--pick {
+  background: #f1f5f9;
+  color: #475569;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  cursor: pointer;
+  border: 1px dashed #cbd5e1;
+  flex-shrink: 0;
+  &:hover { background: #e2e8f0; }
+}
+.btn--send {
+  background: #6366f1;
+  color: #fff;
+  height: 24px;
+  padding: 0 14px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  flex-shrink: 0;
+  &:hover:not(:disabled) { background: #4f46e5; }
+  &:disabled { cursor: not-allowed; background: #a5b4fc; }
 }
 </style>
 

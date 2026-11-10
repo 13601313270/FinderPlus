@@ -106,5 +106,14 @@ export const messages = {
     es: 'Quitar',
     fr: 'Supprimer',
     de: 'Entfernen'
+  },
+  pickImage: {
+    zh: '添加图片',
+    en: 'Add image',
+    ja: '画像を追加',
+    ko: '이미지 추가',
+    es: 'Añadir imagen',
+    fr: 'Ajouter une image',
+    de: 'Bild hinzufügen'
   }
 }

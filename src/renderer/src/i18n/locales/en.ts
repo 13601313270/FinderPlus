@@ -165,6 +165,7 @@ const en: Language = {
     'video-file': 'Video File',
     'html-file': 'HTML File',
     'json-file': 'JSON File',
+    'multimodal': 'Multimodal',
     'img-file-collection': 'Image Collection'
   },
   intro: {

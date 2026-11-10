@@ -1,5 +1,7 @@
 import { StringValue } from '../../engine/data/StringValue'
 import { JsonValue } from '../../engine/data/JsonValue'
+import { MultiModalValue, wrapAsMultiModal, type MultiModalPart } from '../../engine/data/MultiModalValue'
+import { ImgFileValue } from '../../engine/data/ImgFileValue'
 import { InputPort } from '../../engine/port/InputPort'
 import { MethodPort } from '../../engine/port/MethodPort'
 import { OutputPort } from '../../engine/port/OutputPort'
@@ -7,12 +9,12 @@ import { Node } from '../../engine/node/Node'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import type { Value } from '../../engine/data/Value'
 import type { InputPortChangeSource } from '../../engine/node/Node'
-import type { RawChatResponse } from '../LLMNode/node'
+import type { RawChatResponse, ChatMessage } from '../LLMNode/node'
 
 /** HarnessNode 内部使用的 message 格式 */
 export interface HarnessMessage {
   role: 'system' | 'user' | 'assistant' | 'tool'
-  content: string
+  content: string | Array<{ type: string; [k: string]: unknown }>
   tool_calls?: ToolCallRecord[]
   tool_call_id?: string
   name?: string
@@ -265,6 +267,54 @@ class ToolRegistry {
 }
 
 /** ReAct 消息循环 */
+
+/** 把 MultiModalValue 转成 OpenAI 兼容的 user message content */
+async function buildUserContent(
+  mm: MultiModalValue
+): Promise<string | Array<{ type: string; [k: string]: unknown }>> {
+  if (mm.isNull || mm.parts.length === 0) return ''
+
+  // 只有纯文本 → content 直接 string
+  if (mm.parts.every(p => p.type === 'text')) {
+    return mm.parts.filter((p): p is { type: 'text'; text: string } => p.type === 'text')
+      .map(p => p.text).join('\n')
+  }
+
+  // 有图片 → content 是 array
+  const content: Array<{ type: string; [k: string]: unknown }> = []
+  for (const part of mm.parts) {
+    if (part.type === 'text') {
+      content.push({ type: 'text', text: part.text })
+    } else if (part.type === 'image') {
+      const dataUrl = await fileToDataURL(part.file)
+      content.push({ type: 'image_url', image_url: { url: dataUrl } })
+    }
+  }
+  return content
+}
+
+/** File → data URL */
+function fileToDataURL(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result as string)
+    reader.onerror = () => reject(reader.error)
+    reader.readAsDataURL(file)
+  })
+}
+
+/** 从 content（string 或 array）里提取纯文本 */
+function extractTextContent(
+  content: string | Array<{ type: string; [k: string]: unknown }> | undefined
+): string {
+  if (!content) return ''
+  if (typeof content === 'string') return content
+  return content
+    .filter((p): p is { type: 'text'; text: string } => p.type === 'text' && typeof p.text === 'string')
+    .map(p => p.text)
+    .join('\n')
+}
+
 class HarnessLoop {
   messages: HarnessMessage[] = []
   private iteration = 0
@@ -289,10 +339,10 @@ class HarnessLoop {
     this.aborted = true
   }
 
-  async run(system: string, prompt: string): Promise<string> {
+  async run(system: string, promptMm: MultiModalValue): Promise<string> {
     this.messages = [
       { role: 'system', content: system || 'You are a helpful assistant. Use tools when needed.' },
-      { role: 'user', content: prompt }
+      { role: 'user', content: await buildUserContent(promptMm) }
     ]
     this.iteration = 0
     this.aborted = false
@@ -311,7 +361,7 @@ class HarnessLoop {
       try {
         raw = await llmNode.chat(
           this.messages.map(m => {
-            const out: any = { role: m.role, content: m.content }
+            const out: ChatMessage = { role: m.role as any, content: m.content }
             if (m.tool_calls && m.tool_calls.length > 0) {
               out.tool_calls = m.tool_calls
             }
@@ -353,7 +403,7 @@ class HarnessLoop {
 
     // 超过 maxIterations → 返回最后一条 assistant 消息
     const lastAssistant = [...this.messages].reverse().find(m => m.role === 'assistant')
-    return lastAssistant?.content ?? ''
+    return extractTextContent(lastAssistant?.content)
   }
 
   private async executeOneTool(call: ToolCallRecord): Promise<HarnessMessage> {
@@ -686,7 +736,7 @@ export class HarnessNode extends Node {
     label: SYSTEM_INPUT_LABEL
   })
   readonly promptInput = new InputPort('prompt', {
-    accepts: [StringValue],
+    accepts: [StringValue, ImgFileValue, MultiModalValue],
     label: PROMPT_INPUT_LABEL
   })
   private resultOutput!: OutputPort
@@ -955,6 +1005,18 @@ export class HarnessNode extends Node {
     this.notifyChanged()
   }
 
+  /**
+   * 把用户在 UI 里编辑的 text + 上传图片一次性组装成 MultiModalValue，
+   * 直接 commit 到 promptInput 并触发执行。
+   * 给 render.vue 的多模态输入框用。
+   */
+  commitPromptMm(parts: MultiModalPart[]): void {
+    const mm = new MultiModalValue(parts)
+    // 直接写入 promptInput.lastReceiveValue + 触发变更，绕过 Edge
+    this.promptInput.lastReceiveValue = mm
+    this._onInputPortChanged([this.promptInput], 'receive' as InputPortChangeSource)
+  }
+
   get displaySystem(): string {
     return this.localSystem
   }
@@ -971,20 +1033,23 @@ export class HarnessNode extends Node {
     return this.systemInput.incomingEdgeCount > 0
   }
 
-  /** resolveInputs：有连线用端口值，没连线用内部文本 */
-  private resolveInputs(): { system: string; prompt: string } {
+  /** resolveInputs：有连线用端口值，没连线用内部文本。统一返回 MultiModalValue */
+  private resolveInputs(): { system: string; promptMm: MultiModalValue } {
     const [sysFirst] = this.systemInput.value
     const system = sysFirst instanceof StringValue && !sysFirst.isNull
       ? sysFirst.value! : this.localSystem
 
-    let prompt = this.localPrompt
     if (this.promptConnected) {
-      const [promptFirst] = this.promptInput.value
-      if (promptFirst instanceof StringValue && !promptFirst.isNull) {
-        prompt = promptFirst.value!
+      // 有连线 → 取端口值，自动包装成 MultiModalValue
+      const first = this.promptInput.value[0]
+      if (first) {
+        return { system, promptMm: wrapAsMultiModal(first) }
       }
     }
-    return { system, prompt }
+    // 没连线 → 用内部文本框
+    return { system, promptMm: new MultiModalValue(
+      this.localPrompt ? [{ type: 'text', text: this.localPrompt }] : []
+    )}
   }
 
   // ─── 执行控制 ───
@@ -1014,15 +1079,15 @@ export class HarnessNode extends Node {
       this.notifyChanged()
       return
     }
-    const { system, prompt } = this.resolveInputs()
-    if (!prompt.trim()) {
+    const { system, promptMm } = this.resolveInputs()
+    if (promptMm.parts.length === 0) {
       this.status = 'idle'
       this.result = ''
       this.errorMessage = ''
       this.notifyChanged()
       return
     }
-    void this.doRun(system, prompt)
+    void this.doRun(system, promptMm)
   }
 
   cancelRun(): void {
@@ -1036,7 +1101,7 @@ export class HarnessNode extends Node {
     }
   }
 
-  private async doRun(system: string, prompt: string): Promise<void> {
+  private async doRun(system: string, promptMm: MultiModalValue): Promise<void> {
     this.beginRun()
     this.status = 'loading'
     this.errorMessage = ''
@@ -1047,7 +1112,7 @@ export class HarnessNode extends Node {
     this.notifyChanged()
 
     try {
-      const finalText = await this.loop.run(system, prompt)
+      const finalText = await this.loop.run(system, promptMm)
       this.result = finalText
       this.status = 'done'
 

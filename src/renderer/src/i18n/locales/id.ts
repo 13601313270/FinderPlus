@@ -152,6 +152,7 @@ const id: Language = {
     'video-file': 'Video File',
     'html-file': 'File HTML',
     'json-file': 'Berkas JSON',
+    'multimodal': 'Multimodal',
     'img-file-collection': 'Koleksi Gambar'
   },
   intro: {

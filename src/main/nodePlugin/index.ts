@@ -2,6 +2,7 @@ import type { Node } from '../engine/node/Node'
 import type { NodePluginManifest } from './manifest'
 import { FileNode } from './FileNode/node'
 import { manifest as textInputManifest } from './TextInputNode'
+import { manifest as multimodalInputManifest } from './MultimodalInputNode'
 import { manifest as textDisplayManifest } from './TextDisplayNode'
 import { manifest as numberDisplayManifest } from './NumberDisplayNode'
 import { manifest as numberInputManifest } from './NumberInputNode'
@@ -73,6 +74,7 @@ import { manifest as proxyManifest } from './ProxyNode'
  */
 const functionalManifests: NodePluginManifest[] = [
   textInputManifest,
+  multimodalInputManifest,
   textDisplayManifest,
   numberDisplayManifest,
   numberInputManifest,

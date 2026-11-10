@@ -151,6 +151,7 @@ const tr: Language = {
     'video-file': 'Video File',
     'html-file': 'HTML Dosyası',
     'json-file': 'JSON dosyası',
+    'multimodal': 'Multimodal',
     'img-file-collection': 'Görsel Koleksiyonu'
   },
   intro: {

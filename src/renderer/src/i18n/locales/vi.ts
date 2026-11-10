@@ -152,6 +152,7 @@ const vi: Language = {
     'video-file': 'Video File',
     'html-file': 'Tệp HTML',
     'json-file': 'Tệp JSON',
+    'multimodal': 'Multimodal',
     'img-file-collection': 'Bộ sưu tập ảnh'
   },
   intro: {

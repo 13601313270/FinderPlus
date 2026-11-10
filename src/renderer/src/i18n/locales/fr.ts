@@ -151,6 +151,7 @@ const fr: Language = {
     'video-file': 'Video File',
     "html-file": "Fichier HTML",
     "json-file": "Fichier JSON",
+    "multimodal": "Multimodal",
     "img-file-collection": "Collection d'images"
   },
   intro: {

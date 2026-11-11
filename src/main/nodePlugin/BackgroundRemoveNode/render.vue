@@ -10,7 +10,6 @@ import { messages } from './i18n'
 import HelpDialog from '@renderer/components/HelpDialog.vue'
 import NodeHeader from '@renderer/components/NodeHeader.vue'
 import BackgroundRemoveHelpDialog from './BackgroundRemoveHelpDialog.vue'
-import { removeBackground } from '@imgly/background-removal'
 
 // 卡片头部标题走插件 manifest 的多语言 title，未配当前语言时由 resolveNodeTitle 兜底
 const nodeTitle = useNodeTitle(BackgroundRemoveNode.TYPE)
@@ -52,70 +51,19 @@ function refreshResult(n: BackgroundRemoveNode | undefined): void {
   }
 }
 
-// —— 处理中状态 ——
-const processing = ref(false)
-// 下载/推理进度文案：缓存「key + 参数」而非成品字符串，
-// 这样切语言时 computed 会用当前语言重新解析，文案不会停留在旧语言
-const progressState = ref<{ key: keyof typeof messages; params?: { pct: number } } | null>(null)
-const progressText = computed(() =>
-  progressState.value ? t(progressState.value.key, progressState.value.params) : null
-)
+// —— 处理状态（抠图逻辑已迁移到 node.ts，UI 只读） ——
+const processing = computed(() => node.value?.isProcessing ?? false)
+const progressText = computed(() => {
+  const n = node.value
+  if (!n) return null
+  if (n.hasError) return t('failed')
+  if (!n.isProcessing) return null
+  const pct = n.progressPercent
+  if (pct < 0) return t('preparing')
+  return t('processing', { pct })
+})
 
-/**
- * 执行一次抠图：File → removeBackground → Blob → node.setOutput。
- * 同时支持两种触发路径：端口输入（响应式）和拖入节点（一次性）。
- */
-async function runRemoveBg(n: BackgroundRemoveNode, file: File): Promise<void> {
-  processing.value = true
-  progressState.value = { key: 'preparing' }
-
-  try {
-    const blob = await removeBackground(file, {
-      model: 'isnet_fp16',
-      device: 'gpu',
-      output: { format: 'image/png' },
-      progress: (_key: string, current: number, total: number) => {
-        const pct = Math.round((current / total) * 100)
-        progressState.value = { key: 'processing', params: { pct } }
-      }
-    })
-
-    const dot = file.name.lastIndexOf('.')
-    const baseName = dot > 0 ? file.name.slice(0, dot) : file.name
-    const fileName = `${baseName}-nobg.png`
-
-    n.setOutput(blob, fileName)
-    progressState.value = null
-  } catch (err) {
-    console.warn('[BackgroundRemoveNode] 抠图失败：', err)
-    progressState.value = { key: 'failed' }
-  } finally {
-    processing.value = false
-  }
-}
-
-/**
- * 检查是否需要抠图：读 processSource 判断有无可用源，再用 fingerprint 去重。
- */
-function handleRemove(n: BackgroundRemoveNode | undefined): void {
-  if (!n || processing.value) return
-  const src = n.processSource
-  if (!src) return
-
-  const isPending = n.pendingSource !== undefined // 拖入路径有触发信号
-  const fpChanged = src.fingerprint !== n.lastProcessedFp
-
-  // 去重：源文件没变 + 不是拖入触发 → 跳过
-  if (!fpChanged && !isPending) return
-
-  void runRemoveBg(n, src.file).finally(() => {
-    n.markProcessed(src.fingerprint)
-    // 拖入路径处理完清信号（端口路径不清，保持响应式）
-    if (isPending) n.clearPending()
-  })
-}
-
-// —— 订阅 node.onChanged：结果刷新 + 收到触发信号（拖入或端口值变）触发抠图 ——
+// —— 订阅 node.onChanged：抠图逻辑已迁移到 node.ts，这里只做 UI 刷新（预览图） ——
 let unsubscribe: (() => void) | undefined
 watch(
   node,
@@ -123,10 +71,8 @@ watch(
     unsubscribe?.()
     unsubscribe = n?.onChanged(() => {
       refreshResult(n)
-      handleRemove(n)
     })
     refreshResult(n)
-    handleRemove(n)
   },
   { immediate: true, flush: 'sync' }
 )
@@ -156,6 +102,7 @@ async function handleCreateImgNode(): Promise<void> {
   if (!file) return
 
   const base64 = await fileToBase64(file)
+  // @ts-ignore
   const written = await window.fileApi.writeBuffer(file.name, base64)
 
   const [cx, cy] = currentNode.position

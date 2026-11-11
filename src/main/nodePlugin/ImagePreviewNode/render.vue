@@ -218,20 +218,16 @@ onUnmounted(() => {
     <!-- 头部类型标签：与缩小图片尺寸节点区分；也可拖动移动节点 -->
     <div class="preview-card__header" @pointerdown.stop.prevent="startPreviewDrag">
       <span class="preview-card__header-title">{{ nodeTitle }}</span>
-      <button
-        class="preview-card__help"
-        type="button"
-        :title="t('helpTitle')"
-        @pointerdown.stop
-        @click.stop="showHelp = true"
-      >?</button>
+      <button class="preview-card__help" type="button" :title="t('helpTitle')" @pointerdown.stop
+        @click.stop="showHelp = true">?</button>
     </div>
 
     <!-- 预览图区域：画布内拖拽 = 移动节点；越界 = writeBuffer + startDrag 导出 -->
     <div class="preview-card__image-area" @pointerdown.stop.prevent="startPreviewDrag" :title="previewFile
       ? t('dragHint')
       : t('needSourceHint')">
-      <img v-if="imageUrl" class="preview-card__img" :src="imageUrl" :alt="t('altPreview')" draggable="false" @load="onImgLoad" />
+      <img v-if="imageUrl" class="preview-card__img" :src="imageUrl" :alt="t('altPreview')" draggable="false"
+        @load="onImgLoad" />
       <!-- 无图占位 -->
       <div v-else class="preview-card__placeholder">
         <svg class="preview-card__icon-svg" viewBox="0 0 64 72" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -335,7 +331,9 @@ onUnmounted(() => {
     flex: 1 1 auto; // 随 box 高度自由伸缩，图片按 object-fit: contain 在里面自适应
     min-height: 40px;
     overflow: hidden;
-    background: #f4f5f7;
+    background: linear-gradient(45deg, #f0f0f0 25%, transparent 25%), linear-gradient(-45deg, #f0f0f0 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #f0f0f0 75%), linear-gradient(-45deg, transparent 75%, #f0f0f0 75%);
+    background-size: 16px 16px;
+    background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
     display: flex;
     align-items: center;
     justify-content: center;

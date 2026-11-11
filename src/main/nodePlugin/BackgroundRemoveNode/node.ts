@@ -5,6 +5,7 @@ import { InputPort } from '../../engine/port/InputPort'
 import { OutputPort } from '../../engine/port/OutputPort'
 import { Node } from '../../engine/node/Node'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
+import { removeBackground } from '@imgly/background-removal'
 
 /**
  * 背景抠除节点：接收图片，用 @imgly/background-removal 去掉背景后输出透明 PNG。
@@ -141,6 +142,111 @@ export class BackgroundRemoveNode extends Node {
   /** 渲染侧抠图完成后调用，记录 fingerprint 用于后续去重判断 */
   markProcessed(fingerprint: string): void {
     this.lastProcessedFingerprint = fingerprint
+  }
+
+  // —— 抠图执行状态 ——
+
+  /** 处理中标记 */
+  private processing = false
+
+  /** 当前进度百分比（0-100），-1 表示无进度信息 */
+  private progressPct = -1
+
+  /** 错误状态：null=正常，'failed'=失败 */
+  private errorKey: 'failed' | null = null
+
+  /** 自订阅取消函数（onReady 注册，beforeDestroy 清理） */
+  private selfUnsubscribe: (() => void) | null = null
+
+  /** UI 只读：是否处理中 */
+  get isProcessing(): boolean {
+    return this.processing
+  }
+
+  /** UI 只读：进度百分比（-1 表示未知） */
+  get progressPercent(): number {
+    return this.progressPct
+  }
+
+  /** UI 只读：错误标识 */
+  get hasError(): boolean {
+    return this.errorKey !== null
+  }
+
+  // —— 生命周期 ——
+
+  onReady(): void {
+    this.selfUnsubscribe = this.onChanged(() => {
+      this.handleRemove()
+    })
+    // 启动时先试一次
+    this.handleRemove()
+  }
+
+  beforeDestroy(): void {
+    this.selfUnsubscribe?.()
+    this.selfUnsubscribe = null
+  }
+
+  // —— 抠图核心 ——
+
+  /** 内部清 pending 信号，不走 notifyChanged 避免重入 */
+  private clearPendingSilent(): void {
+    this.pendingSourceId = null
+  }
+
+  /** 执行一次抠图：File → removeBackground → Blob → setOutput */
+  private async runRemoveBg(file: File): Promise<void> {
+    this.processing = true
+    this.progressPct = 0
+    this.errorKey = null
+    this.notifyChanged() // 让 UI 刷新 processing 状态
+
+    try {
+      const blob = await removeBackground(file, {
+        model: 'isnet_fp16',
+        device: 'gpu',
+        output: { format: 'image/png' },
+        progress: (_key: string, current: number, total: number) => {
+          this.progressPct = Math.round((current / total) * 100)
+          this.notifyChanged() // 进度更新推给 UI
+        }
+      })
+
+      const dot = file.name.lastIndexOf('.')
+      const base = dot > 0 ? file.name.slice(0, dot) : file.name
+      const fileName = `${base}-nobg.png`
+
+      this.processing = false
+      this.progressPct = 100
+      this.setOutput(blob, fileName)
+      this.notifyChanged() // 让 UI 刷掉 processing 状态
+    } catch (err) {
+      console.warn('[BackgroundRemoveNode] 抠图失败：', err)
+      this.processing = false
+      this.progressPct = -1
+      this.errorKey = 'failed'
+      this.notifyChanged()
+    }
+  }
+
+  /** 检查是否需要抠图：读 processSource，fingerprint 去重 */
+  private handleRemove(): void {
+    if (this.processing) return
+    const src = this.processSource
+    if (!src) return
+
+    const isPending = this.pendingSource !== undefined // 拖入路径
+    const fpChanged = src.fingerprint !== this.lastProcessedFingerprint
+
+    // 去重：源文件没变 + 不是拖入触发 → 跳过
+    if (!fpChanged && !isPending) return
+
+    void this.runRemoveBg(src.file).finally(() => {
+      this.markProcessed(src.fingerprint)
+      // 拖入路径处理完清信号（端口路径不清，保持响应式）
+      if (isPending) this.clearPendingSilent()
+    })
   }
 
   /** 抠图完成后由 render.vue 调用，清空拖入路径的触发信号（端口路径不清） */

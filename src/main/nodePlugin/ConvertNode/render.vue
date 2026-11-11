@@ -20,7 +20,8 @@ const TARGET_OPTIONS: { value: ConvertTarget; label: string }[] = [
   { value: 'bool', label: 'Bool' },
   { value: 'json', label: 'Json' },
   { value: 'html-file', label: 'Html File' },
-  { value: 'txt-file', label: 'Txt File' }
+  { value: 'txt-file', label: 'Txt File' },
+  { value: 'img-file', label: 'Img File' }
 ]
 
 function sync(n: ConvertNode): void {
@@ -48,7 +49,7 @@ function onTargetChange(e: Event): void {
 }
 
 function isConvertTargetValue(v: string): v is ConvertTarget {
-  return v === 'string' || v === 'number' || v === 'bool' || v === 'json' || v === 'html-file' || v === 'txt-file'
+  return v === 'string' || v === 'number' || v === 'bool' || v === 'json' || v === 'html-file' || v === 'txt-file' || v === 'img-file'
 }
 </script>
 

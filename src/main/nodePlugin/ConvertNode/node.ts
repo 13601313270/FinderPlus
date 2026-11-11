@@ -1,6 +1,7 @@
 import { djb2 } from '../../engine/data/hash'
 import { HtmlFileValue } from '../../engine/data/HtmlFileValue'
 import { TxtFileValue } from '../../engine/data/TxtFileValue'
+import { ImgFileValue } from '../../engine/data/ImgFileValue'
 import { FileValue } from '../../engine/data/FileValue'
 import { JsonValue } from '../../engine/data/JsonValue'
 import { BoolValue } from '../../engine/data/BoolValue'
@@ -13,7 +14,7 @@ import { InputPortChangeSource, Node } from '../../engine/node/Node'
 import { inLabel, outLabel } from './i18n'
 
 /** 支持的转换目标类型 */
-export type ConvertTarget = 'string' | 'number' | 'bool' | 'json' | 'html-file' | 'txt-file'
+export type ConvertTarget = 'string' | 'number' | 'bool' | 'json' | 'html-file' | 'txt-file' | 'img-file'
 
 /** 目标类型 → Value 子类映射 */
 const TARGET_TO_CLASS: Record<ConvertTarget, ValueClass> = {
@@ -23,6 +24,7 @@ const TARGET_TO_CLASS: Record<ConvertTarget, ValueClass> = {
   json: JsonValue,
   'html-file': HtmlFileValue,
   'txt-file': TxtFileValue,
+  'img-file': ImgFileValue,
 }
 
 /** 通用 Value 子类类型（带静态 VALUE_NAME） */
@@ -159,28 +161,42 @@ export class ConvertNode extends Node {
   private async convertAsync(value: FileValue): Promise<void> {
     this.beginRun()
     try {
-      const text = await value.file!.text()
       let result: Value | undefined
 
-      if (this.targetType === 'string') {
-        result = new StringValue(text)
-      } else if (this.targetType === 'number') {
-        const num = parseFloat(text)
-        result = Number.isFinite(num) ? new NumberValue(num) : undefined
-      } else if (this.targetType === 'bool') {
-        result = new BoolValue(parseBoolString(text))
-      } else if (this.targetType === 'json') {
-        result = new JsonValue(JSON.parse(text))
-      } else if (this.targetType === 'html-file' || this.targetType === 'txt-file') {
-        const ext = this.targetType === 'html-file' ? 'html' : 'txt'
-        const mime = this.targetType === 'html-file' ? 'text/html;charset=utf-8' : 'text/plain;charset=utf-8'
-        const fileName = value.file?.name ?? `${this.id}.${ext}`
-        // 换掉文件的扩展名
-        const newName = fileName.replace(/\.[^.]+$/, `.${ext}`)
-        const file = new File([text], newName, { type: mime })
-        const hash = djb2(text)
-        const Cls = TARGET_TO_CLASS[this.targetType]
-        result = new Cls(file, hash) as Value
+      // 文件 → img-file：直接把源 File 包装成 ImgFileValue，不走文本读取
+      if (this.targetType === 'img-file') {
+        const file = value.file
+        if (file) {
+          const bytes = new Uint8Array(await file.arrayBuffer())
+          let hash = 0
+          for (let i = 0; i < bytes.length; i++) {
+            hash = ((hash << 5) - hash + bytes[i]) | 0
+          }
+          result = new ImgFileValue(file, String(Math.abs(hash)))
+        }
+      } else {
+        const text = await value.file!.text()
+
+        if (this.targetType === 'string') {
+          result = new StringValue(text)
+        } else if (this.targetType === 'number') {
+          const num = parseFloat(text)
+          result = Number.isFinite(num) ? new NumberValue(num) : undefined
+        } else if (this.targetType === 'bool') {
+          result = new BoolValue(parseBoolString(text))
+        } else if (this.targetType === 'json') {
+          result = new JsonValue(JSON.parse(text))
+        } else if (this.targetType === 'html-file' || this.targetType === 'txt-file') {
+          const ext = this.targetType === 'html-file' ? 'html' : 'txt'
+          const mime = this.targetType === 'html-file' ? 'text/html;charset=utf-8' : 'text/plain;charset=utf-8'
+          const fileName = value.file?.name ?? `${this.id}.${ext}`
+          // 换掉文件的扩展名
+          const newName = fileName.replace(/\.[^.]+$/, `.${ext}`)
+          const file = new File([text], newName, { type: mime })
+          const hash = djb2(text)
+          const Cls = TARGET_TO_CLASS[this.targetType]
+          result = new Cls(file, hash) as Value
+        }
       }
 
       if (result !== undefined && this.outputPort) {
@@ -230,13 +246,18 @@ export class ConvertNode extends Node {
       return new Cls(file, hash) as Value
     }
 
+    // 标量 → img-file 不支持（图片是二进制，标量无法凭空构造）
+    if (target === 'img-file') {
+      return undefined
+    }
+
     return undefined
   }
 
   /** 按目标类型构造一个 null 值（用于上游断连时推送） */
   private makeNullValue(target: ConvertTarget): Value {
     const Cls = TARGET_TO_CLASS[target]
-    if (target === 'html-file' || target === 'txt-file') {
+    if (target === 'html-file' || target === 'txt-file' || target === 'img-file') {
       return new Cls() as Value
     }
     // NumberValue / BoolValue / JsonValue / StringValue 的无参构造都是 null 值
@@ -323,5 +344,5 @@ function scalarToJson(value: Value): unknown {
 }
 
 function isConvertTarget(v: unknown): v is ConvertTarget {
-  return v === 'string' || v === 'number' || v === 'bool' || v === 'json' || v === 'html-file' || v === 'txt-file'
+  return v === 'string' || v === 'number' || v === 'bool' || v === 'json' || v === 'html-file' || v === 'txt-file' || v === 'img-file'
 }

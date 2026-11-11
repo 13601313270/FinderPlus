@@ -480,6 +480,12 @@ class HarnessLoop {
         throw new Error('未绑定 LLM 节点')
       }
 
+      // LLMNode.chat 是纯透传（不碰 nodeState、不 notifyChanged），
+      // 但 HarnessLoop 把它当作"我正在运行"的视觉信号源。
+      // 所以这里手动把 llmNode 置为 running，结束后恢复。
+      llmNode.nodeState = 'running'
+      llmNode.notifyChanged?.()
+
       let raw: RawChatResponse
       try {
         raw = await llmNode.chat(
@@ -496,7 +502,11 @@ class HarnessLoop {
           }),
           this.toolRegistry.getToolSchemas()
         )
+        llmNode.nodeState = 'stable'
+        llmNode.notifyChanged?.()
       } catch (err) {
+        llmNode.nodeState = 'error'
+        llmNode.notifyChanged?.()
         const msg = err instanceof Error ? err.message : String(err)
         this.messages.push({ role: 'assistant', content: `[LLM 调用失败: ${msg}]` })
         throw err
@@ -1216,6 +1226,11 @@ export class HarnessNode extends Node {
   /** 子节点状态变化 → 触发 HarnessNode 重绘卡槽内的状态徽标 */
   private childUnsubscribes = new Map<string, () => void>()
 
+  private onChildChanged(childId: string, child: Node): void {
+    console.log(`[HarnessNode] child changed: ${childId}, state=${child.state}, type=${child.type}`)
+    this.notifyChanged()
+  }
+
   private buildOutputPort(json: boolean): OutputPort {
     return new OutputPort('result', json ? JsonValue : StringValue, OUTPUT_LABEL)
   }
@@ -1232,7 +1247,7 @@ export class HarnessNode extends Node {
     this.children.push(child)
     // 子节点状态变化（running→stable、位置变化等）→ 让卡槽重绘状态徽标
     if (!this.childUnsubscribes.has(child.id)) {
-      this.childUnsubscribes.set(child.id, child.onChanged(() => this.notifyChanged()))
+      this.childUnsubscribes.set(child.id, child.onChanged(() => this.onChildChanged(child.id, child)))
     }
     this.sceneRef?.notifyChanged() // App 层重算顶层节点（被收养的从画布消失）
     this.notifyChanged()
@@ -1355,7 +1370,8 @@ export class HarnessNode extends Node {
       this.modelNode = source
       this.loop.setModelNode(source)
     } else {
-      // Tool 槽位：自动推导 binding
+      // Tool 槽位：先切成 mini 状态，再自动推导 binding 并注册
+      source.setMinimized(true)
       const binding = this.deriveToolBinding(source)
       this.toolRegistry.bindNode(binding)
     }

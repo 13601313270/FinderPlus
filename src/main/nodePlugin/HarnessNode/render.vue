@@ -102,7 +102,7 @@ function syncFromNode() {
   if (mn) {
     modelSummary.value = {
       displayLabel: (mn as any).displayLabel ?? mn.id,
-      state: mn.state,
+      state: (mn as any).nodeState,   // 直接读 nodeState，确保拿到 running 信号
       id: mn.id
     }
   } else {

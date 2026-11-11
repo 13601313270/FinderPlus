@@ -4,11 +4,11 @@ import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { ImgFileValue } from '../../engine/data/ImgFileValue'
 import { BackgroundRemoveNode } from './node'
 import { ImgFileNode } from '../ImgFileNode/node'
-import { useNodePosition } from '@renderer/composables/useNodePosition'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
 import { messages } from './i18n'
 import HelpDialog from '@renderer/components/HelpDialog.vue'
+import NodeHeader from '@renderer/components/NodeHeader.vue'
 import BackgroundRemoveHelpDialog from './BackgroundRemoveHelpDialog.vue'
 import { removeBackground } from '@imgly/background-removal'
 
@@ -24,9 +24,6 @@ const node = computed(() => {
   const n = workspaceScene.getNode(props.id)
   return n instanceof BackgroundRemoveNode ? n : undefined
 })
-
-// —— 拖拽：抠图节点自身也参与画布移动 ——
-const { startDrag } = useNodePosition(() => node.value)
 
 // —— 帮助浮层开关（弹窗壳由 HelpDialog 负责）——
 const showHelp = ref(false)
@@ -177,14 +174,9 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="remove-bg-card" @pointerdown="startDrag"
-    :title="t('dragHint')">
-    <!-- 头部类型标签 -->
-    <div class="remove-bg-card__header">
-      <span class="remove-bg-card__header-title">{{ nodeTitle }}</span>
-      <button class="remove-bg-card__help" type="button" :title="t('helpTitle')" @pointerdown.stop
-        @click.stop="showHelp = true">?</button>
-    </div>
+  <div class="remove-bg-card">
+    <!-- 头部：通用 NodeHeader，自带拖拽、最小化、帮助按钮 -->
+    <NodeHeader :title="nodeTitle" @help="showHelp = true" />
 
     <!-- 抠图结果预览区 -->
     <div class="remove-bg-card__image-area">
@@ -237,52 +229,8 @@ onUnmounted(() => {
   flex-direction: column;
   align-items: stretch;
   gap: 6px;
-  padding: 10px;
+  padding: 0 10px 10px;
   user-select: none;
-
-  &__header {
-    flex-shrink: 1;
-    min-height: 18px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 6px;
-    padding-bottom: 2px;
-    border-bottom: 1px dashed @node-border-color;
-  }
-
-  &__header-title {
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    font-size: 11px;
-    font-weight: 600;
-    color: #ff8c42;
-    letter-spacing: 0.5px;
-  }
-
-  &__help {
-    all: unset;
-    cursor: pointer;
-    flex-shrink: 0;
-    width: 18px;
-    height: 18px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    background: #f3f4f6;
-    color: #6b7280;
-    font-size: 12px;
-    font-weight: 600;
-    line-height: 1;
-    transition: background 0.15s, color 0.15s;
-
-    &:hover {
-      background: #dbeafe;
-      color: #2563eb;
-    }
-  }
 
   &__image-area {
     width: 100%;

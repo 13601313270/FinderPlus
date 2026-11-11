@@ -7,6 +7,9 @@ import { OutputPort } from '../../engine/port/OutputPort'
 import { Node } from '../../engine/node/Node'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 
+/** JPEG 输出质量（固定策略） */
+const JPEG_QUALITY = 0.85
+
 /**
  * 缩小图片尺寸节点：接收图片，按最长边等比缩放到目标尺寸后输出（不改质量参数）。
  *
@@ -231,6 +234,138 @@ export class ImageCompressNode extends Node {
       if (Number.isFinite(v) && v > 0) return v
     }
     return 800 // 兜底，理论上 effectiveValue 总会命中 defaultValue
+  }
+
+  // —— 压缩执行状态 ——
+
+  /** 原始图片大小（字节），UI 体积展示用 */
+  private sourceSize = 0
+
+  /** 压缩中标记：防 onChanged 重入导致重复压缩 */
+  private compressing = false
+
+  /** 自订阅的取消函数（onReady 里注册，beforeDestroy 里清理） */
+  private selfUnsubscribe: (() => void) | null = null
+
+  /** 原始体积（字节），UI 只读 */
+  get sourceSizeBytes(): number {
+    return this.sourceSize
+  }
+
+  /** 压缩后体积（字节），从输出端口值直接取，UI 只读 */
+  get compressedSizeBytes(): number {
+    const v = this.imageOutput.value
+    if (v instanceof ImgFileValue && v.file) return v.file.size
+    return 0
+  }
+
+  // —— 生命周期 ——
+
+  onReady(): void {
+    // 自订阅 onChanged：压缩触发信号由自身 notifyChanged 发出（拖入、端口值变、格式变）
+    this.selfUnsubscribe = this.onChanged(() => {
+      this.handleCompress()
+    })
+    // 启动时先试一次——端口可能已有值但没触发过 notifyChanged
+    this.handleCompress()
+  }
+
+  beforeDestroy(): void {
+    this.selfUnsubscribe?.()
+    this.selfUnsubscribe = null
+  }
+
+  // —— 压缩核心（DOM API，renderer 进程内执行） ——
+
+  /** 导出格式 → MIME / 扩展名 */
+  private mimeForFormat(format: ImageExportFormat): string {
+    return format === 'png' ? 'image/png' : 'image/jpeg'
+  }
+
+  private extForFormat(format: ImageExportFormat): string {
+    return format === 'png' ? '.png' : '.jpg'
+  }
+
+  /** 去掉源文件名的后缀 */
+  private baseName(fileName: string): string {
+    const dot = fileName.lastIndexOf('.')
+    return dot > 0 ? fileName.slice(0, dot) : fileName
+  }
+
+  /** 加载图片（Promise 化） */
+  private loadImage(url: string): Promise<HTMLImageElement> {
+    return new Promise((resolve, reject) => {
+      const img = new Image()
+      img.onload = () => resolve(img)
+      img.onerror = () => reject(new Error('image load failed'))
+      img.src = url
+    })
+  }
+
+  /** 执行一次压缩：File → canvas 按比例缩小 → toDataURL → setOutput */
+  private async runCompress(file: File): Promise<void> {
+    this.sourceSize = file.size
+    const url = URL.createObjectURL(file)
+    try {
+      const img = await this.loadImage(url)
+      const scale = Math.min(1, this.targetSize / Math.max(img.naturalWidth, img.naturalHeight))
+      const width = Math.max(1, Math.round(img.naturalWidth * scale))
+      const height = Math.max(1, Math.round(img.naturalHeight * scale))
+
+      const canvas = document.createElement('canvas')
+      canvas.width = width
+      canvas.height = height
+      const ctx = canvas.getContext('2d')
+      if (!ctx) return
+      ctx.drawImage(img, 0, 0, width, height)
+
+      const format = this.format
+      const mime = this.mimeForFormat(format)
+      const dataUrl = format === 'jpg' ? canvas.toDataURL(mime, JPEG_QUALITY) : canvas.toDataURL(mime)
+      const comma = dataUrl.indexOf(',')
+      const base64 = comma >= 0 ? dataUrl.slice(comma + 1) : dataUrl
+      const fileName = `${this.baseName(file.name)}-compressed${this.extForFormat(format)}`
+
+      this.setOutput(base64, mime, fileName)
+    } catch {
+      // 源图加载失败（文件可能已被删）→ 静默跳过，等下次触发
+    } finally {
+      URL.revokeObjectURL(url)
+    }
+  }
+
+  /**
+   * 检查是否需要压缩：读 compressSource 判断有无可用源，再用 fingerprint 去重。
+   * - 端口路径（响应式）：fingerprint / 尺寸 / 格式任一变化就压缩
+   * - 拖入路径（一次性）：pendingSource 非空表示需要压一次
+   */
+  private handleCompress(): void {
+    if (this.compressing) return
+    const src = this.compressSource
+    if (!src) return
+
+    const isPending = !!this.pendingSource // 拖入路径有触发信号
+    const fpChanged = src.fingerprint !== this.lastCompressedFingerprint
+    const sizeChanged = this.targetSize !== this.lastCompressedSize
+    const formatChanged = this.format !== this.lastCompressedFormat
+
+    // 去重：源文件没变 + 尺寸没变 + 格式没变 + 不是拖入触发 → 跳过
+    if (!fpChanged && !sizeChanged && !formatChanged && !isPending) return
+
+    this.compressing = true
+    this.runCompress(src.file)
+      .catch(() => { /* runCompress 内部已吞异常 */ })
+      .finally(() => {
+        this.compressing = false
+        this.markCompressed(src.fingerprint, this.targetSize, this.format)
+        // 拖入路径处理完清信号（端口路径不清，保持响应式）
+        if (isPending) this.clearPendingSilent()
+      })
+  }
+
+  /** 压缩完成后内部清 pending 信号，不走 notifyChanged 避免重入 */
+  private clearPendingSilent(): void {
+    this.pendingSourceId = null
   }
 
   /** 压缩完成后由 render.vue 调用，清空拖入路径的触发信号（端口路径不清） */

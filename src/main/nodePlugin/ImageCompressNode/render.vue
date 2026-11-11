@@ -4,11 +4,11 @@ import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { ImgFileValue } from '../../engine/data/ImgFileValue'
 import { ImageCompressNode, type ImageExportFormat } from './node'
 import { ImgFileNode } from '../ImgFileNode/node'
-import { useNodePosition } from '@renderer/composables/useNodePosition'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
 import { messages } from './i18n'
 import HelpDialog from '@renderer/components/HelpDialog.vue'
+import NodeHeader from '@renderer/components/NodeHeader.vue'
 import ImageCompressHelpDialog from './ImageCompressHelpDialog.vue'
 
 // 卡片头部标题走插件 manifest 的多语言 title，未配当前语言时由 resolveNodeTitle 兜底
@@ -24,14 +24,8 @@ const node = computed(() => {
   return n instanceof ImageCompressNode ? n : undefined
 })
 
-// —— 拖拽：压缩节点自身也参与画布移动 ——
-const { startDrag } = useNodePosition(() => node.value)
-
 // —— 帮助浮层开关（弹窗壳由 HelpDialog 负责） ——
 const showHelp = ref(false)
-
-// —— JPEG 输出质量（固定策略，最小实现；后续可做成节点 UI 参数） ——
-const JPEG_QUALITY = 0.85
 
 // —— 目标尺寸（最长边像素）展示：随 onChanged 刷新 ——
 const targetSize = ref(800)
@@ -43,9 +37,9 @@ const exportFormat = ref<ImageExportFormat>('jpg')
 const resultUrl = ref<string | null>(null)
 let revokeUrl: (() => void) | null = null
 
-// —— 体积信息：原始大小（压缩时记录，不被 clearResult 清）与压缩后大小（由输出值反映） ——
-const sourceSize = ref(0)
-const compressedSize = ref(0)
+// —— 体积信息：直接从 node 实例读取（压缩逻辑已迁移到 node.ts） ——
+const sourceSize = computed(() => node.value?.sourceSizeBytes ?? 0)
+const compressedSize = computed(() => node.value?.compressedSizeBytes ?? 0)
 
 function clearResult(): void {
   if (revokeUrl) {
@@ -53,7 +47,6 @@ function clearResult(): void {
     revokeUrl = null
   }
   resultUrl.value = null
-  compressedSize.value = 0
 }
 
 /** 从 node.imageOutput 当前值刷预览图 */
@@ -65,26 +58,7 @@ function refreshResult(n: ImageCompressNode | undefined): void {
     const url = URL.createObjectURL(value.file)
     resultUrl.value = url
     revokeUrl = () => URL.revokeObjectURL(url)
-    compressedSize.value = value.file.size
   }
-}
-
-/** 压缩中标记：防止 onChanged 重入导致重复压缩 */
-let compressing = false
-
-/** 导出格式 → MIME / 扩展名 */
-function mimeForFormat(format: ImageExportFormat): string {
-  return format === 'png' ? 'image/png' : 'image/jpeg'
-}
-
-function extForFormat(format: ImageExportFormat): string {
-  return format === 'png' ? '.png' : '.jpg'
-}
-
-/** 去掉源文件名的后缀，压缩输出文件名为 原名-compressed.新后缀 */
-function baseName(fileName: string): string {
-  const dot = fileName.lastIndexOf('.')
-  return dot > 0 ? fileName.slice(0, dot) : fileName
 }
 
 /** 字节数 → 可读体积（B / KB / MB） */
@@ -113,85 +87,7 @@ const reduceText = computed(() => {
   return `${p >= 0 ? '-' : '+'}${Math.abs(p)}%`
 })
 
-/** 加载图片（Promise 化） */
-function loadImage(url: string): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const img = new Image()
-    img.onload = () => resolve(img)
-    img.onerror = () => reject(new Error('image load failed'))
-    img.src = url
-  })
-}
-
-/**
- * 执行一次压缩：File → canvas 按比例缩小 → toDataURL → node.setOutput。
- * 同时支持两种触发路径：端口输入（响应式，上游值变自动重压缩）和拖入节点（一次性）。
- *
- * @param n    压缩节点实例
- * @param file 待压缩的源文件（来自 compressSource.get 的 file 字段）
- */
-async function runCompress(n: ImageCompressNode, file: File): Promise<void> {
-  sourceSize.value = file.size
-  const url = URL.createObjectURL(file)
-  try {
-    const img = await loadImage(url)
-    const scale = Math.min(1, n.targetSize / Math.max(img.naturalWidth, img.naturalHeight))
-    const width = Math.max(1, Math.round(img.naturalWidth * scale))
-    const height = Math.max(1, Math.round(img.naturalHeight * scale))
-
-    const canvas = document.createElement('canvas')
-    canvas.width = width
-    canvas.height = height
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
-    ctx.drawImage(img, 0, 0, width, height)
-
-    const format = n.exportFormat
-    const mime = mimeForFormat(format)
-    const dataUrl = format === 'jpg' ? canvas.toDataURL(mime, JPEG_QUALITY) : canvas.toDataURL(mime)
-    const comma = dataUrl.indexOf(',')
-    const base64 = comma >= 0 ? dataUrl.slice(comma + 1) : dataUrl
-    const fileName = `${baseName(file.name)}-compressed${extForFormat(format)}`
-
-    n.setOutput(base64, mime, fileName)
-  } catch {
-    // 源图加载失败（文件可能已被删）→ 静默跳过，等下次触发
-  } finally {
-    URL.revokeObjectURL(url)
-  }
-}
-
-/**
- * 检查是否需要压缩：读 compressSource 判断有无可用源，再用 fingerprint 去重。
- * - 端口路径（响应式）：fingerprint 没变就跳过，变了就压缩
- * - 拖入路径（一次性）：pendingSource 非空表示需要压一次
- * - 两种都存在时端口优先
- */
-function handleCompress(n: ImageCompressNode | undefined): void {
-  if (!n || compressing) return
-  const src = n.compressSource
-  if (!src) return
-
-  const isPending = !!n.pendingSource // 拖入路径有触发信号
-  const fpChanged = src.fingerprint !== n.lastCompressedFp
-  const sizeChanged = n.targetSize !== n.lastCompressedSz
-  const formatChanged = n.exportFormat !== n.lastCompressedFmt
-
-  // 去重：源文件没变 + 尺寸没变 + 格式没变 + 不是拖入触发 → 跳过
-  if (!fpChanged && !sizeChanged && !formatChanged && !isPending) return
-
-  compressing = true
-  runCompress(n, src.file)
-    .catch(() => { })
-    .finally(() => {
-      compressing = false
-      n.markCompressed(src.fingerprint, n.targetSize, n.exportFormat)
-      // 拖入路径处理完清信号（端口路径不清，保持响应式）
-      if (isPending) n.clearPending()
-    })
-}
-
-// —— 订阅 node.onChanged：结果刷新 + 目标尺寸刷新 + 收到触发信号（拖入或端口值变）触发压缩 ——
+// —— 订阅 node.onChanged：压缩逻辑已迁移到 node.ts，这里只做 UI 刷新（预览图、尺寸、格式） ——
 let unsubscribe: (() => void) | undefined
 watch(
   node,
@@ -201,12 +97,10 @@ watch(
       refreshResult(n)
       targetSize.value = n?.targetSize ?? 800
       exportFormat.value = n?.exportFormat ?? 'jpg'
-      handleCompress(n)
     })
     refreshResult(n)
     targetSize.value = n?.targetSize ?? 800
     exportFormat.value = n?.exportFormat ?? 'jpg'
-    handleCompress(n)
   },
   { immediate: true, flush: 'sync' }
 )
@@ -264,20 +158,9 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="compress-card" @pointerdown="startDrag" :title="t('dragHint')">
-    <!-- 头部类型标签 + 帮助入口（导出格式选择移到按钮左侧） -->
-    <div class="compress-card__header">
-      <span class="compress-card__title">{{ nodeTitle }}</span>
-      <div class="compress-card__header-actions">
-        <button
-          class="compress-card__help"
-          type="button"
-          :title="t('helpTitle')"
-          @pointerdown.stop
-          @click.stop="showHelp = true"
-        >?</button>
-      </div>
-    </div>
+  <div class="compress-card">
+    <!-- 头部：通用 NodeHeader，自带拖拽、最小化、帮助按钮 -->
+    <NodeHeader :title="nodeTitle" @help="showHelp = true" />
 
     <!-- 压缩结果预览区 -->
     <div class="compress-card__image-area">
@@ -349,60 +232,6 @@ onUnmounted(() => {
   padding: 8px;
   padding-top: 0;
   user-select: none;
-
-  &__header {
-    flex-shrink: 0; // 定高不参与压缩，保证 jpg/png 下拉完整展示
-    // height: 26px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 4px 0;
-    border-bottom: 1px dashed @node-border-color;
-    overflow: hidden;
-  }
-
-  // 头部右侧操作区：帮助按钮
-  &__header-actions {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    flex-shrink: 0;
-  }
-
-  // 帮助按钮沿用其他节点的灰底圆问号外观
-  &__help {
-    all: unset;
-    cursor: pointer;
-    width: 18px;
-    height: 18px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    background: #f3f4f6;
-    color: #6b7280;
-    font-size: 12px;
-    font-weight: 600;
-    line-height: 1;
-    transition: background 0.15s, color 0.15s;
-
-    &:hover {
-      background: #dbeafe;
-      color: #2563eb;
-    }
-  }
-
-  &__title {
-    flex: 1;
-    min-width: 0;
-    font-size: 11px;
-    font-weight: 600;
-    color: #8a9099;
-    letter-spacing: 0.5px;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-  }
 
   // 导出格式下拉：贴合卡片风格的小尺寸 select
   &__format {

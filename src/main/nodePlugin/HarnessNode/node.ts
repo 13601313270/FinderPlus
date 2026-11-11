@@ -1213,6 +1213,9 @@ export class HarnessNode extends Node {
     this.setBox(360, 420)
   }
 
+  /** 子节点状态变化 → 触发 HarnessNode 重绘卡槽内的状态徽标 */
+  private childUnsubscribes = new Map<string, () => void>()
+
   private buildOutputPort(json: boolean): OutputPort {
     return new OutputPort('result', json ? JsonValue : StringValue, OUTPUT_LABEL)
   }
@@ -1227,6 +1230,10 @@ export class HarnessNode extends Node {
 
     child.containerNode = this
     this.children.push(child)
+    // 子节点状态变化（running→stable、位置变化等）→ 让卡槽重绘状态徽标
+    if (!this.childUnsubscribes.has(child.id)) {
+      this.childUnsubscribes.set(child.id, child.onChanged(() => this.notifyChanged()))
+    }
     this.sceneRef?.notifyChanged() // App 层重算顶层节点（被收养的从画布消失）
     this.notifyChanged()
   }
@@ -1240,6 +1247,9 @@ export class HarnessNode extends Node {
     this.children.splice(idx, 1)
 
     child.containerNode = undefined
+    // 取消子节点 onChanged 订阅，避免内存泄漏
+    const off = this.childUnsubscribes.get(child.id)
+    if (off) { off(); this.childUnsubscribes.delete(child.id) }
 
     // 如果是 Model 槽位，清 modelNode
     if (child === this.modelNode) {
@@ -1762,6 +1772,9 @@ export class HarnessNode extends Node {
 
   async beforeDestroy(): Promise<void> {
     this.cancelRun()
+    // 统一取消所有子节点 onChanged 订阅，避免悬挂回调
+    for (const off of this.childUnsubscribes.values()) { off() }
+    this.childUnsubscribes.clear()
     // 释放所有子节点回画布
     while (this.children.length > 0) {
       const child = this.children[0]

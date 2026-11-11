@@ -340,17 +340,30 @@ function closeToolEditor() {
     </div>
 
     <!-- 所有工具（内置 + LLM 动态注册，可点击查看详情） -->
-    <div class="builtin-row">
-      <span class="builtin-row__label">{{ t('builtinHeader') }}:</span>
-      <button
-        v-for="info in allToolInfos"
-        :key="info.schema.function.name"
-        type="button"
-        class="builtin-row__tag"
-        :class="{ 'builtin-row__tag--dynamic': info.kind === 'dynamic' }"
-        @click="builtinInfo = info"
-        :title="info.schema.function.description"
-      >{{ info.schema.function.name }}</button>
+    <div class="card-slot card-slot--builtin">
+      <div class="card-slot__label">
+        <span class="card-slot__badge card-slot__badge--builtin">{{ t('builtinHeader') }}</span>
+        <span v-if="allToolInfos.length > 0" class="card-slot__count">{{ allToolInfos.length }}</span>
+      </div>
+      <template v-if="allToolInfos.length > 0">
+        <div class="embedded-nodes-grid">
+          <button
+            v-for="info in allToolInfos"
+            :key="info.schema.function.name"
+            type="button"
+            class="builtin-chip"
+            :class="{ 'builtin-chip--dynamic': info.kind === 'dynamic' }"
+            @click="builtinInfo = info"
+            :title="info.schema.function.description"
+          >
+            <span class="builtin-chip__dot" />
+            <span class="builtin-chip__name">{{ info.schema.function.name }}</span>
+          </button>
+        </div>
+      </template>
+      <template v-else>
+        <div class="card-slot__drop-hint">暂无可用工具</div>
+      </template>
     </div>
 
     <!-- ── 结果区 ── -->
@@ -618,30 +631,56 @@ function closeToolEditor() {
   gap: 4px;
 }
 
-// ── 内置工具 ──
-.builtin-row {
-  display: flex;
+// ── Tools 工具卡槽 badge 变体 ──
+.card-slot--builtin .card-slot__badge {
+  background: #ede9fe;
+  color: #6d28d9;
+}
+
+// ── 内置/动态工具 chip（网格卡片） ──
+.builtin-chip {
+  all: unset;
+  cursor: pointer;
+  display: inline-flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 4px;
-  font-size: 12px;
-  &__label { color: #94a3b8; font-weight: 600; }
-  &__tag {
-    all: unset;
-    cursor: pointer;
-    padding: 4px 8px;
-    border-radius: 3px;
-    background: #f1f5f9;
-    color: #475569;
-    font-family: ui-monospace, Menlo, monospace;
-    transition: background 0.12s, color 0.12s;
-    &:hover { background: #dbeafe; color: #1d4ed8; }
-    &--dynamic {
+  gap: 6px;
+  padding: 5px 9px;
+  border-radius: 6px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 11px;
+  color: #475569;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+  &:hover {
+    background: #eff6ff;
+    border-color: #93c5fd;
+    color: #1d4ed8;
+  }
+  &--dynamic {
+    background: #f0fdf4;
+    border-color: #bbf7d0;
+    color: #166534;
+    &:hover {
       background: #dcfce7;
-      color: #166534;
-      border: 1px solid #86efac;
-      &:hover { background: #bbf7d0; color: #15803d; }
+      border-color: #86efac;
+      color: #15803d;
     }
+    .builtin-chip__dot { background: #22c55e; }
+  }
+  &__dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #94a3b8;
+    flex-shrink: 0;
+  }
+  &__name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 140px;
   }
 }
 

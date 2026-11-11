@@ -256,34 +256,37 @@ export class ProxyNode extends Node {
     this.notifyChanged()
   }
 
-  // —— 端口值透传 ——
-
-  /** 跳过脏标记——Proxy 是透传节点，输入变 = 立即透传，没有"脏"这个中间态 */
-  _onInputPortChanged(ports: InputPort[], source: InputPortChangeSource): void {
-    this.inputPortReceiveValue(ports, source)
-  }
-
-  inputPortReceiveValue(ports: InputPort[], _source: InputPortChangeSource): void {
-    for (const port of ports) {
-      const [value] = port.value
-      if (value === undefined) continue
-
-      // 输入端口 → 配对的 call 端口
-      const inputIdx = this.inputPorts.indexOf(port)
-      if (inputIdx !== -1) {
-        const callPort = this.callPorts[inputIdx]
-        if (callPort) callPort.commit(value, { force: true })
-        continue
+  inputPortReceiveValue(ports: InputPort[], source: InputPortChangeSource): void {
+    if (source === 'receive') {
+      const isReceiveInput = this.inputPorts.includes(ports[0]);
+      const isReceiveCallback = this.callbackPorts.includes(ports[0]);
+      if (isReceiveInput) {
+        this.beginRun()
+        for (const port of ports) {
+          const [value] = port.value
+          // 输入端口 → 配对的 call 端口
+          const inputIdx = this.inputPorts.indexOf(port)
+          if (inputIdx !== -1) {
+            const callPort = this.callPorts[inputIdx]
+            if (callPort) callPort.commit(value, { force: true })
+            continue
+          }
+        }
+        this.notifyChanged()
       }
-
-      // callback 端口 → 配对的输出端口
-      const callbackIdx = this.callbackPorts.indexOf(port)
-      if (callbackIdx !== -1) {
-        const outputPort = this.outputPorts[callbackIdx]
-        if (outputPort) outputPort.commit(value, { force: true })
+      if (isReceiveCallback) {
+        for (const port of ports) {
+          const [value] = port.value
+          const callbackIdx = this.callbackPorts.indexOf(port)
+          if (callbackIdx !== -1) {
+            const outputPort = this.outputPorts[callbackIdx]
+            if (outputPort) outputPort.commit(value, { force: true })
+          }
+        }
+        this.notifyChanged()
+        this.completeRun()
       }
     }
-    this.notifyChanged()
   }
 
   // —— 端口构建 ——

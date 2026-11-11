@@ -761,7 +761,7 @@ export class HarnessNode extends Node {
   private localPrompt = ''
   private localSystem = ''
   private result = ''
-  private status: 'idle' | 'loading' | 'done' | 'error' = 'idle'
+  private _status: 'idle' | 'loading' | 'done' | 'error' = 'idle'
   private errorMessage = ''
   private maxIterations = 10
   private jsonOutput = false
@@ -1076,7 +1076,7 @@ export class HarnessNode extends Node {
   }
 
   get displayResult(): string {
-    if (this.status === 'error') return this.errorMessage
+    if (this._status === 'error') return this.errorMessage
     return this.result
   }
 
@@ -1084,21 +1084,25 @@ export class HarnessNode extends Node {
     return this.loop.messages.slice()
   }
 
+  get status(): 'idle' | 'loading' | 'done' | 'error' {
+    return this._status
+  }
+
   get displayIteration(): number {
     return this.loop.messages.filter(m => m.role === 'assistant').length
   }
 
   manualTrigger(): void {
-    if (this.status === 'loading') return
+    if (this._status === 'loading') return
     if (!this.loop.isModelReady) {
-      this.status = 'error'
+      this._status = 'error'
       this.errorMessage = '请先拖入一个 LLM 节点作为 Model'
       this.notifyChanged()
       return
     }
     const { system, promptMm } = this.resolveInputs()
     if (promptMm.parts.length === 0) {
-      this.status = 'idle'
+      this._status = 'idle'
       this.result = ''
       this.errorMessage = ''
       this.notifyChanged()
@@ -1109,8 +1113,8 @@ export class HarnessNode extends Node {
 
   cancelRun(): void {
     this.loop.abort()
-    if (this.status === 'loading') {
-      this.status = 'idle'
+    if (this._status === 'loading') {
+      this._status = 'idle'
       this.errorMessage = ''
       this.result = ''
       this.failRun()
@@ -1120,7 +1124,7 @@ export class HarnessNode extends Node {
 
   private async doRun(system: string, promptMm: MultiModalValue): Promise<void> {
     this.beginRun()
-    this.status = 'loading'
+    this._status = 'loading'
     this.errorMessage = ''
     this.result = ''
     // 刷新所有 CanvasNodeTool 的节点引用
@@ -1131,7 +1135,7 @@ export class HarnessNode extends Node {
     try {
       const finalText = await this.loop.run(system, promptMm)
       this.result = finalText
-      this.status = 'done'
+      this._status = 'done'
 
       if (this.jsonOutput) {
         try {
@@ -1150,7 +1154,7 @@ export class HarnessNode extends Node {
         return
       }
       this.errorMessage = err instanceof Error ? err.message : String(err)
-      this.status = 'error'
+      this._status = 'error'
       this.failRun()
     }
     this.notifyChanged()

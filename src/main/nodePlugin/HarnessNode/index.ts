@@ -24,6 +24,7 @@ export const manifest: NodePluginManifest = {
     it: 'Imbrago Agente'
   },
   render,
+  detailPanel: () => import('./HarnessDetailPanel.vue'),
   iconImage: LLMIcon,
   category: 'ai',
   platforms: ['mac']

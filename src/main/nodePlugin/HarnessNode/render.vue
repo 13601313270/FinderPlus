@@ -1,39 +1,32 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref, shallowRef, computed } from 'vue'
+import { onMounted, onUnmounted, ref, shallowRef } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
-import { HarnessNode, type HarnessMessage, type CanvasToolBinding } from './node'
+import { HarnessNode, type CanvasToolBinding } from './node'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
 import { messages } from './i18n'
 import NodeHeader from '@renderer/components/NodeHeader.vue'
 import { manualBeginDrag } from '@renderer/composables/useNodePosition'
 import type { Node } from '../../engine/node/Node'
+import GearIcon from '@renderer/components/icons/GearIcon.vue'
+import { useNodeDetail } from '@renderer/composables/useNodeDetail'
 import { viewport } from '@renderer/canvas/viewport'
 
 const props = defineProps<{ id: string }>()
 
 const t = useLocalizedMessages(messages)
-/** 从 content（string 或 array）里提取纯文本 */
-function extractTextMm(content: string | Array<{ type: string; [k: string]: unknown }> | undefined): string {
-  if (!content) return ''
-  if (typeof content === 'string') return content
-  return content
-    .filter((p): p is { type: 'text'; text: string } => p.type === 'text' && typeof p.text === 'string')
-    .map(p => p.text)
-    .join('\n')
-}
 
 const harnessNode = shallowRef<HarnessNode | undefined>(undefined)
 
 const nodeTitle = useNodeTitle(() => harnessNode.value, '?')
+
+const { openNodeDetail } = useNodeDetail()
 
 const status = ref<'idle' | 'loading' | 'done' | 'error'>('idle')
 const result = ref('')
 const hasModel = ref(false)
 const modelSummary = ref<{ displayLabel: string; state: string; id: string } | null>(null)
 const canvasTools = ref<Array<CanvasToolBinding & { childNode: Node | null }>>([])
-const trajectory = ref<HarnessMessage[]>([])
-const iteration = ref(0)
 const promptConnected = ref(false)
 const systemConnected = ref(false)
 const localPrompt = ref('')
@@ -116,8 +109,6 @@ function syncFromNode() {
     return { ...b, childNode: child ?? null }
   })
 
-  trajectory.value = [...n.displayTrajectory]
-  iteration.value = n.displayIteration
   promptConnected.value = n.promptConnected
   systemConnected.value = n.systemConnected
   localPrompt.value = n.displayPrompt
@@ -210,35 +201,6 @@ function stateColor(state: string): string {
   }
 }
 
-// —— Trajectory 分组 ——
-const trajectoryForView = computed(() => {
-  const groups: Array<{
-    kind: 'assistant' | 'tool_call' | 'final'
-    content: string
-    meta?: string
-  }> = []
-  let i = 0
-  while (i < trajectory.value.length) {
-    const msg = trajectory.value[i]
-    if (msg.role === 'assistant') {
-      if (msg.tool_calls && msg.tool_calls.length > 0) {
-        for (const tc of msg.tool_calls) {
-          groups.push({ kind: 'tool_call', content: tc.function.name, meta: tc.function.arguments })
-        }
-      } else if (msg.content) {
-        groups.push({ kind: 'final', content: typeof msg.content === 'string' ? msg.content : extractTextMm(msg.content) })
-      }
-      i++
-    } else if (msg.role === 'tool') {
-      groups.push({ kind: 'assistant', content: typeof msg.content === 'string' ? msg.content : extractTextMm(msg.content), meta: msg.name })
-      i++
-    } else {
-      i++
-    }
-  }
-  return groups
-})
-
 // —— resize handle ——
 const MIN_W = 320
 const MIN_H = 280
@@ -311,7 +273,13 @@ function closeToolEditor() {
 
 <template>
   <div class="harness-node">
-    <NodeHeader :title="nodeTitle" />
+    <NodeHeader :title="nodeTitle">
+      <template #actions>
+        <button class="node__gear" type="button" @pointerdown.stop @click.stop="openNodeDetail(id)">
+          <GearIcon />
+        </button>
+      </template>
+    </NodeHeader>
 
     <!-- ── 卡槽区 ── -->
 
@@ -455,32 +423,6 @@ function closeToolEditor() {
       <template v-else>
         <span class="placeholder">{{ t('promptPlaceholder') }}</span>
       </template>
-    </div>
-
-    <!-- ── Trajectory ── -->
-    <div v-if="trajectoryForView.length > 0" class="trajectory">
-      <div class="trajectory__header">
-        <span>{{ t('trajectoryHeader') }}</span>
-        <span class="trajectory__iter">Iter: {{ iteration }}/{{ harnessNode?.displayMaxIterations ?? 10 }}</span>
-      </div>
-      <div class="trajectory__body">
-        <div
-          v-for="(g, idx) in trajectoryForView"
-          :key="idx"
-          class="traj-row"
-          :class="{
-            'traj-row--call': g.kind === 'tool_call',
-            'traj-row--result': g.kind === 'assistant',
-            'traj-row--final': g.kind === 'final'
-          }"
-        >
-          <span class="traj-row__icon">
-            {{ g.kind === 'tool_call' ? '🔧' : g.kind === 'assistant' ? '📦' : '✅' }}
-          </span>
-          <span class="traj-row__name" v-if="g.meta">{{ g.meta }}</span>
-          <span class="traj-row__content">{{ g.content }}</span>
-        </div>
-      </div>
     </div>
 
     <!-- ── 取消按钮（只有 loading 时出现） ── -->
@@ -710,53 +652,6 @@ function closeToolEditor() {
   .placeholder { color: #cbd5e1; font-style: italic; }
 }
 
-// ── Trajectory ──
-.trajectory {
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
-  overflow: hidden;
-
-  &__header {
-    display: flex;
-    justify-content: space-between;
-    padding: 4px 8px;
-    font-size: 10px;
-    font-weight: 700;
-    color: #475569;
-    background: #f1f5f9;
-  }
-  &__iter { font-weight: 500; color: #94a3b8; }
-  &__body { max-height: 140px; overflow-y: auto; padding: 4px; }
-}
-
-.traj-row {
-  display: flex;
-  gap: 4px;
-  padding: 3px 6px;
-  font-size: 11px;
-  line-height: 1.35;
-  align-items: flex-start;
-
-  &--call { color: #0369a1; background: #f0f9ff; }
-  &--result { color: #64748b; font-size: 10px; }
-  &--final { color: #16a34a; font-weight: 500; background: #f0fdf4; }
-
-  &__icon { flex-shrink: 0; }
-  &__name {
-    font-family: ui-monospace, Menlo, monospace;
-    font-weight: 600;
-    flex-shrink: 0;
-  }
-  &__content {
-    flex: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-  }
-}
-
 // ── Footer ──
 .footer { display: flex; justify-content: flex-end; }
 
@@ -967,6 +862,31 @@ function closeToolEditor() {
   background: transparent;
   color: #64748b;
   &:hover { background: #f1f5f9; color: #334155; }
+}
+
+.node__gear {
+  all: unset;
+  cursor: pointer;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #f3f4f6;
+  color: #6b7280;
+  transition: background 0.15s, color 0.15s;
+  flex-shrink: 0;
+
+  svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  &:hover {
+    background: #dbeafe;
+    color: #2563eb;
+  }
 }
 
 @keyframes harness-spin { to { transform: rotate(360deg); } }

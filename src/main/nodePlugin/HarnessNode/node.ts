@@ -11,6 +11,8 @@ import type { Value } from '../../engine/data/Value'
 import type { InputPortChangeSource } from '../../engine/node/Node'
 import type { RawChatResponse, ChatMessage } from '../LLMNode/node'
 
+const { language } = useLanguageSettings()
+
 /** HarnessNode 内部使用的 message 格式 */
 export interface HarnessMessage {
   role: 'system' | 'user' | 'assistant' | 'tool'
@@ -641,6 +643,7 @@ function formatValueAsText(value: Value): string {
 // 需要引入的 Value 类（上面 wrapArgValue 用到了）
 import { NumberValue } from '../../engine/data/NumberValue'
 import { BoolValue } from '../../engine/data/BoolValue'
+import { useLanguageSettings } from '@renderer/composables/useLanguageSettings'
 
 /** 内置工具注册：5 个最基础的 JS 函数工具 */
 function registerBuiltinTools(registry: ToolRegistry): void {
@@ -1409,10 +1412,17 @@ export class HarnessNode extends Node {
       'number-input': 'Output a predefined number value',
       'text-input': 'Output a predefined text value'
     }
-    let description = typeHints[node.type] ?? node.type.replace(/-/g, ' ')
+    const baseDesc = typeHints[node.type] ?? node.type.replace(/-/g, ' ')
+    // 用户自定义了 displayName 时优先带到 description 里，LLM 更容易按名字识别这个 tool
+    let description = node.displayName
+      ? `${node.displayName} — ${baseDesc}`
+      : baseDesc
     // 追加输入输出端口的简要说明
-    const inputDesc = node.inputPorts.map(p => p.id).join(', ')
-    const outputDesc = firstOutput ? firstOutput.id : 'result'
+    const inputDesc = node.inputPorts.map(p => {
+      console.log('p', p)
+      return p.id + ' ' + (p.label?.[language.value] ?? '');
+    }).join('。\n')
+    const outputDesc = firstOutput ? (firstOutput.id + ' ' + (firstOutput.label?.[language.value] ?? '')) : 'result'
     description += `\nInputs: ${inputDesc || '(none)'}\nOutput: ${outputDesc}`
 
     return {

@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, shallowRef } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
-import { HarnessNode, type CanvasToolBinding } from './node'
+import { HarnessNode, type CanvasToolBinding, type BuiltinToolInfo, type PendingUserPrompt } from './node'
+import { getNodeManifest } from '../index'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
 import { messages } from './i18n'
@@ -27,44 +28,50 @@ const result = ref('')
 const hasModel = ref(false)
 const modelSummary = ref<{ displayLabel: string; state: string; id: string } | null>(null)
 const canvasTools = ref<Array<CanvasToolBinding & { childNode: Node | null }>>([])
-const promptConnected = ref(false)
-const systemConnected = ref(false)
-const localPrompt = ref('')
-const localSystem = ref('')
-const attachedImages = ref<File[]>([])
-
-/** 图片选择回调：点 "+" 按钮触发（原生文件选择器） */
-function onPickImages(files: FileList | null) {
-  if (!files || files.length === 0) return
-  for (const f of files) {
-    if (f.type.startsWith('image/')) attachedImages.value.push(f)
-  }
-}
-
-/** 移除某张已选图片 */
-function removeImage(i: number) {
-  attachedImages.value.splice(i, 1)
-}
-
-/** 暴露给 template：File → object URL */
-function urlOf(file: File): string {
-  return URL.createObjectURL(file)
-}
-
-/** 本地草稿变更 → 组装 MultiModalValue → commit 到 promptInput 触发执行 */
-function commitLocalDraft() {
-  const parts: Array<{ type: 'text'; text: string } | { type: 'image'; file: File }> = []
-  const text = localPrompt.value.trim()
-  if (text) parts.push({ type: 'text', text })
-  for (const f of attachedImages.value) parts.push({ type: 'image', file: f })
-  if (parts.length === 0) return
-  harnessNode.value?.commitPromptMm(parts)
-}
 
 let unsubscribe: (() => void) | undefined
 
-// 内置工具名称（硬编码，与 node.ts registerBuiltinTools 一致）
-const builtinToolNames = ['json_parse', 'json_get', 'regex_extract', 'url_encode', 'string_replace']
+// 所有工具列表（内置 + LLM 动态注册），从 node 模型层取完整详情
+const allToolInfos = ref<BuiltinToolInfo[]>([])
+
+// 工具详情弹窗
+const builtinInfo = ref<BuiltinToolInfo | null>(null)
+
+// ask_user 挂起中的弹窗
+const pendingPrompt = ref<PendingUserPrompt | null>(null)
+/** 多选场景下，前端暂存用户已勾选的选项索引 */
+const pendingPromptSelected = ref<Set<number>>(new Set())
+
+function onAskOptionClick(idx: number) {
+  const p = pendingPrompt.value
+  if (!p) return
+  if (p.multiple) {
+    if (pendingPromptSelected.value.has(idx)) {
+      pendingPromptSelected.value.delete(idx)
+    } else {
+      pendingPromptSelected.value.add(idx)
+    }
+  } else {
+    // 单选：直接 resolve，不再等用户点"确定"
+    harnessNode.value?.resolveUserPrompt(p.options[idx])
+    pendingPromptSelected.value.clear()
+  }
+}
+
+function onAskConfirm() {
+  const p = pendingPrompt.value
+  if (!p) return
+  if (p.multiple) {
+    const picks = Array.from(pendingPromptSelected.value).sort((a, b) => a - b).map(i => p.options[i])
+    harnessNode.value?.resolveUserPrompt(picks)
+  }
+  pendingPromptSelected.value.clear()
+}
+
+function onAskCancel() {
+  pendingPromptSelected.value.clear()
+  harnessNode.value?.cancelPendingPrompt()
+}
 
 // 槽位拖入高亮态
 const modelDropActive = ref(false)
@@ -109,45 +116,18 @@ function syncFromNode() {
     return { ...b, childNode: child ?? null }
   })
 
-  promptConnected.value = n.promptConnected
-  systemConnected.value = n.systemConnected
-  localPrompt.value = n.displayPrompt
-  localSystem.value = n.displaySystem
-}
+  allToolInfos.value = n.builtinToolInfos
 
-function onPromptInput(val: string) {
-  localPrompt.value = val
-  harnessNode.value?.setPrompt(val)
-}
-
-function onSystemInput(val: string) {
-  localSystem.value = val
-  harnessNode.value?.setSystem(val)
+  // ask_user 弹窗同步（挂起中 → 开弹窗；resolve 完 → 关弹窗 + 清空选择态）
+  const nextPending = n.pendingUserPrompt
+  if (nextPending?.handle !== pendingPrompt.value?.handle) {
+    pendingPrompt.value = nextPending
+    if (!nextPending) pendingPromptSelected.value.clear()
+  }
 }
 
 function onStopClick() {
   harnessNode.value?.cancelRun()
-}
-
-function onReleaseModel() {
-  const n = harnessNode.value
-  if (n && n.modelNode) {
-    n.removeChild(n.modelNode)
-  }
-}
-
-function onReleaseTool(toolName: string) {
-  const n = harnessNode.value
-  if (!n) return
-  const binding = n.canvasTools.find(b => b.toolName === toolName)
-  if (!binding) return
-  const child = n.children.find(c => c.id === binding.nodeId)
-  if (child) {
-    n.removeChild(child)
-  } else {
-    // 兜底：如果节点不在 children 里（被删了），只清 binding
-    n.removeTool(toolName)
-  }
 }
 
 /**
@@ -299,7 +279,13 @@ function closeToolEditor() {
       </div>
       <template v-if="hasModel && modelSummary">
         <div class="embedded-node" @pointerdown.stop="startChildDrag(harnessNode?.modelNode ?? null, $event)">
-          <span class="embedded-node__emoji">🧠</span>
+          <img
+            v-if="harnessNode?.modelNode && getNodeManifest(harnessNode.modelNode.type)?.iconImage"
+            :src="getNodeManifest(harnessNode.modelNode.type)!.iconImage!"
+            class="embedded-node__icon"
+            alt=""
+          />
+          <span v-else class="embedded-node__emoji">🧠</span>
           <div class="embedded-node__info">
             <div class="embedded-node__name">{{ modelSummary.displayLabel }}</div>
             <div
@@ -307,9 +293,6 @@ function closeToolEditor() {
               :style="{ color: stateColor(modelSummary.state) }"
             >● {{ modelSummary.state }}</div>
           </div>
-          <button class="embedded-node__release" type="button"
-            @pointerdown.stop
-            @click.stop="onReleaseModel" title="释放回画布">↩</button>
         </div>
       </template>
       <template v-else>
@@ -330,7 +313,13 @@ function closeToolEditor() {
         <div class="embedded-nodes-grid">
           <div v-for="tool in canvasTools" :key="tool.toolName" class="embedded-node embedded-node--compact"
                @pointerdown.stop="startChildDrag(tool.childNode, $event)">
-            <span class="embedded-node__emoji">
+            <img
+              v-if="tool.childNode && getNodeManifest(tool.childNode.type)?.iconImage"
+              :src="getNodeManifest(tool.childNode.type)!.iconImage!"
+              class="embedded-node__icon"
+              alt=""
+            />
+            <span v-else class="embedded-node__emoji">
               {{ nodeTypeEmoji(tool.childNode?.type ?? '') }}
             </span>
             <div class="embedded-node__info">
@@ -342,9 +331,6 @@ function closeToolEditor() {
             <button class="embedded-node__edit" type="button"
               @pointerdown.stop
               @click.stop="openToolEditor(tool)" title="编辑 tool 名称和描述">⚙</button>
-            <button class="embedded-node__release" type="button"
-              @pointerdown.stop
-              @click.stop="onReleaseTool(tool.toolName)" title="释放回画布">↩</button>
           </div>
         </div>
       </template>
@@ -353,50 +339,18 @@ function closeToolEditor() {
       </template>
     </div>
 
-    <!-- 内置工具（只读 tag） -->
+    <!-- 所有工具（内置 + LLM 动态注册，可点击查看详情） -->
     <div class="builtin-row">
       <span class="builtin-row__label">{{ t('builtinHeader') }}:</span>
-      <span v-for="n in builtinToolNames" :key="n" class="builtin-row__tag">{{ n }}</span>
-    </div>
-
-    <!-- ── Prompt 区 ── -->
-    <div class="prompt-area">
-      <textarea
-        v-if="!systemConnected"
-        v-model="localSystem"
-        class="textarea textarea--system"
-        placeholder="System"
-        rows="1"
-        @input="(e) => onSystemInput((e.target as HTMLTextAreaElement).value)"
-      />
-      <textarea
-        v-if="!promptConnected"
-        v-model="localPrompt"
-        class="textarea textarea--prompt"
-        :placeholder="t('promptPlaceholder')"
-        rows="2"
-        @input="(e) => onPromptInput((e.target as HTMLTextAreaElement).value)"
-      />
-      <!-- 多模态输入区（本地草稿才显示） -->
-      <template v-if="!promptConnected">
-        <!-- 已选图片预览 -->
-        <div v-if="attachedImages.length > 0" class="image-previews">
-          <div v-for="(f, i) in attachedImages" :key="i" class="image-chip">
-            <img :src="urlOf(f)" class="image-chip-thumb" />
-            <button class="image-chip-x" @click="removeImage(i)">×</button>
-          </div>
-        </div>
-        <!-- 图片选择按钮 + 发送按钮 -->
-        <div class="draft-actions">
-          <label class="btn btn--pick" :title="t('pickImage')">
-            <input type="file" accept="image/*" multiple hidden @change="(e) => onPickImages((e.target as HTMLInputElement).files)" />
-            ＋ {{ t('pickImage') }}
-          </label>
-          <button class="btn btn--send" :disabled="status === 'loading' || (!localPrompt.trim() && attachedImages.length === 0) || !hasModel" @click="commitLocalDraft">
-            {{ status === 'loading' ? t('loading') : t('send') }}
-          </button>
-        </div>
-      </template>
+      <button
+        v-for="info in allToolInfos"
+        :key="info.schema.function.name"
+        type="button"
+        class="builtin-row__tag"
+        :class="{ 'builtin-row__tag--dynamic': info.kind === 'dynamic' }"
+        @click="builtinInfo = info"
+        :title="info.schema.function.description"
+      >{{ info.schema.function.name }}</button>
     </div>
 
     <!-- ── 结果区 ── -->
@@ -454,6 +408,84 @@ function closeToolEditor() {
           <div class="harness-modal__footer">
             <button class="btn harness-btn--ghost" type="button" @click="closeToolEditor">取消</button>
             <button class="btn btn--primary" type="button" @click="saveToolEditor">保存</button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- ── 内置工具详情弹窗 ── -->
+    <Teleport to="body">
+      <div v-if="builtinInfo" class="harness-modal-backdrop" @click.self="builtinInfo = null">
+        <div class="harness-modal">
+          <div class="harness-modal__header">
+            <span>🔧 {{ builtinInfo.schema.function.name }}</span>
+            <button class="harness-modal__close" type="button" @click="builtinInfo = null">✕</button>
+          </div>
+          <div class="harness-modal__body">
+            <div class="harness-builtin-desc">{{ builtinInfo.schema.function.description }}</div>
+            <div class="harness-builtin-section">
+              <div class="harness-builtin-section__title">参数</div>
+              <div
+                v-for="(prop, key) in (builtinInfo.schema.function.parameters.properties as Record<string, { type: string; description?: string }>)"
+                :key="key"
+                class="harness-builtin-param"
+              >
+                <span class="harness-builtin-param__name">{{ key }}</span>
+                <span class="harness-builtin-param__type">{{ prop.type }}</span>
+                <span
+                  v-if="builtinInfo.schema.function.parameters.required?.includes(key as string)"
+                  class="harness-builtin-param__req"
+                >必填</span>
+                <span class="harness-builtin-param__desc">{{ prop.description }}</span>
+              </div>
+              <div v-if="!builtinInfo.schema.function.parameters.properties" class="harness-builtin-section__empty">无参数</div>
+            </div>
+            <div v-if="builtinInfo.sourceCode" class="harness-builtin-section">
+              <div class="harness-builtin-section__title">函数体</div>
+              <pre class="harness-builtin-code"><code>{{ builtinInfo.sourceCode }}</code></pre>
+            </div>
+          </div>
+          <div class="harness-modal__footer">
+            <button class="btn btn--primary" type="button" @click="builtinInfo = null">关闭</button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- ── ask_user 弹窗（AI 暂停等待用户决策） ── -->
+    <Teleport to="body">
+      <div v-if="pendingPrompt" class="harness-modal-backdrop">
+        <div class="harness-modal harness-modal--ask">
+          <div class="harness-modal__header">
+            <span>🤖 AI 需要你的决定</span>
+          </div>
+          <div class="harness-modal__body">
+            <div class="harness-ask-question">{{ pendingPrompt.question }}</div>
+            <div class="harness-ask-options">
+              <button
+                v-for="(opt, idx) in pendingPrompt.options"
+                :key="idx"
+                type="button"
+                class="harness-ask-option"
+                :class="{ 'harness-ask-option--selected': pendingPrompt.multiple && pendingPromptSelected.has(idx) }"
+                @click="onAskOptionClick(idx)"
+              >
+                <span v-if="pendingPrompt.multiple" class="harness-ask-option__tick">
+                  {{ pendingPromptSelected.has(idx) ? '✓' : '' }}
+                </span>
+                <span class="harness-ask-option__text">{{ opt }}</span>
+              </button>
+            </div>
+          </div>
+          <div class="harness-modal__footer">
+            <button class="btn harness-btn--ghost" type="button" @click="onAskCancel">取消</button>
+            <button
+              v-if="pendingPrompt.multiple"
+              class="btn btn--primary"
+              type="button"
+              :disabled="pendingPromptSelected.size === 0"
+              @click="onAskConfirm"
+            >确定</button>
           </div>
         </div>
       </div>
@@ -536,6 +568,7 @@ function closeToolEditor() {
   }
 
   &__emoji { font-size: 18px; line-height: 1; flex-shrink: 0; }
+  &__icon { width: 18px; height: 18px; object-fit: contain; flex-shrink: 0; }
   &__info { flex: 1; min-width: 0; }
   &__name {
     font-size: 12px;
@@ -590,35 +623,26 @@ function closeToolEditor() {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 3px;
-  font-size: 10px;
+  gap: 4px;
+  font-size: 12px;
   &__label { color: #94a3b8; font-weight: 600; }
   &__tag {
-    padding: 1px 6px;
+    all: unset;
+    cursor: pointer;
+    padding: 4px 8px;
     border-radius: 3px;
     background: #f1f5f9;
-    color: #64748b;
+    color: #475569;
     font-family: ui-monospace, Menlo, monospace;
+    transition: background 0.12s, color 0.12s;
+    &:hover { background: #dbeafe; color: #1d4ed8; }
+    &--dynamic {
+      background: #dcfce7;
+      color: #166534;
+      border: 1px solid #86efac;
+      &:hover { background: #bbf7d0; color: #15803d; }
+    }
   }
-}
-
-// ── Prompt ──
-.prompt-area { display: flex; flex-direction: column; gap: 4px; }
-.textarea {
-  width: 100%;
-  box-sizing: border-box;
-  padding: 6px 8px;
-  font-size: 12px;
-  font-family: inherit;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
-  outline: none;
-  resize: none;
-  line-height: 1.4;
-  transition: border-color 0.15s;
-  &:focus { border-color: #3b82f6; }
-  &--system { background: #fafafa; color: #64748b; }
-  &--prompt { min-height: 48px; }
 }
 
 // ── 结果 ──
@@ -697,77 +721,6 @@ function closeToolEditor() {
     background: #ef4444;
     &:hover { background: #dc2626; }
   }
-}
-
-// ── 多模态输入区 ──
-.image-previews {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 4px;
-}
-.image-chip {
-  position: relative;
-  width: 56px;
-  height: 56px;
-  border-radius: 6px;
-  overflow: hidden;
-  border: 1px solid #e2e8f0;
-  background: #f8fafc;
-}
-.image-chip-thumb {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-.image-chip-x {
-  position: absolute;
-  top: 2px;
-  right: 2px;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: rgba(0,0,0,0.6);
-  color: #fff;
-  font-size: 11px;
-  line-height: 16px;
-  text-align: center;
-  cursor: pointer;
-  border: none;
-  padding: 0;
-}
-.draft-actions {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 6px;
-  gap: 8px;
-}
-.btn--pick {
-  background: #f1f5f9;
-  color: #475569;
-  height: 24px;
-  padding: 0 10px;
-  border-radius: 4px;
-  font-size: 11px;
-  cursor: pointer;
-  border: 1px dashed #cbd5e1;
-  flex-shrink: 0;
-  &:hover { background: #e2e8f0; }
-}
-.btn--send {
-  background: #6366f1;
-  color: #fff;
-  height: 24px;
-  padding: 0 14px;
-  border-radius: 4px;
-  font-size: 11px;
-  font-weight: 500;
-  border: none;
-  cursor: pointer;
-  flex-shrink: 0;
-  &:hover:not(:disabled) { background: #4f46e5; }
-  &:disabled { cursor: not-allowed; background: #a5b4fc; }
 }
 </style>
 
@@ -886,6 +839,145 @@ function closeToolEditor() {
   &:hover {
     background: #dbeafe;
     color: #2563eb;
+  }
+}
+
+.harness-builtin-desc {
+  font-size: 12px;
+  line-height: 1.6;
+  color: #334155;
+  padding: 8px 10px;
+  background: #f8fafc;
+  border-left: 3px solid #6366f1;
+  border-radius: 0 4px 4px 0;
+}
+.harness-builtin-section__title {
+  font-size: 11px;
+  font-weight: 700;
+  color: #475569;
+  margin-bottom: 6px;
+  letter-spacing: 0.3px;
+}
+.harness-builtin-section__empty {
+  font-size: 11px;
+  color: #94a3b8;
+  font-style: italic;
+}
+.harness-builtin-param {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 5px 0;
+  border-bottom: 1px dashed #e2e8f0;
+  font-size: 11px;
+  flex-wrap: wrap;
+  &__name {
+    font-family: ui-monospace, Menlo, monospace;
+    font-weight: 600;
+    color: #1e293b;
+  }
+  &__type {
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 10px;
+    color: #94a3b8;
+    background: #f1f5f9;
+    padding: 0 4px;
+    border-radius: 3px;
+  }
+  &__req {
+    font-size: 9px;
+    color: #dc2626;
+    background: #fee2e2;
+    padding: 0 5px;
+    border-radius: 3px;
+    font-weight: 600;
+  }
+  &__desc {
+    color: #64748b;
+    flex: 1;
+    min-width: 120px;
+  }
+}
+.harness-builtin-code {
+  margin: 0;
+  padding: 10px 12px;
+  background: #0f172a;
+  color: #e2e8f0;
+  border-radius: 6px;
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 11px;
+  line-height: 1.55;
+  overflow-x: auto;
+  max-height: 300px;
+  overflow-y: auto;
+  code {
+    font-family: inherit;
+    white-space: pre;
+  }
+}
+
+/* ── ask_user 弹窗 ── */
+.harness-modal--ask {
+  width: 480px;
+  max-width: 92vw;
+}
+.harness-ask-question {
+  font-size: 13px;
+  line-height: 1.6;
+  color: #1e293b;
+  padding: 8px 10px;
+  background: #fff7ed;
+  border-left: 3px solid #f97316;
+  border-radius: 0 4px 4px 0;
+  margin-bottom: 8px;
+}
+.harness-ask-options {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.harness-ask-option {
+  all: unset;
+  cursor: pointer;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background: #fff;
+  font-size: 12px;
+  color: #334155;
+  text-align: left;
+  transition: border-color 0.12s, background 0.12s;
+  &:hover {
+    border-color: #3b82f6;
+    background: #f0f9ff;
+  }
+  &--selected {
+    border-color: #3b82f6;
+    background: #eff6ff;
+    color: #1d4ed8;
+  }
+  &__tick {
+    flex-shrink: 0;
+    width: 14px;
+    height: 14px;
+    border: 1px solid #cbd5e1;
+    border-radius: 3px;
+    font-size: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    color: #1d4ed8;
+    font-weight: 700;
+    margin-top: 1px;
+  }
+  &__text {
+    flex: 1;
+    line-height: 1.5;
+    word-break: break-word;
   }
 }
 

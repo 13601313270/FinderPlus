@@ -58,17 +58,46 @@ export interface CanvasToolBinding {
   outputPortId: string
 }
 
+/** ask_user 工具的请求参数（HarnessLoop → UI） */
+export interface UserPromptRequest {
+  question: string
+  options: string[]
+  multiple?: boolean
+}
+
+/** ask_user 工具的用户响应（UI → HarnessLoop） */
+export interface UserPromptResponse {
+  answer: string | string[]
+  cancelled?: boolean
+}
+
+/** 挂起中的 ask_user 记录（HarnessNode → UI 展示） */
+export interface PendingUserPrompt extends UserPromptRequest {
+  /** 内部 handle，用于 resolve 时回调 */
+  handle: string
+}
+
 /** 内置工具：纯 JS 函数实现 */
 class BuiltinTool implements HarnessTool {
   constructor(
     readonly schema: ToolSchema,
-    private fn: (args: Record<string, unknown>) => Promise<string> | string
+    private fn: (args: Record<string, unknown>) => Promise<string> | string,
+    readonly sourceCode: string = ''
   ) {
   }
   async execute(args: Record<string, unknown>): Promise<string> {
+    // console.log('BuiltinTool execute', args)
     const result = await this.fn(args)
     return typeof result === 'string' ? result : JSON.stringify(result)
   }
+}
+
+/** UI 专用的内置工具详情（schema + 源码），不发给 LLM */
+export interface BuiltinToolInfo {
+  schema: ToolSchema
+  sourceCode: string
+  /** 工具来源：builtin 代码写死 / dynamic LLM 运行时 define_tool */
+  kind: 'builtin' | 'dynamic'
 }
 
 /** Canvas 节点绑定的 Tool：commit → wait → read output */
@@ -179,13 +208,63 @@ class CanvasNodeTool implements HarnessTool {
   }
 }
 
-/** Tool 注册表：内置工具 + Canvas 节点工具统一管理 */
+/** Tool 注册表：内置工具 + Canvas 节点工具 + LLM 动态工具统一管理 */
 class ToolRegistry {
+  /** 代码写死的内置工具（json_parse 等 + define_tool / remove_tool / ask_user）—— LLM 实际可见的 */
   private builtin = new Map<string, HarnessTool>()
+  /** 所有内置工具本体模板（注册时暂存，toggleBuiltin 用来挂/摘） */
+  private builtinTemplates = new Map<string, HarnessTool>()
+  /** LLM 通过 define_tool 在运行时加的动态工具 */
+  dynamic = new Map<string, HarnessTool>()
+  /** Canvas 节点绑定的工具 */
   private canvas = new Map<string, CanvasNodeTool>()
 
+  /** 动态工具增删时的变更回调，HarnessNode 挂载 notifyChanged 用来实时刷新 UI */
+  onChange: (() => void) | null = null
+
+  /** ask_user 工具挂起时的回调，HarnessNode 用来暂停 loop 并展示选项弹窗 */
+  userPromptHandler: ((req: UserPromptRequest) => Promise<UserPromptResponse>) | null = null
+
+  /** 注册内置工具：放入 builtinTemplates（本体）+ builtin（默认激活） */
   registerBuiltin(tool: HarnessTool): void {
-    this.builtin.set(tool.schema.function.name, tool)
+    const name = tool.schema.function.name
+    this.builtinTemplates.set(name, tool)
+    this.builtin.set(name, tool)
+  }
+
+  /** 批量控制内置工具的激活状态：enabled=true 放回 builtin；enabled=false 从 builtin 里摘掉，LLM 不可见 */
+  setBuiltinsEnabled(names: string[], enabled: boolean): void {
+    for (const name of names) {
+      const tpl = this.builtinTemplates.get(name)
+      if (!tpl) continue
+      if (enabled) {
+        this.builtin.set(name, tpl)
+      } else {
+        this.builtin.delete(name)
+      }
+    }
+    this.onChange?.()
+  }
+
+  /** 查询某个内置工具是否激活（在 builtin 里） */
+  isBuiltinEnabled(name: string): boolean {
+    return this.builtin.has(name)
+  }
+
+  /** 返回所有内置工具模板的名字（不论是否激活） */
+  getBuiltinNames(): string[] {
+    return Array.from(this.builtinTemplates.keys())
+  }
+
+  registerDynamic(tool: HarnessTool): void {
+    this.dynamic.set(tool.schema.function.name, tool)
+    this.onChange?.()
+  }
+
+  deleteDynamic(name: string): boolean {
+    const ok = this.dynamic.delete(name)
+    if (ok) this.onChange?.()
+    return ok
   }
 
   bindNode(binding: CanvasToolBinding): CanvasNodeTool {
@@ -244,6 +323,7 @@ class ToolRegistry {
   getValidTools(): HarnessTool[] {
     const result: HarnessTool[] = []
     for (const t of this.builtin.values()) result.push(t)
+    for (const t of this.dynamic.values()) result.push(t)
     for (const t of this.canvas.values()) {
       if (t.isNodeAlive) result.push(t)
     }
@@ -254,12 +334,40 @@ class ToolRegistry {
     return this.getValidTools().map(t => t.schema)
   }
 
+  /** 仅内置工具 schema（json_parse 等 + define_tool / remove_tool） */
+  getBuiltinSchemas(): ToolSchema[] {
+    return Array.from(this.builtin.values()).map(t => t.schema)
+  }
+
+  /** 内置工具详情列表（schema + 源码），供 UI 展示 */
+  getBuiltinInfos(): BuiltinToolInfo[] {
+    return Array.from(this.builtin.values()).map(t => ({
+      schema: t.schema,
+      sourceCode: (t as BuiltinTool).sourceCode ?? '',
+      kind: 'builtin' as const
+    }))
+  }
+
+  /** 所有工具详情列表（内置 + LLM 动态注册），供 UI 展示 */
+  getAllToolInfos(): BuiltinToolInfo[] {
+    const result: BuiltinToolInfo[] = []
+    for (const t of this.builtin.values()) {
+      result.push({ schema: t.schema, sourceCode: (t as BuiltinTool).sourceCode ?? '', kind: 'builtin' as const })
+    }
+    for (const t of this.dynamic.values()) {
+      result.push({ schema: t.schema, sourceCode: (t as BuiltinTool).sourceCode ?? '', kind: 'dynamic' as const })
+    }
+    return result
+  }
+
   async execute(name: string, args: Record<string, unknown>): Promise<string> {
-    const tool = this.builtin.get(name) ?? this.canvas.get(name)
+    const tool = this.builtin.get(name) ?? this.dynamic.get(name) ?? this.canvas.get(name)
     if (!tool) {
       return JSON.stringify({ error: `工具未找到: ${name}` })
     }
-    return tool.execute(args)
+    const result = await tool.execute(args);
+    console.log('函数工具被执行，ToolRegistry execute', name, args, result)
+    return result;
   }
 
   getAllCanvasBindings(): CanvasToolBinding[] {
@@ -548,7 +656,14 @@ function registerBuiltinTools(registry: ToolRegistry): void {
       } catch (e) {
         return JSON.stringify({ error: `JSON 解析失败: ${e instanceof Error ? e.message : String(e)}` })
       }
-    }
+    },
+    `async (args) => {
+  try {
+    return JSON.stringify(JSON.parse(String(args.text ?? '')), null, 2)
+  } catch (e) {
+    return JSON.stringify({ error: \`JSON 解析失败: \${e instanceof Error ? e.message : String(e)}\` })
+  }
+}`
   ))
 
   // 2. JSON 取值（用 key 路径）
@@ -582,7 +697,22 @@ function registerBuiltinTools(registry: ToolRegistry): void {
       } catch (e) {
         return JSON.stringify({ error: `取值失败: ${e instanceof Error ? e.message : String(e)}` })
       }
+    },
+    `async (args) => {
+  try {
+    const obj = JSON.parse(String(args.json_str ?? 'null'))
+    const parts = String(args.path ?? '').split('.').filter(p => p !== '')
+    let cur = obj
+    for (const part of parts) {
+      if (cur === null || cur === undefined) return 'null'
+      cur = cur[part]
     }
+    if (typeof cur === 'object') return JSON.stringify(cur, null, 2)
+    return String(cur)
+  } catch (e) {
+    return JSON.stringify({ error: \`取值失败: \${e instanceof Error ? e.message : String(e)}\` })
+  }
+}`
   ))
 
   // 3. 正则提取
@@ -620,7 +750,25 @@ function registerBuiltinTools(registry: ToolRegistry): void {
       } catch (e) {
         return JSON.stringify({ error: `正则执行失败: ${e instanceof Error ? e.message : String(e)}` })
       }
+    },
+    `async (args) => {
+  try {
+    const regex = new RegExp(String(args.pattern), String(args.flags ?? ''))
+    const matches = []
+    let m
+    const text = String(args.text ?? '')
+    while ((m = regex.exec(text)) !== null) {
+      matches.push(m[1] ?? m[0])
+      if (!regex.global) break
+      if (m.index === regex.lastIndex) regex.lastIndex++
     }
+    if (matches.length === 0) return '(no match)'
+    if (matches.length === 1) return matches[0]
+    return JSON.stringify(matches)
+  } catch (e) {
+    return JSON.stringify({ error: \`正则执行失败: \${e instanceof Error ? e.message : String(e)}\` })
+  }
+}`
   ))
 
   // 4. URL 编码 / 解码
@@ -644,7 +792,12 @@ function registerBuiltinTools(registry: ToolRegistry): void {
       const text = String(args.text ?? '')
       const mode = String(args.mode ?? 'encode')
       return mode === 'decode' ? decodeURIComponent(text) : encodeURIComponent(text)
-    }
+    },
+    `async (args) => {
+  const text = String(args.text ?? '')
+  const mode = String(args.mode ?? 'encode')
+  return mode === 'decode' ? decodeURIComponent(text) : encodeURIComponent(text)
+}`
   ))
 
   // 5. 字符串替换
@@ -679,7 +832,252 @@ function registerBuiltinTools(registry: ToolRegistry): void {
         }
       }
       return text.split(pattern).join(replacement)
+    },
+    `async (args) => {
+  const text = String(args.text ?? '')
+  const pattern = String(args.pattern ?? '')
+  const replacement = String(args.replacement ?? '')
+  if (args.use_regex) {
+    try {
+      const re = new RegExp(pattern, 'g')
+      return text.replace(re, replacement)
+    } catch {
+      return text.split(pattern).join(replacement)
     }
+  }
+  return text.split(pattern).join(replacement)
+}`
+  ))
+
+  // 6. 动态注册工具 —— LLM 运行时根据需要自己加函数
+  registry.registerBuiltin(new BuiltinTool(
+    {
+      type: 'function',
+      function: {
+        name: 'define_tool',
+        description:
+          '运行时动态注册一个新工具。LLM 可以根据当前任务的需要，自己定义小工具（数据清洗、格式转换、条件过滤等）。' +
+          '参数 code 是一段 JavaScript 函数体，可用内建：Math / JSON / String / Array / Object / Date / RegExp / parseInt / parseFloat / isNaN / isFinite。' +
+          '函数会收到一个 args 对象，需要 return 一个字符串。',
+        parameters: {
+          type: 'object',
+          properties: {
+            name: { type: 'string', description: '工具名，必须全局唯一（已有则覆盖）' },
+            description: { type: 'string', description: '告诉 LLM 这个工具能干啥' },
+            parameters: {
+              type: 'object',
+              description: 'JSON Schema，定义工具的参数。如 { "type":"object", "properties":{ "text":{ "type":"string" } }, "required":["text"] }'
+            },
+            code: {
+              type: 'string',
+              description:
+                'JavaScript 函数体（不是完整函数）。会被包成 `async (args) => { <code> }`。用 return 输出结果（必须是字符串，或会被 JSON.stringify）。'
+            }
+          },
+          required: ['name', 'description', 'parameters', 'code']
+        }
+      }
+    },
+    async (args) => {
+      const name = String(args.name ?? '').trim()
+      const description = String(args.description ?? '').trim()
+      const code = String(args.code ?? '')
+      const parameters = args.parameters
+
+      if (!name) return JSON.stringify({ error: 'name 不能为空' })
+      if (!code.trim()) return JSON.stringify({ error: 'code 不能为空' })
+
+      // 组装 ToolSchema.parameters
+      let paramsSchema: { type: 'object'; properties: Record<string, unknown>; required?: string[] } = {
+        type: 'object',
+        properties: {}
+      }
+      if (parameters && typeof parameters === 'object') {
+        const p = parameters as Record<string, unknown>
+        paramsSchema = {
+          type: 'object',
+          properties: (p.properties as Record<string, unknown>) ?? {},
+          required: Array.isArray(p.required) ? (p.required as string[]) : undefined
+        }
+      }
+
+      // 沙箱执行：new Function + try/catch
+      let runner: (a: Record<string, unknown>) => Promise<string>
+      try {
+        // eslint-disable-next-line no-new-func
+        const fn = new Function(
+          'args',
+          `'use strict'; return (async function(){ ${code} })()`
+        )
+        runner = async (a) => {
+          let result: unknown
+          try {
+            result = await fn(a)
+          } catch (e) {
+            return JSON.stringify({ error: `运行时错误: ${e instanceof Error ? e.message : String(e)}` })
+          }
+          if (result === undefined || result === null) return ''
+          if (typeof result === 'string') return result
+          return JSON.stringify(result)
+        }
+      } catch (e) {
+        return JSON.stringify({ error: `code 语法错误: ${e instanceof Error ? e.message : String(e)}` })
+      }
+
+      try {
+        registry.registerDynamic(new BuiltinTool(
+          {
+            type: 'function',
+            function: { name, description, parameters: paramsSchema }
+          },
+          runner,
+          code
+        ))
+        console.log('动态工具注册成功', name, description, paramsSchema)
+        return JSON.stringify({ ok: true, name, message: `工具 ${name} 已注册成功，下一轮对话可使用` })
+      } catch (e) {
+        return JSON.stringify({ error: `注册失败: ${e instanceof Error ? e.message : String(e)}` })
+      }
+    },
+    `// 运行时沙箱：new Function + registerDynamic
+async (args) => {
+  const name = String(args.name ?? '').trim()
+  const description = String(args.description ?? '').trim()
+  const code = String(args.code ?? '')
+  const parameters = args.parameters
+  if (!name) return JSON.stringify({ error: 'name 不能为空' })
+  if (!code.trim()) return JSON.stringify({ error: 'code 不能为空' })
+
+  let paramsSchema = { type: 'object', properties: {} }
+  if (parameters && typeof parameters === 'object') {
+    const p = parameters
+    paramsSchema = {
+      type: 'object',
+      properties: p.properties ?? {},
+      required: Array.isArray(p.required) ? p.required : undefined
+    }
+  }
+
+  let runner
+  try {
+    const fn = new Function('args', \`'use strict'; return (async function(){ \${code} })()\`)
+    runner = async (a) => {
+      try {
+        const result = await fn(a)
+        if (result === undefined || result === null) return ''
+        if (typeof result === 'string') return result
+        return JSON.stringify(result)
+      } catch (e) {
+        return JSON.stringify({ error: \`运行时错误: \${e.message}\` })
+      }
+    }
+  } catch (e) {
+    return JSON.stringify({ error: \`code 语法错误: \${e.message}\` })
+  }
+
+  registry.registerDynamic(new BuiltinTool(
+    { type: 'function', function: { name, description, parameters: paramsSchema } },
+    runner
+  ))
+  return JSON.stringify({ ok: true, name })
+}`
+  ))
+
+  // 7. 卸载动态工具
+  registry.registerBuiltin(new BuiltinTool(
+    {
+      type: 'function',
+      function: {
+        name: 'remove_tool',
+        description: '卸载之前通过 define_tool 动态注册的工具。只影响动态工具，不影响内置的 json_parse 等。',
+        parameters: {
+          type: 'object',
+          properties: {
+            name: { type: 'string', description: '要卸载的工具名' }
+          },
+          required: ['name']
+        }
+      }
+    },
+    async (args) => {
+      const name = String(args.name ?? '').trim()
+      if (!name) return JSON.stringify({ error: 'name 不能为空' })
+      const ok = registry.deleteDynamic(name)
+      return JSON.stringify({ ok, name, message: ok ? `工具 ${name} 已卸载` : `未找到动态工具 ${name}` })
+    },
+    `async (args) => {
+  const name = String(args.name ?? '').trim()
+  if (!name) return JSON.stringify({ error: 'name 不能为空' })
+  const ok = registry.deleteDynamic(name)
+  return JSON.stringify({ ok, name, message: ok ? \`工具 \${name} 已卸载\` : \`未找到动态工具 \${name}\` })
+}`
+  ))
+
+  // 8. 询问用户意见——暂停 loop，等用户选择后继续
+  registry.registerBuiltin(new BuiltinTool(
+    {
+      type: 'function',
+      function: {
+        name: 'ask_user',
+        description:
+          '当任务有多种走法、信息不足需要用户决策、或想确认方向时，弹出选项让用户选择。' +
+          '会暂停执行直到用户选完；用户选完后你拿到 answer 继续后续任务。',
+        parameters: {
+          type: 'object',
+          properties: {
+            question: { type: 'string', description: '你想问用户的问题或需要决策的方向' },
+            options: {
+              type: 'array',
+              items: { type: 'string' },
+              description: '给用户展示的选项列表，建议 2~6 个'
+            },
+            multiple: { type: 'boolean', description: '是否允许用户多选，默认 false（单选）' }
+          },
+          required: ['question', 'options']
+        }
+      }
+    },
+    async (args) => {
+      const question = String(args.question ?? '').trim()
+      const rawOpts = args.options
+      if (!question) return JSON.stringify({ error: 'question 不能为空' })
+      if (!Array.isArray(rawOpts) || rawOpts.length === 0) {
+        return JSON.stringify({ error: 'options 必须是非空数组' })
+      }
+      const options = rawOpts.map((o: unknown) => String(o)).filter(s => s.trim() !== '')
+      if (options.length === 0) return JSON.stringify({ error: 'options 为空' })
+      const multiple = Boolean(args.multiple)
+
+      if (!registry.userPromptHandler) {
+        return JSON.stringify({ error: 'UI 未就绪，暂时无法询问用户' })
+      }
+
+      try {
+        const resp = await registry.userPromptHandler({ question, options, multiple })
+        return JSON.stringify(resp)
+      } catch (e) {
+        return JSON.stringify({
+          error: `ask_user 被中断: ${e instanceof Error ? e.message : String(e)}`
+        })
+      }
+    },
+    `// 暂停执行，等用户在弹窗里选完后返回
+async (args) => {
+  const question = String(args.question ?? '').trim()
+  const rawOpts = args.options
+  if (!question) return JSON.stringify({ error: 'question 不能为空' })
+  if (!Array.isArray(rawOpts) || rawOpts.length === 0)
+    return JSON.stringify({ error: 'options 必须是非空数组' })
+  const options = rawOpts.map(o => String(o)).filter(s => s.trim() !== '')
+  const multiple = Boolean(args.multiple)
+  if (!registry.userPromptHandler) return JSON.stringify({ error: 'UI 未就绪' })
+  try {
+    const resp = await registry.userPromptHandler({ question, options, multiple })
+    return JSON.stringify(resp)
+  } catch (e) {
+    return JSON.stringify({ error: \`ask_user 被中断: \${e.message}\` })
+  }
+}`
   ))
 }
 
@@ -770,6 +1168,9 @@ export class HarnessNode extends Node {
   private toolRegistry = new ToolRegistry()
   private loop: HarnessLoop
 
+  // 用户决策模式：ask = AI 遇到 ask_user 时弹窗等用户选；auto = 跳过弹窗，直接取第一个选项并标记 auto:true
+  private _userDecisionMode: 'ask' | 'auto' = 'ask'
+
   // Model 绑定（LLMNode 实例）
   modelNode: Node | null = null
 
@@ -781,6 +1182,11 @@ export class HarnessNode extends Node {
 
   // 持久化用：childIds 用于批量恢复收养关系，canvasBindings 用于 Tool 绑定
   private pendingChildIds: string[] = []
+
+  /** 挂起中的 ask_user 请求，null 表示当前没有等待用户决策 */
+  private _pendingPrompt: PendingUserPrompt | null = null
+  /** 对应的 resolve 回调，用户选完后 resolve Promise → loop 继续 */
+  private _pendingPromptResolve: ((resp: UserPromptResponse) => void) | null = null
 
   constructor(id: string) {
     super(id)
@@ -795,6 +1201,14 @@ export class HarnessNode extends Node {
 
     this.loop = new HarnessLoop(this.toolRegistry, this.maxIterations)
     registerBuiltinTools(this.toolRegistry)
+    // 动态工具增删 → 实时刷新 UI（LLM 运行过程中 define_tool / remove_tool 生效）
+    this.toolRegistry.onChange = () => this.notifyChanged()
+    // ask_user 暂停 → 展示选项弹窗；用户选完 → resolve Promise → loop 继续
+    this.toolRegistry.userPromptHandler = (req) => this.handleUserPrompt(req)
+    // ask_user 是否注册进 ToolRegistry，让 LLM 可见：取决于初始决策模式
+    if (this._userDecisionMode === 'auto') {
+      this.toolRegistry.setBuiltinsEnabled(['ask_user'], false)
+    }
 
     this.setBox(360, 420)
   }
@@ -998,6 +1412,11 @@ export class HarnessNode extends Node {
     return this.toolRegistry.getAllCanvasBindings()
   }
 
+  /** 所有工具（内置 + LLM 动态注册）的详情列表（schema + 源码），用于 UI 展示 */
+  get builtinToolInfos(): BuiltinToolInfo[] {
+    return this.toolRegistry.getAllToolInfos()
+  }
+
   removeTool(toolName: string): void {
     this.toolRegistry.removeCanvasTool(toolName)
     this.notifyChanged()
@@ -1029,6 +1448,41 @@ export class HarnessNode extends Node {
     // 直接写入 promptInput.lastReceiveValue + 触发变更，绕过 Edge
     this.promptInput.lastReceiveValue = mm
     this._onInputPortChanged([this.promptInput], 'receive' as InputPortChangeSource)
+  }
+
+  // ─── ask_user 暂停 / 恢复 ───
+
+  /** UI 订阅：返回当前挂起的 ask_user 记录（只读） */
+  get pendingUserPrompt(): PendingUserPrompt | null {
+    return this._pendingPrompt
+  }
+
+  /** ToolRegistry.userPromptHandler 的实现：挂起 loop、开弹窗、等用户选完 resolve */
+  private async handleUserPrompt(req: UserPromptRequest): Promise<UserPromptResponse> {
+    const handle = `p_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+    return new Promise<UserPromptResponse>((resolve) => {
+      this._pendingPrompt = { ...req, handle }
+      this._pendingPromptResolve = resolve
+      this.notifyChanged() // 通知 UI 开弹窗
+    }).finally(() => {
+      this._pendingPrompt = null
+      this._pendingPromptResolve = null
+      this.notifyChanged() // 通知 UI 关弹窗
+    })
+  }
+
+  /** UI 调用：用户选中某个选项（单选多选都行），恢复 loop */
+  resolveUserPrompt(answer: string | string[]): void {
+    if (this._pendingPromptResolve) {
+      this._pendingPromptResolve({ answer })
+    }
+  }
+
+  /** UI 调用：用户点击"取消"，恢复 loop 并带 cancelled 标记，LLM 看到后自己决定怎么应对 */
+  cancelPendingPrompt(): void {
+    if (this._pendingPromptResolve) {
+      this._pendingPromptResolve({ answer: '', cancelled: true })
+    }
   }
 
   get displaySystem(): string {
@@ -1187,6 +1641,39 @@ export class HarnessNode extends Node {
     this.notifyChanged()
   }
 
+  // ─── 用户决策模式 ───
+  get userDecisionMode(): 'ask' | 'auto' {
+    return this._userDecisionMode
+  }
+  setUserDecisionMode(v: 'ask' | 'auto'): void {
+    if (v !== 'ask' && v !== 'auto') return
+    if (v === this._userDecisionMode) return
+    this._userDecisionMode = v
+    // ask 模式 → ask_user 注册进 ToolRegistry，LLM 可见；auto 模式 → 摘掉，LLM 不可见
+    this.toolRegistry.setBuiltinsEnabled(['ask_user'], v === 'ask')
+    this.notifyChanged()
+  }
+
+  // ─── 内置工具激活/禁用（可持久化） ───
+  /** 被禁用的内置工具名集合（禁用后从 ToolRegistry 摘掉，LLM 不可见） */
+  private _disabledBuiltins: Set<string> = new Set()
+
+  /** 查询某个内置工具是否激活 */
+  getBuiltinEnabled(name: string): boolean {
+    return this.toolRegistry.isBuiltinEnabled(name)
+  }
+
+  /** 切换某个内置工具的激活状态 */
+  setBuiltinEnabled(name: string, enabled: boolean): void {
+    if (!this.toolRegistry.getBuiltinNames().includes(name)) return
+    if (enabled) {
+      this._disabledBuiltins.delete(name)
+    } else {
+      this._disabledBuiltins.add(name)
+    }
+    this.toolRegistry.setBuiltinsEnabled([name], enabled)
+  }
+
   // ─── 持久化 ───
 
   saveState(): Record<string, unknown> {
@@ -1197,6 +1684,8 @@ export class HarnessNode extends Node {
       childIds,
       maxIterations: this.maxIterations,
       jsonOutput: this.jsonOutput,
+      userDecisionMode: this._userDecisionMode,
+      disabledBuiltins: Array.from(this._disabledBuiltins),
       localPrompt: this.localPrompt,
       localSystem: this.localSystem,
       canvasBindings: this.toolRegistry.getAllBindings()
@@ -1229,6 +1718,23 @@ export class HarnessNode extends Node {
       this.removeOutput(this.resultOutput)
       this.resultOutput = this.buildOutputPort(state.jsonOutput)
       this.addOutput(this.resultOutput)
+    }
+    if (state.userDecisionMode === 'ask' || state.userDecisionMode === 'auto') {
+      this._userDecisionMode = state.userDecisionMode
+      // 同步 ask_user 的激活状态到 ToolRegistry
+      if (state.userDecisionMode === 'auto') {
+        this.toolRegistry.setBuiltinsEnabled(['ask_user'], false)
+      }
+    }
+    if (Array.isArray(state.disabledBuiltins)) {
+      const names: string[] = []
+      for (const n of state.disabledBuiltins) {
+        if (typeof n === 'string') {
+          this._disabledBuiltins.add(n)
+          names.push(n)
+        }
+      }
+      if (names.length > 0) this.toolRegistry.setBuiltinsEnabled(names, false)
     }
     if (typeof state.localPrompt === 'string') {
       this.localPrompt = state.localPrompt

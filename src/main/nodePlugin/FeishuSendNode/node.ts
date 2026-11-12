@@ -307,6 +307,7 @@ export class FeishuSendNode extends Node {
 
     const err = this.canSend()
     if (err) {
+      // 还没 beginRun——属于"手动触发前校验失败"，保持 dirty 态即可
       this.setSendState('error', err)
       this.sentPort.commit(new BoolValue(false), { force: true })
       this.messageIdPort.commit(new StringValue(''), { force: true })
@@ -316,6 +317,7 @@ export class FeishuSendNode extends Node {
 
     this.sendingNow = true
     this.setSendState('sending', '')
+    this.beginRun() // dirty → running，锁端口，期间上游推值被缓冲
 
     const creds = this.resolveCredentials()!
     const msgType = this.getCurrentMsgType()
@@ -369,27 +371,23 @@ export class FeishuSendNode extends Node {
             this.setSendState('error', '已取消：请先安装 ffmpeg 后再发送')
             this.sentPort.commit(new BoolValue(false), { force: true })
             this.messageIdPort.commit(new StringValue(''), { force: true })
+            this.failRun() // running → error
             return
           }
 
           // 用户确认安装 → 调 commandApi.run 执行 brew install ffmpeg
           try {
-            console.log('runApi---1')
             // @ts-ignore
             const runApi = window.runCommand
-            console.log('runApi---2')
             if (runApi) {
-              console.log('runApi---3')
               this.setSendState('sending', '正在安装 ffmpeg…')
-              // console.Console
-              // window.runCommand('ls -la ~')
-              console.log('runApi---4', runApi)
               // @ts-ignore
               await runApi('brew install ffmpeg', { title: '安装 ffmpeg' })
             } else {
               // @ts-ignore
               window.open?.('https://ffmpeg.org/download.html')
               this.setSendState('error', '无法调用内置命令行，请手动安装 ffmpeg')
+              this.failRun() // running → error
               return
             }
           } catch (err) {
@@ -397,6 +395,7 @@ export class FeishuSendNode extends Node {
             this.setSendState('error', '安装失败：' + msg)
             this.sentPort.commit(new BoolValue(false), { force: true })
             this.messageIdPort.commit(new StringValue(''), { force: true })
+            this.failRun() // running → error
             return
           }
 
@@ -408,6 +407,7 @@ export class FeishuSendNode extends Node {
             this.setSendState('error', 'ffmpeg 安装似乎未成功，请手动检查')
             this.sentPort.commit(new BoolValue(false), { force: true })
             this.messageIdPort.commit(new StringValue(''), { force: true })
+            this.failRun() // running → error
             return
           }
         }
@@ -486,23 +486,27 @@ export class FeishuSendNode extends Node {
         })
       }
 
+      // —— 结果处理：先 commit 输出，再调状态机方法 ——
       if (sendResult.ok) {
-        this.setSendState('success', '')
         this.sentPort.commit(new BoolValue(true), { force: true })
         this.messageIdPort.commit(new StringValue(sendResult.messageId ?? ''), { force: true })
+        this.setSendState('success', '')
+        this.completeRun() // running → stable（或 dirty 如 flush 期间有新输入）
       } else {
-        this.setSendState('error', sendResult.error)
         this.sentPort.commit(new BoolValue(false), { force: true })
         this.messageIdPort.commit(new StringValue(''), { force: true })
+        this.setSendState('error', sendResult.error)
+        this.failRun() // running → error（或 dirty 如 flush 期间有新输入）
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
       this.setSendState('error', msg)
       this.sentPort.commit(new BoolValue(false), { force: true })
       this.messageIdPort.commit(new StringValue(''), { force: true })
+      this.failRun() // running → error（或 dirty）
     } finally {
       this.sendingNow = false
-      this.notifyChanged()
+      this.notifyChanged() // 覆盖 setSendState 没触发的通知（beginRun/completeRun/failRun 已经 notifyChanged 了，但 sendState 的变化需要再推一次）
     }
   }
 

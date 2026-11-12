@@ -692,6 +692,7 @@ const feishuApi = {
 
   /**
    * 发送飞书消息（REST API，和 WS 长连接独立）。
+   * 支持 text 纯文本 和 image 图片两种消息类型。
    * 接收方类型：chat_id=群 / open_id=用户 / user_id=员工ID / union_id=union_id / email=邮箱
    */
   send: (args: {
@@ -699,9 +700,23 @@ const feishuApi = {
     appSecret: string
     receiveId: string
     receiveIdType: 'chat_id' | 'open_id' | 'user_id' | 'union_id' | 'email'
-    text: string
+    msgType: 'text' | 'image'
+    text?: string
+    imageKey?: string
   }): Promise<{ ok: true; messageId?: string } | { ok: false; error: string }> =>
     ipcRenderer.invoke('feishu:send', args),
+
+  /**
+   * 上传图片到飞书，返回 image_key。发送图片消息前必须先调这个。
+   * buffer 是 renderer 读 DOM File 得到的 ArrayBuffer。
+   */
+  uploadImage: (args: {
+    appId: string
+    appSecret: string
+    fileName: string
+    buffer: ArrayBuffer
+  }): Promise<{ ok: true; imageKey: string } | { ok: false; error: string }> =>
+    ipcRenderer.invoke('feishu:uploadImage', args),
 
   /**
    * 监听飞书新消息（主进程 WS 长连接推过来的）。

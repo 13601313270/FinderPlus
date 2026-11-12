@@ -1,5 +1,6 @@
 import { StringValue } from '../../engine/data/StringValue'
 import { BoolValue } from '../../engine/data/BoolValue'
+import { ImgFileValue } from '../../engine/data/ImgFileValue'
 import { Node, type InputPortChangeSource } from '../../engine/node/Node'
 import { InputPort } from '../../engine/port/InputPort'
 import { OutputPort } from '../../engine/port/OutputPort'
@@ -80,8 +81,8 @@ export class FeishuSendNode extends Node {
     super(id)
     // 输入端口
     this.textPort = new InputPort('text', {
-      accepts: [StringValue],
-      label: { zh: '消息', en: 'Text' }
+      accepts: [StringValue, ImgFileValue],
+      label: { zh: '消息', en: 'Message' }
     })
     this.receiveIdPort = new InputPort('receiveId', {
       accepts: [StringValue],
@@ -182,13 +183,38 @@ export class FeishuSendNode extends Node {
     return this.receiveIdType
   }
 
-  /** 获取当前 text 输入端口的值（或空字符串） */
+  /**
+   * 取当前 text 输入端口的值（或空字符串）
+   * 仅当上游是 StringValue 时返回文本，图片类型返回空串
+   */
   getCurrentText(): string {
     const vals = this.textPort.value
     if (vals.length === 0) return ''
     const first = vals[0]
     if (first instanceof StringValue) return first.value ?? ''
     return ''
+  }
+
+  /**
+   * 获取当前消息的实际类型：
+   * - 'text'：StringValue 或无值
+   * - 'image'：ImgFileValue
+   */
+  private getCurrentMsgType(): 'text' | 'image' {
+    const vals = this.textPort.value
+    if (vals.length === 0) return 'text'
+    const first = vals[0]
+    if (first instanceof ImgFileValue) return 'image'
+    return 'text'
+  }
+
+  /** 获取当前图片文件（ImgFileValue 时有效，否则返回 null） */
+  private getCurrentImageFile(): File | null {
+    const vals = this.textPort.value
+    if (vals.length === 0) return null
+    const first = vals[0]
+    if (first instanceof ImgFileValue && first.file) return first.file
+    return null
   }
 
   // —— 配置修改 ——
@@ -220,25 +246,35 @@ export class FeishuSendNode extends Node {
 
   // —— 发送逻辑 ——
 
-  /** 是否具备发送的所有前置条件 */
-  private canSend(text: string): string | null {
+  /** 是否具备发送的所有前置条件——按消息类型分别校验 */
+  private canSend(): string | null {
     if (!this.botId) return '请先选择飞书机器人'
     const creds = this.resolveCredentials()
     if (!creds) return '机器人凭证未找到，请检查设置里的飞书机器人列表'
     if (!this.getEffectiveReceiveId()) return '请先填写接收方 ID'
-    if (!text) return '消息内容为空'
+
+    const msgType = this.getCurrentMsgType()
+    if (msgType === 'text') {
+      if (!this.getCurrentText()) return '消息内容为空'
+    } else {
+      // image 类型
+      const file = this.getCurrentImageFile()
+      if (!file) return '图片文件为空'
+    }
     return null
   }
 
   /**
    * 手动/自动触发发送。
    * 防抖：正在发送中直接跳过，防止连点导致多次发送。
+   *
+   * 文本消息：直接调 send
+   * 图片消息：先 uploadImage 拿 image_key → 再 send
    */
   async triggerSend(): Promise<void> {
     if (this.sendingNow) return
 
-    const text = this.getCurrentText()
-    const err = this.canSend(text)
+    const err = this.canSend()
     if (err) {
       this.setSendState('error', err)
       this.sentPort.commit(new BoolValue(false), { force: true })
@@ -251,22 +287,56 @@ export class FeishuSendNode extends Node {
     this.setSendState('sending', '')
 
     const creds = this.resolveCredentials()!
-    try {
-      // @ts-ignore — 只在 renderer 里执行，window.feishuApi 一定存在
-      const result = await window.feishuApi.send({
-        appId: creds.appId,
-        appSecret: creds.appSecret,
-        receiveId: this.getEffectiveReceiveId(),
-        receiveIdType: this.getEffectiveReceiveIdType(),
-        text
-      })
+    const msgType = this.getCurrentMsgType()
 
-      if (result.ok) {
+    try {
+      let sendResult: { ok: true; messageId?: string } | { ok: false; error: string }
+
+      if (msgType === 'image') {
+        // 图片路径：先上传 → 再发送
+        const file = this.getCurrentImageFile()!
+        const buf = await file.arrayBuffer()
+
+        // @ts-ignore
+        const uploadRes = await window.feishuApi.uploadImage({
+          appId: creds.appId,
+          appSecret: creds.appSecret,
+          fileName: file.name || 'image.png',
+          buffer: buf
+        })
+
+        if (!uploadRes.ok) {
+          sendResult = { ok: false, error: '图片上传失败：' + uploadRes.error }
+        } else {
+          // @ts-ignore
+          sendResult = await window.feishuApi.send({
+            appId: creds.appId,
+            appSecret: creds.appSecret,
+            receiveId: this.getEffectiveReceiveId(),
+            receiveIdType: this.getEffectiveReceiveIdType(),
+            msgType: 'image',
+            imageKey: uploadRes.imageKey
+          })
+        }
+      } else {
+        // 文本路径：直接发送
+        // @ts-ignore
+        sendResult = await window.feishuApi.send({
+          appId: creds.appId,
+          appSecret: creds.appSecret,
+          receiveId: this.getEffectiveReceiveId(),
+          receiveIdType: this.getEffectiveReceiveIdType(),
+          msgType: 'text',
+          text: this.getCurrentText()
+        })
+      }
+
+      if (sendResult.ok) {
         this.setSendState('success', '')
         this.sentPort.commit(new BoolValue(true), { force: true })
-        this.messageIdPort.commit(new StringValue(result.messageId ?? ''), { force: true })
+        this.messageIdPort.commit(new StringValue(sendResult.messageId ?? ''), { force: true })
       } else {
-        this.setSendState('error', result.error)
+        this.setSendState('error', sendResult.error)
         this.sentPort.commit(new BoolValue(false), { force: true })
         this.messageIdPort.commit(new StringValue(''), { force: true })
       }

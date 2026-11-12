@@ -37,6 +37,25 @@ let active: ActiveConnection | null = null
 const seenMessages = new Set<string>()
 const MAX_SEEN = 1000
 
+/**
+ * 从飞书 SDK (axios) 的错误对象里提取真正的可读错误信息。
+ * SDK 把飞书返回的 { code, msg } 包在 err.response.data 里，
+ * 直接取 err.message 只能拿到 "Request failed with status code 400" 这种无用信息。
+ */
+function extractFeishuError(err: unknown): string {
+  if (err && typeof err === 'object') {
+    // 标准飞书 SDK axios 错误结构：err.response.data = { code, msg }
+    const response = (err as any).response
+    if (response?.data?.msg) {
+      const code = response.data.code
+      return code ? `${response.data.msg}（错误码: ${code}）` : String(response.data.msg)
+    }
+    // 兼容纯 Error 对象
+    if (err instanceof Error) return err.message
+  }
+  return String(err)
+}
+
 function markSeen(id: string): void {
   if (seenMessages.has(id)) return
   if (seenMessages.size >= MAX_SEEN) {
@@ -213,20 +232,89 @@ export function stopFeishu(): void {
 }
 
 /**
+ * 上传图片到飞书开放平台，返回 image_key。
+ * 发送图片消息前必须先上传——飞书不接受直接传图片二进制。
+ *
+ * 支持格式：JPG/JPEG/PNG/WEBP/GIF/BMP/ICO/TIFF/HEIC（TIFF/HEIC 自动转 JPG）
+ * 大小限制：≤ 10MB
+ */
+export async function uploadFeishuImage(args: {
+  appId: string
+  appSecret: string
+  fileName: string
+  buffer: ArrayBuffer
+}): Promise<{ ok: true; imageKey: string } | { ok: false; error: string }> {
+  if (!args.appId || !args.appSecret) {
+    return { ok: false, error: 'App ID / App Secret 不能为空' }
+  }
+  if (!args.fileName) {
+    return { ok: false, error: '文件名不能为空' }
+  }
+  if (!args.buffer || args.buffer.byteLength === 0) {
+    return { ok: false, error: '图片内容为空' }
+  }
+
+  let Lark: any
+  try {
+    Lark = await import('@larksuiteoapi/node-sdk')
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    return { ok: false, error: '飞书 SDK 加载失败: ' + msg }
+  }
+
+  try {
+    const client = new Lark.Client({ appId: args.appId, appSecret: args.appSecret })
+    // SDK 接受 Node.js Buffer，把 renderer 传过来的 ArrayBuffer 转一下
+    const nodeBuf = Buffer.from(args.buffer)
+    const res = await client.im.image.create({
+      data: {
+        image_type: 'message',
+        image: nodeBuf
+      }
+    })
+
+    // SDK 不同版本返回结构可能不同，做多级 fallback：
+    // 1. 顶层 res.image_key（部分版本）
+    // 2. res.data.image_key（标准文档结构）
+    // 3. res.data.data.image_key（嵌套结构）
+    const imageKey = res?.image_key
+      ?? res?.data?.image_key
+      ?? res?.data?.data?.image_key
+    if (!imageKey) {
+      console.error('[FeishuManager] 上传图片响应缺少 image_key, 完整响应:', JSON.stringify(res)?.slice(0, 500))
+      return { ok: false, error: '上传图片失败：飞书未返回 image_key' }
+    }
+
+    console.log('[FeishuManager] 上传图片成功, image_key:', imageKey)
+    return { ok: true, imageKey }
+  } catch (err) {
+    const msg = extractFeishuError(err)
+    console.error('[FeishuManager] 上传图片失败:', msg)
+    return { ok: false, error: msg }
+  }
+}
+
+/** 飞书消息类型 */
+export type FeishuMsgType = 'text' | 'image'
+
+/**
  * 发送飞书消息。
  * 和 WS 长连接独立——WSClient 只管收事件，发消息需要单独 new 一个 REST Client。
  *
- * @param args.appId / args.appSecret 飞书应用凭证
- * @param args.receiveId 接收方 ID（群 chat_id 或用户 open_id）
- * @param args.receiveIdType 接收方类型：chat_id=群 / open_id=用户 / user_id=员工ID / union_id=union_id / email=邮箱
- * @param args.text 消息文本
+ * 支持两种消息类型：
+ * - text：纯文本，传 text 字段
+ * - image：图片，传 imageKey 字段（需先调 uploadFeishuImage 拿 key）
  */
 export async function sendFeishuMessage(args: {
   appId: string
   appSecret: string
   receiveId: string
   receiveIdType: 'chat_id' | 'open_id' | 'user_id' | 'union_id' | 'email'
-  text: string
+  msgType: FeishuMsgType
+  /** text 类型时必填 */
+  text?: string
+  /** image 类型时必填（先调 uploadFeishuImage 拿 key） */
+  imageKey?: string
 }): Promise<{ ok: true; messageId?: string } | { ok: false; error: string }> {
   if (!args.appId || !args.appSecret) {
     return { ok: false, error: 'App ID / App Secret 不能为空' }
@@ -234,8 +322,19 @@ export async function sendFeishuMessage(args: {
   if (!args.receiveId) {
     return { ok: false, error: '接收方 ID 不能为空' }
   }
-  if (!args.text) {
-    return { ok: false, error: '消息内容不能为空' }
+
+  // 按类型校验必填字段
+  let content: string
+  let msgType: FeishuMsgType = args.msgType
+
+  if (msgType === 'text') {
+    if (!args.text) return { ok: false, error: '消息内容为空' }
+    content = JSON.stringify({ text: args.text })
+  } else if (msgType === 'image') {
+    if (!args.imageKey) return { ok: false, error: '图片 key 为空，请先上传图片' }
+    content = JSON.stringify({ image_key: args.imageKey })
+  } else {
+    return { ok: false, error: '不支持的消息类型: ' + msgType }
   }
 
   let Lark: any
@@ -252,16 +351,16 @@ export async function sendFeishuMessage(args: {
       params: { receive_id_type: args.receiveIdType },
       data: {
         receive_id: args.receiveId,
-        msg_type: 'text',
-        content: JSON.stringify({ text: args.text })
+        msg_type: msgType,
+        content
       }
     })
 
-    console.log('[FeishuManager] 发送消息成功:', JSON.stringify(res?.data)?.slice(0, 200))
+    console.log(`[FeishuManager] 发送${msgType}消息成功:`, JSON.stringify(res?.data)?.slice(0, 200))
     return { ok: true, messageId: res?.data?.message_id }
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err)
-    console.error('[FeishuManager] 发送消息失败:', msg)
+    const msg = extractFeishuError(err)
+    console.error(`[FeishuManager] 发送${msgType}消息失败:`, msg)
     return { ok: false, error: msg }
   }
 }

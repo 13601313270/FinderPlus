@@ -60,6 +60,7 @@ import { manifest as convertManifest } from './ConvertNode'
 import { manifest as externalCallManifest } from './ExternalCallNode'
 import { manifest as manualTriggerManifest } from './ManualTriggerNode'
 import { manifest as feishuReceiveManifest } from './FeishuReceiveNode'
+import { manifest as feishuSendManifest } from './FeishuSendNode'
 import { manifest as harnessManifest } from './HarnessNode'
 import { manifest as proxyManifest } from './ProxyNode'
 
@@ -125,6 +126,7 @@ const functionalManifests: NodePluginManifest[] = [
   tableManifest,
   scheduleManifest,
   feishuReceiveManifest,
+  feishuSendManifest,
   manualTriggerManifest,
   proxyManifest
 ]

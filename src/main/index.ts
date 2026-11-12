@@ -12,7 +12,7 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import * as cheerio from 'cheerio'
 import * as iconv from 'iconv-lite'
 import OSS from 'ali-oss'
-import { startFeishu, stopFeishu, getFeishuStatus, disposeFeishu } from './feishu/FeishuManager'
+import { startFeishu, stopFeishu, getFeishuStatus, disposeFeishu, sendFeishuMessage } from './feishu/FeishuManager'
 import { openDatabase, closeDatabase, getDatabase, persist } from './db/database'
 import { SqliteStorage } from './db/SqliteStorage'
 import { ensureCanvasDir, getCanvasDir, getCanvasRootDir, migrateLegacyRootFiles } from './paths'
@@ -2694,6 +2694,16 @@ ipcMain.handle('feishu:stop', () => {
 })
 ipcMain.handle('feishu:status', () => {
   return getFeishuStatus()
+})
+// —— 飞书发送消息（给 FeishuSendNode 用）——
+ipcMain.handle('feishu:send', async (_e, args: {
+  appId: string
+  appSecret: string
+  receiveId: string
+  receiveIdType: 'chat_id' | 'open_id' | 'user_id' | 'union_id' | 'email'
+  text: string
+}) => {
+  return sendFeishuMessage(args)
 })
 
 app.whenReady().then(async () => {

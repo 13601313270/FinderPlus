@@ -188,6 +188,60 @@ export function stopFeishu(): void {
   active = null
 }
 
+/**
+ * 发送飞书消息。
+ * 和 WS 长连接独立——WSClient 只管收事件，发消息需要单独 new 一个 REST Client。
+ *
+ * @param args.appId / args.appSecret 飞书应用凭证
+ * @param args.receiveId 接收方 ID（群 chat_id 或用户 open_id）
+ * @param args.receiveIdType 接收方类型：chat_id=群 / open_id=用户 / user_id=员工ID / union_id=union_id / email=邮箱
+ * @param args.text 消息文本
+ */
+export async function sendFeishuMessage(args: {
+  appId: string
+  appSecret: string
+  receiveId: string
+  receiveIdType: 'chat_id' | 'open_id' | 'user_id' | 'union_id' | 'email'
+  text: string
+}): Promise<{ ok: true; messageId?: string } | { ok: false; error: string }> {
+  if (!args.appId || !args.appSecret) {
+    return { ok: false, error: 'App ID / App Secret 不能为空' }
+  }
+  if (!args.receiveId) {
+    return { ok: false, error: '接收方 ID 不能为空' }
+  }
+  if (!args.text) {
+    return { ok: false, error: '消息内容不能为空' }
+  }
+
+  let Lark: any
+  try {
+    Lark = await import('@larksuiteoapi/node-sdk')
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    return { ok: false, error: '飞书 SDK 加载失败: ' + msg }
+  }
+
+  try {
+    const client = new Lark.Client({ appId: args.appId, appSecret: args.appSecret })
+    const res = await client.im.message.create({
+      params: { receive_id_type: args.receiveIdType },
+      data: {
+        receive_id: args.receiveId,
+        msg_type: 'text',
+        content: JSON.stringify({ text: args.text })
+      }
+    })
+
+    console.log('[FeishuManager] 发送消息成功:', JSON.stringify(res?.data)?.slice(0, 200))
+    return { ok: true, messageId: res?.data?.message_id }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    console.error('[FeishuManager] 发送消息失败:', msg)
+    return { ok: false, error: msg }
+  }
+}
+
 /** 查询当前连接状态 */
 export function getFeishuStatus(): FeishuStatus {
   if (!active) return { state: 'idle' }

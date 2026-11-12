@@ -673,6 +673,19 @@ const feishuApi = {
     ipcRenderer.invoke('feishu:status'),
 
   /**
+   * 发送飞书消息（REST API，和 WS 长连接独立）。
+   * 接收方类型：chat_id=群 / open_id=用户 / user_id=员工ID / union_id=union_id / email=邮箱
+   */
+  send: (args: {
+    appId: string
+    appSecret: string
+    receiveId: string
+    receiveIdType: 'chat_id' | 'open_id' | 'user_id' | 'union_id' | 'email'
+    text: string
+  }): Promise<{ ok: true; messageId?: string } | { ok: false; error: string }> =>
+    ipcRenderer.invoke('feishu:send', args),
+
+  /**
    * 监听飞书新消息（主进程 WS 长连接推过来的）。
    * 返回取消订阅函数。
    */

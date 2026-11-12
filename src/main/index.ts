@@ -12,6 +12,7 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import * as cheerio from 'cheerio'
 import * as iconv from 'iconv-lite'
 import OSS from 'ali-oss'
+import { startFeishu, stopFeishu, getFeishuStatus, disposeFeishu } from './feishu/FeishuManager'
 import { openDatabase, closeDatabase, getDatabase, persist } from './db/database'
 import { SqliteStorage } from './db/SqliteStorage'
 import { ensureCanvasDir, getCanvasDir, getCanvasRootDir, migrateLegacyRootFiles } from './paths'
@@ -2684,6 +2685,17 @@ ipcMain.handle('notification:show', (_e, args: {
   }
 })
 
+// —— 飞书长连接（给 FeishuReceiveNode 用）——
+ipcMain.handle('feishu:start', async (_e, args: { appId: string; appSecret: string }) => {
+  return startFeishu(args.appId, args.appSecret)
+})
+ipcMain.handle('feishu:stop', () => {
+  stopFeishu()
+})
+ipcMain.handle('feishu:status', () => {
+  return getFeishuStatus()
+})
+
 app.whenReady().then(async () => {
   electronApp.setAppUserModelId('com.canvasdesk.app')
 
@@ -2722,5 +2734,6 @@ app.on('window-all-closed', () => {
 
 app.on('before-quit', () => {
   stopCanvasWatcher()
+  disposeFeishu()
   closeDatabase()
 })

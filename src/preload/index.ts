@@ -657,7 +657,54 @@ const tableApi = {
 }
 
 /**
- * 画布管理 API：画布列表 / 新建 / 重命名 / 删除 / 开新窗口。
+ * 飞书长连接 API：把 start/stop/status 交给主进程（WSClient 是 Node.js SDK，renderer 没有 node:http）。
+ * 主进程收到消息后通过 'feishu:message' 事件主动推给 renderer。
+ */
+const feishuApi = {
+  /** 启动 WS 长连接。同一时刻只允许一组 App 凭证在连；换凭证时会先关旧的 */
+  start: (args: { appId: string; appSecret: string }): Promise<{ ok: true } | { ok: false; error: string }> =>
+    ipcRenderer.invoke('feishu:start', args),
+
+  /** 关闭连接 */
+  stop: (): Promise<void> => ipcRenderer.invoke('feishu:stop'),
+
+  /** 查询当前状态：idle / connecting / connected / error */
+  getStatus: (): Promise<{ state: 'idle' | 'connecting' | 'connected' | 'error'; error?: string }> =>
+    ipcRenderer.invoke('feishu:status'),
+
+  /**
+   * 监听飞书新消息（主进程 WS 长连接推过来的）。
+   * 返回取消订阅函数。
+   */
+  onMessage: (
+    callback: (payload: {
+      messageId: string
+      chatId: string
+      chatType: 'p2p' | 'group'
+      senderId: string
+      senderName: string
+      text: string
+      handledAt: number
+    }) => void
+  ): (() => void) => {
+    const handler = (
+      _e: Electron.IpcRendererEvent,
+      payload: {
+        messageId: string
+        chatId: string
+        chatType: 'p2p' | 'group'
+        senderId: string
+        senderName: string
+        text: string
+        handledAt: number
+      }
+    ) => callback(payload)
+    ipcRenderer.on('feishu:message', handler)
+    return () => ipcRenderer.removeListener('feishu:message', handler)
+  }
+}
+
+/** 画布管理 API：画布列表 / 新建 / 重命名 / 删除 / 开新窗口。
  * 每窗口绑定一个 canvasId（通过 URL query 传入），多画布通过多窗口并行。
  */
 const canvasApi = {
@@ -750,6 +797,7 @@ if (process.contextIsolated) {
     contextBridge.exposeInMainWorld('dialogApi', dialogApi)
     contextBridge.exposeInMainWorld('transferApi', transferApi)
     contextBridge.exposeInMainWorld('notificationApi', notificationApi)
+    contextBridge.exposeInMainWorld('feishuApi', feishuApi)
     contextBridge.exposeInMainWorld('tableApi', tableApi)
     contextBridge.exposeInMainWorld('canvasApi', canvasApi)
     contextBridge.exposeInMainWorld('getCurrentCanvasId', getCurrentCanvasId)
@@ -789,6 +837,8 @@ if (process.contextIsolated) {
   // @ts-ignore (define in dts)
   window.notificationApi = notificationApi
   // @ts-ignore (define in dts)
+  window.feishuApi = feishuApi
+  // @ts-ignore (define in dts)
   window.tableApi = tableApi
   // @ts-ignore (define in dts)
   window.canvasApi = canvasApi
@@ -812,6 +862,7 @@ export type AppMenuApi = typeof appMenuApi
 export type DialogApi = typeof dialogApi
 export type TransferApi = typeof transferApi
 export type NotificationApi = typeof notificationApi
+export type FeishuApi = typeof feishuApi
 export type TableApi = typeof tableApi
 export type CanvasApi = typeof canvasApi
 export type GetCurrentCanvasId = typeof getCurrentCanvasId

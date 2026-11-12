@@ -14,6 +14,7 @@ import type {
   DialogApi,
   TransferApi,
   NotificationApi,
+  FeishuApi,
   TableApi,
   CanvasApi,
   GetCurrentCanvasId,
@@ -39,6 +40,8 @@ declare global {
     transferApi: TransferApi
     /** 系统通知 API：发 macOS / Windows 系统级通知 */
     notificationApi: NotificationApi
+    /** 飞书长连接 API：start/stop/status + onMessage 回调 */
+    feishuApi: FeishuApi
     tableApi: TableApi
     /** 画布管理 API：list / create / rename / delete / openNewWindow */
     canvasApi: CanvasApi

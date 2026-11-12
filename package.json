@@ -21,6 +21,7 @@
     "@electron-toolkit/preload": "^3.0.2",
     "@electron-toolkit/utils": "^4.0.0",
     "@imgly/background-removal": "^1.7.0",
+    "@larksuiteoapi/node-sdk": "^1.76.0",
     "@types/adm-zip": "^0.5.8",
     "adm-zip": "^0.6.1",
     "ali-oss": "^6.23.0",

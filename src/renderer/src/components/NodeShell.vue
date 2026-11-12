@@ -43,6 +43,7 @@ const props = defineProps<{
   node: NodeLike & PortsOwnerLike
   render: Component | undefined
   floating?: boolean
+  showPortLabel?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -222,10 +223,11 @@ function onResizeEnd(): void {
   }" @contextmenu="onContextMenu">
     <!-- 两侧端口列：始终渲染（最小化/展开都要显示端口圆点），hide-label 让 label 消失 -->
     <div class="ports-col ports-col--left">
-      <NodePorts :node-id="node.id" :node="node" side="in" :dirty-ids="dirtyInputPortIds" :hide-label="minimized" />
+      <NodePorts :node-id="node.id" :node="node" side="in" :dirty-ids="dirtyInputPortIds"
+        :hide-label="minimized || !showPortLabel" />
     </div>
     <div class="ports-col ports-col--right">
-      <NodePorts :node-id="node.id" :node="node" side="out" :hide-label="minimized" />
+      <NodePorts :node-id="node.id" :node="node" side="out" :hide-label="minimized || !showPortLabel" />
     </div>
 
     <!-- 中间内容区：最小化 → 80×80 图标 + 还原按钮；正常态 → node-body + render.vue -->
@@ -260,7 +262,7 @@ function onResizeEnd(): void {
     </template>
     <!-- 底部方法端口行：只有存在方法端口时才渲染 -->
     <div v-if="node.methodPorts && node.methodPorts.length > 0" class="ports-row ports-row--bottom">
-      <NodePorts :node-id="node.id" :node="node" side="method" />
+      <NodePorts :node-id="node.id" :node="node" side="method" :hide-label="minimized || !showPortLabel" />
     </div>
   </div>
 </template>

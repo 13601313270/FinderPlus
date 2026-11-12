@@ -2,7 +2,6 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { workspaceScene } from '../../../main/engine/graph/SceneRegistry'
 import type { Edge } from '../../../main/engine/graph/Edge'
-import { viewport } from '@renderer/canvas/viewport'
 import { canvasLayoutVersion } from '@renderer/canvas/elements'
 import { edgeGeometry, isEdgeGeometry, bezierPath, type EdgeGeometry } from '@renderer/canvas/edges'
 
@@ -60,15 +59,10 @@ function keyOf(edge: Edge): number {
 }
 
 /**
- * 小于这个缩放就不再画删除按钮。
- *
- * 按钮现在是跟着世界层缩放的（不做反向补偿），22px 的圆点缩到 30% 只剩 6px 出头，
- * 既看不清也点不准，留着只是糊在连线上的噪声；连线本身照画，只是暂时没有删除入口，
- * 放大回来按钮自然回来。
+ * 是否显示删除按钮由外层决定（见 App.vue）：按钮跟着世界层缩放，太小既看不清也点不准，
+ * 那时就不画按钮；连线本身照画，放大回来按钮自然回来。
  */
-const REMOVE_BUTTON_MIN_SCALE = 0.3
-
-const showRemoveButtons = computed(() => viewport.scale >= REMOVE_BUTTON_MIN_SCALE)
+defineProps<{ showRemoveButtons: boolean }>()
 
 // 节点位置变化只有 Node.onChanged 会广播（Scene 只报结构变化），所以这里订阅一遍所有节点。
 // 订阅列表跟着场景结构走：每次结构变化都重新订一份，节点增删都不会漏。

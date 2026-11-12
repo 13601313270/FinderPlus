@@ -28,6 +28,7 @@ const props = defineProps<{
   node: NodeLike & PortsOwnerLike
   render: Component | undefined
   floating?: boolean
+  showPortLabel?: boolean
 }>()
 
 const emit = defineEmits<{

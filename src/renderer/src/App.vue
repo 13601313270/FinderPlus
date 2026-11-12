@@ -490,6 +490,16 @@ const worldStyle = computed(() => ({
 }))
 
 const GRID_GAP = 24
+
+/**
+ * 连线删除按钮的最小显示缩放：按钮跟着世界层一起缩小，太小既看不清也点不准，
+ * 小于这个值就不画按钮（连线本身照画）。
+ */
+const EDGE_REMOVE_BUTTON_MIN_SCALE = 0.3
+
+/** 是否显示连线删除按钮（由当前缩放决定），作为 prop 传给 EdgeLayer */
+const showEdgeRemoveButtons = computed(() => viewport.scale >= EDGE_REMOVE_BUTTON_MIN_SCALE)
+
 const gridStyle = computed(() => ({
   backgroundSize: `${GRID_GAP * viewport.scale}px ${GRID_GAP * viewport.scale}px`,
   backgroundPosition: `${viewport.x}px ${viewport.y}px`
@@ -1473,15 +1483,17 @@ onUnmounted(() => {
         <!-- 装饰元素层：最底层，矩形本体在连线之下 -->
         <DecorLayer />
         <!-- 连线层排在节点之前：线画在卡片下面，不会盖住节点内容 -->
-        <EdgeLayer />
+        <EdgeLayer :show-remove-buttons="showEdgeRemoveButtons" />
         <!-- 每个节点 = 外壳（定位 + 端口，通用）+ 内容（render.vue，节点自定义）
              nodes 来自 Scene，新增节点加进 Scene 后会自动出现在这里 -->
         <template v-for="node in nodes" :key="node.id">
           <NodeWire :node="node" v-if="node.type === 'wire' || node.type === 'delay'"
-            :render="manifestFor(node)?.render" :floating="trackingNode?.id === node.id" />
+            :render="manifestFor(node)?.render" :floating="trackingNode?.id === node.id"
+            :show-port-label="showEdgeRemoveButtons" />
           <NodeProxy v-else-if="node.type === 'proxy'" :node="node" :render="manifestFor(node)?.render"
-            :floating="trackingNode?.id === node.id" />
-          <NodeShell v-else :node="node" :render="manifestFor(node)?.render" :floating="trackingNode?.id === node.id" />
+            :floating="trackingNode?.id === node.id" :show-port-label="showEdgeRemoveButtons" />
+          <NodeShell v-else :node="node" :render="manifestFor(node)?.render" :floating="trackingNode?.id === node.id"
+            :show-port-label="showEdgeRemoveButtons" />
         </template>
       </div>
 

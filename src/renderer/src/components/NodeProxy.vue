@@ -45,6 +45,7 @@ const props = defineProps<{
   node: NodeLike & PortsOwnerLike
   render: Component | undefined
   floating?: boolean
+  showPortLabel?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -224,16 +225,18 @@ function onResizeEnd(): void {
   }" @contextmenu="onContextMenu">
     <!-- 两侧端口列：始终渲染（最小化/展开都要显示端口圆点），hide-label 让 label 消失 -->
     <div class="ports-col ports-col--left">
-      <NodePorts :node-id="node.id" :node="node" side="in" :dirty-ids="dirtyInputPortIds" :hide-label="minimized" />
+      <NodePorts :node-id="node.id" :node="node" side="in" :dirty-ids="dirtyInputPortIds"
+        :hide-label="minimized || !showPortLabel" />
     </div>
     <div class="ports-col ports-col--right">
-      <NodePorts :node-id="node.id" :node="node" side="out" :hide-label="minimized" />
+      <NodePorts :node-id="node.id" :node="node" side="out" :hide-label="minimized || !showPortLabel" />
     </div>
     <div v-if="!minimized" class="ports-col" style="left: 20px">
-      <NodePorts :node-id="node.id" :node="node" side="calls" :dirty-ids="dirtyInputPortIds" hide-label />
+      <NodePorts :node-id="node.id" :node="node" side="calls" :dirty-ids="dirtyInputPortIds"
+        :hide-label="minimized || !showPortLabel" />
     </div>
     <div v-if="!minimized" class="ports-col" style="right: 20px" :hide-label="true">
-      <NodePorts :node-id="node.id" :node="node" side="callback" hide-label />
+      <NodePorts :node-id="node.id" :node="node" side="callback" :hide-label="minimized || !showPortLabel" />
     </div>
     <!-- 中间内容区：最小化 → 80×80 图标 + 还原按钮；正常态 → node-body + render.vue -->
     <template v-if="minimized">

@@ -12,7 +12,7 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import * as cheerio from 'cheerio'
 import * as iconv from 'iconv-lite'
 import OSS from 'ali-oss'
-import { startFeishu, stopFeishu, getFeishuStatus, disposeFeishu, sendFeishuMessage, uploadFeishuImage } from './feishu/FeishuManager'
+import { startFeishu, stopFeishu, getFeishuStatus, disposeFeishu, sendFeishuMessage, uploadFeishuImage, sendFeishuFilePipeline, getFfmpegStatus } from './feishu/FeishuManager'
 import { openDatabase, closeDatabase, getDatabase, persist } from './db/database'
 import { SqliteStorage } from './db/SqliteStorage'
 import { ensureCanvasDir, getCanvasDir, getCanvasRootDir, migrateLegacyRootFiles } from './paths'
@@ -2766,15 +2766,35 @@ ipcMain.handle('feishu:uploadImage', async (_e, args: {
   return uploadFeishuImage(args)
 })
 
+// —— 查询 ffmpeg 编码器可用性（renderer 发送前弹窗确认用）——
+ipcMain.handle('feishu:getFfmpegStatus', () => {
+  return getFfmpegStatus()
+})
+
+// —— 飞书文件类消息一站式发送（内部自动 ffmpeg 转码 + 上传 + 发送）——
+ipcMain.handle('feishu:sendFile', async (_e, args: {
+  appId: string
+  appSecret: string
+  receiveId: string
+  receiveIdType: 'chat_id' | 'open_id' | 'user_id' | 'union_id' | 'email'
+  kind: 'file' | 'audio' | 'media'
+  fileName: string
+  buffer: ArrayBuffer
+  durationMs?: number
+}) => {
+  return sendFeishuFilePipeline(args)
+})
+
 // —— 飞书发送消息（给 FeishuSendNode 用）——
 ipcMain.handle('feishu:send', async (_e, args: {
   appId: string
   appSecret: string
   receiveId: string
   receiveIdType: 'chat_id' | 'open_id' | 'user_id' | 'union_id' | 'email'
-  msgType: 'text' | 'image'
+  msgType: 'text' | 'image' | 'file' | 'audio' | 'media'
   text?: string
   imageKey?: string
+  fileKey?: string
 }) => {
   return sendFeishuMessage(args)
 })

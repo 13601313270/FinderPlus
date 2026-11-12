@@ -1,6 +1,9 @@
 import { StringValue } from '../../engine/data/StringValue'
 import { BoolValue } from '../../engine/data/BoolValue'
 import { ImgFileValue } from '../../engine/data/ImgFileValue'
+import { AudioFileValue } from '../../engine/data/AudioFileValue'
+import { VideoFileValue } from '../../engine/data/VideoFileValue'
+import { FileValue } from '../../engine/data/FileValue'
 import { Node, type InputPortChangeSource } from '../../engine/node/Node'
 import { InputPort } from '../../engine/port/InputPort'
 import { OutputPort } from '../../engine/port/OutputPort'
@@ -81,7 +84,7 @@ export class FeishuSendNode extends Node {
     super(id)
     // 输入端口
     this.textPort = new InputPort('text', {
-      accepts: [StringValue, ImgFileValue],
+      accepts: [StringValue, FileValue],
       label: { zh: '消息', en: 'Message' }
     })
     this.receiveIdPort = new InputPort('receiveId', {
@@ -199,21 +202,37 @@ export class FeishuSendNode extends Node {
    * 获取当前消息的实际类型：
    * - 'text'：StringValue 或无值
    * - 'image'：ImgFileValue
+   * - 'audio'：AudioFileValue
+   * - 'media'：VideoFileValue
+   * - 'file'：其他 FileValue（PdfFileValue/TxtFileValue 等）
    */
-  private getCurrentMsgType(): 'text' | 'image' {
+  private getCurrentMsgType(): 'text' | 'image' | 'audio' | 'media' | 'file' {
     const vals = this.textPort.value
     if (vals.length === 0) return 'text'
     const first = vals[0]
+    if (first instanceof StringValue) return 'text'
     if (first instanceof ImgFileValue) return 'image'
+    if (first instanceof AudioFileValue) return 'audio'
+    if (first instanceof VideoFileValue) return 'media'
+    if (first instanceof FileValue) return 'file'
     return 'text'
   }
 
-  /** 获取当前图片文件（ImgFileValue 时有效，否则返回 null） */
+  /** 获取 ImgFileValue 对应的 DOM File */
   private getCurrentImageFile(): File | null {
     const vals = this.textPort.value
     if (vals.length === 0) return null
     const first = vals[0]
     if (first instanceof ImgFileValue && first.file) return first.file
+    return null
+  }
+
+  /** 获取任意 FileValue 子类对应的 DOM File（audio/media/file 通用） */
+  private getCurrentGenericFile(): File | null {
+    const vals = this.textPort.value
+    if (vals.length === 0) return null
+    const first = vals[0]
+    if (first instanceof FileValue && first.file) return first.file
     return null
   }
 
@@ -256,10 +275,13 @@ export class FeishuSendNode extends Node {
     const msgType = this.getCurrentMsgType()
     if (msgType === 'text') {
       if (!this.getCurrentText()) return '消息内容为空'
-    } else {
-      // image 类型
+    } else if (msgType === 'image') {
       const file = this.getCurrentImageFile()
       if (!file) return '图片文件为空'
+    } else {
+      // file / audio / media 都需要有 FileValue.file
+      const file = this.getCurrentGenericFile()
+      if (!file) return '文件为空'
     }
     return null
   }
@@ -268,8 +290,9 @@ export class FeishuSendNode extends Node {
    * 手动/自动触发发送。
    * 防抖：正在发送中直接跳过，防止连点导致多次发送。
    *
-   * 文本消息：直接调 send
-   * 图片消息：先 uploadImage 拿 image_key → 再 send
+   * text   → send（纯文本）
+   * image  → uploadImage → send（两步走）
+   * file/audio/media → sendFile（主进程一站式：ffmpeg → 上传 → 发送）
    */
   async triggerSend(): Promise<void> {
     if (this.sendingNow) return
@@ -318,6 +341,98 @@ export class FeishuSendNode extends Node {
             imageKey: uploadRes.imageKey
           })
         }
+      } else if (msgType === 'audio' || msgType === 'media') {
+        // —— 音频/视频发送前先查 ffmpeg ——
+        // @ts-ignore
+        const ffmpeg = await window.feishuApi.getFfmpegStatus()
+        const encoderOk = msgType === 'audio' ? ffmpeg.hasAudio : ffmpeg.hasVideo
+
+        if (!encoderOk) {
+          // 先弹确认框让用户决定是否安装
+          const encoderName = msgType === 'audio' ? 'libopus' : 'libx264'
+          const wantInstall = confirm(
+            `发送${msgType === 'audio' ? '音频' : '视频'}消息需要 ffmpeg（带 ${encoderName} 编码器）。\n` +
+            `本机检测不到可用的 ffmpeg。\n\n` +
+            `是否现在通过内置命令行执行安装？\n` +
+            `命令：brew install ffmpeg`
+          )
+
+          if (!wantInstall) {
+            this.setSendState('error', '已取消：请先安装 ffmpeg 后再发送')
+            this.sentPort.commit(new BoolValue(false), { force: true })
+            this.messageIdPort.commit(new StringValue(''), { force: true })
+            return
+          }
+
+          // 用户确认安装 → 调 commandApi.run 执行 brew install ffmpeg
+          try {
+            console.log('runApi---1')
+            // @ts-ignore
+            const runApi = window.runCommand
+            console.log('runApi---2')
+            if (runApi) {
+              console.log('runApi---3')
+              this.setSendState('sending', '正在安装 ffmpeg…')
+              // console.Console
+              // window.runCommand('ls -la ~')
+              console.log('runApi---4', runApi)
+              // @ts-ignore
+              await runApi('brew install ffmpeg', { title: '安装 ffmpeg' })
+            } else {
+              // @ts-ignore
+              window.open?.('https://ffmpeg.org/download.html')
+              this.setSendState('error', '无法调用内置命令行，请手动安装 ffmpeg')
+              return
+            }
+          } catch (err) {
+            const msg = err instanceof Error ? err.message : String(err)
+            this.setSendState('error', '安装失败：' + msg)
+            this.sentPort.commit(new BoolValue(false), { force: true })
+            this.messageIdPort.commit(new StringValue(''), { force: true })
+            return
+          }
+
+          // 安装完再查一次
+          // @ts-ignore
+          const ffmpeg2 = await window.feishuApi.getFfmpegStatus()
+          const encoderOk2 = msgType === 'audio' ? ffmpeg2.hasAudio : ffmpeg2.hasVideo
+          if (!encoderOk2) {
+            this.setSendState('error', 'ffmpeg 安装似乎未成功，请手动检查')
+            this.sentPort.commit(new BoolValue(false), { force: true })
+            this.messageIdPort.commit(new StringValue(''), { force: true })
+            return
+          }
+        }
+
+        // 文件类路径：主进程一站式（ffmpeg 自动转码 + 上传 + 发送）
+        const file = this.getCurrentGenericFile()!
+        const buf = await file.arrayBuffer()
+
+        // @ts-ignore
+        sendResult = await window.feishuApi.sendFile({
+          appId: creds.appId,
+          appSecret: creds.appSecret,
+          receiveId: this.getEffectiveReceiveId(),
+          receiveIdType: this.getEffectiveReceiveIdType(),
+          kind: msgType,
+          fileName: file.name || 'file.bin',
+          buffer: buf
+        })
+      } else if (msgType === 'file') {
+        // 普通文件路径：主进程一站式（直接上传 + 发送，无需 ffmpeg）
+        const file = this.getCurrentGenericFile()!
+        const buf = await file.arrayBuffer()
+
+        // @ts-ignore
+        sendResult = await window.feishuApi.sendFile({
+          appId: creds.appId,
+          appSecret: creds.appSecret,
+          receiveId: this.getEffectiveReceiveId(),
+          receiveIdType: this.getEffectiveReceiveIdType(),
+          kind: msgType,
+          fileName: file.name || 'file.bin',
+          buffer: buf
+        })
       } else {
         // 文本路径：直接发送
         // @ts-ignore

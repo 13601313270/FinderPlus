@@ -1,4 +1,9 @@
 import { BrowserWindow } from 'electron'
+import { spawn, spawnSync } from 'node:child_process'
+import { readFileSync, writeFileSync, unlinkSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join, extname } from 'node:path'
+import { randomBytes } from 'node:crypto'
 
 /** 飞书消息事件 payload——主进程推给 renderer 的轻量结构 */
 export interface FeishuMessagePayload {
@@ -54,6 +59,129 @@ function extractFeishuError(err: unknown): string {
     if (err instanceof Error) return err.message
   }
   return String(err)
+}
+
+// —— ffmpeg 工具（音频/视频转码用）——
+
+/**
+ * 检测 ffmpeg 可用性——不仅检查能不能启动，还要检查指定编码器是否存在。
+ * 有些系统上 ffmpeg 能跑但编进去的编码器不全（比如 brew 卸载残留），必须二次确认。
+ */
+function checkFfmpegEncoder(encoder: string): boolean {
+  try {
+    // ffmpeg -encoders 输出所有编码器列表（stdout）
+    const result = spawnSync('ffmpeg', ['-encoders'], {
+      shell: true,
+      windowsHide: true,
+      timeout: 5000,
+      encoding: 'utf-8'
+    })
+    if (result.status !== 0) return false
+    // 编码器列表格式：" V..... libopus         Opus audio encoder"
+    return result.stdout?.includes(encoder) ?? false
+  } catch {
+    return false
+  }
+}
+
+/** 检测 ffmpeg 音频编码器（libopus） */
+function hasFfmpegAudioEncoder(): boolean {
+  return checkFfmpegEncoder('libopus')
+}
+/** 检测 ffmpeg 视频编码器（libx264） */
+function hasFfmpegVideoEncoder(): boolean {
+  return checkFfmpegEncoder('libx264')
+}
+
+/** 把 DOM ArrayBuffer 落盘到临时文件，返回完整路径 */
+function saveBufferToTempFile(buffer: ArrayBuffer, suffix: string): string {
+  const tmpPath = join(tmpdir(), `feishu-${randomBytes(6).toString('hex')}${suffix}`)
+  writeFileSync(tmpPath, Buffer.from(new Uint8Array(buffer)))
+  return tmpPath
+}
+
+/** 推断飞书 im/v1/files 接受的 file_type 参数值 */
+function inferFeishuFileType(fileName: string): string {
+  const ext = extname(fileName).toLowerCase().replace(/^\./, '')
+  // 飞书 im/v1/files API 明确支持的 file_type 枚举
+  const map: Record<string, string> = {
+    opus: 'opus',
+    mp4: 'mp4',
+    pdf: 'pdf',
+    doc: 'doc', docx: 'doc',
+    xls: 'xls', xlsx: 'xls',
+    ppt: 'ppt', pptx: 'ppt',
+    csv: 'csv',
+    txt: 'txt',
+    zip: 'zip',
+    rar: 'rar',
+    gz: 'tar.gz',
+    md: 'md',
+    json: 'json',
+    html: 'html',
+    css: 'css',
+    js: 'js',
+    png: 'png', jpg: 'jpg', jpeg: 'jpg', gif: 'gif', webp: 'webp', bmp: 'bmp',
+    mp3: 'mp3', wav: 'wav', m4a: 'm4a', aac: 'aac', flac: 'flac',
+    mov: 'mov', avi: 'avi', mkv: 'mkv',
+  }
+  return map[ext] ?? ext
+}
+
+/** ffmpeg 转码：把音频/视频统一格式化成飞书要求的 opus/mp4 */
+function runFfmpeg(inputPath: string, outputPath: string, extraArgs: string[]): Promise<{ ok: boolean; stderr: string }> {
+  return new Promise((resolve) => {
+    const args = ['-y', '-i', inputPath, ...extraArgs, outputPath]
+    const proc = spawn('ffmpeg', args, {
+      shell: true,
+      windowsHide: true
+    })
+
+    let stderr = ''
+    proc.stderr?.on('data', (buf) => { stderr += buf.toString() })
+    proc.stdout?.on('data', (buf) => { stderr += buf.toString() })
+
+    proc.on('close', (code) => {
+      resolve({ ok: code === 0, stderr })
+    })
+    proc.on('error', (err) => {
+      resolve({ ok: false, stderr: err.message })
+    })
+  })
+}
+
+/** 音频 → OPUS（单声道 16kHz，飞书 audio 类型唯一接受的格式） */
+async function convertAudioToOpus(inputPath: string, outputPath: string): Promise<{ ok: boolean; error?: string }> {
+  if (!hasFfmpegAudioEncoder()) {
+    return { ok: false, error: '需要安装带 libopus 编码器的 ffmpeg 才能发送音频：macOS 执行 brew install ffmpeg' }
+  }
+  const args = ['-acodec', 'libopus', '-ac', '1', '-ar', '16000']
+  const { ok, stderr } = await runFfmpeg(inputPath, outputPath, args)
+  if (!ok) {
+    // 截取最后 2 行关键错误，ffmpeg stderr 前几行是 banner
+    const lastLines = stderr.trim().split('\n').slice(-3).join('\n')
+    return { ok: false, error: '音频转 OPUS 失败：' + lastLines }
+  }
+  return { ok: true }
+}
+
+/** 视频 → MP4（H.264 + AAC，飞书 media 类型唯一接受的格式） */
+async function convertVideoToMp4(inputPath: string, outputPath: string): Promise<{ ok: boolean; error?: string }> {
+  if (!hasFfmpegVideoEncoder()) {
+    return { ok: false, error: '需要安装带 libx264 编码器的 ffmpeg 才能发送视频：macOS 执行 brew install ffmpeg' }
+  }
+  const args = ['-c:v', 'libx264', '-c:a', 'aac', '-pix_fmt', 'yuv420p']
+  const { ok, stderr } = await runFfmpeg(inputPath, outputPath, args)
+  if (!ok) {
+    const lastLines = stderr.trim().split('\n').slice(-3).join('\n')
+    return { ok: false, error: '视频转 MP4 失败：' + lastLines }
+  }
+  return { ok: true }
+}
+
+/** 安全删除临时文件（忽略不存在等错误） */
+function safeUnlink(path: string): void {
+  try { unlinkSync(path) } catch { /* noop */ }
 }
 
 function markSeen(id: string): void {
@@ -242,7 +370,7 @@ export async function uploadFeishuImage(args: {
   appId: string
   appSecret: string
   fileName: string
-  buffer: ArrayBuffer
+  buffer: ArrayBuffer | Buffer
 }): Promise<{ ok: true; imageKey: string } | { ok: false; error: string }> {
   if (!args.appId || !args.appSecret) {
     return { ok: false, error: 'App ID / App Secret 不能为空' }
@@ -264,8 +392,7 @@ export async function uploadFeishuImage(args: {
 
   try {
     const client = new Lark.Client({ appId: args.appId, appSecret: args.appSecret })
-    // SDK 接受 Node.js Buffer，把 renderer 传过来的 ArrayBuffer 转一下
-    const nodeBuf = Buffer.from(args.buffer)
+    const nodeBuf = args.buffer instanceof Buffer ? args.buffer : Buffer.from(new Uint8Array(args.buffer as ArrayBuffer))
     const res = await client.im.image.create({
       data: {
         image_type: 'message',
@@ -273,10 +400,6 @@ export async function uploadFeishuImage(args: {
       }
     })
 
-    // SDK 不同版本返回结构可能不同，做多级 fallback：
-    // 1. 顶层 res.image_key（部分版本）
-    // 2. res.data.image_key（标准文档结构）
-    // 3. res.data.data.image_key（嵌套结构）
     const imageKey = res?.image_key
       ?? res?.data?.image_key
       ?? res?.data?.data?.image_key
@@ -294,16 +417,101 @@ export async function uploadFeishuImage(args: {
   }
 }
 
+/**
+ * 上传文件/音频/视频到飞书开放平台，返回 file_key。
+ * 走 im/v1/files 接口——和 uploadFeishuImage（im/v1/images）平行。
+ *
+ * file_type 参考飞书文档：opus/mp4/pdf/doc/xls/ppt/csv/txt/zip 等。
+ * 大小限制：≤ 30MB
+ */
+export async function uploadFeishuFile(args: {
+  appId: string
+  appSecret: string
+  fileName: string
+  fileType: string
+  buffer: ArrayBuffer | Buffer
+  /** 音视频可选，毫秒 */
+  durationMs?: number
+}): Promise<{ ok: true; fileKey: string } | { ok: false; error: string }> {
+  if (!args.appId || !args.appSecret) return { ok: false, error: 'App ID / App Secret 不能为空' }
+  if (!args.fileName) return { ok: false, error: '文件名不能为空' }
+  if (!args.fileType) return { ok: false, error: '文件类型不能为空' }
+  if (!args.buffer || args.buffer.byteLength === 0) return { ok: false, error: '文件内容为空' }
+
+  let Lark: any
+  try {
+    Lark = await import('@larksuiteoapi/node-sdk')
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    return { ok: false, error: '飞书 SDK 加载失败: ' + msg }
+  }
+
+  try {
+    const client = new Lark.Client({ appId: args.appId, appSecret: args.appSecret })
+    const nodeBuf = args.buffer instanceof Buffer ? args.buffer : Buffer.from(new Uint8Array(args.buffer as ArrayBuffer))
+    const data: Record<string, unknown> = {
+      file_type: args.fileType,
+      file_name: args.fileName,
+      file: nodeBuf
+    }
+    if (typeof args.durationMs === 'number' && args.durationMs > 0) {
+      data.duration = args.durationMs
+    }
+
+    const res = await client.im.file.create({ data })
+
+    // 和 uploadFeishuImage 一样，SDK 返回结构有多级可能
+    const fileKey = res?.file_key
+      ?? res?.data?.file_key
+      ?? res?.data?.data?.file_key
+    if (!fileKey) {
+      console.error('[FeishuManager] 上传文件响应缺少 file_key:', JSON.stringify(res)?.slice(0, 300))
+      return { ok: false, error: '上传文件失败：飞书未返回 file_key' }
+    }
+
+    console.log(`[FeishuManager] 上传${args.fileType}文件成功, file_key:`, fileKey)
+    return { ok: true, fileKey }
+  } catch (err) {
+    const msg = extractFeishuError(err)
+    console.error('[FeishuManager] 上传文件失败:', msg)
+    return { ok: false, error: msg }
+  }
+}
+
+ /**
+ * 查询 ffmpeg 编码器可用性（给 renderer 发送前检查 + 弹窗确认用）。
+ * 不阻塞——纯 spawnSync 本地查，耗时 <100ms。
+ */
+export function getFfmpegStatus(): {
+  hasAny: boolean
+  hasAudio: boolean  // libopus
+  hasVideo: boolean   // libx264
+  /** brew 安装命令 */
+  installHint: string
+} {
+  const hasAudio = hasFfmpegAudioEncoder()
+  const hasVideo = hasFfmpegVideoEncoder()
+  return {
+    hasAny: hasAudio || hasVideo,
+    hasAudio,
+    hasVideo,
+    installHint: 'brew install ffmpeg'
+  }
+}
+
 /** 飞书消息类型 */
-export type FeishuMsgType = 'text' | 'image'
+export type FeishuMsgType = 'text' | 'image' | 'file' | 'audio' | 'media'
 
 /**
  * 发送飞书消息。
  * 和 WS 长连接独立——WSClient 只管收事件，发消息需要单独 new 一个 REST Client。
  *
- * 支持两种消息类型：
+ * 支持五种消息类型：
  * - text：纯文本，传 text 字段
- * - image：图片，传 imageKey 字段（需先调 uploadFeishuImage 拿 key）
+ * - image：图片，传 imageKey（uploadFeishuImage 拿）
+ * - file：文件，传 fileKey（uploadFeishuFile 拿）
+ * - audio：语音，传 fileKey（uploadFeishuFile 拿，file_type=opus）
+ * - media：视频，传 fileKey（uploadFeishuFile 拿，file_type=mp4）
  */
 export async function sendFeishuMessage(args: {
   appId: string
@@ -313,26 +521,26 @@ export async function sendFeishuMessage(args: {
   msgType: FeishuMsgType
   /** text 类型时必填 */
   text?: string
-  /** image 类型时必填（先调 uploadFeishuImage 拿 key） */
+  /** image 类型时必填 */
   imageKey?: string
+  /** file/audio/media 类型时必填 */
+  fileKey?: string
 }): Promise<{ ok: true; messageId?: string } | { ok: false; error: string }> {
-  if (!args.appId || !args.appSecret) {
-    return { ok: false, error: 'App ID / App Secret 不能为空' }
-  }
-  if (!args.receiveId) {
-    return { ok: false, error: '接收方 ID 不能为空' }
-  }
+  if (!args.appId || !args.appSecret) return { ok: false, error: 'App ID / App Secret 不能为空' }
+  if (!args.receiveId) return { ok: false, error: '接收方 ID 不能为空' }
 
-  // 按类型校验必填字段
   let content: string
-  let msgType: FeishuMsgType = args.msgType
+  const msgType = args.msgType
 
   if (msgType === 'text') {
     if (!args.text) return { ok: false, error: '消息内容为空' }
     content = JSON.stringify({ text: args.text })
   } else if (msgType === 'image') {
-    if (!args.imageKey) return { ok: false, error: '图片 key 为空，请先上传图片' }
+    if (!args.imageKey) return { ok: false, error: '图片 key 为空' }
     content = JSON.stringify({ image_key: args.imageKey })
+  } else if (msgType === 'file' || msgType === 'audio' || msgType === 'media') {
+    if (!args.fileKey) return { ok: false, error: '文件 key 为空' }
+    content = JSON.stringify({ file_key: args.fileKey })
   } else {
     return { ok: false, error: '不支持的消息类型: ' + msgType }
   }
@@ -362,6 +570,104 @@ export async function sendFeishuMessage(args: {
     const msg = extractFeishuError(err)
     console.error(`[FeishuManager] 发送${msgType}消息失败:`, msg)
     return { ok: false, error: msg }
+  }
+}
+
+/**
+ * 一站式发送文件类消息（file/audio/media）。
+ * 内部自动处理 ffmpeg 转码 → 上传 → 发送 → 清理临时文件的完整链路。
+ *
+ * @param args.kind  业务含义：'audio' 音频消息（自动转 OPUS）、'media' 视频消息（自动转 MP4）、'file' 普通文件（直接上传）
+ * @param args.msgType 飞书 API 的 msg_type 值：'audio' | 'media' | 'file'
+ * @param args.buffer 原始文件的 ArrayBuffer（renderer 读 DOM File 得到的）
+ */
+export async function sendFeishuFilePipeline(args: {
+  appId: string
+  appSecret: string
+  receiveId: string
+  receiveIdType: 'chat_id' | 'open_id' | 'user_id' | 'union_id' | 'email'
+  kind: 'file' | 'audio' | 'media'
+  fileName: string
+  buffer: ArrayBuffer
+  durationMs?: number
+}): Promise<{ ok: true; messageId?: string } | { ok: false; error: string }> {
+  if (!args.appId || !args.appSecret) return { ok: false, error: 'App ID / App Secret 不能为空' }
+  if (!args.receiveId) return { ok: false, error: '接收方 ID 不能为空' }
+  if (!args.buffer || args.buffer.byteLength === 0) return { ok: false, error: '文件内容为空' }
+
+  const originalExt = extname(args.fileName).toLowerCase()
+  let processedBuffer: ArrayBuffer | Buffer = args.buffer
+  let finalFileName = args.fileName
+  let finalFileType: string
+  const tempPaths: string[] = []
+
+  // —— 需要 ffmpeg 转码的场景：audio → opus，media → mp4 ——
+  try {
+    if (args.kind === 'audio' && originalExt !== '.opus') {
+      // 音频转 OPUS
+      const inputPath = saveBufferToTempFile(args.buffer, originalExt || '.tmp')
+      tempPaths.push(inputPath)
+      const outputPath = join(tmpdir(), `feishu-${randomBytes(6).toString('hex')}.opus`)
+      tempPaths.push(outputPath)
+
+      const convRes = await convertAudioToOpus(inputPath, outputPath)
+      if (!convRes.ok) {
+        return { ok: false, error: convRes.error ?? '音频转码失败' }
+      }
+      processedBuffer = readFileSync(outputPath)
+      finalFileName = (args.fileName.replace(/\.[^.]+$/, '') || 'audio') + '.opus'
+      finalFileType = 'opus'
+    } else if (args.kind === 'media' && originalExt !== '.mp4') {
+      // 视频转 MP4
+      const inputPath = saveBufferToTempFile(args.buffer, originalExt || '.tmp')
+      tempPaths.push(inputPath)
+      const outputPath = join(tmpdir(), `feishu-${randomBytes(6).toString('hex')}.mp4`)
+      tempPaths.push(outputPath)
+
+      const convRes = await convertVideoToMp4(inputPath, outputPath)
+      if (!convRes.ok) {
+        return { ok: false, error: convRes.error ?? '视频转码失败' }
+      }
+      processedBuffer = readFileSync(outputPath)
+      finalFileName = (args.fileName.replace(/\.[^.]+$/, '') || 'video') + '.mp4'
+      finalFileType = 'mp4'
+    } else if (args.kind === 'audio') {
+      // 已经是 .opus，无需转码
+      finalFileType = 'opus'
+    } else if (args.kind === 'media') {
+      // 已经是 .mp4，无需转码
+      finalFileType = 'mp4'
+    } else {
+      // 普通文件：直接按扩展名推断 file_type
+      finalFileType = inferFeishuFileType(args.fileName)
+    }
+
+    // —— 上传 ——
+    const uploadRes = await uploadFeishuFile({
+      appId: args.appId,
+      appSecret: args.appSecret,
+      fileName: finalFileName,
+      fileType: finalFileType,
+      buffer: processedBuffer,
+      durationMs: args.durationMs
+    })
+    if (!uploadRes.ok) {
+      return { ok: false, error: uploadRes.error }
+    }
+
+    // —— 发送 ——
+    const sendRes = await sendFeishuMessage({
+      appId: args.appId,
+      appSecret: args.appSecret,
+      receiveId: args.receiveId,
+      receiveIdType: args.receiveIdType,
+      msgType: args.kind,
+      fileKey: uploadRes.fileKey
+    })
+    return sendRes
+  } finally {
+    // 无论成功失败都清理临时文件
+    for (const p of tempPaths) safeUnlink(p)
   }
 }
 

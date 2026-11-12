@@ -2,10 +2,11 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { OssDownloadNode } from './node'
+import { useOssBuckets } from '@renderer/composables/useOssBuckets'
 
 /**
  * OSS 下载节点详情面板中间栏：
- * - AccessKeyId / Secret / Region / Bucket / Endpoint
+ * - Bucket 下拉选择（引用全局配置）
  * - 自动下载开关
  * - 下载按钮 + 结果展示
  */
@@ -16,12 +17,10 @@ const ossNode = computed(() => {
   return n instanceof OssDownloadNode ? n : undefined
 })
 
+const { buckets: ossBuckets } = useOssBuckets()
+
 // —— 表单镜像状态 ——
-const accessKeyId = ref('')
-const accessKeySecret = ref('')
-const region = ref('')
-const bucket = ref('')
-const endpoint = ref('')
+const bucketId = ref('')
 const autoSend = ref(false)
 
 // —— 运行时状态 ——
@@ -46,11 +45,7 @@ onMounted(() => {
 onUnmounted(() => { offChanged?.() })
 
 function sync(node: OssDownloadNode): void {
-  accessKeyId.value = node.displayAccessKeyId
-  accessKeySecret.value = node.displayAccessKeySecret
-  region.value = node.displayRegion
-  bucket.value = node.displayBucket
-  endpoint.value = node.displayEndpoint
+  bucketId.value = node.displayBucketId
   autoSend.value = node.displayAutoSend
   status.value = node.displayStatus
   lastError.value = node.displayLastError
@@ -66,47 +61,23 @@ const hasConfig = computed(() => ossNode.value?.hasConfig ?? false)
 function onDownload(): void { ossNode.value?.run() }
 
 // —— 事件：改了就直接写回节点 ——
-function onAccessKeyId(e: Event): void { ossNode.value?.setAccessKeyId((e.target as HTMLInputElement).value) }
-function onAccessKeySecret(e: Event): void { ossNode.value?.setAccessKeySecret((e.target as HTMLInputElement).value) }
-function onRegion(e: Event): void { ossNode.value?.setRegion((e.target as HTMLInputElement).value) }
-function onBucket(e: Event): void { ossNode.value?.setBucket((e.target as HTMLInputElement).value) }
-function onEndpoint(e: Event): void { ossNode.value?.setEndpoint((e.target as HTMLInputElement).value) }
+function onBucketId(e: Event): void { ossNode.value?.setBucketId((e.target as HTMLSelectElement).value) }
 function onAutoSend(e: Event): void { ossNode.value?.setAutoSend((e.target as HTMLInputElement).checked) }
 </script>
 
 <template>
   <div class="detail-panel">
 
-    <!-- 凭证区 -->
+    <!-- Bucket 选择 -->
     <div class="detail-panel__section">
-      <label class="detail-panel__label">AccessKeyId *</label>
-      <input class="detail-panel__input" type="text" :value="accessKeyId"
-        placeholder="LTAI5t..." @input="onAccessKeyId" />
-    </div>
-
-    <div class="detail-panel__section">
-      <label class="detail-panel__label">AccessKeySecret *</label>
-      <input class="detail-panel__input" type="password" :value="accessKeySecret"
-        placeholder="••••••" @input="onAccessKeySecret" />
-    </div>
-
-    <div style="display: flex; gap: 8px;">
-      <div class="detail-panel__section" style="flex: 1;">
-        <label class="detail-panel__label">Region *</label>
-        <input class="detail-panel__input" type="text" :value="region"
-          placeholder="oss-cn-hangzhou" @input="onRegion" />
-      </div>
-      <div class="detail-panel__section" style="flex: 1;">
-        <label class="detail-panel__label">Bucket *</label>
-        <input class="detail-panel__input" type="text" :value="bucket"
-          placeholder="my-bucket" @input="onBucket" />
-      </div>
-    </div>
-
-    <div class="detail-panel__section">
-      <label class="detail-panel__label">Endpoint（可选，自定义域名 / 传输加速 / 内网）</label>
-      <input class="detail-panel__input" type="text" :value="endpoint"
-        placeholder="oss-cn-hangzhou.aliyuncs.com" @input="onEndpoint" />
+      <label class="detail-panel__label">Bucket *</label>
+      <select class="detail-panel__input" :value="bucketId" @change="onBucketId">
+        <option value="">请选择 Bucket…</option>
+        <option v-for="b in ossBuckets" :key="b.id" :value="b.id">{{ b.name }}（{{ b.bucket }}）</option>
+      </select>
+      <p v-if="ossBuckets.length === 0" class="detail-panel__hint">
+        尚未配置任何 Bucket，请在「设置 → OSS Bucket」中新增。
+      </p>
     </div>
 
     <div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
@@ -143,7 +114,7 @@ function onAutoSend(e: Event): void { ossNode.value?.setAutoSend((e.target as HT
             <span v-if="lastFileSize"> · {{ lastFileSize.toLocaleString() }} bytes</span>
           </div>
         </template>
-        <template v-else>配置好凭证后下载</template>
+        <template v-else>配置好 Bucket 后下载</template>
       </div>
     </div>
 
@@ -172,6 +143,12 @@ function onAutoSend(e: Event): void { ossNode.value?.setAutoSend((e.target as HT
     color: #374151;
   }
 
+  &__hint {
+    margin: 0;
+    font-size: 11px;
+    color: #d97706;
+  }
+
   &__switch {
     display: flex;
     align-items: center;
@@ -179,7 +156,6 @@ function onAutoSend(e: Event): void { ossNode.value?.setAutoSend((e.target as HT
     cursor: pointer;
     user-select: none;
 
-    /* 原生 checkbox 隐藏但保留可聚焦 */
     input {
       position: absolute;
       width: 0; height: 0;
@@ -187,7 +163,6 @@ function onAutoSend(e: Event): void { ossNode.value?.setAutoSend((e.target as HT
       pointer-events: none;
     }
 
-    /* 轨道 */
     &-track {
       position: relative;
       width: 36px;
@@ -211,18 +186,15 @@ function onAutoSend(e: Event): void { ossNode.value?.setAutoSend((e.target as HT
       }
     }
 
-    /* 选中态 */
     input:checked + &-track {
       background: #2563eb;
       &::after { transform: translateX(16px); }
     }
 
-    /* 聚焦态（键盘可访问） */
     input:focus-visible + &-track {
       box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.3);
     }
 
-    /* 悬停态 */
     &:hover input:not(:checked) + &-track {
       background: #9ca3af;
     }
@@ -245,6 +217,12 @@ function onAutoSend(e: Event): void { ossNode.value?.setAutoSend((e.target as HT
     outline: none;
 
     &:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12); }
+  }
+
+  select.detail-panel__input {
+    font-family: inherit;
+    background: #fff;
+    cursor: pointer;
   }
 
   &__scrape {

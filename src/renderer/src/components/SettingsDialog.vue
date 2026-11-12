@@ -27,6 +27,10 @@ import {
   useFeishuBots,
   type FeishuBot
 } from '@renderer/composables/useFeishuBots'
+import {
+  useOssBuckets,
+  type OssBucket
+} from '@renderer/composables/useOssBuckets'
 import SelectMenu from './SelectMenu.vue'
 import { workspaceScene } from '../../../main/engine/graph/SceneRegistry'
 import { viewport } from '@renderer/canvas/viewport'
@@ -70,9 +74,16 @@ const {
   update: updateFeishuBot,
   remove: removeFeishuBot
 } = useFeishuBots()
+const {
+  buckets: ossBuckets,
+  add: addOssBucket,
+  update: updateOssBucket,
+  remove: removeOssBucket,
+  find: findOssBucket
+} = useOssBuckets()
 
 /** 左侧选中的分类 */
-type SectionKey = 'general' | 'appearance' | 'llm' | 'image' | 'nodes' | 'browser' | 'feishu' | 'canvases'
+type SectionKey = 'general' | 'appearance' | 'llm' | 'image' | 'nodes' | 'browser' | 'feishu' | 'oss' | 'canvases'
 const activeSection = ref<SectionKey>('general')
 
 /** 各 provider API Key 是否以明文显示 */
@@ -86,7 +97,7 @@ function toggleImageKeyVisible(key: string): void {
   imageKeyVisible.value[key] = !imageKeyVisible.value[key]
 }
 
-const SECTION_ORDER: SectionKey[] = ['general', 'appearance', 'llm', 'image', 'nodes', 'browser', 'feishu', 'canvases']
+const SECTION_ORDER: SectionKey[] = ['general', 'appearance', 'llm', 'image', 'nodes', 'browser', 'feishu', 'oss', 'canvases']
 
 function sectionLabel(key: SectionKey): string {
   switch (key) {
@@ -97,6 +108,7 @@ function sectionLabel(key: SectionKey): string {
     case 'nodes':      return t('settingsDialog.groupNodes')
     case 'browser':    return t('settingsDialog.groupBrowser')
     case 'feishu':     return '飞书机器人'
+    case 'oss':        return 'OSS Bucket'
     case 'canvases':   return t('settingsDialog.groupCanvases')
   }
 }
@@ -505,6 +517,77 @@ async function onDeleteFeishuBot(bot: FeishuBot): Promise<void> {
   )
   if (!ok) return
   removeFeishuBot(bot.id)
+}
+
+// —— OSS Bucket ——
+interface OssBucketDraft {
+  mode: 'add' | 'edit'
+  id?: string
+  name: string
+  accessKeyId: string
+  accessKeySecret: string
+  region: string
+  bucket: string
+  endpoint: string
+}
+const ossBucketModalVisible = ref(false)
+const ossBucketDraft = ref<OssBucketDraft>({
+  mode: 'add', name: '', accessKeyId: '', accessKeySecret: '', region: '', bucket: '', endpoint: ''
+})
+const ossSecretVisible = ref(false)
+
+function showOssBucketModal(mode: 'add' | 'edit', bucket?: OssBucket): void {
+  if (mode === 'edit' && bucket) {
+    ossBucketDraft.value = {
+      mode: 'edit',
+      id: bucket.id,
+      name: bucket.name,
+      accessKeyId: bucket.accessKeyId,
+      accessKeySecret: bucket.accessKeySecret,
+      region: bucket.region,
+      bucket: bucket.bucket,
+      endpoint: bucket.endpoint
+    }
+  } else {
+    ossBucketDraft.value = { mode: 'add', name: '', accessKeyId: '', accessKeySecret: '', region: '', bucket: '', endpoint: '' }
+  }
+  ossSecretVisible.value = false
+  ossBucketModalVisible.value = true
+}
+
+function closeOssBucketModal(): void {
+  ossBucketModalVisible.value = false
+}
+
+function onSaveOssBucket(): void {
+  const d = ossBucketDraft.value
+  if (!d.name.trim() || !d.accessKeyId.trim() || !d.accessKeySecret.trim() || !d.region.trim() || !d.bucket.trim()) return
+  if (d.mode === 'add') {
+    addOssBucket(d.name, d.accessKeyId, d.accessKeySecret, d.region, d.bucket, d.endpoint)
+  } else if (d.id) {
+    updateOssBucket(d.id, {
+      name: d.name, accessKeyId: d.accessKeyId, accessKeySecret: d.accessKeySecret,
+      region: d.region, bucket: d.bucket, endpoint: d.endpoint
+    })
+  }
+  ossBucketModalVisible.value = false
+}
+
+async function onDeleteOssBucket(bucket: OssBucket): Promise<void> {
+  const ok = await window.showConfirm(
+    '删除 Bucket',
+    `确定要删除 Bucket"${bucket.name}"吗？删除后，引用该 Bucket 的 OSS 节点将无法正常工作（节点里的 bucketId 配置保留，但凭证不再生效）。`
+  )
+  if (!ok) return
+  removeOssBucket(bucket.id)
+}
+
+// —— 查找画布上引用了某个 bucketId 的 OSS 节点 ——
+function findNodesUsingBucket(id: string): string[] {
+  const typeNames = ['oss-upload', 'oss-download', 'oss-exists']
+  return workspaceScene.allNodes
+    .filter((n) => typeNames.includes(n.type))
+    .map((n) => n.id)
 }
 
 // —— 我的画布 tab ——
@@ -1051,6 +1134,51 @@ async function onDeleteCanvas(id: string, name: string): Promise<void> {
               </section>
             </template>
 
+            <!-- ========== OSS Bucket ========== -->
+            <template v-if="activeSection === 'oss'">
+              <section class="gs-section">
+                <h4 class="gs-section__title">阿里云 OSS Bucket</h4>
+                <p class="gs-section__hint">统一配置 Bucket 凭证，OSS 上传 / 下载 / 存在性检查 节点只需选择 Bucket 即可。AccessKey 存储在本地浏览器 localStorage。</p>
+
+                <div class="gs-transfer__actions" style="margin-bottom: 12px;">
+                  <button
+                    class="gs-btn gs-btn--primary"
+                    type="button"
+                    @click="showOssBucketModal('add')"
+                  >+ 新增 Bucket</button>
+                </div>
+
+                <div v-if="ossBuckets.length === 0" class="gs-canvases__empty">
+                  暂无 Bucket，点击上方"新增 Bucket"按钮添加。
+                </div>
+
+                <div v-else class="gs-feishu__list">
+                  <div
+                    v-for="bkt in ossBuckets"
+                    :key="bkt.id"
+                    class="gs-feishu-card"
+                  >
+                    <div class="gs-feishu-card__info">
+                      <span class="gs-feishu-card__name">{{ bkt.name }}</span>
+                      <span class="gs-feishu-card__appid">{{ bkt.bucket }} · {{ bkt.region }}</span>
+                    </div>
+                    <div class="gs-feishu-card__actions">
+                      <button
+                        class="gs-canvas-card__btn"
+                        type="button"
+                        @click="showOssBucketModal('edit', bkt)"
+                      >编辑</button>
+                      <button
+                        class="gs-canvas-card__btn gs-canvas-card__btn--danger"
+                        type="button"
+                        @click="onDeleteOssBucket(bkt)"
+                      >删除</button>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            </template>
+
             <!-- ========== 我的画布 ========== -->
             <template v-if="activeSection === 'canvases'">
               <section class="gs-section">
@@ -1166,6 +1294,95 @@ async function onDeleteCanvas(id: string, name: string): Promise<void> {
                     type="button"
                     :disabled="!feishuBotDraft.name.trim() || !feishuBotDraft.appId.trim() || !feishuBotDraft.appSecret.trim()"
                     @click="onSaveFeishuBot"
+                  >保存</button>
+                </div>
+              </div>
+            </div>
+          </Teleport>
+
+          <!-- ========== OSS Bucket 编辑 Modal ========== -->
+          <Teleport to="body">
+            <div v-if="ossBucketModalVisible" class="gs-mask" @click.self="closeOssBucketModal">
+              <div class="gs-modal gs-modal--wide" @click.stop>
+                <div class="gs-modal__header">
+                  <span class="gs-modal__title">{{ ossBucketDraft.mode === 'edit' ? '编辑 Bucket' : '新增 Bucket' }}</span>
+                  <button class="gs-modal__close" type="button" @click="closeOssBucketModal">×</button>
+                </div>
+                <div class="gs-modal__body">
+                  <label class="gs-field">
+                    <span class="gs-field__label">名称</span>
+                    <input
+                      class="gs-field__input"
+                      type="text"
+                      v-model="ossBucketDraft.name"
+                      placeholder="如：生产环境 bucket"
+                      maxlength="64"
+                    />
+                  </label>
+                  <div style="display: flex; gap: 8px;">
+                    <label class="gs-field" style="flex: 1;">
+                      <span class="gs-field__label">AccessKeyId *</span>
+                      <input
+                        class="gs-field__input"
+                        type="text"
+                        v-model="ossBucketDraft.accessKeyId"
+                        placeholder="LTAI5t..."
+                      />
+                    </label>
+                    <label class="gs-field" style="flex: 1;">
+                      <span class="gs-field__label">AccessKeySecret *</span>
+                      <div class="gs-field__secret-row">
+                        <input
+                          class="gs-field__input"
+                          :type="ossSecretVisible ? 'text' : 'password'"
+                          v-model="ossBucketDraft.accessKeySecret"
+                          placeholder="••••••"
+                        />
+                        <button
+                          class="gs-field__toggle"
+                          type="button"
+                          @click="ossSecretVisible = !ossSecretVisible"
+                        >{{ ossSecretVisible ? '隐藏' : '显示' }}</button>
+                      </div>
+                    </label>
+                  </div>
+                  <div style="display: flex; gap: 8px;">
+                    <label class="gs-field" style="flex: 1;">
+                      <span class="gs-field__label">Region *</span>
+                      <input
+                        class="gs-field__input"
+                        type="text"
+                        v-model="ossBucketDraft.region"
+                        placeholder="oss-cn-hangzhou"
+                      />
+                    </label>
+                    <label class="gs-field" style="flex: 1;">
+                      <span class="gs-field__label">Bucket *</span>
+                      <input
+                        class="gs-field__input"
+                        type="text"
+                        v-model="ossBucketDraft.bucket"
+                        placeholder="my-bucket"
+                      />
+                    </label>
+                  </div>
+                  <label class="gs-field">
+                    <span class="gs-field__label">Endpoint（可选，自定义域名 / 传输加速 / 内网）</span>
+                    <input
+                      class="gs-field__input"
+                      type="text"
+                      v-model="ossBucketDraft.endpoint"
+                      placeholder="oss-cn-hangzhou.aliyuncs.com"
+                    />
+                  </label>
+                </div>
+                <div class="gs-modal__footer">
+                  <button class="gs-btn" type="button" @click="closeOssBucketModal">取消</button>
+                  <button
+                    class="gs-btn gs-btn--primary"
+                    type="button"
+                    :disabled="!ossBucketDraft.name.trim() || !ossBucketDraft.accessKeyId.trim() || !ossBucketDraft.accessKeySecret.trim() || !ossBucketDraft.region.trim() || !ossBucketDraft.bucket.trim()"
+                    @click="onSaveOssBucket"
                   >保存</button>
                 </div>
               </div>
@@ -2005,6 +2222,10 @@ async function onDeleteCanvas(id: string, name: string): Promise<void> {
     padding: 12px 18px;
     border-top: 1px solid #e5e7eb;
   }
+}
+
+.gs-modal--wide {
+  width: 540px;
 }
 
 .gs-field {

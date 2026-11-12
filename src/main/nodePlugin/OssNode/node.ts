@@ -4,6 +4,7 @@ import { InputPort } from '../../engine/port/InputPort'
 import { MethodPort } from '../../engine/port/MethodPort'
 import { OutputPort } from '../../engine/port/OutputPort'
 import { Node } from '../../engine/node/Node'
+import { useOssBuckets } from '../../../renderer/src/composables/useOssBuckets'
 
 /** 节点运行状态（UI 据此决定按钮可点 / 结果区样式） */
 export type OssStatus = 'idle' | 'running' | 'done' | 'error'
@@ -30,8 +31,8 @@ function hasExtension(name: string): boolean {
 /**
  * 阿里云 OSS 上传节点：接入任意 FileValue，用源文件名直接上传到 bucket，输出可访问 URL。
  *
- * 配置字段（节点 state 持久化）：AccessKeyId / AccessKeySecret / Region / Bucket / Endpoint /
- * 是否签名 URL / 签名有效期。
+ * 配置字段（节点 state 持久化）：bucketId（全局 OSS Bucket 配置引用）、
+ * 是否签名 URL / 签名有效期、自动发送开关。
  *
  * 触发方式：
  * 1. 点击卡片上的「上传」按钮
@@ -70,11 +71,8 @@ export class OssNode extends Node {
 
   // —— 持久化配置 ——
 
-  private accessKeyId = ''
-  private accessKeySecret = ''
-  private region = ''
-  private bucket = ''
-  private endpoint = ''
+  /** 引用全局 Bucket 配置的 id */
+  private bucketId = ''
   /** 是否用 signatureUrl 生成带签名的长期链接（bucket 私有时必须开） */
   private signUrl = false
   /** 签名有效期（秒）；signUrl=true 时生效 */
@@ -104,11 +102,11 @@ export class OssNode extends Node {
 
   // —— 渲染层读的状态 ——
 
-  get displayAccessKeyId(): string { return this.accessKeyId }
-  get displayAccessKeySecret(): string { return this.accessKeySecret }
-  get displayRegion(): string { return this.region }
-  get displayBucket(): string { return this.bucket }
-  get displayEndpoint(): string { return this.endpoint }
+  get displayBucketId(): string { return this.bucketId }
+  get displayBucketName(): string {
+    const { getLabel } = useOssBuckets()
+    return getLabel(this.bucketId)
+  }
   get displaySignUrl(): boolean { return this.signUrl }
   get displaySignExpires(): number { return this.signExpires }
   get displayAutoSend(): boolean { return this.autoSend }
@@ -118,21 +116,15 @@ export class OssNode extends Node {
   get displayLastUrl(): string { return this.lastUrl }
   get displayLastObjectKey(): string { return this.lastObjectKey }
 
-  /** 是否已填好必须的配置（accessKeyId / secret / region / bucket 四项） */
+  /** 是否已填好必须的配置（bucketId 指向了全局已配置完整的 Bucket） */
   get hasConfig(): boolean {
-    return !!this.accessKeyId.trim()
-      && !!this.accessKeySecret.trim()
-      && !!this.region.trim()
-      && !!this.bucket.trim()
+    const { isConfigured } = useOssBuckets()
+    return isConfigured(this.bucketId)
   }
 
   // —— 用户操作 ——
 
-  setAccessKeyId(v: string): void { if (this.accessKeyId !== v) { this.accessKeyId = v; this.notifyChanged() } }
-  setAccessKeySecret(v: string): void { if (this.accessKeySecret !== v) { this.accessKeySecret = v; this.notifyChanged() } }
-  setRegion(v: string): void { if (this.region !== v) { this.region = v; this.notifyChanged() } }
-  setBucket(v: string): void { if (this.bucket !== v) { this.bucket = v; this.notifyChanged() } }
-  setEndpoint(v: string): void { if (this.endpoint !== v) { this.endpoint = v; this.notifyChanged() } }
+  setBucketId(v: string): void { if (this.bucketId !== v) { this.bucketId = v; this.notifyChanged() } }
   setSignUrl(v: boolean): void { if (this.signUrl !== v) { this.signUrl = v; this.notifyChanged() } }
   setSignExpires(v: number): void {
     const clamped = Math.max(60, Math.min(365 * 24 * 3600 * 10, Math.round(v)))
@@ -170,10 +162,12 @@ export class OssNode extends Node {
       return
     }
 
-    // 2. 必须配置项检查
-    if (!this.hasConfig) {
+    // 2. 反查 Bucket 配置
+    const { find } = useOssBuckets()
+    const bucket = find(this.bucketId)
+    if (!bucket) {
       this.status = 'error'
-      this.lastError = '请先配置 AccessKey / Region / Bucket'
+      this.lastError = '请先在设置中配置 Bucket'
       this.notifyChanged()
       this.failRun()
       return
@@ -228,11 +222,11 @@ export class OssNode extends Node {
     try {
       // @ts-ignore — 渲染进程里 window.ossApi 一定存在
       result = await window.ossApi.upload({
-        accessKeyId: this.accessKeyId,
-        accessKeySecret: this.accessKeySecret,
-        region: this.region,
-        bucket: this.bucket,
-        endpoint: this.endpoint || undefined,
+        accessKeyId: bucket.accessKeyId,
+        accessKeySecret: bucket.accessKeySecret,
+        region: bucket.region,
+        bucket: bucket.bucket,
+        endpoint: bucket.endpoint || undefined,
         objectKey,
         base64Data: base64,
         contentType: first.file.type || undefined,
@@ -263,11 +257,7 @@ export class OssNode extends Node {
   saveState(): Record<string, unknown> {
     return {
       ...super.saveState(),
-      accessKeyId: this.accessKeyId,
-      accessKeySecret: this.accessKeySecret,
-      region: this.region,
-      bucket: this.bucket,
-      endpoint: this.endpoint,
+      bucketId: this.bucketId,
       signUrl: this.signUrl,
       signExpires: this.signExpires,
       autoSend: this.autoSend
@@ -277,11 +267,7 @@ export class OssNode extends Node {
   readState(state: Record<string, unknown>): void {
     super.readState(state)
 
-    if (typeof state.accessKeyId === 'string') this.accessKeyId = state.accessKeyId
-    if (typeof state.accessKeySecret === 'string') this.accessKeySecret = state.accessKeySecret
-    if (typeof state.region === 'string') this.region = state.region
-    if (typeof state.bucket === 'string') this.bucket = state.bucket
-    if (typeof state.endpoint === 'string') this.endpoint = state.endpoint
+    if (typeof state.bucketId === 'string') this.bucketId = state.bucketId
     if (typeof state.signUrl === 'boolean') this.signUrl = state.signUrl
     if (typeof state.signExpires === 'number') {
       this.signExpires = Math.max(60, Math.min(365 * 24 * 3600 * 10, Math.round(state.signExpires)))

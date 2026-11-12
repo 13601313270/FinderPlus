@@ -742,6 +742,23 @@ const feishuApi = {
     ipcRenderer.invoke('feishu:sendFile', args),
 
   /**
+   * 发送飞书交互卡片（interactive）。
+   * 主进程内部自动 upload 所有图片 part → 拼卡片 JSON → 发送。
+   * parts 结构：text part 传 text 字符串，image part 传 fileName + ArrayBuffer。
+   */
+  sendCard: (args: {
+    appId: string
+    appSecret: string
+    receiveId: string
+    receiveIdType: 'chat_id' | 'open_id' | 'user_id' | 'union_id' | 'email'
+    parts: Array<
+      | { type: 'text'; text: string }
+      | { type: 'image'; fileName: string; buffer: ArrayBuffer }
+    >
+  }): Promise<{ ok: true; messageId?: string } | { ok: false; error: string }> =>
+    ipcRenderer.invoke('feishu:sendCard', args),
+
+  /**
    * 上传图片到飞书，返回 image_key。发送图片消息前必须先调这个。
    * buffer 是 renderer 读 DOM File 得到的 ArrayBuffer。
    */

@@ -12,7 +12,7 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import * as cheerio from 'cheerio'
 import * as iconv from 'iconv-lite'
 import OSS from 'ali-oss'
-import { startFeishu, stopFeishu, getFeishuStatus, disposeFeishu, sendFeishuMessage, uploadFeishuImage, sendFeishuFilePipeline, getFfmpegStatus } from './feishu/FeishuManager'
+import { startFeishu, stopFeishu, getFeishuStatus, disposeFeishu, sendFeishuMessage, uploadFeishuImage, sendFeishuFilePipeline, getFfmpegStatus, sendFeishuCardPipeline } from './feishu/FeishuManager'
 import { openDatabase, closeDatabase, getDatabase, persist } from './db/database'
 import { SqliteStorage } from './db/SqliteStorage'
 import { ensureCanvasDir, getCanvasDir, getCanvasRootDir, migrateLegacyRootFiles } from './paths'
@@ -2785,13 +2785,27 @@ ipcMain.handle('feishu:sendFile', async (_e, args: {
   return sendFeishuFilePipeline(args)
 })
 
+// —— 飞书发送卡片消息（MultiModalValue → interactive）——
+ipcMain.handle('feishu:sendCard', async (_e, args: {
+  appId: string
+  appSecret: string
+  receiveId: string
+  receiveIdType: 'chat_id' | 'open_id' | 'user_id' | 'union_id' | 'email'
+  parts: Array<
+    | { type: 'text'; text: string }
+    | { type: 'image'; fileName: string; buffer: ArrayBuffer }
+  >
+}) => {
+  return sendFeishuCardPipeline(args)
+})
+
 // —— 飞书发送消息（给 FeishuSendNode 用）——
 ipcMain.handle('feishu:send', async (_e, args: {
   appId: string
   appSecret: string
   receiveId: string
   receiveIdType: 'chat_id' | 'open_id' | 'user_id' | 'union_id' | 'email'
-  msgType: 'text' | 'image' | 'file' | 'audio' | 'media'
+  msgType: 'text' | 'image' | 'file' | 'audio' | 'media' | 'interactive'
   text?: string
   imageKey?: string
   fileKey?: string

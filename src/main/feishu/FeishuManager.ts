@@ -100,32 +100,33 @@ function saveBufferToTempFile(buffer: ArrayBuffer, suffix: string): string {
   return tmpPath
 }
 
-/** 推断飞书 im/v1/files 接受的 file_type 参数值 */
+/**
+ * 推断飞书 im/v1/files 接受的 file_type 参数值。
+ * 飞书只接受有限枚举——不在枚举里的一律归为 stream（通用流文件）。
+ *
+ * 官方文档枚举：opus / mp4 / pdf / doc / xls / ppt / stream / 以及部分展开值
+ * 参考：https://open.feishu.cn/document/server-docs/im-v1/file/create
+ */
 function inferFeishuFileType(fileName: string): string {
   const ext = extname(fileName).toLowerCase().replace(/^\./, '')
   // 飞书 im/v1/files API 明确支持的 file_type 枚举
-  const map: Record<string, string> = {
+  // 参考官方文档：https://open.feishu.cn/document/server-docs/im-v1/file/create
+  const explicitMap: Record<string, string> = {
+    // 音频
     opus: 'opus',
+    // 视频
     mp4: 'mp4',
+    // 文档
     pdf: 'pdf',
     doc: 'doc', docx: 'doc',
     xls: 'xls', xlsx: 'xls',
     ppt: 'ppt', pptx: 'ppt',
-    csv: 'csv',
-    txt: 'txt',
-    zip: 'zip',
-    rar: 'rar',
-    gz: 'tar.gz',
-    md: 'md',
-    json: 'json',
-    html: 'html',
-    css: 'css',
-    js: 'js',
-    png: 'png', jpg: 'jpg', jpeg: 'jpg', gif: 'gif', webp: 'webp', bmp: 'bmp',
-    mp3: 'mp3', wav: 'wav', m4a: 'm4a', aac: 'aac', flac: 'flac',
-    mov: 'mov', avi: 'avi', mkv: 'mkv',
   }
-  return map[ext] ?? ext
+  if (explicitMap[ext]) return explicitMap[ext]
+
+  // 不在上述枚举里的，统统用 stream（飞书的"通用流文件"类型）
+  // 包括 txt / csv / json / html / md / zip / rar / png / jpg / mp3 等所有其他类型
+  return 'stream'
 }
 
 /** ffmpeg 转码：把音频/视频统一格式化成飞书要求的 opus/mp4 */
@@ -500,18 +501,19 @@ export function getFfmpegStatus(): {
 }
 
 /** 飞书消息类型 */
-export type FeishuMsgType = 'text' | 'image' | 'file' | 'audio' | 'media'
+export type FeishuMsgType = 'text' | 'image' | 'file' | 'audio' | 'media' | 'interactive'
 
 /**
  * 发送飞书消息。
  * 和 WS 长连接独立——WSClient 只管收事件，发消息需要单独 new 一个 REST Client。
  *
- * 支持五种消息类型：
+ * 支持六种消息类型：
  * - text：纯文本，传 text 字段
  * - image：图片，传 imageKey（uploadFeishuImage 拿）
  * - file：文件，传 fileKey（uploadFeishuFile 拿）
  * - audio：语音，传 fileKey（uploadFeishuFile 拿，file_type=opus）
  * - media：视频，传 fileKey（uploadFeishuFile 拿，file_type=mp4）
+ * - interactive：卡片，传 cardJson 字符串（需符合飞书卡片 JSON 格式）
  */
 export async function sendFeishuMessage(args: {
   appId: string
@@ -525,6 +527,8 @@ export async function sendFeishuMessage(args: {
   imageKey?: string
   /** file/audio/media 类型时必填 */
   fileKey?: string
+  /** interactive 类型时必填——飞书卡片 JSON 字符串 */
+  cardJson?: string
 }): Promise<{ ok: true; messageId?: string } | { ok: false; error: string }> {
   if (!args.appId || !args.appSecret) return { ok: false, error: 'App ID / App Secret 不能为空' }
   if (!args.receiveId) return { ok: false, error: '接收方 ID 不能为空' }
@@ -541,6 +545,9 @@ export async function sendFeishuMessage(args: {
   } else if (msgType === 'file' || msgType === 'audio' || msgType === 'media') {
     if (!args.fileKey) return { ok: false, error: '文件 key 为空' }
     content = JSON.stringify({ file_key: args.fileKey })
+  } else if (msgType === 'interactive') {
+    if (!args.cardJson) return { ok: false, error: '卡片 JSON 为空' }
+    content = args.cardJson
   } else {
     return { ok: false, error: '不支持的消息类型: ' + msgType }
   }
@@ -669,6 +676,100 @@ export async function sendFeishuFilePipeline(args: {
     // 无论成功失败都清理临时文件
     for (const p of tempPaths) safeUnlink(p)
   }
+}
+
+/** 飞书卡片里的单个片段——对应 MultiModalValue.parts 序列化后的结构 */
+export type FeishuCardPart =
+  | { type: 'text'; text: string }
+  | { type: 'image'; fileName: string; buffer: ArrayBuffer | Buffer }
+
+/**
+ * 一站式发卡片消息（interactive 类型）。
+ * 内部自动 upload 所有图片 part → 拼飞书卡片 JSON → 发送。
+ *
+ * 只含文本 parts → 纯 markdown 块
+ * 含图片 parts → markdown + img tag 混排
+ * parts 全空 → 返回错误
+ */
+export async function sendFeishuCardPipeline(args: {
+  appId: string
+  appSecret: string
+  receiveId: string
+  receiveIdType: 'chat_id' | 'open_id' | 'user_id' | 'union_id' | 'email'
+  parts: FeishuCardPart[]
+}): Promise<{ ok: true; messageId?: string } | { ok: false; error: string }> {
+  if (!args.appId || !args.appSecret) return { ok: false, error: 'App ID / App Secret 不能为空' }
+  if (!args.receiveId) return { ok: false, error: '接收方 ID 不能为空' }
+  if (!args.parts || args.parts.length === 0) return { ok: false, error: '卡片内容为空' }
+
+  // —— 先把所有图片 upload 拿 image_key ——
+  const imageKeyMap = new Map<number, string>() // part index → image_key
+  for (let i = 0; i < args.parts.length; i++) {
+    const part = args.parts[i]
+    if (part.type === 'image') {
+      const uploadRes = await uploadFeishuImage({
+        appId: args.appId,
+        appSecret: args.appSecret,
+        fileName: part.fileName || 'image.png',
+        buffer: part.buffer
+      })
+      if (!uploadRes.ok) {
+        return { ok: false, error: '图片上传失败：' + uploadRes.error }
+      }
+      imageKeyMap.set(i, uploadRes.imageKey)
+    }
+  }
+
+  // —— 拼飞书卡片 JSON ——
+  const elements: unknown[] = []
+  let plainTextTitle = ''
+
+  for (let i = 0; i < args.parts.length; i++) {
+    const part = args.parts[i]
+    if (part.type === 'text') {
+      const trimmed = part.text.trim()
+      if (!trimmed) continue
+      // 第一段文本同时作为卡片 header 标题（截断到 30 字）
+      if (!plainTextTitle) {
+        plainTextTitle = trimmed.length > 30 ? trimmed.slice(0, 30) + '…' : trimmed
+      }
+      elements.push({ tag: 'markdown', content: trimmed })
+    } else if (part.type === 'image') {
+      const imageKey = imageKeyMap.get(i)
+      if (!imageKey) continue
+      elements.push({
+        tag: 'img',
+        img_key: imageKey,
+        alt: { tag: 'plain_text', content: '' }
+      })
+    }
+  }
+
+  if (elements.length === 0) {
+    return { ok: false, error: '卡片内容为空' }
+  }
+
+  const card = {
+    config: { wide_screen_mode: true },
+    header: {
+      title: {
+        tag: 'plain_text',
+        content: plainTextTitle || '消息'
+      },
+      template: 'blue'
+    },
+    elements
+  }
+
+  // —— 发送 ——
+  return sendFeishuMessage({
+    appId: args.appId,
+    appSecret: args.appSecret,
+    receiveId: args.receiveId,
+    receiveIdType: args.receiveIdType,
+    msgType: 'interactive',
+    cardJson: JSON.stringify(card)
+  })
 }
 
 /** 查询当前连接状态 */

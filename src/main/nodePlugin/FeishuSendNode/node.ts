@@ -4,6 +4,7 @@ import { ImgFileValue } from '../../engine/data/ImgFileValue'
 import { AudioFileValue } from '../../engine/data/AudioFileValue'
 import { VideoFileValue } from '../../engine/data/VideoFileValue'
 import { FileValue } from '../../engine/data/FileValue'
+import { MultiModalValue } from '../../engine/data/MultiModalValue'
 import { Node, type InputPortChangeSource } from '../../engine/node/Node'
 import { InputPort } from '../../engine/port/InputPort'
 import { OutputPort } from '../../engine/port/OutputPort'
@@ -84,7 +85,7 @@ export class FeishuSendNode extends Node {
     super(id)
     // 输入端口
     this.textPort = new InputPort('text', {
-      accepts: [StringValue, FileValue],
+      accepts: [StringValue, FileValue, MultiModalValue],
       label: { zh: '消息', en: 'Message' }
     })
     this.receiveIdPort = new InputPort('receiveId', {
@@ -206,10 +207,11 @@ export class FeishuSendNode extends Node {
    * - 'media'：VideoFileValue
    * - 'file'：其他 FileValue（PdfFileValue/TxtFileValue 等）
    */
-  private getCurrentMsgType(): 'text' | 'image' | 'audio' | 'media' | 'file' {
+  private getCurrentMsgType(): 'text' | 'image' | 'audio' | 'media' | 'file' | 'card' {
     const vals = this.textPort.value
     if (vals.length === 0) return 'text'
     const first = vals[0]
+    if (first instanceof MultiModalValue) return 'card'
     if (first instanceof StringValue) return 'text'
     if (first instanceof ImgFileValue) return 'image'
     if (first instanceof AudioFileValue) return 'audio'
@@ -278,6 +280,12 @@ export class FeishuSendNode extends Node {
     } else if (msgType === 'image') {
       const file = this.getCurrentImageFile()
       if (!file) return '图片文件为空'
+    } else if (msgType === 'card') {
+      const vals = this.textPort.value
+      const mm = vals[0]
+      if (!(mm instanceof MultiModalValue) || mm.isNull || mm.parts.length === 0) {
+        return '多模态内容为空'
+      }
     } else {
       // file / audio / media 都需要有 FileValue.file
       const file = this.getCurrentGenericFile()
@@ -432,6 +440,38 @@ export class FeishuSendNode extends Node {
           kind: msgType,
           fileName: file.name || 'file.bin',
           buffer: buf
+        })
+      } else if (msgType === 'card') {
+        // —— 卡片路径：MultiModalValue → sendCard ——
+        const vals = this.textPort.value
+        const mm = vals[0] as MultiModalValue
+
+        // parts 序列化：图片 part 先读 arrayBuffer
+        const serializedParts: Array<
+          | { type: 'text'; text: string }
+          | { type: 'image'; fileName: string; buffer: ArrayBuffer }
+        > = []
+
+        for (const part of mm.parts) {
+          if (part.type === 'text') {
+            serializedParts.push({ type: 'text', text: part.text })
+          } else if (part.type === 'image') {
+            const buf = await part.file.arrayBuffer()
+            serializedParts.push({
+              type: 'image',
+              fileName: part.file.name || 'image.png',
+              buffer: buf
+            })
+          }
+        }
+
+        // @ts-ignore
+        sendResult = await window.feishuApi.sendCard({
+          appId: creds.appId,
+          appSecret: creds.appSecret,
+          receiveId: this.getEffectiveReceiveId(),
+          receiveIdType: this.getEffectiveReceiveIdType(),
+          parts: serializedParts
         })
       } else {
         // 文本路径：直接发送

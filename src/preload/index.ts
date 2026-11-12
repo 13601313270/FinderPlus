@@ -114,10 +114,26 @@ const canvasDeskDb = {
 
 /**
  * 命令行节点 API：把 shell 命令交给主进程执行并回收输出。
+ *
+ * run — 普通模式：等命令跑完一次性返回 stdout/stderr/code（给 CommandNode 用）。
+ * runStream / killStream — 流式模式：边执行边推 chunk 到渲染进程，支持中途 kill（给全局命令行弹窗用）。
  */
 const commandApi = {
   run: (command: string): Promise<{ stdout: string; stderr: string; code: number }> =>
-    ipcRenderer.invoke('command:run', command)
+    ipcRenderer.invoke('command:run', command),
+
+  /**
+   * 流式执行命令。
+   * 返回 { listenerId }，之后主进程会推 'command:chunk' 事件：
+   *   { listenerId, type: 'stdout'|'stderr'|'exit', data?, code? }
+   * 渲染进程按 listenerId 路由到对应弹窗实例。
+   */
+  runStream: (command: string): Promise<{ listenerId: string }> =>
+    ipcRenderer.invoke('command:runStream', command),
+
+  /** 主动终止正在运行的流式命令 */
+  killStream: (listenerId: string): Promise<void> =>
+    ipcRenderer.invoke('command:killStream', listenerId)
 }
 
 /**

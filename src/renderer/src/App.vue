@@ -38,6 +38,7 @@ import NodeDetailDialog from './components/NodeDetailDialog.vue'
 import OnboardingGuide from './components/OnboardingGuide.vue'
 import SettingsDialog from './components/SettingsDialog.vue'
 import PromptDialog from './components/PromptDialog.vue'
+import CommandDialog from './components/CommandDialog.vue'
 import CanvasPicker from './components/CanvasPicker.vue'
 import HelpIcon from './components/icons/HelpIcon.vue'
 import GearIcon from './components/icons/GearIcon.vue'
@@ -1510,6 +1511,9 @@ onUnmounted(() => {
 
   <!-- 全局 prompt / confirm / alert 替代组件：必须在 v-if/v-else 外面，picker 模式也要用 -->
   <PromptDialog />
+
+  <!-- 全局命令行弹窗工具：支持 imperative 调用 window.runCommand() 和 window.openCommandDialog() -->
+  <CommandDialog />
 
   <!-- 登录 / 注册弹窗：独立 Teleport 到 body -->
   <AuthDialog />

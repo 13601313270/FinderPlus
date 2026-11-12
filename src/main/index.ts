@@ -1180,6 +1180,67 @@ function registerIpcHandlers(): void {
     })
   })
 
+  // 正在运行的流式命令子进程表：key = listenerId，主进程 killStream 时用
+  const streamingChildren = new Map<string, ReturnType<typeof spawn>>()
+
+  /**
+   * 流式执行 shell 命令（给全局命令行弹窗用）。
+   *
+   * 用 spawn 而非 exec：spawn 边产生输出边推送 chunk 到渲染进程，用户能实时看到命令行输出，
+   * 而不是等命令跑完才一次性展示。
+   *
+   * 协议：
+   * - 先 invoke 发起，拿到 listenerId
+   * - 主进程通过 event.sender.send('command:chunk', { listenerId, type: 'stdout'|'stderr'|'exit', data?, code? }) 推事件
+   * - 渲染进程监听 'command:chunk'，按 listenerId 路由到对应弹窗实例
+   *
+   * 工作目录定在用户主目录。超时 600s，防止失控命令无限挂着。
+   */
+  ipcMain.handle('command:runStream', async (event, command: string): Promise<{
+    listenerId: string
+  }> => {
+    const listenerId = `cmd-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+
+    // @ts-ignore — shell: true 的 spawn 类型在当前 tsconfig 下推断冲突，直接按 child_process 运行时行为写
+    const child = spawn(command, [], {
+      cwd: app.getPath('home'),
+      shell: true,
+      windowsHide: true,
+      timeout: 600_000
+    })
+
+    streamingChildren.set(listenerId, child)
+
+    child.stdout?.on('data', (buf: Buffer) => {
+      event.sender.send('command:chunk', { listenerId, type: 'stdout', data: buf.toString() })
+    })
+
+    child.stderr?.on('data', (buf: Buffer) => {
+      event.sender.send('command:chunk', { listenerId, type: 'stderr', data: buf.toString() })
+    })
+
+    child.on('close', (code: number | null) => {
+      event.sender.send('command:chunk', { listenerId, type: 'exit', code: code ?? 0 })
+      streamingChildren.delete(listenerId)
+    })
+
+    child.on('error', (err) => {
+      event.sender.send('command:chunk', { listenerId, type: 'stderr', data: err.message })
+      event.sender.send('command:chunk', { listenerId, type: 'exit', code: 1 })
+      streamingChildren.delete(listenerId)
+    })
+
+    return { listenerId }
+  })
+
+  /** 主动终止正在运行的流式命令（弹窗点「停止」时调用） */
+  ipcMain.handle('command:killStream', async (_e, listenerId: string): Promise<void> => {
+    const proc = streamingChildren.get(listenerId)
+    if (proc && !proc.killed) {
+      proc.kill()
+    }
+  })
+
   // —— 表节点：动态建表 + 行 CRUD ——
 
   /** 合法列名正则：字母/下划线开头，后跟字母/数字/下划线 */

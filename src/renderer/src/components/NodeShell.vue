@@ -235,13 +235,9 @@ function onResizeEnd(): void {
         <!-- 还原按钮：最小化时 NodeHeader 被隐藏了，这里叠一个小号还原入口 -->
         <button class="node-minimized-icon__restore" type="button" title="还原" @pointerdown.stop
           @click.stop="props.node.toggleMinimized?.()">▢</button>
-        <img v-if="minimizedIconImage" class="node-minimized-icon__img" :src="minimizedIconImage" alt="" aria-hidden="true" />
+        <img v-if="minimizedIconImage" class="node-minimized-icon__img" :src="minimizedIconImage" alt=""
+          aria-hidden="true" />
         <span v-else class="node-minimized-icon__fallback">{{ node.type.slice(0, 2).toUpperCase() }}</span>
-      </div>
-      <!-- 底部方法端口行：最小化态也要保留，hide-label 只留三角形；用 absolute 钉在 icon 底部，不参与 flex 流 -->
-      <div v-if="node.methodPorts && node.methodPorts.length > 0"
-        class="ports-row ports-row--bottom ports-row--minimized">
-        <NodePorts :node-id="node.id" :node="node" side="method" :hide-label="true" />
       </div>
       <div v-if="nodeState === 'running'" class="node-loading" aria-hidden="true">
         <div class="node-loading__spinner" />
@@ -260,12 +256,12 @@ function onResizeEnd(): void {
           <!-- 右下角 resize 手柄 -->
           <div class="node-resize" @pointerdown.stop="startResize" />
         </div>
-        <!-- 底部方法端口行：只有存在方法端口时才渲染 -->
-        <div v-if="node.methodPorts && node.methodPorts.length > 0" class="ports-row ports-row--bottom">
-          <NodePorts :node-id="node.id" :node="node" side="method" />
-        </div>
       </div>
     </template>
+    <!-- 底部方法端口行：只有存在方法端口时才渲染 -->
+    <div v-if="node.methodPorts && node.methodPorts.length > 0" class="ports-row ports-row--bottom">
+      <NodePorts :node-id="node.id" :node="node" side="method" />
+    </div>
   </div>
 </template>
 
@@ -359,9 +355,10 @@ function onResizeEnd(): void {
   gap: 12px;
 
   &--bottom {
-    // 锚在 node-content 底部：ports-row 在 node-body 的 flex 底部
-    padding-top: 6px;
     pointer-events: none; // 容器空白区域穿透
+    position: absolute;
+    bottom: -30px;
+    width: 100%;
 
     :deep(.port) {
       pointer-events: auto; // 只有端口三角形恢复捕获

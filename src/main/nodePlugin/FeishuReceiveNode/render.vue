@@ -4,6 +4,7 @@ import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { FeishuReceiveNode } from './node'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import { useNodeDetail } from '@renderer/composables/useNodeDetail'
+import { useFeishuBots } from '@renderer/composables/useFeishuBots'
 import NodeHeader from '@renderer/components/NodeHeader.vue'
 import GearIcon from '@renderer/components/icons/GearIcon.vue'
 
@@ -11,10 +12,13 @@ const props = defineProps<{ id: string }>()
 
 const { openNodeDetail } = useNodeDetail()
 
+const { find: findBot } = useFeishuBots()
+
 const node = shallowRef<FeishuReceiveNode | undefined>(undefined)
 
 const nodeTitle = useNodeTitle(() => node.value, '飞书消息')
 
+const botId = ref('')
 const enabled = ref(false)
 const connState = ref<'idle' | 'connecting' | 'connected' | 'error'>('idle')
 const connError = ref('')
@@ -30,7 +34,14 @@ const stateText = computed((): string => {
   }
 })
 
+/** 选中机器人的名称；已选中但机器人被删除时给出提示 */
+const botName = computed((): string => {
+  if (!botId.value) return ''
+  return findBot(botId.value)?.name ?? '机器人已删除'
+})
+
 function syncFromNode(n: FeishuReceiveNode): void {
+  botId.value = n.displayBotId
   enabled.value = n.isEnabled
   connState.value = n.displayConnectionState
   connError.value = n.displayConnectionError
@@ -91,7 +102,12 @@ onUnmounted(() => {
       </div>
 
       <div v-if="connState === 'error' && connError" class="error-msg">{{ connError }}</div>
-      <div v-else-if="!node?.displayBotId" class="hint">点齿轮选择飞书机器人</div>
+
+      <div v-if="botId" class="bot-row" :title="botName">
+        <span class="bot-row__label">机器人</span>
+        <span class="bot-row__name">{{ botName }}</span>
+      </div>
+      <div v-else class="hint">点齿轮选择飞书机器人</div>
     </div>
   </div>
 </template>
@@ -201,6 +217,27 @@ onUnmounted(() => {
   font-size: 10px;
   color: @color-text-weak;
   font-style: italic;
+}
+
+.bot-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+
+  &__label {
+    font-size: 10px;
+    color: @color-text-weak;
+    flex-shrink: 0;
+  }
+
+  &__name {
+    font-size: 11px;
+    color: @color-text;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }
 
 .error-msg {

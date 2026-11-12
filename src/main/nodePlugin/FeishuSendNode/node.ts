@@ -8,6 +8,7 @@ import { MultiModalValue } from '../../engine/data/MultiModalValue'
 import { Node, type InputPortChangeSource } from '../../engine/node/Node'
 import { InputPort } from '../../engine/port/InputPort'
 import { OutputPort } from '../../engine/port/OutputPort'
+import { MethodPort } from '../../engine/port/MethodPort'
 
 /** 节点默认 box 尺寸 */
 const DEFAULT_BOX: [number, number] = [200, 130]
@@ -32,6 +33,7 @@ export type SendState = 'idle' | 'sending' | 'success' | 'error'
  * - 输入端口 receiveId（StringValue）：接收方 ID（外部传入优先于面板）
  * - 输入端口 receiveIdType（StringValue）：接收方 ID 类型（外部传入优先于面板）
  * - 手动触发：点击节点卡片上的「发送」按钮；或 autoSend=true 时输入变更自动发
+ * - 方法端口 send：上游 commit 任意值即触发一次发送（等同点击「发送」）
  * - 输出端口：sent（BoolValue 成功/失败）+ messageId（StringValue 飞书返回的消息 ID）
  *
  * 飞书应用凭证（App ID / Secret）统一在设置 → 飞书机器人里配置，
@@ -55,6 +57,11 @@ export class FeishuSendNode extends Node {
 
   /** 输出端口：飞书返回的 message_id（成功时） */
   private readonly messageIdPort: OutputPort
+
+  /** 方法端口：上游 commit 任意值即触发一次发送 */
+  readonly sendPort = new MethodPort('send', {
+    label: { zh: '发送', en: 'Send' }
+  })
 
   // —— 用户配置 ——
 
@@ -106,6 +113,10 @@ export class FeishuSendNode extends Node {
     this.addOutput(this.sentPort)
     this.addOutput(this.messageIdPort)
 
+    // 方法端口：上游 commit 一次 → 发送一次
+    this.addMethod(this.sendPort)
+    this.sendPort.onTrigger(() => { void this.triggerSend() })
+
     const [w, h] = DEFAULT_BOX
     this.setBox(w, h)
   }
@@ -146,6 +157,8 @@ export class FeishuSendNode extends Node {
   get displaySendState(): SendState { return this.sendState }
   get displaySendError(): string { return this.sendError }
   get isSending(): boolean { return this.sendingNow }
+  /** 当前是否满足全部发送前置条件（UI 按钮可用性） */
+  get displayCanSend(): boolean { return this.canSend() === null }
 
   /** 下拉选项：所有合法的 receive_id_type */
   static readonly ALL_RECEIVE_ID_TYPES: ReceiveIdType[] = ALL_RECEIVE_ID_TYPES

@@ -4,6 +4,7 @@ import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { FeishuSendNode } from './node'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import { useNodeDetail } from '@renderer/composables/useNodeDetail'
+import { useFeishuBots } from '@renderer/composables/useFeishuBots'
 import NodeHeader from '@renderer/components/NodeHeader.vue'
 import GearIcon from '@renderer/components/icons/GearIcon.vue'
 
@@ -11,10 +12,14 @@ const props = defineProps<{ id: string }>()
 
 const { openNodeDetail } = useNodeDetail()
 
+const { find: findBot } = useFeishuBots()
+
 const node = shallowRef<FeishuSendNode | undefined>(undefined)
 
 const nodeTitle = useNodeTitle(() => node.value, '飞书发送')
 
+const botId = ref('')
+const canSendNow = ref(false)
 const sendState = ref<'idle' | 'sending' | 'success' | 'error'>('idle')
 const sendError = ref('')
 const sendingNow = ref(false)
@@ -30,15 +35,17 @@ const sendStateText = computed((): string => {
   }
 })
 
-const canSend = computed((): boolean => {
-  const n = node.value
-  if (!n) return false
-  if (sendingNow.value) return false
-  if (!n.displayBotId || !n.displayReceiveId) return false
-  return n.getCurrentText().length > 0
+/** 选中机器人的名称；已选中但机器人被删除时给出提示 */
+const botName = computed((): string => {
+  if (!botId.value) return ''
+  return findBot(botId.value)?.name ?? '机器人已删除'
 })
 
 function syncFromNode(n: FeishuSendNode): void {
+  botId.value = n.displayBotId
+  // 按钮可用性由 node 内部实时计算后同步到 ref：
+  // 端口值（文本/文件）不是 Vue 响应式数据，必须在 notifyChanged 时主动拉取
+  canSendNow.value = n.displayCanSend
   sendState.value = n.displaySendState
   sendError.value = n.displaySendError
   sendingNow.value = n.isSending
@@ -80,7 +87,7 @@ onUnmounted(() => {
       <button
         class="send-btn"
         type="button"
-        :disabled="!canSend"
+        :disabled="!canSendNow"
         :class="{ 'send-btn--sending': sendingNow }"
         @pointerdown.stop
         @click.stop="onSend"
@@ -93,7 +100,12 @@ onUnmounted(() => {
       </div>
 
       <div v-if="sendState === 'error' && sendError" class="error-msg">{{ sendError }}</div>
-      <div v-else-if="!node?.displayBotId" class="hint">点齿轮选择机器人和接收方</div>
+
+      <div v-if="botId" class="bot-row" :title="botName">
+        <span class="bot-row__label">机器人</span>
+        <span class="bot-row__name">{{ botName }}</span>
+      </div>
+      <div v-else class="hint">点齿轮选择机器人和接收方</div>
     </div>
   </div>
 </template>
@@ -160,6 +172,27 @@ onUnmounted(() => {
   &--success { color: #22c55e; }
   &--error { color: #ef4444; }
   &--sending { color: #eab308; }
+}
+
+.bot-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+
+  &__label {
+    font-size: 10px;
+    color: @color-text-weak;
+    flex-shrink: 0;
+  }
+
+  &__name {
+    font-size: 11px;
+    color: @color-text;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }
 
 .hint {

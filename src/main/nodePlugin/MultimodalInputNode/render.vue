@@ -120,8 +120,9 @@ function urlOf(f: File): string { return URL.createObjectURL(f) }
   display: flex; flex-direction: column;
   background: #fff; border-radius: 6px;
   overflow: hidden; position: relative;
+  padding: 0 8px 8px;
 }
-.mi-body { flex: 1; padding: 8px; display: flex; flex-direction: column; gap: 6px; }
+.mi-body { flex: 1; display: flex; padding-top: 8px; flex-direction: column; gap: 6px; }
 .mi-textarea {
   all: unset; flex: 1; min-height: 40px;
   padding: 6px 8px; font-size: 12px; line-height: 1.5;

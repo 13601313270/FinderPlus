@@ -4,11 +4,16 @@ import { BrowserWindow } from 'electron'
 export interface FeishuMessagePayload {
   messageId: string
   chatId: string
-  chatType: 'p2p' | 'group'
+  /** 群聊 / 单聊 */
+  chatType: 'group' | 'p2p'
+  /** 发送人 ID（来自 sender_id 中第一个有值的字段） */
   senderId: string
+  /** 发送人 ID 类型 */
+  senderIdType: 'open_id' | 'user_id' | 'union_id' | 'email'
+  /** 兜底显示名（目前拿不到昵称，和 senderId 一样） */
   senderName: string
+  /** 消息文本 */
   text: string
-  /** 已处理过——防止飞书重推重复消息 */
   handledAt: number
 }
 
@@ -139,12 +144,31 @@ export async function startFeishu(appId: string, appSecret: string): Promise<{ o
             text = message.content ?? ''
           }
 
+          // sender_id 结构可能同时有 open_id / user_id / union_id / email，哪个有值用哪个
+          const sid = sender?.sender_id ?? {}
+          let senderId = ''
+          let senderIdType: FeishuMessagePayload['senderIdType'] = 'open_id'
+          if (typeof sid.open_id === 'string' && sid.open_id) {
+            senderId = sid.open_id
+            senderIdType = 'open_id'
+          } else if (typeof sid.user_id === 'string' && sid.user_id) {
+            senderId = sid.user_id
+            senderIdType = 'user_id'
+          } else if (typeof sid.union_id === 'string' && sid.union_id) {
+            senderId = sid.union_id
+            senderIdType = 'union_id'
+          } else if (typeof sid.email === 'string' && sid.email) {
+            senderId = sid.email
+            senderIdType = 'email'
+          }
+
           const payload: FeishuMessagePayload = {
             messageId,
             chatId: message.chat_id,
             chatType: message.chat_type === 'group' ? 'group' : 'p2p',
-            senderId: sender?.sender_id?.user_id ?? '',
-            senderName: sender?.sender_id?.open_id ?? 'unknown',
+            senderId,
+            senderIdType,
+            senderName: senderId || 'unknown',
             text,
             handledAt: Date.now()
           }

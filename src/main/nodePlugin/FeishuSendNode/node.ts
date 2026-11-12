@@ -37,6 +37,12 @@ export class FeishuSendNode extends Node {
   /** 输入端口：消息文本 */
   private readonly textPort: InputPort
 
+  /** 输入端口：接收方 ID（外部传入时优先于面板配置） */
+  private readonly receiveIdPort: InputPort
+
+  /** 输入端口：接收方 ID 类型（外部传入时优先于面板配置） */
+  private readonly receiveIdTypePort: InputPort
+
   /** 输出端口：发送是否成功 */
   private readonly sentPort: OutputPort
 
@@ -78,7 +84,17 @@ export class FeishuSendNode extends Node {
       accepts: [StringValue],
       label: { zh: '消息', en: 'Text' }
     })
+    this.receiveIdPort = new InputPort('receiveId', {
+      accepts: [StringValue],
+      label: { zh: '接收方ID', en: 'Receive ID' }
+    })
+    this.receiveIdTypePort = new InputPort('receiveIdType', {
+      accepts: [StringValue],
+      label: { zh: 'ID类型', en: 'ID Type' }
+    })
     this.addInput(this.textPort)
+    this.addInput(this.receiveIdPort)
+    this.addInput(this.receiveIdTypePort)
 
     // 输出端口
     this.sentPort = new OutputPort('sent', BoolValue, { zh: '成功', en: 'Sent' })
@@ -109,9 +125,10 @@ export class FeishuSendNode extends Node {
    * 输入端口变更：autoSend=true 时自动发送（仅真正 receive 到值时触发），
    * 绑线/断线/清空都不自动发。
    */
-  inputPortReceiveValue(_ports: InputPort[], source: InputPortChangeSource): void {
+  inputPortReceiveValue(ports: InputPort[], source: InputPortChangeSource): void {
     this.notifyChanged()
-    if (this.autoSend && source === 'receive') {
+    // 只有消息文本端口变更才触发自动发送——receiveId / receiveIdType 变更不触发
+    if (this.autoSend && source === 'receive' && ports.includes(this.textPort)) {
       void this.triggerSend()
     }
   }
@@ -129,6 +146,34 @@ export class FeishuSendNode extends Node {
 
   /** 下拉选项：所有合法的 receive_id_type */
   static readonly ALL_RECEIVE_ID_TYPES: ReceiveIdType[] = ALL_RECEIVE_ID_TYPES
+
+  /**
+   * 取当前生效的 receiveId：优先输入端口有值时用端口值，
+   * 否则用面板手动配置的兜底值。
+   */
+  private getEffectiveReceiveId(): string {
+    const vals = this.receiveIdPort.value
+    if (vals.length > 0 && vals[0] instanceof StringValue) {
+      const v = vals[0].value as string
+      if (v) return v
+    }
+    return this.receiveId
+  }
+
+  /**
+   * 取当前生效的 receiveIdType：优先输入端口有值时用端口值，
+   * 否则用面板手动配置的兜底值。
+   */
+  private getEffectiveReceiveIdType(): ReceiveIdType {
+    const vals = this.receiveIdTypePort.value
+    if (vals.length > 0 && vals[0] instanceof StringValue) {
+      const v = vals[0].value as string
+      if (ALL_RECEIVE_ID_TYPES.includes(v as ReceiveIdType)) {
+        return v as ReceiveIdType
+      }
+    }
+    return this.receiveIdType
+  }
 
   /** 获取当前 text 输入端口的值（或空字符串） */
   getCurrentText(): string {
@@ -176,7 +221,7 @@ export class FeishuSendNode extends Node {
   /** 是否具备发送的所有前置条件 */
   private canSend(text: string): string | null {
     if (!this.appId || !this.appSecret) return '请先填写 App ID / Secret'
-    if (!this.receiveId) return '请先填写接收方 ID'
+    if (!this.getEffectiveReceiveId()) return '请先填写接收方 ID'
     if (!text) return '消息内容为空'
     return null
   }
@@ -206,8 +251,8 @@ export class FeishuSendNode extends Node {
       const result = await window.feishuApi.send({
         appId: this.appId,
         appSecret: this.appSecret,
-        receiveId: this.receiveId,
-        receiveIdType: this.receiveIdType,
+        receiveId: this.getEffectiveReceiveId(),
+        receiveIdType: this.getEffectiveReceiveIdType(),
         text
       })
 

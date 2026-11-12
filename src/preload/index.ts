@@ -695,6 +695,7 @@ const feishuApi = {
       chatId: string
       chatType: 'p2p' | 'group'
       senderId: string
+      senderIdType: 'open_id' | 'user_id' | 'union_id' | 'email'
       senderName: string
       text: string
       handledAt: number
@@ -707,6 +708,7 @@ const feishuApi = {
         chatId: string
         chatType: 'p2p' | 'group'
         senderId: string
+        senderIdType: 'open_id' | 'user_id' | 'union_id' | 'email'
         senderName: string
         text: string
         handledAt: number

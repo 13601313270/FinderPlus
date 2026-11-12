@@ -2,6 +2,7 @@ import { StringValue } from '../../engine/data/StringValue'
 import { OutputPort } from '../../engine/port/OutputPort'
 import { Node } from '../../engine/node/Node'
 import type { InputPort } from '../../engine/port/InputPort'
+import type { FeishuMessagePayload } from '../../feishu/FeishuManager'
 
 /** 节点默认 box 尺寸 */
 const DEFAULT_BOX: [number, number] = [220, 140]
@@ -12,17 +13,6 @@ const MIN_H = 120
 
 /** WSClient 连接状态枚举 */
 export type ConnectionState = 'idle' | 'connecting' | 'connected' | 'error'
-
-/** 主进程推过来的消息 payload 结构 */
-interface FeishuMessagePayload {
-  messageId: string
-  chatId: string
-  chatType: 'p2p' | 'group'
-  senderId: string
-  senderName: string
-  text: string
-  handledAt: number
-}
 
 /**
  * 飞书消息接收节点：通过飞书开放平台长连接（WebSocket）实时接收飞书消息。
@@ -53,8 +43,11 @@ export class FeishuReceiveNode extends Node {
   /** 输出端口：消息文本 */
   private readonly messagePort: OutputPort
 
-  /** 输出端口：发送人 open_id */
+  /** 输出端口：发送人 ID（open_id / user_id / union_id / email，取 sender_id 中第一个有值的字段） */
   private readonly senderPort: OutputPort
+
+  /** 输出端口：发送人 ID 类型（open_id / user_id / union_id / email） */
+  private readonly senderIdTypePort: OutputPort
 
   // —— 用户配置 ——
 
@@ -91,8 +84,10 @@ export class FeishuReceiveNode extends Node {
     super(id)
     this.messagePort = new OutputPort('message', StringValue, { zh: '消息', en: 'Message' })
     this.senderPort = new OutputPort('sender', StringValue, { zh: '发送人', en: 'Sender' })
+    this.senderIdTypePort = new OutputPort('senderIdType', StringValue, { zh: '发送人ID类型', en: 'Sender ID Type' })
     this.addOutput(this.messagePort)
     this.addOutput(this.senderPort)
+    this.addOutput(this.senderIdTypePort)
     const [w, h] = DEFAULT_BOX
     this.setBox(w, h)
   }
@@ -275,7 +270,8 @@ export class FeishuReceiveNode extends Node {
 
     // commit 输出端口（force: true 确保即使值相同也推给下游）
     this.messagePort.commit(new StringValue(payload.text), { force: true })
-    this.senderPort.commit(new StringValue(payload.senderName || payload.senderId), { force: true })
+    this.senderPort.commit(new StringValue(payload.senderId), { force: true })
+    this.senderIdTypePort.commit(new StringValue(payload.senderIdType), { force: true })
     this.notifyChanged()
   }
 

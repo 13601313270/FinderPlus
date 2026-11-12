@@ -24,11 +24,13 @@ export type SendState = 'idle' | 'sending' | 'success' | 'error'
  *
  * 行为：
  * - 输入端口 text（StringValue）：消息内容
+ * - 输入端口 receiveId（StringValue）：接收方 ID（外部传入优先于面板）
+ * - 输入端口 receiveIdType（StringValue）：接收方 ID 类型（外部传入优先于面板）
  * - 手动触发：点击节点卡片上的「发送」按钮；或 autoSend=true 时输入变更自动发
  * - 输出端口：sent（BoolValue 成功/失败）+ messageId（StringValue 飞书返回的消息 ID）
- * - 每次发送完（成功或失败）都会 commit 输出端口 + 通知 UI 更新状态
  *
- * 和 FeishuReceiveNode 共享飞书应用凭证，但 REST API 调用和 WS 长连接互不依赖。
+ * 飞书应用凭证（App ID / Secret）统一在设置 → 飞书机器人里配置，
+ * 节点只存 botId（引用全局列表），不再独立存 appId/appSecret。
  */
 export class FeishuSendNode extends Node {
   static readonly TYPE = 'feishu-send'
@@ -51,11 +53,8 @@ export class FeishuSendNode extends Node {
 
   // —— 用户配置 ——
 
-  /** 飞书应用 App ID */
-  private appId = ''
-
-  /** 飞书应用 App Secret */
-  private appSecret = ''
+  /** 全局机器人 id（引用 SettingsDialog 里的飞书机器人列表） */
+  private botId = ''
 
   /** 接收方 ID（群 chat_id 或用户 open_id 等） */
   private receiveId = ''
@@ -135,8 +134,7 @@ export class FeishuSendNode extends Node {
 
   // —— UI 读的状态 ——
 
-  get displayAppId(): string { return this.appId }
-  get displayAppSecret(): string { return this.appSecret }
+  get displayBotId(): string { return this.botId }
   get displayReceiveId(): string { return this.receiveId }
   get displayReceiveIdType(): ReceiveIdType { return this.receiveIdType }
   get displayAutoSend(): boolean { return this.autoSend }
@@ -146,6 +144,15 @@ export class FeishuSendNode extends Node {
 
   /** 下拉选项：所有合法的 receive_id_type */
   static readonly ALL_RECEIVE_ID_TYPES: ReceiveIdType[] = ALL_RECEIVE_ID_TYPES
+
+  /**
+   * 从 botId 反查凭证；找不到返回 null。
+   * 底层读 localStorage（和 SettingsDialog 里的全局机器人列表同源）。
+   */
+  private resolveCredentials(): { appId: string; appSecret: string } | null {
+    // @ts-ignore — 只在 renderer 里执行，window.feishuApi 一定存在
+    return window.feishuApi.resolveBotCredentials(this.botId)
+  }
 
   /**
    * 取当前生效的 receiveId：优先输入端口有值时用端口值，
@@ -186,15 +193,10 @@ export class FeishuSendNode extends Node {
 
   // —— 配置修改 ——
 
-  setAppId(v: string): void {
-    if (this.appId === v) return
-    this.appId = v.trim()
-    this.notifyChanged()
-  }
-
-  setAppSecret(v: string): void {
-    if (this.appSecret === v) return
-    this.appSecret = v.trim()
+  setBotId(v: string): void {
+    const trimmed = v.trim()
+    if (this.botId === trimmed) return
+    this.botId = trimmed
     this.notifyChanged()
   }
 
@@ -220,7 +222,9 @@ export class FeishuSendNode extends Node {
 
   /** 是否具备发送的所有前置条件 */
   private canSend(text: string): string | null {
-    if (!this.appId || !this.appSecret) return '请先填写 App ID / Secret'
+    if (!this.botId) return '请先选择飞书机器人'
+    const creds = this.resolveCredentials()
+    if (!creds) return '机器人凭证未找到，请检查设置里的飞书机器人列表'
     if (!this.getEffectiveReceiveId()) return '请先填写接收方 ID'
     if (!text) return '消息内容为空'
     return null
@@ -246,11 +250,12 @@ export class FeishuSendNode extends Node {
     this.sendingNow = true
     this.setSendState('sending', '')
 
+    const creds = this.resolveCredentials()!
     try {
       // @ts-ignore — 只在 renderer 里执行，window.feishuApi 一定存在
       const result = await window.feishuApi.send({
-        appId: this.appId,
-        appSecret: this.appSecret,
+        appId: creds.appId,
+        appSecret: creds.appSecret,
         receiveId: this.getEffectiveReceiveId(),
         receiveIdType: this.getEffectiveReceiveIdType(),
         text
@@ -288,8 +293,7 @@ export class FeishuSendNode extends Node {
   saveState(): Record<string, unknown> {
     return {
       ...super.saveState(),
-      appId: this.appId,
-      appSecret: this.appSecret,
+      botId: this.botId,
       receiveId: this.receiveId,
       receiveIdType: this.receiveIdType,
       autoSend: this.autoSend
@@ -299,8 +303,13 @@ export class FeishuSendNode extends Node {
   readState(state: Record<string, unknown>): void {
     super.readState(state)
 
-    if (typeof state.appId === 'string') this.appId = state.appId
-    if (typeof state.appSecret === 'string') this.appSecret = state.appSecret
+    // 新版：直接 botId
+    if (typeof state.botId === 'string') {
+      this.botId = state.botId
+    } else if (typeof state.appId === 'string' && typeof state.appSecret === 'string') {
+      // 旧版迁移：节点里存的 appId/appSecret → 新版改由全局 SettingsDialog 管理
+      this.botId = ''
+    }
     if (typeof state.receiveId === 'string') this.receiveId = state.receiveId
     if (typeof state.autoSend === 'boolean') this.autoSend = state.autoSend
 

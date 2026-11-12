@@ -34,7 +34,7 @@ const canSend = computed((): boolean => {
   const n = node.value
   if (!n) return false
   if (sendingNow.value) return false
-  if (!n.displayAppId || !n.displayAppSecret || !n.displayReceiveId) return false
+  if (!n.displayBotId || !n.displayReceiveId) return false
   return n.getCurrentText().length > 0
 })
 
@@ -93,7 +93,7 @@ onUnmounted(() => {
       </div>
 
       <div v-if="sendState === 'error' && sendError" class="error-msg">{{ sendError }}</div>
-      <div v-else-if="!node?.displayAppId" class="hint">点齿轮填写凭证和接收方</div>
+      <div v-else-if="!node?.displayBotId" class="hint">点齿轮选择机器人和接收方</div>
     </div>
   </div>
 </template>

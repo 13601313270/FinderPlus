@@ -661,6 +661,24 @@ const tableApi = {
  * 主进程收到消息后通过 'feishu:message' 事件主动推给 renderer。
  */
 const feishuApi = {
+  /** 按 botId 从 localStorage 反查飞书应用凭证（与 SettingsDialog 里的全局机器人列表同源） */
+  resolveBotCredentials: (botId: string | undefined | null): { appId: string; appSecret: string } | null => {
+    if (!botId) return null
+    try {
+      const raw = localStorage.getItem('canvasdesk.feishu.bots')
+      if (!raw) return null
+      const list = JSON.parse(raw) as any[]
+      const bot = list.find((b) => b && typeof b.id === 'string' && b.id === botId)
+      if (!bot) return null
+      const appId = typeof bot.appId === 'string' ? bot.appId.trim() : ''
+      const appSecret = typeof bot.appSecret === 'string' ? bot.appSecret.trim() : ''
+      if (!appId || !appSecret) return null
+      return { appId, appSecret }
+    } catch {
+      return null
+    }
+  },
+
   /** 启动 WS 长连接。同一时刻只允许一组 App 凭证在连；换凭证时会先关旧的 */
   start: (args: { appId: string; appSecret: string }): Promise<{ ok: true } | { ok: false; error: string }> =>
     ipcRenderer.invoke('feishu:start', args),

@@ -51,11 +51,8 @@ export class FeishuReceiveNode extends Node {
 
   // —— 用户配置 ——
 
-  /** 飞书应用 App ID */
-  private appId = ''
-
-  /** 飞书应用 App Secret */
-  private appSecret = ''
+  /** 全局机器人 id（引用 SettingsDialog 里的飞书机器人列表） */
+  private botId = ''
 
   /** 是否启用接收（持久化；默认 false，防止空凭证也自动重连） */
   private enabled = false
@@ -112,8 +109,7 @@ export class FeishuReceiveNode extends Node {
 
   // —— UI 读的状态 ——
 
-  get displayAppId(): string { return this.appId }
-  get displayAppSecret(): string { return this.appSecret }
+  get displayBotId(): string { return this.botId }
   get displayChatIdFilter(): string { return this.chatIdFilter }
   get isEnabled(): boolean { return this.enabled }
   get displayConnectionState(): ConnectionState { return this.connectionState }
@@ -121,16 +117,10 @@ export class FeishuReceiveNode extends Node {
 
   // —— 配置修改 ——
 
-  setAppId(v: string): void {
-    if (this.appId === v) return
-    this.appId = v.trim()
-    this.notifyChanged()
-    if (this.enabled) this.restartConnection()
-  }
-
-  setAppSecret(v: string): void {
-    if (this.appSecret === v) return
-    this.appSecret = v.trim()
+  setBotId(v: string): void {
+    const trimmed = v.trim()
+    if (this.botId === trimmed) return
+    this.botId = trimmed
     this.notifyChanged()
     if (this.enabled) this.restartConnection()
   }
@@ -156,9 +146,16 @@ export class FeishuReceiveNode extends Node {
 
   // —— 长连接管理 ——
 
+  /** 从 botId 反查凭证；找不到返回 null */
+  private resolveCredentials(): { appId: string; appSecret: string } | null {
+    // @ts-ignore — 只在 renderer 里执行，window.feishuApi 一定存在
+    return window.feishuApi.resolveBotCredentials(this.botId)
+  }
+
   /** 是否具备启动连接的所有前置条件 */
   private canStart(): boolean {
-    return this.appId.length > 0 && this.appSecret.length > 0
+    if (!this.botId) return false
+    return this.resolveCredentials() !== null
   }
 
   /**
@@ -166,8 +163,11 @@ export class FeishuReceiveNode extends Node {
    * 主进程 FeishuManager 是单例——同一时刻一组 App 凭证在连；换凭证会自动关旧起新。
    */
   startConnection(): void {
-    if (!this.canStart()) {
-      this.setConnectionState('error', '请先填写 App ID 和 App Secret')
+    const creds = this.resolveCredentials()
+    if (!creds) {
+      this.setConnectionState('error', this.botId
+        ? `机器人"${this.botId}"的凭证未找到，请先在设置里配置`
+        : '请先选择一个飞书机器人')
       return
     }
 
@@ -184,7 +184,7 @@ export class FeishuReceiveNode extends Node {
 
     // 通知主进程启动 WS
     // @ts-ignore — 只在 renderer 里执行，window.feishuApi 一定存在
-    void window.feishuApi.start({ appId: this.appId, appSecret: this.appSecret }).then((result) => {
+    void window.feishuApi.start({ appId: creds.appId, appSecret: creds.appSecret }).then((result) => {
       if (!result.ok) {
         this.setConnectionState('error', result.error)
         this.cleanupMessageListener()
@@ -288,8 +288,7 @@ export class FeishuReceiveNode extends Node {
   saveState(): Record<string, unknown> {
     return {
       ...super.saveState(),
-      appId: this.appId,
-      appSecret: this.appSecret,
+      botId: this.botId,
       enabled: this.enabled,
       chatIdFilter: this.chatIdFilter
     }
@@ -298,8 +297,15 @@ export class FeishuReceiveNode extends Node {
   readState(state: Record<string, unknown>): void {
     super.readState(state)
 
-    if (typeof state.appId === 'string') this.appId = state.appId
-    if (typeof state.appSecret === 'string') this.appSecret = state.appSecret
+    // 新版：直接 botId
+    if (typeof state.botId === 'string') {
+      this.botId = state.botId
+    } else if (typeof state.appId === 'string' && typeof state.appSecret === 'string') {
+      // 旧版迁移：节点里存的 appId/appSecret。
+      // 新版改由全局 SettingsDialog 管理，这里保留空 botId，用户需手动在全局配置里添加。
+      // 迁移后不再持久化 appId/appSecret——凭证交给全局统一管理。
+      this.botId = ''
+    }
     if (typeof state.chatIdFilter === 'string') this.chatIdFilter = state.chatIdFilter
     // enabled 默认 false——防止旧存量节点升级后自动重连（需要用户手动确认）
     this.enabled = state.enabled === true

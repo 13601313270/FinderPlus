@@ -91,7 +91,7 @@ onUnmounted(() => {
       </div>
 
       <div v-if="connState === 'error' && connError" class="error-msg">{{ connError }}</div>
-      <div v-else-if="!node?.displayAppId" class="hint">点齿轮填写 App ID / Secret</div>
+      <div v-else-if="!node?.displayBotId" class="hint">点齿轮选择飞书机器人</div>
     </div>
   </div>
 </template>

@@ -23,6 +23,10 @@ import {
   useBrowserIdentities,
   type BrowserIdentity
 } from '@renderer/composables/useBrowserIdentities'
+import {
+  useFeishuBots,
+  type FeishuBot
+} from '@renderer/composables/useFeishuBots'
 import SelectMenu from './SelectMenu.vue'
 import { workspaceScene } from '../../../main/engine/graph/SceneRegistry'
 import { viewport } from '@renderer/canvas/viewport'
@@ -60,9 +64,15 @@ const {
   rename: renameBrowserIdentity,
   remove: removeBrowserIdentity
 } = useBrowserIdentities()
+const {
+  bots: feishuBots,
+  add: addFeishuBot,
+  update: updateFeishuBot,
+  remove: removeFeishuBot
+} = useFeishuBots()
 
 /** 左侧选中的分类 */
-type SectionKey = 'general' | 'appearance' | 'llm' | 'image' | 'nodes' | 'browser' | 'canvases'
+type SectionKey = 'general' | 'appearance' | 'llm' | 'image' | 'nodes' | 'browser' | 'feishu' | 'canvases'
 const activeSection = ref<SectionKey>('general')
 
 /** 各 provider API Key 是否以明文显示 */
@@ -76,7 +86,7 @@ function toggleImageKeyVisible(key: string): void {
   imageKeyVisible.value[key] = !imageKeyVisible.value[key]
 }
 
-const SECTION_ORDER: SectionKey[] = ['general', 'appearance', 'llm', 'image', 'nodes', 'browser', 'canvases']
+const SECTION_ORDER: SectionKey[] = ['general', 'appearance', 'llm', 'image', 'nodes', 'browser', 'feishu', 'canvases']
 
 function sectionLabel(key: SectionKey): string {
   switch (key) {
@@ -86,6 +96,7 @@ function sectionLabel(key: SectionKey): string {
     case 'image':      return t('settingsDialog.groupImage')
     case 'nodes':      return t('settingsDialog.groupNodes')
     case 'browser':    return t('settingsDialog.groupBrowser')
+    case 'feishu':     return '飞书机器人'
     case 'canvases':   return t('settingsDialog.groupCanvases')
   }
 }
@@ -442,6 +453,58 @@ async function onDeleteBrowserIdentity(identity: BrowserIdentity): Promise<void>
   }
   // 再删身份定义
   removeBrowserIdentity(identity.id)
+}
+
+// —— 飞书机器人 ——
+interface FeishuBotDraft {
+  mode: 'add' | 'edit'
+  id?: string
+  name: string
+  appId: string
+  appSecret: string
+}
+const feishuBotModalVisible = ref(false)
+const feishuBotDraft = ref<FeishuBotDraft>({ mode: 'add', name: '', appId: '', appSecret: '' })
+const feishuSecretVisible = ref(false)
+
+function showFeishuBotModal(mode: 'add' | 'edit', bot?: FeishuBot): void {
+  if (mode === 'edit' && bot) {
+    feishuBotDraft.value = {
+      mode: 'edit',
+      id: bot.id,
+      name: bot.name,
+      appId: bot.appId,
+      appSecret: bot.appSecret
+    }
+  } else {
+    feishuBotDraft.value = { mode: 'add', name: '', appId: '', appSecret: '' }
+  }
+  feishuSecretVisible.value = false
+  feishuBotModalVisible.value = true
+}
+
+function closeFeishuBotModal(): void {
+  feishuBotModalVisible.value = false
+}
+
+function onSaveFeishuBot(): void {
+  const d = feishuBotDraft.value
+  if (!d.name.trim() || !d.appId.trim() || !d.appSecret.trim()) return
+  if (d.mode === 'add') {
+    addFeishuBot(d.name, d.appId, d.appSecret)
+  } else if (d.id) {
+    updateFeishuBot(d.id, { name: d.name, appId: d.appId, appSecret: d.appSecret })
+  }
+  feishuBotModalVisible.value = false
+}
+
+async function onDeleteFeishuBot(bot: FeishuBot): Promise<void> {
+  const ok = await window.showConfirm(
+    '删除机器人',
+    `确定要删除机器人"${bot.name}"吗？删除后，引用该机器人的节点将无法发送/接收消息（节点里的 botId 配置保留，但凭证不再生效）。`
+  )
+  if (!ok) return
+  removeFeishuBot(bot.id)
 }
 
 // —— 我的画布 tab ——
@@ -943,6 +1006,51 @@ async function onDeleteCanvas(id: string, name: string): Promise<void> {
               </section>
             </template>
 
+            <!-- ========== 飞书机器人 ========== -->
+            <template v-if="activeSection === 'feishu'">
+              <section class="gs-section">
+                <h4 class="gs-section__title">飞书机器人</h4>
+                <p class="gs-section__hint">配置飞书开放平台自建应用凭证，节点通过 botId 引用。App Secret 存储在本地浏览器 localStorage。</p>
+
+                <div class="gs-transfer__actions" style="margin-bottom: 12px;">
+                  <button
+                    class="gs-btn gs-btn--primary"
+                    type="button"
+                    @click="showFeishuBotModal('add')"
+                  >+ 新增机器人</button>
+                </div>
+
+                <div v-if="feishuBots.length === 0" class="gs-canvases__empty">
+                  暂无机器人，点击上方"新增机器人"按钮添加。
+                </div>
+
+                <div v-else class="gs-feishu__list">
+                  <div
+                    v-for="bot in feishuBots"
+                    :key="bot.id"
+                    class="gs-feishu-card"
+                  >
+                    <div class="gs-feishu-card__info">
+                      <span class="gs-feishu-card__name">{{ bot.name }}</span>
+                      <span class="gs-feishu-card__appid">App ID: {{ bot.appId }}</span>
+                    </div>
+                    <div class="gs-feishu-card__actions">
+                      <button
+                        class="gs-canvas-card__btn"
+                        type="button"
+                        @click="showFeishuBotModal('edit', bot)"
+                      >编辑</button>
+                      <button
+                        class="gs-canvas-card__btn gs-canvas-card__btn--danger"
+                        type="button"
+                        @click="onDeleteFeishuBot(bot)"
+                      >删除</button>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            </template>
+
             <!-- ========== 我的画布 ========== -->
             <template v-if="activeSection === 'canvases'">
               <section class="gs-section">
@@ -1005,6 +1113,64 @@ async function onDeleteCanvas(id: string, name: string): Promise<void> {
               </section>
             </template>
           </div>
+
+          <!-- ========== 飞书机器人编辑 Modal ========== -->
+          <Teleport to="body">
+            <div v-if="feishuBotModalVisible" class="gs-mask" @click.self="closeFeishuBotModal">
+              <div class="gs-modal" @click.stop>
+                <div class="gs-modal__header">
+                  <span class="gs-modal__title">{{ feishuBotDraft.mode === 'edit' ? '编辑飞书机器人' : '新增飞书机器人' }}</span>
+                  <button class="gs-modal__close" type="button" @click="closeFeishuBotModal">×</button>
+                </div>
+                <div class="gs-modal__body">
+                  <label class="gs-field">
+                    <span class="gs-field__label">名称</span>
+                    <input
+                      class="gs-field__input"
+                      type="text"
+                      v-model="feishuBotDraft.name"
+                      placeholder="如：通知群机器人"
+                      maxlength="32"
+                    />
+                  </label>
+                  <label class="gs-field">
+                    <span class="gs-field__label">App ID</span>
+                    <input
+                      class="gs-field__input"
+                      type="text"
+                      v-model="feishuBotDraft.appId"
+                      placeholder="cli_xxxxxxxxxxxxxx"
+                    />
+                  </label>
+                  <label class="gs-field">
+                    <span class="gs-field__label">App Secret</span>
+                    <div class="gs-field__secret-row">
+                      <input
+                        class="gs-field__input"
+                        :type="feishuSecretVisible ? 'text' : 'password'"
+                        v-model="feishuBotDraft.appSecret"
+                        placeholder="••••••••••••••••••••"
+                      />
+                      <button
+                        class="gs-field__toggle"
+                        type="button"
+                        @click="feishuSecretVisible = !feishuSecretVisible"
+                      >{{ feishuSecretVisible ? '隐藏' : '显示' }}</button>
+                    </div>
+                  </label>
+                </div>
+                <div class="gs-modal__footer">
+                  <button class="gs-btn" type="button" @click="closeFeishuBotModal">取消</button>
+                  <button
+                    class="gs-btn gs-btn--primary"
+                    type="button"
+                    :disabled="!feishuBotDraft.name.trim() || !feishuBotDraft.appId.trim() || !feishuBotDraft.appSecret.trim()"
+                    @click="onSaveFeishuBot"
+                  >保存</button>
+                </div>
+              </div>
+            </div>
+          </Teleport>
         </div>
       </div>
     </div>
@@ -1737,5 +1903,152 @@ async function onDeleteCanvas(id: string, name: string): Promise<void> {
 @keyframes gsPopIn {
   from { opacity: 0; transform: translateY(-8px) scale(0.97); }
   to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+// —— 飞书机器人卡片样式 ——
+.gs-feishu__list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.gs-feishu-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  transition: border-color 0.15s;
+
+  &:hover { border-color: #93c5fd; }
+
+  &__info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  &__name {
+    font-size: 13px;
+    font-weight: 600;
+    color: @color-text;
+  }
+
+  &__appid {
+    font-size: 11px;
+    color: @color-text-weak;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+
+  &__actions {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+}
+
+// —— 通用 Modal 样式 ——
+.gs-modal {
+  width: 440px;
+  max-height: 80vh;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  animation: gsPopIn 0.15s ease;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  &__title {
+    font-size: 14px;
+    font-weight: 600;
+    color: @color-text;
+  }
+
+  &__close {
+    all: unset;
+    cursor: pointer;
+    font-size: 18px;
+    color: @color-text-weak;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &:hover { background: #f3f4f6; color: @color-text; }
+  }
+
+  &__body {
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow-y: auto;
+  }
+
+  &__footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 12px 18px;
+    border-top: 1px solid #e5e7eb;
+  }
+}
+
+.gs-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  &__label {
+    font-size: 12px;
+    font-weight: 500;
+    color: @color-text-weak;
+  }
+
+  &__input {
+    padding: 7px 10px;
+    font-size: 13px;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    outline: none;
+    background: #fff;
+    transition: border-color 0.15s;
+
+    &:focus { border-color: #3b82f6; }
+  }
+
+  &__secret-row {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+
+    .gs-field__input { flex: 1; }
+  }
+
+  &__toggle {
+    all: unset;
+    cursor: pointer;
+    padding: 6px 10px;
+    font-size: 12px;
+    color: #3b82f6;
+    background: #eff6ff;
+    border-radius: 6px;
+    white-space: nowrap;
+
+    &:hover { background: #dbeafe; }
+  }
 }
 </style>

@@ -2,13 +2,15 @@
 import { computed, onMounted, onUnmounted, ref, shallowRef } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { FeishuSendNode, type ReceiveIdType } from './node'
+import { useFeishuBots } from '@renderer/composables/useFeishuBots'
 
 const props = defineProps<{ nodeId: string }>()
 
 const node = shallowRef<FeishuSendNode | undefined>(undefined)
 
-const appId = ref('')
-const appSecret = ref('')
+const { bots } = useFeishuBots()
+
+const botId = ref('')
 const receiveId = ref('')
 const receiveIdType = ref<ReceiveIdType>('chat_id')
 const autoSend = ref(false)
@@ -23,20 +25,21 @@ const ALL_TYPES: { value: ReceiveIdType; label: string }[] = [
 
 let unsubscribe: (() => void) | undefined
 
+const selectedBotLabel = computed((): string => {
+  if (!botId.value) return '未选择'
+  const bot = bots.value.find((b) => b.id === botId.value)
+  return bot ? `${bot.name}（${bot.appId}）` : '已删除'
+})
+
 function syncFromNode(n: FeishuSendNode): void {
-  appId.value = n.displayAppId
-  appSecret.value = n.displayAppSecret
+  botId.value = n.displayBotId
   receiveId.value = n.displayReceiveId
   receiveIdType.value = n.displayReceiveIdType
   autoSend.value = n.displayAutoSend
 }
 
-function onAppIdInput(v: string): void {
-  node.value?.setAppId(v)
-}
-
-function onAppSecretInput(v: string): void {
-  node.value?.setAppSecret(v)
+function onBotIdChange(v: string): void {
+  node.value?.setBotId(v)
 }
 
 function onReceiveIdInput(v: string): void {
@@ -78,29 +81,23 @@ onUnmounted(() => {
 <template>
   <div class="panel">
     <section class="section">
-      <h3 class="section__title">应用凭证</h3>
+      <h3 class="section__title">飞书机器人</h3>
 
       <label class="field">
-        <span class="field__label">App ID</span>
-        <input
+        <span class="field__label">选择机器人</span>
+        <select
           class="field__input"
-          type="text"
-          :value="appId"
-          placeholder="cli_xxxxxxxxxxxxxx"
-          @input="onAppIdInput(($event.target as HTMLInputElement).value)"
-        />
+          :value="botId"
+          @change="(e: Event) => onBotIdChange((e.target as HTMLSelectElement).value)"
+        >
+          <option value="">-- 请先在设置里添加机器人 --</option>
+          <option v-for="b in bots" :key="b.id" :value="b.id">{{ b.name }}（{{ b.appId }}）</option>
+        </select>
       </label>
 
-      <label class="field">
-        <span class="field__label">App Secret</span>
-        <input
-          class="field__input"
-          type="password"
-          :value="appSecret"
-          placeholder="••••••••••••••••••••"
-          @input="onAppSecretInput(($event.target as HTMLInputElement).value)"
-        />
-      </label>
+      <p class="field__hint">
+        机器人列表在 <strong>设置 → 飞书机器人</strong> 里管理。当前选择：{{ selectedBotLabel }}
+      </p>
     </section>
 
     <section class="section">
@@ -156,7 +153,7 @@ onUnmounted(() => {
       <button
         class="test-btn"
         type="button"
-        :disabled="!node?.displayAppId || !node?.displayReceiveId"
+        :disabled="!node?.displayBotId || !node?.displayReceiveId"
         @click="onTestSend"
       >
         测试发送

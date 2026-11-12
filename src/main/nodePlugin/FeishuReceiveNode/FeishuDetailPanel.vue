@@ -1,14 +1,16 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref, shallowRef } from 'vue'
+import { computed, onMounted, onUnmounted, ref, shallowRef } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { FeishuReceiveNode } from './node'
+import { useFeishuBots } from '@renderer/composables/useFeishuBots'
 
 const props = defineProps<{ nodeId: string }>()
 
 const node = shallowRef<FeishuReceiveNode | undefined>(undefined)
 
-const appId = ref('')
-const appSecret = ref('')
+const { bots } = useFeishuBots()
+
+const botId = ref('')
 const chatIdFilter = ref('')
 const enabled = ref(false)
 const connState = ref<'idle' | 'connecting' | 'connected' | 'error'>('idle')
@@ -16,21 +18,22 @@ const connError = ref('')
 
 let unsubscribe: (() => void) | undefined
 
+const selectedBotLabel = computed((): string => {
+  if (!botId.value) return '未选择'
+  const bot = bots.value.find((b) => b.id === botId.value)
+  return bot ? `${bot.name}（${bot.appId}）` : '已删除'
+})
+
 function syncFromNode(n: FeishuReceiveNode): void {
-  appId.value = n.displayAppId
-  appSecret.value = n.displayAppSecret
+  botId.value = n.displayBotId
   chatIdFilter.value = n.displayChatIdFilter
   enabled.value = n.isEnabled
   connState.value = n.displayConnectionState
   connError.value = n.displayConnectionError
 }
 
-function onAppIdInput(v: string): void {
-  node.value?.setAppId(v)
-}
-
-function onAppSecretInput(v: string): void {
-  node.value?.setAppSecret(v)
+function onBotIdChange(v: string): void {
+  node.value?.setBotId(v)
 }
 
 function onChatIdFilterInput(v: string): void {
@@ -58,29 +61,23 @@ onUnmounted(() => {
 <template>
   <div class="panel">
     <section class="section">
-      <h4 class="section__title">连接凭证</h4>
+      <h4 class="section__title">飞书机器人</h4>
 
       <label class="field">
-        <span class="field__label">App ID</span>
-        <input
+        <span class="field__label">选择机器人</span>
+        <select
           class="field__input"
-          type="text"
-          :value="appId"
-          placeholder="cli_xxxxxxxxxxxxxxxx"
-          @input="(e: Event) => onAppIdInput((e.target as HTMLInputElement).value)"
-        />
+          :value="botId"
+          @change="(e: Event) => onBotIdChange((e.target as HTMLSelectElement).value)"
+        >
+          <option value="">-- 请先在设置里添加机器人 --</option>
+          <option v-for="b in bots" :key="b.id" :value="b.id">{{ b.name }}（{{ b.appId }}）</option>
+        </select>
       </label>
 
-      <label class="field">
-        <span class="field__label">App Secret</span>
-        <input
-          class="field__input"
-          type="password"
-          :value="appSecret"
-          placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-          @input="(e: Event) => onAppSecretInput((e.target as HTMLInputElement).value)"
-        />
-      </label>
+      <p class="field__hint">
+        机器人列表在 <strong>设置 → 飞书机器人</strong> 里管理。当前选择：{{ selectedBotLabel }}
+      </p>
     </section>
 
     <section class="section">
@@ -123,7 +120,7 @@ onUnmounted(() => {
         <li>进入「事件与回调 → 事件配置」，选择「使用长连接接收事件」</li>
         <li>添加订阅事件：<code>im.message.receive_v1</code>（接收消息 v2.0）</li>
         <li>开启机器人能力，把机器人拉进目标群</li>
-        <li>把 App ID / App Secret 填入上方表单，开启开关</li>
+        <li>在 <strong>设置 → 飞书机器人</strong> 里添加应用凭证，再回到这里选择</li>
       </ol>
     </section>
   </div>
@@ -177,6 +174,13 @@ onUnmounted(() => {
       outline: none;
       border-color: @color-primary;
     }
+  }
+
+  &__hint {
+    font-size: 10px;
+    color: @color-text-weak;
+    margin: 4px 0 0;
+    line-height: 1.5;
   }
 }
 

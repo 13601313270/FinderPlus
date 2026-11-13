@@ -6,6 +6,7 @@ import { MethodPort } from '../../engine/port/MethodPort'
 import { Node } from '../../engine/node/Node'
 import { OutputPort } from '../../engine/port/OutputPort'
 import { BoolValue } from '../../engine/data/BoolValue'
+import { getSharedAudioContext } from '../AudioFileNode/sharedAudio'
 
 /**
  * 音频播放节点：接收 FileValue 子类（AudioFileValue / VideoFileValue / FileValue），
@@ -51,14 +52,14 @@ export class AudioPlayNode extends Node {
   /** 播放控制：play / pause / currentTime / timeupdate */
   private audio: HTMLAudioElement | null = null
 
-  /** 时长引擎：decodeAudioData 拿真实 duration */
-  private audioCtx: AudioContext | null = null
-
   /** src blob URL */
   private blobUrl: string | null = null
 
   /** 当前文件引用（render.vue 读文件名） */
   private _sourceFile: File | undefined
+
+  /** 并发保护：_decodeDuration 过期请求丢弃用 */
+  private decodeRequestId = 0
 
   // 状态快照——render.vue 通过 snapshot() 读
   private _isPlaying = false
@@ -178,20 +179,16 @@ export class AudioPlayNode extends Node {
 
   /** Web Audio API 解码 → 拿真实 duration，写进 this._duration 并通知订阅者 */
   private async _decodeDuration(file: File): Promise<void> {
-    // 新建 AudioContext（浏览器单例不规范，这里每次重建跟 Audio 引擎同步生命周期）
-    const ctx = new AudioContext()
-    this.audioCtx = ctx
+    const myRequestId = ++this.decodeRequestId
+    const ctx = getSharedAudioContext()
     try {
       const arrayBuffer = await file.arrayBuffer()
       const decoded = await ctx.decodeAudioData(arrayBuffer.slice(0))
-      // 检查 Audio 还活着（没有被下一次 rebuildAudio 替换）
-      if (this.audioCtx !== ctx) return
+      // 并发保护：如果期间又重建了，说明是过期请求，丢弃
+      if (this.decodeRequestId !== myRequestId) return
       this._duration = decoded.duration
       this.notifyPlayerChanged()
-    } finally {
-      ctx.close().catch(() => { /* 关闭失败忽略 */ })
-      if (this.audioCtx === ctx) this.audioCtx = null
-    }
+    } catch { /* 解码失败静默忽略 */ }
   }
 
   /** 完整清理，节点销毁或输入变化时调 */
@@ -206,10 +203,8 @@ export class AudioPlayNode extends Node {
       URL.revokeObjectURL(this.blobUrl)
       this.blobUrl = null
     }
-    if (this.audioCtx) {
-      this.audioCtx.close().catch(() => {})
-      this.audioCtx = null
-    }
+    // 让在飞的 _decodeDuration 过期（不要 close 共享 AudioContext）
+    this.decodeRequestId++
     this._isPlaying = false
     this._currentTime = 0
     this._duration = 0

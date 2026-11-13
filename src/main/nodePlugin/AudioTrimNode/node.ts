@@ -3,6 +3,7 @@ import { InputPort } from '../../engine/port/InputPort'
 import { OutputPort } from '../../engine/port/OutputPort'
 import { Node, type InputPortChangeSource } from '../../engine/node/Node'
 import { bytesToBase64 } from '../../engine/data/base64'
+import { getSharedAudioContext } from '../AudioFileNode/sharedAudio'
 
 export type TrimStatus = 'idle' | 'loading' | 'done' | 'error'
 
@@ -101,9 +102,8 @@ export class AudioTrimNode extends Node {
 
     try {
       const arrayBuffer = await file.arrayBuffer()
-      const ctx = new AudioContext()
+      const ctx = getSharedAudioContext()
       const audioBuffer = await ctx.decodeAudioData(arrayBuffer)
-      void ctx.close()
 
       if (this.requestId !== myRequestId) return
 

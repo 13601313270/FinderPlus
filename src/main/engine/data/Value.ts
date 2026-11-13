@@ -37,6 +37,8 @@ export const BUILTIN_VALUE_KINDS = [
   'audio-file',
   'video-file',
   'img-file-collection',
+  'mix-file-collection',
+  'audio-file-collection',
   'multimodal'
 ] as const
 

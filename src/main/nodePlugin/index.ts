@@ -23,6 +23,7 @@ import { manifest as imageCompressManifest } from './ImageCompressNode'
 import { manifest as imageQualityManifest } from './ImageQualityNode'
 import { manifest as folderManifest } from './FolderNode'
 import { manifest as imgFolderManifest } from './ImgFolderNode'
+import { manifest as audioFolderManifest } from './AudioFolderNode'
 import { manifest as llmManifest } from './LLMNode'
 import { manifest as imageGenManifest } from './ImageGenNode'
 import { manifest as ttsManifest } from './TTSNode'
@@ -92,6 +93,7 @@ const functionalManifests: NodePluginManifest[] = [
   imageOverlayManifest,
   folderManifest,
   imgFolderManifest,
+  audioFolderManifest,
   llmManifest,
   harnessManifest,
   imageGenManifest,

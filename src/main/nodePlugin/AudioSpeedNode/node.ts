@@ -3,6 +3,7 @@ import { NumberValue } from '../../engine/data/NumberValue'
 import { InputPort } from '../../engine/port/InputPort'
 import { OutputPort } from '../../engine/port/OutputPort'
 import { Node, type InputPortChangeSource } from '../../engine/node/Node'
+import { getSharedAudioContext } from '../AudioFileNode/sharedAudio'
 import { bytesToBase64 } from '../../engine/data/base64'
 
 export type SpeedStatus = 'idle' | 'loading' | 'done' | 'error'
@@ -114,10 +115,9 @@ export class AudioSpeedNode extends Node {
     this.beginRun()
 
     try {
-      // 解码原音频
-      const ctx = new AudioContext()
+      // 解码原音频（共用单例 AudioContext，避免文件夹中多文件并发超限）
+      const ctx = getSharedAudioContext()
       const audioBuffer = await ctx.decodeAudioData(await file.arrayBuffer())
-      void ctx.close()
       if (this.requestId !== myRequestId) return
 
       // 按变速比例计算目标时长和样本数

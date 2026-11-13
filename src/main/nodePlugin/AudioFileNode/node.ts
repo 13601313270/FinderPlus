@@ -6,6 +6,7 @@ import { OutputPort } from '../../engine/port/OutputPort'
 import { MethodPort } from '../../engine/port/MethodPort'
 import { FileNode } from '../FileNode/node'
 import { inferAudioMime } from './mime'
+import { getSharedAudioContext } from './sharedAudio'
 
 /** 音频文件后缀集合 */
 const ACCEPTED_EXTS = new Set([
@@ -137,19 +138,15 @@ export class AudioFileNode extends FileNode {
    */
   private async decodeAndCommitDuration(ab: ArrayBuffer): Promise<void> {
     try {
-      const ctx = new AudioContext()
-      try {
-        const audioBuffer = await ctx.decodeAudioData(ab.slice(0))
-        const seconds = Number(audioBuffer.duration.toFixed(3))
-        if (seconds > 0 && isFinite(seconds)) {
-          this.durationOutput.commit(new NumberValue(seconds))
-          // 同时写内部状态，通知 UI 刷新总时长显示
-          this._duration = seconds
-          this.notifyPlayerChanged()
-          this.notifyChanged()
-        }
-      } finally {
-        await ctx.close()
+      const ctx = getSharedAudioContext()
+      const audioBuffer = await ctx.decodeAudioData(ab.slice(0))
+      const seconds = Number(audioBuffer.duration.toFixed(3))
+      if (seconds > 0 && isFinite(seconds)) {
+        this.durationOutput.commit(new NumberValue(seconds))
+        // 同时写内部状态，通知 UI 刷新总时长显示
+        this._duration = seconds
+        this.notifyPlayerChanged()
+        this.notifyChanged()
       }
     } catch { /* 解码失败静默忽略 */ }
   }

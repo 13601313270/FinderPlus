@@ -494,7 +494,10 @@ export abstract class FolderNode extends Node {
     const child = this.children.find((c) => c.id === this.selectedChildIdValue)
     if (child && this.acceptedFileNodeClasses.some(cls => child instanceof cls)) {
       const value = child.fileOutput.value
-      if (value instanceof FileValue && this.acceptedFileNodeClasses.some(cls => value instanceof cls)) {
+      // 注意：不要再用 acceptedFileNodeClasses（Node 类）去 instanceof value（Value 类）——
+      // 两条继承链独立，ImgFileValue instanceof ImgFileNode 永远是 false，会导致选中输出永远被 clear。
+      // 外层已校验 child 类型，FileNode.fileOutput 构造时绑定了正确的 fileValueClass，这里只需检查有效值即可。
+      if (value instanceof FileValue && !value.isNull) {
         this.fileSelectOutput.commit(value)
       } else {
         this.fileSelectOutput.clear()

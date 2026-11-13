@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, ref, watch, type Ref, onUnmounted } from 'vue'
+import { computed, ref, watch, type Ref, onUnmounted, reactive } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
-import { useNodePosition } from '@renderer/composables/useNodePosition'
+import { useNodePosition, manualBeginDrag } from '@renderer/composables/useNodePosition'
 import { setLastDragPaths } from '@renderer/composables/useFileDragOut'
 import { viewport } from '@renderer/canvas/viewport'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
@@ -66,6 +66,25 @@ const selectedName = computed(() => {
 /** 某子节点是否正在播放 */
 const playingId = ref('')
 
+/** 每个子节点的时长（秒）。初始值 0——AudioFileNode 异步解码完成后会通过 subscribePlayer 通知并写入真实值 */
+const durations = reactive(new Map<string, number>())
+
+/** 每个子节点的播放进度（0~1）。ended / pause 时清零，play + timeupdate 时实时推进 */
+const progress = reactive(new Map<string, number>())
+
+/** 格式化秒数 → "mm:ss" 或 "h:mm:ss" */
+function formatDuration(sec: number): string {
+  if (!sec || sec <= 0 || !isFinite(sec)) return '--:--'
+  const total = Math.round(sec)
+  const h = Math.floor(total / 3600)
+  const m = Math.floor((total % 3600) / 60)
+  const s = total % 60
+  if (h > 0) {
+    return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+  }
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+}
+
 /** 为单个子节点确保播放器状态订阅。
  * 注意：不要订阅 child.onChanged 再去调 reloadFileContent！
  * AudioFileNode（及 FileNode 基类）自己处理文件替换 → 自动 setContent → notifyChanged。
@@ -75,14 +94,26 @@ const playingId = ref('')
 function ensureChild(child: AudioFileNode): void {
   if (!child.fileName) return
 
-  // 播放器状态订阅：AudioFileNode 内部 Audio 的 play/pause/ended 变化都通知这里
+  // 播放器状态订阅：AudioFileNode 内部 Audio 的 play/pause/ended / 时长解码完成 / timeupdate 都通知这里
+  // 这里同时负责：写 duration（异步解码）、写 progress（实时播放进度）、维护 playingId
   if (!playerSubs.has(child.id)) {
     playerSubs.set(child.id, child.subscribePlayer(() => {
       const snap = child.snapshot()
+      // 播放状态
       if (snap.isPlaying) {
         playingId.value = child.id
       } else if (playingId.value === child.id) {
         playingId.value = ''
+      }
+      // 时长：每次 notifyPlayerChanged 都会带最新 duration（含刚解码完的那次）
+      if (snap.duration > 0) {
+        durations.set(child.id, snap.duration)
+      }
+      // 进度：currentTime 持续推进；不在播放时清零（pause/ended 都会进来）
+      if (snap.isPlaying && snap.duration > 0) {
+        progress.set(child.id, Math.min(1, Math.max(0, snap.currentTime / snap.duration)))
+      } else if (progress.has(child.id)) {
+        progress.set(child.id, 0)
       }
     }))
   }
@@ -92,11 +123,13 @@ function ensureChild(child: AudioFileNode): void {
 function refreshContent(): void {
   const ids = new Set(children.value.map((c) => c.id))
 
-  // 清理已移除子节点的订阅
+  // 清理已移除子节点的订阅和缓存
   for (const [id, unsub] of [...playerSubs.entries()]) {
     if (!ids.has(id)) {
       unsub()
       playerSubs.delete(id)
+      durations.delete(id)
+      progress.delete(id)
       if (playingId.value === id) playingId.value = ''
     }
   }
@@ -109,17 +142,41 @@ function refreshContent(): void {
 function releaseAll(): void {
   playerSubs.forEach((unsub) => unsub())
   playerSubs.clear()
+  durations.clear()
+  progress.clear()
   playingId.value = ''
 }
 
 // —— 播放/暂停单个音频 ——
+// 策略：任何时刻只允许一个子节点处于播放状态。
+// 点击某个子节点的播放按钮时，先暂停当前正在播放的（如果是不同的那个），再 toggle 目标。
+// 点击正在播放的那个 → 它自己 pause（playingId 通过 Audio 的 pause 事件自动清空）。
 function onTogglePlay(child: AudioFileNode): void {
+  const currentId = playingId.value
+  if (currentId && currentId !== child.id) {
+    // 另一个在播放 → 先暂停它
+    const prev = children.value.find((c) => c.id === currentId)
+    prev?.togglePlay() // AudioFileNode.togglePlay 内部调 audio.pause()
+  }
   child.togglePlay()
 }
 
-// —— 选中某音频行 ——
-function onSelectRow(id: string): void {
-  node.value?.selectChild(id)
+/** 某个子节点是否正在被拖拽（视觉高亮用） */
+const draggingId = ref('')
+
+// —— 行级拖拽 + 选中：pointerdown 先选中，再启动 manualBeginDrag 让 App 层结算 ——
+// manualBeginDrag 内部：设 draggingNode / 实时 setPosition → 松手 App 判定是否越出 container → removeChild 释放回画布
+function onRowPointerDown(e: PointerEvent, child: AudioFileNode): void {
+  node.value?.selectChild(child.id)
+  draggingId.value = child.id
+  manualBeginDrag(child, e)
+  // manualBeginDrag 内部自己加了 pointeronce 的 pointerup 监听；
+  // 但需要额外清除 draggingId——在 window 级 pointerup 上做（once 够了）
+  const cleanup = () => {
+    draggingId.value = ''
+    window.removeEventListener('pointerup', cleanup)
+  }
+  window.addEventListener('pointerup', cleanup, { once: true })
 }
 
 // —— 双击文件名：用系统默认程序打开 ——
@@ -200,8 +257,12 @@ onUnmounted(() => {
         v-for="c in children"
         :key="c.id"
         class="audio-folder__row"
-        :class="{ 'audio-folder__row--selected': c.id === selectedId }"
-        @pointerdown.stop="onSelectRow(c.id)"
+        :class="{
+          'audio-folder__row--selected': c.id === selectedId,
+          'audio-folder__row--dragging': c.id === draggingId
+        }"
+        :style="{ '--progress': progress.get(c.id) ?? 0 }"
+        @pointerdown.stop="onRowPointerDown($event, c)"
         @dblclick.stop="onDblClick(c)"
       >
         <!-- 播放/暂停按钮 -->
@@ -224,7 +285,10 @@ onUnmounted(() => {
         <!-- 文件名 -->
         <span class="audio-folder__name" :title="c.fileName">{{ c.fileName }}</span>
 
-        <!-- 格式标签（可选） -->
+        <!-- 时长 -->
+        <span class="audio-folder__duration">{{ formatDuration(durations.get(c.id) ?? 0) }}</span>
+
+        <!-- 格式标签 -->
         <span class="audio-folder__format">{{ c.displayFormat }}</span>
       </div>
 
@@ -334,7 +398,10 @@ onUnmounted(() => {
     align-content: start;
   }
 
-  // 每行：播放按钮 + 文件名 + 格式标签
+  // 每行：播放按钮 + 文件名 + 时长 + 格式标签
+  // 进度条用 background-image 双层叠画：
+  //   第一层（上面）：进度条蓝色，从左侧起算，宽度 = calc(var(--progress) * 100%)
+  //   第二层（下面）：底色（默认/hover/selected 各自不同），全铺
   &__row {
     display: flex;
     align-items: center;
@@ -344,15 +411,36 @@ onUnmounted(() => {
     border-radius: 6px;
     cursor: pointer;
     transition: background 0.1s;
+    position: relative;
+
+    background-image: linear-gradient(rgba(59, 124, 255, 0.08), rgba(59, 124, 255, 0.08));
+    background-size: calc(var(--progress, 0) * 100%) 100%;
+    background-repeat: no-repeat;
+    background-color: transparent;
 
     &:hover {
-      background: #f2f3f5;
+      background-image:
+        linear-gradient(rgba(59, 124, 255, 0.12), rgba(59, 124, 255, 0.12)),
+        linear-gradient(#f2f3f5, #f2f3f5);
+      background-size: calc(var(--progress, 0) * 100%) 100%, 100% 100%;
+      background-repeat: no-repeat, no-repeat;
     }
 
     &--selected {
-      background: rgba(59, 124, 255, 0.1);
+      background-image:
+        linear-gradient(rgba(59, 124, 255, 0.18), rgba(59, 124, 255, 0.18)),
+        linear-gradient(rgba(59, 124, 255, 0.1), rgba(59, 124, 255, 0.1));
+      background-size: calc(var(--progress, 0) * 100%) 100%, 100% 100%;
+      background-repeat: no-repeat, no-repeat;
       border: 1px solid @color-primary;
       padding: 4px 9px; // 补偿 border
+    }
+
+    // 拖拽中视觉：抬起感（阴影 + 微透明 + 抓手变 grab）
+    &--dragging {
+      cursor: grabbing;
+      opacity: 0.85;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
     }
   }
 
@@ -387,6 +475,13 @@ onUnmounted(() => {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  &__duration {
+    flex-shrink: 0;
+    font-size: 11px;
+    color: @color-text-weak;
+    font-variant-numeric: tabular-nums; // 等宽数字，mm:ss 切换时不抖动
   }
 
   &__format {

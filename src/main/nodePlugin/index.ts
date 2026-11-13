@@ -26,6 +26,7 @@ import { manifest as imgFolderManifest } from './ImgFolderNode'
 import { manifest as llmManifest } from './LLMNode'
 import { manifest as imageGenManifest } from './ImageGenNode'
 import { manifest as ttsManifest } from './TTSNode'
+import { manifest as sttManifest } from './STTNode'
 import { manifest as s2vManifest } from './S2VNode'
 import { manifest as recorderManifest } from './RecorderNode'
 import { manifest as audioTrimManifest } from './AudioTrimNode'
@@ -95,6 +96,7 @@ const functionalManifests: NodePluginManifest[] = [
   harnessManifest,
   imageGenManifest,
   ttsManifest,
+  sttManifest,
   s2vManifest,
   recorderManifest,
   audioTrimManifest,

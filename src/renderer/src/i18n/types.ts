@@ -376,7 +376,9 @@ export type Language = {
       boolean: string
       color: string
       time: string
-      date: string
+      date: string,
+      image: string,
+      file: string,
     }
 
     /** 新增/编辑弹窗 */

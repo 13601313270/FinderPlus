@@ -171,7 +171,9 @@ const zh: Language = {
     'html-file': 'HTML文件',
     'json-file': 'JSON文件',
     'multimodal': 'Multimodal',
-    'img-file-collection': '图片文件集合'
+    'img-file-collection': '图片文件集合',
+    'audio-file-collection': '音频文件集合',
+    'mix-file-collection': '混合文件集合'
   },
   intro: {
     whatIs: {
@@ -319,7 +321,9 @@ const zh: Language = {
       boolean: '布尔',
       color: '颜色',
       time: '时间',
-      date: '日期'
+      date: '日期',
+      image: '图片',
+      file: '文件'
     },
     dialogTitleAdd: '新增',
     dialogTitleEdit: '修改',

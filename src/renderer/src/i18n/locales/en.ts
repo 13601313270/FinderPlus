@@ -166,7 +166,9 @@ const en: Language = {
     'html-file': 'HTML File',
     'json-file': 'JSON File',
     'multimodal': 'Multimodal',
-    'img-file-collection': 'Image Collection'
+    'img-file-collection': 'Image Collection',
+    'audio-file-collection': 'Audio Collection',
+    'mix-file-collection': 'Mixed File Collection'
   },
   intro: {
     whatIs: {
@@ -313,7 +315,9 @@ const en: Language = {
       boolean: 'Boolean',
       color: 'Color',
       time: 'Time',
-      date: 'Date'
+      date: 'Date',
+      image: 'Image',
+      file: 'File'
     },
     dialogTitleAdd: 'Add',
     dialogTitleEdit: 'Edit',

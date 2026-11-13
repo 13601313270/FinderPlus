@@ -36,7 +36,7 @@ export type ColumnType = 'number' | 'string' | 'boolean'
  * 业务数据类型（语义层）——决定 UI 渲染什么组件。
  * 每个业务类型固定绑定一个存储类型（见 BUSINESS_TYPE_MAP）。
  */
-export type BusinessType = 'text' | 'textarea' | 'number' | 'boolean' | 'color' | 'time' | 'date'
+export type BusinessType = 'text' | 'textarea' | 'number' | 'boolean' | 'color' | 'time' | 'date' | 'image' | 'file'
 
 /** 业务类型 → 存储类型（SQLite DDL 用）的固定映射 */
 export const BUSINESS_TYPE_MAP: Record<BusinessType, ColumnType> = {
@@ -46,7 +46,9 @@ export const BUSINESS_TYPE_MAP: Record<BusinessType, ColumnType> = {
   boolean: 'boolean',
   color: 'string',
   time: 'string',
-  date: 'string'
+  date: 'string',
+  image: 'string',
+  file: 'string'
 }
 
 /** 存储类型 → 默认业务类型（老存档没 businessType 时回退用） */

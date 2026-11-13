@@ -289,7 +289,7 @@ export abstract class FileNode extends Node {
    * 新文件已落到磁盘后，子类重读内容并 commit 自己的业务端口。
    * 基类默认什么都不做，需要重读内容的子类（txt / 图片 / 通用文件）override。
    */
-  async reloadFileContent(): Promise<void> {}
+  async reloadFileContent(): Promise<void> { }
 
   /**
    * 画布启动就绪时：注册文件系统变化监听。
@@ -345,6 +345,26 @@ export abstract class FileNode extends Node {
         // 文件可能已被用户手动删了，静默忽略——节点本身还是要删的
         console.warn('[FileNode] 删除文件失败：', this.fileNameValue, err)
       }
+    }
+  }
+
+  /**
+   * 复制节点时：同时复制磁盘上的文件副本，避免两个节点指向同一个文件。
+   * 复制走 getFullPath → copyPath（主进程内部 resolveNonCollidingName 处理重名），
+   * 最后把新的 fileName / fileSize 替换进 state 供 initStateBySaveData 恢复。
+   * 文件复制失败时降级为返回原 state（新节点仍指向原文件，避免中断复制流程）。
+   */
+  override async modifyStateDataBeforeCopy(state: Record<string, unknown>): Promise<Record<string, unknown>> {
+    if (!this.fileNameValue) return state
+    try {
+      // @ts-ignore — renderer 里 window.fileApi 一定存在，见 commitPath 注释
+      const fullPath = await window.fileApi.getFullPath(this.fileNameValue)
+      // @ts-ignore
+      const { fileName, size } = await window.fileApi.copyPath(fullPath)
+      return { ...state, fileName, fileSize: size }
+    } catch (err) {
+      console.warn('[FileNode] 复制节点时文件复制失败，降级为共用原文件：', this.fileNameValue, err)
+      return state
     }
   }
 }

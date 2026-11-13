@@ -735,6 +735,14 @@ export abstract class Node {
   }
 
   /**
+   * 复制节点时，对节点状态进行修改。子类 override 时可以对复制后的状态进行处理，
+   * 比如添加随机数、重置计数器等。也可以返回 Promise——FileNode 子类用来异步复制磁盘文件。
+   */
+  modifyStateDataBeforeCopy(state: Record<string, unknown>): Record<string, unknown> | Promise<Record<string, unknown>> {
+    return state;
+  }
+
+  /**
    * 右键菜单项声明。子类按需要 override，在 super 返回的基础上追加自己的项。
    *
    * 默认包含「复制节点」和「删除节点」——run 依赖 bindScene 注入的 sceneRef。
@@ -752,8 +760,9 @@ export abstract class Node {
           // 用构造函数签名 (id: string) 统一创建新实例，避免引擎层反向依赖插件注册表
           const Ctor = this.constructor as new (id: string) => Node
           const newNode = new Ctor(Node.generateId(this.type))
+          const originData = this.getSaveDataByState();
           // 复制内部运行状态（saveState 存子类字段 → initStateBySaveData 恢复，基类字段由外层处理）
-          newNode.initStateBySaveData(this.getSaveDataByState())
+          newNode.initStateBySaveData(await this.modifyStateDataBeforeCopy(originData))
           // 位置偏移：原位置 + (24, 24)，避免和原节点完全重叠
           const [ox, oy] = this.position
           newNode.setPosition(ox + 24, oy + 24)

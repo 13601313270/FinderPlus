@@ -1,12 +1,12 @@
 import type { NodePluginManifest } from '../manifest'
-import { FolderNode } from './node'
+import { OtherFolderNode } from './OtherFolderNode'
 import render from './render.vue'
 
 import FolderIcon from '@renderer/assets/node-icons/FolderNode.svg'
 
 export const manifest: NodePluginManifest = {
-  type: FolderNode.TYPE,
-  nodeClass: FolderNode,
+  type: OtherFolderNode.TYPE,
+  nodeClass: OtherFolderNode,
   title: {
     zh: '文件夹',
     en: 'Folder',

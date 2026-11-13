@@ -37,7 +37,10 @@ function fileToBase64(file: File): Promise<string> {
 }
 
 /**
- * 文件夹容器节点：把若干文件/节点收纳进去，统一管理尺寸与摆放。
+ * 文件夹容器节点（抽象基类）：把若干文件/节点收纳进去，统一管理尺寸与摆放。
+ *
+ * 自身不直接实例化——画布上的「文件夹」是 OtherFolderNode，「图片文件夹」是 ImgFolderNode，
+ * 两者共用本类提供的收养 / 释放 / 计数 / 持久化能力。
  *
  * 容器模型 = 同一扁平 Scene 收养：子节点仍是 workspaceScene 里的真实节点，
  * 通过 containerNode 标记归属到本文件夹，其 position 存的是**相对本文件夹的局部坐标**，
@@ -50,8 +53,8 @@ function fileToBase64(file: File): Promise<string> {
  * 不重建 Value**：收养一律基于「已有文件节点」或「已有文件值」。文件字节的复制
  * 仍只在「正常创建文件节点」时走既有 copyPath 路径（App 层），节点类不碰 IPC。
  */
-export class FolderNode extends Node {
-  // 显式标注为 string：允许子类（如 ImgFolderNode）覆写成自己的类型标识
+export abstract class FolderNode extends Node {
+  // 显式标注为 string：允许子类（如 ImgFolderNode / OtherFolderNode）覆写成自己的类型标识
   static readonly TYPE: string = 'folder'
   readonly type: string = FolderNode.TYPE
 

@@ -614,9 +614,9 @@ export class S2VNode extends Node {
 
   // —— 持久化 ——
 
-  saveState(): Record<string, unknown> {
+  initSaveStateData(): Record<string, unknown> {
     return {
-      ...super.saveState(),
+      ...super.initSaveStateData(),
       workspaceId: this.workspaceId,
       resolution: this.resolution,
       enableDetect: this.enableDetect

@@ -104,8 +104,8 @@ export class PdfFileNode extends FileNode {
     this.setBox(w, Math.round(iconHeight + CARD_VERTICAL_OVERHEAD))
   }
 
-  saveState(): Record<string, unknown> {
-    return { ...super.saveState(), box: this.box }
+  initSaveStateData(): Record<string, unknown> {
+    return { ...super.initSaveStateData(), box: this.box }
   }
 
   readState(state: Record<string, unknown>): void {

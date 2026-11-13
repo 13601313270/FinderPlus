@@ -348,9 +348,9 @@ export class ProxyNode extends Node {
 
   // —— 持久化 ——
 
-  saveState(): Record<string, unknown> {
+  initSaveStateData(): Record<string, unknown> {
     return {
-      ...super.saveState(),
+      ...super.initSaveStateData(),
       inputKinds: [...this.inputKinds],
       outputKinds: [...this.outputKinds],
       childIds: this.children.map((c) => c.id),

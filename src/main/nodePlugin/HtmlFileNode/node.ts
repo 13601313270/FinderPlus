@@ -195,9 +195,9 @@ export class HtmlFileNode extends FileNode {
     this.notifyChanged()
   }
 
-  saveState(): Record<string, unknown> {
+  initSaveStateData(): Record<string, unknown> {
     return {
-      ...super.saveState(),
+      ...super.initSaveStateData(),
       content: this.contentValue,
       previewEnabled: this.previewEnabled,
       box: [...this.box]

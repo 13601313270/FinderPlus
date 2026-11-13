@@ -82,7 +82,7 @@ clearNodeDropActive(): void
 - `get pendingSource()`：`workspaceScene.getNode(pendingSourceId)`。
 - `clearPending()`：清空 pendingSourceId + notifyChanged（render.vue 干完活后调用，重置触发信号）。
 - `setOutput(base64)`：仿 ImgFileNode.setContent —— base64ToBytes → File → djb2 hash → `commit(new ImgFileValue(file, hash))` + notifyChanged（render.vue 提交压缩结果）。
-- `saveState/readState`：返回空对象（一次性工作，无持久状态；恢复后不自动重压，等用户再拖一次）。
+- `initSaveStateData/readState`：返回空对象（一次性工作，无持久状态；恢复后不自动重压，等用户再拖一次）。
 
 `render.vue`（压缩逻辑在浏览器侧，引擎不碰字节）：
 - 订阅 node.onChanged；watch `pendingSource` 变化：读到非空 → 执行**一次**压缩 → 完成后调 `node.clearPending()`（重置触发信号）。

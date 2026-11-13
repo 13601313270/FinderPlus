@@ -467,9 +467,9 @@ export class BrowserNode extends Node {
 
   // —— 持久化 ——
 
-  saveState(): Record<string, unknown> {
+  initSaveStateData(): Record<string, unknown> {
     return {
-      ...super.saveState(),
+      ...super.initSaveStateData(),
       homeUrl: this.homeUrl,
       inputCount: this.inputPorts.length,
       zoomFactor: this.zoomFactor,

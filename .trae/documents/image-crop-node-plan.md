@@ -13,7 +13,7 @@ render.vue 内嵌裁剪交互：
 - 加载源图 → `<img>` → canvas 绘制原图
 - canvas 上叠加裁剪框矩形（绝对定位 div + 四个角落 resize handle）
 - 用户拖选裁剪区域 → 点「确认裁剪」→ canvas.drawImage 裁剪 → toDataURL → base64 → node.setOutput()
-- 裁剪框坐标存**原图像素坐标**（saveState 持久化）
+- 裁剪框坐标存**原图像素坐标**（initSaveStateData 持久化）
 
 ### 输出
 - setOutput commit imageOutput → 下游刷新
@@ -46,7 +46,7 @@ render.vue 内嵌裁剪交互：
 - 拖入路径：isPositionAcceptNodeDrop / onNodeDrop / pendingSourceId / clearPending 全套照搬
 - 响应式路径：inputPortReceiveValue 调 notifyChanged
 - setOutput(base64, mime, fileName)：照搬同名方法
-- saveState / readState：存 cropRect
+- initSaveStateData / readState：存 cropRect
 
 ### Step 2：ImageCropNode/render.vue
 

@@ -248,8 +248,8 @@ export class JsonFileNode extends FileNode {
     this.notifyChanged()
   }
 
-  saveState(): Record<string, unknown> {
-    return { ...super.saveState(), content: this.contentValue }
+  initSaveStateData(): Record<string, unknown> {
+    return { ...super.initSaveStateData(), content: this.contentValue }
   }
 
   readState(state: Record<string, unknown>): void {

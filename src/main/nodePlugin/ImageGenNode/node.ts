@@ -615,9 +615,9 @@ export class ImageGenNode extends Node {
     this.notifyChanged()
   }
 
-  saveState(): Record<string, unknown> {
+  initSaveStateData(): Record<string, unknown> {
     return {
-      ...super.saveState(),
+      ...super.initSaveStateData(),
       provider: this.provider,
       model: this.model,
       localSize: this.localSize

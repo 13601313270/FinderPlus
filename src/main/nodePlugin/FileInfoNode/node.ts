@@ -131,9 +131,9 @@ export class FileInfoNode extends Node {
     this.notifyChanged()
   }
 
-  saveState(): Record<string, unknown> {
+  initSaveStateData(): Record<string, unknown> {
     // 都是上游派生出来的，恢复时上游 commit 会自动刷回来，不用存
-    return { ...super.saveState() }
+    return { ...super.initSaveStateData() }
   }
 
   readState(_state: Record<string, unknown>): void {

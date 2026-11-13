@@ -221,9 +221,9 @@ export class SwitchNode extends Node {
 
   // —— 持久化 ——
 
-  saveState(): Record<string, unknown> {
+  initSaveStateData(): Record<string, unknown> {
     // 没有可配置字段；lastCondition 是派生态，恢复时上游一来就重算填上
-    return { ...super.saveState() }
+    return { ...super.initSaveStateData() }
   }
 
   readState(_state: Record<string, unknown>): void {

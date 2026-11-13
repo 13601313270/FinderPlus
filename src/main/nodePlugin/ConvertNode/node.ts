@@ -278,8 +278,8 @@ export class ConvertNode extends Node {
 
   // —— 持久化 ——
 
-  saveState(): Record<string, unknown> {
-    return { ...super.saveState(), targetType: this.targetType }
+  initSaveStateData(): Record<string, unknown> {
+    return { ...super.initSaveStateData(), targetType: this.targetType }
   }
 
   readState(state: Record<string, unknown>): void {

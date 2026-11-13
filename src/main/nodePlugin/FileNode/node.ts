@@ -312,8 +312,8 @@ export abstract class FileNode extends Node {
     })
   }
 
-  saveState(): Record<string, unknown> {
-    return { ...super.saveState(), fileName: this.fileNameValue, fileSize: this.fileSizeValue }
+  initSaveStateData(): Record<string, unknown> {
+    return { ...super.initSaveStateData(), fileName: this.fileNameValue, fileSize: this.fileSizeValue }
   }
 
   readState(state: Record<string, unknown>): void {

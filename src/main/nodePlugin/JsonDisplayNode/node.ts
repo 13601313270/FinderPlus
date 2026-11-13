@@ -124,11 +124,11 @@ export class JsonDisplayNode extends Node {
     this.completeRun()
   }
 
-  saveState(): Record<string, unknown> {
+  initSaveStateData(): Record<string, unknown> {
     // parsed/error 是上游派生出来的，恢复时上游 commit 会自动刷回来，不用存；
     // box（用户拖右下角调整过的大小）是本节点自己的状态，必须存。
     return {
-      ...super.saveState(),
+      ...super.initSaveStateData(),
       box: this.box as readonly [number, number]
     }
   }

@@ -172,10 +172,10 @@ export class ImgFileNode extends FileNode {
     return map[mime] ?? mime
   }
 
-  saveState(): Record<string, unknown> {
+  initSaveStateData(): Record<string, unknown> {
     // 持久化键名保持 'previewWidth'（老存档兼容），值来自基类 box 宽
     return {
-      ...super.saveState(),
+      ...super.initSaveStateData(),
       box: this.box
     }
   }

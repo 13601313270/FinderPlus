@@ -208,8 +208,8 @@ export abstract class BufferNode extends Node {
   // —— 持久化 ——
 
   /** 只存用户选择的 kind；缓冲区内容由上游重新 commit 自动重建 */
-  saveState(): Record<string, unknown> {
-    return { ...super.saveState(), kind: this.kindValue }
+  initSaveStateData(): Record<string, unknown> {
+    return { ...super.initSaveStateData(), kind: this.kindValue }
   }
 
   readState(state: Record<string, unknown>): void {

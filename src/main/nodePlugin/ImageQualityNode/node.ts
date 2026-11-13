@@ -230,8 +230,8 @@ export class ImageQualityNode extends Node {
   }
 
   /** 一次性工作：压缩结果不持久化，只记住用户的质量与格式偏好 */
-  saveState(): Record<string, unknown> {
-    return { ...super.saveState(), quality: this.quality, format: this.format }
+  initSaveStateData(): Record<string, unknown> {
+    return { ...super.initSaveStateData(), quality: this.quality, format: this.format }
   }
 
   readState(state: Record<string, unknown>): void {

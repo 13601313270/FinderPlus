@@ -465,9 +465,9 @@ export class CrawlerNode extends Node {
 
   // —— 持久化 ——
 
-  saveState(): Record<string, unknown> {
+  initSaveStateData(): Record<string, unknown> {
     return {
-      ...super.saveState(),
+      ...super.initSaveStateData(),
       urlTemplate: this.urlTemplate,
       selector: this.selector,
       extractMode: this.extractMode,

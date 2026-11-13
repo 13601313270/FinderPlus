@@ -16,7 +16,7 @@
 - 未迁移节点 `box=[0,0]`，行为与现状逐字节一致 → 可逐个节点搬、搬一个验一个，不用一次性全改。
 - 这同时化解了 ImgFileNode 高度随图片比例、无法硬盒化的问题（高度维保持 0 = auto）。
 
-**持久化**：box 不在基类落库（不加 DB 列）。多数节点的 box 是类声明的静态默认（构造时 setBox 一次）。用户可调的宽（ImgFileNode）仍走现有的 `params`（saveState/readState），不新增持久化字段。
+**持久化**：box 不在基类落库（不加 DB 列）。多数节点的 box 是类声明的静态默认（构造时 setBox 一次）。用户可调的宽（ImgFileNode）仍走现有的 `params`（initSaveStateData/readState），不新增持久化字段。
 
 ## 实施步骤
 
@@ -84,7 +84,7 @@ export function measureNodeBox(id, position, box?) {
 - `get previewWidth()` → `return this.box[0] || DEFAULT_PREVIEW_WIDTH`
 - `setPreviewWidth(w)` → `this.setBox(clamped, this.box[1])`，clamped 夹在 [MIN, MAX]
 - `constructor` → `this.setBox(DEFAULT_PREVIEW_WIDTH, 0)`（高维 auto）
-- `saveState`/`readState` 照旧读写 `previewWidth` 字段（走 params，不动 DB）；`setNaturalSize`/`naturalWidth/Height` 保持原样，高度不参与 box。
+- `initSaveStateData`/`readState` 照旧读写 `previewWidth` 字段（走 params，不动 DB）；`setNaturalSize`/`naturalWidth/Height` 保持原样，高度不参与 box。
 
 **`src/main/nodePlugin/ImgFileNode/render.vue`** — 根 `.file-card` 去掉 `:style="{width: previewWidth+'px'}"`，改 `width:100%; box-sizing:border-box; height:auto`；resize handle 逻辑不变（`setPreviewWidth` → box 变 → NodeShell 镜像 → 全线自动跟随）。长名已 nowrap+ellipsis，不会爆宽。
 

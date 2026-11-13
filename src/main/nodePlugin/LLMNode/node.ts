@@ -13,7 +13,7 @@ import { Node } from '../../engine/node/Node'
  * - 输出一条 LLM 回复字符串
  *
  * 架构（v2）：
- * - Provider 选择、Model 名称、JSON 输出模式 → 节点级配置（存 saveState/readState）
+ * - Provider 选择、Model 名称、JSON 输出模式 → 节点级配置（存 initSaveStateData/readState）
  * - API Key → 全局配置（localStorage canvasdesk.llm.config），所有节点共享各 provider 的 key
  *
  * Stale-call 取消策略：用递增的 requestId 标记每次请求，
@@ -676,9 +676,9 @@ export class LLMNode extends Node {
     this.notifyChanged()
   }
 
-  saveState(): Record<string, unknown> {
+  initSaveStateData(): Record<string, unknown> {
     return {
-      ...super.saveState(),
+      ...super.initSaveStateData(),
       provider: this.provider,
       model: this.model,
       jsonMode: this.jsonMode,

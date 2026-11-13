@@ -68,8 +68,8 @@ export class NumberInputNode extends Node {
   /** 没有输入端口，永远收不到通知 */
   inputPortReceiveValue(_ports: InputPort[]): void {}
 
-  saveState(): Record<string, unknown> {
-    return { ...super.saveState(), content: this.content }
+  initSaveStateData(): Record<string, unknown> {
+    return { ...super.initSaveStateData(), content: this.content }
   }
 
   readState(state: Record<string, unknown>): void {

@@ -1,7 +1,9 @@
 import { Node } from '../../engine/node/Node'
 import { InputPort } from '../../engine/port/InputPort'
+import { OutputPort } from '../../engine/port/OutputPort'
 import type { Scene } from '../../engine/graph/Scene'
 import { FileValue } from '../../engine/data/FileValue'
+import { NumberValue } from '../../engine/data/NumberValue'
 import { FileNode } from '../FileNode/node'
 import { resolveByExtension } from '../index'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
@@ -75,6 +77,25 @@ export class FolderNode extends Node {
     }
   })
 
+  /** 数量输出端口：当前文件夹内的文件数量（NumberValue） */
+  readonly countOutput = new OutputPort('count', NumberValue, {
+    zh: '文件数量',
+    en: 'File Count',
+    ja: 'ファイル数',
+    ko: '파일 수',
+    es: 'Cantidad de archivos',
+    ar: 'عدد الملفات',
+    fr: 'Nombre de fichiers',
+    pt: 'Quantidade de arquivos',
+    ru: 'Количество файлов',
+    hi: 'फ़ाइलों की संख्या',
+    id: 'Jumlah Berkas',
+    de: 'Dateianzahl',
+    vi: 'Số lượng tệp',
+    tr: 'Dosya Sayısı',
+    it: 'Numero di file'
+  })
+
   /** 已收养的子节点列表。子节点仍是 Scene 里的顶层节点，只是归属这里 */
   readonly children: Node[] = []
 
@@ -87,8 +108,14 @@ export class FolderNode extends Node {
   constructor(id: string) {
     super(id)
     this.addInput(this.fileInput)
+    this.addOutput(this.countOutput)
     // 默认最小框；setBox override 会钳制到 MIN_W/MIN_H
     this.setBox(MIN_W, MIN_H)
+  }
+
+  /** 把当前 children 数量 commit 到 countOutput */
+  protected commitCount(): void {
+    this.countOutput.commit(new NumberValue(this.children.length))
   }
 
   // —— 收养（统一入口） ——
@@ -113,6 +140,7 @@ export class FolderNode extends Node {
     // 结构变更：child 从顶层集合退出，App 要重算
     this.sceneRef?.notifyChanged()
     this.notifyChanged()
+    this.commitCount()
   }
 
   /**
@@ -140,6 +168,7 @@ export class FolderNode extends Node {
     // 结构变更：child 加入顶层集合，App 要重算（之前它只在文件夹里嵌套渲染）
     this.sceneRef?.notifyChanged()
     this.notifyChanged()
+    this.commitCount()
   }
 
   /** 恢复收尾：按 pendingChildIds 收养（缺 id 跳过），清空暂存 */
@@ -149,6 +178,7 @@ export class FolderNode extends Node {
       if (child && child !== this) this.adoptNode(child)
     }
     this.pendingChildIds = []
+    this.commitCount()
   }
 
   /** child 是否在我的祖先链里（即收养它会成环） */

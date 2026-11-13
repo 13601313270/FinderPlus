@@ -1,18 +1,11 @@
 import type { Node } from '../../engine/node/Node'
-import type { InputPort } from '../../engine/port/InputPort'
+import { InputPort } from '../../engine/port/InputPort'
 import type { Scene } from '../../engine/graph/Scene'
 import { ImgFileCollectionValue } from '../../engine/data/ImgFileCollectionValue'
 import { ImgFileValue } from '../../engine/data/ImgFileValue'
-import { MethodPort } from '../../engine/port/MethodPort'
 import { OutputPort } from '../../engine/port/OutputPort'
-import { FolderNode } from '../FolderNode/node'
+import { FolderNode, type FileNodeClass } from '../FolderNode/node'
 import { ImgFileNode } from '../ImgFileNode/node'
-
-/** 取文件名后缀（含点、小写）；无扩展名返回空串 */
-function extOf(name: string): string {
-  const dot = name.lastIndexOf('.')
-  return dot >= 0 ? name.slice(dot).toLowerCase() : ''
-}
 
 /**
  * 图片文件夹节点：结构与 FolderNode 一致（同一扁平 Scene 收养、局部坐标、DOM 嵌套渲染），
@@ -31,6 +24,31 @@ function extOf(name: string): string {
 export class ImgFolderNode extends FolderNode {
   static readonly TYPE = 'img-folder'
   readonly type: string = ImgFolderNode.TYPE
+
+  /** 输入端口：只接受图片值（ImgFileValue），非图片类型的输出无法连入 */
+  readonly fileInput = new InputPort('file', {
+    accepts: [ImgFileValue],
+    label: {
+      zh: '图片',
+      en: 'Image',
+      ja: '画像',
+      ko: '이미지',
+      es: 'Imagen',
+      ar: 'صورة',
+      fr: 'Image',
+      pt: 'Imagem',
+      ru: 'Изображение',
+      hi: 'छवि',
+      id: 'Gambar',
+      de: 'Bild',
+      vi: 'Ảnh',
+      tr: 'Görüntü',
+      it: 'Immagine'
+    }
+  })
+
+  /** 收纳范围：只接受图片文件节点 */
+  protected readonly acceptedFileNodeClasses: readonly FileNodeClass[] = [ImgFileNode]
 
   /** 图片输出端口：当前选中子图片的 ImgFileValue */
   readonly imageOutput = new OutputPort('image', ImgFileValue, {
@@ -73,27 +91,6 @@ export class ImgFolderNode extends FolderNode {
   /** 所有子节点 onChanged 订阅清理函数集合，collection 输出重算依赖它 */
   private readonly childSubs = new Set<() => void>()
 
-  /** 方法端口：外部连线触发清空全部子图片 */
-  private readonly clearPort = new MethodPort('clear', {
-    label: {
-      zh: '清空',
-      en: 'Clear',
-      ja: 'クリア',
-      ko: '비우기',
-      es: 'Limpiar',
-      ar: 'مسح',
-      fr: 'Vider',
-      pt: 'Limpar',
-      ru: 'Очистить',
-      hi: 'साफ़ करें',
-      id: 'Hapus',
-      de: 'Leeren',
-      vi: 'Xóa',
-      tr: 'Temizle',
-      it: 'Cancella'
-    }
-  })
-
   /** 当前选中的子节点 id；空串表示未选中 */
   private selectedChildIdValue = ''
 
@@ -105,28 +102,9 @@ export class ImgFolderNode extends FolderNode {
 
   constructor(id: string) {
     super(id)
-    // 数量端口复用父类的 countOutput，仅把标签改为「图片数量」
-    this.countOutput.setLabel({
-      zh: '图片数量',
-      en: 'Image Count',
-      ja: '画像数',
-      ko: '이미지 수',
-      es: 'Cantidad de imágenes',
-      ar: 'عدد الصور',
-      fr: 'Nombre d\'images',
-      pt: 'Quantidade de imagens',
-      ru: 'Количество изображений',
-      hi: 'छवियों की संख्या',
-      id: 'Jumlah Gambar',
-      de: 'Bildanzahl',
-      vi: 'Số lượng ảnh',
-      tr: 'Görsel Sayısı',
-      it: 'Numero di immagini'
-    })
+    this.addInput(this.fileInput)
     this.addOutput(this.imageOutput)
     this.addOutput(this.collectionOutput)
-    this.addMethod(this.clearPort)
-    this.clearPort.onTrigger(() => this.clearAll())
   }
 
   /** 当前选中的子节点 id；空串表示未选中 */
@@ -209,32 +187,13 @@ export class ImgFolderNode extends FolderNode {
 
   /** 只收养图片节点；首个被收养的子节点自动选中 */
   override adoptNode(child: Node): void {
-    if (!(child instanceof ImgFileNode)) return
+    if (!this.isAcceptedFileNode(child)) return
     super.adoptNode(child)
     if (!this.selectedChildIdValue) {
       this.selectChild(child.id)
     }
     this.resubscribeAllChildren()
     this.commitCollection()
-  }
-
-  /** 端口收值：只接受图片值，其余走超类流程会产生非图片子节点，直接拦截 */
-  override async inputPortReceiveValue(ports: InputPort[]): Promise<void> {
-    const [first] = this.fileInput.value
-    if (!(first instanceof ImgFileValue)) return
-    await super.inputPortReceiveValue(ports)
-  }
-
-  /** 文件拖入：仅图片后缀才继续（超类会复制文件并构造对应的文件子节点） */
-  override async onFileDrop(sourcePath: string): Promise<void> {
-    if (!ImgFileNode.acceptsExtension(extOf(sourcePath))) return
-    await super.onFileDrop(sourcePath)
-  }
-
-  /** 节点拖入：只接受图片节点（超类判定为「未被收养的文件节点」） */
-  override isPositionAcceptNodeDrop(source: Node): boolean {
-    if (!(source instanceof ImgFileNode)) return false
-    return super.isPositionAcceptNodeDrop(source)
   }
 
   /** 释放子节点：若释放的正是选中项，退订并回退到下一个子节点（没有则清空输出） */
@@ -262,25 +221,16 @@ export class ImgFolderNode extends FolderNode {
 
   /**
    * 清空全部子图片节点（彻底 destroy，不是释放回画布）。
-   * 选中态、输出值、fingerprint 映射、集合输出一并清理。
+   * 父类负责移除子节点并清 fingerprint 映射，这里额外清理选中态与各输出。
    */
-  clearAll(): void {
-    const scene = this.sceneRef
-    if (!scene || this.children.length === 0) return
-    // 用副本遍历，因为 scene.removeNode → removeChild 会 splice children
-    const snapshot = [...this.children]
-    for (const child of snapshot) {
-      void scene.removeNode(child)
-    }
+  override clearAll(): void {
+    if (!this.sceneRef || this.children.length === 0) return
+    super.clearAll()
     this.selectedChildIdValue = ''
     this.resubscribeSelected(undefined)
     this.imageOutput.clear()
     this.resubscribeAllChildren()
     this.commitCollection()
-    // 清 fingerprint 映射（父类的属性子类直接访问）
-    // @ts-ignore — fingerprintToChild 是 FolderNode private，这里用下标签名绕过
-    const fpMap: Map<string, Node> = (this as unknown as { fingerprintToChild: Map<string, Node> }).fingerprintToChild
-    fpMap.clear()
     this.notifyChanged()
   }
 

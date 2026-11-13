@@ -1,6 +1,7 @@
 import { Node } from '../../engine/node/Node'
 import { InputPort } from '../../engine/port/InputPort'
 import { OutputPort } from '../../engine/port/OutputPort'
+import { MethodPort } from '../../engine/port/MethodPort'
 import type { Scene } from '../../engine/graph/Scene'
 import { FileValue } from '../../engine/data/FileValue'
 import { NumberValue } from '../../engine/data/NumberValue'
@@ -15,6 +16,9 @@ export const BAR_H = 22
 /** 文件夹最小宽高，resize 时钳制 */
 export const MIN_W = 100
 export const MIN_H = 80
+
+/** 文件夹可收纳的 FileNode 子类构造器 */
+export type FileNodeClass = new (id: string) => FileNode
 
 /** 取文件名后缀（含点、小写）；无扩展名返回空串 */
 function extOf(name: string): string {
@@ -58,27 +62,18 @@ export abstract class FolderNode extends Node {
   static readonly TYPE: string = 'folder'
   readonly type: string = FolderNode.TYPE
 
-  /** 输入端口：接收文件类 Value，收到后文件夹内新建对应文件子节点（收养元素源自值） */
-  readonly fileInput = new InputPort('file', {
-    accepts: [FileValue],
-    label: {
-      zh: '文件',
-      en: 'File',
-      ja: 'ファイル',
-      ko: '파일',
-      es: 'Archivo',
-      ar: 'ملف',
-      fr: 'Fichier',
-      pt: 'Arquivo',
-      ru: 'Файл',
-      hi: 'फ़ाइल',
-      id: 'Berkas',
-      de: 'Datei',
-      vi: 'Tệp',
-      tr: 'Dosya',
-      it: 'File'
-    }
-  })
+  /**
+   * 输入端口：接收文件类 Value，收到后文件夹内新建对应文件子节点。
+   * 具体接受哪种 Value 由子类决定（OtherFolderNode 收 FileValue，ImgFolderNode 只收 ImgFileValue），
+   * 子类字段初始化后需自行调 addInput 登记。
+   */
+  abstract readonly fileInput: InputPort
+
+  /**
+   * 本文件夹允许收纳的文件节点类，由具体子类声明。
+   * 例：ImgFolderNode 返回 [ImgFileNode]，只收图片；OtherFolderNode 返回空数组表示不限制。
+   */
+  protected abstract readonly acceptedFileNodeClasses: readonly FileNodeClass[]
 
   /** 数量输出端口：当前文件夹内的文件数量（NumberValue） */
   readonly countOutput = new OutputPort('count', NumberValue, {
@@ -99,6 +94,27 @@ export abstract class FolderNode extends Node {
     it: 'Numero di file'
   })
 
+  /** 方法端口：外部连线触发清空全部子节点 */
+  readonly clearPort = new MethodPort('clear', {
+    label: {
+      zh: '清空',
+      en: 'Clear',
+      ja: 'クリア',
+      ko: '비우기',
+      es: 'Limpiar',
+      ar: 'مسح',
+      fr: 'Vider',
+      pt: 'Limpar',
+      ru: 'Очистить',
+      hi: 'साफ़ करें',
+      id: 'Hapus',
+      de: 'Leeren',
+      vi: 'Xóa',
+      tr: 'Temizle',
+      it: 'Cancella'
+    }
+  })
+
   /** 已收养的子节点列表。子节点仍是 Scene 里的顶层节点，只是归属这里 */
   readonly children: Node[] = []
 
@@ -110,8 +126,10 @@ export abstract class FolderNode extends Node {
 
   constructor(id: string) {
     super(id)
-    this.addInput(this.fileInput)
+    // fileInput 由子类定义并登记（接受类型不同）
     this.addOutput(this.countOutput)
+    this.addMethod(this.clearPort)
+    this.clearPort.onTrigger(() => this.clearAll())
     // 默认最小框；setBox override 会钳制到 MIN_W/MIN_H
     this.setBox(MIN_W, MIN_H)
   }
@@ -119,6 +137,19 @@ export abstract class FolderNode extends Node {
   /** 把当前 children 数量 commit 到 countOutput */
   protected commitCount(): void {
     this.countOutput.commit(new NumberValue(this.children.length))
+  }
+
+  /** node 是否为「本文件夹允许收纳的文件节点」（空数组 = 不限制） */
+  protected isAcceptedFileNode(node: Node): boolean {
+    if (!(node instanceof FileNode)) return false
+    const allowed = this.acceptedFileNodeClasses
+    return allowed.length === 0 || allowed.some((cls) => node instanceof cls)
+  }
+
+  /** 某文件节点类是否在允许收纳范围内（空数组 = 不限制） */
+  private acceptsFileNodeClass(nodeClass: new (id: string) => Node): boolean {
+    const allowed = this.acceptedFileNodeClasses
+    return allowed.length === 0 || allowed.some((cls) => nodeClass === cls || nodeClass.prototype instanceof cls)
   }
 
   // —— 收养（统一入口） ——
@@ -136,7 +167,7 @@ export abstract class FolderNode extends Node {
     if (child === this) return
     if (child.containerNode) return // 已被收养（含被本文件夹收养过）
     if (this.isDescendant(child)) return // 把祖先收养进自己 = 成环，拒绝
-    if (child instanceof FileNode && child.containerNode) return // 安全冗余
+    if (child instanceof FileNode && !this.isAcceptedFileNode(child)) return // 类型不被本文件夹接受
 
     child.containerNode = this
     this.children.push(child)
@@ -194,13 +225,34 @@ export abstract class FolderNode extends Node {
     return false
   }
 
+  /**
+   * 清空全部子节点（彻底 destroy，不是释放回画布）。
+   * 子类可覆写以清理自身额外状态，覆写时先调 super.clearAll()。
+   */
+  clearAll(): void {
+    const scene = this.sceneRef
+    if (!scene || this.children.length === 0) return
+    // 用副本遍历，因为 scene.removeNode → removeChild 会 splice children
+    const snapshot = [...this.children]
+    for (const child of snapshot) {
+      void scene.removeNode(child)
+    }
+    this.fingerprintToChild.clear()
+    this.notifyChanged()
+  }
+
   // —— 三个收养入口 ——
 
-  /** 端口收值：收到文件 Value → 落盘 → 按文件后缀决定子节点类型 → 构造 → 收养 */
+  /** 端口收值：收到文件 Value → 按后缀决定子节点类型 → 落盘 → 构造 → 收养 */
   async inputPortReceiveValue(_ports: InputPort[]): Promise<void> {
     const [first] = this.fileInput.value
     if (!(first instanceof FileValue) || first.isNull) return
     if (this.fingerprintToChild.has(first.fingerprint)) return // 同一文件去重
+
+    // 承接哪种子节点由文件夹决定：复用 App 落盘时的扩展名注册表（后缀 → 节点类）。
+    // 类型不被本文件夹接受时直接返回，不产生无谓的落盘。
+    const manifest = resolveByExtension(extOf(first.file!.name))
+    if (!manifest || !this.acceptsFileNodeClass(manifest.nodeClass)) return
 
     // FileValue.file 是浏览器原生 File（内存中，无磁盘路径），必须转 base64 落盘
     let written: { fileName: string; size: number }
@@ -213,11 +265,6 @@ export abstract class FolderNode extends Node {
       console.warn(`[FolderNode] 收文件 ${first.file!.name} 落盘失败：`, err)
       return
     }
-
-    // 承接哪种子节点由文件夹决定：复用 App 落盘时的扩展名注册表（后缀 → 节点类），
-    // 文件节点自身不承担任何「承接」职责。
-    const manifest = resolveByExtension(extOf(first.file!.name))
-    if (!manifest) return
 
     const child = new manifest.nodeClass(this.makeId(manifest.type))
     ;(child as FileNode).setFile(written.fileName, written.size)
@@ -238,6 +285,10 @@ export abstract class FolderNode extends Node {
    * 承接是哪一种文件/构造哪种子节点，全由文件夹自己决定（App 只广播 onFileDrop，不特判）。
    */
   async onFileDrop(sourcePath: string): Promise<void> {
+    // 先按后缀判定子节点类型，类型不被本文件夹接受就不做无谓的文件复制
+    const manifest = resolveByExtension(extOf(sourcePath))
+    if (!manifest || !this.acceptsFileNodeClass(manifest.nodeClass)) return
+
     // 文件副本：走 preload IPC（和 FileNode 一样配套 @ts-ignore，运行时在 renderer 才执行）
     let copied: { fileName: string; size: number }
     try {
@@ -248,9 +299,6 @@ export abstract class FolderNode extends Node {
       console.warn(`[FolderNode] 收文件 ${sourcePath} 复制失败：`, err)
       return
     }
-    // 承接哪种子节点由文件夹决定：复用扩展名注册表（后缀 → 节点类）
-    const manifest = resolveByExtension(extOf(copied.fileName))
-    if (!manifest) return
     const child = new manifest.nodeClass(this.makeId(manifest.type))
     ;(child as FileNode).setFile(copied.fileName, copied.size)
     // 直接设局部坐标（内容区左上角）——adoptNode 不再做转换
@@ -259,9 +307,9 @@ export abstract class FolderNode extends Node {
     this.adoptNode(child)
   }
 
-  /** 节点拖入：只接受「未被收养的文件节点」，且不能是自己的祖先 */
+  /** 节点拖入：只接受「本文件夹允许的文件节点」，且未被收养、不能是自己的祖先 */
   isPositionAcceptNodeDrop(source: Node): boolean {
-    if (!(source instanceof FileNode)) return false
+    if (!this.isAcceptedFileNode(source)) return false
     if (source.containerNode) return false
     if (this.isDescendant(source)) return false
     return true

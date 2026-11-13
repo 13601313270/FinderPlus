@@ -31,6 +31,7 @@ export class Edge {
   transferData(value: Value, force = false): void {
     // MethodPort 是触发型入口（按钮/方法调用），类型检查不适用于它，直接透传
     if (!(this.endPort instanceof MethodPort) && !this.endPort.canReceiveValue(value)) {
+      console.error('Edge transferData error:', value, this.endPort)
       this.state = 'error'
       return
     }

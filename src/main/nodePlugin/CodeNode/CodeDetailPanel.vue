@@ -105,6 +105,7 @@ onUnmounted(() => {
 
 async function refreshPackages(): Promise<void> {
   try {
+    // @ts-ignore
     const list = await window.codeApi.listPackages()
     installedPackages.value = list
   } catch { /* 首次启动时主进程 IPC 可能还没 ready，忽略 */ }
@@ -117,6 +118,7 @@ async function onInstallPackage(): Promise<void> {
   installError.value = ''
   installLog.value = ''
   try {
+    // @ts-ignore
     const result = await window.codeApi.installPackage(pkg)
     if (result.ok) {
       installInput.value = ''
@@ -134,6 +136,7 @@ async function onInstallPackage(): Promise<void> {
 
 async function onUninstallPackage(name: string): Promise<void> {
   try {
+    // @ts-ignore
     const result = await window.codeApi.uninstallPackage(name)
     if (result.ok) {
       await refreshPackages()
@@ -400,6 +403,9 @@ async function onGenerateCode(): Promise<void> {
                 <option value="bool">bool</option>
                 <option value="file">file</option>
                 <option value="json">json</option>
+                <option value="imgfile">img</option>
+                <option value="audio">audio</option>
+                <option value="video">video</option>
               </select>
             </div>
             <div class="code-row inputs__subrow">
@@ -440,6 +446,8 @@ async function onGenerateCode(): Promise<void> {
                 <option value="file">file</option>
                 <option value="imgfile">img file</option>
                 <option value="json">json</option>
+                <option value="audio">audio</option>
+                <option value="video">video</option>
               </select>
             </div>
             <div class="code-row inputs__subrow">

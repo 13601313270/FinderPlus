@@ -10,9 +10,11 @@ import { InputPort } from '../../engine/port/InputPort'
 import { MethodPort } from '../../engine/port/MethodPort'
 import { OutputPort } from '../../engine/port/OutputPort'
 import { Node } from '../../engine/node/Node'
+import { AudioFileValue } from '../../engine/data/AudioFileValue'
+import { VideoFileValue } from '../../engine/data/VideoFileValue'
 
 /** 可选的端口类型：输入和输出共用同一套 Value 子类集合 */
-export type CodePortKind = 'number' | 'string' | 'bool' | 'file' | 'imgfile' | 'json'
+export type CodePortKind = 'number' | 'string' | 'bool' | 'file' | 'imgfile' | 'json' | 'audio' | 'video'
 
 /** 输入端口可选类型（不含 imgfile——输入侧图片归为 file，原型链覆盖） */
 export type CodeInputKind = Exclude<CodePortKind, 'imgfile'>
@@ -33,18 +35,20 @@ export type CodePortNameError =
   | { readonly kind: 'conflict-input'; readonly name: string }
 
 /** 所有合法的输入端口 kind，readState 反序列化校验用。用 satisfies 保证不缺项 */
-const INPUT_KINDS: readonly CodeInputKind[] = ['number', 'string', 'bool', 'file', 'json'] as const
+const INPUT_KINDS: readonly CodeInputKind[] = ['number', 'string', 'bool', 'file', 'json', 'audio', 'video'] as const
 /** 所有合法的输出端口 kind，readState 反序列化校验用 */
-const ALL_PORT_KINDS: readonly CodePortKind[] = ['number', 'string', 'bool', 'file', 'imgfile', 'json'] as const
+const ALL_PORT_KINDS: readonly CodePortKind[] = ['number', 'string', 'bool', 'file', 'imgfile', 'json', 'audio', 'video'] as const
 
 /** Value 子类注册表：kind → Value 子类（端口 accept / 结果包装共用这一处真相） */
-const KIND_CLASSES: Record<CodePortKind, { readonly VALUE_NAME: string; prototype: Value; new (...args: any[]): Value }> = {
+const KIND_CLASSES: Record<CodePortKind, { readonly VALUE_NAME: string; prototype: Value; new(...args: any[]): Value }> = {
   number: NumberValue,
   string: StringValue,
   bool: BoolValue,
   file: FileValue,
   imgfile: ImgFileValue,
-  json: JsonValue
+  json: JsonValue,
+  audio: AudioFileValue,
+  video: VideoFileValue,
 }
 
 /** 输入类型 → InputPort.accepts 数组。file 用 FileValue（原型链覆盖 ImgFileValue / TxtFileValue） */
@@ -53,7 +57,9 @@ const INPUT_KIND_ACCEPTS: Record<CodeInputKind, readonly InputPortOptionsAcc[]> 
   string: [StringValue],
   bool: [BoolValue],
   file: [FileValue],
-  json: [JsonValue]
+  json: [JsonValue],
+  audio: [AudioFileValue],
+  video: [VideoFileValue],
 }
 
 /** InputPort 构造器 accepts 参数所需的 Value 子类类型 */
@@ -636,6 +642,18 @@ export class CodeNode extends Node {
         }
         return new ImgFileValue(raw, djb2(raw.name))
       }
+      case 'audio': {
+        if (!(raw instanceof File)) {
+          throw new Error(`需要 File 对象（音频），实际收到 ${typeof raw}`)
+        }
+        return new AudioFileValue(raw, djb2(raw.name))
+      }
+      case 'video': {
+        if (!(raw instanceof File)) {
+          throw new Error(`需要 File 对象（视频），实际收到 ${typeof raw}`)
+        }
+        return new VideoFileValue(raw, djb2(raw.name))
+      }
       case 'string':
       default:
         return new StringValue(String(raw))
@@ -649,13 +667,13 @@ export class CodeNode extends Node {
    */
   private coerceNull(kind: CodePortKind): Value {
     switch (kind) {
-      case 'number':  return new NumberValue()
-      case 'bool':    return new BoolValue()
-      case 'json':    return new JsonValue()
-      case 'file':    return new FileValue()
+      case 'number': return new NumberValue()
+      case 'bool': return new BoolValue()
+      case 'json': return new JsonValue()
+      case 'file': return new FileValue()
       case 'imgfile': return new ImgFileValue()
       case 'string':
-      default:        return new StringValue()
+      default: return new StringValue()
     }
   }
 

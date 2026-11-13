@@ -135,6 +135,12 @@ function queryOutputLabel(idx: number): { zh: string; en: string } {
   }
 }
 
+/** 新增行 InputPort label */
+const INSERT_INPUT_LABEL = { zh: '新增行·KV JSON', en: 'Insert Row·KV JSON' }
+
+/** insertInput 端口的固定 id，用于在 inputPortReceiveValue 中识别 */
+const INSERT_INPUT_ID = 'insert_row'
+
 export class TableNode extends Node {
   static readonly TYPE = 'table'
   readonly type = TableNode.TYPE
@@ -145,6 +151,9 @@ export class TableNode extends Node {
   /** 动态查询端口对列表，按 add 顺序排列 */
   readonly queryPorts: QueryPortPair[] = []
 
+  /** 默认新增行的输入端口（KV JSON） */
+  readonly insertInput: InputPort
+
   /** 每次成功执行 INSERT/UPDATE/DELETE 时递增。render.vue 监听它来自动刷新表格数据。 */
   mutationsVersion = 0
 
@@ -154,6 +163,13 @@ export class TableNode extends Node {
     this.columns = [{ name: 'name', type: 'string' }]
     // 内容区宽 480px，高 320px（不含端口列）
     this.setBox(480, 320)
+
+    // 默认新增行端口
+    this.insertInput = new InputPort(INSERT_INPUT_ID, {
+      accepts: [JsonValue],
+      label: INSERT_INPUT_LABEL
+    })
+    this.addInput(this.insertInput)
   }
 
   override setBox(width: number, height: number): void {
@@ -171,7 +187,7 @@ export class TableNode extends Node {
   }
 
   /**
-   * 异步：收到输入端口值 → 找到对应端口对 → 执行 SQL → commit JsonValue 到输出端口。
+   * 异步：收到输入端口值 → 分发到新增行 / 动态查询端口对 → 执行 → commit 输出。
    *
    * @ts-ignore — 同 beforeDestroy：preload API 只在 renderer 有，tsconfig.node.json 不带 Window 扩展
    */
@@ -179,6 +195,13 @@ export class TableNode extends Node {
     this.beginRun()
     try {
       for (const port of ports) {
+        // —— 1. 新增行 InputPort ——
+        if (port === this.insertInput) {
+          await this.handleInsertRow(port)
+          continue
+        }
+
+        // —— 2. 动态查询端口对 ——
         const pair = this.queryPorts.find((p) => p.input === port)
         if (!pair) continue
 
@@ -225,6 +248,90 @@ export class TableNode extends Node {
       }
     } finally {
       this.completeRun()
+    }
+  }
+
+  /**
+   * 处理新增行 InputPort：接收一个 JsonValue（kv 结构），校验后写入 SQLite。
+   * 校验规则：
+   * - JsonValue.value 必须是普通对象（不能是数组、不能是 null）
+   * - 每个 key 必须存在于 this.columns 中
+   * - 每个 value 的 JS 类型必须与列的 ColumnType 匹配：
+   *     string 列 → typeof value === 'string'
+   *     number 列 → typeof value === 'number'
+   *     boolean 列 → typeof value === 'boolean'
+   */
+  private async handleInsertRow(port: InputPort): Promise<void> {
+    const [first] = port.value
+    if (!(first instanceof JsonValue) || first.isNull) {
+      return
+    }
+
+    const raw = first.value
+    if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) {
+      console.warn('[TableNode] insertRow 校验失败：传入值必须是 JSON 对象（kv 结构）')
+      return
+    }
+
+    const kv = raw as Record<string, unknown>
+
+    // —— key 校验：所有 key 必须是表的真实字段 ——
+    const validColNames = new Set(this.columns.map(c => c.name))
+    const extraKeys = Object.keys(kv).filter(k => !validColNames.has(k))
+    if (extraKeys.length > 0) {
+      console.warn(
+        '[TableNode] insertRow 校验失败：以下 key 不是表的有效字段：', extraKeys,
+        '；有效字段为：', this.columns.map(c => c.name)
+      )
+      return
+    }
+
+    // —— value 类型校验 ——
+    const typeErrors: string[] = []
+    for (const col of this.columns) {
+      if (!(col.name in kv)) continue // 允许缺省字段（后端 insertRow 会处理）
+      const val = kv[col.name]
+      const expectedType = col.type
+
+      let jsType: string
+      if (val === null) {
+        jsType = 'null'
+      } else if (Array.isArray(val)) {
+        jsType = 'array'
+      } else {
+        jsType = typeof val
+      }
+
+      const matches =
+        (expectedType === 'string' && jsType === 'string') ||
+        (expectedType === 'number' && jsType === 'number') ||
+        (expectedType === 'boolean' && jsType === 'boolean')
+
+      if (!matches) {
+        typeErrors.push(`字段 "${col.name}" 期望 ${expectedType}，实际是 ${jsType}`)
+      }
+    }
+
+    if (typeErrors.length > 0) {
+      console.warn('[TableNode] insertRow 校验失败：', typeErrors.join('；'))
+      return
+    }
+
+    // —— 校验通过，调后端插入 ——
+    try {
+      // @ts-ignore
+      const res = await window.tableApi.insertRow({
+        nodeId: this.id,
+        columns: this.columns.map(c => ({ name: c.name, type: c.type })),
+        values: kv
+      })
+      if (res.ok) {
+        this.mutationsVersion++
+      } else {
+        console.warn('[TableNode] insertRow failed:', res.error)
+      }
+    } catch (err) {
+      console.warn('[TableNode] insertRow error:', err)
     }
   }
 

@@ -1,24 +1,26 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, onBeforeUnmount } from 'vue'
 
 /**
  * image 业务类型单元格：懒加载缩略图。
  * value 是 SQLite 里存的 relPath（如 'a1b2c3.png'）。
- * mount 时调 tableApi.readFileAsDataUrl 拿到 base64 data URL 渲染。
+ * mount 时调 tableApi.readFileAsDataUrl 拿到 ArrayBuffer + mime → 生成 blob URL 渲染。
+ * 用 blob URL 而不是 data URL：CSP 的 media-src 常禁 data: 但允许 blob:，且无 base64 体积膨胀。
  */
 const props = defineProps<{
   value: unknown
   nodeId: string
 }>()
 
-const dataUrl = ref<string>('')
+const blobUrl = ref<string>('')
 const loading = ref(false)
 const error = ref(false)
 
 async function loadImage(): Promise<void> {
   const relPath = typeof props.value === 'string' ? props.value : ''
   if (!relPath) {
-    dataUrl.value = ''
+    if (blobUrl.value) URL.revokeObjectURL(blobUrl.value)
+    blobUrl.value = ''
     error.value = false
     return
   }
@@ -26,7 +28,7 @@ async function loadImage(): Promise<void> {
   loading.value = true
   error.value = false
   try {
-    // @ts-ignore — preload API
+    // @ts-ignore
     const res = await window.tableApi.readFileAsDataUrl({
       // @ts-ignore
       canvasId: window.getCurrentCanvasId(),
@@ -34,7 +36,8 @@ async function loadImage(): Promise<void> {
       relPath
     })
     if (res.ok) {
-      dataUrl.value = res.dataUrl
+      if (blobUrl.value) URL.revokeObjectURL(blobUrl.value)
+      blobUrl.value = URL.createObjectURL(new Blob([res.buffer], { type: res.mime }))
     } else {
       error.value = true
     }
@@ -45,34 +48,33 @@ async function loadImage(): Promise<void> {
   }
 }
 
-// value 变化时重新加载（编辑行后触发）
 watch(() => props.value, loadImage, { immediate: true })
+
+onBeforeUnmount(() => {
+  if (blobUrl.value) URL.revokeObjectURL(blobUrl.value)
+})
 </script>
 
 <template>
   <div class="img-cell">
-    <!-- 空值：显示占位虚线框 -->
     <template v-if="!value">
       <span class="img-cell__empty">—</span>
     </template>
 
-    <!-- 加载中 -->
     <template v-else-if="loading">
       <span class="img-cell__loading">…</span>
     </template>
 
-    <!-- 加载失败 -->
     <template v-else-if="error">
       <span class="img-cell__error">⚠</span>
     </template>
 
-    <!-- 缩略图：可点击查看大图 -->
     <template v-else>
       <img
-        :src="dataUrl"
+        :src="blobUrl"
         class="img-cell__thumb"
         alt=""
-        @click="$emit('preview', dataUrl)"
+        @click="$emit('preview', blobUrl)"
       />
     </template>
   </div>

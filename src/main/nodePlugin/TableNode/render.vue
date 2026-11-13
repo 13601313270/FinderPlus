@@ -33,6 +33,8 @@ import DateInput from './columnTypes/date/Input.vue'
 import DateCell from './columnTypes/date/Cell.vue'
 import ImageInput from './columnTypes/image/Input.vue'
 import ImageCell from './columnTypes/image/Cell.vue'
+import AudioInput from './columnTypes/audio/Input.vue'
+import AudioCell from './columnTypes/audio/Cell.vue'
 import TableHelpDialog from './TableHelpDialog.vue'
 
 /** 业务类型 → 输入组件映射（表单里用） */
@@ -45,6 +47,7 @@ const inputComponents: Record<BusinessType, Component> = {
   time: TimeInput,
   date: DateInput,
   image: ImageInput,
+  audio: AudioInput,
   file: TextInput // TODO: 后续补 FileInput
 }
 
@@ -58,6 +61,7 @@ const cellComponents: Record<BusinessType, Component> = {
   time: TimeCell,
   date: DateCell,
   image: ImageCell,
+  audio: AudioCell,
   file: TextCell // TODO: 后续补 FileCell
 }
 
@@ -461,11 +465,7 @@ async function deleteRow(row: Row): Promise<void> {
   if (!ok) return
 
   try {
-    // @ts-ignore
-    const result = await window.tableApi.deleteRow({
-      nodeId: node.id,
-      rowId: Number(row.id)
-    })
+    const result = await node.deleteRowValues(Number(row.id))
 
     if (result.ok) {
       total.value--
@@ -1009,6 +1009,7 @@ function removeQueryPortFromUI(id: string, idx: number): void {
             <option value="time">time（{{ $t('table.businessType.time') }}）</option>
             <option value="date">date（{{ $t('table.businessType.date') }}）</option>
             <option value="image">image（{{ $t('table.businessType.image') }}）</option>
+            <option value="audio">audio（{{ $t('table.businessType.audio') }}）</option>
           </select>
         </div>
 

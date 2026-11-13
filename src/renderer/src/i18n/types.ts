@@ -378,6 +378,7 @@ export type Language = {
       time: string
       date: string,
       image: string,
+      audio: string,
       file: string,
     }
 

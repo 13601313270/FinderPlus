@@ -323,6 +323,7 @@ const zh: Language = {
       time: '时间',
       date: '日期',
       image: '图片',
+      audio: '音频',
       file: '文件'
     },
     dialogTitleAdd: '新增',

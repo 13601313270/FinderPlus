@@ -28,8 +28,9 @@ async function loadExistingRelPath(relPath: string): Promise<void> {
       relPath
     })
     if (res.ok) {
-      previewUrl.value = res.dataUrl
-      _isObjectUrl = false // data URL 不用 revoke
+      if (previewUrl.value && _isObjectUrl) URL.revokeObjectURL(previewUrl.value)
+      previewUrl.value = URL.createObjectURL(new Blob([res.buffer], { type: res.mime }))
+      _isObjectUrl = true // blob URL（不管是 createObjectURL 还是 Blob 构造的）都需要 revoke
     }
   } catch (err) {
     console.warn('[ImageInput] 加载已有图失败：', relPath, err)

@@ -317,6 +317,7 @@ const en: Language = {
       time: 'Time',
       date: 'Date',
       image: 'Image',
+      audio: 'Audio',
       file: 'File'
     },
     dialogTitleAdd: 'Add',

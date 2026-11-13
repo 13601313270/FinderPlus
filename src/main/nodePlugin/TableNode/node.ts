@@ -36,7 +36,7 @@ export type ColumnType = 'number' | 'string' | 'boolean'
  * 业务数据类型（语义层）——决定 UI 渲染什么组件。
  * 每个业务类型固定绑定一个存储类型（见 BUSINESS_TYPE_MAP）。
  */
-export type BusinessType = 'text' | 'textarea' | 'number' | 'boolean' | 'color' | 'time' | 'date' | 'image' | 'file'
+export type BusinessType = 'text' | 'textarea' | 'number' | 'boolean' | 'color' | 'time' | 'date' | 'image' | 'audio' | 'file'
 
 /** 业务类型 → 存储类型（SQLite DDL 用）的固定映射 */
 export const BUSINESS_TYPE_MAP: Record<BusinessType, ColumnType> = {
@@ -48,6 +48,7 @@ export const BUSINESS_TYPE_MAP: Record<BusinessType, ColumnType> = {
   time: 'string',
   date: 'string',
   image: 'string',
+  audio: 'string',
   file: 'string'
 }
 
@@ -347,16 +348,12 @@ export class TableNode extends Node {
     // 2. 先查旧值 —— UPDATE 成功后用来判断哪些旧文件要删
     let oldRow: Record<string, unknown> | null = null
     try {
-      const sql = `SELECT * FROM "${this.tableName}" WHERE id = ${Number(rowId)}`
-      console.log('[TableNode.updateRowValues] 查旧值 SQL:', sql)
       const qRes = await (window as any).tableApi.executeRawSql({
         nodeId: this.id,
-        sql
+        sql: `SELECT * FROM "${this.tableName}" WHERE id = ${Number(rowId)}`
       })
-      console.log('[TableNode.updateRowValues] 查旧值结果:', qRes)
       if (qRes.ok && Array.isArray(qRes.rows) && qRes.rows.length > 0) {
         oldRow = qRes.rows[0] as Record<string, unknown>
-        console.log('[TableNode.updateRowValues] oldRow:', oldRow)
       }
     } catch (err) {
       console.warn('[TableNode] updateRowValues 查旧值失败（不阻塞）：', err)
@@ -364,9 +361,7 @@ export class TableNode extends Node {
 
     // 3. File 预处理：存新文件 → kv 里替换成 relPath
     const replacedByNewFile: Set<string> = new Set()
-    console.log('[TableNode.updateRowValues] persistFiles 前 kv:', kv)
     const fileRes = await this.persistFiles(kv, resolvedCanvasId, replacedByNewFile)
-    console.log('[TableNode.updateRowValues] persistFiles 后 kv:', kv, 'replacedByNewFile:', [...replacedByNewFile], 'fileRes:', fileRes)
     if (!fileRes.ok) return fileRes
 
     // 4. 类型校验
@@ -389,46 +384,105 @@ export class TableNode extends Node {
       return { ok: false, error: err instanceof Error ? err.message : String(err) }
     }
 
-    // 6. UPDATE 成功后，删被替换的旧文件
-    console.log('[TableNode.updateRowValues] 步骤6 oldRow:', oldRow, 'replacedByNewFile:', [...replacedByNewFile])
-    if (!oldRow) {
-      console.warn('[TableNode.updateRowValues] oldRow 为空，跳过删旧文件')
-    }
+    // 6. UPDATE 成功后，删被替换/被清空的旧文件
     if (oldRow) {
+      // 6a. 被新 File 替换的列
       for (const colName of replacedByNewFile) {
         const oldVal = oldRow[colName]
-        console.log('[TableNode.updateRowValues] 检查替换删旧文件:', colName, 'oldVal:', oldVal, 'isString:', typeof oldVal === 'string')
         if (typeof oldVal === 'string' && oldVal) {
           try {
-            console.log('[TableNode.updateRowValues] 调 deleteFile:', oldVal)
-            const delRes = await (window as any).tableApi.deleteFile({
+            await (window as any).tableApi.deleteFile({
               canvasId: resolvedCanvasId,
               nodeId: this.id,
               relPath: oldVal
             })
-            console.log('[TableNode.updateRowValues] deleteFile 返回:', delRes)
           } catch (err) {
             console.warn('[TableNode] updateRowValues 删旧文件失败：', colName, oldVal, err)
           }
         }
       }
-      // 额外：用户把 image 列显式清空（传 ''），也要删旧文件
+      // 6b. 用户把 file 列显式清空（传 '' 或 null），也要删旧文件
       for (const col of this.columns) {
-        if (replacedByNewFile.has(col.name)) continue // 上面已处理
+        if (replacedByNewFile.has(col.name)) continue
         if (!(col.name in kv)) continue
         const newVal = kv[col.name]
         const oldVal = oldRow[col.name]
         if ((newVal === '' || newVal == null) && typeof oldVal === 'string' && oldVal) {
           try {
-            console.log('[TableNode.updateRowValues] 调 deleteFile（清空场景）:', oldVal)
-            const delRes = await (window as any).tableApi.deleteFile({
+            await (window as any).tableApi.deleteFile({
               canvasId: resolvedCanvasId,
               nodeId: this.id,
               relPath: oldVal
             })
-            console.log('[TableNode.updateRowValues] deleteFile 返回:', delRes)
           } catch (err) {
             console.warn('[TableNode] updateRowValues 删旧文件失败：', col.name, oldVal, err)
+          }
+        }
+      }
+    }
+
+    return { ok: true }
+  }
+
+  /**
+   * 公共：删除一行，并清理该行关联的文件。
+   *
+   * 流程：
+   *   1. SELECT 旧值 → 拿到所有 file 类列（businessType 为 image/audio/file）的 relPath
+   *   2. 主进程 DELETE
+   *   3. DELETE 成功后删除旧文件（逐个调 deleteFile，单个失败不阻塞）
+   */
+  async deleteRowValues(
+    rowId: number,
+    canvasId?: string
+  ): Promise<{ ok: true } | { ok: false; error: string }> {
+    const resolvedCanvasId = canvasId ?? this.getRuntimeCanvasId()
+
+    // 1. 先查旧值 —— DELETE 之后就拿不到了
+    let oldRow: Record<string, unknown> | null = null
+    try {
+      const qRes = await (window as any).tableApi.executeRawSql({
+        nodeId: this.id,
+        sql: `SELECT * FROM "${this.tableName}" WHERE id = ${Number(rowId)}`
+      })
+      if (qRes.ok && Array.isArray(qRes.rows) && qRes.rows.length > 0) {
+        oldRow = qRes.rows[0] as Record<string, unknown>
+      }
+    } catch (err) {
+      console.warn('[TableNode] deleteRowValues 查旧值失败（不阻塞）：', err)
+    }
+
+    // 2. 主进程 DELETE
+    try {
+      const res = await (window as any).tableApi.deleteRow({
+        nodeId: this.id,
+        rowId: Number(rowId)
+      })
+      if (!res.ok) {
+        return { ok: false, error: res.error ?? 'deleteRow failed' }
+      }
+      this.mutationsVersion++
+    } catch (err) {
+      return { ok: false, error: err instanceof Error ? err.message : String(err) }
+    }
+
+    // 3. DELETE 成功后，遍历所有 file 类列的旧值 → 删文件
+    if (oldRow) {
+      const fileCols = this.columns.filter(
+        c => ['image', 'audio', 'file'].includes((c.businessType ?? DEFAULT_BUSINESS_TYPE[c.type]) as string)
+      )
+      for (const col of fileCols) {
+        const oldVal = oldRow[col.name]
+        if (typeof oldVal === 'string' && oldVal) {
+          try {
+            await (window as any).tableApi.deleteFile({
+              canvasId: resolvedCanvasId,
+              nodeId: this.id,
+              relPath: oldVal
+            })
+          } catch (err) {
+            // 单个删失败不阻塞整体——可能之前已经被 updateRowValues 清过了
+            console.warn('[TableNode] deleteRowValues 删旧文件失败：', col.name, oldVal, err)
           }
         }
       }
@@ -458,8 +512,50 @@ export class TableNode extends Node {
     return { ok: true }
   }
 
+  // —— File 类型 MIME 校验（static，实例方法通过 TableNode.validateFileMime 调用） ——
+
+  /**
+   * File 类 businessType 允许的 MIME 前缀。
+   * 用 startsWith 匹配而不是精确 match —— image 可以是 image/png / image/jpeg / image/webp …
+   * 'file' 是通用容器，允许任何 MIME（undefined 表示不校验）。
+   */
+  static readonly FILE_TYPE_MIME_PREFIX: Partial<Record<BusinessType, string[]>> = {
+    image: ['image/'],
+    audio: ['audio/'],
+    file: undefined // 不限制
+  }
+
+  /**
+   * 检查一个 JS File 的 MIME 类型是否匹配列的 businessType。
+   * 'file' 类型允许任何文件；非 File 类 businessType 拒绝 File 值。
+   * @returns null 表示通过；string 是错误消息
+   */
+  static validateFileMime(file: File, col: ColumnDef): string | null {
+    const bt = col.businessType ?? DEFAULT_BUSINESS_TYPE[col.type]
+    const prefixes = (TableNode.FILE_TYPE_MIME_PREFIX as Record<string, string[] | undefined>)[bt]
+
+    if (prefixes === undefined) {
+      // 不是 File 类 businessType 但传了 File 值
+      return `字段 "${col.name}" 是 ${bt} 类型，不接受 File 值`
+    }
+
+    const mime = file.type ?? ''
+    if (!mime) {
+      // 有些场景（拖拽、某些浏览器）File.type 是空串，放宽容许
+      return null
+    }
+
+    const ok = prefixes.some(p => mime.startsWith(p))
+    if (!ok) {
+      return `字段 "${col.name}" 期望 ${bt} 文件（MIME: ${prefixes.join(' 或 ')}），但收到 ${mime || '未知类型'}（${file.name}）`
+    }
+    return null
+  }
+
   /**
    * 把 kv 里的 JS 原生 File 存到节点目录，替换成 relPath 字符串。
+   * 存之前校验 File 的 MIME 是否匹配列的 businessType。
+   *
    * @param replacedKeys  可选——out 参数，被新 File 替换的列名会塞进去（updateRowValues 用来对比旧值删旧文件）
    */
   private async persistFiles(
@@ -472,6 +568,13 @@ export class TableNode extends Node {
       const val = kv[col.name]
       if (!(val instanceof File)) continue
 
+      // 1. 先校验 File 的 MIME 类型
+      const mimeErr = TableNode.validateFileMime(val, col)
+      if (mimeErr) {
+        return { ok: false, error: mimeErr }
+      }
+
+      // 2. 再存盘
       try {
         const dataBase64 = await fileToBase64(val)
         const saveRes = await (window as any).tableApi.saveFile({
@@ -538,6 +641,7 @@ export class TableNode extends Node {
 
     const res = await this.insertRowValues(raw as Record<string, unknown>)
     if (!res.ok) {
+      alert(`[TableNode] insertRow failed: ${res.error}`)
       console.warn('[TableNode] insertRow failed:', res.error)
     }
   }

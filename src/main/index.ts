@@ -1546,23 +1546,24 @@ function registerIpcHandlers(): void {
   })
 
   /**
-   * 读节点目录下的文件，返回 base64 data URL。
-   * renderer 侧直接 <img :src="dataUrl"> 就能显示，或者 Blob() 重建 File 对象。
+   * 读节点目录下的文件，返回原始 bytes（ArrayBuffer）+ mime。
+   * renderer 侧用 URL.createObjectURL(new Blob([buffer], { type: mime })) 生成 blob URL。
+   * 选 blob URL 而不是 data URL：CSP 的 media-src 常禁 data: 但允许 blob:，且 blob 无 base64 33% 膨胀。
    */
   ipcMain.handle('table:readFileAsDataUrl', (_e, args: {
     canvasId: string
     nodeId: string
     relPath: string
-  }): { ok: true; dataUrl: string; fileName: string; mime: string; size: number } | { ok: false; error: string } => {
+  }): { ok: true; buffer: ArrayBuffer; fileName: string; mime: string; size: number } | { ok: false; error: string } => {
     if (!SAFE_CANVAS_ID.test(args.canvasId)) return { ok: false, error: '画布 ID 不合法' }
 
     const res = readFileFromNodeDir(args.canvasId, args.nodeId, args.relPath)
     if (!res.ok) return res
 
-    const base64 = res.data.toString('base64')
+    // Electron IPC 支持直接传 Buffer → renderer 收到的是 ArrayBuffer
     return {
       ok: true,
-      dataUrl: `data:${res.mime};base64,${base64}`,
+      buffer: res.data.buffer.slice(res.data.byteOffset, res.data.byteOffset + res.data.byteLength) as ArrayBuffer,
       fileName: res.fileName,
       mime: res.mime,
       size: res.size

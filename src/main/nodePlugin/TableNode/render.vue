@@ -395,6 +395,9 @@ function defaultValueForType(type: ColumnType): unknown {
 }
 
 function coerceFormValue(raw: unknown, type: ColumnType): unknown {
+  // File 对象原样透传 —— insertRowValues 里会识别并存盘
+  if (raw instanceof File) return raw
+
   switch (type) {
     case 'number': {
       const n = Number(raw)
@@ -422,20 +425,11 @@ async function submitDialog(): Promise<void> {
     let result: { ok: boolean; error?: string; newId?: number }
 
     if (dialogMode.value === 'add') {
-      // @ts-ignore
-      result = await window.tableApi.insertRow({
-        nodeId: node.id,
-        columns: node.columns,
-        values
-      })
+      // 统一走 TableNode.insertRowValues — 带 key 校验 + File 预处理 + 类型校验
+      result = await node.insertRowValues(values)
     } else if (editingRowId.value !== null) {
-      // @ts-ignore
-      result = await window.tableApi.updateRow({
-        nodeId: node.id,
-        columns: node.columns,
-        rowId: editingRowId.value,
-        values
-      })
+      // 统一走 TableNode.updateRowValues — 额外带旧文件清理
+      result = await node.updateRowValues(editingRowId.value, values)
     } else {
       showDialog.value = false
       return

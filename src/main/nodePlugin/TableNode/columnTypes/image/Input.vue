@@ -1,97 +1,116 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 
 /**
- * image 业务类型表单输入：点击选图 → 存到节点目录 → emit relPath 字符串。
+ * image 业务类型表单输入：点击选图 → emit 原生 File 对象。
+ * 存盘统一由 TableNode.insertRowValues 处理（避免取消弹窗后留下孤儿文件）。
  *
  * 对外接口统一：modelValue + update:modelValue。
- * modelValue 是 relPath 字符串（与 Cell 组件的值一致）。
+ * modelValue 可能是：string（已有 relPath 从 SQLite 加载）| File（新选的待存）| ''（清空）。
  */
 const props = defineProps<{ modelValue: unknown; disabled?: boolean; nodeId: string }>()
 const emit = defineEmits<{ 'update:modelValue': [value: unknown] }>()
 
-const localPreviewUrl = ref<string>('') // 选中待上传的图片的临时预览 URL
-const uploading = ref(false)
+/** 显示用的预览 URL：可能是 Object URL（新选的 File），也可能是 data URL（从磁盘加载的已有图） */
+const previewUrl = ref<string>('')
 
-// File → 纯 base64 字符串
-function fileToBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => {
-      const dataUrl = reader.result as string
-      const commaIdx = dataUrl.indexOf(',')
-      resolve(commaIdx >= 0 ? dataUrl.slice(commaIdx + 1) : '')
+// 已有图是从磁盘 readFileAsDataUrl 加载的，不是 Object URL，
+// 所以需要区分 —— 只有 Object URL 才需要 revoke
+let _isObjectUrl = false
+
+async function loadExistingRelPath(relPath: string): Promise<void> {
+  try {
+    // @ts-ignore
+    const res = await window.tableApi.readFileAsDataUrl({
+      // @ts-ignore
+      canvasId: window.getCurrentCanvasId(),
+      nodeId: props.nodeId,
+      relPath
+    })
+    if (res.ok) {
+      previewUrl.value = res.dataUrl
+      _isObjectUrl = false // data URL 不用 revoke
     }
-    reader.onerror = () => reject(reader.error)
-    reader.readAsDataURL(file)
-  })
+  } catch (err) {
+    console.warn('[ImageInput] 加载已有图失败：', relPath, err)
+  }
 }
 
-async function onFilePicked(e: Event): Promise<void> {
+/** modelValue 变化时同步 */
+watch(() => props.modelValue, async (val) => {
+  // 释放旧 Object URL
+  if (previewUrl.value && _isObjectUrl) {
+    URL.revokeObjectURL(previewUrl.value)
+  }
+  previewUrl.value = ''
+  _isObjectUrl = false
+
+  if (val instanceof File) {
+    previewUrl.value = URL.createObjectURL(val)
+    _isObjectUrl = true
+  } else if (typeof val === 'string' && val) {
+    // 已有 relPath —— 加载磁盘文件做预览
+    await loadExistingRelPath(val)
+  }
+}, { immediate: true })
+
+function onFilePicked(e: Event): void {
   const input = e.target as HTMLInputElement
   const file = input.files?.[0]
   if (!file) return
 
-  // 先给个临时预览（Object URL，不占主进程资源）
-  localPreviewUrl.value = URL.createObjectURL(file)
-  uploading.value = true
-
-  try {
-    const dataBase64 = await fileToBase64(file)
-    // @ts-ignore — preload API
-    const saveRes = await window.tableApi.saveFile({
-      // @ts-ignore
-      canvasId: window.getCurrentCanvasId(),
-      nodeId: props.nodeId,
-      fileName: file.name,
-      dataBase64
-    })
-    if (saveRes.ok) {
-      emit('update:modelValue', saveRes.relPath)
-    } else {
-      console.warn('[ImageInput] 存文件失败：', saveRes.error)
-      localPreviewUrl.value = ''
-    }
-  } catch (err) {
-    console.warn('[ImageInput] 异常：', err)
-    localPreviewUrl.value = ''
-  } finally {
-    uploading.value = false
-    // 重置 input，允许用户选同一个文件
-    input.value = ''
+  // 替换前释放旧 Object URL
+  if (previewUrl.value && _isObjectUrl) {
+    URL.revokeObjectURL(previewUrl.value)
   }
+
+  previewUrl.value = URL.createObjectURL(file)
+  _isObjectUrl = true
+  emit('update:modelValue', file)
+
+  // 重置 input，允许用户选同一个文件
+  input.value = ''
 }
 
 function clearImage(): void {
-  localPreviewUrl.value = ''
+  if (previewUrl.value && _isObjectUrl) {
+    URL.revokeObjectURL(previewUrl.value)
+  }
+  previewUrl.value = ''
+  _isObjectUrl = false
   emit('update:modelValue', '')
 }
 
-// 优先显示本地预览（新选的图），否则显示已有 value（从 SQLite 加载的）
-function getDisplayUrl(): string {
-  if (localPreviewUrl.value) return localPreviewUrl.value
-  return '' // 从 SQLite 加载已有图的预览暂时不做（Cell 组件单独处理）
+onMounted(() => {
+  // immediate watch 已经处理了，这里什么都不用做
+})
+
+// 组件卸载时释放 Object URL
+function dispose(): void {
+  if (previewUrl.value && _isObjectUrl) {
+    URL.revokeObjectURL(previewUrl.value)
+  }
 }
+defineExpose({ dispose })
 </script>
 
 <template>
   <div class="img-input">
-    <!-- 选图按钮：始终显示 -->
-    <label v-if="!disabled" class="img-input__btn" :class="{ 'img-input__btn--busy': uploading }">
-      <span v-if="!localPreviewUrl">📷 选择图片</span>
+    <!-- 选图按钮 -->
+    <label v-if="!disabled" class="img-input__btn">
+      <span v-if="!previewUrl">📷 选择图片</span>
       <span v-else>🔄 更换</span>
       <input
         type="file"
         accept="image/*"
         class="img-input__file"
-        :disabled="uploading"
         @change="onFilePicked"
       />
     </label>
 
-    <!-- 临时预览 + 清除 -->
-    <template v-if="localPreviewUrl">
-      <img :src="localPreviewUrl" class="img-input__preview" alt="" />
+    <!-- 预览图（不管是新选的 File 还是已有的 relPath，都渲染） -->
+    <template v-if="previewUrl">
+      <img :src="previewUrl" class="img-input__preview" alt="" />
       <button type="button" class="img-input__clear" @click="clearImage">✕</button>
     </template>
   </div>
@@ -119,10 +138,6 @@ function getDisplayUrl(): string {
 .img-input__btn:hover {
   border-color: var(--color-primary, #3b82f6);
   color: var(--color-primary, #3b82f6);
-}
-.img-input__btn--busy {
-  opacity: 0.6;
-  cursor: not-allowed;
 }
 .img-input__file {
   display: none;

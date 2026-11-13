@@ -195,6 +195,16 @@ export class TableNode extends Node {
     super.setBox(Math.max(MIN_W, Math.round(width)), Math.max(MIN_H, Math.round(height)))
   }
 
+  /**
+   * 把节点 id 清洗成合法的 SQLite 表名（与主进程 sanitizeTableName 完全一致）。
+   * 加 tbl_ 前缀，非 [a-zA-Z0-9_] 的字符替换成 _。
+   * node.ts 自己拼 SQL（查旧值用）时必须用这个，不能直接用 this.id。
+   */
+  get tableName(): string {
+    const safe = this.id.replace(/[^a-zA-Z0-9_]/g, '_')
+    return `tbl_${safe}`
+  }
+
   // —— Node 基类抽象方法 ——
 
   isPositionAcceptFileDrop(_relativeX: number, _relativeY: number): boolean {
@@ -271,84 +281,231 @@ export class TableNode extends Node {
   }
 
   /**
-   * 处理新增行 InputPort：接收一个 JsonValue（kv 结构），校验后写入 SQLite。
-   * 校验规则：
-   * - JsonValue.value 必须是普通对象（不能是数组、不能是 null）
-   * - 每个 key 必须存在于 this.columns 中
-   * - 每个 value 的 JS 类型必须与列的 ColumnType 匹配：
-   *     string 列 → typeof value === 'string'
-   *     number 列 → typeof value === 'number'
-   *     boolean 列 → typeof value === 'boolean'
+   * 公共：把一个 kv 对象插入到表里（带完整校验 + File 处理）。
+   * 所有新增行的入口（上游节点推 insertInput / render.vue 手动新增）都走这里。
+   *
+   * @param kv  { colName: value } — value 可以是 primitive，也可以是 JS 原生 File
+   * @param canvasId  画布 ID；不传时运行时自动兜底（renderer 场景）
+   * @returns  { ok: true, newId } 或 { ok: false, error }
    */
-  private async handleInsertRow(port: InputPort): Promise<void> {
-    const [first] = port.value
-    if (!(first instanceof JsonValue) || first.isNull) {
-      return
+  async insertRowValues(
+    kv: Record<string, unknown>,
+    canvasId?: string
+  ): Promise<{ ok: true; newId: number } | { ok: false; error: string }> {
+    const resolvedCanvasId = canvasId ?? this.getRuntimeCanvasId()
+
+    // 1. key 校验
+    const keyRes = this.validateKeys(kv)
+    if (!keyRes.ok) return keyRes
+
+    // 2. File 预处理：存磁盘 → kv 里替换成 relPath
+    const fileRes = await this.persistFiles(kv, resolvedCanvasId)
+    if (!fileRes.ok) return fileRes
+
+    // 3. 类型校验
+    const typeRes = this.validateTypes(kv)
+    if (!typeRes.ok) return typeRes
+
+    // 4. 调后端
+    try {
+      const res = await (window as any).tableApi.insertRow({
+        nodeId: this.id,
+        columns: this.columns.map(c => ({ name: c.name, type: c.type })),
+        values: kv
+      })
+      if (res.ok) {
+        this.mutationsVersion++
+        return { ok: true, newId: res.newId }
+      }
+      return { ok: false, error: res.error ?? 'insertRow failed' }
+    } catch (err) {
+      return { ok: false, error: err instanceof Error ? err.message : String(err) }
+    }
+  }
+
+  /**
+   * 公共：更新一行（带完整校验 + File 处理 + 旧文件清理）。
+   *
+   * 流程：
+   *   1. key 校验 → 2. File 预处理（存新文件） → 3. 类型校验
+   *   4. 主进程 UPDATE → 5. 成功后删被替换的旧文件（对比 UPDATE 前的旧值）
+   *
+   * @param rowId  要更新的行 id
+   * @param kv  { colName: value } — 允许 File（新图）、string（relPath 或 '' 清空）、primitive
+   */
+  async updateRowValues(
+    rowId: number,
+    kv: Record<string, unknown>,
+    canvasId?: string
+  ): Promise<{ ok: true } | { ok: false; error: string }> {
+    const resolvedCanvasId = canvasId ?? this.getRuntimeCanvasId()
+
+    // 1. key 校验
+    const keyRes = this.validateKeys(kv)
+    if (!keyRes.ok) return keyRes
+
+    // 2. 先查旧值 —— UPDATE 成功后用来判断哪些旧文件要删
+    let oldRow: Record<string, unknown> | null = null
+    try {
+      const sql = `SELECT * FROM "${this.tableName}" WHERE id = ${Number(rowId)}`
+      console.log('[TableNode.updateRowValues] 查旧值 SQL:', sql)
+      const qRes = await (window as any).tableApi.executeRawSql({
+        nodeId: this.id,
+        sql
+      })
+      console.log('[TableNode.updateRowValues] 查旧值结果:', qRes)
+      if (qRes.ok && Array.isArray(qRes.rows) && qRes.rows.length > 0) {
+        oldRow = qRes.rows[0] as Record<string, unknown>
+        console.log('[TableNode.updateRowValues] oldRow:', oldRow)
+      }
+    } catch (err) {
+      console.warn('[TableNode] updateRowValues 查旧值失败（不阻塞）：', err)
     }
 
-    const raw = first.value
-    if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) {
-      console.warn('[TableNode] insertRow 校验失败：传入值必须是 JSON 对象（kv 结构）')
-      return
+    // 3. File 预处理：存新文件 → kv 里替换成 relPath
+    const replacedByNewFile: Set<string> = new Set()
+    console.log('[TableNode.updateRowValues] persistFiles 前 kv:', kv)
+    const fileRes = await this.persistFiles(kv, resolvedCanvasId, replacedByNewFile)
+    console.log('[TableNode.updateRowValues] persistFiles 后 kv:', kv, 'replacedByNewFile:', [...replacedByNewFile], 'fileRes:', fileRes)
+    if (!fileRes.ok) return fileRes
+
+    // 4. 类型校验
+    const typeRes = this.validateTypes(kv)
+    if (!typeRes.ok) return typeRes
+
+    // 5. 调后端 UPDATE
+    try {
+      const res = await (window as any).tableApi.updateRow({
+        nodeId: this.id,
+        columns: this.columns.map(c => ({ name: c.name, type: c.type })),
+        rowId,
+        values: kv
+      })
+      if (!res.ok) {
+        return { ok: false, error: res.error ?? 'updateRow failed' }
+      }
+      this.mutationsVersion++
+    } catch (err) {
+      return { ok: false, error: err instanceof Error ? err.message : String(err) }
     }
 
-    const kv = raw as Record<string, unknown>
+    // 6. UPDATE 成功后，删被替换的旧文件
+    console.log('[TableNode.updateRowValues] 步骤6 oldRow:', oldRow, 'replacedByNewFile:', [...replacedByNewFile])
+    if (!oldRow) {
+      console.warn('[TableNode.updateRowValues] oldRow 为空，跳过删旧文件')
+    }
+    if (oldRow) {
+      for (const colName of replacedByNewFile) {
+        const oldVal = oldRow[colName]
+        console.log('[TableNode.updateRowValues] 检查替换删旧文件:', colName, 'oldVal:', oldVal, 'isString:', typeof oldVal === 'string')
+        if (typeof oldVal === 'string' && oldVal) {
+          try {
+            console.log('[TableNode.updateRowValues] 调 deleteFile:', oldVal)
+            const delRes = await (window as any).tableApi.deleteFile({
+              canvasId: resolvedCanvasId,
+              nodeId: this.id,
+              relPath: oldVal
+            })
+            console.log('[TableNode.updateRowValues] deleteFile 返回:', delRes)
+          } catch (err) {
+            console.warn('[TableNode] updateRowValues 删旧文件失败：', colName, oldVal, err)
+          }
+        }
+      }
+      // 额外：用户把 image 列显式清空（传 ''），也要删旧文件
+      for (const col of this.columns) {
+        if (replacedByNewFile.has(col.name)) continue // 上面已处理
+        if (!(col.name in kv)) continue
+        const newVal = kv[col.name]
+        const oldVal = oldRow[col.name]
+        if ((newVal === '' || newVal == null) && typeof oldVal === 'string' && oldVal) {
+          try {
+            console.log('[TableNode.updateRowValues] 调 deleteFile（清空场景）:', oldVal)
+            const delRes = await (window as any).tableApi.deleteFile({
+              canvasId: resolvedCanvasId,
+              nodeId: this.id,
+              relPath: oldVal
+            })
+            console.log('[TableNode.updateRowValues] deleteFile 返回:', delRes)
+          } catch (err) {
+            console.warn('[TableNode] updateRowValues 删旧文件失败：', col.name, oldVal, err)
+          }
+        }
+      }
+    }
 
-    // —— key 校验：所有 key 必须是表的真实字段 ——
+    return { ok: true }
+  }
+
+  // —— 内部公共辅助方法（insert 和 update 共用） ——
+
+  /** 运行时兜底取 canvasId */
+  private getRuntimeCanvasId(): string {
+    if (typeof window === 'undefined') return ''
+    const w = window as any
+    return typeof w.getCurrentCanvasId === 'function' ? w.getCurrentCanvasId() : ''
+  }
+
+  /** key 白名单校验 */
+  private validateKeys(kv: Record<string, unknown>):
+    | { ok: true }
+    | { ok: false; error: string } {
     const validColNames = new Set(this.columns.map(c => c.name))
     const extraKeys = Object.keys(kv).filter(k => !validColNames.has(k))
     if (extraKeys.length > 0) {
-      console.warn(
-        '[TableNode] insertRow 校验失败：以下 key 不是表的有效字段：', extraKeys,
-        '；有效字段为：', this.columns.map(c => c.name)
-      )
-      return
+      return { ok: false, error: `以下 key 不是表的有效字段：${extraKeys.join(', ')}` }
     }
+    return { ok: true }
+  }
 
-    // —— 2.5 File 预处理：把 kv 里的 JS 原生 File 存到节点目录，替换成 relPath 字符串 ——
+  /**
+   * 把 kv 里的 JS 原生 File 存到节点目录，替换成 relPath 字符串。
+   * @param replacedKeys  可选——out 参数，被新 File 替换的列名会塞进去（updateRowValues 用来对比旧值删旧文件）
+   */
+  private async persistFiles(
+    kv: Record<string, unknown>,
+    canvasId: string,
+    replacedKeys?: Set<string>
+  ): Promise<{ ok: true } | { ok: false; error: string }> {
     for (const col of this.columns) {
       if (!(col.name in kv)) continue
       const val = kv[col.name]
       if (!(val instanceof File)) continue
 
-      // 读文件 → base64 → 调 preload API 存到节点目录
       try {
         const dataBase64 = await fileToBase64(val)
-        // @ts-ignore
-        const saveRes = await window.tableApi.saveFile({
-          // @ts-ignore
-          canvasId: window.getCurrentCanvasId(),
+        const saveRes = await (window as any).tableApi.saveFile({
+          canvasId,
           nodeId: this.id,
           fileName: val.name || 'untitled',
           dataBase64
         })
         if (!saveRes.ok) {
-          console.warn('[TableNode] insertRow 存文件失败：', col.name, saveRes.error)
-          return
+          return { ok: false, error: `存文件失败（${col.name}）：${saveRes.error}` }
         }
-        // 替换 File → 相对路径字符串（后续类型校验会把它当 string 过）
         kv[col.name] = saveRes.relPath
+        replacedKeys?.add(col.name)
       } catch (err) {
-        console.warn('[TableNode] insertRow 文件读取/存储异常：', col.name, err)
-        return
+        return { ok: false, error: `文件读取/存储异常（${col.name}）：${err instanceof Error ? err.message : String(err)}` }
       }
     }
+    return { ok: true }
+  }
 
-    // —— value 类型校验 ——
+  /** value JS 类型与 ColumnType 匹配校验 */
+  private validateTypes(kv: Record<string, unknown>):
+    | { ok: true }
+    | { ok: false; error: string } {
     const typeErrors: string[] = []
     for (const col of this.columns) {
-      if (!(col.name in kv)) continue // 允许缺省字段（后端 insertRow 会处理）
+      if (!(col.name in kv)) continue // 允许缺省字段（后端会处理）
       const val = kv[col.name]
       const expectedType = col.type
 
       let jsType: string
-      if (val === null) {
-        jsType = 'null'
-      } else if (Array.isArray(val)) {
-        jsType = 'array'
-      } else {
-        jsType = typeof val
-      }
+      if (val === null) jsType = 'null'
+      else if (Array.isArray(val)) jsType = 'array'
+      else jsType = typeof val
 
       const matches =
         (expectedType === 'string' && jsType === 'string') ||
@@ -359,27 +516,29 @@ export class TableNode extends Node {
         typeErrors.push(`字段 "${col.name}" 期望 ${expectedType}，实际是 ${jsType}`)
       }
     }
-
     if (typeErrors.length > 0) {
-      console.warn('[TableNode] insertRow 校验失败：', typeErrors.join('；'))
+      return { ok: false, error: typeErrors.join('；') }
+    }
+    return { ok: true }
+  }
+
+  /**
+   * 处理新增行 InputPort：接收一个 JsonValue（kv 结构），校验后写入 SQLite。
+   * 核心逻辑委托给 insertRowValues()，这里只做 JsonValue 拆包 + 错误日志。
+   */
+  private async handleInsertRow(port: InputPort): Promise<void> {
+    const [first] = port.value
+    if (!(first instanceof JsonValue) || first.isNull) return
+
+    const raw = first.value
+    if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) {
+      console.warn('[TableNode] insertRow 校验失败：传入值必须是 JSON 对象（kv 结构）')
       return
     }
 
-    // —— 校验通过，调后端插入 ——
-    try {
-      // @ts-ignore
-      const res = await window.tableApi.insertRow({
-        nodeId: this.id,
-        columns: this.columns.map(c => ({ name: c.name, type: c.type })),
-        values: kv
-      })
-      if (res.ok) {
-        this.mutationsVersion++
-      } else {
-        console.warn('[TableNode] insertRow failed:', res.error)
-      }
-    } catch (err) {
-      console.warn('[TableNode] insertRow error:', err)
+    const res = await this.insertRowValues(raw as Record<string, unknown>)
+    if (!res.ok) {
+      console.warn('[TableNode] insertRow failed:', res.error)
     }
   }
 

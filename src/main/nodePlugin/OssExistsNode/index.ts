@@ -2,7 +2,7 @@ import type { NodePluginManifest } from '../manifest'
 import { OssExistsNode } from './node'
 import render from './render.vue'
 
-import OssExistsIcon from '@renderer/assets/node-icons/OssExistsNode.svg'
+import aliyunLogo from '@renderer/assets/images/aliyun.png'
 
 export const manifest: NodePluginManifest = {
   type: OssExistsNode.TYPE,
@@ -25,7 +25,7 @@ export const manifest: NodePluginManifest = {
     it: 'File OSS esistente'
   },
   render,
-  iconImage: OssExistsIcon,
+  iconImage: aliyunLogo,
   category: 'tool',
   common: false,
   detailPanel: () => import('./OssExistsDetailPanel.vue'),

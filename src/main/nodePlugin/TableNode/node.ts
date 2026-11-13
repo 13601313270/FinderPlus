@@ -3,6 +3,10 @@ import { InputPort } from '../../engine/port/InputPort'
 import { OutputPort } from '../../engine/port/OutputPort'
 import { StringValue } from '../../engine/data/StringValue'
 import { JsonValue } from '../../engine/data/JsonValue'
+import { FileValue } from '../../engine/data/FileValue'
+import { ImgFileValue } from '../../engine/data/ImgFileValue'
+import { AudioFileValue } from '../../engine/data/AudioFileValue'
+import { VideoFileValue } from '../../engine/data/VideoFileValue'
 
 /**
  * 浏览器 File → 纯 base64 字符串（去掉 data URL 前缀）。
@@ -264,8 +268,9 @@ export class TableNode extends Node {
               // DML 副作用：render.vue 的 onChanged 检测到 mutationsVersion 变化后自动 loadPage()
               this.mutationsVersion++
             } else {
-              // —— SELECT（changes=0）：维持原行为，直接 commit rows 数组 ——
-              pair.output.commit(new JsonValue(res.rows))
+              // —— SELECT（changes=0）：把 file 类列加工成 FileValue 子类再 commit ——
+              const hydratedRows = await this.hydrateFileColumns(res.rows as Record<string, unknown>[])
+              pair.output.commit(new JsonValue(hydratedRows))
             }
           } else {
             pair.output.clear()
@@ -498,6 +503,81 @@ export class TableNode extends Node {
     if (typeof window === 'undefined') return ''
     const w = window as any
     return typeof w.getCurrentCanvasId === 'function' ? w.getCurrentCanvasId() : ''
+  }
+
+  /**
+   * 把 SELECT 返回的 rows 里，file 类 businessType 的列从 relPath 字符串
+   * 加工成 FileValue 子类实例（ImgFileValue / AudioFileValue / VideoFileValue / FileValue）。
+   *
+   * 只加工 columns 里能识别到的 file 列名。如果用户写 SELECT * 或显式列名跟
+   * TableNode.columns.name 对不上（比如 alias），对应列就跳过，保留原始值。
+   *
+   * @param rows  executeRawSql 返回的 rows 对象数组（[{ colName: value, ... }, ...]）
+   */
+  private async hydrateFileColumns(
+    rows: Record<string, unknown>[]
+  ): Promise<Record<string, unknown>[]> {
+    if (!rows.length) return rows
+
+    const canvasId = this.getRuntimeCanvasId()
+
+    // 找出所有需要加工的 file 类列 + 对应的 FileValue 子类构造
+    type FileValueCtor = new (file: File, fingerprint: string) => FileValue
+    const fileColumns: { name: string; Ctor: FileValueCtor }[] = []
+    for (const col of this.columns) {
+      const bt = col.businessType ?? DEFAULT_BUSINESS_TYPE[col.type]
+      let Ctor: FileValueCtor | null = null
+      switch (bt) {
+        case 'image': Ctor = ImgFileValue; break
+        case 'audio': Ctor = AudioFileValue; break
+        case 'file':  Ctor = FileValue; break
+      }
+      if (Ctor) fileColumns.push({ name: col.name, Ctor })
+    }
+
+    if (!fileColumns.length) return rows
+
+    // 预建 relPath → FileValue 的缓存：同一行如果两个 image 列存了同一个文件，只读一次
+    const cache = new Map<string, FileValue>()
+
+    // 遍历 rows × fileColumns，并发加载
+    const hydrated = await Promise.all(
+      rows.map(async (row) => {
+        const hydratedRow = { ...row }
+        for (const { name, Ctor } of fileColumns) {
+          const val = row[name]
+          if (typeof val !== 'string' || !val) continue // 不是 relPath，跳过
+
+          if (cache.has(val)) {
+            hydratedRow[name] = cache.get(val)!
+            continue
+          }
+
+          try {
+            // @ts-ignore
+            const res = await (window as any).tableApi.readFileAsDataUrl({
+              // @ts-ignore
+              canvasId: canvasId,
+              nodeId: this.id,
+              relPath: val
+            })
+            if (res.ok) {
+              const file = new File([res.buffer], res.fileName, { type: res.mime })
+              const fv = new Ctor(file, val) // fingerprint 先用 relPath 本身，唯一即可
+              cache.set(val, fv)
+              hydratedRow[name] = fv
+            } else {
+              console.warn('[TableNode.hydrateFileColumns] 读文件失败：', val, res.error)
+            }
+          } catch (err) {
+            console.warn('[TableNode.hydrateFileColumns] 读文件异常：', val, err)
+          }
+        }
+        return hydratedRow
+      })
+    )
+
+    return hydrated
   }
 
   /** key 白名单校验 */

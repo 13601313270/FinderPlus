@@ -1,4 +1,4 @@
-import { CollectionValue } from './CollectionValue'
+import { FileCollectionValue } from './FileCollectionValue'
 import { ImgFileValue } from './ImgFileValue'
 import type { ValueKind } from './Value'
 
@@ -8,9 +8,10 @@ import type { ValueKind } from './Value'
  * 典型场景：FolderNode（图片文件夹）一次产出 100 张图，下游 PdfFromImgNode
  * 只需要接一条 Edge 就能拿到全部图片，不用拖 100 条 Edge。
  *
+ * 继承链：ImgFileCollectionValue → FileCollectionValue → CollectionValue → Value
  * fingerprint 由 CollectionValue 基类统一计算，跟 ImgFileValue 自身的文件内容 hash 对齐。
  */
-export class ImgFileCollectionValue extends CollectionValue<ImgFileValue> {
+export class ImgFileCollectionValue extends FileCollectionValue<ImgFileValue> {
   static readonly VALUE_NAME: ValueKind = 'img-file-collection'
 
   constructor(items?: readonly ImgFileValue[]) {

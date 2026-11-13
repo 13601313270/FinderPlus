@@ -288,8 +288,8 @@ export class BackgroundRemoveNode extends Node {
     return { ...super.initSaveStateData() }
   }
 
-  readState(_state: Record<string, unknown>): void {
-    super.readState(_state)
+  initStateBySaveData(_state: Record<string, unknown>): void {
+    super.initStateBySaveData(_state)
 
     // 啥也不做——等用户再拖一次
   }

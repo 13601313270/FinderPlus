@@ -672,8 +672,8 @@ export class CodeNode extends Node {
     }
   }
 
-  readState(state: Record<string, unknown>): void {
-    super.readState(state)
+  initStateBySaveData(state: Record<string, unknown>): void {
+    super.initStateBySaveData(state)
 
     if (typeof state.code === 'string') {
       this.code = state.code

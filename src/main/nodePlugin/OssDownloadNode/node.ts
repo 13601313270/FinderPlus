@@ -217,8 +217,8 @@ export class OssDownloadNode extends Node {
     }
   }
 
-  readState(state: Record<string, unknown>): void {
-    super.readState(state)
+  initStateBySaveData(state: Record<string, unknown>): void {
+    super.initStateBySaveData(state)
 
     if (typeof state.bucketId === 'string') this.bucketId = state.bucketId
     if (typeof state.autoSend === 'boolean') this.autoSend = state.autoSend

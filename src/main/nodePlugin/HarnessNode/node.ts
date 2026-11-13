@@ -1293,7 +1293,7 @@ export class HarnessNode extends Node {
 
   /** 恢复收尾：sceneRef 里所有节点都已就绪后调用 */
   adoptAllChildren(): void {
-    // 先恢复 Model（pendingModelChildId 是 readState 里存的，此时 sceneRef 里应该有了）
+    // 先恢复 Model（pendingModelChildId 是 initStateBySaveData 里存的，此时 sceneRef 里应该有了）
     if (this.pendingModelChildId) {
       const modelNode = this.sceneRef?.getNode(this.pendingModelChildId)
       if (modelNode) {
@@ -1728,10 +1728,10 @@ export class HarnessNode extends Node {
     }
   }
 
-  readState(state: Record<string, unknown>): void {
-    super.readState(state)
+  initStateBySaveData(state: Record<string, unknown>): void {
+    super.initStateBySaveData(state)
 
-    // readState 阶段 scene 里的节点可能还没加载完，只存 id 不查 scene。
+    // initStateBySaveData 阶段 scene 里的节点可能还没加载完，只存 id 不查 scene。
     // 所有恢复逻辑交给 adoptAllChildren（App.vue 在恢复第 4 步统一调）。
 
     if (typeof (state as any).modelChildId === 'string') {

@@ -136,8 +136,8 @@ export class FileInfoNode extends Node {
     return { ...super.initSaveStateData() }
   }
 
-  readState(_state: Record<string, unknown>): void {
-    super.readState(_state)
+  initStateBySaveData(_state: Record<string, unknown>): void {
+    super.initStateBySaveData(_state)
 
     // 啥也不做——派生状态等上游恢复后自然会刷新
   }

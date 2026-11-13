@@ -294,8 +294,8 @@ export class FeishuReceiveNode extends Node {
     }
   }
 
-  readState(state: Record<string, unknown>): void {
-    super.readState(state)
+  initStateBySaveData(state: Record<string, unknown>): void {
+    super.initStateBySaveData(state)
 
     // 新版：直接 botId
     if (typeof state.botId === 'string') {

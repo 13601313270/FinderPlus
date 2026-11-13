@@ -27,7 +27,7 @@
 - 端口：`imageInput`(source, ImgFileValue) / `imageOutput`(image, ImgFileValue, '调整后')
 - 状态：`quality`（默认 80）、`format`（`'jpeg' | 'png'`，默认 jpeg）、`pendingSourceId`、`lastProcessedFingerprint/Quality/Format`
 - API：`compressSource`（拖入优先于端口）、`pendingSource`、`quality`/`exportFormat` getter、`setQuality(n)`（clamp 1–100 并 `Math.round`，变更则 notifyChanged）、`setFormat(f)`、`markProcessed(fp,q,f)`、`clearPending()`、`setOutput(base64,mime,fileName)`、`inputPortReceiveValue → notifyChanged`、`isPositionAcceptNodeDrop/onNodeDrop`（照抄）
-- 持久化：`initSaveStateData()` 只存 `{ quality, format }`；`readState()` 只恢复这两项（压缩结果不持久化）
+- 持久化：`initSaveStateData()` 只存 `{ quality, format }`；`initStateBySaveData()` 只恢复这两项（压缩结果不持久化）
 - `this.setBox(260, 300)`
 
 ### 3. 新增 `src/main/nodePlugin/ImageQualityNode/render.vue`

@@ -345,8 +345,8 @@ export class ImageToPdfNode extends Node {
     }
   }
 
-  readState(state: Record<string, unknown>): void {
-    super.readState(state)
+  initStateBySaveData(state: Record<string, unknown>): void {
+    super.initStateBySaveData(state)
 
     const savedCount = typeof state.portCount === 'number' && state.portCount >= 1
       ? state.portCount : 1

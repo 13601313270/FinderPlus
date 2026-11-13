@@ -72,8 +72,8 @@ export class NumberInputNode extends Node {
     return { ...super.initSaveStateData(), content: this.content }
   }
 
-  readState(state: Record<string, unknown>): void {
-    super.readState(state)
+  initStateBySaveData(state: Record<string, unknown>): void {
+    super.initStateBySaveData(state)
 
     // 恢复源头值 → 触发 commit，下游才能收到
     const n = typeof state.content === 'number' ? state.content : 0

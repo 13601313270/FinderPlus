@@ -237,8 +237,8 @@ export class TableNode extends Node {
     }
   }
 
-  readState(state: Record<string, unknown>): void {
-    super.readState(state)
+  initStateBySaveData(state: Record<string, unknown>): void {
+    super.initStateBySaveData(state)
 
     if (Array.isArray(state.columns)) {
       this.columns = state.columns.filter(
@@ -308,7 +308,7 @@ export class TableNode extends Node {
 
   /**
    * 新增一对查询端口（输入 StringValue → 输出 JsonValue）。
-   * 运行时调用或 readState 重建都走这个——传入 id 可选，不传时自动生成。
+   * 运行时调用或 initStateBySaveData 重建都走这个——传入 id 可选，不传时自动生成。
    */
   addQueryPort(existingId?: string): QueryPortPair {
     const id = existingId ?? makeQueryId()

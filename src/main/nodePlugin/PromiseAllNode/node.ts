@@ -366,8 +366,8 @@ export class PromiseAllNode extends Node {
     return { ...super.initSaveStateData(), portCount: this.portCount }
   }
 
-  readState(state: Record<string, unknown>): void {
-    super.readState(state)
+  initStateBySaveData(state: Record<string, unknown>): void {
+    super.initStateBySaveData(state)
 
     const stored = state.portCount
     if (typeof stored !== 'number' || stored < MIN_PORT_COUNT || stored === this.portCount) return

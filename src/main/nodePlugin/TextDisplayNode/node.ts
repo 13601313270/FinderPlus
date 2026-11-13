@@ -104,8 +104,8 @@ export class TextDisplayNode extends Node {
     }
   }
 
-  readState(state: Record<string, unknown>): void {
-    super.readState(state)
+  initStateBySaveData(state: Record<string, unknown>): void {
+    super.initStateBySaveData(state)
 
     // 恢复用户调整过的尺寸（老数据缺该字段时保留构造时的默认 box）
     const box = state.box

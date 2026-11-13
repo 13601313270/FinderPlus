@@ -46,7 +46,7 @@ render.vue 内嵌裁剪交互：
 - 拖入路径：isPositionAcceptNodeDrop / onNodeDrop / pendingSourceId / clearPending 全套照搬
 - 响应式路径：inputPortReceiveValue 调 notifyChanged
 - setOutput(base64, mime, fileName)：照搬同名方法
-- initSaveStateData / readState：存 cropRect
+- initSaveStateData / initStateBySaveData：存 cropRect
 
 ### Step 2：ImageCropNode/render.vue
 

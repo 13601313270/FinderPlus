@@ -40,7 +40,7 @@
 要点：
 - 输入端口 `fileInput = new InputPort('file', FileValue, '文件')`，`accepts=[FileValue, TxtFileValue, ImgFileValue]`
 - `children: Node[]`、去重指纹集、boxSize
-- `initSaveStateData = { childIds: string[], box: [w,h] }`；`readState` 存 `pendingChildIds` + setBox
+- `initSaveStateData = { childIds: string[], box: [w,h] }`；`initStateBySaveData` 存 `pendingChildIds` + setBox
 - `beforeDestroy()`：最前遍历 child 清 `containerNode`（释放回画布，边按端口引用保留），再 `super.beforeDestroy()`
 
 ### Step 2 — resolveByValueClass + FileNode.acceptsValue
@@ -69,7 +69,7 @@ static acceptsValue(_value: Value): boolean { return false }
 override：算 `dx, dy` → `super.setPosition(x,y)` → `children.forEach(c => c.setPosition(c.position[0]+dx, c.position[1]+dy))`。子节点若又是 FolderNode 其 override 自然递归，无环。
 
 ### Step 6 — 尺寸可调 + 最小钳制
-render.vue 东南角 resize 手柄 → `setBox(w,h)`。`setBox` override 钳制到 `MIN_W/MIN_H`。nodes 表无 box 列，尺寸经 initSaveStateData/readState 持久化（ImgFileNode 已示范同模式）。
+render.vue 东南角 resize 手柄 → `setBox(w,h)`。`setBox` override 钳制到 `MIN_W/MIN_H`。nodes 表无 box 列，尺寸经 initSaveStateData/initStateBySaveData 持久化（ImgFileNode 已示范同模式）。
 
 ### Step 7 — 拖出边界结算
 App.vue `onGlobalPointerUp` finally 前追加：若 `draggedNode.containerNode` 存在，用松手世界坐标与 `measureNodeBox(holder...)` 判界（外扩 margin=12px），越界即 `holder.removeChild(draggedNode)` 原地放回。

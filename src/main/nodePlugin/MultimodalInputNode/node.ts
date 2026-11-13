@@ -139,8 +139,8 @@ export class MultimodalInputNode extends Node {
     }
   }
 
-  readState(state: Record<string, unknown>): void {
-    super.readState(state)
+  initStateBySaveData(state: Record<string, unknown>): void {
+    super.initStateBySaveData(state)
     if (state.autoSend === true) this.autoSend = true
     if (typeof state.width === 'number' && typeof state.height === 'number') {
       this.setBox(state.width, state.height)

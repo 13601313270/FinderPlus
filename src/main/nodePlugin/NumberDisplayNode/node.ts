@@ -93,8 +93,8 @@ export class NumberDisplayNode extends Node {
     }
   }
 
-  readState(state: Record<string, unknown>): void {
-    super.readState(state)
+  initStateBySaveData(state: Record<string, unknown>): void {
+    super.initStateBySaveData(state)
 
     const color = state.textColor
     if (typeof color === 'string') this.setNumberColor(color)

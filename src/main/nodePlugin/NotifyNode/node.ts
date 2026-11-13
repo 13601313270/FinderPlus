@@ -107,8 +107,8 @@ export class NotifyNode extends Node {
     }
   }
 
-  readState(_state: Record<string, unknown>): void {
-    super.readState(_state)
+  initStateBySaveData(_state: Record<string, unknown>): void {
+    super.initStateBySaveData(_state)
 
     const tpl = _state.textTemplate
     if (typeof tpl === 'string') {

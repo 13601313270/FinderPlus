@@ -108,8 +108,8 @@ export class PdfFileNode extends FileNode {
     return { ...super.initSaveStateData(), box: this.box }
   }
 
-  readState(state: Record<string, unknown>): void {
-    super.readState(state)
+  initStateBySaveData(state: Record<string, unknown>): void {
+    super.initStateBySaveData(state)
     const box = state.box as [number, number]
     if (box !== undefined) {
       this.setBox(Math.min(MAX_PREVIEW_WIDTH, Math.max(MIN_PREVIEW_WIDTH, Math.round(box[0]))), box[1])

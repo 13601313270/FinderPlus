@@ -234,8 +234,8 @@ export class ImageQualityNode extends Node {
     return { ...super.initSaveStateData(), quality: this.quality, format: this.format }
   }
 
-  readState(state: Record<string, unknown>): void {
-    super.readState(state)
+  initStateBySaveData(state: Record<string, unknown>): void {
+    super.initStateBySaveData(state)
 
     const q = state.quality
     if (typeof q === 'number' && Number.isFinite(q)) {

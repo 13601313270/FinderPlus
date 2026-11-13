@@ -125,7 +125,7 @@ export class RecorderNode extends Node {
   inputPortReceiveValue(_ports: InputPort[], _source: InputPortChangeSource): void { /* 无输入端口 */ }
 
   initSaveStateData(): Record<string, unknown> { return { ...super.initSaveStateData() } }
-  readState(_state: Record<string, unknown>): void { super.readState(_state)
+  initStateBySaveData(_state: Record<string, unknown>): void { super.initStateBySaveData(_state)
  /* 无持久化配置 */ }
 
   beforeDestroy(): void {

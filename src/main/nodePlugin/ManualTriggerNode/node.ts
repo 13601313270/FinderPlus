@@ -295,7 +295,7 @@ export class ManualTriggerNode extends Node {
     return new OutputPort(btn.id, valueClass, { zh: btn.label })
   }
 
-  /** 全量重建所有输出端口（构造 / readState 恢复时用） */
+  /** 全量重建所有输出端口（构造 / initStateBySaveData 恢复时用） */
   private rebuildAllOutputs(): void {
     // 先清空现有端口
     for (const port of this.portMap.values()) {
@@ -344,8 +344,8 @@ export class ManualTriggerNode extends Node {
     }
   }
 
-  readState(state: Record<string, unknown>): void {
-    super.readState(state)
+  initStateBySaveData(state: Record<string, unknown>): void {
+    super.initStateBySaveData(state)
 
     const savedButtons = state.buttons
     if (Array.isArray(savedButtons) && savedButtons.length > 0) {

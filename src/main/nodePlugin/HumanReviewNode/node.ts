@@ -426,8 +426,8 @@ export class HumanReviewNode extends Node {
     }
   }
 
-  readState(state: Record<string, unknown>): void {
-    super.readState(state)
+  initStateBySaveData(state: Record<string, unknown>): void {
+    super.initStateBySaveData(state)
 
     // 恢复用户保存的 box 尺寸；老版本数据没有 box 字段，跳过即可（构造函数已设了默认值）
     const box = state.box as unknown

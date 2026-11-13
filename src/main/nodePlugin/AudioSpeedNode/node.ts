@@ -182,8 +182,8 @@ export class AudioSpeedNode extends Node {
     return { ...super.initSaveStateData(), speed: this.speedValue }
   }
 
-  readState(state: Record<string, unknown>): void {
-    super.readState(state)
+  initStateBySaveData(state: Record<string, unknown>): void {
+    super.initStateBySaveData(state)
 
     if (typeof state.speed === 'number') {
       this.speedValue = Math.round(

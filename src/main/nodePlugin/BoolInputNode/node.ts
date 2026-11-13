@@ -77,8 +77,8 @@ export class BoolInputNode extends Node {
     return { ...super.initSaveStateData(), content: this.content }
   }
 
-  readState(state: Record<string, unknown>): void {
-    super.readState(state)
+  initStateBySaveData(state: Record<string, unknown>): void {
+    super.initStateBySaveData(state)
 
     // 恢复源头值 → 显式 commit，下游才能收到（哪怕恢复值与默认值相同）
     const v = typeof state.content === 'boolean' ? state.content : false

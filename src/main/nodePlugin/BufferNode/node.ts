@@ -212,8 +212,8 @@ export abstract class BufferNode extends Node {
     return { ...super.initSaveStateData(), kind: this.kindValue }
   }
 
-  readState(state: Record<string, unknown>): void {
-    super.readState(state)
+  initStateBySaveData(state: Record<string, unknown>): void {
+    super.initStateBySaveData(state)
 
     const kind = state.kind
     if (typeof kind === 'string' && ALL_KINDS.includes(kind as BufferKind) && kind !== this.kindValue) {

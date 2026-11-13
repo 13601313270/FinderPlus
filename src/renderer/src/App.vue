@@ -1249,7 +1249,7 @@ async function bootstrapScene(): Promise<void> {
     workspaceScene.addNode(node)
   }
 
-  // —— 2. 节点内部状态（源头节点 readState 会 commit，连边下游能立刻收到）——
+  // —— 2. 节点内部状态（源头节点 initStateBySaveData 会 commit，连边下游能立刻收到）——
   for (const row of data?.nodes ?? []) {
     const node = workspaceScene.getNode(row.id)
     if (!node) continue
@@ -1259,7 +1259,7 @@ async function bootstrapScene(): Promise<void> {
     } catch (err) {
       console.warn(`[bootstrap] 节点 ${row.id} params JSON 解析失败：`, err)
     }
-    node.readState(params)
+    node.initStateBySaveData(params)
   }
 
   // —— 3. 边最后建（端口必须先存在）——
@@ -1280,7 +1280,7 @@ async function bootstrapScene(): Promise<void> {
   }
 
   // —— 4. 恢复视口 + attachStorage ——
-  // （边已重建，端口已就绪）此时按各文件夹/子容器 readState 暂存的 pendingChildIds 收养子节点
+  // （边已重建，端口已就绪）此时按各文件夹/子容器 initStateBySaveData 暂存的 pendingChildIds 收养子节点
   for (const node of workspaceScene.allNodes) {
     if (node instanceof FolderNode) {
       node.adoptChildren(workspaceScene)

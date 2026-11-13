@@ -554,7 +554,7 @@ export class RadioNode extends Node {
     return {
       ...super.initSaveStateData(),
       kind: this.kind,
-      // 只持久化手动配置的选项，输入驱动的选项由上游在 readState 后重新推送
+      // 只持久化手动配置的选项，输入驱动的选项由上游在 initStateBySaveData 后重新推送
       // （开启 cacheInputOptions 时 applyInputOptions 已自动同步 manualOptions）
       options: this.manualOptions.map(o => ({ id: o.id, label: o.label, value: o.value })),
       selectedId: this.selectedId ?? null,
@@ -563,8 +563,8 @@ export class RadioNode extends Node {
     }
   }
 
-  readState(state: Record<string, unknown>): void {
-    super.readState(state)
+  initStateBySaveData(state: Record<string, unknown>): void {
+    super.initStateBySaveData(state)
 
     if (typeof state.kind === 'string' && ALL_KINDS.includes(state.kind as RadioValueKind)) {
       this.kind = state.kind as RadioValueKind

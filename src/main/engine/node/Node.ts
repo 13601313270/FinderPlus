@@ -695,7 +695,7 @@ export abstract class Node {
   /**
    * 从 initSaveStateData 返回的 plain object 里恢复节点内部状态。
    *
-   * displayName 是基类通用字段，这里自动恢复。子类 override 时应当先调 super.readState(state)
+   * displayName 是基类通用字段，这里自动恢复。子类 override 时应当先调 super.initStateBySaveData(state)
    * 再读自己的字段，避免丢掉 displayName 的恢复。
    *
    * 实现时要考虑：
@@ -704,13 +704,13 @@ export abstract class Node {
    * - 恢复展示/计算节点的值通常是冗余的（连好边后上游 commit 会自动刷新），
    *   但写进去可以让「断开状态下也能看到上次结果」。
    */
-  readState(state: Record<string, unknown>): void {
+  initStateBySaveData(state: Record<string, unknown>): void {
     const name = typeof state.displayName === 'string' ? state.displayName : ''
     this.setDisplayName(name)
   }
 
   /**
-   * 节点就绪钩子，异步。画布启动时由 bootstrapScene 在 addNode + readState + connect 全部完成后
+   * 节点就绪钩子，异步。画布启动时由 bootstrapScene 在 addNode + initStateBySaveData + connect 全部完成后
    * 统一 await 一轮——此时端口已就绪、状态已恢复、边已重建，子类可以做最后一层异步初始化，
    * 比如 FileNode 子类从磁盘补读文件内容并 commit 输出端口。
    *
@@ -752,8 +752,8 @@ export abstract class Node {
           // 用构造函数签名 (id: string) 统一创建新实例，避免引擎层反向依赖插件注册表
           const Ctor = this.constructor as new (id: string) => Node
           const newNode = new Ctor(Node.generateId(this.type))
-          // 复制内部运行状态（saveState 存子类字段 → readState 恢复，基类字段由外层处理）
-          newNode.readState(this.initSaveStateData())
+          // 复制内部运行状态（saveState 存子类字段 → initStateBySaveData 恢复，基类字段由外层处理）
+          newNode.initStateBySaveData(this.initSaveStateData())
           // 位置偏移：原位置 + (24, 24)，避免和原节点完全重叠
           const [ox, oy] = this.position
           newNode.setPosition(ox + 24, oy + 24)

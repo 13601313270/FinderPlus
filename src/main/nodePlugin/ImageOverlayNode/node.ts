@@ -385,8 +385,8 @@ export class ImageOverlayNode extends Node {
     }
   }
 
-  readState(state: Record<string, unknown>): void {
-    super.readState(state)
+  initStateBySaveData(state: Record<string, unknown>): void {
+    super.initStateBySaveData(state)
 
     const savedCount = typeof state.portCount === 'number' ? state.portCount : 2
     const rawStates = (state.layerStates as Record<string, Partial<LayerState>>) ?? {}

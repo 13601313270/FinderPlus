@@ -479,8 +479,8 @@ export class CrawlerNode extends Node {
     }
   }
 
-  readState(state: Record<string, unknown>): void {
-    super.readState(state)
+  initStateBySaveData(state: Record<string, unknown>): void {
+    super.initStateBySaveData(state)
 
     if (typeof state.urlTemplate === 'string') this.urlTemplate = state.urlTemplate
     if (typeof state.selector === 'string') this.selector = state.selector

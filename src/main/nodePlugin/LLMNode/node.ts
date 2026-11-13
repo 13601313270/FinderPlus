@@ -691,8 +691,8 @@ export class LLMNode extends Node {
     }
   }
 
-  readState(state: Record<string, unknown>): void {
-    super.readState(state)
+  initStateBySaveData(state: Record<string, unknown>): void {
+    super.initStateBySaveData(state)
 
     if (typeof state.provider === 'string' && PROVIDER_PRESETS[state.provider as LLMProviderId]) {
       this.provider = state.provider as LLMProviderId

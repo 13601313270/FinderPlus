@@ -665,8 +665,8 @@ export class HttpRequestNode extends Node {
     }
   }
 
-  readState(state: Record<string, unknown>): void {
-    super.readState(state)
+  initStateBySaveData(state: Record<string, unknown>): void {
+    super.initStateBySaveData(state)
 
     if (typeof state.method === 'string' && ALL_METHODS.includes(state.method as HttpMethod)) {
       this.method = state.method as HttpMethod

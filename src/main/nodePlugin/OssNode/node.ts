@@ -264,8 +264,8 @@ export class OssNode extends Node {
     }
   }
 
-  readState(state: Record<string, unknown>): void {
-    super.readState(state)
+  initStateBySaveData(state: Record<string, unknown>): void {
+    super.initStateBySaveData(state)
 
     if (typeof state.bucketId === 'string') this.bucketId = state.bucketId
     if (typeof state.signUrl === 'boolean') this.signUrl = state.signUrl

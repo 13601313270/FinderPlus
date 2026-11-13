@@ -252,8 +252,8 @@ export class JsonFileNode extends FileNode {
     return { ...super.initSaveStateData(), content: this.contentValue }
   }
 
-  readState(state: Record<string, unknown>): void {
-    super.readState(state)
+  initStateBySaveData(state: Record<string, unknown>): void {
+    super.initStateBySaveData(state)
     const text = typeof state.content === 'string' ? state.content : ''
     if (text) {
       this.contentValue = text
@@ -275,7 +275,7 @@ export class JsonFileNode extends FileNode {
         this.jsonOutput.commit(new JsonValue())
       }
 
-      // 持久化恢复时 fileName 已由 super.readState 恢复，构造 JsonFileValue commit
+      // 持久化恢复时 fileName 已由 super.initStateBySaveData 恢复，构造 JsonFileValue commit
       if (this.fileName) {
         const file = new File([text], this.fileName, { type: 'application/json' })
         const hash = djb2(text)

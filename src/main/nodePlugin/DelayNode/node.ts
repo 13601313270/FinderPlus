@@ -30,7 +30,7 @@ const MAX_DELAY_MS = 60 * 60 * 1000
  * - 等待期间上游断开 → 取消 timer，删输出端口
  * - 节点被删除 → beforeDestroy 里 clearTimeout，防止泄漏
  *
- * 与 WireNode 唯一的区别就是 setTimeout 包裹了 commit；端口管理 / readState 逻辑抄 WireNode。
+ * 与 WireNode 唯一的区别就是 setTimeout 包裹了 commit；端口管理 / initStateBySaveData 逻辑抄 WireNode。
  */
 export class DelayNode extends Node {
   static readonly TYPE = 'delay'
@@ -224,8 +224,8 @@ export class DelayNode extends Node {
     return { ...super.initSaveStateData(), delayMs: this.delayMs }
   }
 
-  readState(state: Record<string, unknown>): void {
-    super.readState(state)
+  initStateBySaveData(state: Record<string, unknown>): void {
+    super.initStateBySaveData(state)
 
     if (typeof state.delayMs === 'number') {
       this.delayMs = Math.max(MIN_DELAY_MS, Math.min(MAX_DELAY_MS, Math.round(state.delayMs)))

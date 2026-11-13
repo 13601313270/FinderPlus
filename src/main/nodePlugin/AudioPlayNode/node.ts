@@ -268,8 +268,8 @@ export class AudioPlayNode extends Node {
     return { ...super.initSaveStateData(), box: this.box }
   }
 
-  readState(state: Record<string, unknown>): void {
-    super.readState(state)
+  initStateBySaveData(state: Record<string, unknown>): void {
+    super.initStateBySaveData(state)
     const box = state.box as [number, number] | undefined
     if (box !== undefined) {
       this.setBox(Math.round(box[0]), Math.round(box[1]))

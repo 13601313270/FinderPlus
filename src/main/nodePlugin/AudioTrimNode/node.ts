@@ -173,8 +173,8 @@ export class AudioTrimNode extends Node {
     return { ...super.initSaveStateData(), startTime: this.startTimeValue, endTime: this.endTimeValue }
   }
 
-  readState(state: Record<string, unknown>): void {
-    super.readState(state)
+  initStateBySaveData(state: Record<string, unknown>): void {
+    super.initStateBySaveData(state)
 
     const s = typeof state.startTime === 'number' ? state.startTime : 0
     const e = typeof state.endTime === 'number' ? state.endTime : 0

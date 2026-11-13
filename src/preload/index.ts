@@ -602,6 +602,7 @@ const tableApi = {
   /** 确保物理表存在（CREATE TABLE IF NOT EXISTS）。新建节点和恢复都会调 */
   ensure: (args: {
     nodeId: string
+    canvasId: string
     columns: Array<{ name: string; type: string }>
   }): Promise<{ ok: true; tableName: string } | { ok: false; error: string }> =>
     ipcRenderer.invoke('table:ensure', args),
@@ -609,6 +610,7 @@ const tableApi = {
   /** 删除物理表（节点被删时调用） */
   drop: (args: {
     nodeId: string
+    canvasId: string
   }): Promise<{ ok: true } | { ok: false; error: string }> =>
     ipcRenderer.invoke('table:drop', args),
 

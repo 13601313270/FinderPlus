@@ -262,6 +262,8 @@ async function ensureAndLoad(): Promise<void> {
   // @ts-ignore — 只在 renderer 里有 window.tableApi
   const ensureResult = await window.tableApi.ensure({
     nodeId: node.id,
+    // @ts-ignore
+    canvasId: window.getCurrentCanvasId(),
     columns: node.columns
   }).catch(() => ({ ok: false as const, error: 'ensure failed' }))
 

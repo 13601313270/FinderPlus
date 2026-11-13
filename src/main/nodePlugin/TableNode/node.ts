@@ -272,8 +272,12 @@ export class TableNode extends Node {
    */
   async beforeDestroy(): Promise<void> {
     try {
-      // @ts-ignore
-      await window.tableApi.drop({ nodeId: this.id })
+      // @ts-ignore — renderer 里有 window.tableApi 和 getCurrentCanvasId
+      await window.tableApi.drop({
+        nodeId: this.id,
+        // @ts-ignore
+        canvasId: window.getCurrentCanvasId()
+      })
     } catch (err) {
       // 删表失败不阻塞节点删除——可能是表已经不存在了
       console.warn('[TableNode] drop table failed:', err)

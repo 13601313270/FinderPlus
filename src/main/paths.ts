@@ -1,6 +1,6 @@
 import { app } from 'electron'
-import { join } from 'node:path'
-import { mkdirSync, existsSync, readdirSync, renameSync } from 'node:fs'
+import { join, basename } from 'node:path'
+import { mkdirSync, existsSync, readdirSync, renameSync, rmSync } from 'node:fs'
 
 /** 画布文件根目录：文稿/CanvasDesk/我的画布 */
 export function getCanvasRootDir(): string {
@@ -58,4 +58,43 @@ export function migrateLegacyRootFiles(): boolean {
   }
   console.info(`[paths] 已迁移 ${files.length} 个旧文件到 default/ 子目录`)
   return true
+}
+
+/**
+ * 节点文件目录（通用）：画布下按 nodeId 分，扁平一层。
+ *   getNodeDir('default', 'abc123')
+ *     → 文稿/CanvasDesk/我的画布/default/abc123/
+ *
+ * nodeId 本身在全画布唯一，不再需要额外的 nodeType 层级。
+ */
+export function getNodeDir(canvasId: string, nodeId: string): string {
+  return join(getCanvasDir(canvasId), nodeId)
+}
+
+/** 确保某节点文件目录存在（mkdir -p 等价）。不存在就建，存在不报错 */
+export function ensureNodeDir(canvasId: string, nodeId: string): string {
+  const dir = getNodeDir(canvasId, nodeId)
+  mkdirSync(dir, { recursive: true })
+  return dir
+}
+
+/**
+ * 删除某节点的整个文件目录（递归、强制）。
+ * 目录不存在时不报错（幂等）。
+ *
+ * @returns true 表示确实删了东西，false 表示目录本来就不存在
+ */
+export function removeNodeDir(canvasId: string, nodeId: string): boolean {
+  const dir = getNodeDir(canvasId, nodeId)
+  if (!existsSync(dir)) return false
+  rmSync(dir, { recursive: true, force: true })
+  return true
+}
+
+/** 从路径字符串里安全地取最后一段作为文件名（防止 path traversal） */
+export function safeBasename(p: string): string {
+  const name = basename(p)
+  // basename('../../../etc/passwd') → 'passwd'，天然防 traversal
+  if (!name || name === '.' || name === '..') return ''
+  return name
 }

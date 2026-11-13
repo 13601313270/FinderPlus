@@ -15,7 +15,7 @@ import OSS from 'ali-oss'
 import { startFeishu, stopFeishu, getFeishuStatus, disposeFeishu, sendFeishuMessage, uploadFeishuImage, sendFeishuFilePipeline, getFfmpegStatus, sendFeishuCardPipeline } from './feishu/FeishuManager'
 import { openDatabase, closeDatabase, getDatabase, persist } from './db/database'
 import { SqliteStorage } from './db/SqliteStorage'
-import { ensureCanvasDir, getCanvasDir, getCanvasRootDir, migrateLegacyRootFiles } from './paths'
+import { ensureCanvasDir, getCanvasDir, getCanvasRootDir, migrateLegacyRootFiles, ensureNodeDir, removeNodeDir } from './paths'
 import type { MenuLabels } from '../preload'
 
 /** canvasId 安全校验：只允许字母数字下划线、中划线、中文，防路径穿越和 SQL 注入 */
@@ -1295,17 +1295,24 @@ function registerIpcHandlers(): void {
 
   /**
    * 确保物理表存在（CREATE TABLE IF NOT EXISTS）。
+   * 同时确保该表节点的文件目录存在（canvasDir/tables/nodeId/），
+   * 给后续图片等文件型字段使用。
    * 新建节点和从备份恢复都会走这个——IF NOT EXISTS 天然幂等。
    */
   ipcMain.handle('table:ensure', (_e, args: {
     nodeId: string
+    canvasId: string
     columns: Array<{ name: string; type: string }>
   }): { ok: true; tableName: string } | { ok: false; error: string } => {
     if (importInProgress) return { ok: false, error: '导入中，暂不操作' }
+    if (!SAFE_CANVAS_ID.test(args.canvasId)) return { ok: false, error: '画布 ID 不合法' }
 
     const tableName = sanitizeTableName(args.nodeId)
     const v = validateColumns(args.columns)
     if (!v.ok) return { ok: false, error: v.error }
+
+    // 确保节点文件目录存在（幂等）
+    ensureNodeDir(args.canvasId, args.nodeId)
 
     const colDefs = v.columns.map((c) => `  ${c.name} ${c.sqlType}`).join(',\n')
     const sql = `CREATE TABLE IF NOT EXISTS ${tableName} (\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\n${colDefs}\n)`
@@ -1320,17 +1327,31 @@ function registerIpcHandlers(): void {
     }
   })
 
-  /** 删除物理表（节点被删时调用） */
+  /**
+   * 删除物理表（节点被删时调用）。
+   * 同时删除该表节点的文件目录（canvasDir/tables/nodeId/），
+   * 包括所有图片等文件型字段保存的文件。
+   */
   ipcMain.handle('table:drop', (_e, args: {
     nodeId: string
+    canvasId: string
   }): { ok: true } | { ok: false; error: string } => {
     if (importInProgress) return { ok: false, error: '导入中，暂不操作' }
+    if (!SAFE_CANVAS_ID.test(args.canvasId)) return { ok: false, error: '画布 ID 不合法' }
 
     const tableName = sanitizeTableName(args.nodeId)
     try {
       const db = getDatabase()
       db.run(`DROP TABLE IF EXISTS ${tableName}`)
       persist()
+
+      // 删除节点文件目录（递归、幂等——目录不存在也不报错）
+      try {
+        removeNodeDir(args.canvasId, args.nodeId)
+      } catch (err) {
+        console.warn('[table:drop] 删除文件目录失败，不阻塞删表：', args.nodeId, err)
+      }
+
       return { ok: true }
     } catch (err) {
       return { ok: false, error: err instanceof Error ? err.message : String(err) }

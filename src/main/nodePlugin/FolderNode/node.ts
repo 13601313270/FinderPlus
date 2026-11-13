@@ -8,6 +8,8 @@ import { NumberValue } from '../../engine/data/NumberValue'
 import { FileNode } from '../FileNode/node'
 import { resolveByExtension } from '../index'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
+import { FileCollectionValue } from 'src/main/engine/data/FileCollectionValue'
+import { ValueKind } from 'src/main/engine/data/Value'
 
 /** 内容区内边距（子节点距离文件夹边框的默认偏移） */
 export const PADDING = 12
@@ -19,6 +21,8 @@ export const MIN_H = 80
 
 /** 文件夹可收纳的 FileNode 子类构造器 */
 export type FileNodeClass = new (id: string) => FileNode
+
+export type FileCollectionNodeClass = { readonly VALUE_NAME: ValueKind; new(items?: FileValue[]): FileCollectionValue<FileValue> }
 
 /** 取文件名后缀（含点、小写）；无扩展名返回空串 */
 function extOf(name: string): string {
@@ -70,10 +74,29 @@ export abstract class FolderNode extends Node {
   abstract readonly fileInput: InputPort
 
   /**
+   * 输出端口：当前选中子文件的 FileValue。
+   * 无选中项时调 fileSelectOutput.clear() 让下游清空。
+   * 子类字段初始化后需自行调 addOutput 登记。
+   */
+  abstract readonly fileSelectOutput: OutputPort
+
+  /** 集合输出端口：全部子文件组成的 ImgFileCollectionValue */
+  abstract readonly collectionOutput: OutputPort
+
+  /**
    * 本文件夹允许收纳的文件节点类，由具体子类声明。
    * 例：ImgFolderNode 返回 [ImgFileNode]，只收图片；OtherFolderNode 返回空数组表示不限制。
    */
   protected abstract readonly acceptedFileNodeClasses: readonly FileNodeClass[]
+
+  /**
+   * 本文件夹输出的文件集合节点类，由具体子类声明。
+   * 例：ImgFolderNode 返回 [ImgFileNode]，只收图片；OtherFolderNode 返回 [FileNode]，收所有文件。
+   */
+  protected abstract readonly FileCollectionNodeClasses: FileCollectionNodeClass
+
+  /** 所有子节点 onChanged 订阅清理函数集合，collection 输出重算依赖它 */
+  protected readonly childSubs = new Set<() => void>()
 
   /** 数量输出端口：当前文件夹内的文件数量（NumberValue） */
   readonly countOutput = new OutputPort('count', NumberValue, {
@@ -116,10 +139,24 @@ export abstract class FolderNode extends Node {
   })
 
   /** 已收养的子节点列表。子节点仍是 Scene 里的顶层节点，只是归属这里 */
-  readonly children: Node[] = []
+  readonly children: FileNode[] = []
 
   /** 持久化期间暂存的待收养子节点 id（readState 存、adoptChildren 在恢复收尾时收养） */
   private pendingChildIds: string[] = []
+
+  /** 当前选中的子节点 id；空串表示未选中 */
+  protected selectedChildIdValue = ''
+
+  /** 当前选中的子节点 id；空串表示未选中 */
+  get selectedChildId(): string {
+    return this.selectedChildIdValue
+  }
+
+  /** 持久化期间暂存的待恢复选中 id（readState 存、adoptChildren 收尾时应用） */
+  private pendingSelectedChildId = ''
+
+  /** 选中子节点的 onChanged 订阅：选中图片内容变化（异步读回 / 被替换）时重提值 */
+  protected selectedChildUnsub?: () => void
 
   /** fingerprint → 子节点。端口收值时建映射，removeChild 时按子节点反查 fingerprint 删掉 */
   private readonly fingerprintToChild = new Map<string, Node>()
@@ -163,8 +200,8 @@ export abstract class FolderNode extends Node {
    * - 新建场景（inputPortReceiveValue / onFileDrop）：调用方直接设成局部坐标
    * - 拖入场景（onNodeDrop）：调用方把世界坐标转成局部坐标再传进来
    */
-  adoptNode(child: Node): void {
-    if (child === this) return
+  adoptNode(child: FileNode): void {
+    if (!(child instanceof FileNode)) return
     if (child.containerNode) return // 已被收养（含被本文件夹收养过）
     if (this.isDescendant(child)) return // 把祖先收养进自己 = 成环，拒绝
     if (child instanceof FileNode && !this.isAcceptedFileNode(child)) return // 类型不被本文件夹接受
@@ -175,6 +212,12 @@ export abstract class FolderNode extends Node {
     this.sceneRef?.notifyChanged()
     this.notifyChanged()
     this.commitCount()
+
+    if (!this.selectedChildIdValue) {
+      this.selectChild(child.id)
+    }
+    this.resubscribeAllChildren()
+    this.commitCollection()
   }
 
   /**
@@ -184,7 +227,7 @@ export abstract class FolderNode extends Node {
    * 同时清理去重集：子节点的 fingerprint 从 adoptedFingerprints 里删掉，
    * 否则这个文件以后重新通过端口进来会被误判成已收过。
    */
-  removeChild(child: Node): void {
+  removeChild(child: FileNode): void {
     const idx = this.children.indexOf(child)
     if (idx < 0) return
     this.children.splice(idx, 1)
@@ -203,16 +246,43 @@ export abstract class FolderNode extends Node {
     this.sceneRef?.notifyChanged()
     this.notifyChanged()
     this.commitCount()
+
+    // 子元素选中状态更新
+    if (child.id !== this.selectedChildIdValue) {
+      this.resubscribeAllChildren()
+      this.commitCollection()
+      return
+    }
+    this.selectedChildIdValue = ''
+    this.resubscribeSelected(undefined)
+    const next = this.children[0]
+    if (next) {
+      this.selectChild(next.id)
+    } else {
+      this.fileSelectOutput.clear()
+      this.notifyChanged()
+    }
+    this.resubscribeAllChildren()
+    this.commitCollection()
   }
 
   /** 恢复收尾：按 pendingChildIds 收养（缺 id 跳过），清空暂存 */
   adoptChildren(scene: Scene): void {
     for (const id of this.pendingChildIds) {
       const child = scene.getNode(id)
-      if (child && child !== this) this.adoptNode(child)
+      if (child instanceof FileNode) {
+        this.adoptNode(child)
+      }
     }
     this.pendingChildIds = []
     this.commitCount()
+
+    const wanted = this.children.find((c) => c.id === this.pendingSelectedChildId)
+    const target = wanted ?? this.children[0]
+    if (target) this.selectChild(target.id)
+    this.pendingSelectedChildId = ''
+    this.resubscribeAllChildren()
+    this.commitCollection()
   }
 
   /** child 是否在我的祖先链里（即收养它会成环） */
@@ -230,6 +300,7 @@ export abstract class FolderNode extends Node {
    * 子类可覆写以清理自身额外状态，覆写时先调 super.clearAll()。
    */
   clearAll(): void {
+    if (!this.sceneRef || this.children.length === 0) return
     const scene = this.sceneRef
     if (!scene || this.children.length === 0) return
     // 用副本遍历，因为 scene.removeNode → removeChild 会 splice children
@@ -238,6 +309,13 @@ export abstract class FolderNode extends Node {
       void scene.removeNode(child)
     }
     this.fingerprintToChild.clear()
+    this.notifyChanged()
+
+    this.selectedChildIdValue = ''
+    this.resubscribeSelected(undefined)
+    this.fileSelectOutput.clear()
+    this.resubscribeAllChildren()
+    this.commitCollection()
     this.notifyChanged()
   }
 
@@ -266,13 +344,15 @@ export abstract class FolderNode extends Node {
       return
     }
 
-    const child = new manifest.nodeClass(this.makeId(manifest.type))
-    ;(child as FileNode).setFile(written.fileName, written.size)
-    // 直接设局部坐标（内容区左上角）——adoptNode 不再做转换
-    child.setPosition(PADDING, BAR_H + PADDING)
-    workspaceScene.addNode(child)
-    this.adoptNode(child)
-    this.fingerprintToChild.set(first.fingerprint, child)
+    const child = new manifest.nodeClass(this.makeId(manifest.type));
+    if (child instanceof FileNode) {
+      child.setFile(written.fileName, written.size)
+      // 直接设局部坐标（内容区左上角）——adoptNode 不再做转换
+      child.setPosition(PADDING, BAR_H + PADDING)
+      workspaceScene.addNode(child)
+      this.adoptNode(child)
+      this.fingerprintToChild.set(first.fingerprint, child)
+    }
   }
 
   /** 文件拖入命中本节点内容区：恒接受（App 会复制文件后构造子节点再调 adoptNode） */
@@ -300,11 +380,13 @@ export abstract class FolderNode extends Node {
       return
     }
     const child = new manifest.nodeClass(this.makeId(manifest.type))
-    ;(child as FileNode).setFile(copied.fileName, copied.size)
-    // 直接设局部坐标（内容区左上角）——adoptNode 不再做转换
-    child.setPosition(PADDING, BAR_H + PADDING)
-    workspaceScene.addNode(child)
-    this.adoptNode(child)
+    if (child instanceof FileNode) {
+      child.setFile(copied.fileName, copied.size)
+      // 直接设局部坐标（内容区左上角）——adoptNode 不再做转换
+      child.setPosition(PADDING, BAR_H + PADDING)
+      workspaceScene.addNode(child)
+      this.adoptNode(child)
+    }
   }
 
   /** 节点拖入：只接受「本文件夹允许的文件节点」，且未被收养、不能是自己的祖先 */
@@ -317,13 +399,17 @@ export abstract class FolderNode extends Node {
 
   /** 节点 drop 结算：把被拖的顶级节点世界坐标转成本文件夹局部坐标，再收养（保持落点） */
   onNodeDrop(source: Node, _startPos: readonly [number, number]): boolean {
-    if (!this.isPositionAcceptNodeDrop(source)) return false
-    // source 是顶级节点，position 是世界坐标；转成相对本文件夹的局部坐标
-    const [swx, swy] = source.worldPosition
-    const [fwx, fwy] = this.worldPosition
-    source.setPosition(swx - fwx, swy - fwy)
-    this.adoptNode(source)
-    return true
+    if (source instanceof FileNode) {
+      if (!this.isPositionAcceptNodeDrop(source)) return false
+      // source 是顶级节点，position 是世界坐标；转成相对本文件夹的局部坐标
+      const [swx, swy] = source.worldPosition
+      const [fwx, fwy] = this.worldPosition
+      source.setPosition(swx - fwx, swy - fwy)
+      this.adoptNode(source)
+      return true
+    } else {
+      return false;
+    }
   }
 
   // —— 尺寸 / 位置 ——
@@ -345,6 +431,7 @@ export abstract class FolderNode extends Node {
       ...super.saveState(),
       childIds: this.children.map((c) => c.id),
       box: this.box as readonly [number, number],
+      selectedChildId: this.selectedChildIdValue,
       fingerprintPairs: fpPairs
     }
   }
@@ -375,10 +462,16 @@ export abstract class FolderNode extends Node {
         }
       }
     }
+
+    const selected = state.selectedChildId
+    this.pendingSelectedChildId = typeof selected === 'string' ? selected : ''
   }
 
   /** 删除文件夹前：把全部子节点先释放回画布根部（清归属、补世界坐标，边保留），再走基类清理 */
   override async beforeDestroy(): Promise<void> {
+    this.resubscribeSelected(undefined)
+    this.childSubs.forEach(unsub => unsub())
+    this.childSubs.clear()
     const [wx, wy] = this.worldPosition
     for (const c of this.children) {
       const [lx, ly] = c.position
@@ -394,5 +487,80 @@ export abstract class FolderNode extends Node {
   /** 生成与画布一致的节点 ID（类型 + 时间戳 + 随机后缀） */
   private makeId(type: string): string {
     return `${type}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+  }
+
+  /** 把选中子文件的 fileOutput 值提交到 fileSelectOutput；无有效值则清空下游 */
+  protected commitSelected(): void {
+    const child = this.children.find((c) => c.id === this.selectedChildIdValue)
+    if (child && this.acceptedFileNodeClasses.some(cls => child instanceof cls)) {
+      const value = child.fileOutput.value
+      if (value instanceof FileValue && this.acceptedFileNodeClasses.some(cls => value instanceof cls)) {
+        this.fileSelectOutput.commit(value)
+      } else {
+        this.fileSelectOutput.clear()
+      }
+    } else {
+      this.fileSelectOutput.clear()
+    }
+  }
+
+  /**
+   * 构造 FileCollectionNodeClasses 并 commit 到 collectionOutput。
+   * 所有子节点的 fileOutput.value 收集起来；没有子节点则 commit null 值。
+   */
+  protected commitCollection(): void {
+    if (this.children.length === 0) {
+      this.collectionOutput.commit(new this.FileCollectionNodeClasses())
+      return
+    }
+    const items: FileValue[] = []
+    for (const child of this.children) {
+      if (this.acceptedFileNodeClasses.some(item => child instanceof item)) {
+        const v = child.fileOutput.value
+        if (v instanceof FileValue && !v.isNull) {
+          items.push(v)
+        }
+      }
+    }
+    this.collectionOutput.commit(new this.FileCollectionNodeClasses(items))
+  }
+
+  /**
+   * 订阅所有当前子节点的变化（先清理旧订阅）。
+   * 子节点 fileOutput 变化时 → commitCollection() 重算集合输出。
+   */
+  protected resubscribeAllChildren(): void {
+    this.childSubs.forEach(unsub => unsub())
+    this.childSubs.clear()
+    for (const child of this.children) {
+      if (this.acceptedFileNodeClasses.some(item => child instanceof item)) {
+        const unsub = child.onChanged(() => this.commitCollection())
+        this.childSubs.add(unsub)
+      }
+    }
+  }
+
+  /** 订阅当前选中子节点的变化；切换 / 释放时先退订旧的 */
+  protected resubscribeSelected(child: Node | undefined): void {
+    this.selectedChildUnsub?.()
+    this.selectedChildUnsub = undefined
+    if (child) {
+      this.selectedChildUnsub = child.onChanged(() => this.commitSelected())
+    }
+  }
+
+  /**
+   * 切换到指定子节点（必须是本文件夹已收养的图片节点）。
+   * 切换后重订阅该子节点、重新提交输出值并通知 UI 刷新选中高亮。
+   */
+  selectChild(id: string): void {
+    if (id === this.selectedChildIdValue) return
+    const child = this.children.find((c) => c.id === id)
+    if (this.acceptedFileNodeClasses.some(item => child instanceof item)) {
+      this.selectedChildIdValue = id
+      this.resubscribeSelected(child)
+      this.commitSelected()
+      this.notifyChanged()
+    }
   }
 }

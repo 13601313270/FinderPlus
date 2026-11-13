@@ -84,6 +84,7 @@ async function ensureThumb(child: ImgFileNode): Promise<void> {
   if (!name) return
   if (thumbSourceByNode.get(child.id) === name && thumbUrlByNode.has(child.id)) return
   try {
+    // @ts-ignore
     const b64 = await window.fileApi.readBinary(name)
     if (child.fileName !== name) return // 等待期间文件被替换，丢弃过期结果
     const url = URL.createObjectURL(base64ToBlob(b64, inferImageMime(name)))
@@ -149,6 +150,7 @@ function onBatchDragOutPointerDown(e: PointerEvent): void {
     .filter((c) => c instanceof ImgFileNode && c.fileName)
     .map((c) => (c as ImgFileNode).fileName)
   if (names.length === 0) return
+  // @ts-ignore
   window.fileApi.startDrag(names).then((paths) => {
     setLastDragPaths(paths)
   })

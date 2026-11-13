@@ -140,9 +140,9 @@ export class WireNode extends Node {
 
   // —— 持久化 ——
 
-  initSaveStateData(): Record<string, unknown> {
+  getSaveDataByState(): Record<string, unknown> {
     // 无配置字段；outputPort 由上游连线动态重建
-    return { ...super.initSaveStateData() }
+    return { ...super.getSaveDataByState() }
   }
 
   initStateBySaveData(_state: Record<string, unknown>): void {

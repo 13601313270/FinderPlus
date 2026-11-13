@@ -209,9 +209,9 @@ export class OssDownloadNode extends Node {
 
   // —— 持久化 ——
 
-  initSaveStateData(): Record<string, unknown> {
+  getSaveDataByState(): Record<string, unknown> {
     return {
-      ...super.initSaveStateData(),
+      ...super.getSaveDataByState(),
       bucketId: this.bucketId,
       autoSend: this.autoSend
     }

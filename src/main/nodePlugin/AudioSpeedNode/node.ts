@@ -178,8 +178,8 @@ export class AudioSpeedNode extends Node {
 
   // —— 持久化 ——
 
-  initSaveStateData(): Record<string, unknown> {
-    return { ...super.initSaveStateData(), speed: this.speedValue }
+  getSaveDataByState(): Record<string, unknown> {
+    return { ...super.getSaveDataByState(), speed: this.speedValue }
   }
 
   initStateBySaveData(state: Record<string, unknown>): void {

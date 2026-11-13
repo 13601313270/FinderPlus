@@ -648,9 +648,9 @@ export class TTSNode extends Node {
 
   // —— 持久化 ——
 
-  initSaveStateData(): Record<string, unknown> {
+  getSaveDataByState(): Record<string, unknown> {
     return {
-      ...super.initSaveStateData(),
+      ...super.getSaveDataByState(),
       provider: this.provider,
       model: this.model,
       voice: this.voice,

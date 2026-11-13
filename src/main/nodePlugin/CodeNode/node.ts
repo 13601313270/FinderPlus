@@ -661,9 +661,9 @@ export class CodeNode extends Node {
 
   // —— 持久化 ——
 
-  initSaveStateData(): Record<string, unknown> {
+  getSaveDataByState(): Record<string, unknown> {
     return {
-      ...super.initSaveStateData(),
+      ...super.getSaveDataByState(),
       code: this.code,
       inputs: this.inputMetas,
       outputs: this.outputMetas,

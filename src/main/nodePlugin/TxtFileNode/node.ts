@@ -171,8 +171,8 @@ export class TxtFileNode extends FileNode {
     this.notifyChanged()
   }
 
-  initSaveStateData(): Record<string, unknown> {
-    return { ...super.initSaveStateData(), content: this.contentValue }
+  getSaveDataByState(): Record<string, unknown> {
+    return { ...super.getSaveDataByState(), content: this.contentValue }
   }
 
   initStateBySaveData(state: Record<string, unknown>): void {

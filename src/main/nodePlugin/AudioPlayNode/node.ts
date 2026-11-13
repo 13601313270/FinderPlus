@@ -264,8 +264,8 @@ export class AudioPlayNode extends Node {
     this.playerSubscribers.clear()
   }
 
-  initSaveStateData(): Record<string, unknown> {
-    return { ...super.initSaveStateData(), box: this.box }
+  getSaveDataByState(): Record<string, unknown> {
+    return { ...super.getSaveDataByState(), box: this.box }
   }
 
   initStateBySaveData(state: Record<string, unknown>): void {

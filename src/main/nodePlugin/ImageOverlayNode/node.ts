@@ -370,12 +370,12 @@ export class ImageOverlayNode extends Node {
 
   // —— 序列化 ——
 
-  initSaveStateData(): Record<string, unknown> {
+  getSaveDataByState(): Record<string, unknown> {
     const states: Record<string, LayerState> = {}
     this.layerStates.forEach((v, k) => { states[k] = { ...v } })
     const [w, h] = this.box
     return {
-      ...super.initSaveStateData(),
+      ...super.getSaveDataByState(),
       box: [w, h],
       zoomFactor: this.previewZoomFactor,
       portCount: this.inputPorts.length,

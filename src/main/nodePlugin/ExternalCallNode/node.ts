@@ -337,9 +337,9 @@ export class ExternalCallNode extends Node {
 
   // —— 持久化 ——
 
-  initSaveStateData(): Record<string, unknown> {
+  getSaveDataByState(): Record<string, unknown> {
     return {
-      ...super.initSaveStateData(),
+      ...super.getSaveDataByState(),
       ports: this.portMetas
     }
   }

@@ -332,10 +332,10 @@ export class ImageToPdfNode extends Node {
 
   // —— 序列化 ——
 
-  initSaveStateData(): Record<string, unknown> {
+  getSaveDataByState(): Record<string, unknown> {
     const [w, h] = this.box
     return {
-      ...super.initSaveStateData(),
+      ...super.getSaveDataByState(),
       box: [w, h],
       portCount: this.inputPorts.length,
       pageSize: this.pageSize,

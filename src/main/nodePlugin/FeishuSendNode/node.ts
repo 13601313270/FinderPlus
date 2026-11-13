@@ -532,9 +532,9 @@ export class FeishuSendNode extends Node {
 
   // —— 持久化 ——
 
-  initSaveStateData(): Record<string, unknown> {
+  getSaveDataByState(): Record<string, unknown> {
     return {
-      ...super.initSaveStateData(),
+      ...super.getSaveDataByState(),
       botId: this.botId,
       receiveId: this.receiveId,
       receiveIdType: this.receiveIdType,

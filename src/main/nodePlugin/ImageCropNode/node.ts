@@ -206,9 +206,9 @@ export class ImageCropNode extends Node {
   }
 
   /** 持久化：存裁剪框位置（engine 侧状态） */
-  initSaveStateData(): Record<string, unknown> {
+  getSaveDataByState(): Record<string, unknown> {
     return {
-      ...super.initSaveStateData(),
+      ...super.getSaveDataByState(),
       cropRect: this.cropRectValue
         ? { x: this.cropRectValue.x, y: this.cropRectValue.y, w: this.cropRectValue.w, h: this.cropRectValue.h }
         : null

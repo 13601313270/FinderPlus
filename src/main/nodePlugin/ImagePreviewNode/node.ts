@@ -94,9 +94,9 @@ export class ImagePreviewNode extends Node {
     this.completeRun()
   }
 
-  initSaveStateData(): Record<string, unknown> {
+  getSaveDataByState(): Record<string, unknown> {
     return {
-      ...super.initSaveStateData(),
+      ...super.getSaveDataByState(),
       box: this.box
     }
   }

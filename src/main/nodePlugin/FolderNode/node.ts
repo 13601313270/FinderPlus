@@ -424,11 +424,11 @@ export abstract class FolderNode extends Node {
 
   // —— 持久化 ——
 
-  initSaveStateData(): Record<string, unknown> {
+  getSaveDataByState(): Record<string, unknown> {
     // Map 不可直接 JSON，存成 [fingerprint, nodeId] 数组
     const fpPairs = Array.from(this.fingerprintToChild.entries()).map(([fp, n]) => [fp, n.id])
     return {
-      ...super.initSaveStateData(),
+      ...super.getSaveDataByState(),
       childIds: this.children.map((c) => c.id),
       box: this.box as readonly [number, number],
       selectedChildId: this.selectedChildIdValue,

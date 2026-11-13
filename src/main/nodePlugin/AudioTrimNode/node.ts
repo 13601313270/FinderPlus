@@ -169,8 +169,8 @@ export class AudioTrimNode extends Node {
 
   // —— 持久化 ——
 
-  initSaveStateData(): Record<string, unknown> {
-    return { ...super.initSaveStateData(), startTime: this.startTimeValue, endTime: this.endTimeValue }
+  getSaveDataByState(): Record<string, unknown> {
+    return { ...super.getSaveDataByState(), startTime: this.startTimeValue, endTime: this.endTimeValue }
   }
 
   initStateBySaveData(state: Record<string, unknown>): void {

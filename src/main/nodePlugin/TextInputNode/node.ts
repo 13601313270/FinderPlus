@@ -171,10 +171,10 @@ export class TextInputNode extends Node {
     }
   }
 
-  initSaveStateData(): Record<string, unknown> {
+  getSaveDataByState(): Record<string, unknown> {
     const [w, h] = this.box
     return {
-      ...super.initSaveStateData(),
+      ...super.getSaveDataByState(),
       content: this.content,
       autoSend: this.autoSend,
       width: w,

@@ -51,7 +51,7 @@ export interface HarnessTool {
   execute(args: Record<string, unknown>): Promise<string>
 }
 
-/** Canvas 节点绑定的 Tool 元数据（用于 initSaveStateData 持久化） */
+/** Canvas 节点绑定的 Tool 元数据（用于 getSaveDataByState 持久化） */
 export interface CanvasToolBinding {
   nodeId: string
   toolName: string
@@ -1712,10 +1712,10 @@ export class HarnessNode extends Node {
 
   // ─── 持久化 ───
 
-  initSaveStateData(): Record<string, unknown> {
+  getSaveDataByState(): Record<string, unknown> {
     const childIds = this.children.map(c => c.id)
     return {
-      ...super.initSaveStateData(),
+      ...super.getSaveDataByState(),
       modelChildId: this.modelNode?.id ?? null,
       childIds,
       maxIterations: this.maxIterations,
@@ -1816,7 +1816,7 @@ export class HarnessNode extends Node {
 
   /** sceneRef 就绪后：恢复子节点收养关系 */
   onReady(): Promise<void> | void {
-    // 先收养 pending（从 initSaveStateData 恢复的 childIds）
+    // 先收养 pending（从 getSaveDataByState 恢复的 childIds）
     this.adoptAllChildren()
     // 再从 scene 里把所有 canvasBindings 对应的节点也拉进来收养
     const bindings = this.toolRegistry.getAllCanvasBindings()

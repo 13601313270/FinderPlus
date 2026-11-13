@@ -73,8 +73,8 @@ export class BoolInputNode extends Node {
   /** 没有输入端口，永远收不到通知 */
   inputPortReceiveValue(_ports: InputPort[]): void {}
 
-  initSaveStateData(): Record<string, unknown> {
-    return { ...super.initSaveStateData(), content: this.content }
+  getSaveDataByState(): Record<string, unknown> {
+    return { ...super.getSaveDataByState(), content: this.content }
   }
 
   initStateBySaveData(state: Record<string, unknown>): void {

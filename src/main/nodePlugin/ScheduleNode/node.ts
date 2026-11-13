@@ -222,10 +222,10 @@ export class ScheduleNode extends Node {
     this.stopTimer()
   }
 
-  initSaveStateData(): Record<string, unknown> {
+  getSaveDataByState(): Record<string, unknown> {
     const [w, h] = this.box
     return {
-      ...super.initSaveStateData(),
+      ...super.getSaveDataByState(),
       schedule: [...this.schedule],
       enabled: this.enabled,
       box: [w, h]

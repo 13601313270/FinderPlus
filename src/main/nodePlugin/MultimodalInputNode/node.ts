@@ -126,10 +126,10 @@ export class MultimodalInputNode extends Node {
     if (this.autoSend) this.commitMm(true)
   }
 
-  initSaveStateData(): Record<string, unknown> {
+  getSaveDataByState(): Record<string, unknown> {
     const [w, h] = this.box
     return {
-      ...super.initSaveStateData(),
+      ...super.getSaveDataByState(),
       // File 不持久化，只存 text + image count 元信息
       text: this.text,
       imageCount: this.imageFiles.length,

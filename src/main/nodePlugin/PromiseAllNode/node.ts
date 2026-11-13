@@ -362,8 +362,8 @@ export class PromiseAllNode extends Node {
 
   // —— 持久化 ——
 
-  initSaveStateData(): Record<string, unknown> {
-    return { ...super.initSaveStateData(), portCount: this.portCount }
+  getSaveDataByState(): Record<string, unknown> {
+    return { ...super.getSaveDataByState(), portCount: this.portCount }
   }
 
   initStateBySaveData(state: Record<string, unknown>): void {

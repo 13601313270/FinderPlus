@@ -95,11 +95,11 @@ export class TextDisplayNode extends Node {
     this.completeRun()
   }
 
-  initSaveStateData(): Record<string, unknown> {
+  getSaveDataByState(): Record<string, unknown> {
     // displayed 是上游派生出来的，恢复时上游 commit 会自动刷回来，不用存；
     // box（用户拖右下角调整过的大小）是本节点自己的状态，必须存。
     return {
-      ...super.initSaveStateData(),
+      ...super.getSaveDataByState(),
       box: this.box as readonly [number, number]
     }
   }

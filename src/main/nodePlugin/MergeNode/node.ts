@@ -193,8 +193,8 @@ export class MergeNode extends Node {
 
   // —— 持久化 ——
 
-  initSaveStateData(): Record<string, unknown> {
-    return { ...super.initSaveStateData(), kind: this.kindValue, portCount: this.portCount }
+  getSaveDataByState(): Record<string, unknown> {
+    return { ...super.getSaveDataByState(), kind: this.kindValue, portCount: this.portCount }
   }
 
   initStateBySaveData(state: Record<string, unknown>): void {

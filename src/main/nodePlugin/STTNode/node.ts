@@ -474,9 +474,9 @@ export class STTNode extends Node {
 
   // —— 持久化 ——
 
-  initSaveStateData(): Record<string, unknown> {
+  getSaveDataByState(): Record<string, unknown> {
     return {
-      ...super.initSaveStateData(),
+      ...super.getSaveDataByState(),
       provider: this.provider,
       model: this.model,
       workspaceId: this.workspaceId,

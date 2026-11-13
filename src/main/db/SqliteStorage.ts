@@ -36,7 +36,7 @@ export class SqliteStorage implements NodeStorage {
         node.position[0],
         node.position[1],
         node.minimized ? 1 : 0,
-        JSON.stringify(node.initSaveStateData()),
+        JSON.stringify(node.getSaveDataByState()),
         NOW(),
         NOW()
       ]

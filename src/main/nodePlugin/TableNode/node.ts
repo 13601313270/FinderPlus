@@ -228,9 +228,9 @@ export class TableNode extends Node {
     }
   }
 
-  initSaveStateData(): Record<string, unknown> {
+  getSaveDataByState(): Record<string, unknown> {
     return {
-      ...super.initSaveStateData(),
+      ...super.getSaveDataByState(),
       columns: this.columns,
       queryPortIds: this.queryPorts.map((p) => p.id),
       box: this.box as readonly [number, number]

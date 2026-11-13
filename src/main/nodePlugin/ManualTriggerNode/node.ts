@@ -337,9 +337,9 @@ export class ManualTriggerNode extends Node {
 
   // —— 持久化 ——
 
-  initSaveStateData(): Record<string, unknown> {
+  getSaveDataByState(): Record<string, unknown> {
     return {
-      ...super.initSaveStateData(),
+      ...super.getSaveDataByState(),
       buttons: this.buttons.map(b => ({ ...b }))
     }
   }

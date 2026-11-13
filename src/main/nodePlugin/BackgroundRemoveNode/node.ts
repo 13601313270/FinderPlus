@@ -284,8 +284,8 @@ export class BackgroundRemoveNode extends Node {
   }
 
   /** 一次性工作：无持久状态，恢复后不自动重压 */
-  initSaveStateData(): Record<string, unknown> {
-    return { ...super.initSaveStateData() }
+  getSaveDataByState(): Record<string, unknown> {
+    return { ...super.getSaveDataByState() }
   }
 
   initStateBySaveData(_state: Record<string, unknown>): void {

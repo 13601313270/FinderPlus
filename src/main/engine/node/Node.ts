@@ -680,20 +680,20 @@ export abstract class Node {
    *
    * 只存节点自己独有的字段（比如 TextInputNode 的 content、NumberInputNode 的 number）。
    * 基类字段（id、type、position、端口形状）由外层持久化层统一读写，子类不用管。
-   * displayName 是基类通用字段，这里自动带上。子类 override 时应当先调 super.initSaveStateData()
+   * displayName 是基类通用字段，这里自动带上。子类 override 时应当先调 super.getSaveDataByState()
    * 再合并自己的字段，避免丢掉 displayName。
    *
    * 返回值必须是 JSON-safe 的（string / number / boolean / null / array / 嵌套 object），
    * 不能包含 class instance、function、undefined。
    */
-  initSaveStateData(): Record<string, unknown> {
+  getSaveDataByState(): Record<string, unknown> {
     return {
       displayName: this.displayNameValue
     }
   }
 
   /**
-   * 从 initSaveStateData 返回的 plain object 里恢复节点内部状态。
+   * 从 getSaveDataByState 返回的 plain object 里恢复节点内部状态。
    *
    * displayName 是基类通用字段，这里自动恢复。子类 override 时应当先调 super.initStateBySaveData(state)
    * 再读自己的字段，避免丢掉 displayName 的恢复。
@@ -753,7 +753,7 @@ export abstract class Node {
           const Ctor = this.constructor as new (id: string) => Node
           const newNode = new Ctor(Node.generateId(this.type))
           // 复制内部运行状态（saveState 存子类字段 → initStateBySaveData 恢复，基类字段由外层处理）
-          newNode.initStateBySaveData(this.initSaveStateData())
+          newNode.initStateBySaveData(this.getSaveDataByState())
           // 位置偏移：原位置 + (24, 24)，避免和原节点完全重叠
           const [ox, oy] = this.position
           newNode.setPosition(ox + 24, oy + 24)

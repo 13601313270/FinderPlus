@@ -202,9 +202,9 @@ export class CommandNode extends Node {
     this.notifyChanged()
   }
 
-  initSaveStateData(): Record<string, unknown> {
+  getSaveDataByState(): Record<string, unknown> {
     return {
-      ...super.initSaveStateData(),
+      ...super.getSaveDataByState(),
       name: this.name,
       template: this.template,
       // 端口数量：恢复时按此重建端口，边才能重新接上

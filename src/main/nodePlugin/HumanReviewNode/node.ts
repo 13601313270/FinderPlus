@@ -415,9 +415,9 @@ export class HumanReviewNode extends Node {
    * 持久化 box 尺寸和审核模式。
    * 队列不持久化，恢复时上游重新 commit 自动重建；输出端口动态重建。
    */
-  initSaveStateData(): Record<string, unknown> {
+  getSaveDataByState(): Record<string, unknown> {
     return {
-      ...super.initSaveStateData(),
+      ...super.getSaveDataByState(),
       box: [...this.box],
       mode: this.mode,
       autoPlayAudio: this.autoPlayAudio,

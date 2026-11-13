@@ -285,9 +285,9 @@ export class FeishuReceiveNode extends Node {
     this.stopConnection()
   }
 
-  initSaveStateData(): Record<string, unknown> {
+  getSaveDataByState(): Record<string, unknown> {
     return {
-      ...super.initSaveStateData(),
+      ...super.getSaveDataByState(),
       botId: this.botId,
       enabled: this.enabled,
       chatIdFilter: this.chatIdFilter

@@ -645,9 +645,9 @@ export class HttpRequestNode extends Node {
 
   // —— 持久化 ——
 
-  initSaveStateData(): Record<string, unknown> {
+  getSaveDataByState(): Record<string, unknown> {
     return {
-      ...super.initSaveStateData(),
+      ...super.getSaveDataByState(),
       method: this.method,
       urlTemplate: this.urlTemplate,
       headers: this.headers,

@@ -203,20 +203,20 @@ export const helpMessages = {
     it: 'Questo è un nodo sorgente puro: senza porte di input non riceve nulla dalla parte a monte e il valore può essere inserito solo dalla casella'
   },
   notesLi3: {
-    zh: '框内的数字会随项目一起保存（<code>initSaveStateData</code>），重新打开时自动恢复并重新提交给下游；未保存过时默认为 <code>0</code>',
-    en: 'The number in the box is saved with the project (<code>initSaveStateData</code>) and restored and re-committed downstream when reopened; if nothing was saved it defaults to <code>0</code>',
-    ja: 'ボックス内の数値はプロジェクトと一緒に保存され（<code>initSaveStateData</code>）、再度開くと自動的に復元され下流へ再送信されます。未保存の場合は既定値 <code>0</code> になります',
-    ko: '상자 안의 숫자는 프로젝트와 함께 저장되어(<code>initSaveStateData</code>) 다시 열 때 자동으로 복원되어 하위로 재전송됩니다. 저장된 값이 없으면 기본값 <code>0</code>입니다',
-    es: 'El número de la caja se guarda con el proyecto (<code>initSaveStateData</code>) y, al reabrir, se restaura y se vuelve a confirmar aguas abajo; si no se guardó nada, el valor predeterminado es <code>0</code>',
-    ar: 'يُحفَظ الرقم الموجود في المربع مع المشروع (<code>initSaveStateData</code>)، ويُستعاد ويُعاد إرساله إلى العقد اللاحقة عند إعادة الفتح؛ وإذا لم يُحفَظ شيء فالقيمة الافتراضية <code>0</code>',
-    fr: 'Le nombre du champ est enregistré avec le projet (<code>initSaveStateData</code>) et, à la réouverture, restauré puis revalidé vers l’aval ; sans valeur enregistrée, la valeur par défaut est <code>0</code>',
-    pt: 'O número da caixa é salvo junto com o projeto (<code>initSaveStateData</code>) e, ao reabrir, é restaurado e reenviado adiante; se nada foi salvo, o padrão é <code>0</code>',
-    ru: 'Число в поле сохраняется вместе с проектом (<code>initSaveStateData</code>) и при повторном открытии восстанавливается и снова отправляется дальше; если ничего не сохранено, значение по умолчанию — <code>0</code>',
-    hi: 'बॉक्स के अंदर की संख्या प्रोजेक्ट के साथ सहेजी जाती है (<code>initSaveStateData</code>); दोबारा खोलने पर यह स्वतः पुनर्स्थापित होकर डाउनस्ट्रीम को फिर से भेजी जाती है; न सहेजी होने पर डिफ़ॉल्ट <code>0</code> होती है',
-    id: 'Angka di dalam kotak disimpan bersama proyek (<code>initSaveStateData</code>); saat dibuka kembali dipulihkan otomatis dan dikirim ulang ke hilir; jika belum pernah disimpan, bawaannya <code>0</code>',
-    de: 'Die Zahl im Feld wird zusammen mit dem Projekt gespeichert (<code>initSaveStateData</code>); beim erneuten Öffnen wird sie automatisch wiederhergestellt und erneut nachgelagert gesendet; ohne gespeicherten Wert gilt <code>0</code> als Standard',
-    vi: 'Số trong ô được lưu cùng dự án (<code>initSaveStateData</code>); khi mở lại, nó tự động được khôi phục và gửi lại cho hạ nguồn; nếu chưa từng lưu thì mặc định là <code>0</code>',
-    tr: 'Kutudaki sayı projeyle birlikte kaydedilir (<code>initSaveStateData</code>); yeniden açıldığında otomatik geri yüklenir ve aşağı akışa yeniden gönderilir; daha önce kaydedilmemişse varsayılan <code>0</code> dır',
-    it: 'Il numero nella casella viene salvato insieme al progetto (<code>initSaveStateData</code>); alla riapertura viene ripristinato automaticamente e reinviato a valle; se non è mai stato salvato, il valore predefinito è <code>0</code>'
+    zh: '框内的数字会随项目一起保存（<code>getSaveDataByState</code>），重新打开时自动恢复并重新提交给下游；未保存过时默认为 <code>0</code>',
+    en: 'The number in the box is saved with the project (<code>getSaveDataByState</code>) and restored and re-committed downstream when reopened; if nothing was saved it defaults to <code>0</code>',
+    ja: 'ボックス内の数値はプロジェクトと一緒に保存され（<code>getSaveDataByState</code>）、再度開くと自動的に復元され下流へ再送信されます。未保存の場合は既定値 <code>0</code> になります',
+    ko: '상자 안의 숫자는 프로젝트와 함께 저장되어(<code>getSaveDataByState</code>) 다시 열 때 자동으로 복원되어 하위로 재전송됩니다. 저장된 값이 없으면 기본값 <code>0</code>입니다',
+    es: 'El número de la caja se guarda con el proyecto (<code>getSaveDataByState</code>) y, al reabrir, se restaura y se vuelve a confirmar aguas abajo; si no se guardó nada, el valor predeterminado es <code>0</code>',
+    ar: 'يُحفَظ الرقم الموجود في المربع مع المشروع (<code>getSaveDataByState</code>)، ويُستعاد ويُعاد إرساله إلى العقد اللاحقة عند إعادة الفتح؛ وإذا لم يُحفَظ شيء فالقيمة الافتراضية <code>0</code>',
+    fr: 'Le nombre du champ est enregistré avec le projet (<code>getSaveDataByState</code>) et, à la réouverture, restauré puis revalidé vers l’aval ; sans valeur enregistrée, la valeur par défaut est <code>0</code>',
+    pt: 'O número da caixa é salvo junto com o projeto (<code>getSaveDataByState</code>) e, ao reabrir, é restaurado e reenviado adiante; se nada foi salvo, o padrão é <code>0</code>',
+    ru: 'Число в поле сохраняется вместе с проектом (<code>getSaveDataByState</code>) и при повторном открытии восстанавливается и снова отправляется дальше; если ничего не сохранено, значение по умолчанию — <code>0</code>',
+    hi: 'बॉक्स के अंदर की संख्या प्रोजेक्ट के साथ सहेजी जाती है (<code>getSaveDataByState</code>); दोबारा खोलने पर यह स्वतः पुनर्स्थापित होकर डाउनस्ट्रीम को फिर से भेजी जाती है; न सहेजी होने पर डिफ़ॉल्ट <code>0</code> होती है',
+    id: 'Angka di dalam kotak disimpan bersama proyek (<code>getSaveDataByState</code>); saat dibuka kembali dipulihkan otomatis dan dikirim ulang ke hilir; jika belum pernah disimpan, bawaannya <code>0</code>',
+    de: 'Die Zahl im Feld wird zusammen mit dem Projekt gespeichert (<code>getSaveDataByState</code>); beim erneuten Öffnen wird sie automatisch wiederhergestellt und erneut nachgelagert gesendet; ohne gespeicherten Wert gilt <code>0</code> als Standard',
+    vi: 'Số trong ô được lưu cùng dự án (<code>getSaveDataByState</code>); khi mở lại, nó tự động được khôi phục và gửi lại cho hạ nguồn; nếu chưa từng lưu thì mặc định là <code>0</code>',
+    tr: 'Kutudaki sayı projeyle birlikte kaydedilir (<code>getSaveDataByState</code>); yeniden açıldığında otomatik geri yüklenir ve aşağı akışa yeniden gönderilir; daha önce kaydedilmemişse varsayılan <code>0</code> dır',
+    it: 'Il numero nella casella viene salvato insieme al progetto (<code>getSaveDataByState</code>); alla riapertura viene ripristinato automaticamente e reinviato a valle; se non è mai stato salvato, il valore predefinito è <code>0</code>'
   }
 } satisfies Record<string, LocalizedText>

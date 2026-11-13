@@ -5,6 +5,23 @@ import { StringValue } from '../../engine/data/StringValue'
 import { JsonValue } from '../../engine/data/JsonValue'
 
 /**
+ * 浏览器 File → 纯 base64 字符串（去掉 data URL 前缀）。
+ * renderer 侧没有 Node.js Buffer，用 FileReader 实现。
+ */
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      const dataUrl = reader.result as string // "data:image/png;base64,iVBOR..."
+      const commaIdx = dataUrl.indexOf(',')
+      resolve(commaIdx >= 0 ? dataUrl.slice(commaIdx + 1) : '')
+    }
+    reader.onerror = () => reject(reader.error)
+    reader.readAsDataURL(file)
+  })
+}
+
+/**
  * 表节点：在 SQLite 里动态建一张物理表，画布上展示成可分页编辑的数据表。
  *
  * 生命周期：
@@ -284,6 +301,35 @@ export class TableNode extends Node {
         '；有效字段为：', this.columns.map(c => c.name)
       )
       return
+    }
+
+    // —— 2.5 File 预处理：把 kv 里的 JS 原生 File 存到节点目录，替换成 relPath 字符串 ——
+    for (const col of this.columns) {
+      if (!(col.name in kv)) continue
+      const val = kv[col.name]
+      if (!(val instanceof File)) continue
+
+      // 读文件 → base64 → 调 preload API 存到节点目录
+      try {
+        const dataBase64 = await fileToBase64(val)
+        // @ts-ignore
+        const saveRes = await window.tableApi.saveFile({
+          // @ts-ignore
+          canvasId: window.getCurrentCanvasId(),
+          nodeId: this.id,
+          fileName: val.name || 'untitled',
+          dataBase64
+        })
+        if (!saveRes.ok) {
+          console.warn('[TableNode] insertRow 存文件失败：', col.name, saveRes.error)
+          return
+        }
+        // 替换 File → 相对路径字符串（后续类型校验会把它当 string 过）
+        kv[col.name] = saveRes.relPath
+      } catch (err) {
+        console.warn('[TableNode] insertRow 文件读取/存储异常：', col.name, err)
+        return
+      }
     }
 
     // —— value 类型校验 ——

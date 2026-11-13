@@ -15,7 +15,7 @@ import OSS from 'ali-oss'
 import { startFeishu, stopFeishu, getFeishuStatus, disposeFeishu, sendFeishuMessage, uploadFeishuImage, sendFeishuFilePipeline, getFfmpegStatus, sendFeishuCardPipeline } from './feishu/FeishuManager'
 import { openDatabase, closeDatabase, getDatabase, persist } from './db/database'
 import { SqliteStorage } from './db/SqliteStorage'
-import { ensureCanvasDir, getCanvasDir, getCanvasRootDir, migrateLegacyRootFiles, ensureNodeDir, removeNodeDir } from './paths'
+import { ensureCanvasDir, getCanvasDir, getCanvasRootDir, migrateLegacyRootFiles, ensureNodeDir, removeNodeDir, saveFileToNodeDir, readFileFromNodeDir, deleteFileFromNodeDir } from './paths'
 import type { MenuLabels } from '../preload'
 
 /** canvasId 安全校验：只允许字母数字下划线、中划线、中文，防路径穿越和 SQL 注入 */
@@ -1521,6 +1521,62 @@ function registerIpcHandlers(): void {
     } catch (err) {
       return { ok: false, error: err instanceof Error ? err.message : String(err) }
     }
+  })
+
+  /**
+   * 把一段 base64 文件数据存进节点目录（平铺，不按列名分子目录）。
+   * renderer 侧负责把 File/Blob 读成 base64 字符串传进来（跨 IPC 稳定）。
+   * 返回相对路径 relPath —— 存入 SQLite TEXT 列的就是它。
+   */
+  ipcMain.handle('table:saveFile', (_e, args: {
+    canvasId: string
+    nodeId: string
+    fileName: string
+    dataBase64: string
+  }): { ok: true; relPath: string; size: number; ext: string } | { ok: false; error: string } => {
+    if (!SAFE_CANVAS_ID.test(args.canvasId)) return { ok: false, error: '画布 ID 不合法' }
+
+    try {
+      const buf = Buffer.from(args.dataBase64, 'base64')
+      const saved = saveFileToNodeDir(args.canvasId, args.nodeId, args.fileName, buf)
+      return { ok: true, relPath: saved.relPath, size: saved.size, ext: saved.ext }
+    } catch (err) {
+      return { ok: false, error: err instanceof Error ? err.message : String(err) }
+    }
+  })
+
+  /**
+   * 读节点目录下的文件，返回 base64 data URL。
+   * renderer 侧直接 <img :src="dataUrl"> 就能显示，或者 Blob() 重建 File 对象。
+   */
+  ipcMain.handle('table:readFileAsDataUrl', (_e, args: {
+    canvasId: string
+    nodeId: string
+    relPath: string
+  }): { ok: true; dataUrl: string; fileName: string; mime: string; size: number } | { ok: false; error: string } => {
+    if (!SAFE_CANVAS_ID.test(args.canvasId)) return { ok: false, error: '画布 ID 不合法' }
+
+    const res = readFileFromNodeDir(args.canvasId, args.nodeId, args.relPath)
+    if (!res.ok) return res
+
+    const base64 = res.data.toString('base64')
+    return {
+      ok: true,
+      dataUrl: `data:${res.mime};base64,${base64}`,
+      fileName: res.fileName,
+      mime: res.mime,
+      size: res.size
+    }
+  })
+
+  /** 删除节点目录下的一个文件（不删列子目录）。幂等：文件不存在也返回 ok: true */
+  ipcMain.handle('table:deleteFile', (_e, args: {
+    canvasId: string
+    nodeId: string
+    relPath: string
+  }): { ok: true } | { ok: false; error: string } => {
+    if (!SAFE_CANVAS_ID.test(args.canvasId)) return { ok: false, error: '画布 ID 不合法' }
+    return deleteFileFromNodeDir(args.canvasId, args.nodeId, args.relPath)
   })
 
   /** 插入一行。values 是 { colName: value }，会按 columns 定义过滤 + 类型转换 */

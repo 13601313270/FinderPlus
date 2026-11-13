@@ -633,6 +633,34 @@ const tableApi = {
   }): Promise<{ ok: true; newId: number } | { ok: false; error: string }> =>
     ipcRenderer.invoke('table:insertRow', args),
 
+  /**
+   * 把一段 base64 文件数据存进节点目录（平铺）。
+   * canvasId 不传时自动取当前窗口绑定的画布。
+   */
+  saveFile: (args: {
+    canvasId?: string
+    nodeId: string
+    fileName: string
+    dataBase64: string
+  }): Promise<{ ok: true; relPath: string; size: number; ext: string } | { ok: false; error: string }> =>
+    ipcRenderer.invoke('table:saveFile', { ...args, canvasId: fillCanvasId(args.canvasId) }),
+
+  /** 读节点目录下的文件，返回 base64 data URL（<img :src="dataUrl"> 直接能用） */
+  readFileAsDataUrl: (args: {
+    canvasId?: string
+    nodeId: string
+    relPath: string
+  }): Promise<{ ok: true; dataUrl: string; fileName: string; mime: string; size: number } | { ok: false; error: string }> =>
+    ipcRenderer.invoke('table:readFileAsDataUrl', { ...args, canvasId: fillCanvasId(args.canvasId) }),
+
+  /** 删除节点目录下的一个文件（幂等） */
+  deleteFile: (args: {
+    canvasId?: string
+    nodeId: string
+    relPath: string
+  }): Promise<{ ok: true } | { ok: false; error: string }> =>
+    ipcRenderer.invoke('table:deleteFile', { ...args, canvasId: fillCanvasId(args.canvasId) }),
+
   /** 更新一行。rowId 指定 id */
   updateRow: (args: {
     nodeId: string

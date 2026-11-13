@@ -3,7 +3,6 @@ import { djb2 } from '../../engine/data/hash'
 import { AudioFileValue } from '../../engine/data/AudioFileValue'
 import { NumberValue } from '../../engine/data/NumberValue'
 import { OutputPort } from '../../engine/port/OutputPort'
-import { InputPort } from '../../engine/port/InputPort'
 import { MethodPort } from '../../engine/port/MethodPort'
 import { FileNode } from '../FileNode/node'
 import { inferAudioMime } from './mime'
@@ -22,25 +21,6 @@ export class AudioFileNode extends FileNode {
 
   readonly type = AudioFileNode.TYPE
 
-  /** 文件输出（AudioFileValue，kind = 'audio-file'） */
-  readonly fileOutput = new OutputPort('file', AudioFileValue, {
-    zh: '文件',
-    en: 'File',
-    ja: 'ファイル',
-    ko: '파일',
-    es: 'Archivo',
-    ar: 'ملف',
-    fr: 'Fichier',
-    pt: 'Ficheiro',
-    ru: 'Файл',
-    hi: 'फ़ाइल',
-    id: 'Berkas',
-    de: 'Datei',
-    vi: 'Tệp',
-    tr: 'Dosya',
-    it: 'File'
-  })
-
   /** 时长输出（秒） */
   readonly durationOutput = new OutputPort('duration', NumberValue, {
     zh: '时长（秒）',
@@ -58,28 +38,6 @@ export class AudioFileNode extends FileNode {
     vi: 'Thời lượng (s)',
     tr: 'Süre (s)',
     it: 'Durata (s)'
-  })
-
-  /** 文件数据输入端口：只接受同类型音频文件 */
-  readonly fileInput = new InputPort('file-in', {
-    accepts: [AudioFileValue],
-    label: {
-      zh: '写入数据',
-      en: 'Write Data',
-      ja: 'データを書き込む',
-      ko: '데이터 쓰기',
-      es: 'Escribir datos',
-      ar: 'كتابة البيانات',
-      fr: 'Écrire des données',
-      pt: 'Gravar dados',
-      ru: 'Запись данных',
-      hi: 'डेटा लिखें',
-      id: 'Tulis Data',
-      de: 'Daten schreiben',
-      vi: 'Ghi dữ liệu',
-      tr: 'Veri yaz',
-      it: 'Scrivi dati'
-    }
   })
 
   /** 方法端口：上游 commit 任意值即触发一次播放（从头开始） */
@@ -124,15 +82,12 @@ export class AudioFileNode extends FileNode {
   private playerSubscribers = new Set<() => void>()
 
   constructor(id: string) {
-    super(id)
-    this.addOutput(this.fileOutput)
+    super(id, AudioFileValue)
     this.addOutput(this.durationOutput)
-    this.addOutput(this.pathOutput)
     this.addMethod(this.playPort)
     this.playPort.onTrigger(() => {
       this.playFromStart()
     })
-    this.bindFileInput(this.fileInput)
     this.setBox(140, 160)
   }
 
@@ -168,7 +123,7 @@ export class AudioFileNode extends FileNode {
     const file = new File([ab], this.fileName, { type: mime })
     const hash = djb2(base64)
     this._currentFile = file
-    this.fileOutput.commit(new AudioFileValue(file, hash))
+    this.fileOutput.commit(new this.fileValueClass(file, hash))
     this.notifyChanged()
     // 重建 Audio 播放引擎
     this.rebuildAudio()

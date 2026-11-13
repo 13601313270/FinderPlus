@@ -1,8 +1,6 @@
 import { base64ToBytes } from '../../engine/data/base64'
 import { djb2 } from '../../engine/data/hash'
 import { PdfFileValue } from '../../engine/data/PdfFileValue'
-import { OutputPort } from '../../engine/port/OutputPort'
-import { InputPort } from '../../engine/port/InputPort'
 import { FileNode } from '../FileNode/node'
 
 /** PDF 后缀集合，供 acceptsExtension 使用 */
@@ -35,53 +33,8 @@ export class PdfFileNode extends FileNode {
   /** PDF 第一页天然高度（像素）。render.vue 的 pdfjs 加载后回写；0 表示尚未加载 */
   private pageHeightValue = 0
 
-  /** 文件输出（PdfFileValue，kind = 'pdf-file'） */
-  readonly fileOutput = new OutputPort('file', PdfFileValue, {
-    zh: '文件',
-    en: 'File',
-    ja: 'ファイル',
-    ko: '파일',
-    es: 'Archivo',
-    ar: 'ملف',
-    fr: 'Fichier',
-    pt: 'Ficheiro',
-    ru: 'Файл',
-    hi: 'फ़ाइल',
-    id: 'Berkas',
-    de: 'Datei',
-    vi: 'Tệp',
-    tr: 'Dosya',
-    it: 'Scrivi dati'
-  })
-
-  /** 文件数据输入端口：只接受同类型（PDF）文件，收到值即替换本节点文件 */
-  readonly fileInput = new InputPort('file-in', {
-    accepts: [PdfFileValue],
-    label: {
-      zh: '写入数据',
-      en: 'Write Data',
-      ja: 'データを書き込む',
-      ko: '데이터 쓰기',
-      es: 'Escribir datos',
-      ar: 'كتابة البيانات',
-      fr: 'Écrire des données',
-      pt: 'Gravar dados',
-      ru: 'Запись данных',
-      hi: 'डेटा लिखें',
-      id: 'Tulis Data',
-      de: 'Daten schreiben',
-      vi: 'Ghi dữ liệu',
-      tr: 'Veri yaz',
-      it: 'Scrivi dati'
-    }
-  })
-
   constructor(id: string) {
-    super(id)
-    this.addOutput(this.fileOutput)
-    // 基类共用的路径端口（文件绝对路径），挂在末尾
-    this.addOutput(this.pathOutput)
-    this.bindFileInput(this.fileInput)
+    super(id, PdfFileValue)
     // 宽度走基类 box（用户可拖 handle 调）；高度维 0 = 不约束，随 PDF 页面比例撑开
     this.setBox(DEFAULT_PREVIEW_WIDTH, 0)
   }
@@ -114,7 +67,7 @@ export class PdfFileNode extends FileNode {
     const ab = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer
     const file = new File([ab], this.fileName, { type: 'application/pdf' })
     const hash = djb2(base64)
-    this.fileOutput.commit(new PdfFileValue(file, hash))
+    this.fileOutput.commit(new this.fileValueClass(file, hash))
     this.notifyChanged()
   }
 

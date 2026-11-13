@@ -42,47 +42,6 @@ export class HtmlFileNode extends FileNode {
     it: 'Testo'
   })
 
-  /** 文件输出（HtmlFileValue，kind = 'html-file'） */
-  readonly fileOutput = new OutputPort('file', HtmlFileValue, {
-    zh: '文件',
-    en: 'File',
-    ja: 'ファイル',
-    ko: '파일',
-    es: 'Archivo',
-    ar: 'ملف',
-    fr: 'Fichier',
-    pt: 'Ficheiro',
-    ru: 'Файл',
-    hi: 'फ़ाइल',
-    id: 'Berkas',
-    de: 'Datei',
-    vi: 'Tệp',
-    tr: 'Dosya',
-    it: 'File'
-  })
-
-  /** 文件数据输入端口：只接受同类型（html）文件，收到值即替换本节点文件 */
-  readonly fileInput = new InputPort('file-in', {
-    accepts: [HtmlFileValue],
-    label: {
-      zh: '文件',
-      en: 'File',
-      ja: 'ファイル',
-      ko: '파일',
-      es: 'Archivo',
-      ar: 'ملف',
-      fr: 'Fichier',
-      pt: 'Ficheiro',
-      ru: 'Файл',
-      hi: 'फ़ाइल',
-      id: 'Berkas',
-      de: 'Datei',
-      vi: 'Tệp',
-      tr: 'Dosya',
-      it: 'File'
-    }
-  })
-
   /** 文本内容输入端口：接收字符串，写入节点内容并同步到磁盘文件 */
   readonly contentInput = new InputPort('content-in', {
     accepts: [StringValue],
@@ -112,12 +71,8 @@ export class HtmlFileNode extends FileNode {
   private previewEnabled = false
 
   constructor(id: string) {
-    super(id)
+    super(id, HtmlFileValue)
     this.addOutput(this.contentOutput)
-    this.addOutput(this.fileOutput)
-    // 基类共用的路径端口（文件绝对路径），挂在末尾
-    this.addOutput(this.pathOutput)
-    this.bindFileInput(this.fileInput)
     this.addInput(this.contentInput)
     // 默认图标模式尺寸：文件图标 72px + 文件名行 + padding ≈ 122px 高，宽 180px
     this.setBox(180, 122)
@@ -234,7 +189,7 @@ export class HtmlFileNode extends FileNode {
     if (this.fileName) {
       const file = new File([text], this.fileName, { type: 'text/html;charset=utf-8' })
       const hash = djb2(text)
-      this.fileOutput.commit(new HtmlFileValue(file, hash))
+      this.fileOutput.commit(new this.fileValueClass(file, hash))
     }
 
     this.notifyChanged()
@@ -259,7 +214,7 @@ export class HtmlFileNode extends FileNode {
       if (this.fileName) {
         const file = new File([text], this.fileName, { type: 'text/html;charset=utf-8' })
         const hash = djb2(text)
-        this.fileOutput.commit(new HtmlFileValue(file, hash))
+        this.fileOutput.commit(new this.fileValueClass(file, hash))
       }
     }
     // 恢复预览开关；老版本没有 previewEnabled 字段，默认 false（向后兼容）

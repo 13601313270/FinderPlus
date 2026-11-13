@@ -66,47 +66,6 @@ export class JsonFileNode extends FileNode {
     it: 'Testo'
   })
 
-  /** 文件输出（JsonFileValue，kind = 'json-file'） */
-  readonly fileOutput = new OutputPort('file', JsonFileValue, {
-    zh: '文件',
-    en: 'File',
-    ja: 'ファイル',
-    ko: '파일',
-    es: 'Archivo',
-    ar: 'ملف',
-    fr: 'Fichier',
-    pt: 'Ficheiro',
-    ru: 'Файл',
-    hi: 'फ़ाइल',
-    id: 'Berkas',
-    de: 'Datei',
-    vi: 'Tệp',
-    tr: 'Dosya',
-    it: 'File'
-  })
-
-  /** 文件数据输入端口：只接受同类型（json）文件，收到值即替换本节点文件 */
-  readonly fileInput = new InputPort('file-in', {
-    accepts: [JsonFileValue],
-    label: {
-      zh: '文件',
-      en: 'File',
-      ja: 'ファイル',
-      ko: '파일',
-      es: 'Archivo',
-      ar: 'ملف',
-      fr: 'Fichier',
-      pt: 'Ficheiro',
-      ru: 'Файл',
-      hi: 'फ़ाइल',
-      id: 'Berkas',
-      de: 'Datei',
-      vi: 'Tệp',
-      tr: 'Dosya',
-      it: 'File'
-    }
-  })
-
   /** JSON 文本输入端口：接收字符串，写入节点内容并同步到磁盘文件 */
   readonly rawInput = new InputPort('raw-in', {
     accepts: [StringValue],
@@ -155,13 +114,9 @@ export class JsonFileNode extends FileNode {
   private contentValue = ''
 
   constructor(id: string) {
-    super(id)
+    super(id, JsonFileValue)
     this.addOutput(this.jsonOutput)
     this.addOutput(this.rawOutput)
-    this.addOutput(this.fileOutput)
-    // 基类共用的路径端口（文件绝对路径），挂在末尾
-    this.addOutput(this.pathOutput)
-    this.bindFileInput(this.fileInput)
     this.addInput(this.rawInput)
     this.addInput(this.jsonInput)
     // 内容区硬约束：文件图标 72px + 文件名行 + padding ≈ 122px 高，宽 180px
@@ -287,7 +242,7 @@ export class JsonFileNode extends FileNode {
     if (this.fileName) {
       const file = new File([text], this.fileName, { type: 'application/json' })
       const hash = djb2(text)
-      this.fileOutput.commit(new JsonFileValue(file, hash))
+      this.fileOutput.commit(new this.fileValueClass(file, hash))
     }
 
     this.notifyChanged()
@@ -324,7 +279,7 @@ export class JsonFileNode extends FileNode {
       if (this.fileName) {
         const file = new File([text], this.fileName, { type: 'application/json' })
         const hash = djb2(text)
-        this.fileOutput.commit(new JsonFileValue(file, hash))
+        this.fileOutput.commit(new this.fileValueClass(file, hash))
       }
     }
   }

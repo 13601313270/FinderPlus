@@ -1,7 +1,5 @@
 import { base64ToBytes } from '../../engine/data/base64'
 import { FileValue } from '../../engine/data/FileValue'
-import { InputPort } from '../../engine/port/InputPort'
-import { OutputPort } from '../../engine/port/OutputPort'
 import { FileNode } from '../FileNode/node'
 
 /** 计算 SHA-256 hex 摘要（用 Web Crypto API） */
@@ -57,53 +55,8 @@ export class AnyFileNode extends FileNode {
 
   readonly type = AnyFileNode.TYPE
 
-  /** 文件输出（FileValue，kind = 'file'） */
-  readonly fileOutput = new OutputPort('file', FileValue, {
-    zh: '文件',
-    en: 'File',
-    ja: 'ファイル',
-    ko: '파일',
-    es: 'Archivo',
-    ar: 'ملف',
-    fr: 'Fichier',
-    pt: 'Ficheiro',
-    ru: 'Файл',
-    hi: 'फ़ाइल',
-    id: 'Berkas',
-    de: 'Datei',
-    vi: 'Tệp',
-    tr: 'Dosya',
-    it: 'File'
-  })
-
-  /** 文件数据输入端口：接受任何文件类型（含各类子类），收到值即替换本节点文件 */
-  readonly fileInput = new InputPort('file-in', {
-    accepts: [FileValue],
-    label: {
-      zh: '文件',
-      en: 'File',
-      ja: 'ファイル',
-      ko: '파일',
-      es: 'Archivo',
-      ar: 'ملف',
-      fr: 'Fichier',
-      pt: 'Ficheiro',
-      ru: 'Файл',
-      hi: 'फ़ाइल',
-      id: 'Berkas',
-      de: 'Datei',
-      vi: 'Tệp',
-      tr: 'Dosya',
-      it: 'File'
-    }
-  })
-
   constructor(id: string) {
-    super(id)
-    this.addOutput(this.fileOutput)
-    // 基类共用的路径端口（文件绝对路径），挂在末尾
-    this.addOutput(this.pathOutput)
-    this.bindFileInput(this.fileInput)
+    super(id, FileValue)
     // 内容区硬约束：文件图标 72px + 文件名行 + padding ≈ 122px 高，宽 180px
     this.setBox(180, 122)
   }

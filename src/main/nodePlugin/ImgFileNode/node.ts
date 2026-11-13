@@ -1,8 +1,6 @@
 import { base64ToBytes } from '../../engine/data/base64'
 import { djb2 } from '../../engine/data/hash'
 import { ImgFileValue } from '../../engine/data/ImgFileValue'
-import { OutputPort } from '../../engine/port/OutputPort'
-import { InputPort } from '../../engine/port/InputPort'
 import { FileNode } from '../FileNode/node'
 import { inferImageMime } from './mime'
 import {
@@ -53,58 +51,13 @@ export class ImgFileNode extends FileNode {
 
   readonly type = ImgFileNode.TYPE
 
-  /** 文件输出（ImgFileValue，kind = 'img-file'） */
-  readonly fileOutput = new OutputPort('file', ImgFileValue, {
-    zh: '文件',
-    en: 'File',
-    ja: 'ファイル',
-    ko: '파일',
-    es: 'Archivo',
-    ar: 'ملف',
-    fr: 'Fichier',
-    pt: 'Ficheiro',
-    ru: 'Файл',
-    hi: 'फ़ाइल',
-    id: 'Berkas',
-    de: 'Datei',
-    vi: 'Tệp',
-    tr: 'Dosya',
-    it: 'File'
-  })
-
-  /** 文件数据输入端口：只接受同类型（图片）文件，收到值即替换本节点文件 */
-  readonly fileInput = new InputPort('file-in', {
-    accepts: [ImgFileValue],
-    label: {
-      zh: '写入数据',
-      en: 'Write Data',
-      ja: 'データを書き込む',
-      ko: '데이터 쓰기',
-      es: 'Escribir datos',
-      ar: 'كتابة البيانات',
-      fr: 'Écrire des données',
-      pt: 'Gravar dados',
-      ru: 'Запись данных',
-      hi: 'डेटा लिखें',
-      id: 'Tulis Data',
-      de: 'Daten schreiben',
-      vi: 'Ghi dữ liệu',
-      tr: 'Veri yaz',
-      it: 'Scrivi dati'
-    }
-  })
-
   /** 图片天然宽度（像素）。render.vue 的 img load 时回写；0 表示尚未加载 */
   private naturalWidthValue = 0
   /** 图片天然高度（像素）。render.vue 的 img load 时回写；0 表示尚未加载 */
   private naturalHeightValue = 0
 
   constructor(id: string) {
-    super(id)
-    this.addOutput(this.fileOutput)
-    // 基类共用的路径端口（文件绝对路径），挂在末尾
-    this.addOutput(this.pathOutput)
-    this.bindFileInput(this.fileInput)
+    super(id, ImgFileValue)
     // 宽度走基类 box（用户可拖 handle 调）；高度维 0 = 不约束，随图片比例撑开
     this.setBox(DEFAULT_PREVIEW_WIDTH, 0)
   }
@@ -378,7 +331,7 @@ export class ImgFileNode extends FileNode {
         // 写盘失败：仍然 commit 内存端口让下游拿到新图，UI 靠 thumbnailUrl 刷新
       }
       // 无论写盘成功与否，都更新端口 + bump revision 让 UI 重建缩略图
-      this.fileOutput.commit(new ImgFileValue(file, hash))
+      this.fileOutput.commit(new this.fileValueClass(file, hash))
       this.fileRevisionValue += 1
       if (writeResult) {
         // 写盘成功：setFile 更新 fileName / fileSize，触发 reloadFileContent → setContent

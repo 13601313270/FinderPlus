@@ -2,8 +2,47 @@ import { StringValue } from '../../engine/data/StringValue'
 import { FileValue } from '../../engine/data/FileValue'
 import { bytesToBase64 } from '../../engine/data/base64'
 import { OutputPort } from '../../engine/port/OutputPort'
+import { InputPort } from '../../engine/port/InputPort'
 import { Node } from '../../engine/node/Node'
-import type { InputPort } from '../../engine/port/InputPort'
+import type { LocalizedText } from '../../../shared/language'
+
+/** 所有 FileNode 子类共用的「文件输出」端口 15 语言标签 */
+export const FILE_PORT_LABEL: LocalizedText = {
+  zh: '文件',
+  en: 'File',
+  ja: 'ファイル',
+  ko: '파일',
+  es: 'Archivo',
+  ar: 'ملف',
+  fr: 'Fichier',
+  pt: 'Ficheiro',
+  ru: 'Файл',
+  hi: 'फ़ाइल',
+  id: 'Berkas',
+  de: 'Datei',
+  vi: 'Tệp',
+  tr: 'Dosya',
+  it: 'File'
+}
+
+/** FileNode 文件输入端口的默认 label（"写入数据" 语义：往节点里替换/写入新文件） */
+const FILE_IN_WRITE_LABEL: LocalizedText = {
+  zh: '写入数据',
+  en: 'Write Data',
+  ja: 'データを書き込む',
+  ko: '데이터 쓰기',
+  es: 'Escribir datos',
+  ar: 'كتابة البيانات',
+  fr: 'Écrire des données',
+  pt: 'Gravar dados',
+  ru: 'Запись данных',
+  hi: 'डेटा लिखें',
+  id: 'Tulis Data',
+  de: 'Daten schreiben',
+  vi: 'Ghi dữ liệu',
+  tr: 'Veri yaz',
+  it: 'Scrivi dati'
+}
 
 /**
  * 文件节点抽象基类：管理"已选中的文件"这一层共同状态。
@@ -42,6 +81,18 @@ export abstract class FileNode extends Node {
   /** 文件字节大小；未选时为 0 */
   protected fileSizeValue = 0
 
+  /**
+   * 本节点产出的 FileValue 子类。由子类构造函数通过 super(id, XxxFileValue) 传入，
+   * 构造后作为实例属性对外暴露。基类据此创建 fileOutput 端口，子类不再重复声明。
+   */
+  readonly fileValueClass: typeof FileValue
+
+  /**
+   * 文件数据输出端口。基类统一创建（端口 id 'file'、标签 FILE_PORT_LABEL、valueClass 来自 fileValueClass），
+   * 子类只需在 super() 里传对文件类型即可，不再重复声明端口本身。
+   */
+  readonly fileOutput: OutputPort
+
   /** 文件路径输出：画布目录下的绝对路径（string），所有文件节点共用 */
   readonly pathOutput = new OutputPort('path', StringValue, {
     zh: '路径',
@@ -61,8 +112,8 @@ export abstract class FileNode extends Node {
     it: 'Percorso'
   })
 
-  /** 文件数据输入端口。accepts 因文件类型而异，由子类声明后经 bindFileInput 注册 */
-  protected fileInputPort: InputPort | undefined
+  /** 文件数据输入端口：只接受本节点 fileValueClass 类型的文件，收到即替换本节点文件 */
+  readonly fileInput: InputPort
 
   /** 文件被输入端口替换的次数。同名文件替换时 fileName 不变，UI 靠它感知内容已换 */
   protected fileRevisionValue = 0
@@ -70,8 +121,17 @@ export abstract class FileNode extends Node {
   /** 文件变化监听的取消订阅函数。由 onReady 注册，beforeDestroy 注销 */
   private fileChangeUnsubscribe?: () => void
 
-  constructor(id: string) {
+  constructor(id: string, fileValueClass: typeof FileValue) {
     super(id)
+    this.fileValueClass = fileValueClass
+    this.fileOutput = new OutputPort('file', fileValueClass, FILE_PORT_LABEL)
+    this.addOutput(this.fileOutput)
+    this.addOutput(this.pathOutput)
+    this.fileInput = new InputPort('file-in', {
+      accepts: [fileValueClass],
+      label: FILE_IN_WRITE_LABEL
+    })
+    this.addInput(this.fileInput)
   }
 
   /**
@@ -183,23 +243,12 @@ export abstract class FileNode extends Node {
   }
 
   inputPortReceiveValue(ports: InputPort[]): void {
-    const input = this.fileInputPort
-    if (!input || !ports.includes(input)) return
-    const [value] = input.value
+    if (!ports.includes(this.fileInput)) return
+    const [value] = this.fileInput.value
     if (value instanceof FileValue && !value.isNull) {
       void this.replaceFile(value.file!)
       this.completeRun()
     }
-  }
-
-  /**
-   * 子类构造时把自己的文件输入端口注册进来。
-   * accepts 用子类对应的文件 Value 类型（如图片节点用 ImgFileValue），
-   * 这样只有同类型文件才能连上——类型约束由端口校验负责，节点内部不再重复判断。
-   */
-  protected bindFileInput(port: InputPort): void {
-    this.fileInputPort = port
-    this.addInput(port)
   }
 
   /**

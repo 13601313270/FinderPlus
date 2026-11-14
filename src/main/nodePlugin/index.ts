@@ -33,6 +33,7 @@ import { manifest as recorderManifest } from './RecorderNode'
 import { manifest as audioTrimManifest } from './AudioTrimNode'
 import { manifest as audioSpeedManifest } from './AudioSpeedNode'
 import { manifest as audioPlayManifest } from './AudioPlayNode'
+import { manifest as audioMergeManifest } from './AudioMergeNode'
 import { manifest as humanReviewManifest } from './HumanReviewNode'
 import { manifest as stringConcatManifest } from './StringConcatNode'
 import { manifest as commandManifest } from './CommandNode'
@@ -104,6 +105,7 @@ const functionalManifests: NodePluginManifest[] = [
   audioTrimManifest,
   audioSpeedManifest,
   audioPlayManifest,
+  audioMergeManifest,
   humanReviewManifest,
   stringConcatManifest,
   convertManifest,

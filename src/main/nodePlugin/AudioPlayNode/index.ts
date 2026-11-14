@@ -26,7 +26,7 @@ export const manifest: NodePluginManifest = {
   },
   // 喇叭图标（和 AudioFileNode 一致，区分开文件类型节点）
   iconImage: AudioPlayIcon,
-  category: 'tool',
+  category: 'audio',
   render,
   platforms: ["mac"]
 }

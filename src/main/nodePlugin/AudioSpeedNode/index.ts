@@ -27,7 +27,7 @@ export const manifest: NodePluginManifest = {
   // 图标：仪表盘指针（速度调节）
   iconImage: AudioSpeedIcon,
   common: false,
-  category: 'tool',
+  category: 'audio',
   render,
   platforms: ["mac"]
 }

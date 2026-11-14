@@ -26,7 +26,7 @@ export const manifest: NodePluginManifest = {
   },
   render,
   iconImage: AudioFolderIcon,
-  category: 'file',
+  category: 'audio',
   help: () => import('./AudioFolderHelpDialog.vue'),
   platforms: ["mac"]
 }

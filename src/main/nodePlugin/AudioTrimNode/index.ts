@@ -13,7 +13,7 @@ export const manifest: NodePluginManifest = {
   },
   // 图标：剪刀（截取音频片段）
   iconImage: AudioTrimIcon,
-  category: 'tool',
+  category: 'audio',
   render,
   platforms: ["mac"]
 }

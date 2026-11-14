@@ -26,7 +26,7 @@ export const manifest: NodePluginManifest = {
   },
   // 图标：喇叭（和 TTS 一样的喇叭形，区分开图片/文本节点）
   iconImage: AudioFileIcon,
-  category: 'file',
+  category: 'audio',
   render,
   platforms: ["mac"]
 }

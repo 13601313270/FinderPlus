@@ -12,7 +12,7 @@ export const manifest: NodePluginManifest = {
     en: 'Audio Merge'
   },
   iconImage: AudioMergeIcon,
-  category: 'tool',
+  category: 'audio',
   render,
   platforms: ['mac']
 }

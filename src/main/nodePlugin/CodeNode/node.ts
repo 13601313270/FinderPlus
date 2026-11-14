@@ -11,10 +11,11 @@ import { MethodPort } from '../../engine/port/MethodPort'
 import { OutputPort } from '../../engine/port/OutputPort'
 import { Node } from '../../engine/node/Node'
 import { AudioFileValue } from '../../engine/data/AudioFileValue'
+import { AudioFileCollectionValue } from '../../engine/data/AudioFileCollectionValue'
 import { VideoFileValue } from '../../engine/data/VideoFileValue'
 
 /** 可选的端口类型：输入和输出共用同一套 Value 子类集合 */
-export type CodePortKind = 'number' | 'string' | 'bool' | 'file' | 'imgfile' | 'json' | 'audio' | 'video'
+export type CodePortKind = 'number' | 'string' | 'bool' | 'file' | 'imgfile' | 'json' | 'audio' | 'video' | 'audiocollection'
 
 /** 输入端口可选类型（不含 imgfile——输入侧图片归为 file，原型链覆盖） */
 export type CodeInputKind = Exclude<CodePortKind, 'imgfile'>
@@ -35,9 +36,9 @@ export type CodePortNameError =
   | { readonly kind: 'conflict-input'; readonly name: string }
 
 /** 所有合法的输入端口 kind，readState 反序列化校验用。用 satisfies 保证不缺项 */
-const INPUT_KINDS: readonly CodeInputKind[] = ['number', 'string', 'bool', 'file', 'json', 'audio', 'video'] as const
+const INPUT_KINDS: readonly CodeInputKind[] = ['number', 'string', 'bool', 'file', 'json', 'audio', 'video', 'audiocollection'] as const
 /** 所有合法的输出端口 kind，readState 反序列化校验用 */
-const ALL_PORT_KINDS: readonly CodePortKind[] = ['number', 'string', 'bool', 'file', 'imgfile', 'json', 'audio', 'video'] as const
+const ALL_PORT_KINDS: readonly CodePortKind[] = ['number', 'string', 'bool', 'file', 'imgfile', 'json', 'audio', 'video', 'audiocollection'] as const
 
 /** Value 子类注册表：kind → Value 子类（端口 accept / 结果包装共用这一处真相） */
 const KIND_CLASSES: Record<CodePortKind, { readonly VALUE_NAME: string; prototype: Value; new(...args: any[]): Value }> = {
@@ -49,6 +50,7 @@ const KIND_CLASSES: Record<CodePortKind, { readonly VALUE_NAME: string; prototyp
   json: JsonValue,
   audio: AudioFileValue,
   video: VideoFileValue,
+  audiocollection: AudioFileCollectionValue,
 }
 
 /** 输入类型 → InputPort.accepts 数组。file 用 FileValue（原型链覆盖 ImgFileValue / TxtFileValue） */
@@ -60,6 +62,7 @@ const INPUT_KIND_ACCEPTS: Record<CodeInputKind, readonly InputPortOptionsAcc[]> 
   json: [JsonValue],
   audio: [AudioFileValue],
   video: [VideoFileValue],
+  audiocollection: [AudioFileCollectionValue],
 }
 
 /** InputPort 构造器 accepts 参数所需的 Value 子类类型 */
@@ -610,6 +613,7 @@ export class CodeNode extends Node {
     if (v instanceof BoolValue) return v.value
     if (v instanceof JsonValue) return v.value
     if (v instanceof FileValue) return v.file
+    if (v instanceof AudioFileCollectionValue) return v.items?.map(item => item.file)
     return v
   }
 
@@ -654,6 +658,22 @@ export class CodeNode extends Node {
         }
         return new VideoFileValue(raw, djb2(raw.name))
       }
+      case 'audiocollection': {
+        if (!Array.isArray(raw)) {
+          throw new Error(`需要数组（AudioFileValue[] 或 File[]），实际收到 ${typeof raw}`)
+        }
+        const items: AudioFileValue[] = []
+        for (const [i, elem] of raw.entries()) {
+          if (elem instanceof AudioFileValue) {
+            items.push(elem)
+          } else if (elem instanceof File) {
+            items.push(new AudioFileValue(elem, djb2(elem.name)))
+          } else {
+            throw new Error(`集合第 ${i} 项不是 File 也不是 AudioFileValue，实际收到 ${typeof elem}`)
+          }
+        }
+        return new AudioFileCollectionValue(items)
+      }
       case 'string':
       default:
         return new StringValue(String(raw))
@@ -672,6 +692,9 @@ export class CodeNode extends Node {
       case 'json': return new JsonValue()
       case 'file': return new FileValue()
       case 'imgfile': return new ImgFileValue()
+      case 'audio': return new AudioFileValue()
+      case 'video': return new VideoFileValue()
+      case 'audiocollection': return new AudioFileCollectionValue()
       case 'string':
       default: return new StringValue()
     }

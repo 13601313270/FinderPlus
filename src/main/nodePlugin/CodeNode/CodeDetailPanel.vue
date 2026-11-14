@@ -406,6 +406,7 @@ async function onGenerateCode(): Promise<void> {
                 <option value="imgfile">img</option>
                 <option value="audio">audio</option>
                 <option value="video">video</option>
+                <option value="audiocollection">audio collection</option>
               </select>
             </div>
             <div class="code-row inputs__subrow">
@@ -448,6 +449,7 @@ async function onGenerateCode(): Promise<void> {
                 <option value="json">json</option>
                 <option value="audio">audio</option>
                 <option value="video">video</option>
+                <option value="audiocollection">audio collection</option>
               </select>
             </div>
             <div class="code-row inputs__subrow">

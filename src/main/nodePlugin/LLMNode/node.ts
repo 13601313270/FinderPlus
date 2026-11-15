@@ -658,13 +658,13 @@ export class LLMNode extends Node {
       if (this.jsonMode) {
         try {
           const parsed = JSON.parse(content)
-          this.textOutput.commit(new JsonValue(parsed))
+          this.textOutput.commit(new JsonValue(parsed), { force: true })
         } catch {
           // 模型没按 JSON 格式返回，降级为字符串
-          this.textOutput.commit(new StringValue(content))
+          this.textOutput.commit(new StringValue(content), { force: true })
         }
       } else {
-        this.textOutput.commit(new StringValue(content))
+        this.textOutput.commit(new StringValue(content), { force: true })
       }
       this.completeRun() // 成功产出 → stable
     } else {

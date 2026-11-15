@@ -291,7 +291,7 @@ async function onStopClick(): Promise<void> {
         {{ t('stop') }}
       </button>
       <button
-        v-else
+        v-else-if="!promptConnected"
         class="node__send"
         type="button"
         @click="onSendClick"

@@ -1,6 +1,7 @@
 import { AudioFileCollectionValue } from '../../engine/data/AudioFileCollectionValue'
 import { AudioFileValue } from '../../engine/data/AudioFileValue'
 import { InputPort } from '../../engine/port/InputPort'
+import { MethodPort } from '../../engine/port/MethodPort'
 import { OutputPort } from '../../engine/port/OutputPort'
 import { Node, type InputPortChangeSource } from '../../engine/node/Node'
 import { bytesToBase64 } from '../../engine/data/base64'
@@ -39,6 +40,14 @@ export class AudioMergeNode extends Node {
   /** 输出端口：拼接后的音频（WAV） */
   readonly audioOutput = new OutputPort('audio', AudioFileValue, AUDIO_LABEL)
 
+  /** 方法端口：外部触发一次拼接 */
+  readonly mergeMethod = new MethodPort('merge', {
+    label: {
+      zh: '触发拼接',
+      en: 'Trigger Merge'
+    }
+  })
+
   // —— 运行态 ——
 
   private status: MergeStatus = 'idle'
@@ -52,6 +61,8 @@ export class AudioMergeNode extends Node {
     this.addInput(this.collectionInput)
     this.addInput(this.audioInput)
     this.addOutput(this.audioOutput)
+    this.addMethod(this.mergeMethod)
+    this.mergeMethod.onTrigger(() => this.run())
     this.setBox(220, 150)
   }
 

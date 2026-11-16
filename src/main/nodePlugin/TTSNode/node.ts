@@ -11,17 +11,21 @@ import {
   resolveTtsEndpoint,
   getTtsModelIdsByProvider,
   getDefaultTtsModel,
+  resolveCustomizationUrl,
   TTS_LANGUAGE_TYPES,
   TTS_SAMPLE_RATES,
   DEFAULT_SAMPLE_RATE,
   isMaasModel,
   isTokenPlanModel,
   supportsReferenceAudio,
+  supportsCustomVoice,
+  isCustomVoiceId,
   TTS_MODELS,
   type TtsProviderId,
   type TtsModelId,
   type TtsLanguageType,
   type TtsSampleRate,
+  type CustomVoice,
 } from './providers'
 
 type TtsStatus = 'idle' | 'loading' | 'done' | 'error'
@@ -181,6 +185,17 @@ export class TTSNode extends Node {
   /** stale-call 保护：每次请求递增，响应回来时比一下 */
   private requestId = 0
   private abortController: AbortController | null = null
+
+  // —— 复刻音色（customization API）——
+
+  /** 从 customization API 拉回来的复刻音色列表（缓存，只保留 OK 状态的） */
+  private customVoices: CustomVoice[] = []
+  /** 复刻音色列表的加载状态 */
+  private customVoiceLoadState: 'idle' | 'loading' | 'done' | 'error' = 'idle'
+  private customVoiceLoadError = ''
+  /** 创建复刻音色的状态 */
+  private customVoiceCreateState: 'idle' | 'loading' | 'done' | 'error' = 'idle'
+  private customVoiceCreateError = ''
 
   constructor(id: string) {
     super(id)
@@ -347,6 +362,165 @@ export class TTSNode extends Node {
   /** 当前 provider 下可用的模型选项 */
   get availableModels(): readonly TtsModelId[] { return getTtsModelIdsByProvider(this.provider) }
 
+  /** 当前模型是否支持复刻音色（customization API） */
+  get supportsCustomVoiceMode(): boolean {
+    return supportsCustomVoice(this.model)
+  }
+
+  /** 当前选中的 voice 是否是复刻音色的 voice_id */
+  get isCurrentVoiceCustom(): boolean {
+    return isCustomVoiceId(this.voice)
+  }
+
+  /** 已加载的复刻音色列表（只保留 OK 状态的） */
+  get displayCustomVoices(): readonly CustomVoice[] {
+    return this.customVoices
+  }
+  get displayCustomVoiceLoadState(): 'idle' | 'loading' | 'done' | 'error' { return this.customVoiceLoadState }
+  get displayCustomVoiceLoadError(): string { return this.customVoiceLoadError }
+  get displayCustomVoiceCreateState(): 'idle' | 'loading' | 'done' | 'error' { return this.customVoiceCreateState }
+  get displayCustomVoiceCreateError(): string { return this.customVoiceCreateError }
+
+  // —— 复刻音色 customization API ——
+
+  /**
+   * 拉取当前账号下所有复刻音色，缓存到 customVoices。
+   * 调用方：DetailPanel 在切换到"复刻音色"tab 或用户点击刷新时触发。
+   */
+  async listCustomVoices(prefix?: string): Promise<void> {
+    if (!this.supportsCustomVoiceMode) return
+    if (!this.workspaceId) {
+      this.customVoiceLoadState = 'error'
+      this.customVoiceLoadError = '复刻音色需要填写 Workspace ID（在百炼控制台「业务空间」页面可找到）'
+      this.notifyChanged()
+      return
+    }
+    const key = readImageProviderKey('dashscope')
+    if (!key) {
+      this.customVoiceLoadState = 'error'
+      this.customVoiceLoadError = 'DashScope API Key 未配置'
+      this.notifyChanged()
+      return
+    }
+
+    this.customVoiceLoadState = 'loading'
+    this.customVoiceLoadError = ''
+    this.notifyChanged()
+
+    try {
+      const url = resolveCustomizationUrl(this.workspaceId)
+      const body: Record<string, unknown> = {
+        model: 'voice-enrollment',
+        input: {
+          action: 'list_voice',
+          page_size: 50,
+          page_index: 0,
+          ...(prefix ? { prefix } : {})
+        }
+      }
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
+        body: JSON.stringify(body)
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        const msg = (data as Record<string, unknown>)?.message ?? `请求失败（${res.status}）`
+        throw new Error(String(msg))
+      }
+      const output = (data as Record<string, unknown>)?.output as Record<string, unknown> | undefined
+      const list = (output?.voice_list as CustomVoice[] | undefined) ?? []
+      // 过滤 OK 状态，DEPLOYING 的也保留（让 UI 知道正在审核）
+      this.customVoices = list.filter(v => v && v.voice_id)
+      this.customVoiceLoadState = 'done'
+    } catch (err) {
+      this.customVoiceLoadState = 'error'
+      this.customVoiceLoadError = (err as Error).message || String(err)
+    } finally {
+      this.notifyChanged()
+    }
+  }
+
+  /**
+   * 创建一个复刻音色。
+   * @param audioDataUri 参考音频 Data URI，如 `data:audio/wav;base64,...`
+   * @param prefix 音色名前缀（数字+字母，≤10 字符）
+   */
+  async createCustomVoice(audioDataUri: string, prefix: string): Promise<void> {
+    if (!this.supportsCustomVoiceMode) return
+    if (!this.workspaceId) {
+      this.customVoiceCreateState = 'error'
+      this.customVoiceCreateError = '复刻音色需要填写 Workspace ID（在百炼控制台「业务空间」页面可找到）'
+      this.notifyChanged()
+      return
+    }
+    const key = readImageProviderKey('dashscope')
+    if (!key) {
+      this.customVoiceCreateState = 'error'
+      this.customVoiceCreateError = 'DashScope API Key 未配置'
+      this.notifyChanged()
+      return
+    }
+    if (!audioDataUri) {
+      this.customVoiceCreateState = 'error'
+      this.customVoiceCreateError = '请先选择参考音频文件'
+      this.notifyChanged()
+      return
+    }
+
+    // prefix 校验：仅数字字母，≤10 字符
+    const cleanPrefix = prefix.trim().toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 10) || 'myvoice'
+
+    this.customVoiceCreateState = 'loading'
+    this.customVoiceCreateError = ''
+    this.notifyChanged()
+
+    try {
+      const url = resolveCustomizationUrl(this.workspaceId)
+      const body = {
+        model: 'voice-enrollment',
+        input: {
+          action: 'create_voice',
+          target_model: this.model, // 必须和后续合成模型一致
+          prefix: cleanPrefix,
+          audio: audioDataUri,
+          language_hints: ['zh'],
+          enable_volume_normalization: 'false'
+        }
+      }
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
+        body: JSON.stringify(body)
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        const msg = (data as Record<string, unknown>)?.message ?? `创建失败（${res.status}）`
+        throw new Error(String(msg))
+      }
+      const output = (data as Record<string, unknown>)?.output as Record<string, unknown> | undefined
+      const voiceId = output?.voice_id as string | undefined
+      if (!voiceId) throw new Error('创建成功但未返回 voice_id')
+
+      this.customVoiceCreateState = 'done'
+      // 自动选上新创建的音色
+      this.voice = voiceId
+      // 重新拉列表
+      await this.listCustomVoices()
+    } catch (err) {
+      this.customVoiceCreateState = 'error'
+      this.customVoiceCreateError = (err as Error).message || String(err)
+      this.notifyChanged()
+    }
+  }
+
+  /** 重置创建状态（UI 关闭弹窗时调） */
+  resetCustomVoiceCreateState(): void {
+    this.customVoiceCreateState = 'idle'
+    this.customVoiceCreateError = ''
+    this.notifyChanged()
+  }
+
   // —— 触发生成 ——
 
   manualTrigger(): void {
@@ -410,12 +584,23 @@ export class TTSNode extends Node {
         throw new Error(label)
       }
 
-      // voice 兜底：节点里存的 voice 可能来自旧端点（如 DashScope 3.1 的 longanhuan_v3.1），
-      // 切到 Token Plan 后 3.0 系列 voice 列表完全不同。校验一下，不在列表里就用默认音色。
+      // voice 兜底：
+      //  - 复刻 voice_id（customization API 注册的）直接用，不走系统音色列表校验
+      //  - 系统音色：必须在当前模型的 voices 列表里，否则 fallback 到默认音色
+      const isCustomVoice = isCustomVoiceId(this.voice)
       const availableVoiceIds = new Set((endpoint.voices ?? []).map(v => v.id))
-      const effectiveVoice = (this.voice && availableVoiceIds.has(this.voice))
-        ? this.voice
-        : (endpoint.defaultVoice ?? this.voice)
+      let effectiveVoice: string
+      if (isCustomVoice) {
+        effectiveVoice = this.voice
+        // 复刻 voice_id 可以用于 DashScope MAAS (3.1-flash/plus) 或 Token Plan (3.0-plus) 的 simple 格式
+        if (endpoint.requestFormat !== 'dashscope-maas' && endpoint.requestFormat !== 'tokenplan-simple') {
+          throw new Error(`复刻音色（${effectiveVoice}）只能用于 qwen-audio-3.1-tts-flash / plus 或 qwen-audio-3.0-tts-plus 模型`)
+        }
+      } else {
+        effectiveVoice = (this.voice && availableVoiceIds.has(this.voice))
+          ? this.voice
+          : (endpoint.defaultVoice ?? this.voice)
+      }
 
       // —— 1. 构造请求体（根据 requestFormat 走不同分支） ——
       let bodyStr: string

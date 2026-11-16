@@ -29,6 +29,9 @@ const hasModel = ref(false)
 const modelSummary = ref<{ displayLabel: string; state: string; id: string } | null>(null)
 const canvasTools = ref<Array<CanvasToolBinding & { childNode: Node | null }>>([])
 
+// —— 连续对话历史（仅展示，开关在 DetailPanel） ——
+const chatHistory = ref<Array<{ role: string; content: string }>>([])
+
 let unsubscribe: (() => void) | undefined
 
 // 所有工具列表（内置 + LLM 动态注册），从 node 模型层取完整详情
@@ -124,6 +127,15 @@ function syncFromNode() {
     pendingPrompt.value = nextPending
     if (!nextPending) pendingPromptSelected.value.clear()
   }
+
+  // 连续对话历史同步（仅展示，开关在 DetailPanel）
+  chatHistory.value = n.displayHistory.map(m => {
+    const c = m.content
+    const contentStr = typeof c === 'string'
+      ? c
+      : (c as Array<{ type: string; text?: string }>)?.filter(p => p.type === 'text').map(p => p.text).join('\n') ?? ''
+    return { role: m.role, content: contentStr }
+  })
 }
 
 function onStopClick() {
@@ -364,6 +376,26 @@ function closeToolEditor() {
       <template v-else>
         <div class="card-slot__drop-hint">暂无可用工具</div>
       </template>
+    </div>
+
+    <!-- ── 历史消息列表（仅当有历史时展示，方便在卡片上快速预览） ── -->
+    <div v-if="chatHistory.length > 0" class="chat-history">
+      <div
+        v-for="(msg, idx) in chatHistory"
+        :key="idx"
+        class="chat-history__msg"
+        :class="{
+          'chat-history__msg--user': msg.role === 'user',
+          'chat-history__msg--assistant': msg.role === 'assistant',
+          'chat-history__msg--tool': msg.role === 'tool',
+          'chat-history__msg--system': msg.role === 'system'
+        }"
+      >
+        <span class="chat-history__role">
+          {{ msg.role === 'user' ? t('historyUser') : msg.role === 'assistant' ? t('historyAssistant') : msg.role === 'tool' ? 'Tool' : 'System' }}
+        </span>
+        <span class="chat-history__content">{{ msg.content }}</span>
+      </div>
     </div>
 
     <!-- ── 结果区 ── -->
@@ -717,6 +749,50 @@ function closeToolEditor() {
 
 // ── Footer ──
 .footer { display: flex; justify-content: flex-end; }
+
+// ── 历史消息列表（仅展示，开关在 DetailPanel） ──
+.chat-history {
+  padding: 4px 6px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background: #fff;
+  max-height: 100px;
+  overflow-y: auto;
+  font-size: 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+
+  &__msg {
+    display: flex;
+    gap: 6px;
+    padding: 2px 4px;
+    border-radius: 3px;
+    line-height: 1.4;
+    word-break: break-all;
+
+    &--user { background: #eff6ff; }
+    &--assistant { background: #f0fdf4; }
+    &--tool { background: #fff7ed; font-size: 10px; }
+    &--system { background: #f8fafc; font-style: italic; font-size: 10px; }
+  }
+  &__role {
+    font-weight: 700;
+    flex-shrink: 0;
+    width: 54px;
+    color: #64748b;
+  }
+  &__content {
+    flex: 1;
+    min-width: 0;
+    color: #334155;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+}
 
 // ── Resize Handle ──
 .resize-handle {

@@ -357,10 +357,12 @@ function onResizeEnd(): void {
   gap: 12px;
 
   &--bottom {
-    pointer-events: none; // 容器空白区域穿透
+    pointer-events: none;
     position: absolute;
     bottom: -30px;
+    height: 30px;
     width: 100%;
+    align-items: start;
 
     :deep(.port) {
       pointer-events: auto; // 只有端口三角形恢复捕获

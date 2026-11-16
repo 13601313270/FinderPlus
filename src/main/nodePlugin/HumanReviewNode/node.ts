@@ -12,6 +12,9 @@ import { clearQueueLabel } from './i18n'
 
 const NODE_HEIGHT = 220
 
+/** 审核超时再次提醒的间隔（毫秒）：5 分钟 */
+const REMINDER_DELAY = 5 * 60 * 1000
+
 /** 审核模式：queue（FIFO 队列逐条审核）/ override（只保留最新值覆盖） */
 export type ReviewMode = 'queue' | 'override'
 
@@ -80,6 +83,9 @@ export class HumanReviewNode extends Node {
 
   /** 卡片内各 kind renderer 的视图状态（按 VALUE_NAME 存，结构由各 renderer 自行决定） */
   private rendererSaveStates: Record<string, Record<string, unknown>> = {}
+
+  /** 5 分钟超时再提醒的定时器；undefined 表示没有待触发的提醒 */
+  private reminderTimer: ReturnType<typeof setTimeout> | undefined
 
   constructor(id: string) {
     super(id)
@@ -200,7 +206,8 @@ export class HumanReviewNode extends Node {
     const upstreamClass = this.resolveUpstreamValueClass()
 
     if (!hasEdges) {
-      // 上游完全断开 → 清队列 + 删输出端口
+      // 上游完全断开 → 清队列 + 删输出端口 + 清提醒
+      this.clearReminder()
       this.queue.length = 0
       this.current = undefined
       if (this.approveOutput) {
@@ -233,8 +240,10 @@ export class HumanReviewNode extends Node {
     const value = values[0]
 
     if (this.mode === 'override') {
-      // 覆盖模式：每次都替换 current，不维护队列
+      // 覆盖模式：每次都替换 current，不维护队列；重置超时提醒计时
+      this.clearReminder()
       this.current = value
+      this.scheduleReminder()
       this.notifyChanged()
       // 覆盖模式不发系统通知——频繁覆盖场景下弹通知会骚扰用户
       // 保持 dirty：有 current 待审核
@@ -250,7 +259,7 @@ export class HumanReviewNode extends Node {
     }
     this.notifyChanged()
 
-    // 首次入队（队列为空 → 有了第一项）时发系统通知，避免队列积压连弹 N 条
+    // 首次入队（队列为空 → 有了第一项）时发系统通知 + 启动超时提醒，避免队列积压连弹 N 条
     if (wasEmpty) {
       const label = value.displayLabel || '待审核项'
       // bracket 访问绕过 node tsconfig 的 Window 类型差异（web tsconfig 正常）
@@ -266,6 +275,8 @@ export class HumanReviewNode extends Node {
           nodeId: this.id
         }).catch(() => { /* noop */ })
       }
+      // 首次有待审核项 → 启动 5 分钟超时再提醒
+      this.scheduleReminder()
     }
 
     // 入队后保持 dirty——队列非空 = 有未处理的审核项，等 approve/reject 清空后 stable
@@ -365,6 +376,39 @@ export class HumanReviewNode extends Node {
     }
   }
 
+  // —— 超时再提醒 ——
+
+  /** 安排 5 分钟后再次发提醒；已有定时器则先清掉再重排 */
+  private scheduleReminder(): void {
+    this.clearReminder()
+    this.reminderTimer = setTimeout(() => {
+      // 触发时 current 可能已被审完（用户恰好 5 分钟整点操作），双重检查
+      if (this.current === undefined) return
+      const label = this.current.displayLabel || '待审核项'
+      const w = window as unknown as {
+        notificationApi?: { show: (t: string, b?: string, m?: Record<string, unknown>) => Promise<unknown> }
+        getCurrentCanvasId?: () => string
+      }
+      if (w.notificationApi) {
+        const canvasId = w.getCurrentCanvasId?.()
+        w.notificationApi.show('人工审核待处理（已超时）', label, {
+          ...(canvasId ? { canvasId } : {}),
+          nodeId: this.id
+        }).catch(() => { /* noop */ })
+      }
+      // 只提醒一次，发完清掉
+      this.reminderTimer = undefined
+    }, REMINDER_DELAY)
+  }
+
+  /** 清除待触发的提醒定时器 */
+  private clearReminder(): void {
+    if (this.reminderTimer !== undefined) {
+      clearTimeout(this.reminderTimer)
+      this.reminderTimer = undefined
+    }
+  }
+
   // —— 人工操作 ——
 
   /** 同意当前项：commit 到 approveOutput，然后取下一个 */
@@ -387,11 +431,18 @@ export class HumanReviewNode extends Node {
   /** 审核通过/拒绝后取下一个待审核项 */
   private advance(): void {
     if (this.mode === 'override') {
-      // 覆盖模式：只有一条，审完就清空
+      // 覆盖模式：只有一条，审完就清空 → 清提醒
       this.current = undefined
+      this.clearReminder()
     } else {
       // queue 模式：从队列取下一个成为当前项；队列为空则 current 置 undefined
       this.current = this.queue.shift()
+      // 还有下一项 → 重新开始 5 分钟计时；没有了 → 清提醒
+      if (this.current !== undefined) {
+        this.scheduleReminder()
+      } else {
+        this.clearReminder()
+      }
     }
     this.notifyChanged()
     // 没有待审核项了 → stable
@@ -403,6 +454,7 @@ export class HumanReviewNode extends Node {
   /** 清空当前审核项 + 积压队列，回到等待输入状态 */
   clearQueue(): void {
     if (this.current === undefined && this.queue.length === 0) return
+    this.clearReminder()
     this.current = undefined
     this.queue.length = 0
     this.notifyChanged()

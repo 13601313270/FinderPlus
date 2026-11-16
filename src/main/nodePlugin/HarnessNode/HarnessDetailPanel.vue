@@ -24,6 +24,26 @@ function onChangeMode(v: 'ask' | 'auto') {
   console.log('[HarnessDetailPanel] after set, userDecisionMode.value=', userDecisionMode.value, 'node.userDecisionMode=', nodeRef.value?.userDecisionMode)
 }
 
+// 连续对话模式
+const chatMode = ref(false)
+const historyCount = ref(0)
+function onToggleChatMode(e: Event) {
+  const v = (e.target as HTMLInputElement).checked
+  chatMode.value = v
+  nodeRef.value?.setChatMode(v)
+}
+function onClearHistory() {
+  nodeRef.value?.clearHistory()
+}
+
+// 自动调用
+const autoCall = ref(false)
+function onToggleAutoCall(e: Event) {
+  const v = (e.target as HTMLInputElement).checked
+  autoCall.value = v
+  nodeRef.value?.setAutoCall(v)
+}
+
 // 内置工具开关（只展示 5 个常用纯函数工具；define_tool/remove_tool/ask_user 不由这里控制）
 const BUILTIN_SWITCHES = ['json_parse', 'json_get', 'regex_extract', 'url_encode', 'string_replace'] as const
 type BuiltinSwitchName = typeof BUILTIN_SWITCHES[number]
@@ -98,6 +118,11 @@ function sync() {
   maxIterations.value = n.displayMaxIterations
   userDecisionMode.value = n.userDecisionMode
   console.log('[HarnessDetailPanel] sync, userDecisionMode=', n.userDecisionMode)
+  // 连续对话同步
+  chatMode.value = n.displayChatMode
+  historyCount.value = n.historyCount
+  // 自动调用同步
+  autoCall.value = n.displayAutoCall
   // 内置工具开关同步
   for (const name of BUILTIN_SWITCHES) {
     builtinSwitches.value[name] = n.getBuiltinEnabled(name)
@@ -160,6 +185,27 @@ function extractText(content: string | Array<{ type: string; [k: string]: unknow
 
 <template>
   <div class="harness-detail">
+    <!-- ── 模式开关组 ── -->
+    <div class="detail-panel__section">
+      <label class="detail-panel__label">模式</label>
+      <div class="detail-panel__toggles">
+        <label class="detail-panel__toggle">
+          <input type="checkbox" :checked="autoCall" @change="onToggleAutoCall" />
+          <span>{{ t('autoCall') }}</span>
+        </label>
+        <label class="detail-panel__toggle">
+          <input type="checkbox" :checked="chatMode" @change="onToggleChatMode" />
+          <span>{{ t('chatMode') }}</span>
+          <button
+            v-if="historyCount > 0"
+            class="detail-panel__mini-btn"
+            type="button"
+            @click="onClearHistory"
+          >{{ t('clearHistory') }} ({{ historyCount }})</button>
+        </label>
+      </div>
+    </div>
+
     <!-- ── 用户决策模式 ── -->
     <div class="mode-row">
       <span class="mode-row__label">决策模式</span>
@@ -278,6 +324,52 @@ function extractText(content: string | Array<{ type: string; [k: string]: unknow
   flex-direction: column;
   height: 100%;
   overflow: hidden;
+}
+
+// ── 模式开关组（跟 LLMNode 一致的 checkbox toggle 风格） ──
+.detail-panel__section {
+  padding: 10px 12px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.detail-panel__label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #334155;
+}
+.detail-panel__toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+}
+.detail-panel__toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #374151;
+  cursor: pointer;
+  user-select: none;
+
+  input[type='checkbox'] {
+    accent-color: #3b82f6;
+    width: 14px;
+    height: 14px;
+  }
+}
+.detail-panel__mini-btn {
+  all: unset;
+  cursor: pointer;
+  font-size: 11px;
+  color: #dc2626;
+  padding: 1px 6px;
+  border-radius: 3px;
+  border: 1px solid #fecaca;
+  margin-left: 4px;
+  &:hover { background: #fee2e2; }
 }
 
 // ── 用户决策模式 ──
@@ -512,6 +604,7 @@ function extractText(content: string | Array<{ type: string; [k: string]: unknow
   align-items: center;
   justify-content: center;
   color: #94a3b8;
+  min-height: 120px;
   font-size: 12px;
 }
 

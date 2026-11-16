@@ -464,11 +464,31 @@ class HarnessLoop {
     this.aborted = true
   }
 
-  async run(system: string, promptMm: MultiModalValue): Promise<string> {
-    this.messages = [
-      { role: 'system', content: system || 'You are a helpful assistant. Use tools when needed.' },
-      { role: 'user', content: await buildUserContent(promptMm) }
-    ]
+  /** 清空对话历史（chatMode 关闭时也可手动调，把 messages 清空） */
+  clearMessages(): void {
+    this.messages = []
+    this.iteration = 0
+  }
+
+  /**
+   * 执行一次 ReAct 循环。
+   * @param chatMode true = 连续对话模式：保留历史 messages，追加新的 user prompt；首次调用时补 system
+   *                 false = 单次模式（默认）：重置 messages 从头开始
+   */
+  async run(system: string, promptMm: MultiModalValue, chatMode: boolean = false): Promise<string> {
+    const userContent = await buildUserContent(promptMm)
+    const defaultSystem = 'You are a helpful assistant. Use tools when needed.'
+
+    if (!chatMode || this.messages.length === 0) {
+      // 重置模式：单次模式 或 连续对话首次调用 → 从头开始
+      this.messages = [
+        { role: 'system', content: system || defaultSystem },
+        { role: 'user', content: userContent }
+      ]
+    } else {
+      // 追加模式：已有历史 → 直接 push 新的 user message
+      this.messages.push({ role: 'user', content: userContent })
+    }
     this.iteration = 0
     this.aborted = false
 
@@ -1167,6 +1187,7 @@ export class HarnessNode extends Node {
   private resultOutput!: OutputPort
   readonly sendPort = new MethodPort('send', { label: { zh: '发送', en: 'Send' } })
   readonly cancelPort = new MethodPort('cancel', { label: { zh: '取消', en: 'Cancel' } })
+  readonly clearHistoryPort = new MethodPort('clearHistory', { label: { zh: '清空历史', en: 'Clear History' } })
 
   // 内部状态
   private localPrompt = ''
@@ -1176,6 +1197,12 @@ export class HarnessNode extends Node {
   private errorMessage = ''
   private maxIterations = 10
   private jsonOutput = false
+
+  /** 是否开启连续对话模式：每次 prompt 追加到历史，下次运行带上完整历史 */
+  private chatMode = false
+
+  /** 是否自动调用：收到上游 prompt 输入时自动触发 ReAct 循环；默认 false，需用户手动点发送 */
+  private autoCall = false
 
   // 核心组件
   private toolRegistry = new ToolRegistry()
@@ -1211,6 +1238,8 @@ export class HarnessNode extends Node {
     this.sendPort.onTrigger(() => this.manualTrigger())
     this.addMethod(this.cancelPort)
     this.cancelPort.onTrigger(() => this.cancelRun())
+    this.addMethod(this.clearHistoryPort)
+    this.clearHistoryPort.onTrigger(() => this.clearHistory())
 
     this.loop = new HarnessLoop(this.toolRegistry, this.maxIterations)
     registerBuiltinTools(this.toolRegistry)
@@ -1339,7 +1368,8 @@ export class HarnessNode extends Node {
 
   inputPortReceiveValue(ports: InputPort[], _source: InputPortChangeSource): void {
     this.notifyChanged()
-    // promptInput 或 systemInput 变化 → 自动执行
+    // 仅当 autoCall 开启时才自动触发；默认 false，需用户手动点发送按钮
+    if (!this.autoCall) return
     const changedIds = ports.map(p => p.id)
     if (changedIds.includes('prompt') || changedIds.includes('system')) {
       this.manualTrigger()
@@ -1623,7 +1653,7 @@ export class HarnessNode extends Node {
     this.notifyChanged()
 
     try {
-      const finalText = await this.loop.run(system, promptMm)
+      const finalText = await this.loop.run(system, promptMm, this.chatMode)
       this.result = finalText
       this._status = 'done'
 
@@ -1659,7 +1689,11 @@ export class HarnessNode extends Node {
     const clamped = Math.max(1, Math.min(50, Math.floor(v)))
     if (clamped !== this.maxIterations) {
       this.maxIterations = clamped
+      // 重建 loop 时保留对话历史
+      const oldMessages = this.loop.messages.slice()
       this.loop = new HarnessLoop(this.toolRegistry, this.maxIterations)
+      this.loop.messages = oldMessages
+      this.loop.setModelNode(this.modelNode)
       this.notifyChanged()
     }
   }
@@ -1687,6 +1721,54 @@ export class HarnessNode extends Node {
     this._userDecisionMode = v
     // ask 模式 → ask_user 注册进 ToolRegistry，LLM 可见；auto 模式 → 摘掉，LLM 不可见
     this.toolRegistry.setBuiltinsEnabled(['ask_user'], v === 'ask')
+    this.notifyChanged()
+  }
+
+  // ─── 连续对话模式 ───
+
+  /** 是否开启连续对话模式 —— UI 读它决定是否显示历史区 */
+  get displayChatMode(): boolean {
+    return this.chatMode
+  }
+  /** 设置连续对话开关；关闭时自动清空历史 */
+  setChatMode(v: boolean): void {
+    if (v === this.chatMode) return
+    this.chatMode = v
+    if (!v) {
+      this.loop.clearMessages()
+      this.result = ''
+    }
+    this.notifyChanged()
+  }
+
+  // ─── 自动调用开关 ───
+
+  /** 是否自动调用 —— UI 读它决定是显示发送按钮还是静默自动 */
+  get displayAutoCall(): boolean {
+    return this.autoCall
+  }
+  /** 设置自动调用开关；UI 切换时调用 */
+  setAutoCall(v: boolean): void {
+    if (v === this.autoCall) return
+    this.autoCall = v
+    this.notifyChanged()
+  }
+
+  /** 当前对话历史条数 —— UI 可显示 "N 条消息" */
+  get historyCount(): number {
+    return this.loop.messages.length
+  }
+
+  /** 对话历史快照（UI 渲染预览用，返回副本） */
+  get displayHistory(): readonly HarnessMessage[] {
+    return this.loop.messages.slice()
+  }
+
+  /** 清空对话历史 */
+  clearHistory(): void {
+    if (this.loop.messages.length === 0) return
+    this.loop.clearMessages()
+    this.result = ''
     this.notifyChanged()
   }
 
@@ -1724,7 +1806,9 @@ export class HarnessNode extends Node {
       disabledBuiltins: Array.from(this._disabledBuiltins),
       localPrompt: this.localPrompt,
       localSystem: this.localSystem,
-      canvasBindings: this.toolRegistry.getAllBindings()
+      canvasBindings: this.toolRegistry.getAllBindings(),
+      chatMode: this.chatMode,
+      autoCall: this.autoCall
     }
   }
 
@@ -1777,6 +1861,12 @@ export class HarnessNode extends Node {
     }
     if (typeof state.localSystem === 'string') {
       this.localSystem = state.localSystem
+    }
+    if (typeof state.chatMode === 'boolean') {
+      this.chatMode = state.chatMode
+    }
+    if (typeof state.autoCall === 'boolean') {
+      this.autoCall = state.autoCall
     }
 
     // 画布恢复后，重新绑定 Canvas 节点工具 + 收养关系

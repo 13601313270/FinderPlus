@@ -115,5 +115,81 @@ export const messages = {
     es: 'Añadir imagen',
     fr: 'Ajouter une image',
     de: 'Bild hinzufügen'
+  },
+
+  // —— 自动调用 ——
+  autoCall: {
+    zh: '自动调用',
+    en: 'Auto call',
+    ja: '自動実行',
+    ko: '자동 실행',
+    es: 'Llamada automática',
+    fr: 'Appel automatique',
+    de: 'Auto-Aufruf'
+  },
+
+  // —— 连续对话模式 ——
+  chatMode: {
+    zh: '连续对话',
+    en: 'Chat mode',
+    ja: '連続対話',
+    ko: '연속 대화',
+    es: 'Modo conversación',
+    fr: 'Mode conversation',
+    de: 'Chat-Modus'
+  },
+  chatModeOn: {
+    zh: '开启',
+    en: 'Enabled',
+    ja: '有効',
+    ko: '활성화',
+    es: 'Activado',
+    fr: 'Activé',
+    de: 'Aktiviert'
+  },
+  chatModeHint: {
+    zh: '开启后，每次发送的 prompt 会追加到历史中，下次执行带上完整上下文',
+    en: 'When enabled, each prompt is appended to history and sent with full context next time',
+    ja: '有効にすると、毎回の prompt が履歴に追加され、次回実行時に完全なコンテキストと共に送信されます',
+    ko: '활성화하면 매번 prompt가 기록에 추가되고 다음 실행 시 전체 컨텍스트와 함께 전송됩니다',
+    es: 'Cuando está habilitado, cada prompt se agrega al historial y se envía con el contexto completo la próxima vez',
+    fr: 'Lorsqu’il est activé, chaque prompt est ajouté à l’historique et envoyé avec le contexte complet la prochaine fois',
+    de: 'Wenn aktiviert, wird jeder prompt zum Verlauf hinzugefügt und beim nächsten Mal mit vollständigem Kontext gesendet'
+  },
+  clearHistory: {
+    zh: '清空历史',
+    en: 'Clear history',
+    ja: '履歴をクリア',
+    ko: '기록 지우기',
+    es: 'Limpiar historial',
+    fr: 'Effacer l’historique',
+    de: 'Verlauf löschen'
+  },
+  historyMsgs: {
+    zh: '条消息',
+    en: 'messages',
+    ja: '件のメッセージ',
+    ko: '개의 메시지',
+    es: 'mensajes',
+    fr: 'messages',
+    de: 'Nachrichten'
+  },
+  historyUser: {
+    zh: '用户',
+    en: 'You',
+    ja: 'ユーザー',
+    ko: '사용자',
+    es: 'Tú',
+    fr: 'Vous',
+    de: 'Du'
+  },
+  historyAssistant: {
+    zh: 'AI',
+    en: 'AI',
+    ja: 'AI',
+    ko: 'AI',
+    es: 'IA',
+    fr: 'IA',
+    de: 'KI'
   }
 }

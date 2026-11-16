@@ -9,6 +9,9 @@ import { InputPort } from '../../engine/port/InputPort'
 import { OutputPort } from '../../engine/port/OutputPort'
 import { Node, type InputPortChangeSource } from '../../engine/node/Node'
 import { inLabel, outLabel } from './i18n'
+import { VideoFileValue } from 'src/main/engine/data/VideoFileValue'
+import { AudioFileCollectionValue } from 'src/main/engine/data/AudioFileCollectionValue'
+import { ImgFileCollectionValue } from 'src/main/engine/data/ImgFileCollectionValue'
 
 /**
  * 透传节点（Wire）：极简的接线卡子，接受任何类型的数据、原样透传出去。
@@ -30,7 +33,7 @@ export class WireNode extends Node {
 
   /** 所有内置 Value 子类（FileValue 覆盖 ImgFileValue / TxtFileValue 的继承链） */
   private static readonly ALL_VALUE_CLASSES = [
-    StringValue, NumberValue, BoolValue, JsonValue, FileValue, ImgFileValue, TxtFileValue
+    StringValue, NumberValue, BoolValue, JsonValue, FileValue, ImgFileValue, TxtFileValue, VideoFileValue, AudioFileCollectionValue, ImgFileCollectionValue
   ]
 
   /** 输入端口：接受任何 Value（继承链覆盖所有内置类型） */

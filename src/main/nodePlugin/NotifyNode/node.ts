@@ -8,6 +8,9 @@ import { TxtFileValue } from '../../engine/data/TxtFileValue'
 import { InputPort } from '../../engine/port/InputPort'
 import { Node } from '../../engine/node/Node'
 import { inLabel } from './i18n'
+import { VideoFileValue } from 'src/main/engine/data/VideoFileValue'
+import { AudioFileCollectionValue } from 'src/main/engine/data/AudioFileCollectionValue'
+import { ImgFileCollectionValue } from 'src/main/engine/data/ImgFileCollectionValue'
 
 /**
  * 通知节点（Notify）：终端节点，收到任意值时发起系统级通知。
@@ -24,7 +27,7 @@ export class NotifyNode extends Node {
 
   /** 所有内置 Value 子类 */
   private static readonly ALL_VALUE_CLASSES = [
-    StringValue, NumberValue, BoolValue, JsonValue, FileValue, ImgFileValue, TxtFileValue
+    StringValue, NumberValue, BoolValue, JsonValue, FileValue, ImgFileValue, TxtFileValue, VideoFileValue, AudioFileCollectionValue, ImgFileCollectionValue
   ]
 
   /** 输入端口 */

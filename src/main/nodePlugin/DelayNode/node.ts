@@ -9,6 +9,9 @@ import { InputPort } from '../../engine/port/InputPort'
 import { OutputPort } from '../../engine/port/OutputPort'
 import { Node, type InputPortChangeSource } from '../../engine/node/Node'
 import { inLabel, outLabel } from './i18n'
+import { VideoFileValue } from 'src/main/engine/data/VideoFileValue'
+import { AudioFileCollectionValue } from 'src/main/engine/data/AudioFileCollectionValue'
+import { ImgFileCollectionValue } from 'src/main/engine/data/ImgFileCollectionValue'
 
 /** 默认延时毫秒 */
 const DEFAULT_DELAY_MS = 1000
@@ -38,7 +41,7 @@ export class DelayNode extends Node {
 
   /** 所有内置 Value 子类 */
   private static readonly ALL_VALUE_CLASSES = [
-    StringValue, NumberValue, BoolValue, JsonValue, FileValue, ImgFileValue, TxtFileValue
+    StringValue, NumberValue, BoolValue, JsonValue, FileValue, ImgFileValue, TxtFileValue, VideoFileValue, AudioFileCollectionValue, ImgFileCollectionValue
   ]
 
   /** 输入端口 */

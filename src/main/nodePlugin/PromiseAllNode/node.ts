@@ -6,6 +6,9 @@ import { NumberValue } from '../../engine/data/NumberValue'
 import { StringValue } from '../../engine/data/StringValue'
 import { Value, type ValueKind } from '../../engine/data/Value'
 import { InputPort } from '../../engine/port/InputPort'
+import { VideoFileValue } from 'src/main/engine/data/VideoFileValue'
+import { AudioFileCollectionValue } from 'src/main/engine/data/AudioFileCollectionValue'
+import { ImgFileCollectionValue } from 'src/main/engine/data/ImgFileCollectionValue'
 import { OutputPort } from '../../engine/port/OutputPort'
 import { Node } from '../../engine/node/Node'
 import { EdgeBatch } from '../../engine/graph/EdgeBatch'
@@ -15,7 +18,9 @@ import type { Edge } from '../../engine/graph/Edge'
 type ValueClass = { readonly VALUE_NAME: ValueKind; prototype: Value; new (...args: any[]): Value }
 
 /** 输入端口类型标签复用 SwitchNode 的全部具体 Value 子类 */
-const ALL_VALUE_CLASSES = [StringValue, NumberValue, BoolValue, FileValue, ImgFileValue, JsonValue]
+const ALL_VALUE_CLASSES = [
+  StringValue, NumberValue, BoolValue, FileValue, ImgFileValue, JsonValue, VideoFileValue, AudioFileCollectionValue, ImgFileCollectionValue
+]
 
 /** 端口标签多语言前缀，动态端口会拼接序号，如 "输入 1" / "Output 1" */
 const IN_LABEL = {

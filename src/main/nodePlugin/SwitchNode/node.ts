@@ -6,6 +6,13 @@ import { Value, type ValueKind } from '../../engine/data/Value'
 import { InputPort } from '../../engine/port/InputPort'
 import { OutputPort } from '../../engine/port/OutputPort'
 import { Node } from '../../engine/node/Node'
+import { ImgFileValue } from '../../engine/data/ImgFileValue'
+import { TxtFileValue } from '../../engine/data/TxtFileValue'
+import { VideoFileValue } from '../../engine/data/VideoFileValue'
+import { AudioFileCollectionValue } from '../../engine/data/AudioFileCollectionValue'
+import { ImgFileCollectionValue } from '../../engine/data/ImgFileCollectionValue'
+
+
 
 /** OutputPort 构造函数需要的 Value 子类形状（与 OutputPort.ts 里的 ValueClass 同构但未导出，这里内联） */
 type ValueClass = { readonly VALUE_NAME: ValueKind; prototype: Value; new (...args: any[]): Value }
@@ -32,7 +39,9 @@ export class SwitchNode extends Node {
   readonly type = SwitchNode.TYPE
 
   /** 所有当前具体 Value 子类（FileValue 覆盖 ImgFileValue / TxtFileValue 的继承链） */
-  private static readonly ALL_VALUE_CLASSES = [StringValue, NumberValue, BoolValue, FileValue]
+  private static readonly ALL_VALUE_CLASSES = [
+    StringValue, NumberValue, BoolValue, FileValue, ImgFileValue, TxtFileValue, VideoFileValue, AudioFileCollectionValue, ImgFileCollectionValue
+  ]
 
   /** 输入端口：布尔条件 */
   readonly conditionInput = new InputPort('cond', {

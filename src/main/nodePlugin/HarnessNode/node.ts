@@ -1211,6 +1211,9 @@ export class HarnessNode extends Node {
   // 用户决策模式：ask = AI 遇到 ask_user 时弹窗等用户选；auto = 跳过弹窗，直接取第一个选项并标记 auto:true
   private _userDecisionMode: 'ask' | 'auto' = 'ask'
 
+  /** 是否允许 AI 动态注册/卸载工具（define_tool / remove_tool）；默认 true，关掉后这两个工具从 ToolRegistry 摘掉 */
+  private _allowToolDefine = true
+
   // Model 绑定（LLMNode 实例）
   modelNode: Node | null = null
 
@@ -1250,6 +1253,10 @@ export class HarnessNode extends Node {
     // ask_user 是否注册进 ToolRegistry，让 LLM 可见：取决于初始决策模式
     if (this._userDecisionMode === 'auto') {
       this.toolRegistry.setBuiltinsEnabled(['ask_user'], false)
+    }
+    // define_tool / remove_tool 是否可见：取决于 allowToolDefine 开关
+    if (!this._allowToolDefine) {
+      this.toolRegistry.setBuiltinsEnabled(['define_tool', 'remove_tool'], false)
     }
 
     this.setBox(360, 420)
@@ -1724,6 +1731,16 @@ export class HarnessNode extends Node {
     this.notifyChanged()
   }
 
+  // ─── 动态工具注册开关 ───
+  get allowToolDefine(): boolean { return this._allowToolDefine }
+  setAllowToolDefine(v: boolean): void {
+    if (v === this._allowToolDefine) return
+    this._allowToolDefine = v
+    // 关掉 → 摘掉 define_tool / remove_tool；打开 → 重新注册
+    this.toolRegistry.setBuiltinsEnabled(['define_tool', 'remove_tool'], v)
+    this.notifyChanged()
+  }
+
   // ─── 连续对话模式 ───
 
   /** 是否开启连续对话模式 —— UI 读它决定是否显示历史区 */
@@ -1808,7 +1825,8 @@ export class HarnessNode extends Node {
       localSystem: this.localSystem,
       canvasBindings: this.toolRegistry.getAllBindings(),
       chatMode: this.chatMode,
-      autoCall: this.autoCall
+      autoCall: this.autoCall,
+      allowToolDefine: this._allowToolDefine
     }
   }
 
@@ -1867,6 +1885,12 @@ export class HarnessNode extends Node {
     }
     if (typeof state.autoCall === 'boolean') {
       this.autoCall = state.autoCall
+    }
+    if (typeof state.allowToolDefine === 'boolean') {
+      this._allowToolDefine = state.allowToolDefine
+      if (!state.allowToolDefine) {
+        this.toolRegistry.setBuiltinsEnabled(['define_tool', 'remove_tool'], false)
+      }
     }
 
     // 画布恢复后，重新绑定 Canvas 节点工具 + 收养关系

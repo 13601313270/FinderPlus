@@ -128,6 +128,17 @@ export const messages = {
     de: 'Auto-Aufruf'
   },
 
+  // —— 动态工具注册 ——
+  allowToolDefine: {
+    zh: '允许动态工具',
+    en: 'Dynamic tools',
+    ja: '動的ツール',
+    ko: '동적 도구',
+    es: 'Herramientas dinámicas',
+    fr: 'Outils dynamiques',
+    de: 'Dynamische Werkzeuge'
+  },
+
   // —— 连续对话模式 ——
   chatMode: {
     zh: '连续对话',

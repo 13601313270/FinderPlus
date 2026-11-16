@@ -44,6 +44,14 @@ function onToggleAutoCall(e: Event) {
   nodeRef.value?.setAutoCall(v)
 }
 
+// 动态工具注册开关（控制 define_tool / remove_tool 是否对 LLM 可见）
+const allowToolDefine = ref(true)
+function onToggleAllowToolDefine(e: Event) {
+  const v = (e.target as HTMLInputElement).checked
+  allowToolDefine.value = v
+  nodeRef.value?.setAllowToolDefine(v)
+}
+
 // 内置工具开关（只展示 5 个常用纯函数工具；define_tool/remove_tool/ask_user 不由这里控制）
 const BUILTIN_SWITCHES = ['json_parse', 'json_get', 'regex_extract', 'url_encode', 'string_replace'] as const
 type BuiltinSwitchName = typeof BUILTIN_SWITCHES[number]
@@ -123,6 +131,8 @@ function sync() {
   historyCount.value = n.historyCount
   // 自动调用同步
   autoCall.value = n.displayAutoCall
+  // 动态工具注册开关同步
+  allowToolDefine.value = n.allowToolDefine
   // 内置工具开关同步
   for (const name of BUILTIN_SWITCHES) {
     builtinSwitches.value[name] = n.getBuiltinEnabled(name)
@@ -202,6 +212,10 @@ function extractText(content: string | Array<{ type: string; [k: string]: unknow
             type="button"
             @click="onClearHistory"
           >{{ t('clearHistory') }} ({{ historyCount }})</button>
+        </label>
+        <label class="detail-panel__toggle">
+          <input type="checkbox" :checked="allowToolDefine" @change="onToggleAllowToolDefine" />
+          <span>{{ t('allowToolDefine') }}</span>
         </label>
       </div>
     </div>

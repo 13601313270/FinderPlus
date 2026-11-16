@@ -8,9 +8,9 @@ import { TxtFileValue } from '../../engine/data/TxtFileValue'
 import { InputPort } from '../../engine/port/InputPort'
 import { Node } from '../../engine/node/Node'
 import { inLabel } from './i18n'
-import { VideoFileValue } from 'src/main/engine/data/VideoFileValue'
-import { AudioFileCollectionValue } from 'src/main/engine/data/AudioFileCollectionValue'
-import { ImgFileCollectionValue } from 'src/main/engine/data/ImgFileCollectionValue'
+import { VideoFileValue } from '../../engine/data/VideoFileValue'
+import { AudioFileCollectionValue } from '../../engine/data/AudioFileCollectionValue'
+import { ImgFileCollectionValue } from '../../engine/data/ImgFileCollectionValue'
 
 /**
  * 通知节点（Notify）：终端节点，收到任意值时发起系统级通知。

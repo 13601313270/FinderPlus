@@ -9,9 +9,9 @@ import { InputPort } from '../../engine/port/InputPort'
 import { OutputPort } from '../../engine/port/OutputPort'
 import { Node, type InputPortChangeSource } from '../../engine/node/Node'
 import { inLabel, outLabel } from './i18n'
-import { VideoFileValue } from 'src/main/engine/data/VideoFileValue'
-import { AudioFileCollectionValue } from 'src/main/engine/data/AudioFileCollectionValue'
-import { ImgFileCollectionValue } from 'src/main/engine/data/ImgFileCollectionValue'
+import { VideoFileValue } from '../../engine/data/VideoFileValue'
+import { AudioFileCollectionValue } from '../../engine/data/AudioFileCollectionValue'
+import { ImgFileCollectionValue } from '../../engine/data/ImgFileCollectionValue'
 
 /** 默认延时毫秒 */
 const DEFAULT_DELAY_MS = 1000

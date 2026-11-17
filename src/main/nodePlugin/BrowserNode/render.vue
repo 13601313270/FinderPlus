@@ -64,6 +64,16 @@ const ffmpegReady = ref<{ available: boolean; hasLibx264: boolean; installHint: 
 const recordError = ref('')
 let recordErrorTimer: number | undefined
 
+// —— 音频录制相关 ——
+/** 默认开启音频录制（无需单独开关，录视频就一定带声音） */
+const recordWithAudio = true
+/** MediaRecorder 实例（浏览器原生 API，录 webview 音频输出） */
+let mediaRecorder: MediaRecorder | null = null
+/** MediaStream（desktopCapturer 拿的，录完要关掉所有 tracks） */
+let mediaStream: MediaStream | null = null
+/** audioSourceId 缓存：startRecord 返回的 desktopCapturer source id */
+let currentAudioSourceId: string | undefined
+
 // 地址栏输入框（v-model 绑定，和 homeUrl 同步但允许临时编辑）
 const addressInput = ref('')
 
@@ -348,12 +358,20 @@ async function toggleRecording(): Promise<void> {
     }
 
     // ★ 关键：先立即翻 UI 状态，再异步等主进程。
-    // 以前 isRecording=false 排在 await stopRecord() 之后，主进程卡一下 UI 就永远在等。
     isRecording.value = false
     stopRecordingTimer()
     browserNode.value.markRecordingStopped()
 
     try {
+      // —— 先停 MediaRecorder（如果在录音频）——
+      if (mediaRecorder) {
+        // eslint-disable-next-line no-console
+        console.log('[BrowserNode:toggleRecording] → 先 stopAudioCapture()')
+        await stopAudioCapture()
+        // eslint-disable-next-line no-console
+        console.log('[BrowserNode:toggleRecording] ✅ stopAudioCapture 完成')
+      }
+
       // eslint-disable-next-line no-console
       console.log('[BrowserNode:toggleRecording] → 调 browserApi.stopRecord(', wcId, ')')
       const result = await browserApi.stopRecord(wcId)
@@ -422,15 +440,26 @@ async function toggleRecording(): Promise<void> {
     const height = Math.max(100, Math.round(rect?.height ?? browserNode.value.box[1]))
 
     try {
-      const result = await browserApi.startRecord({ wcId, width, height, fps: 15 })
+      const result = await browserApi.startRecord({ wcId, width, height, fps: 15, includeAudio: recordWithAudio })
       if (!result.ok) {
         showRecordError(result.error)
         return
       }
+      currentAudioSourceId = result.audioSourceId
       browserNode.value.markRecordingStarted()
       isRecording.value = true
       recordingElapsedMs.value = 0
       startRecordingTimer()
+
+      // —— 启动 MediaRecorder 录 webview 音频 ——
+      if (currentAudioSourceId) {
+        // eslint-disable-next-line no-console
+        console.log('[BrowserNode:toggleRecording] → 启动 MediaRecorder')
+        void startAudioCapture(wcId, currentAudioSourceId)
+      } else {
+        // eslint-disable-next-line no-console
+        console.warn('[BrowserNode:toggleRecording] 主进程没返回 audioSourceId，降级纯视频')
+      }
     } catch (err) {
       showRecordError(`${t('recordFailed')}：${err instanceof Error ? err.message : String(err)}`)
     }
@@ -450,6 +479,132 @@ function stopRecordingTimer(): void {
     clearInterval(recordingTimer)
     recordingTimer = undefined
   }
+}
+
+// —— 音频录制辅助 ——
+
+/**
+ * 启动 MediaRecorder 录 webview 音频。
+ * 主进程 startRecord 会返回 desktopCapturer 的 audioSourceId，
+ * 我们用 chromeMediaSource: 'desktop' + chromeMediaSourceId 来 get 这个 webview 的音频流。
+ * 产出的每个 MediaRecorder chunk 都会转 base64 发给主进程 append 到 webm 文件。
+ */
+async function startAudioCapture(wcId: number, audioSourceId: string): Promise<void> {
+  try {
+    // eslint-disable-next-line no-console
+    console.log('[BrowserNode:startAudioCapture] ★ 开始，audioSourceId=', audioSourceId)
+
+    // ★ 关键：chromeMediaSource: 'tab' —— 配合主进程 getMediaSourceId(requestingWc) 返回的 sourceId
+    // desktop source 只接受 screen/window id；要抓 webview 的音频必须用 tab source
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const constraints = {
+      audio: {
+        mandatory: {
+          chromeMediaSource: 'tab',
+          chromeMediaSourceId: audioSourceId
+        }
+      } as any,
+      video: false
+    } as MediaStreamConstraints
+
+    // Electron preload 里需要 contextIsolation 关或者暴露 mediaDevices...
+    // 好，我们在 BrowserNode 这个渲染进程里（webview 外面那个 Vue 页面）直接能用 getUserMedia
+    const stream = await navigator.mediaDevices.getUserMedia(constraints)
+    // eslint-disable-next-line no-console
+    console.log('[BrowserNode:startAudioCapture] ✅ 拿到 MediaStream，tracks=', stream.getTracks().length)
+
+    mediaStream = stream
+
+    // 选 opus 编码的 webm（MediaRecorder 支持最好的格式）
+    const mimeTypes = ['audio/webm;codecs=opus', 'audio/webm']
+    let mimeType = ''
+    for (const mt of mimeTypes) {
+      if (MediaRecorder.isTypeSupported(mt)) { mimeType = mt; break }
+    }
+    if (!mimeType) {
+      // eslint-disable-next-line no-console
+      console.warn('[BrowserNode:startAudioCapture] MediaRecorder 不支持任何 audio/webm，降级纯视频')
+      mediaStream = null
+      return
+    }
+
+    mediaRecorder = new MediaRecorder(stream, { mimeType })
+    // eslint-disable-next-line no-console
+    console.log('[BrowserNode:startAudioCapture] ✅ MediaRecorder 创建，mimeType=', mimeType)
+
+    // ondataavailable：MediaRecorder 每隔一段时间（timeSlice=1s）产出一个 Blob chunk
+    // 我们把每个 chunk 转 base64 发给主进程
+    mediaRecorder.ondataavailable = (e) => {
+      if (!e.data || e.data.size === 0) return
+      void (async () => {
+        const base64 = await blobToBase64(e.data)
+        try {
+          browserApi.audioChunk(wcId, base64)
+        } catch (err) {
+          // eslint-disable-next-line no-console
+          console.warn('[BrowserNode] audioChunk IPC 失败:', err)
+        }
+      })()
+    }
+
+    mediaRecorder.onstop = () => {
+      // eslint-disable-next-line no-console
+      console.log('[BrowserNode:startAudioCapture] MediaRecorder.onstop 触发')
+      // 主进程 stopRecord 会等我们 markAudioDone
+      browserApi.markAudioDone(wcId)
+      // 清理 tracks
+      mediaStream?.getTracks().forEach((t) => t.stop())
+      mediaStream = null
+      mediaRecorder = null
+    }
+
+    mediaRecorder.start(1000)  // 每 1s 一个 chunk（平衡延迟和内存）
+    // eslint-disable-next-line no-console
+    console.log('[BrowserNode:startAudioCapture] ✅ MediaRecorder.start(1000)')
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error('[BrowserNode:startAudioCapture] ❌ 失败:', err)
+    // 失败降级：纯视频录像继续
+    mediaRecorder = null
+    mediaStream = null
+  }
+}
+
+/** Blob → base64 string */
+function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      const result = reader.result as string  // data URL
+      const base64 = result.includes(',') ? result.split(',')[1] ?? '' : result
+      resolve(base64)
+    }
+    reader.onerror = () => reject(reader.error)
+    reader.readAsDataURL(blob)
+  })
+}
+
+/** MediaRecorder.stop() —— 返回 Promise，等 onstop fire 再 resolve */
+function stopAudioCapture(): Promise<void> {
+  return new Promise((resolve) => {
+    if (!mediaRecorder) { resolve(); return }
+    if (mediaRecorder.state !== 'recording') { resolve(); return }
+    const prevOnStop = mediaRecorder.onstop
+    mediaRecorder.onstop = (e: Event) => {
+      // 保存 resolve 到闭包里，同时清 onstop 避免重复触发
+      mediaRecorder!.onstop = null
+      resolve()
+      if (typeof prevOnStop === 'function') {
+        prevOnStop.call(mediaRecorder!, e)
+      }
+    }
+    try {
+      mediaRecorder.stop()
+    } catch {
+      mediaRecorder.onstop = null
+      resolve()
+    }
+  })
 }
 
 // —— 浏览模式切换 ——

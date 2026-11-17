@@ -1,6 +1,6 @@
-import { webContents, type NativeImage, type Rectangle } from 'electron'
+import { webContents, type WebContents, type NativeImage, type Rectangle } from 'electron'
 import { spawn, spawnSync, type ChildProcessWithoutNullStreams } from 'node:child_process'
-import { mkdtempSync, rmSync, statSync, readFileSync } from 'node:fs'
+import { mkdtempSync, rmSync, statSync, readFileSync, openSync, writeSync, closeSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
@@ -33,6 +33,16 @@ interface RecorderState {
   cleanupSubscription: () => void
   /** 是否已结束（stop 被调用后标记 true，防止 endFrameSubscription + ffmpeg 双重收尾） */
   ended: boolean
+  /** 是否录声音 */
+  includeAudio: boolean
+  /** 主进程给 renderer 的 desktopCapturer source id，用来抓 webview 音频 */
+  audioSourceId?: string
+  /** 音频 webm 文件路径（renderer 发来的 MediaRecorder 数据存这里） */
+  audioWebmPath?: string
+  /** 音频 webm 文件的 fd，stop 时要 close */
+  audioWebmFd?: number
+  /** 是否等音频写完 */
+  audioDone: boolean
 }
 
 const activeRecorders = new Map<number, RecorderState>()
@@ -71,10 +81,12 @@ export interface StartRecordArgs {
   height: number
   /** 帧率（可选，默认 15） */
   fps?: number
+  /** 是否同时录 webview 里的音频输出（可选，默认 false） */
+  includeAudio?: boolean
 }
 
 export type StartRecordResult =
-  | { ok: true; recordId: number }
+  | { ok: true; recordId: number; audioSourceId?: string }
   | { ok: false; error: string }
 
 export type StopRecordResult =
@@ -85,7 +97,7 @@ export type StopRecordResult =
  * 开始录制指定 webview。
  * 同一 wcId 上已有活跃录制时返回 ok:false；不同 wcId 可并行。
  */
-export function startRecord(args: StartRecordArgs): StartRecordResult {
+export function startRecord(args: StartRecordArgs, requestingWc?: WebContents): StartRecordResult {
   const wcId = args.wcId
 
   // eslint-disable-next-line no-console
@@ -118,14 +130,16 @@ export function startRecord(args: StartRecordArgs): StartRecordResult {
   const width = (Math.max(100, Math.round(args.width || 0)) & ~1)   // 向下取偶数
   const height = (Math.max(100, Math.round(args.height || 0)) & ~1)
   const fps = Math.min(60, Math.max(1, args.fps ?? DEFAULT_FPS))
+  const includeAudio = !!args.includeAudio
   const tmpDir = mkdtempSync(join(tmpdir(), 'canvasdesk-record-'))
   const outputPath = join(tmpDir, `browser-${wcId}-${Date.now()}.mp4`)
   // eslint-disable-next-line no-console
-  console.log('[BrowserRecorder.startRecord] ffmpeg 输入配置：', width, 'x', height, '@', fps, 'fps')
+  console.log('[BrowserRecorder.startRecord] ffmpeg 输入配置：', width, 'x', height, '@', fps, 'fps',
+    includeAudio ? '+ audio' : '（纯视频）')
 
-  // 5. spawn ffmpeg（stdin 接收 raw BGRA 字节）
-  const ffmpegArgs = [
-    '-y', // 覆盖已有文件
+  // 5. 构建 ffmpeg 命令（startRecord 先只跑纯视频；音频等 stopRecord 后再合成）
+  const ffmpegArgs: string[] = [
+    '-y',
     '-f', 'rawvideo',
     '-pix_fmt', 'bgra',
     '-s', `${width}x${height}`,
@@ -136,8 +150,51 @@ export function startRecord(args: StartRecordArgs): StartRecordResult {
     '-preset', 'veryfast',
     '-crf', '23',
     '-movflags', '+faststart',
-    outputPath
+    outputPath  // 先输出纯视频 mp4，stopRecord 后如果有音频再合成
   ]
+
+  // 尝试拿 audioSourceId 给 renderer 抓 webview 音频（异步：主进程 getMediaSourceId）
+  let audioSourceId: string | undefined
+  let audioWebmPath: string | undefined
+  let audioWebmFd: number | undefined
+
+  if (includeAudio) {
+    try {
+      // ★ 正确重载：getMediaSourceId(requestingWc) —— 传请求方（BrowserNode 渲染页面）的 WebContents
+      // 返回的 id 配合 chromeMediaSource: 'tab' 在 renderer 里 getUserMedia
+      const sourceId = requestingWc ? wc.getMediaSourceId(requestingWc) : undefined
+      if (sourceId) {
+        // eslint-disable-next-line no-console
+        console.log('[BrowserRecorder.startRecord] getMediaSourceId ✅', sourceId,
+          '(注意：这个 id 只有 10 秒有效！renderer 必须立刻 getUserMedia)')
+        audioSourceId = sourceId
+      } else {
+        // eslint-disable-next-line no-console
+        console.warn('[BrowserRecorder.startRecord] getMediaSourceId 返回空字符串？降级纯视频')
+      }
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.warn('[BrowserRecorder.startRecord] getMediaSourceId 失败:', e)
+    }
+
+    // 如果真的拿到 sourceId，预创建 webm 文件让 renderer 写 chunks
+    if (audioSourceId) {
+      audioWebmPath = join(tmpDir, `audio-${wcId}.webm`)
+      try {
+        audioWebmFd = openSync(audioWebmPath, 'w')
+        // eslint-disable-next-line no-console
+        console.log('[BrowserRecorder.startRecord] 音频 webm 文件已创建:', audioWebmPath)
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error('[BrowserRecorder.startRecord] 创建 webm 文件失败:', e)
+        audioSourceId = undefined
+        audioWebmPath = undefined
+      }
+    }
+  }
+
+  // eslint-disable-next-line no-console
+  console.log('[BrowserRecorder.startRecord] ffmpeg args (纯视频):', ffmpegArgs.join(' '))
 
   let ffmpeg: ChildProcessWithoutNullStreams
   try {
@@ -245,14 +302,57 @@ export function startRecord(args: StartRecordArgs): StartRecordResult {
     tmpDir,
     ffmpegError: '',
     cleanupSubscription,
-    ended: false
+    ended: false,
+    includeAudio: !!audioSourceId,  // 只有真的拿到 sourceId 才走音频
+    audioSourceId,
+    audioWebmPath: audioWebmFd !== undefined ? audioWebmPath : undefined,
+    audioWebmFd,
+    audioDone: audioSourceId === undefined  // 没录音频就直接 true
   })
 
   // 8. 把 frameCount 暴露给 stopRecord 的 ffmpeg exit 诊断
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ;(activeRecorders.get(wcId) as any).__frameCountRef = { get count() { return frameCount }, get first() { return firstFrameSize } }
 
-  return { ok: true, recordId: wcId }
+  return { ok: true, recordId: wcId, audioSourceId }
+}
+
+/**
+ * renderer MediaRecorder 每产出一个 chunk，用 base64 发给主进程。
+ * 主进程直接 append 到 webm 文件。
+ */
+export function appendAudioChunk(wcId: number, base64Chunk: string): void {
+  const state = activeRecorders.get(wcId)
+  if (!state || !state.audioWebmFd) return
+  if (state.ended) return
+  try {
+    const buf = Buffer.from(base64Chunk, 'base64')
+    writeSync(state.audioWebmFd, buf)
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.warn('[BrowserRecorder.appendAudioChunk] 写失败:', e)
+  }
+}
+
+/**
+ * renderer MediaRecorder 停止后调这个，主进程关闭 webm fd。
+ */
+export function markAudioDone(wcId: number): void {
+  const state = activeRecorders.get(wcId)
+  if (!state) return
+  try {
+    if (state.audioWebmFd !== undefined) {
+      closeSync(state.audioWebmFd)
+      state.audioWebmFd = undefined
+      // eslint-disable-next-line no-console
+      console.log('[BrowserRecorder.markAudioDone] fd 已关闭')
+    }
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.warn('[BrowserRecorder.markAudioDone] 关闭 fd 失败:', e)
+  }
+  state.audioDone = true
+  // 可选：如果 stopRecord 正在等 audioDone，resolve 它
 }
 
 /**
@@ -342,12 +442,58 @@ export function stopRecord(wcId: number): Promise<StopRecordResult> {
           return
         }
 
+        // ★ 音频合成：如果 audioWebmPath 存在且 > 0 字节，跑第二次 ffmpeg 把音频合进去
+        let finalOutputPath = state.outputPath
+        let finalFileSize = stat.size
+
+        if (state.audioWebmPath) {
+          try {
+            const audioStat = statSync(state.audioWebmPath)
+            // eslint-disable-next-line no-console
+            console.log('[BrowserRecorder] 检查音频文件:', state.audioWebmPath, '大小:', audioStat.size, 'audioDone=', state.audioDone)
+            if (audioStat.size > 0 && state.audioDone) {
+              // 跑第二次 ffmpeg 合成（用 -c:v copy 不重编码视频，超快）
+              const mergedPath = join(state.tmpDir, `with-audio-${wcId}.mp4`)
+              // eslint-disable-next-line no-console
+              console.log('[BrowserRecorder] ★ 开始合成音频:', state.outputPath, '+', state.audioWebmPath, '→', mergedPath)
+              const mergeResult = spawnSync('ffmpeg', [
+                '-y',
+                '-i', state.outputPath,   // 纯视频
+                '-i', state.audioWebmPath, // MediaRecorder 产出的 webm
+                '-c:v', 'copy',            // 视频直接 copy（超快）
+                '-c:a', 'aac',             // 音频转 AAC
+                '-b:a', '128k',
+                '-shortest',               // 按较短的一路收尾
+                '-movflags', '+faststart',
+                mergedPath
+              ], { shell: true, timeout: 15000 })
+
+              if (mergeResult.status === 0) {
+                const mergedStat = statSync(mergedPath)
+                finalOutputPath = mergedPath
+                finalFileSize = mergedStat.size
+                // eslint-disable-next-line no-console
+                console.log('[BrowserRecorder] ✅ 音频合成成功，最终大小:', finalFileSize)
+                // 删掉纯视频临时文件
+                try { rmSync(state.outputPath, { force: true }) } catch { /* noop */ }
+              } else {
+                // eslint-disable-next-line no-console
+                console.warn('[BrowserRecorder] 音频合成失败，返回纯视频。', mergeResult.stderr?.toString()?.split('\n').slice(-3).join('\n'))
+              }
+            } else {
+              // eslint-disable-next-line no-console
+              console.warn('[BrowserRecorder] 音频文件 size=', audioStat.size, 'audioDone=', state.audioDone, '跳过合成')
+            }
+          } catch (e) {
+            // eslint-disable-next-line no-console
+            console.warn('[BrowserRecorder] 检查音频/合成时出错，返回纯视频:', e)
+          }
+        }
+
         // ★ 关键：读 base64 → 清临时目录 → 返回。
-        // 以前返回绝对路径让 renderer 再去读，但系统临时目录会堆积 mp4。
-        // 现在主进程直接读进返回值，renderer 拿到就能用，临时目录立刻清。
         let base64 = ''
         try {
-          base64 = readFileSync(state.outputPath, 'base64')
+          base64 = readFileSync(finalOutputPath, 'base64')
           // eslint-disable-next-line no-console
           console.log('[BrowserRecorder] base64 读取成功，长度:', base64.length)
         } catch (err) {
@@ -360,7 +506,7 @@ export function stopRecord(wcId: number): Promise<StopRecordResult> {
           try { rmSync(state.tmpDir, { recursive: true, force: true }) } catch { /* noop */ }
         }
 
-        doResolve({ ok: true, outputPath: state.outputPath, fileSize: stat.size, durationMs, base64 })
+        doResolve({ ok: true, outputPath: finalOutputPath, fileSize: finalFileSize, durationMs, base64 })
       } catch (err) {
         // eslint-disable-next-line no-console
         console.error('[BrowserRecorder] statSync 失败:', err)

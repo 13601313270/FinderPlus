@@ -858,17 +858,26 @@ const browserApi = {
   checkFfmpeg: (): Promise<{ available: boolean; hasLibx264: boolean; installHint: string }> =>
     ipcRenderer.invoke('browser:checkFfmpeg'),
 
-  /** 开始录制指定 webview。返回 { ok: true } 或 { ok: false, error } */
-  startRecord: (args: { wcId: number; width: number; height: number; fps?: number }): Promise<
-    { ok: true; recordId: number }
+  /** 开始录制指定 webview。返回 { ok: true, recordId, audioSourceId } 或 { ok: false, error }。
+   *  audioSourceId 存在时 renderer 应该开始 MediaRecorder 抓 webview 音频。 */
+  startRecord: (args: { wcId: number; width: number; height: number; fps?: number; includeAudio?: boolean }): Promise<
+    { ok: true; recordId: number; audioSourceId?: string }
     | { ok: false; error: string }
   > => ipcRenderer.invoke('browser:startRecord', args),
 
   /** 停止录制并等 ffmpeg 写完文件。返回输出 mp4 的绝对路径 + 文件大小 + 时长 */
   stopRecord: (wcId: number): Promise<
-    { ok: true; outputPath: string; fileSize: number; durationMs: number }
+    { ok: true; outputPath: string; fileSize: number; durationMs: number; base64: string }
     | { ok: false; error: string }
   > => ipcRenderer.invoke('browser:stopRecord', wcId),
+
+  /** renderer MediaRecorder 每产一个 chunk 发给主进程（base64） */
+  audioChunk: (wcId: number, base64: string): Promise<void> =>
+    ipcRenderer.invoke('browser:audioChunk', wcId, base64),
+
+  /** renderer MediaRecorder 停止后通知主进程 close webm fd */
+  markAudioDone: (wcId: number): Promise<void> =>
+    ipcRenderer.invoke('browser:markAudioDone', wcId),
 
   /** 查指定 webview 是否在录制中 */
   isRecording: (wcId: number): Promise<boolean> =>

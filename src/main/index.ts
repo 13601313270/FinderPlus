@@ -13,7 +13,7 @@ import * as cheerio from 'cheerio'
 import * as iconv from 'iconv-lite'
 import OSS from 'ali-oss'
 import { startFeishu, stopFeishu, getFeishuStatus, disposeFeishu, sendFeishuMessage, uploadFeishuImage, sendFeishuFilePipeline, getFfmpegStatus, sendFeishuCardPipeline } from './feishu/FeishuManager'
-import { startRecord as startBrowserRecord, stopRecord as stopBrowserRecord, isRecording as isBrowserRecording, checkFfmpeg as checkBrowserFfmpeg } from './BrowserRecorder'
+import { startRecord as startBrowserRecord, stopRecord as stopBrowserRecord, isRecording as isBrowserRecording, checkFfmpeg as checkBrowserFfmpeg, appendAudioChunk as appendBrowserAudioChunk, markAudioDone as markBrowserAudioDone } from './BrowserRecorder'
 import { openDatabase, closeDatabase, getDatabase, persist } from './db/database'
 import { SqliteStorage } from './db/SqliteStorage'
 import { ensureCanvasDir, getCanvasDir, getCanvasRootDir, migrateLegacyRootFiles, ensureNodeDir, removeNodeDir, saveFileToNodeDir, readFileFromNodeDir, deleteFileFromNodeDir } from './paths'
@@ -2906,10 +2906,10 @@ ipcMain.handle('browser:checkFfmpeg', () => {
   return info
 })
 
-ipcMain.handle('browser:startRecord', (_e, args: { wcId: number; width: number; height: number; fps?: number }) => {
+ipcMain.handle('browser:startRecord', (event, args: { wcId: number; width: number; height: number; fps?: number; includeAudio?: boolean }) => {
   // eslint-disable-next-line no-console
   console.log('[IPC browser:startRecord] →', args)
-  const r = startBrowserRecord(args)
+  const r = startBrowserRecord(args, event.sender)
   // eslint-disable-next-line no-console
   console.log('[IPC browser:startRecord] ←', r)
   return r
@@ -2922,6 +2922,14 @@ ipcMain.handle('browser:stopRecord', async (_e, wcId: number) => {
   // eslint-disable-next-line no-console
   console.log('[IPC browser:stopRecord] ←', JSON.stringify(r).slice(0, 300))
   return r
+})
+
+ipcMain.handle('browser:audioChunk', (_e, wcId: number, base64: string) => {
+  appendBrowserAudioChunk(wcId, base64)
+})
+
+ipcMain.handle('browser:markAudioDone', (_e, wcId: number) => {
+  markBrowserAudioDone(wcId)
 })
 
 ipcMain.handle('browser:isRecording', (_e, wcId: number) => {

@@ -1,5 +1,6 @@
 import { StringValue } from '../../engine/data/StringValue'
 import { VideoFileValue } from '../../engine/data/VideoFileValue'
+import { HtmlFileValue } from '../../engine/data/HtmlFileValue'
 import { InputPort } from '../../engine/port/InputPort'
 import { MethodPort } from '../../engine/port/MethodPort'
 import { OutputPort } from '../../engine/port/OutputPort'
@@ -53,6 +54,34 @@ export interface ScriptItem {
 export class BrowserNode extends Node {
   static readonly TYPE = 'browser'
   readonly type = BrowserNode.TYPE
+
+  // —— 固定输入端口 ——
+
+  /**
+   * 本地 HTML 输入端口：接收 HtmlFileValue，渲染成 data:text/html;... 本地页面。
+   * 和下面的 $1 $2 ... 字符串端口**完全独立**，互不干扰。
+   * 一旦这个端口有 HtmlFileValue，BrowserNode 就走"本地渲染"模式，忽略 homeUrl。
+   */
+  readonly htmlInput = new InputPort('html', {
+    accepts: [HtmlFileValue],
+    label: {
+      zh: '本地 HTML',
+      en: 'Local HTML',
+      ja: 'ローカル HTML',
+      ko: '로컬 HTML',
+      es: 'HTML local',
+      ar: 'HTML محلي',
+      fr: 'HTML local',
+      pt: 'HTML local',
+      ru: 'Локальный HTML',
+      hi: 'स्थानीय HTML',
+      id: 'HTML Lokal',
+      de: 'Lokales HTML',
+      vi: 'HTML cục bộ',
+      tr: 'Yerel HTML',
+      it: 'HTML locale'
+    }
+  })
 
   // —— 输出端口 ——
 
@@ -178,6 +207,14 @@ export class BrowserNode extends Node {
   /** 最近一次错误信息（webview did-fail-load 时设置） */
   private lastError = ''
 
+  /**
+   * 本地 HTML 源（data:text/html;charset=utf-8 形式）。
+   * 当输入端口收到 HtmlFileValue 时异步读取并编码到此字段，render.vue 检测到非空时用 loadURL 渲染。
+   * 收到 StringValue 时自动清空，回退到 URL 导航模式。
+   * 不持久化（因为 HtmlFileValue 是运行时通过端口传进来的）。
+   */
+  private htmlSource = ''
+
   constructor(id: string) {
     super(id)
     this.addOutput(this.currentUrlOutput)
@@ -186,7 +223,10 @@ export class BrowserNode extends Node {
     this.addMethod(this.navigatePort)
     this.navigatePort.onTrigger(() => { void this._dispatchNavigate() })
 
-    // 默认给一个输入端口，方便直接开用
+    // 注册固定输入端口（独立于 $1/$2/... 字符串端口）
+    this.addInput(this.htmlInput)
+
+    // 默认给一个字符串输入端口，方便直接开用
     this.addInputPort()
 
     // 默认 box：540 × 400，webview 内容区需要足够空间
@@ -208,6 +248,14 @@ export class BrowserNode extends Node {
   /** URL 模板原文 */
   get displayHomeUrl(): string {
     return this.homeUrl
+  }
+
+  /**
+   * 本地 HTML data URL（非空时 render.vue 应优先用 webview.loadURL 加载）。
+   * 空字符串表示走正常 URL 导航。
+   */
+  get displayHtmlSource(): string {
+    return this.htmlSource
   }
 
   /**
@@ -390,33 +438,108 @@ export class BrowserNode extends Node {
     return url
   }
 
-  /** 追加一个输入端口 */
+  /** 追加一个字符串输入端口（只接 StringValue，用于 $1 $2 占位符） */
   addInputPort(): void {
     this.portSeq += 1
     const port = new InputPort(`p${this.portSeq}`, {
       accepts: [StringValue],
-      label: { zh: `$${this.inputPorts.length + 1}`, en: `$${this.inputPorts.length + 1}` }
+      label: { zh: `$${this._stringPortCount() + 1}`, en: `$${this._stringPortCount() + 1}` }
     })
     this.addInput(port)
     this.recomputeResolvedUrl()
   }
 
-  /** 移除末尾输入端口；至少保留 1 个 */
+  /** $1 $2 ... 端口数量（排除固定端口 html） */
+  private _stringPortCount(): number {
+    return this.inputPorts.filter((p) => p.id.startsWith('p')).length
+  }
+
+  /** 移除末尾字符串输入端口；至少保留 1 个 */
   removeLastInputPort(): void {
-    if (this.inputPorts.length <= 1) return
-    const last = this.inputPorts[this.inputPorts.length - 1]
+    const stringPorts = this.inputPorts.filter((p) => p.id.startsWith('p'))
+    if (stringPorts.length <= 1) return
+    const last = stringPorts[stringPorts.length - 1]
     if (!last) return
     this.removeInput(last)
     this.recomputeResolvedUrl()
     this.notifyChanged()
   }
 
-  /** 输入端口值变化 → 重算 resolvedUrl + 自动补端口（复用 CrawlerNode 逻辑） */
-  inputPortReceiveValue(_ports: InputPort[]): void {
+  /**
+   * 输入端口值变化：
+   * - 是 htmlInput → 异步读取 HtmlFileValue → 设置 htmlSource → 本地渲染模式
+   * - 是 $1/$2 字符串端口 → 重算 resolvedUrl（URL 导航模式）
+   * 两个分支独立，互不干扰。
+   */
+  inputPortReceiveValue(ports: InputPort[]): void {
+    // eslint-disable-next-line no-console
+    console.log('[BrowserNode:inputPortReceiveValue] ★ 收到，ports=', ports.map((p) => p.id),
+      'htmlInput.id=', this.htmlInput.id, 'includes=', ports.includes(this.htmlInput))
+
     if (this.allPortsFull()) {
       this.addInputPort()
     }
+
+    // 如果是 htmlInput 触发的 → 走本地 HTML 渲染分支
+    if (ports.includes(this.htmlInput)) {
+      // eslint-disable-next-line no-console
+      console.log('[BrowserNode:inputPortReceiveValue] → 走 htmlInput 分支')
+      void this._checkHtmlSource()
+      return
+    }
+
+    // 否则是 $1/$2 ... 字符串端口 → 走 URL 导航分支
+    // eslint-disable-next-line no-console
+    console.log('[BrowserNode:inputPortReceiveValue] → 走 URL 分支')
     this.recomputeResolvedUrl()
+    this.notifyChanged()
+  }
+
+  /**
+   * 处理 htmlInput 的值变化：
+   * - 有 HtmlFileValue → file.text() → encodeURIComponent → htmlSource = data:text/html;...
+   * - 无值 → htmlSource = '' → 回退 URL 导航
+   */
+  private async _checkHtmlSource(): Promise<void> {
+    const [v] = this.htmlInput.value
+    // eslint-disable-next-line no-console
+    console.log('[BrowserNode:_checkHtmlSource] ★ htmlInput.value[0]=',
+      v ? `${v.constructor.name} (${v.isNull ? 'null' : 'has value'})` : 'undefined',
+      'htmlSource 当前长度=', this.htmlSource.length)
+
+    const htmlFile = v instanceof HtmlFileValue ? v : null
+    // eslint-disable-next-line no-console
+    console.log('[BrowserNode:_checkHtmlSource] → instanceof HtmlFileValue?', !!htmlFile,
+      'file?', htmlFile?.file ? `size=${htmlFile.file.size}` : 'no file')
+
+    if (htmlFile && htmlFile.file) {
+      try {
+        const htmlText = await htmlFile.file.text()
+        const dataUrl = `data:text/html;charset=utf-8,${encodeURIComponent(htmlText)}`
+        // eslint-disable-next-line no-console
+        console.log('[BrowserNode:_checkHtmlSource] ✅ file.text() 成功，HTML 长度=', htmlText.length,
+          '→ dataUrl 长度=', dataUrl.length,
+          '和当前 htmlSource 相同?', this.htmlSource === dataUrl)
+        if (this.htmlSource !== dataUrl) {
+          this.htmlSource = dataUrl
+          // eslint-disable-next-line no-console
+          console.log('[BrowserNode:_checkHtmlSource] htmlSource 已更新')
+        }
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.error('[BrowserNode:_checkHtmlSource] ❌ 读取 HtmlFileValue 失败:', err)
+        this.lastError = err instanceof Error ? err.message : String(err)
+      }
+    } else {
+      if (this.htmlSource !== '') {
+        this.htmlSource = ''
+        // eslint-disable-next-line no-console
+        console.log('[BrowserNode:_checkHtmlSource] htmlSource 清空 → 回退 URL 导航')
+      }
+      this.recomputeResolvedUrl()
+    }
+    // eslint-disable-next-line no-console
+    console.log('[BrowserNode:_checkHtmlSource] → notifyChanged()')
     this.notifyChanged()
   }
 

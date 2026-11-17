@@ -48,6 +48,8 @@ const lastError = ref('')
 const zoomFactor = ref(1.0)
 const scripts = ref<ScriptItem[]>([])
 const partition = ref('')
+/** 本地 HTML data URL（非空时 webview 用 loadURL 渲染，不走 URL 导航） */
+const htmlSource = ref('')
 const lastScriptResult = ref<{ ok: boolean; text: string } | null>(null)
 
 // —— 录像相关状态 ——
@@ -139,6 +141,7 @@ function syncFromNode(node: BrowserNode): void {
   zoomFactor.value = node.currentZoomFactor
   scripts.value = node.getScripts()
   partition.value = node.partition
+  htmlSource.value = node.displayHtmlSource
   // 从 node 同步录制状态（节点重建时用）
   if (node.isRecording !== isRecording.value) {
     isRecording.value = node.isRecording
@@ -155,7 +158,8 @@ function syncFromNode(node: BrowserNode): void {
 // —— 派生 ——
 
 const loading = computed(() => status.value === 'loading')
-const hasConfig = computed(() => homeUrl.value.trim().length > 0)
+/** 有可显示内容：要么 homeUrl 有值（URL 模式），要么 htmlSource 有值（本地 HTML 模式） */
+const hasConfig = computed(() => homeUrl.value.trim().length > 0 || htmlSource.value.length > 0)
 const browsing = computed(() => browsingMode.value)
 
 /**
@@ -211,12 +215,11 @@ function onAddressKeydown(e: KeyboardEvent): void {
 // —— 导航控制 ——
 
 /**
- * 让 webview 加载当前 resolvedUrl。
+ * 让 webview 加载内容。
+ * - htmlSource 非空 → 优先 loadURL(data:text/html;...) 渲染本地 HTML
+ * - 否则 → loadURL(resolvedUrl) 走远程 URL 导航
  * 不再依赖 webviewReady 守卫——改用 try-catch + 延迟重试处理 Electron
  * "must be attached and dom-ready before loadURL" 的时序错误。
- * 因为 webview 首次创建时 initialSrc 现在一定会回退到 'about:blank'，
- * webContents 必然存在，但 dom-ready 可能比用户输入 URL 更快烧完，
- * 此时 webviewReady=true 但内部仍需等下一帧才能接受 loadURL。
  */
 function navigateToResolved(): void {
   if (!browserNode.value) {
@@ -224,6 +227,17 @@ function navigateToResolved(): void {
     console.warn('[BrowserNode] navigateToResolved: 无 browserNode，跳过')
     return
   }
+
+  // ★ 优先检查本地 HTML 源
+  const html = browserNode.value.displayHtmlSource
+  if (html) {
+    // eslint-disable-next-line no-console
+    console.log('[BrowserNode] navigateToResolved → 本地 HTML data URL 模式，长度=', html.length)
+    loadUrlWithRetry(html)
+    return
+  }
+
+  // 走远程 URL 导航
   const url = browserNode.value.displayResolvedUrl.trim()
   // eslint-disable-next-line no-console
   console.log('[BrowserNode] navigateToResolved', { url, webviewReady: webviewReady.value, hasEl: !!webviewEl.value })
@@ -235,6 +249,11 @@ function navigateToResolved(): void {
     return
   }
 
+  loadUrlWithRetry(url)
+}
+
+/** 通用：带重试的 webview.loadURL 封装 */
+function loadUrlWithRetry(url: string): void {
   const token = ++navToken
   let attempts = 0
   const maxAttempts = 10
@@ -245,7 +264,7 @@ function navigateToResolved(): void {
     if (!webviewEl.value) return
     try {
       // eslint-disable-next-line no-console
-      console.log('[BrowserNode] → loadURL', url, `(attempt ${attempts + 1})`)
+      console.log('[BrowserNode] → loadURL', url.slice(0, 80), url.length > 80 ? '...' : '', `(attempt ${attempts + 1})`)
       webviewEl.value.loadURL(url)
       webviewReady.value = true
     } catch (err) {
@@ -633,6 +652,7 @@ onMounted(() => {
   unsubscribe = found.onChanged(() => {
     const prevZoom = zoomFactor.value
     const prevPartition = partition.value
+    const prevHtmlSource = htmlSource.value
     syncFromNode(found)
 
     // —— identity 变化 → partition 变化 → 必须重建 webview ——
@@ -664,6 +684,17 @@ onMounted(() => {
       // initialSrc 在模板 diff 时被新 webview 绑定，重新触发导航
       nextTick(() => navigateToResolved())
       return // 下面的 zoom/navigate 逻辑是给稳定态用的，重建后等新的 onChanged 再走
+    }
+
+    // ★ htmlSource 变化 → 本地 HTML 源来了或清了 → 都要重新导航
+    if (htmlSource.value !== prevHtmlSource) {
+      // eslint-disable-next-line no-console
+      console.log('[BrowserNode] htmlSource 变化 → 导航', {
+        prevLen: prevHtmlSource.length,
+        newLen: htmlSource.value.length
+      })
+      nextTick(() => navigateToResolved())
+      return
     }
 
     // zoom 变化 → 立即应用（不需要等 did-stop-loading）

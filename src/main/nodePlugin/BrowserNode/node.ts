@@ -682,15 +682,21 @@ export class BrowserNode extends Node {
         }))
     }
 
-    // 重建端口
-    const wanted = typeof state.inputCount === 'number'
+    // 重建端口：只重建 $1 $2 ... 字符串端口，不动固定端口 html
+    // 以前 while 把所有端口（包括 html）都删了，然后补 addInputPort() → html 丢了
+    // inputCount 存的是 inputPorts 总数（含 html），所以 wanted - 1 才是要补的字符串端口数
+    const wantedTotal = typeof state.inputCount === 'number'
       ? Math.max(1, Math.floor(state.inputCount))
       : this.inputPorts.length
-    while (this.inputPorts.length > 0) {
-      const p = this.inputPorts[this.inputPorts.length - 1]!
-      this.removeInput(p)
-    }
-    for (let i = 0; i < wanted; i += 1) {
+
+    // 先清掉所有 $1 $2 ... 字符串端口（保留固定端口 html）
+    const stringPorts = this.inputPorts.filter((p) => p.id.startsWith('p'))
+    for (const p of stringPorts) this.removeInput(p)
+
+    // 计算需要多少个字符串端口 = wantedTotal - 固定端口数（html 占了 1 个）
+    const fixedCount = this.inputPorts.length  // 应该只剩 html
+    const wantedStringPorts = Math.max(1, wantedTotal - fixedCount)
+    for (let i = 0; i < wantedStringPorts; i += 1) {
       this.addInputPort()
     }
 

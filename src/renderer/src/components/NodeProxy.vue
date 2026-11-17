@@ -285,7 +285,7 @@ function onResizeEnd(): void {
   position: absolute;
   display: flex;
   align-items: stretch; // 两侧 ports-col 高度跟随 content
-  z-index: 1;
+  z-index: 3;
 
   &--floating {
     pointer-events: none;

@@ -18,6 +18,7 @@ import {
   buildFileFromUrl,
   MAX_REFERENCE_IMAGE_BYTES
 } from './imageGenerationService'
+import { ProxyNode } from '../ProxyNode/node'
 
 type ImageGenStatus = 'idle' | 'loading' | 'done' | 'error'
 
@@ -611,6 +612,14 @@ export class ImageGenNode extends Node {
       this.errorMessage = errMsg || '生成失败'
       this.resultFile = null
       this.failRun() // 失败 → running 兜底回到 dirty
+
+      if (this.containerNode) {
+        // 如果这个节点，是在一个
+        console.log('失败节点的上游是', this.containerNode)
+        if (this.containerNode instanceof ProxyNode) {
+          this.containerNode.onChildRunError(this, errMsg || '子节点运行错误');
+        }
+      }
     }
     this.notifyChanged()
   }

@@ -22,6 +22,14 @@ export const IMAGE_TASK_POLL_INTERVAL_MS = 2500
 export const IMAGE_TASK_TIMEOUT_MS = 120_000
 
 /**
+ * POST 创建任务的重试策略：失败后最多重试 2 次（首次 + 2 次重试 = 总共 3 次尝试）。
+ * 只对网络异常、HTTP 5xx（服务端临时故障）、HTTP 429（限流）重试；
+ * 4xx 客户端错误（API Key 无效、参数错误等）重试也没用，直接返回。
+ */
+const POST_MAX_RETRIES = 2
+const POST_RETRY_DELAY_MS = 1000
+
+/**
  * 参考图文件大小上限：百炼对单次请求体有 ~10MB 限制。
  * 7MB 原始文件 → base64 后约 9.3MB，留出 prompt / JSON 结构余量。
  */
@@ -61,26 +69,60 @@ export async function requestImage(
   isStale: () => boolean,
   signal: AbortSignal
 ): Promise<{ result?: ExtractedImage; error?: string; cancelled?: boolean }> {
-  const res = await fetch(endpoint.requestUrl, {
-    method: 'POST',
-    headers: buildImageRequestHeaders(endpoint),
-    body: JSON.stringify(buildImageRequestBody(endpoint, prompt, size, referenceImages)),
-    signal
-  })
-  const data = await res.json().catch(() => undefined)
+  let lastError: string | undefined
 
-  if (!res.ok) {
-    return { error: extractImageErrorMessage(data) ?? `请求失败（${res.status} ${res.statusText}）` }
-  }
-  if (endpoint.shape !== 'dashscope-async') {
-    return { result: extractImageResult(endpoint.shape, data) }
+  for (let attempt = 0; attempt <= POST_MAX_RETRIES; attempt++) {
+    // 每轮重试都检查 stale / abort，避免在已取消的请求上浪费
+    if (isStale()) return { cancelled: true }
+    if (signal.aborted) return { cancelled: true }
+
+    try {
+      const res = await fetch(endpoint.requestUrl, {
+        method: 'POST',
+        headers: buildImageRequestHeaders(endpoint),
+        body: JSON.stringify(buildImageRequestBody(endpoint, prompt, size, referenceImages)),
+        signal
+      })
+      const data = await res.json().catch(() => undefined)
+
+      if (res.ok) {
+        // POST 成功——同步协议直接返回结果，异步协议往下走轮询（不会对已提交的任务重 POST）
+        if (endpoint.shape !== 'dashscope-async') {
+          return { result: extractImageResult(endpoint.shape, data) }
+        }
+        const taskId = extractTaskId(data)
+        if (!taskId) {
+          return { error: extractImageErrorMessage(data) ?? '任务已提交但响应里没有 task_id' }
+        }
+        return waitForTask(endpoint, taskId, isStale, signal)
+      } else if (res.status === 400) {
+        console.log('error', res, data)
+        return { error: res.status + ' ' + data.message }
+      }
+
+      // HTTP 错误：只对可重试的状态码重试
+      const canRetry = res.status >= 500 || res.status === 429
+      const errMsg = extractImageErrorMessage(data) ?? `请求失败（${res.status} ${res.statusText}）`
+      if (!canRetry || attempt === POST_MAX_RETRIES) {
+        return { error: errMsg }
+      }
+      lastError = errMsg
+    } catch (err) {
+      // fetch 异常：AbortError 是用户主动取消，直接退出；其他网络异常可以重试
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        return { cancelled: true }
+      }
+      if (attempt === POST_MAX_RETRIES) {
+        return { error: err instanceof Error ? err.message : '网络请求异常' }
+      }
+      lastError = err instanceof Error ? err.message : '网络请求异常'
+    }
+
+    // 等一下再重试；sleep 内部会响应 abort
+    await sleep(POST_RETRY_DELAY_MS, signal)
   }
 
-  const taskId = extractTaskId(data)
-  if (!taskId) {
-    return { error: extractImageErrorMessage(data) ?? '任务已提交但响应里没有 task_id' }
-  }
-  return waitForTask(endpoint, taskId, isStale, signal)
+  return { error: lastError ?? '请求失败' }
 }
 
 /**

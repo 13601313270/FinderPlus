@@ -163,6 +163,14 @@ export class ProxyNode extends Node {
     return true
   }
 
+  /**
+   * 当子节点运行错误的时候回调
+   */
+  onChildRunError(node: Node, error: string) {
+    console.log('子节点运行错误', node, error)
+    this.failRun()
+  }
+
   /** 钳制最小框：ProxyNode 作为容器需要足够大才能放子节点 */
   override setBox(width: number, height: number): void {
     const MIN_W = 120

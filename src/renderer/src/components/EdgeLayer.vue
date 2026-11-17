@@ -22,6 +22,9 @@ import { edgeGeometry, isEdgeGeometry, bezierPath, type EdgeGeometry } from '@re
 const sceneTick = ref(0)
 const nodeTick = ref(0)
 
+/** 连线短于该阈值时整条不画——两个端口几乎重合，画出来也是噪声 */
+const MIN_EDGE_LENGTH_TO_DRAW = 10
+
 const lines = computed<readonly EdgeGeometry[]>(() => {
   // 下面三行只做「依赖登记」，取到的值本身不用：几何不是响应式数据，靠它们触发重算。
   sceneTick.value
@@ -41,6 +44,7 @@ const lines = computed<readonly EdgeGeometry[]>(() => {
     })
     .map((edge) => edgeGeometry(workspaceScene, edge))
     .filter(isEdgeGeometry)
+    .filter((line) => line.length >= MIN_EDGE_LENGTH_TO_DRAW)
 })
 
 // Edge 在引擎里没有 id（它就只是两端端口的一条记录），但 v-for 需要稳定 key。

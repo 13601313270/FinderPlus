@@ -62,20 +62,22 @@ function onDelayInput(e: Event): void {
 <template>
   <div class="node" :class="{ 'node--pending': pending }">
     <NodeHeader :title="nodeTitle" justify="center" />
-    <div class="delay-body">
-      <input
-        class="delay-body__input"
-        type="number"
-        inputmode="numeric"
-        min="0"
-        step="100"
-        :value="delayMs"
-        :disabled="!delayNode"
-        @input="onDelayInput"
-        @pointerdown.stop
-      />
-      <span class="delay-body__unit">ms</span>
-      <span v-if="typeName" class="delay-body__type">{{ typeName }}</span>
+    <div>
+      <div class="delay-body">
+        <input
+          class="delay-body__input"
+          type="number"
+          inputmode="numeric"
+          min="0"
+          step="100"
+          :value="delayMs"
+          :disabled="!delayNode"
+          @input="onDelayInput"
+          @pointerdown.stop
+        />
+        <span class="delay-body__unit">ms</span>
+      </div>
+      <div v-if="typeName" class="delay-body__type">{{ typeName }}</div>
     </div>
   </div>
 </template>

@@ -68,7 +68,7 @@ export class DelayNode extends Node {
     })
     this.addInput(this.inputPort)
     // header(~24px) + 内容区(~50px)
-    this.setBox(120, 60)
+    this.setBox(100, 80)
   }
 
   isPositionAcceptFileDrop(_relativeX: number, _relativeY: number): boolean {

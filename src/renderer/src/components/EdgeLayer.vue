@@ -64,6 +64,14 @@ function keyOf(edge: Edge): number {
  */
 defineProps<{ showRemoveButtons: boolean }>()
 
+/**
+ * 删除按钮直径 22px，加两边呼吸空间约 40px；连线短于此值时按钮会盖住节点或挤在一起，
+ * 干脆不画按钮——连线本身仍然照画，只是短连线没有中间删除入口。
+ */
+const MIN_EDGE_LENGTH_FOR_DELETE_BTN = 40
+
+const linesLongEnough = computed(() => lines.value.filter((line) => line.length >= MIN_EDGE_LENGTH_FOR_DELETE_BTN))
+
 // 节点位置变化只有 Node.onChanged 会广播（Scene 只报结构变化），所以这里订阅一遍所有节点。
 // 订阅列表跟着场景结构走：每次结构变化都重新订一份，节点增删都不会漏。
 let unsubscribeScene: (() => void) | undefined
@@ -124,7 +132,7 @@ function removeEdge(edge: Edge): void {
     留在线上只是噪声。连线本身照画，只是那会儿没有删除入口。
   -->
   <template v-if="showRemoveButtons">
-    <button v-for="line in lines" :key="`remove-${keyOf(line.edge)}`" class="edges__remove" type="button"
+    <button v-for="line in linesLongEnough" :key="`remove-${keyOf(line.edge)}`" class="edges__remove" type="button"
       title="断开两个节点之间的连接" aria-label="断开两个节点之间的连接" :style="{ left: `${line.mid.x}px`, top: `${line.mid.y}px` }"
       @pointerdown.stop @click.stop="removeEdge(line.edge)">
       ×

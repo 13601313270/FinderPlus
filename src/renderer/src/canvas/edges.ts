@@ -26,6 +26,8 @@ export interface EdgeGeometry {
   readonly to: Vec2
   /** 连线正中央（三次贝塞尔曲线 t=0.5），删除按钮落在这里 */
   readonly mid: Vec2
+  /** 起点到终点的欧氏距离——太短时不画删除按钮，避免盖住节点 */
+  readonly length: number
   /** 起点端口 side（用于画曲线时决定控制点方向） */
   readonly fromSide: PortSide
   /** 终点端口 side（用于画曲线时决定控制点方向） */
@@ -249,6 +251,7 @@ export function edgeGeometry(scene: Scene, edge: Edge): EdgeGeometry | undefined
     from,
     to,
     mid: bezierMid(from, to, { fromSide, toSide: endSide, fromType: startNode.type || '', toType: endNode.type || '' }),
+    length: Math.hypot(to.x - from.x, to.y - from.y),
     fromSide,
     toSide: endSide,
     fromType: edge.startPort.getOwner()?.type || '',

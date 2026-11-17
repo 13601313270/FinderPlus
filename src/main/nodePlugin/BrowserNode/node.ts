@@ -1,4 +1,5 @@
 import { StringValue } from '../../engine/data/StringValue'
+import { VideoFileValue } from '../../engine/data/VideoFileValue'
 import { InputPort } from '../../engine/port/InputPort'
 import { MethodPort } from '../../engine/port/MethodPort'
 import { OutputPort } from '../../engine/port/OutputPort'
@@ -93,6 +94,25 @@ export class BrowserNode extends Node {
     it: 'Titolo pagina'
   })
 
+  /** 输出端口：视频录制文件（每次录像停止时 commit 新的 VideoFileValue） */
+  readonly videoOutput = new OutputPort('video', VideoFileValue, {
+    zh: '录制视频',
+    en: 'Recorded Video',
+    ja: '録画ビデオ',
+    ko: '녹화 영상',
+    es: 'Video grabado',
+    ar: 'فيديو مسجل',
+    fr: 'Vidéo enregistrée',
+    pt: 'Vídeo gravado',
+    ru: 'Записанное видео',
+    hi: 'रिकॉर्ड किया गया वीडियो',
+    id: 'Video Terekam',
+    de: 'Aufgenommenes Video',
+    vi: 'Video đã quay',
+    tr: 'Kaydedilen Video',
+    it: 'Video registrato'
+  })
+
   // —— 方法端口 ——
 
   /** 方法端口：上游 commit 任意值即触发一次导航到当前 resolvedUrl */
@@ -162,6 +182,7 @@ export class BrowserNode extends Node {
     super(id)
     this.addOutput(this.currentUrlOutput)
     this.addOutput(this.titleOutput)
+    this.addOutput(this.videoOutput)
     this.addMethod(this.navigatePort)
     this.navigatePort.onTrigger(() => { void this._dispatchNavigate() })
 
@@ -262,6 +283,38 @@ export class BrowserNode extends Node {
     const clamped = Math.min(5.0, Math.max(0.25, Math.round(factor * 100) / 100))
     if (clamped === this.zoomFactor) return
     this.zoomFactor = clamped
+    this.notifyChanged()
+  }
+
+  // —— 视频录制状态（运行时，不持久化） ——
+
+  /** 是否正在录制（运行时状态，不持久化；render.vue 在主进程成功启动/停止后调这里同步） */
+  private recording: boolean = false
+
+  /** 录制开始的时间戳（毫秒，用于 UI 显示时长） */
+  private recordingStartedAt: number = 0
+
+  get isRecording(): boolean {
+    return this.recording
+  }
+
+  get recordingStartTimestamp(): number {
+    return this.recordingStartedAt
+  }
+
+  /** render.vue 在主进程成功 startRecord 后调用——纯状态变更，不碰录制逻辑 */
+  markRecordingStarted(): void {
+    if (this.recording) return
+    this.recording = true
+    this.recordingStartedAt = Date.now()
+    this.notifyChanged()
+  }
+
+  /** render.vue 在主进程成功 stopRecord 后调用——纯状态变更，不碰录制逻辑 */
+  markRecordingStopped(): void {
+    if (!this.recording) return
+    this.recording = false
+    this.recordingStartedAt = 0
     this.notifyChanged()
   }
 

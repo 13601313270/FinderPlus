@@ -208,5 +208,77 @@ export const messages: Record<string, LocalizedText> = {
     vi: 'Trợ giúp nút trình duyệt',
     tr: 'Tarayıcı Düğümü Yardımı',
     it: 'Aiuto nodo Browser'
+  },
+
+  recordStart: {
+    zh: '录像',
+    en: 'Record',
+    ja: '録画',
+    ko: '녹화',
+    es: 'Grabar',
+    ar: 'تسجيل',
+    fr: 'Enregistrer',
+    pt: 'Gravar',
+    ru: 'Запись',
+    hi: 'रिकॉर्ड',
+    id: 'Rekam',
+    de: 'Aufnehmen',
+    vi: 'Quay',
+    tr: 'Kaydet',
+    it: 'Registra'
+  },
+
+  recordStop: {
+    zh: '停止',
+    en: 'Stop',
+    ja: '停止',
+    ko: '중지',
+    es: 'Detener',
+    ar: 'إيقاف',
+    fr: 'Arrêter',
+    pt: 'Parar',
+    ru: 'Стоп',
+    hi: 'रुकें',
+    id: 'Berhenti',
+    de: 'Stoppen',
+    vi: 'Dừng',
+    tr: 'Durdur',
+    it: 'Ferma'
+  },
+
+  recordNeedFfmpeg: {
+    zh: '录像需要 ffmpeg（macOS 执行：brew install ffmpeg）',
+    en: 'Recording requires ffmpeg (macOS: brew install ffmpeg)',
+    ja: '録画には ffmpeg が必要です（macOS: brew install ffmpeg）',
+    ko: '녹화에 ffmpeg 필요 (macOS: brew install ffmpeg)',
+    es: 'La grabación requiere ffmpeg (macOS: brew install ffmpeg)',
+    ar: 'التسجيل يتطلب ffmpeg (macOS: brew install ffmpeg)',
+    fr: 'L\'enregistrement nécessite ffmpeg (macOS: brew install ffmpeg)',
+    pt: 'A gravação requer ffmpeg (macOS: brew install ffmpeg)',
+    ru: 'Для записи нужен ffmpeg (macOS: brew install ffmpeg)',
+    hi: 'रिकॉर्डिंग के लिए ffmpeg चाहिए (macOS: brew install ffmpeg)',
+    id: 'Rekam butuh ffmpeg (macOS: brew install ffmpeg)',
+    de: 'Aufnahme erfordert ffmpeg (macOS: brew install ffmpeg)',
+    vi: 'Quay cần ffmpeg (macOS: brew install ffmpeg)',
+    tr: 'Kayıt için ffmpeg gerekli (macOS: brew install ffmpeg)',
+    it: 'La registrazione richiede ffmpeg (macOS: brew install ffmpeg)'
+  },
+
+  recordFailed: {
+    zh: '录像失败',
+    en: 'Recording failed',
+    ja: '録画失敗',
+    ko: '녹화 실패',
+    es: 'La grabación falló',
+    ar: 'فشل التسجيل',
+    fr: 'Échec de l\'enregistrement',
+    pt: 'Falha na gravação',
+    ru: 'Ошибка записи',
+    hi: 'रिकॉर्डिंग विफल',
+    id: 'Rekam gagal',
+    de: 'Aufnahme fehlgeschlagen',
+    vi: 'Quay thất bại',
+    tr: 'Kayıt başarısız',
+    it: 'Registrazione fallita'
   }
 }

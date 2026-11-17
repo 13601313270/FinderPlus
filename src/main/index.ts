@@ -13,6 +13,7 @@ import * as cheerio from 'cheerio'
 import * as iconv from 'iconv-lite'
 import OSS from 'ali-oss'
 import { startFeishu, stopFeishu, getFeishuStatus, disposeFeishu, sendFeishuMessage, uploadFeishuImage, sendFeishuFilePipeline, getFfmpegStatus, sendFeishuCardPipeline } from './feishu/FeishuManager'
+import { startRecord as startBrowserRecord, stopRecord as stopBrowserRecord, isRecording as isBrowserRecording, checkFfmpeg as checkBrowserFfmpeg } from './BrowserRecorder'
 import { openDatabase, closeDatabase, getDatabase, persist } from './db/database'
 import { SqliteStorage } from './db/SqliteStorage'
 import { ensureCanvasDir, getCanvasDir, getCanvasRootDir, migrateLegacyRootFiles, ensureNodeDir, removeNodeDir, saveFileToNodeDir, readFileFromNodeDir, deleteFileFromNodeDir } from './paths'
@@ -979,6 +980,11 @@ function registerIpcHandlers(): void {
   ipcMain.handle('file:readBinary', (_e, args: { fileName: string; canvasId?: string }): string => {
     const targetPath = join(getCanvasDir(args.canvasId), args.fileName)
     return readFileSync(targetPath, 'base64')
+  })
+
+  /** 按绝对路径读二进制文件并返回 base64（不拼画布目录，给录像/临时文件用） */
+  ipcMain.handle('file:readBinaryAbsolute', (_e, absPath: string): string => {
+    return readFileSync(absPath, 'base64')
   })
 
   /**
@@ -2889,6 +2895,40 @@ ipcMain.handle('feishu:send', async (_e, args: {
   fileKey?: string
 }) => {
   return sendFeishuMessage(args)
+})
+
+// —— BrowserNode 视频录制 ——
+
+ipcMain.handle('browser:checkFfmpeg', () => {
+  const info = checkBrowserFfmpeg()
+  // eslint-disable-next-line no-console
+  console.log('[IPC browser:checkFfmpeg] →', info)
+  return info
+})
+
+ipcMain.handle('browser:startRecord', (_e, args: { wcId: number; width: number; height: number; fps?: number }) => {
+  // eslint-disable-next-line no-console
+  console.log('[IPC browser:startRecord] →', args)
+  const r = startBrowserRecord(args)
+  // eslint-disable-next-line no-console
+  console.log('[IPC browser:startRecord] ←', r)
+  return r
+})
+
+ipcMain.handle('browser:stopRecord', async (_e, wcId: number) => {
+  // eslint-disable-next-line no-console
+  console.log('[IPC browser:stopRecord] → wcId=', wcId)
+  const r = await stopBrowserRecord(wcId)
+  // eslint-disable-next-line no-console
+  console.log('[IPC browser:stopRecord] ←', JSON.stringify(r).slice(0, 300))
+  return r
+})
+
+ipcMain.handle('browser:isRecording', (_e, wcId: number) => {
+  const r = isBrowserRecording(wcId)
+  // eslint-disable-next-line no-console
+  console.log('[IPC browser:isRecording] wcId=', wcId, '→', r)
+  return r
 })
 
 app.whenReady().then(async () => {

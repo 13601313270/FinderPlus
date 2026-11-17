@@ -2,6 +2,9 @@
 import { computed, nextTick, onMounted, onUnmounted, ref, shallowRef } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { BrowserNode, type ScriptItem } from './node'
+import { VideoFileValue } from '../../engine/data/VideoFileValue'
+import { djb2 } from '../../engine/data/hash'
+import type { BrowserApi } from '../../../preload'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
 import { useNodeDetail } from '@renderer/composables/useNodeDetail'
@@ -18,20 +21,19 @@ const t = useLocalizedMessages(messages)
 const { openNodeDetail } = useNodeDetail()
 const { identities: allIdentities } = useBrowserIdentities()
 
+// —— 从 preload 拿到 browserApi ——
+const browserApi = window.browserApi as BrowserApi
+
 // —— webview DOM 引用 ——
 const webviewEl = ref<any>(null)
 
-/**
- * webview 重新挂载 key：identity 变化时递增此值，让 Vue 销毁旧 webview 并重建。
- * 因为 partition 属性在 webview 创建时就决定了 session，事后修改不生效。
- */
+/** webview 重新挂载 key：identity 变化时递增此值，让 Vue 销毁旧 webview 并重建。 */
 const webviewKey = ref(0)
 
 /** webview 是否已发出 dom-ready（此后才能安全 loadURL / goBack 等） */
 const webviewReady = ref(false)
 
 // —— 浏览模式开关 ——
-/** true = webview 捕获事件（默认，浏览器节点核心用途）；false = 画布事件穿透方便连线 */
 const browsingMode = ref(true)
 
 // —— 本地镜像状态 ——
@@ -45,13 +47,20 @@ const canGoForward = ref(false)
 const lastError = ref('')
 const zoomFactor = ref(1.0)
 const scripts = ref<ScriptItem[]>([])
-/** 当前 webview 使用的 partition 字符串（用于检测 identity 变化） */
 const partition = ref('')
-/** 最近一次显示用的身份信息（供 header 视觉标记使用） */
-// const displayIdentityLabel = ref<string>('')
-// const displayIsIsolated = ref<boolean>(true)
-/** 最近一次脚本执行结果，显示在脚本按钮条下方 */
 const lastScriptResult = ref<{ ok: boolean; text: string } | null>(null)
+
+// —— 录像相关状态 ——
+const isRecording = ref(false)
+const recordingElapsedMs = ref(0)
+let recordingTimer: number | undefined
+/** webview 的 webContents id（dom-ready 后可取，缓存下来给录像用） */
+const webContentsId = ref<number | null>(null)
+/** ffmpeg 是否可用（启动时查一次） */
+const ffmpegReady = ref<{ available: boolean; hasLibx264: boolean; installHint: string } | null>(null)
+/** 录像错误提示（用于临时显示） */
+const recordError = ref('')
+let recordErrorTimer: number | undefined
 
 // 地址栏输入框（v-model 绑定，和 homeUrl 同步但允许临时编辑）
 const addressInput = ref('')
@@ -130,6 +139,17 @@ function syncFromNode(node: BrowserNode): void {
   zoomFactor.value = node.currentZoomFactor
   scripts.value = node.getScripts()
   partition.value = node.partition
+  // 从 node 同步录制状态（节点重建时用）
+  if (node.isRecording !== isRecording.value) {
+    isRecording.value = node.isRecording
+    if (node.isRecording) {
+      recordingElapsedMs.value = Date.now() - node.recordingStartTimestamp
+      startRecordingTimer()
+    } else {
+      stopRecordingTimer()
+      recordingElapsedMs.value = 0
+    }
+  }
 }
 
 // —— 派生 ——
@@ -262,6 +282,157 @@ function reload(): void {
   }
 }
 
+// —— 视频录制 ——
+
+/** 格式化毫秒为 m:ss 显示 */
+function formatDuration(ms: number): string {
+  const totalSec = Math.floor(ms / 1000)
+  const m = Math.floor(totalSec / 60)
+  const s = totalSec % 60
+  return `${m}:${s.toString().padStart(2, '0')}`
+}
+
+function showRecordError(msg: string): void {
+  recordError.value = msg
+  if (recordErrorTimer) clearTimeout(recordErrorTimer)
+  recordErrorTimer = window.setTimeout(() => { recordError.value = '' }, 5000)
+}
+
+async function ensureFfmpegReady(): Promise<boolean> {
+  if (ffmpegReady.value) return ffmpegReady.value.available
+  try {
+    ffmpegReady.value = await browserApi.checkFfmpeg()
+  } catch {
+    ffmpegReady.value = { available: false, hasLibx264: false, installHint: t('recordNeedFfmpeg') }
+  }
+  return ffmpegReady.value.available
+}
+
+async function toggleRecording(): Promise<void> {
+  // eslint-disable-next-line no-console
+  console.log('[BrowserNode:toggleRecording] ★ 被点击，当前 isRecording=', isRecording.value, 'webContentsId=', webContentsId.value)
+  if (!browserNode.value) {
+    // eslint-disable-next-line no-console
+    console.error('[BrowserNode:toggleRecording] browserNode.value 为空！')
+    return
+  }
+
+  if (isRecording.value) {
+    // —— 停止 ——
+    const wcId = webContentsId.value
+    // eslint-disable-next-line no-console
+    console.log('[BrowserNode:toggleRecording] → 停止分支，wcId=', wcId)
+    if (wcId == null) {
+      // eslint-disable-next-line no-console
+      console.error('[BrowserNode:toggleRecording] wcId 为 null，无法停止')
+      return
+    }
+
+    // ★ 关键：先立即翻 UI 状态，再异步等主进程。
+    // 以前 isRecording=false 排在 await stopRecord() 之后，主进程卡一下 UI 就永远在等。
+    isRecording.value = false
+    stopRecordingTimer()
+    browserNode.value.markRecordingStopped()
+
+    try {
+      // eslint-disable-next-line no-console
+      console.log('[BrowserNode:toggleRecording] → 调 browserApi.stopRecord(', wcId, ')')
+      const result = await browserApi.stopRecord(wcId)
+      // eslint-disable-next-line no-console
+      console.log('[BrowserNode:toggleRecording] ← stopRecord 返回:', JSON.stringify(result).slice(0, 300))
+      if (!result.ok) {
+        // eslint-disable-next-line no-console
+        console.error('[BrowserNode:toggleRecording] stopRecord ok=false:', result.error)
+        showRecordError(result.error)
+        recordingElapsedMs.value = 0
+        return
+      }
+
+      // —— 主进程已经把 mp4 读成 base64 返回了，直接用 result.base64 ——
+      recordingElapsedMs.value = 0
+      try {
+        // eslint-disable-next-line no-console
+        console.log('[BrowserNode:toggleRecording] → 主进程返回 base64 长度=', result.base64.length,
+          '文件大小=', result.fileSize)
+        const pureBase64 = result.base64.includes(',') ? result.base64.split(',')[1] ?? '' : result.base64
+        const binaryStr = atob(pureBase64)
+        const bytes = new Uint8Array(binaryStr.length)
+        for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i)
+        const fileName = `browser-record-${Date.now()}.mp4`
+        const file = new File([bytes], fileName, { type: 'video/mp4' })
+        const hash = djb2(pureBase64)
+        const value = new VideoFileValue(file, hash)
+        // eslint-disable-next-line no-console
+        console.log('[BrowserNode:toggleRecording] → commit videoOutput，File.size=', file.size)
+        browserNode.value.videoOutput.commit(value, { force: true })
+        // eslint-disable-next-line no-console
+        console.log('[BrowserNode:toggleRecording] ✅ videoOutput commit 完成')
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.error('[BrowserNode:toggleRecording] ❌ 构造 VideoFileValue 失败:', err)
+        showRecordError(`${t('recordFailed')}：${err instanceof Error ? err.message : String(err)}`)
+      }
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('[BrowserNode:toggleRecording] ❌ stopRecord 异常:', err)
+      showRecordError(`${t('recordFailed')}：${err instanceof Error ? err.message : String(err)}`)
+    }
+  } else {
+    // —— 开始 ——
+    // 1. 查 ffmpeg
+    // eslint-disable-next-line no-console
+    console.log('[BrowserNode:toggleRecording] → 开始分支：ensureFfmpegReady()')
+    if (!(await ensureFfmpegReady())) {
+      showRecordError(ffmpegReady.value?.installHint || t('recordNeedFfmpeg'))
+      return
+    }
+    // 2. 确保 webview 已 ready 且能拿到 wcId
+    if (!webviewReady.value || !webviewEl.value) {
+      showRecordError(t('urlEmpty'))
+      return
+    }
+    const wcId = webviewEl.value.getWebContentsId?.()
+    if (wcId == null) {
+      showRecordError(t('recordFailed'))
+      return
+    }
+    webContentsId.value = wcId
+    // 3. 取 webview 渲染尺寸
+    const rect = webviewEl.value.getBoundingClientRect?.()
+    const width = Math.max(100, Math.round(rect?.width ?? browserNode.value.box[0]))
+    const height = Math.max(100, Math.round(rect?.height ?? browserNode.value.box[1]))
+
+    try {
+      const result = await browserApi.startRecord({ wcId, width, height, fps: 15 })
+      if (!result.ok) {
+        showRecordError(result.error)
+        return
+      }
+      browserNode.value.markRecordingStarted()
+      isRecording.value = true
+      recordingElapsedMs.value = 0
+      startRecordingTimer()
+    } catch (err) {
+      showRecordError(`${t('recordFailed')}：${err instanceof Error ? err.message : String(err)}`)
+    }
+  }
+}
+
+function startRecordingTimer(): void {
+  stopRecordingTimer()
+  recordingTimer = window.setInterval(() => {
+    if (!browserNode.value) return
+    recordingElapsedMs.value = Date.now() - browserNode.value.recordingStartTimestamp
+  }, 250)
+}
+
+function stopRecordingTimer(): void {
+  if (recordingTimer !== undefined) {
+    clearInterval(recordingTimer)
+    recordingTimer = undefined
+  }
+}
+
 // —— 浏览模式切换 ——
 
 function toggleBrowsing(): void {
@@ -334,6 +505,12 @@ function handleWebviewReady(): void {
   // 都可能在 nextTick 绑定监听器之前烧完，导致 webviewReady 永远为 false，
   // 用户后续输入 URL 按回车时 navigateToResolved 会提前 return。
   webviewReady.value = true
+
+  // 缓存 webContentsId 给录像用
+  const el = webviewEl.value
+  if (el?.getWebContentsId) {
+    webContentsId.value = el.getWebContentsId()
+  }
 }
 
 function handleNavigate(_e: any, url: string): void {
@@ -462,8 +639,23 @@ onMounted(() => {
     if (partition.value !== prevPartition) {
       // eslint-disable-next-line no-console
       console.log('[BrowserNode] partition 变化 → 重建 webview', { from: prevPartition, to: partition.value })
+      // 录像中重建 webview → 停掉旧录制（旧 wcId 对应旧 webContents）
+      if (isRecording.value && webContentsId.value != null) {
+        const oldWcId = webContentsId.value
+        browserApi.stopRecord(oldWcId).then((res) => {
+          if (res.ok && browserNode.value) {
+            browserNode.value.markRecordingStopped()
+            // commit 视频... 这里简化，不 commit 了——录像中的页面变了，视频意义不大
+          }
+        }).catch(() => { /* 旧 wcId 已失效，忽略错误 */ })
+        isRecording.value = false
+        stopRecordingTimer()
+        recordingElapsedMs.value = 0
+        if (browserNode.value) browserNode.value.markRecordingStopped()
+      }
       webviewKey.value += 1
       webviewReady.value = false
+      webContentsId.value = null // 新 webview 的 wcId 要等 dom-ready 重新取
       // 重置导航状态，等新 webview 的 did-stop-loading 来驱动
       status.value = 'idle'
       currentUrl.value = ''
@@ -518,6 +710,15 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  // 清理录制定时器 + 如有录制中也停掉
+  stopRecordingTimer()
+  if (recordErrorTimer) clearTimeout(recordErrorTimer)
+  if (isRecording.value && webContentsId.value != null) {
+    // 节点被卸载时，主进程那边的录制也要收尾——但我们不在 render 里 await 这个了，
+    // 让主进程的 BrowserRecorder 在 close 时自动清理。这里只是把 node 的状态重置。
+    browserNode.value?.markRecordingStopped()
+  }
+
   unsubscribe?.()
 
   // 清理身份选择下拉框的文档级点击监听
@@ -694,6 +895,22 @@ onUnmounted(() => {
             </button>
           </template>
         </div>
+      </div>
+
+      <!-- —— 录像按钮 —— -->
+      <div class="browser-toolbar__record">
+        <button
+          class="browser-record-btn"
+          type="button"
+          :class="{ 'browser-record-btn--active': isRecording }"
+          :title="isRecording ? t('recordStop') : t('recordStart')"
+          :disabled="isRecording && !webviewReady"
+          @pointerdown.stop
+          @click.stop="toggleRecording"
+        >
+          <span class="browser-record-btn__dot" />
+          <span v-if="isRecording" class="browser-record-btn__time">{{ formatDuration(recordingElapsedMs) }}</span>
+        </button>
       </div>
 
       <!-- 浏览模式切换 -->
@@ -1210,6 +1427,62 @@ onUnmounted(() => {
   height: 1px;
   background: #e5e7eb;
   margin: 4px 0;
+}
+
+// —— 录像按钮 ——
+
+.browser-toolbar__record {
+  flex-shrink: 0;
+  position: relative;
+}
+
+.browser-record-btn {
+  all: unset;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding: 0 7px;
+  border-radius: 4px;
+  color: #4b5563;
+  font-size: 10px;
+  font-weight: 500;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  background: #f3f4f6;
+  transition: background 0.15s, color 0.15s;
+  user-select: none;
+
+  &:hover { background: #e2e8f0; }
+
+  &__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #d1d5db;
+    flex-shrink: 0;
+    transition: background 0.15s;
+  }
+
+  &__time {
+    min-width: 28px;
+    text-align: center;
+  }
+
+  &--active {
+    background: #fef2f2;
+    color: #dc2626;
+
+    .browser-record-btn__dot {
+      background: #dc2626;
+      animation: recordPulse 1s ease-in-out infinite;
+    }
+  }
+}
+
+@keyframes recordPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.85); }
 }
 
 @keyframes spin {

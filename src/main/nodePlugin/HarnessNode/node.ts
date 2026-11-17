@@ -179,11 +179,11 @@ class CanvasNodeTool implements HarnessTool {
       node._onInputPortChanged([port], 'receive' as InputPortChangeSource)
     }
 
-    // Step 2: 如果节点有 sendPort（手动触发型），调 sendPort.trigger()
-    const sendPort = node.methodPorts.find(m => m.id === 'send')
-    if (sendPort && typeof (sendPort as any).trigger === 'function') {
-      (sendPort as any).trigger()
-    }
+    // // Step 2: 如果节点有 sendPort（手动触发型），调 sendPort.trigger()
+    // const sendPort = node.methodPorts.find(m => m.id === 'send')
+    // if (sendPort && typeof (sendPort as any).trigger === 'function') {
+    //   (sendPort as any).trigger()
+    // }
 
     // Step 3: 等输出端口出值（最可靠的信号）或 state 变完成态（兜底）
     const outPort = node.outputPorts.find(p => p.id === this.binding.outputPortId)

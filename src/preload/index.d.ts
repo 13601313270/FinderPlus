@@ -16,6 +16,7 @@ import type {
   NotificationApi,
   FeishuApi,
   TableApi,
+  BrowserApi,
   CanvasApi,
   GetCurrentCanvasId,
   GetStartupMode
@@ -43,6 +44,8 @@ declare global {
     /** 飞书长连接 API：start/stop/status + onMessage 回调 */
     feishuApi: FeishuApi
     tableApi: TableApi
+    /** BrowserNode 视频录制 API：checkFfmpeg / startRecord / stopRecord / isRecording */
+    browserApi: BrowserApi
     /** 画布管理 API：list / create / rename / delete / openNewWindow */
     canvasApi: CanvasApi
     /** 返回当前窗口绑定的 canvasId（从 URL query 读，默认 'default'） */

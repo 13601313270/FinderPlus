@@ -400,6 +400,10 @@ const fileApi = {
   readBinary: (fileName: string, canvasId?: string): Promise<string> =>
     ipcRenderer.invoke('file:readBinary', { fileName, canvasId: fillCanvasId(canvasId) }),
 
+  /** 读取**任意绝对路径**文件的二进制内容，返回 base64 字符串（录像临时文件等非画布目录文件用） */
+  readBinaryAbsolute: (absPath: string): Promise<string> =>
+    ipcRenderer.invoke('file:readBinaryAbsolute', absPath),
+
   /** 删除画布目录下指定文件（文件节点清空或重新选择时清理旧副本） */
   delete: (fileName: string, canvasId?: string): Promise<void> =>
     ipcRenderer.invoke('file:delete', { fileName, canvasId: fillCanvasId(canvasId) }),
@@ -845,6 +849,32 @@ const feishuApi = {
   }
 }
 
+/**
+ * BrowserNode 视频录制 API：把 webview 的 webContents id 交给主进程。
+ * 主进程用 beginFrameSubscription 捕获 GPU 帧，pipe 给 ffmpeg 实时编码成 mp4。
+ */
+const browserApi = {
+  /** 查本机 ffmpeg + libx264 编码器是否就绪 */
+  checkFfmpeg: (): Promise<{ available: boolean; hasLibx264: boolean; installHint: string }> =>
+    ipcRenderer.invoke('browser:checkFfmpeg'),
+
+  /** 开始录制指定 webview。返回 { ok: true } 或 { ok: false, error } */
+  startRecord: (args: { wcId: number; width: number; height: number; fps?: number }): Promise<
+    { ok: true; recordId: number }
+    | { ok: false; error: string }
+  > => ipcRenderer.invoke('browser:startRecord', args),
+
+  /** 停止录制并等 ffmpeg 写完文件。返回输出 mp4 的绝对路径 + 文件大小 + 时长 */
+  stopRecord: (wcId: number): Promise<
+    { ok: true; outputPath: string; fileSize: number; durationMs: number }
+    | { ok: false; error: string }
+  > => ipcRenderer.invoke('browser:stopRecord', wcId),
+
+  /** 查指定 webview 是否在录制中 */
+  isRecording: (wcId: number): Promise<boolean> =>
+    ipcRenderer.invoke('browser:isRecording', wcId)
+}
+
 /** 画布管理 API：画布列表 / 新建 / 重命名 / 删除 / 开新窗口。
  * 每窗口绑定一个 canvasId（通过 URL query 传入），多画布通过多窗口并行。
  */
@@ -940,6 +970,7 @@ if (process.contextIsolated) {
     contextBridge.exposeInMainWorld('notificationApi', notificationApi)
     contextBridge.exposeInMainWorld('feishuApi', feishuApi)
     contextBridge.exposeInMainWorld('tableApi', tableApi)
+    contextBridge.exposeInMainWorld('browserApi', browserApi)
     contextBridge.exposeInMainWorld('canvasApi', canvasApi)
     contextBridge.exposeInMainWorld('getCurrentCanvasId', getCurrentCanvasId)
     contextBridge.exposeInMainWorld('getStartupMode', getStartupMode)
@@ -982,6 +1013,8 @@ if (process.contextIsolated) {
   // @ts-ignore (define in dts)
   window.tableApi = tableApi
   // @ts-ignore (define in dts)
+  window.browserApi = browserApi
+  // @ts-ignore (define in dts)
   window.canvasApi = canvasApi
   // @ts-ignore (define in dts)
   window.getCurrentCanvasId = getCurrentCanvasId
@@ -1005,5 +1038,6 @@ export type TransferApi = typeof transferApi
 export type NotificationApi = typeof notificationApi
 export type FeishuApi = typeof feishuApi
 export type TableApi = typeof tableApi
+export type BrowserApi = typeof browserApi
 export type CanvasApi = typeof canvasApi
 export type GetCurrentCanvasId = typeof getCurrentCanvasId

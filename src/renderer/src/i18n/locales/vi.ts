@@ -153,7 +153,9 @@ const vi: Language = {
     'html-file': 'Tệp HTML',
     'json-file': 'Tệp JSON',
     'multimodal': 'Multimodal',
-    'img-file-collection': 'Bộ sưu tập ảnh'
+    'img-file-collection': 'Bộ sưu tập ảnh',
+    'mix-file-collection': 'Bộ sưu tập tệp mixes',
+    'audio-file-collection': 'Bộ sưu tập tệp âm thanh'
   },
   intro: {
     whatIs: {
@@ -300,7 +302,10 @@ const vi: Language = {
       boolean: 'Boolean',
       color: 'Color',
       time: 'Thời gian',
-      date: 'Ngày'
+      date: 'Ngày',
+      image: 'Hình ảnh',
+      audio: 'Âm thanh',
+      file: 'Tệp',
     },
     dialogTitleAdd: 'Add',
     dialogTitleEdit: 'Edit',

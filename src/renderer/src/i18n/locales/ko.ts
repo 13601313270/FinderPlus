@@ -153,7 +153,9 @@ const ko: Language = {
     'html-file': 'HTML 파일',
     'json-file': 'JSON 파일',
     'multimodal': 'Multimodal',
-    'img-file-collection': '이미지 컬렉션'
+    'img-file-collection': '이미지 컬렉션',
+    'mix-file-collection': 'mix 컬렉션',
+    'audio-file-collection': '음성 컬렉션'
   },
   intro: {
     whatIs: {
@@ -300,7 +302,10 @@ const ko: Language = {
       boolean: 'Boolean',
       color: 'Color',
       time: '시간',
-      date: '날짜'
+      date: '날짜',
+      image: '이미지',
+      audio: '음성',
+      file: '파일'
     },
     dialogTitleAdd: 'Add',
     dialogTitleEdit: 'Edit',

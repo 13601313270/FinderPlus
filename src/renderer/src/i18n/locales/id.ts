@@ -153,7 +153,9 @@ const id: Language = {
     'html-file': 'File HTML',
     'json-file': 'Berkas JSON',
     'multimodal': 'Multimodal',
-    'img-file-collection': 'Koleksi Gambar'
+    'img-file-collection': 'Koleksi Gambar',
+    'mix-file-collection': 'Koleksi Mix',
+    'audio-file-collection': 'Koleksi Audio Files'
   },
   intro: {
     whatIs: {
@@ -302,7 +304,10 @@ const id: Language = {
       boolean: 'Boolean',
       color: 'Color',
       time: 'Waktu',
-      date: 'Tanggal'
+      date: 'Tanggal',
+      image: 'Gambar',
+      audio: 'Audio',
+      file: 'Fileir'
     },
     dialogTitleAdd: 'Add',
     dialogTitleEdit: 'Edit',

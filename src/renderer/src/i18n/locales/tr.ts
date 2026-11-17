@@ -152,7 +152,9 @@ const tr: Language = {
     'html-file': 'HTML Dosyası',
     'json-file': 'JSON dosyası',
     'multimodal': 'Multimodal',
-    'img-file-collection': 'Görsel Koleksiyonu'
+    'img-file-collection': 'Görsel Koleksiyonu',
+    'mix-file-collection': 'Koleksiyonu',
+    'audio-file-collection': 'Ses Koleksiyonu'
   },
   intro: {
     whatIs: {
@@ -299,7 +301,10 @@ const tr: Language = {
       boolean: 'Boolean',
       color: 'Color',
       time: 'Tarih',
-      date: 'Tarih'
+      date: 'Tarih',
+      image: 'Text',
+      audio: 'Text',
+      file: 'Text',
     },
     dialogTitleAdd: 'Add',
     dialogTitleEdit: 'Edit',

@@ -152,7 +152,9 @@ const fr: Language = {
     "html-file": "Fichier HTML",
     "json-file": "Fichier JSON",
     "multimodal": "Multimodal",
-    "img-file-collection": "Collection d'images"
+    "img-file-collection": "Collection d'images",
+    "mix-file-collection": "Collection de mixes",
+    "audio-file-collection": "Collection de fichiers audio"
   },
   intro: {
     whatIs: {
@@ -301,7 +303,10 @@ const fr: Language = {
       boolean: 'Boolean',
       color: 'Color',
       time: 'Date',
-      date: 'Date'
+      date: 'Date',
+      image: 'Image',
+      audio: 'Audio',
+      file: 'File'
     },
     dialogTitleAdd: 'Add',
     dialogTitleEdit: 'Edit',

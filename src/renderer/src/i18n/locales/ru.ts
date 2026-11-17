@@ -153,7 +153,9 @@ const ru: Language = {
     'html-file': 'HTML-файл',
     'json-file': 'JSON-файл',
     'multimodal': 'Multimodal',
-    'img-file-collection': 'Коллекция изображений'
+    'img-file-collection': 'Коллекция изображений',
+    'mix-file-collection': 'Коллекция mixes',
+    'audio-file-collection': 'Коллекция аудиофайлов'
   },
   intro: {
     whatIs: {
@@ -300,7 +302,10 @@ const ru: Language = {
       boolean: 'Boolean',
       color: 'Color',
       time: 'Дата',
-      date: 'Дата'
+      date: 'Дата',
+      image: 'Фото',
+      audio: 'Аудио файл',
+      file: 'Файл'
     },
     dialogTitleAdd: 'Add',
     dialogTitleEdit: 'Edit',

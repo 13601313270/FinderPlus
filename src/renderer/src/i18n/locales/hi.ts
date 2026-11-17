@@ -153,7 +153,9 @@ const hi: Language = {
     'html-file': 'HTML फ़ाइल',
     'json-file': 'JSON फ़ाइल',
     'multimodal': 'Multimodal',
-    'img-file-collection': 'छवि संग्रह'
+    'img-file-collection': 'छवि संग्रह',
+    'mix-file-collection': 'मिक संग्रह',
+    'audio-file-collection': 'सौप फ़ाइल संग्रह'
   },
   intro: {
     whatIs: {
@@ -302,7 +304,10 @@ const hi: Language = {
       boolean: 'Boolean',
       color: 'Color',
       time: 'समय',
-      date: 'दिनांक'
+      date: 'दिनांक',
+      image: 'प्रिप्प्तिक',
+      audio: 'प्रिप्प्तिक',
+      file: 'प्रिप्प्तिक फाइल'
     },
     dialogTitleAdd: 'Add',
     dialogTitleEdit: 'Edit',

@@ -79,7 +79,6 @@ const {
   add: addOssBucket,
   update: updateOssBucket,
   remove: removeOssBucket,
-  find: findOssBucket
 } = useOssBuckets()
 
 /** 左侧选中的分类 */
@@ -580,14 +579,6 @@ async function onDeleteOssBucket(bucket: OssBucket): Promise<void> {
   )
   if (!ok) return
   removeOssBucket(bucket.id)
-}
-
-// —— 查找画布上引用了某个 bucketId 的 OSS 节点 ——
-function findNodesUsingBucket(id: string): string[] {
-  const typeNames = ['oss-upload', 'oss-download', 'oss-exists']
-  return workspaceScene.allNodes
-    .filter((n) => typeNames.includes(n.type))
-    .map((n) => n.id)
 }
 
 // —— 我的画布 tab ——

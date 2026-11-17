@@ -6,7 +6,6 @@ import { JsonValue } from '../../engine/data/JsonValue'
 import { FileValue } from '../../engine/data/FileValue'
 import { ImgFileValue } from '../../engine/data/ImgFileValue'
 import { AudioFileValue } from '../../engine/data/AudioFileValue'
-import { VideoFileValue } from '../../engine/data/VideoFileValue'
 
 /**
  * 浏览器 File → 纯 base64 字符串（去掉 data URL 前缀）。

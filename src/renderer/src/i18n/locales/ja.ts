@@ -153,7 +153,9 @@ const ja: Language = {
     'html-file': 'HTMLファイル',
     'json-file': 'JSONファイル',
     'multimodal': 'Multimodal',
-    'img-file-collection': '画像コレクション'
+    'img-file-collection': '画像コレクション',
+    'mix-file-collection': 'mixコレクション',
+    'audio-file-collection': '音声コレクション'
   },
   intro: {
     whatIs: {
@@ -302,7 +304,10 @@ const ja: Language = {
       boolean: 'Boolean',
       color: 'Color',
       time: '日時',
-      date: '日付'
+      date: '日付',
+      image: '画像',
+      audio: '音声',
+      file: 'ファイル'
     },
     dialogTitleAdd: 'Add',
     dialogTitleEdit: 'Edit',

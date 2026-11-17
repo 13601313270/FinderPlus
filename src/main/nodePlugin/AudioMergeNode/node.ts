@@ -34,7 +34,6 @@ export class AudioMergeNode extends Node {
       zh: '音频',
       en: 'Audio'
     },
-    optional: true
   })
 
   /** 输出端口：拼接后的音频（WAV） */

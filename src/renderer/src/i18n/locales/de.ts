@@ -153,7 +153,9 @@ const de: Language = {
     'html-file': 'HTML-Datei',
     'json-file': 'JSON-Datei',
     'multimodal': 'Multimodal',
-    'img-file-collection': 'Bildsammlung'
+    'img-file-collection': 'Bildsammlung',
+    'mix-file-collection': 'Mixsammlung',
+    'audio-file-collection': 'Audio-Dateisammlung'
   },
   intro: {
     whatIs: {
@@ -300,7 +302,10 @@ const de: Language = {
       boolean: 'Boolean',
       color: 'Color',
       time: 'Datum',
-      date: 'Datum'
+      date: 'Datum',
+      image: 'Bild',
+      audio: 'Audio',
+      file: 'Datei'
     },
     dialogTitleAdd: 'Add',
     dialogTitleEdit: 'Edit',

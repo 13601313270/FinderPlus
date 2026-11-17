@@ -1035,6 +1035,9 @@ function onGlobalPointerUp(e: PointerEvent): void {
     clearDraggingNode()
     return
   }
+  if (!(draggedNode instanceof FileNode)) {
+    return;
+  }
   try {
     const [wx, wy] = screenToWorld(e.clientX - canvasRect.left, e.clientY - canvasRect.top)
     let acceptedByTarget = false

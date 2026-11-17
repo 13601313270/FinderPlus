@@ -29,7 +29,7 @@ async function loadImage(): Promise<void> {
   error.value = false
   try {
     // @ts-ignore
-    const res = await window.tableApi.readFileAsDataUrl({
+    const res: any = await window.tableApi.readFileAsDataUrl({
       // @ts-ignore
       canvasId: window.getCurrentCanvasId(),
       nodeId: props.nodeId,

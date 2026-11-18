@@ -1035,9 +1035,6 @@ function onGlobalPointerUp(e: PointerEvent): void {
     clearDraggingNode()
     return
   }
-  if (!(draggedNode instanceof FileNode)) {
-    return;
-  }
   try {
     const [wx, wy] = screenToWorld(e.clientX - canvasRect.left, e.clientY - canvasRect.top)
     let acceptedByTarget = false
@@ -1068,7 +1065,13 @@ function onGlobalPointerUp(e: PointerEvent): void {
         wx < rect.x - 12 || wx > rect.x + rect.width + 12 ||
         wy < rect.y - 12 || wy > rect.y + rect.height + 12
       if (outside && (holder instanceof FolderNode || holder instanceof ProxyNode)) {
-        holder.removeChild(draggedNode)
+        // FolderNode.removeChild 签名为 FileNode——理论上它的 child 都是 FileNode，
+        // 这里从自己 children 里的类型收窄：FolderNode 的 container 关系意味着 dragged 必然是 FileNode
+        if (holder instanceof FolderNode) {
+          holder.removeChild(draggedNode as unknown as FileNode)
+        } else {
+          holder.removeChild(draggedNode)
+        }
       }
     }
   } finally {

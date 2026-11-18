@@ -414,16 +414,16 @@ export class HumanReviewNode extends Node {
   /** 同意当前项：commit 到 approveOutput，然后取下一个 */
   approve(): void {
     if (!this.current || !this.approveOutput) return
-    this.approveOutput.commit(this.current)
+    this.approveOutput.commit(this.current, { force: true })
     this.advance()
   }
 
   /** 拒绝当前项：commit 到 rejectOutput + rejectReasonOutput（拒绝理由字符串），然后取下一个 */
   reject(reason: string): void {
     if (!this.current || !this.rejectOutput) return
-    this.rejectOutput.commit(this.current)
+    this.rejectOutput.commit(this.current, { force: true })
     if (this.rejectReasonOutput) {
-      this.rejectReasonOutput.commit(new StringValue(reason ?? ''))
+      this.rejectReasonOutput.commit(new StringValue(reason ?? ''), { force: true })
     }
     this.advance()
   }

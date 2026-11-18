@@ -2575,7 +2575,7 @@ async function onDeleteCanvas(id: string, name: string): Promise<void> {
   &__progress {
     position: relative;
     display: inline-block;
-    min-width: 120px;
+    min-width: 150px;
     height: 24px;
     border-radius: 4px;
     background: #e5e7eb;

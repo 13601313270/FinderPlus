@@ -1,19 +1,31 @@
 /**
  * 模型下载：从 HuggingFace（或国内镜像）拉取 GGUF 文件到本地 models 目录。
  *
- * 支持跨平台 http(s) 下载 + 进度回调。
- * 失败时部分文件会留在磁盘（.part 后缀），下次下载会自动重试。
+ * 特性：
+ *   - 多连接分片并行下载（默认 4 片，服务器支持 Range 时自动开启）
+ *   - 每片独立断点续传 + 自动重试 3 次
+ *   - 合并阶段用流拼接（不占内存）
+ *   - 跟随重定向
+ *   - 进度回调（聚合所有分片的总进度）
+ *   - 全局可取消（所有分片一起停）
  */
 
-import { createWriteStream, existsSync } from 'node:fs'
+import { createWriteStream, createReadStream, existsSync, statSync, unlinkSync } from 'node:fs'
 import { join } from 'node:path'
 import https from 'node:https'
 import http from 'node:http'
 import { getModelsDir } from './LlmRunner'
 
-/** HuggingFace 官方域名（给科学上网/海外用户） */
+/** 并行分片数。hf-mirror 单 IP 建议 4，多了可能被限速 */
+const PARALLEL_CHUNKS = 4
+/** 每片最大重试次数 */
+const MAX_RETRIES_PER_CHUNK = 3
+/** 重试间隔 ms */
+const RETRY_DELAY = 1200
+/** socket 空闲超时 ms */
+const SOCKET_TIMEOUT = 180_000
+
 const HF_OFFICIAL = 'https://huggingface.co'
-/** HuggingFace 国内镜像（大陆默认选这个） */
 const HF_MIRROR = 'https://hf-mirror.com'
 
 export type DownloadSource = 'hf-mirror' | 'hf-official'
@@ -32,29 +44,20 @@ export const DOWNLOAD_SOURCE_OPTIONS: { value: DownloadSource; label: string; hi
 ]
 
 export interface ModelCatalogEntry {
-  /** 展示名 */
   label: string
-  /** 内部 ID（比如 qwen2.5:1.5b） */
   id: string
-  /** GGUF 大小（GB，展示用） */
   sizeGb: number
-  /** 推荐内存（GB，展示用） */
   ramGb: number
-  /** HuggingFace repo 路径 */
   hfRepo: string
-  /** GGUF 文件名（repo 里的那个） */
   hfFileName: string
-  /** 最终落盘文件名 */
   fileName: string
 }
 
-/** 构造不同源的下载 URL */
 function buildDownloadUrl(entry: ModelCatalogEntry, source: DownloadSource): string {
   const base = source === 'hf-official' ? HF_OFFICIAL : HF_MIRROR
   return `${base}/${entry.hfRepo}/resolve/main/${entry.hfFileName}`
 }
 
-/** 内置推荐模型目录——M 系列 Mac 能流畅跑的小模型 */
 export const RECOMMENDED_MODELS: readonly ModelCatalogEntry[] = [
   {
     label: 'Qwen 2.5 1.5B Instruct (中文好)',
@@ -94,15 +97,11 @@ export const RECOMMENDED_MODELS: readonly ModelCatalogEntry[] = [
   }
 ]
 
-/** 下载进度回调 */
 export interface DownloadProgress {
-  /** 已下载字节数 */
+  /** 所有分片累计已下载字节 */
   received: number
-  /** 总字节数（不知道时为 null） */
   total: number | null
-  /** 0-100 百分比 */
   percent: number
-  /** 当前速度（bytes/s，近 2 秒平均） */
   speed: number
 }
 
@@ -110,53 +109,271 @@ export type DownloadResult =
   | { ok: true; path: string; size: number }
   | { ok: false; error: string }
 
-/** 进行中的下载（支持取消） */
 export interface ActiveDownload {
-  /** 取消函数 */
   cancel: () => void
-  /** 当前进度 */
   progress: DownloadProgress
 }
 
-// 正在进行的下载表
 const activeDownloads = new Map<string, ActiveDownload>()
 
-/**
- * 下载一个模型。
- * @param catalogEntry  模型目录条目
- * @param onProgress    进度回调（可选）
- * @returns 下载结果
- */
+// ————————————————————————————————————————————
+// 分片下载核心
+// ————————————————————————————————————————————
+
+interface ChunkTask {
+  index: number
+  start: number
+  end: number       // inclusive
+  expectedSize: number
+  partPath: string  // .part.N
+  received: number   // 当前已收字节（含续传）
+  aborted: boolean
+}
+
+/** HEAD 请求探测文件大小 + 是否支持 Range */
+function probeFile(urlObj: URL): Promise<{ total: number; acceptRanges: boolean; finalUrl: URL }> {
+  return new Promise((resolve, reject) => {
+    const lib = urlObj.protocol === 'https:' ? https : http
+    const req = lib.request({
+      method: 'HEAD',
+      hostname: urlObj.hostname,
+      port: urlObj.port || (urlObj.protocol === 'https:' ? 443 : 80),
+      path: urlObj.pathname + urlObj.search,
+      headers: { 'User-Agent': 'CanvasDesk-LocalModel/1.0' }
+    }, (res) => {
+      res.resume()
+      // 跟随 302
+      if (res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+        const redir = new URL(res.headers.location, urlObj.origin)
+        probeFile(redir).then(resolve, reject)
+        return
+      }
+      const total = Number(res.headers['content-length']) || 0
+      const acceptRanges = (res.headers['accept-ranges'] ?? '').includes('bytes')
+      resolve({ total, acceptRanges, finalUrl: urlObj })
+    })
+    req.on('error', reject)
+    req.end()
+  })
+}
+
+/** 单个分片下载（支持续传 + 重试） */
+function downloadChunk(task: ChunkTask, urlObj: URL, onBytes: (n: number) => void): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (task.aborted) { reject(new Error('aborted')); return }
+
+    // 续传：看 .part.N 已有多少
+    try {
+      if (existsSync(task.partPath)) {
+        task.received = statSync(task.partPath).size
+      }
+    } catch { task.received = 0 }
+
+    if (task.received >= task.expectedSize) {
+      // 这片已经下完了
+      resolve()
+      return
+    }
+
+    let attempt = 0
+    let req: http.ClientRequest | null = null
+
+    const tryOnce = () => {
+      attempt++
+      const lib = urlObj.protocol === 'https:' ? https : http
+
+      const headers: Record<string, string> = {
+        'User-Agent': 'CanvasDesk-LocalModel/1.0',
+        'Accept-Encoding': 'identity',
+        // Range: bytes=<start+已有>-<end>
+        'Range': `bytes=${task.start + task.received}-${task.end}`
+      }
+
+      req = lib.get({
+        hostname: urlObj.hostname,
+        port: urlObj.port || (urlObj.protocol === 'https:' ? 443 : 80),
+        path: urlObj.pathname + urlObj.search,
+        headers
+      }, (res) => {
+        if (task.aborted) { res.destroy(); reject(new Error('aborted')); return }
+
+        // 跟随 302 重定向
+        if (res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+          const redir = new URL(res.headers.location, urlObj.origin)
+          res.resume()
+          console.log(`[chunk ${task.index}] 跟随重定向 →`, redir.hostname)
+          downloadChunk(task, redir, onBytes).then(resolve, reject)
+          return
+        }
+
+        if (res.statusCode === 416) {
+          // 范围不可满足 → 已完整
+          res.resume()
+          resolve()
+          return
+        }
+
+        if (res.statusCode !== 206) {
+          // 服务器不支持 Range，只能串行单连接（外层会 fallback）
+          res.destroy()
+          reject(new Error(`Range not supported (HTTP ${res.statusCode})`))
+          return
+        }
+
+        // 追加写
+        const writeStream = createWriteStream(task.partPath, { flags: 'a' })
+        let chunkBytes = 0
+
+        res.on('data', (chunk: Buffer) => {
+          if (task.aborted) { res.destroy(); return }
+          chunkBytes += chunk.length
+          task.received += chunk.length
+          onBytes(chunk.length)
+        })
+
+        res.on('end', () => {
+          writeStream.end(() => resolve())
+        })
+
+        res.on('error', (err) => {
+          console.warn(`[chunk ${task.index}] stream error:`, err.message)
+          writeStream.destroy()
+          maybeRetry(err)
+        })
+      })
+
+      req.setTimeout(SOCKET_TIMEOUT, () => {
+        req?.destroy(new Error('chunk socket timeout'))
+      })
+
+      req.on('error', maybeRetry)
+    }
+
+    function maybeRetry(err: Error) {
+      if (task.aborted) { reject(new Error('aborted')); return }
+      if (attempt <= MAX_RETRIES_PER_CHUNK) {
+        console.warn(`[chunk ${task.index}] retry ${attempt}/${MAX_RETRIES_PER_CHUNK}:`, err.message)
+        setTimeout(() => { if (!task.aborted) tryOnce() }, RETRY_DELAY)
+        return
+      }
+      reject(err)
+    }
+
+    tryOnce()
+  })
+}
+
+/** 串行单连接下载（Range 不支持时的 fallback） */
+function downloadSerial(
+  tmpPath: string,
+  urlObj: URL,
+  resumeFrom: number,
+  onBytes: (n: number) => void,
+  isAborted: () => boolean
+): Promise<number> {
+  return new Promise((resolve, reject) => {
+    let attempt = 0
+
+    const tryOnce = () => {
+      attempt++
+      const lib = urlObj.protocol === 'https:' ? https : http
+      const headers: Record<string, string> = {
+        'User-Agent': 'CanvasDesk-LocalModel/1.0',
+        'Accept-Encoding': 'identity'
+      }
+      if (resumeFrom > 0) headers['Range'] = `bytes=${resumeFrom}-`
+
+      const req = lib.get({
+        hostname: urlObj.hostname,
+        port: urlObj.port || (urlObj.protocol === 'https:' ? 443 : 80),
+        path: urlObj.pathname + urlObj.search,
+        headers
+      }, (res) => {
+        if (isAborted()) { res.destroy(); reject(new Error('aborted')); return }
+
+        if (res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+          const redir = new URL(res.headers.location, urlObj.origin)
+          res.resume()
+          downloadSerial(tmpPath, redir, resumeFrom, onBytes, isAborted).then(resolve, reject)
+          return
+        }
+
+        if (!res.statusCode || res.statusCode < 200 || res.statusCode >= 400) {
+          res.destroy()
+          maybeRetry(new Error(`HTTP ${res.statusCode ?? '?'}`))
+          return
+        }
+
+        const isResume = res.statusCode === 206
+        const writeStream = createWriteStream(tmpPath, { flags: isResume ? 'a' : 'w' })
+
+        res.on('data', (chunk: Buffer) => {
+          if (isAborted()) { res.destroy(); return }
+          resumeFrom += chunk.length
+          onBytes(chunk.length)
+        })
+        res.on('end', () => writeStream.end(() => resolve(resumeFrom)))
+        res.on('error', (err) => { writeStream.destroy(); maybeRetry(err) })
+      })
+
+      req.setTimeout(SOCKET_TIMEOUT, () => req?.destroy(new Error('socket timeout')))
+      req.on('error', maybeRetry)
+    }
+
+    function maybeRetry(err: Error) {
+      if (isAborted()) { reject(new Error('aborted')); return }
+      if (attempt <= MAX_RETRIES_PER_CHUNK) {
+        setTimeout(tryOnce, RETRY_DELAY)
+      } else {
+        reject(err)
+      }
+    }
+
+    tryOnce()
+  })
+}
+
+/** 合并多个分片 → 目标文件（流拼接，不占内存） */
+function mergeChunks(chunkPaths: string[], targetPath: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const out = createWriteStream(targetPath)
+    let i = 0
+
+    function pipeNext() {
+      if (i >= chunkPaths.length) { out.end(() => resolve()); return }
+      const src = createReadStream(chunkPaths[i])
+      src.pipe(out, { end: false })
+      src.on('end', () => { i++; pipeNext() })
+      src.on('error', reject)
+    }
+    pipeNext()
+  })
+}
+
+// ————————————————————————————————————————————
+// 主入口
+// ————————————————————————————————————————————
+
 export function downloadModel(
   catalogEntry: ModelCatalogEntry,
   source: DownloadSource,
   onProgress?: (p: DownloadProgress) => void
 ): Promise<DownloadResult> {
-  return new Promise((resolve) => {
+  return new Promise(async (resolve) => {
     const modelsDir = getModelsDir()
     const targetPath = join(modelsDir, catalogEntry.fileName)
 
-    // 文件已存在 → 直接返回成功
     if (existsSync(targetPath)) {
-      resolve({ ok: true, path: targetPath, size: 0 })
+      resolve({ ok: true, path: targetPath, size: statSync(targetPath).size })
       return
     }
-
-    // 防重入：同一个文件正在下载就别重复开
     if (activeDownloads.has(catalogEntry.id)) {
       resolve({ ok: false, error: '该模型正在下载中' })
       return
     }
 
-    const tmpPath = targetPath + '.part'
-
-    let aborted = false
-    let req: http.ClientRequest | null = null
-
-    const cancel = () => {
-      aborted = true
-      req?.destroy()
-    }
+    const aborted = { v: false }
+    const cancel = () => { aborted.v = true }
 
     const active: ActiveDownload = {
       cancel,
@@ -164,112 +381,154 @@ export function downloadModel(
     }
     activeDownloads.set(catalogEntry.id, active)
 
-    const lastProgress = { received: 0, time: Date.now() }
+    let lastProgress = { received: 0, time: Date.now() }
+    const pushProgress = () => {
+      const now = Date.now()
+      if (now - lastProgress.time < 400) return
+      const received = active.progress.received
+      const speed = ((received - lastProgress.received) * 1000) / (now - lastProgress.time)
+      lastProgress.received = received
+      lastProgress.time = now
+      const total = active.progress.total
+      active.progress.speed = speed
+      active.progress.percent = total ? Math.min(99, Math.round((received / total) * 100)) : 0
+      onProgress?.({ ...active.progress })
+    }
 
-    const url = new URL(buildDownloadUrl(catalogEntry, source))
-    const lib = url.protocol === 'https:' ? https : http
+    const urlObj = new URL(buildDownloadUrl(catalogEntry, source))
+    console.log('[本地模型] 探测:', catalogEntry.id, '源:', source, '→', urlObj.href)
 
-    console.log('[本地模型] 开始下载:', catalogEntry.id, '源:', source, '→', url.href)
-    console.log('[本地模型] 保存到:', targetPath)
+    let fileTotal = 0
+    let acceptRanges = false
+    let finalUrlObj = urlObj
 
-    req = lib.get({
-      hostname: url.hostname,
-      port: url.port || (url.protocol === 'https:' ? 443 : 80),
-      path: url.pathname + url.search,
-      headers: { 'User-Agent': 'CanvasDesk-LocalModel/1.0' },
-      // 整体超时设成 60 秒（DNS + TCP 握手阶段），不是整个下载时间
-      timeout: 60000
-    }, (res) => {
-      console.log('[本地模型] 收到响应:', res.statusCode, '位置:', res.headers.location ?? '(无重定向)')
+    try {
+      const probe = await probeFile(urlObj)
+      fileTotal = probe.total
+      acceptRanges = probe.acceptRanges && probe.total > 0
+      finalUrlObj = probe.finalUrl
+      console.log('[本地模型] HEAD:', fileTotal, 'bytes, Range:', acceptRanges ? '支持' : '不支持', '→ final:', finalUrlObj.href)
+    } catch (e) {
+      console.warn('[本地模型] HEAD 探测失败，退回到串行:', (e as Error).message)
+    }
 
-      if (res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-        // 跟随重定向（镜像经常 302）
-        const redirectedUrl = new URL(res.headers.location, url.origin)
-        console.log('[本地模型] 跟随重定向 →', redirectedUrl.href)
-        res.resume()
-        lib.get({
-          hostname: redirectedUrl.hostname,
-          port: redirectedUrl.port || (redirectedUrl.protocol === 'https:' ? 443 : 80),
-          path: redirectedUrl.pathname + redirectedUrl.search,
-          headers: { 'User-Agent': 'CanvasDesk-LocalModel/1.0' }
-        }, (redRes) => handleResponse(redRes)).on('error', handleError)
-        return
-      }
+    try {
+      if (acceptRanges && fileTotal > 0) {
+        // —— 并行分片 ——
+        const chunkSize = Math.ceil(fileTotal / PARALLEL_CHUNKS)
+        const tasks: ChunkTask[] = []
+        const chunkPaths: string[] = []
 
-      handleResponse(res)
-    })
+        for (let i = 0; i < PARALLEL_CHUNKS; i++) {
+          const start = i * chunkSize
+          const end = Math.min(start + chunkSize - 1, fileTotal - 1)
+          const expectedSize = end - start + 1
+          const partPath = `${targetPath}.part.${i}`
+          tasks.push({
+            index: i, start, end, expectedSize, partPath,
+            received: 0, aborted: false
+          })
+          chunkPaths.push(partPath)
+        }
 
-    function handleResponse(res: http.IncomingMessage) {
-      console.log('[本地模型] 最终响应:', res.statusCode, 'content-length:', res.headers['content-length'] ?? 'unknown')
+        // 恢复已下载的分片状态
+        let alreadyDone = 0
+        for (const t of tasks) {
+          try {
+            if (existsSync(t.partPath)) {
+              const sz = statSync(t.partPath).size
+              t.received = sz
+              if (sz >= t.expectedSize) alreadyDone += sz
+            }
+          } catch { /* ignore */ }
+        }
 
-      if (!res.statusCode || res.statusCode < 200 || res.statusCode >= 300) {
-        handleError(new Error(`HTTP ${res.statusCode ?? '无状态码'}`))
-        return
-      }
+        active.progress.total = fileTotal
+        active.progress.received = alreadyDone
+        lastProgress.received = alreadyDone
 
-      const total = Number(res.headers['content-length']) || null
-      const writeStream = createWriteStream(tmpPath)
+        // 启动所有分片（用 finalUrlObj 避免再次 302）
+        const chunkPromises = tasks.map((t) =>
+          downloadChunk(t, finalUrlObj, (n) => {
+            if (aborted.v) return
+            active.progress.received += n
+            pushProgress()
+          })
+        )
 
-      res.pipe(writeStream)
+        // 等待所有分片完成
+        for (let i = 0; i < chunkPromises.length; i++) {
+          try {
+            await chunkPromises[i]
+          } catch (err) {
+            if (aborted.v) { throw new Error('用户取消') }
+            throw err
+          }
+        }
 
-      let received = 0
-      res.on('data', (chunk: Buffer) => {
-        if (aborted) {
-          res.destroy()
+        if (aborted.v) {
+          cleanupChunks(chunkPaths)
+          resolve({ ok: false, error: '下载已取消' })
+          activeDownloads.delete(catalogEntry.id)
           return
         }
-        received += chunk.length
 
-        // 每 500ms 推送一次进度
-        const now = Date.now()
-        if (now - lastProgress.time >= 500) {
-          const speed = ((received - lastProgress.received) * 1000) / (now - lastProgress.time)
-          lastProgress.received = received
-          lastProgress.time = now
+        // 合并分片
+        console.log('[本地模型] 合并', PARALLEL_CHUNKS, '分片 →', targetPath)
+        await mergeChunks(chunkPaths, targetPath)
+        cleanupChunks(chunkPaths)
+      } else {
+        // —— 串行 fallback ——
+        console.log('[本地模型] 串行下载（不支持 Range 或 HEAD 失败）')
+        const tmpPath = targetPath + '.part'
+        let resumeFrom = 0
+        try { if (existsSync(tmpPath)) resumeFrom = statSync(tmpPath).size } catch { /* ignore */ }
+        active.progress.received = resumeFrom
+        active.progress.total = fileTotal || null
+        lastProgress.received = resumeFrom
 
-          const percent = total != null ? Math.round((received / total) * 100) : 0
-          const p: DownloadProgress = { received, total, percent, speed }
-          active.progress = p
-          onProgress?.(p)
-        }
-      })
+        await downloadSerial(tmpPath, finalUrlObj, resumeFrom, (n) => {
+          if (aborted.v) return
+          active.progress.received += n
+          pushProgress()
+        }, () => aborted.v)
 
-      writeStream.on('finish', () => {
-        writeStream.close()
-        if (aborted) {
-          handleError(new Error('下载已取消'))
+        if (aborted.v) {
+          try { unlinkSync(tmpPath) } catch { /* ignore */ }
+          resolve({ ok: false, error: '下载已取消' })
+          activeDownloads.delete(catalogEntry.id)
           return
         }
-        // 把 .part 重命名成正式文件
+
         const fs = require('node:fs') as typeof import('node:fs')
         fs.renameSync(tmpPath, targetPath)
-        activeDownloads.delete(catalogEntry.id)
-        console.log('[本地模型] 下载完成:', catalogEntry.id, '总大小:', received, '字节')
-        resolve({ ok: true, path: targetPath, size: received })
-      })
-    }
-
-    function handleError(err: Error) {
-      console.error('[本地模型] 下载失败:', catalogEntry.id, err.message)
-      activeDownloads.delete(catalogEntry.id)
-      // 清理残留 .part
-      try { require('node:fs').unlinkSync(tmpPath) } catch { /* 忽略 */ }
-      if (aborted) {
-        resolve({ ok: false, error: '下载已取消' })
-      } else {
-        resolve({ ok: false, error: err.message })
       }
-    }
 
-    req.on('error', handleError)
-    req.on('timeout', () => {
-      console.error('[本地模型] 请求超时（60s）:', catalogEntry.id)
-      req?.destroy(new Error('连接超时（60 秒内未能完成 DNS/TCP 建立）'))
-    })
+      // 100% 最终进度
+      const total = statSync(targetPath).size
+      active.progress.received = total
+      active.progress.percent = 100
+      active.progress.total = total
+      active.progress.speed = 0
+      onProgress?.({ ...active.progress })
+
+      console.log('[本地模型] ✓ 完成:', catalogEntry.id, total, 'bytes')
+      resolve({ ok: true, path: targetPath, size: total })
+    } catch (err) {
+      console.error('[本地模型] ✗ 失败:', catalogEntry.id, (err as Error).message)
+      resolve({ ok: false, error: (err as Error).message })
+    } finally {
+      activeDownloads.delete(catalogEntry.id)
+    }
   })
 }
 
-/** 取消一个进行中的下载 */
+function cleanupChunks(paths: string[]) {
+  for (const p of paths) {
+    try { unlinkSync(p) } catch { /* ignore */ }
+  }
+}
+
 export function cancelDownload(id: string): boolean {
   const dl = activeDownloads.get(id)
   if (!dl) return false
@@ -278,7 +537,6 @@ export function cancelDownload(id: string): boolean {
   return true
 }
 
-/** 查询一个下载是否在进行中 */
 export function getActiveDownloads(): string[] {
   return [...activeDownloads.keys()]
 }

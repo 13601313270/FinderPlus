@@ -358,7 +358,6 @@ const de: Language = {
     nodeFallback: 'Table',
     refreshTooltip: 'Refresh table data',
     detailPageSizeLabel: 'Rows per page',
-    detailPageSizeHint: 'Any integer between 1–1000. Changes take effect immediately.',
     detailApply: 'Apply'
   }
 }

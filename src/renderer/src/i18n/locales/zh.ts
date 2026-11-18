@@ -377,7 +377,6 @@ const zh: Language = {
     resizeTooltip: '拖拽调整大小',
     nodeFallback: '表',
     detailPageSizeLabel: '每页记录数',
-    detailPageSizeHint: '可设 1–1000 之间的整数，改完自动生效',
     detailApply: '应用'
   }
 }

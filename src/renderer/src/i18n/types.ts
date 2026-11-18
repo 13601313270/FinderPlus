@@ -450,8 +450,6 @@ export type Language = {
 
     /** detailPanel — 每页记录数标签 */
     detailPageSizeLabel: string
-    /** detailPanel — 每页记录数输入框下方提示 */
-    detailPageSizeHint: string
     /** detailPanel — 应用按钮 */
     detailApply: string
   }

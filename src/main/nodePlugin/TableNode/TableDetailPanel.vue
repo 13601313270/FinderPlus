@@ -45,7 +45,6 @@ let offChanged: (() => void) | undefined
 
 // —— pageSize ——
 const pageSizeInput = ref(10)
-const PRESET_SIZES = [10, 20, 50, 100]
 
 // —— 列管理 UI 状态 ——
 /** 强制列列表重算的 dummy ref */
@@ -111,10 +110,6 @@ function applyPageSize(): void {
   } else {
     pageSizeInput.value = n.pageSize
   }
-}
-
-function applyPreset(size: number): void {
-  node.value?.setPageSize(size)
 }
 
 // —— 列管理操作 ——
@@ -254,36 +249,6 @@ function removeQueryPortFromUI(id: string, idx: number): void {
 
 <template>
   <div class="detail-panel">
-    <!-- ===== 每页记录数 ===== -->
-    <div class="detail-panel__section">
-      <div class="detail-panel__section-title">{{ $t('table.detailPageSizeLabel') }}</div>
-      <div class="detail-panel__row">
-        <input
-          v-model.number="pageSizeInput"
-          type="number"
-          min="1"
-          max="1000"
-          class="detail-panel__input"
-          @blur="applyPageSize"
-          @keydown.enter="applyPageSize"
-        />
-        <button class="detail-panel__apply-btn" type="button" @click="applyPageSize">
-          {{ $t('table.detailApply') }}
-        </button>
-      </div>
-      <div class="detail-panel__hint">{{ $t('table.detailPageSizeHint') }}</div>
-      <div class="detail-panel__presets">
-        <button
-          v-for="s in PRESET_SIZES"
-          :key="s"
-          class="detail-panel__preset"
-          type="button"
-          :class="{ 'detail-panel__preset--active': node?.pageSize === s }"
-          @click="applyPreset(s)"
-        >{{ s }}</button>
-      </div>
-    </div>
-
     <!-- ===== 列管理 ===== -->
     <div class="detail-panel__section">
       <div class="detail-panel__section-title">{{ $t('table.columnSettings') }}</div>
@@ -481,6 +446,25 @@ function removeQueryPortFromUI(id: string, idx: number): void {
         </button>
       </div>
     </div>
+
+    <!-- ===== 每页记录数 ===== -->
+    <div class="detail-panel__section">
+      <div class="detail-panel__section-title">{{ $t('table.detailPageSizeLabel') }}</div>
+      <div class="detail-panel__row">
+        <input
+          v-model.number="pageSizeInput"
+          type="number"
+          min="1"
+          max="1000"
+          class="detail-panel__input"
+          @blur="applyPageSize"
+          @keydown.enter="applyPageSize"
+        />
+        <button class="detail-panel__apply-btn" type="button" @click="applyPageSize">
+          {{ $t('table.detailApply') }}
+        </button>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -513,12 +497,6 @@ function removeQueryPortFromUI(id: string, idx: number): void {
     color: #374151;
     display: flex;
     align-items: center;
-  }
-
-  &__hint {
-    font-size: 11px;
-    color: #9ca3af;
-    line-height: 1.4;
   }
 
   &__empty {
@@ -575,32 +553,6 @@ function removeQueryPortFromUI(id: string, idx: number): void {
 
     &:hover { background: #2563eb; }
     &:active { background: #1d4ed8; }
-  }
-
-  &__presets {
-    display: flex;
-    gap: 6px;
-    flex-wrap: wrap;
-  }
-
-  &__preset {
-    all: unset;
-    cursor: pointer;
-    padding: 4px 12px;
-    font-size: 12px;
-    color: #475569;
-    background: #f1f5f9;
-    border-radius: 4px;
-    transition: background 0.15s, color 0.15s;
-
-    &:hover { background: #e2e8f0; color: #1f2937; }
-
-    &--active {
-      background: #2563eb;
-      color: #fff;
-
-      &:hover { background: #1d4ed8; color: #fff; }
-    }
   }
 
   // —— 列管理表格 ——

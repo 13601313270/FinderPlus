@@ -360,7 +360,6 @@ const id: Language = {
     resizeTooltip: 'Drag to resize',
     nodeFallback: 'Table',
     detailPageSizeLabel: 'Rows per page',
-    detailPageSizeHint: 'Any integer between 1–1000. Changes take effect immediately.',
     detailApply: 'Apply'
   }
 }

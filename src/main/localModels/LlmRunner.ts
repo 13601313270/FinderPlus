@@ -1,7 +1,8 @@
 /**
  * 本地 LLM 推理引擎封装（node-llama-cpp）。
  *
- * 单例模式：整个主进程只初始化一次 llama 引擎，模型按需 load / unload。
+ * 多模型并行：主进程可以同时加载多个 GGUF 模型，各自独立 context。
+ * 每个 LLMNode 调用时必须指定 modelPath，引擎按路径路由到对应实例。
  *
  * 依赖：node-llama-cpp（原生 binding，需保留在 node_modules 原样不能被 bundle）
  * 打包配置：electron-builder.yml 的 asarUnpack + electron.vite.config.ts 的 external
@@ -9,7 +10,11 @@
 
 import { existsSync, mkdirSync, readdirSync, statSync, rmSync } from 'node:fs'
 import { join, basename } from 'node:path'
-import { app } from 'electron'
+import { createRequire } from 'node:module'
+// ⚠️ 注意：不在顶层 import electron —— renderer 会通过 nodePlugin import 链间接加载这个文件，
+// electron 是 CJS 包不提供 ESM 命名导出，vite dev server 解析时会炸。
+// electron 只在 getModelsDir() 里用到，那里用 createRequire 同步获取 app。
+const requireElectron = createRequire(import.meta.url)
 
 // ESM 动态导入——node-llama-cpp 是纯 ESM 包，主进程代码（electron-vite 编译）里只能用动态 import
 // @vite-ignore：阻止 vite/esbuild 尝试静态解析 node-llama-cpp 内部的平台子包
@@ -42,11 +47,6 @@ interface LlamaContextSequence {
   dispose: () => void
 }
 
-/** LlamaChatSession 的 prompt 返回结构 */
-interface LlamaChatResponse {
-  response: string
-}
-
 // 用 any 绕过 LlamaChatSession 的类型检查——我们只关心它能 call 就行
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let LlamaChatSessionClass: any = null
@@ -67,6 +67,7 @@ let modelsDir: string | null = null
 /** 获取模型目录（首次调用时创建）。导出给 ModelDownloader 用 */
 export function getModelsDir(): string {
   if (modelsDir) return modelsDir
+  const { app } = requireElectron('electron') as typeof import('electron')
   modelsDir = join(app.getPath('userData'), 'models')
   if (!existsSync(modelsDir)) {
     mkdirSync(modelsDir, { recursive: true })
@@ -74,19 +75,21 @@ export function getModelsDir(): string {
   return modelsDir
 }
 
-// —— 引擎状态 ——
+// —— 多模型实例管理 ——
 
-/** 当前已加载的模型实例（null = 未加载） */
-let currentModel: LlamaModel | null = null
-/** 当前模型文件路径 */
-let currentModelPath: string | null = null
-/** 当前 context + session */
-let currentContext: LlamaContext | null = null
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let currentSession: any = null
+/** 每个已加载模型的运行时状态 */
+interface LoadedModel {
+  model: LlamaModel
+  context: LlamaContext
+  /** 当前活跃的 chat session（每次 chat 会新建一个） */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  currentSession: any | null
+  /** 是否正在推理（该模型实例内防并发） */
+  busy: boolean
+}
 
-/** 是否正在推理（用于防止并发请求） */
-let busy = false
+/** 所有已加载模型，key = 模型完整路径 */
+const loadedModels = new Map<string, LoadedModel>()
 
 // —— 公开 API ——
 
@@ -129,24 +132,25 @@ function formatBytes(bytes: number): string {
 
 /**
  * 加载一个 GGUF 模型到内存。
- * 同一个路径则跳过重复加载（已在内存里）。
- * 不同路径则先 unload 旧的再 load 新的。
+ * 同一个路径已在内存则跳过；不同路径则新增一个实例（不卸载其他模型）。
  */
 export async function loadModel(modelPath: string): Promise<{ ok: true; modelName: string } | { ok: false; error: string }> {
   try {
-    if (currentModelPath === modelPath && currentModel) {
+    // 已加载则跳过
+    if (loadedModels.has(modelPath)) {
       return { ok: true, modelName: basename(modelPath) }
     }
 
-    // 先卸载旧的
-    unloadModelInternal()
-
     const llama = await getLlama()
-    currentModel = await llama.loadModel({ modelPath })
-    currentModelPath = modelPath
+    const model = await llama.loadModel({ modelPath })
+    const context = await model.createContext({ contextSize: 2048 })
 
-    // 创建 context（默认 2048 token 上下文）
-    currentContext = await currentModel.createContext({ contextSize: 2048 })
+    loadedModels.set(modelPath, {
+      model,
+      context,
+      currentSession: null,
+      busy: false
+    })
 
     return { ok: true, modelName: basename(modelPath) }
   } catch (err) {
@@ -155,45 +159,45 @@ export async function loadModel(modelPath: string): Promise<{ ok: true; modelNam
   }
 }
 
-/** 卸载当前模型（释放 GPU/内存） */
-export function unloadModel(): void {
-  unloadModelInternal()
+/** 卸载指定模型（释放 GPU/内存）。不传 path 则卸载全部 */
+export function unloadModel(modelPath?: string): void {
+  if (modelPath) {
+    disposeModelInstance(modelPath)
+  } else {
+    // 卸载全部
+    for (const p of [...loadedModels.keys()]) {
+      disposeModelInstance(p)
+    }
+  }
 }
 
-function unloadModelInternal(): void {
+function disposeModelInstance(modelPath: string): void {
+  const entry = loadedModels.get(modelPath)
+  if (!entry) return
   try {
-    // 先 dispose session（如果有）
-    if (currentSession && typeof currentSession.dispose === 'function') {
-      currentSession.dispose()
+    if (entry.currentSession && typeof entry.currentSession.dispose === 'function') {
+      entry.currentSession.dispose()
     }
-    currentSession = null
-
-    // dispose context sequence
-    if (currentContext) {
-      try {
-        // LlamaContext 没有直接 dispose，sequence 才有
-      } catch { /* 忽略 */ }
-    }
-
-    currentModel = null
-    currentModelPath = null
-    currentContext = null
-  } catch { /* 清理失败静默忽略 */ }
+  } catch { /* 忽略 */ }
+  loadedModels.delete(modelPath)
 }
 
-/** 当前加载的模型文件名 */
-export function getLoadedModel(): string | null {
-  return currentModelPath ? basename(currentModelPath) : null
+/** 当前所有已加载模型的文件名列表 */
+export function getLoadedModels(): string[] {
+  return [...loadedModels.keys()].map(p => basename(p))
 }
 
-/** 是否有模型在内存里 */
-export function isModelLoaded(): boolean {
-  return currentModel !== null
+/** 指定模型是否已加载 */
+export function isModelLoaded(modelPath: string): boolean {
+  return loadedModels.has(modelPath)
 }
 
-/** 是否正在推理 */
-export function isBusy(): boolean {
-  return busy
+/** 是否有任何模型在推理中（所有实例的 busy 合并） */
+export function isAnyBusy(): boolean {
+  for (const entry of loadedModels.values()) {
+    if (entry.busy) return true
+  }
+  return false
 }
 
 export type ChatResult =
@@ -201,48 +205,45 @@ export type ChatResult =
   | { ok: false; error: string }
 
 /**
- * 单轮对话：system prompt + user prompt → assistant 回复。
+ * 单轮对话：指定模型路径，system prompt + user prompt → assistant 回复。
  * 每次调用重新创建 session（简单模式，不保留连续对话历史）。
+ *
+ * 注意：LlamaChatSession.prompt() 直接返回 responseText 字符串（不是对象）。
  */
-export async function chat(system: string, prompt: string): Promise<ChatResult> {
-  if (!currentModel || !currentContext) {
-    return { ok: false, error: '本地模型未加载，请先在设置里选择并加载一个模型' }
+export async function chat(modelPath: string, system: string, prompt: string): Promise<ChatResult> {
+  const entry = loadedModels.get(modelPath)
+  if (!entry) {
+    return { ok: false, error: `模型未加载：${basename(modelPath)}。请先在设置里加载该模型。` }
   }
-  if (busy) {
+  if (entry.busy) {
     return { ok: false, error: '模型正在忙，请稍后再试' }
   }
 
-  busy = true
+  entry.busy = true
   try {
     const SessionClass = await getChatSessionClass()
     const session = new SessionClass({
-      contextSequence: currentContext.getSequence(),
+      contextSequence: entry.context.getSequence(),
       systemPrompt: system || 'You are a helpful assistant.'
     })
-    currentSession = session
+    entry.currentSession = session
 
-    const result = await session.prompt(prompt) as LlamaChatResponse
-    const content = result?.response ?? ''
+    // session.prompt() 直接返回 responseText 字符串（node-llama-cpp v3 API）
+    const responseText = await session.prompt(prompt) as unknown as string
 
-    return { ok: true, content }
+    return { ok: true, content: responseText ?? '' }
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
     return { ok: false, error: msg }
   } finally {
-    busy = false
-    currentSession = null
+    entry.busy = false
+    entry.currentSession = null
   }
 }
 
 /**
- * 流式对话：逐 token 回调。
- * 暂不实现，需要时再加。
- */
-// export async function chatStream(...) { ... }
-
-/**
  * 删除本地模型文件。
- * 注意：如果该模型正在使用中，会先卸载再删除。
+ * 注意：如果该模型正在内存里，会先卸载再删除。
  */
 export function deleteModel(modelName: string): { ok: true } | { ok: false; error: string } {
   const dir = getModelsDir()
@@ -252,8 +253,8 @@ export function deleteModel(modelName: string): { ok: true } | { ok: false; erro
   }
 
   // 如果正在加载这个模型，先卸载
-  if (currentModelPath === targetPath) {
-    unloadModelInternal()
+  if (loadedModels.has(targetPath)) {
+    disposeModelInstance(targetPath)
   }
 
   try {
@@ -267,5 +268,8 @@ export function deleteModel(modelName: string): { ok: true } | { ok: false; erro
 
 /** 关闭引擎（应用退出时调用） */
 export function dispose(): void {
-  unloadModelInternal()
+  // 卸载全部
+  for (const p of [...loadedModels.keys()]) {
+    disposeModelInstance(p)
+  }
 }

@@ -1,26 +1,18 @@
 diff --git a/node_modules/node-llama-cpp/dist/bindings/utils/compileLLamaCpp.js b/node_modules/node-llama-cpp/dist/bindings/utils/compileLLamaCpp.js
-index 29aa4e7..d52f0b3 100644
+index 29aa4e7..6c0a0e1 100644
 --- a/node_modules/node-llama-cpp/dist/bindings/utils/compileLLamaCpp.js
 +++ b/node_modules/node-llama-cpp/dist/bindings/utils/compileLLamaCpp.js
-@@ -3,6 +3,17 @@ import { fileURLToPath } from "url";
+@@ -3,6 +3,9 @@ import { fileURLToPath } from "url";
  import process from "process";
  import os from "os";
  import fs from "fs-extra";
-+import { createRequire } from "module";
-+const _require = createRequire(import.meta.url);
 +// 运行时动态加载 @node-llama-cpp 平台子包，避免 vite/esbuild 静态扫描
-+function _dynImport(pkg) {
-+    try {
-+        return Promise.resolve(_require(pkg));
-+    }
-+    catch (err) {
-+        return Promise.reject(err);
-+    }
-+}
++// 用 new Function 构造动态 import()，绕过静态分析；同时正确处理带 top-level await 的 ESM 子包
++const _dynImport = new Function("pkg", "return import(pkg)");
  import chalk from "chalk";
  import which from "which";
  import { buildMetadataFileName, documentationPageUrls, llamaCppDirectory, llamaDirectory, llamaLocalBuildBinsDirectory, llamaPrebuiltBinsDirectory, llamaToolchainsDirectory } from "../../config.js";
-@@ -433,54 +444,54 @@ function getPrebuiltBinariesPackageDirectoryForBuildOptions(buildOptions) {
+@@ -433,54 +436,54 @@ function getPrebuiltBinariesPackageDirectoryForBuildOptions(buildOptions) {
      if (buildOptions.platform === "mac") {
          if (buildOptions.arch === "arm64" && buildOptions.gpu === "metal")
              // @ts-ignore

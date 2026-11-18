@@ -40,8 +40,9 @@ export function registerLocalModelIpcHandlers(): void {
     const d = await downloader()
     const models = r.listLocalModels()
     return {
-      loaded: r.getLoadedModel(),
-      busy: r.isBusy(),
+      // 多模型：返回已加载的模型文件名数组
+      loaded: r.getLoadedModels(),
+      busy: r.isAnyBusy(),
       models,
       activeDownloads: d.getActiveDownloads()
     }
@@ -56,20 +57,23 @@ export function registerLocalModelIpcHandlers(): void {
     return r.loadModel(modelPath)
   })
 
-  // —— 卸载当前模型 ——
-  ipcMain.handle('local:unloadModel', async () => {
+  // —— 卸载模型（不传 path 则卸载全部）——
+  ipcMain.handle('local:unloadModel', async (_e, modelPath?: string) => {
     const r = await runner()
-    r.unloadModel()
+    r.unloadModel(modelPath)
     return { ok: true }
   })
 
   // —— 单轮对话（核心调用）——
-  ipcMain.handle('local:chat', async (_e, args: { system?: string; prompt: string }) => {
+  ipcMain.handle('local:chat', async (_e, args: { modelPath: string; system?: string; prompt: string }) => {
     if (!args || typeof args.prompt !== 'string') {
       return { ok: false, error: 'prompt 不能为空' }
     }
+    if (!args.modelPath) {
+      return { ok: false, error: '必须指定模型路径 modelPath' }
+    }
     const r = await runner()
-    return r.chat(args.system ?? '', args.prompt)
+    return r.chat(args.modelPath, args.system ?? '', args.prompt)
   })
 
   // —— 下载模型（带进度回调 + 源选择）——

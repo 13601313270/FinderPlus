@@ -34,14 +34,15 @@ export default defineConfig({
     },
     // renderer 是纯浏览器环境，node-llama-cpp 的依赖（ipull/chmodrp/cross-spawn 等）
     // 里有 Node-only 的 import，vite 预构建时会尝试解析它们然后报错/卡住
-    // 直接让 renderer 跳过对 node-llama-cpp 生态 + src/main 的依赖追踪
+    // 让 renderer 跳过对这些 Node-only 生态的依赖追踪
     optimizeDeps: {
-      exclude: ['node-llama-cpp', '@node-llama-cpp/*', 'ipull', 'chmodrp', 'cross-spawn']
+      exclude: ['node-llama-cpp', '@node-llama-cpp/*', 'ipull', 'chmodrp', 'cross-spawn', 'electron']
     },
     build: {
       rollupOptions: {
         external: (id: string) =>
-          id.includes('/src/main/') ||
+          id === 'electron' ||
+          id.startsWith('electron/') ||
           id.includes('node-llama-cpp')
       }
     },

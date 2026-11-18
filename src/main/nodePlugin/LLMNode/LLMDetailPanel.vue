@@ -61,6 +61,29 @@ const modelListForProvider = computed(() => modelLists.value[provider.value as L
 const canPullModels = computed(() => !pullingModels.value && provider.value && hasKeyNow.value)
 const chatCount = computed(() => chatHistory.value.length)
 
+// —— 本地模型专用 ——
+const isLocal = computed(() => provider.value === 'local')
+/** 本地模型下拉选项：已下载的 GGUF 文件，value=完整路径，label=文件名 */
+const localModelOptions = ref<Array<{ path: string; name: string; loaded: boolean }>>([])
+
+async function refreshLocalModels(): Promise<void> {
+  const api = (window as any).localLlmApi
+  if (!api) return
+  const list = await api.listModels()
+  localModelOptions.value = list.models.map(m => ({
+    path: m.path,
+    name: m.name,
+    loaded: list.loaded.includes(m.name)
+  }))
+}
+
+// provider 切到 local 时刷新一次本地列表
+watch(provider, async (val) => {
+  if (val === 'local') {
+    await refreshLocalModels()
+  }
+})
+
 let offChanged: (() => void) | undefined
 
 // 防抖 300ms：textarea 输入过程中不频繁触发 notifyChanged
@@ -199,27 +222,38 @@ function onPickModel(e: Event): void {
     llmNode.value?.setModel(val)
   }
 }
+
+function onPickLocalModel(e: Event): void {
+  const val = (e.target as HTMLSelectElement).value
+  model.value = val
+  llmNode.value?.setModel(val)
+}
 </script>
 
 <template>
   <div class="detail-panel">
 
-    <!-- API Key 状态行 -->
+    <!-- API Key 状态行（本地模型显示特殊提示） -->
     <div class="detail-panel__section">
       <label class="detail-panel__label">API Key</label>
       <div class="detail-panel__key-row">
-        <span class="detail-panel__key-status" :class="{
-          'detail-panel__key-status--ok': hasKeyNow,
-          'detail-panel__key-status--miss': !hasKeyNow
-        }">
-          {{ hasKeyNow ? '✓ 已配置' : '✗ 未配置' }}
-        </span>
-        <span v-if="currentPresetUrl" class="detail-panel__url" :title="currentPresetUrl">
-          {{ currentPresetUrl }}
-        </span>
-        <button class="detail-panel__btn detail-panel__btn--sm" type="button"
-          :title="hasKey(provider as LLMProvider) ? t('keyConfigured') : t('keyMissing')"
-          @click="onGearClick">⚙ 全局设置</button>
+        <template v-if="provider === 'local'">
+          <span class="detail-panel__key-status detail-panel__key-status--ok">✓ 本地推理 · 无需 API Key</span>
+        </template>
+        <template v-else>
+          <span class="detail-panel__key-status" :class="{
+            'detail-panel__key-status--ok': hasKeyNow,
+            'detail-panel__key-status--miss': !hasKeyNow
+          }">
+            {{ hasKeyNow ? '✓ 已配置' : '✗ 未配置' }}
+          </span>
+          <span v-if="currentPresetUrl" class="detail-panel__url" :title="currentPresetUrl">
+            {{ currentPresetUrl }}
+          </span>
+          <button class="detail-panel__btn detail-panel__btn--sm" type="button"
+            :title="hasKey(provider as LLMProvider) ? t('keyConfigured') : t('keyMissing')"
+            @click="onGearClick">⚙ 全局设置</button>
+        </template>
       </div>
     </div>
 
@@ -235,28 +269,67 @@ function onPickModel(e: Event): void {
       </div>
       <div class="detail-panel__section detail-panel__section--flex">
         <label class="detail-panel__label">Model</label>
-        <div class="detail-panel__model-row">
-          <input
-            class="detail-panel__input"
-            :value="model"
-            :placeholder="currentDefaultModel"
-            type="text"
-            spellcheck="false"
-            @input="onModelInput"
-          />
-          <select v-if="modelListForProvider.length > 0" class="detail-panel__select detail-panel__select--sm"
-            :value="model" @change="onPickModel">
-            <option value="">— —</option>
-            <option v-for="m in modelListForProvider" :key="m" :value="m">{{ m }}</option>
-          </select>
-          <button class="detail-panel__btn" type="button"
-            :disabled="!canPullModels || running"
-            :title="pullingModels ? '拉取中…' : '从 /models 端点拉取可用模型'"
-            @click="onPullModels">
-            {{ pullingModels ? '…' : '↻' }}
-          </button>
-        </div>
-        <div v-if="pullError" class="detail-panel__error">{{ pullError }}</div>
+
+        <!-- 本地模型：下拉选择已下载的 GGUF 文件 -->
+        <template v-if="isLocal">
+          <div class="detail-panel__model-row">
+            <select
+              class="detail-panel__select"
+              :value="model"
+              @change="onPickLocalModel"
+            >
+              <option value="">— 选择本地模型 —</option>
+              <option
+                v-for="m in localModelOptions"
+                :key="m.path"
+                :value="m.path"
+              >
+                {{ m.name }}{{ m.loaded ? ' 🟢' : '' }}
+              </option>
+            </select>
+            <button class="detail-panel__btn" type="button"
+              :disabled="running"
+              :title="'刷新本地模型列表'"
+              @click="refreshLocalModels">
+              ↻
+            </button>
+          </div>
+          <div class="detail-panel__local-hint">
+            <template v-if="model">
+              <span v-if="localModelOptions.find(m => m.path === model)?.loaded" class="detail-panel__key-status detail-panel__key-status--ok">🟢 已加载</span>
+              <span v-else class="detail-panel__key-status detail-panel__key-status--miss">⚠ 未加载 · 请先到设置里"加载到内存"</span>
+            </template>
+            <template v-else>
+              <span class="detail-panel__muted">从已下载的本地模型中选一个；如未下载请到设置里下载</span>
+            </template>
+          </div>
+        </template>
+
+        <!-- HTTP provider：文本输入 + 模型列表下拉 + 拉取按钮 -->
+        <template v-else>
+          <div class="detail-panel__model-row">
+            <input
+              class="detail-panel__input"
+              :value="model"
+              :placeholder="currentDefaultModel"
+              type="text"
+              spellcheck="false"
+              @input="onModelInput"
+            />
+            <select v-if="modelListForProvider.length > 0" class="detail-panel__select detail-panel__select--sm"
+              :value="model" @change="onPickModel">
+              <option value="">— —</option>
+              <option v-for="m in modelListForProvider" :key="m" :value="m">{{ m }}</option>
+            </select>
+            <button class="detail-panel__btn" type="button"
+              :disabled="!canPullModels || running"
+              :title="pullingModels ? '拉取中…' : '从 /models 端点拉取可用模型'"
+              @click="onPullModels">
+              {{ pullingModels ? '…' : '↻' }}
+            </button>
+          </div>
+          <div v-if="pullError" class="detail-panel__error">{{ pullError }}</div>
+        </template>
       </div>
     </div>
 
@@ -530,6 +603,13 @@ function onPickModel(e: Event): void {
   &__error {
     font-size: 11px;
     color: #dc2626;
+  }
+
+  &__local-hint {
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    margin-top: 2px;
   }
 
   &__textarea {

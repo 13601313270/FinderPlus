@@ -599,7 +599,7 @@ interface RecommendedModel {
 }
 
 const localModels = ref<LocalModelInfo[]>([])
-const localLoaded = ref<string | null>(null)
+const localLoaded = ref<string[]>([])  // 多模型：已加载的模型文件名数组
 const localBusy = ref(false)
 const recommendedModels = ref<RecommendedModel[]>([])
 const downloadingId = ref<string | null>(null)
@@ -614,7 +614,7 @@ async function refreshLocalModels(): Promise<void> {
   try {
     const [rec, list] = await Promise.all([
       window.localLlmApi?.getRecommendedModels() ?? Promise.resolve([]),
-      window.localLlmApi?.listModels() ?? Promise.resolve({ loaded: null, busy: false, models: [], activeDownloads: [] })
+      window.localLlmApi?.listModels() ?? Promise.resolve({ loaded: [], busy: false, models: [], activeDownloads: [] })
     ])
     console.log('[SettingsDialog] refreshLocalModels rec=', rec, 'list=', list)
     recommendedModels.value = rec
@@ -718,8 +718,10 @@ async function onLoadLocalModel(modelName: string): Promise<void> {
   await refreshLocalModels()
 }
 
-async function onUnloadLocalModel(): Promise<void> {
-  await window.localLlmApi?.unloadModel()
+async function onUnloadLocalModel(modelName: string): Promise<void> {
+  const model = localModels.value.find((m) => m.name === modelName)
+  if (!model) return
+  await window.localLlmApi?.unloadModel(model.path)
   await refreshLocalModels()
 }
 
@@ -1404,13 +1406,13 @@ async function onDeleteCanvas(id: string, name: string): Promise<void> {
                     <div class="gs-feishu-card__info">
                       <span class="gs-feishu-card__name">
                         {{ m.name }}
-                        <span v-if="localLoaded === m.name" class="gs-local__loaded-badge">🟢 运行中</span>
+                      <span v-if="localLoaded.includes(m.name)" class="gs-local__loaded-badge">🟢 运行中</span>
                       </span>
                       <span class="gs-feishu-card__appid">{{ m.sizeHuman }}</span>
                     </div>
                     <div class="gs-feishu-card__actions">
                       <button
-                        v-if="localLoaded !== m.name"
+                        v-if="!localLoaded.includes(m.name)"
                         class="gs-canvas-card__btn gs-canvas-card__btn--primary"
                         type="button"
                         :disabled="localBusy"
@@ -1421,12 +1423,12 @@ async function onDeleteCanvas(id: string, name: string): Promise<void> {
                         class="gs-canvas-card__btn"
                         type="button"
                         :disabled="localBusy"
-                        @click="onUnloadLocalModel"
+                        @click="onUnloadLocalModel(m.name)"
                       >卸载</button>
                       <button
                         class="gs-canvas-card__btn gs-canvas-card__btn--danger"
                         type="button"
-                        :disabled="localLoaded === m.name"
+                        :disabled="localLoaded.includes(m.name)"
                         @click="onDeleteLocalModel(m.name)"
                       >删除</button>
                     </div>

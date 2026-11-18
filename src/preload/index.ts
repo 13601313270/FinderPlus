@@ -609,7 +609,7 @@ const localLlmApi = {
 
   /** 列出本地已下载模型 + 当前状态 */
   listModels: (): Promise<{
-    loaded: string | null
+    loaded: string[]      // 多模型：已加载的模型文件名数组
     busy: boolean
     models: Array<{ name: string; path: string; size: number; sizeHuman: string }>
     activeDownloads: string[]
@@ -619,11 +619,12 @@ const localLlmApi = {
   loadModel: (modelPath: string): Promise<{ ok: true; modelName: string } | { ok: false; error: string }> =>
     ipcRenderer.invoke('local:loadModel', modelPath),
 
-  /** 卸载当前模型（释放内存） */
-  unloadModel: (): Promise<{ ok: true }> => ipcRenderer.invoke('local:unloadModel'),
+  /** 卸载模型。modelPath 可选：不传则卸载全部 */
+  unloadModel: (modelPath?: string): Promise<{ ok: true }> =>
+    ipcRenderer.invoke('local:unloadModel', modelPath),
 
-  /** 单轮对话 */
-  chat: (args: { system?: string; prompt: string }): Promise<{ ok: true; content: string } | { ok: false; error: string }> =>
+  /** 单轮对话（多模型：必须指定 modelPath） */
+  chat: (args: { modelPath: string; system?: string; prompt: string }): Promise<{ ok: true; content: string } | { ok: false; error: string }> =>
     ipcRenderer.invoke('local:chat', args),
 
   /** 下载一个推荐模型（带进度推送）。args.source 可选：'hf-mirror'（默认）或 'hf-official' */

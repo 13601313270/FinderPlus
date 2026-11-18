@@ -300,8 +300,9 @@ export class LLMNode extends Node {
     this.notifyChanged()
   }
 
-  /** 当前 provider 是否已配全局 Key —— UI 读它决定是否显示警告 */
+  /** 当前 provider 是否已配全局 Key —— UI 读它决定是否显示警告；local 不需要 Key，直接 true */
   get hasProviderKey(): boolean {
+    if (this.provider === 'local') return true
     return readProviderKey(this.provider).length > 0
   }
 
@@ -699,6 +700,13 @@ export class LLMNode extends Node {
   /**
    * 本地 LLM 推理：动态 import LlmRunner，不走 HTTP fetch。
    * 结构和 fetchAndCommit 一致——beginRun → 推理 → commit → completeRun/failRun → notifyChanged。
+   *
+   * 多模型：this.model 存本地模型的完整路径（modelPath）。
+   *
+   * 注意：LLMNode 类在 renderer 和 main 进程各有一份实例，
+   * renderer 不能碰 Node API（node-llama-cpp 需要原生 binding），
+   * 所以 renderer 环境走 IPC window.localLlmApi.chat() 发给 main，
+   * 只有 main 环境才本地动态 import LlmRunner。
    */
   private async localChatAndCommit(
     system: string,
@@ -710,9 +718,22 @@ export class LLMNode extends Node {
     this.errorMessage = ''
     this.notifyChanged()
 
-    // 动态 import：只有真正调用时才加载 node-llama-cpp 原生引擎
-    const { chat } = await import(/* @vite-ignore */ '../../localModels/LlmRunner')
-    const result = await chat(system || 'You are a helpful assistant.', prompt)
+    // this.model 在 local provider 下存的是模型完整路径
+    const modelPath = this.model
+    let result: { ok: true; content: string } | { ok: false; error: string }
+
+    if (!modelPath) {
+      result = { ok: false, error: '请在节点里选择要使用的本地模型（model 字段填完整路径）' }
+    } else if (typeof window !== 'undefined' && (window as any).localLlmApi?.chat) {
+      // renderer 环境：走 preload bridge 的 IPC，让 main 进程执行推理
+      result = await (window as any).localLlmApi.chat({ modelPath, system, prompt })
+    } else {
+      // main 环境：动态 import LlmRunner 原生引擎
+      // @vite-ignore：阻止 vite/esbuild 尝试静态解析 node-llama-cpp 依赖链
+      // （renderer 环境的代码也会被 vite 扫描，需要彻底跳过对 LlmRunner 的解析）
+      const mod = await import(/* @vite-ignore */ '../../localModels/LlmRunner')
+      result = await mod.chat(modelPath, system || 'You are a helpful assistant.', prompt)
+    }
 
     // —— Stale-call 守卫 ——
     if (this.requestId !== myRequestId) return

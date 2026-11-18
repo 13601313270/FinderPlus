@@ -70,8 +70,8 @@ export const RECOMMENDED_MODELS: readonly ModelCatalogEntry[] = [
     id: 'gemma3-1b',
     sizeGb: 0.7,
     ramGb: 1.5,
-    fileName: 'gemma-3-1b-it.Q4_K_M.gguf',
-    buildUri: (s) => buildModelUri(s, 'bartowski/gemma-3-1b-it-GGUF', 'gemma-3-1b-it-Q4_K_M.gguf')
+    fileName: 'gemma-3-1b-it-Q4_K_M.gguf',
+    buildUri: (s) => buildModelUri(s, 'google/gemma-3-1b-it-GGUF', 'gemma-3-1b-it-Q4_K_M.gguf')
   },
   {
     label: 'Qwen 2.5 3B Instruct (效果更好)',

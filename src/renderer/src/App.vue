@@ -85,6 +85,49 @@ const { openCenter: openHelpCenter } = useHelpCenter()
 // 全局设置：工具栏按钮和系统应用菜单（macOS 顶部菜单栏「设置…」）共享同一弹窗
 const { openSettings } = useGlobalSettings()
 
+// —— 本地模型运行状态（工具栏左侧展示）——
+const loadedLocalModels = ref<string[]>([])
+const localModelBusy = ref(false)
+let localModelRefreshTimer: ReturnType<typeof setInterval> | null = null
+
+async function refreshLocalModelStatus(): Promise<void> {
+  const api = (window as any).localLlmApi
+  if (!api) return
+  try {
+    const list = await api.listModels()
+    loadedLocalModels.value = list.loaded
+    localModelBusy.value = list.busy
+  } catch { /* 忽略 */ }
+}
+
+async function stopLocalModel(modelName: string): Promise<void> {
+  const api = (window as any).localLlmApi
+  if (!api) return
+  const ok = await (window as any).showConfirm?.(
+    '停止本地模型',
+    `确定要停止 "${modelName}" 吗？内存将被释放，下次使用需要重新启动。`
+  )
+  if (!ok) return
+  // 需要拿到完整路径
+  const list = await api.listModels()
+  const m = list.models.find((m: any) => m.name === modelName)
+  if (!m) return
+  await api.unloadModel(m.path)
+  await refreshLocalModelStatus()
+}
+
+onMounted(() => {
+  refreshLocalModelStatus()
+  localModelRefreshTimer = setInterval(refreshLocalModelStatus, 3000)
+})
+
+onUnmounted(() => {
+  if (localModelRefreshTimer) {
+    clearInterval(localModelRefreshTimer)
+    localModelRefreshTimer = null
+  }
+})
+
 // 认证状态：登录 / 注册 / 退出
 const { isLoggedIn, user, openLogin, doLogout } = useAuth()
 
@@ -1438,6 +1481,23 @@ onUnmounted(() => {
       <!-- 右侧可拖动区（stretch 撑满） -->
       <span class="stage__dragbar-drag-area stage__dragbar-drag-area--right" />
       <div style="display: flex;align-items: center;">
+        <!-- 已加载的本地模型（运行中） -->
+        <template v-if="loadedLocalModels.length > 0">
+          <div class="stage__local-models">
+            <div class="stage__local-models-label">🖥 本地</div>
+            <button
+              v-for="name in loadedLocalModels"
+              :key="name"
+              class="stage__local-model-chip"
+              type="button"
+              :disabled="localModelBusy"
+              :title="`${localModelBusy ? '模型推理中，无法停止' : '点击停止'}：${name}`"
+              @click="stopLocalModel(name)"
+            >
+              {{ name }}{{ localModelBusy ? ' ⏳' : ' ✕' }}
+            </button>
+          </div>
+        </template>
         <button class="stage__settings-btn" type="button" :title="t('app.settings')" @click="openSettings()">
           <GearIcon :size="14" />
           <span>{{ t('app.settings') }}</span>
@@ -1815,6 +1875,53 @@ onUnmounted(() => {
         background: darken(@color-primary, 8%);
         color: #fff;
       }
+    }
+  }
+
+  // —— 工具栏右侧：本地已加载的模型展示 ——
+  &__local-models {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-right: 10px;
+    padding-right: 10px;
+    border-right: 1px solid rgba(0, 0, 0, 0.12);
+  }
+
+  &__local-models-label {
+    font-size: 11px;
+    color: @color-text-weak;
+    font-weight: 500;
+  }
+
+  &__local-model-chip {
+    all: unset;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 500;
+    color: #047857;
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    max-width: 180px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: background 0.15s ease, border-color 0.15s ease;
+    -webkit-app-region: no-drag;
+
+    &:hover:not(:disabled) {
+      background: #fef2f2;
+      border-color: #fecaca;
+      color: #b91c1c;
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
     }
   }
 

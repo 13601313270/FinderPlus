@@ -605,6 +605,59 @@ const recommendedModels = ref<RecommendedModel[]>([])
 const downloadingId = ref<string | null>(null)
 const downloadProgress = ref(0)
 const downloadProgressText = ref('')
+
+/** 合并后的模型列表：推荐模型做 base + 已安装但不在推荐里的兜底 */
+const mergedModels = computed(() => {
+  type MergedItem = {
+    uniqueKey: string
+    label: string
+    subtitle: string
+    recommendedId?: string
+    installedName?: string
+    isInstalled: boolean
+    loaded: boolean
+    isDownloading: boolean
+  }
+
+  const installedSet = new Set(localModels.value.map(m => m.name))
+  const recommendedFileNames = new Set(recommendedModels.value.map(r => r.fileName))
+  const items: MergedItem[] = []
+
+  // 1) 推荐模型（含下载/安装状态）
+  for (const r of recommendedModels.value) {
+    const installed = localModels.value.find(m => m.name === r.fileName)
+    const loaded = installed ? localLoaded.value.includes(installed.name) : false
+    items.push({
+      uniqueKey: `rec:${r.id}`,
+      label: r.label,
+      subtitle: installed
+        ? `${installed.sizeHuman}`
+        : `约 ${r.sizeGb}GB 磁盘 · 建议 ${r.ramGb}GB 内存`,
+      recommendedId: r.id,
+      installedName: installed?.name,
+      isInstalled: !!installed,
+      loaded,
+      isDownloading: downloadingId.value === r.id
+    })
+  }
+
+  // 2) 已安装但不在推荐里的（兜底，比如用户手动放进 models 目录的 GGUF）
+  for (const m of localModels.value) {
+    if (recommendedFileNames.has(m.name)) continue // 上面已覆盖
+    const loaded = localLoaded.value.includes(m.name)
+    items.push({
+      uniqueKey: `inst:${m.name}`,
+      label: m.name,
+      subtitle: m.sizeHuman,
+      installedName: m.name,
+      isInstalled: true,
+      loaded,
+      isDownloading: false
+    })
+  }
+
+  return items
+})
 const localModelsLoading = ref(false)
 
 let progressUnsub: (() => void) | undefined
@@ -1338,28 +1391,34 @@ async function onDeleteCanvas(id: string, name: string): Promise<void> {
               <section class="gs-section">
                 <h4 class="gs-section__title">本地模型</h4>
                 <p class="gs-section__hint">下载小体积本地大语言模型（1~3B），直接在你的 Mac 上运行推理，无需网络。首次下载后完全离线可用。</p>
-                <p class="gs-section__hint gs-section__hint--warn">下载的模型保存在本地数据目录，不会随应用打包。用完点"卸载"可释放内存，磁盘空间可单独删除。</p>
+                <p class="gs-section__hint gs-section__hint--warn">下载的模型保存在本地数据目录，不会随应用打包。用完点"停止"可释放内存，磁盘空间可单独删除。</p>
               </section>
 
               <section class="gs-section">
-                <h4 class="gs-section__title">推荐模型</h4>
-                <p class="gs-section__hint">Mac 统一内存 8GB+ 可流畅运行。点击下载后自动加载到"已安装"列表。</p>
+                <h4 class="gs-section__title">模型库</h4>
 
                 <div v-if="localModelsLoading" class="gs-canvases__loading">加载中...</div>
 
+                <div v-else-if="mergedModels.length === 0" class="gs-canvases__empty">
+                  暂无本地模型。
+                </div>
+
                 <div v-else class="gs-feishu__list">
                   <div
-                    v-for="m in recommendedModels"
-                    :key="m.id"
+                    v-for="m in mergedModels"
+                    :key="m.uniqueKey"
                     class="gs-feishu-card"
                   >
                     <div class="gs-feishu-card__info">
-                      <span class="gs-feishu-card__name">{{ m.label }}</span>
-                      <span class="gs-feishu-card__appid">约 {{ m.sizeGb }}GB 磁盘 · 建议 {{ m.ramGb }}GB 内存</span>
+                      <span class="gs-feishu-card__name">
+                        {{ m.label }}
+                        <span v-if="m.loaded" class="gs-local__loaded-badge">🟢 运行中</span>
+                      </span>
+                      <span class="gs-feishu-card__appid">{{ m.subtitle }}</span>
                     </div>
                     <div class="gs-feishu-card__actions">
                       <!-- 下载中：进度条 + 取消 -->
-                      <template v-if="downloadingId === m.id">
+                      <template v-if="m.isDownloading">
                         <div class="gs-local__progress">
                           <div class="gs-local__progress-bar" :style="{ width: `${downloadProgress}%` }" />
                           <span class="gs-local__progress-text">{{ downloadProgress.toFixed(0) }}% · {{ downloadProgressText }}</span>
@@ -1367,70 +1426,42 @@ async function onDeleteCanvas(id: string, name: string): Promise<void> {
                         <button
                           class="gs-canvas-card__btn gs-canvas-card__btn--danger"
                           type="button"
-                          @click="onCancelDownload(m.id)"
+                          @click="onCancelDownload(m.recommendedId!)"
                         >取消</button>
                       </template>
-                      <!-- 已下载："已安装" 标识 -->
-                      <template v-else-if="localModels.some((lm) => lm.name === m.fileName)">
-                        <span class="gs-local__installed-badge">✓ 已安装</span>
+
+                      <!-- 已下载：启动/停止 + 删除 -->
+                      <template v-else-if="m.isInstalled">
+                        <button
+                          v-if="!m.loaded"
+                          class="gs-canvas-card__btn gs-canvas-card__btn--primary"
+                          type="button"
+                          :disabled="localBusy"
+                          @click="onLoadLocalModel(m.installedName!)"
+                        >启动</button>
+                        <button
+                          v-else
+                          class="gs-canvas-card__btn"
+                          type="button"
+                          :disabled="localBusy"
+                          @click="onUnloadLocalModel(m.installedName!)"
+                        >停止</button>
+                        <button
+                          class="gs-canvas-card__btn gs-canvas-card__btn--danger"
+                          type="button"
+                          :disabled="m.loaded"
+                          @click="onDeleteLocalModel(m.installedName!)"
+                        >删除</button>
                       </template>
-                      <!-- 未下载：下载按钮（弹源选择） -->
+
+                      <!-- 未下载：下载按钮 -->
                       <template v-else>
                         <button
                           class="gs-canvas-card__btn gs-canvas-card__btn--primary"
                           type="button"
-                          @click="openSourceSelector(m.id)"
+                          @click="openSourceSelector(m.recommendedId!)"
                         >下载</button>
                       </template>
-                    </div>
-                  </div>
-                </div>
-              </section>
-
-              <section class="gs-section">
-                <h4 class="gs-section__title">已安装</h4>
-                <p class="gs-section__hint">下载后需要"加载到内存"才能在 LLM 节点里使用。加载会占用显存/内存约模型体积，用完可以卸载。</p>
-
-                <div v-if="localModelsLoading" class="gs-canvases__loading">加载中...</div>
-
-                <div v-else-if="localModels.length === 0" class="gs-canvases__empty">
-                  暂无已安装的本地模型，先从上方推荐列表下载一个吧。
-                </div>
-
-                <div v-else class="gs-feishu__list">
-                  <div
-                    v-for="m in localModels"
-                    :key="m.name"
-                    class="gs-feishu-card"
-                  >
-                    <div class="gs-feishu-card__info">
-                      <span class="gs-feishu-card__name">
-                        {{ m.name }}
-                      <span v-if="localLoaded.includes(m.name)" class="gs-local__loaded-badge">🟢 运行中</span>
-                      </span>
-                      <span class="gs-feishu-card__appid">{{ m.sizeHuman }}</span>
-                    </div>
-                    <div class="gs-feishu-card__actions">
-                      <button
-                        v-if="!localLoaded.includes(m.name)"
-                        class="gs-canvas-card__btn gs-canvas-card__btn--primary"
-                        type="button"
-                        :disabled="localBusy"
-                        @click="onLoadLocalModel(m.name)"
-                      >加载到内存</button>
-                      <button
-                        v-else
-                        class="gs-canvas-card__btn"
-                        type="button"
-                        :disabled="localBusy"
-                        @click="onUnloadLocalModel(m.name)"
-                      >卸载</button>
-                      <button
-                        class="gs-canvas-card__btn gs-canvas-card__btn--danger"
-                        type="button"
-                        :disabled="localLoaded.includes(m.name)"
-                        @click="onDeleteLocalModel(m.name)"
-                      >删除</button>
                     </div>
                   </div>
                 </div>

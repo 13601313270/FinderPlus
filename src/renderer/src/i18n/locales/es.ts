@@ -279,7 +279,7 @@ const es: Language = {
     sqlPortDialogTitle: 'SQL Port Management',
     sqlPortSectionTitle: 'Added query ports',
     sqlPortEmpty: 'No SQL query ports yet',
-    sqlPortAdd: '+ Add SQL port',
+    sqlPortAdd: 'Add SQL port',
     sqlPortConfirmDelete: 'Delete query port {idx}?',
     addRow: '+ Add',
     search: 'Search',
@@ -331,7 +331,7 @@ const es: Language = {
     canEditDisabled: 'Disabled in edit dialog',
     sortEnabled: 'Clickable sort',
     sortDisabled: 'Not sortable',
-    addColumnTrigger: '+ Add column',
+    addColumnTrigger: 'Add column',
     close: 'Close',
     noCustomColumns: '(no custom columns)',
     addColTitle: 'Add column',
@@ -356,7 +356,10 @@ const es: Language = {
     errorDuplicateName: 'Column "{name}" already exists',
     refreshTooltip: 'Refresh data',
     resizeTooltip: 'Drag to resize',
-    nodeFallback: 'Table'
+    nodeFallback: 'Table',
+    detailPageSizeLabel: 'Rows per page',
+    detailPageSizeHint: 'Any integer between 1–1000. Changes take effect immediately.',
+    detailApply: 'Apply'
   }
 }
 

@@ -28,6 +28,7 @@ export const manifest: NodePluginManifest = {
   iconImage: TableIcon,
   category: 'text-data',
   help: () => import('./TableHelpDialog.vue'),
+  detailPanel: () => import('./TableDetailPanel.vue'),
   platforms: ["mac"]
 }
 

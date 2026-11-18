@@ -298,7 +298,7 @@ const zh: Language = {
     sqlPortDialogTitle: 'SQL 端口管理',
     sqlPortSectionTitle: '已添加的查询端口',
     sqlPortEmpty: '暂无 SQL 查询端口',
-    sqlPortAdd: '＋ 添加 SQL 端口',
+    sqlPortAdd: '添加 SQL 端口',
     sqlPortConfirmDelete: '确定删除查询端口 {idx}？',
     addRow: '＋ 新增',
     search: '搜索',
@@ -350,7 +350,7 @@ const zh: Language = {
     canEditDisabled: '修改弹窗禁用',
     sortEnabled: '表头可点击排序',
     sortDisabled: '表头不可排序',
-    addColumnTrigger: '＋ 添加新列',
+    addColumnTrigger: '添加新列',
     close: '关闭',
     noCustomColumns: '(无自定义列)',
     addColTitle: '添加新列',
@@ -375,7 +375,10 @@ const zh: Language = {
     errorDuplicateName: '列名 "{name}" 已存在',
     refreshTooltip: '刷新数据（重置搜索 + 重新加载）',
     resizeTooltip: '拖拽调整大小',
-    nodeFallback: '表'
+    nodeFallback: '表',
+    detailPageSizeLabel: '每页记录数',
+    detailPageSizeHint: '可设 1–1000 之间的整数，改完自动生效',
+    detailApply: '应用'
   }
 }
 

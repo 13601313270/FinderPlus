@@ -447,5 +447,12 @@ export type Language = {
 
     /** 节点标题 fallback（新建时还没取到 manifest） */
     nodeFallback: string
+
+    /** detailPanel — 每页记录数标签 */
+    detailPageSizeLabel: string
+    /** detailPanel — 每页记录数输入框下方提示 */
+    detailPageSizeHint: string
+    /** detailPanel — 应用按钮 */
+    detailApply: string
   }
 }

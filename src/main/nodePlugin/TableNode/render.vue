@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, reactive, ref, watch, type Component } from 'vue'
+import { computed, onMounted, onUnmounted, reactive, ref, type Component } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { viewport } from '@renderer/canvas/viewport'
 
@@ -10,12 +10,14 @@ import {
   type ColumnType,
   type ColumnDef,
   type BusinessType,
-  BUSINESS_TYPE_MAP,
   resolveBusinessType,
-  resolveShowInList
+  resolveShowInList,
+  defaultValueForType
 } from './node'
-import { useNodePosition } from '@renderer/composables/useNodePosition'
 import { useNodeTitle } from '@renderer/composables/useNodeTitle'
+import { useNodeDetail } from '@renderer/composables/useNodeDetail'
+import NodeHeader from '@renderer/components/NodeHeader.vue'
+import GearIcon from '@renderer/components/icons/GearIcon.vue'
 import HelpDialog from '@renderer/components/HelpDialog.vue'
 import TextInput from './columnTypes/text/Input.vue'
 import TextCell from './columnTypes/text/Cell.vue'
@@ -73,7 +75,7 @@ const tableNode = computed(() => {
 })
 
 const nodeTitle = useNodeTitle(() => tableNode.value, t('table.nodeFallback'))
-const { box, startDrag } = useNodePosition(() => tableNode.value)
+const { openNodeDetail } = useNodeDetail()
 
 /**
  * 用来强制 listColumns / formColumns 重算的 dummy ref。
@@ -81,9 +83,6 @@ const { box, startDrag } = useNodePosition(() => tableNode.value)
  * 所以每次 columns 变化时手动 bump 一下，让依赖它的 computed 重新执行。
  */
 const columnsVersion = ref(0)
-
-/** 同 columnsVersion，强制 queryPorts 列表重渲染 */
-const sqlPortVersion = ref(0)
 
 /** 表格（列表视图）显示的列——过滤掉 showInList: false 的 */
 const listColumns = computed<ColumnDef[]>(() => {
@@ -95,11 +94,6 @@ const formColumns = computed<ColumnDef[]>(() => {
   columnsVersion.value
   return tableNode.value?.columns ? [...tableNode.value.columns] : []
 })
-/** SQL 端口对列表——依赖 sqlPortVersion 强制重渲染 */
-const sqlPortPairs = computed(() => {
-  sqlPortVersion.value
-  return tableNode.value ? [...tableNode.value.queryPorts] : []
-})
 
 // —— 表格状态 ——
 interface Row {
@@ -110,7 +104,12 @@ interface Row {
 const rows = ref<Row[]>([])
 const total = ref(0)
 const page = ref(1)
-const pageSize = 10
+/** pageSize 也走 dummy ref 模式：node.pageSize 改了之后 bump 一下，强制 computed 重算 */
+const pageSizeVersion = ref(0)
+const pageSize = computed(() => {
+  pageSizeVersion.value  // 强制依赖 dummy ref
+  return tableNode.value?.pageSize ?? 10
+})
 const loading = ref(false)
 const errorMsg = ref('')
 
@@ -152,32 +151,10 @@ const showDialog = ref(false)
 const editingRowId = ref<number | null>(null)
 const formValues = reactive<Record<string, unknown>>({})
 
-// —— 列设置弹窗 ——
-const showColumnDialog = ref(false)
-const showAddColumnDialog = ref(false)
-const newColumnName = ref('')
-const newColumnTitle = ref('')
-const newColumnBusinessType = ref<BusinessType>('text')
-/** 新增列时的默认值（跟着 newColumnBusinessType 变类型） */
-const newColumnDefaultValue = ref<unknown>('')
-/** 新增列时的元信息开关 */
-const newColumnShowInList = ref(true)
-const newColumnShowInSearch = ref(false)
-const newColumnCanUpdate = ref(true)
-const newColumnCanSort = ref(false)
-const columnError = ref('')
-
 // —— 帮助弹窗 ——
 const showHelp = ref(false)
 
 // —— SQL 端口管理弹窗 ——
-const showSqlPortDialog = ref(false)
-
-// businessType 切换时，defaultValue 重置成该类型的初始值，避免脏值串类型
-watch(newColumnBusinessType, (bt) => {
-  const storageType = BUSINESS_TYPE_MAP[bt]
-  newColumnDefaultValue.value = defaultValueForType(storageType)
-})
 
 let offChanged: (() => void) | undefined
 
@@ -203,8 +180,18 @@ onMounted(async () => {
 
   lastColumnsSig = columnsSig(node.columns)
   let lastMutationsVersion = node.mutationsVersion
+  let lastPageSize = node.pageSize
 
   offChanged = node.onChanged(() => {
+    // —— pageSize 变化：bump dummy ref 让 computed 重算，回第一页，重新查 ——
+    if (node.pageSize !== lastPageSize) {
+      lastPageSize = node.pageSize
+      pageSizeVersion.value++
+      page.value = 1
+      loadPage()
+      return
+    }
+
     // 只有列定义真正变化（SQL 语法层）才 bump dummy ref 强制 computed 重算。
     // position / port 等变化也会走 notifyChanged，但这些不该触发列重渲染——
     // 否则拖动节点时 columnsVersion 反复 bump，打断 Vue 拖拽事件链。
@@ -212,7 +199,6 @@ onMounted(async () => {
     if (curSig !== lastColumnsSig) {
       lastColumnsSig = curSig
       columnsVersion.value++
-      sqlPortVersion.value++
       ensureAndLoad()
       return
     }
@@ -244,7 +230,8 @@ function startResize(e: PointerEvent): void {
   resizing = true
   resizeStartClientX = e.clientX
   resizeStartClientY = e.clientY
-  resizeStartBox = [box.value[0], box.value[1]]
+  const n = tableNode.value
+  resizeStartBox = n ? [...n.box] : [0, 0]
   window.addEventListener('pointermove', onResizeMove)
   window.addEventListener('pointerup', onResizeEnd)
 }
@@ -319,7 +306,7 @@ async function loadPage(): Promise<void> {
       nodeId: node.id,
       columns: node.columns,
       page: page.value,
-      pageSize,
+      pageSize: pageSize.value,
       where,
       sort
     })
@@ -327,7 +314,7 @@ async function loadPage(): Promise<void> {
     if (result.ok) {
       const totalCount = result.total as number
       // 数据被删后当前页可能越界，校正到合法范围
-      const maxPage = Math.max(1, Math.ceil(totalCount / pageSize))
+      const maxPage = Math.max(1, Math.ceil(totalCount / pageSize.value))
       if (page.value > maxPage) {
         page.value = maxPage
         // 页码变了，重新查才能拿到正确的 rows
@@ -347,7 +334,7 @@ async function loadPage(): Promise<void> {
 }
 
 // —— 分页 ——
-const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize)))
+const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize.value)))
 
 function goToPage(p: number): void {
   const target = Math.max(1, Math.min(totalPages.value, p))
@@ -388,14 +375,6 @@ function openEditDialog(row: Row): void {
   dialogMode.value = 'edit'
   editingRowId.value = Number(row.id)
   showDialog.value = true
-}
-
-function defaultValueForType(type: ColumnType): unknown {
-  switch (type) {
-    case 'number': return 0
-    case 'boolean': return false
-    case 'string': return ''
-  }
 }
 
 function coerceFormValue(raw: unknown, type: ColumnType): unknown {
@@ -442,7 +421,7 @@ async function submitDialog(): Promise<void> {
     if (result.ok) {
       showDialog.value = false
       // 插入时如果当前页未满，直接 append；否则重新加载
-      if (dialogMode.value === 'add' && rows.value.length < pageSize) {
+      if (dialogMode.value === 'add' && rows.value.length < pageSize.value) {
         rows.value.push({ id: result.newId ?? 0, ...values })
         total.value++
       } else {
@@ -482,117 +461,6 @@ async function deleteRow(row: Row): Promise<void> {
   }
 }
 
-// —— 列管理 ——
-/** 打开添加列弹窗（带上默认值） */
-function openAddColumnDialog(): void {
-  columnError.value = ''
-  showAddColumnDialog.value = true
-}
-
-/** 关闭添加列弹窗（顺手清一下错误提示） */
-function closeAddColumnDialog(): void {
-  showAddColumnDialog.value = false
-  columnError.value = ''
-}
-
-async function addColumnFromUI(): Promise<void> {
-  const node = tableNode.value
-  if (!node) return
-
-  const name = newColumnName.value.trim()
-  if (!name) {
-    columnError.value = t('table.errorEmptyName')
-    return
-  }
-
-  // 校验（和主进程保持一致）
-  if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(name)) {
-    columnError.value = t('table.errorInvalidName')
-    return
-  }
-
-  if (node.columns.some((c) => c.name === name)) {
-    columnError.value = t('table.errorDuplicateName', { name })
-    return
-  }
-
-  columnError.value = ''
-
-  try {
-    // businessType → 存储类型 固定派生
-    const storageType: ColumnType = BUSINESS_TYPE_MAP[newColumnBusinessType.value]
-
-    // 1. 先改物理表
-    // @ts-ignore
-    const alterResult = await window.tableApi.addColumn({
-      nodeId: node.id,
-      column: { name, type: storageType }
-    })
-
-    if (!alterResult.ok) {
-      columnError.value = alterResult.error
-      return
-    }
-
-    // 2. 再改节点状态（saveState 会持久化到 nodes.params）
-    const col: ColumnDef = {
-      name,
-      type: storageType,
-      businessType: newColumnBusinessType.value,
-      showInList: newColumnShowInList.value,
-      showInSearch: newColumnShowInSearch.value,
-      canUpdate: newColumnCanUpdate.value,
-      canSort: newColumnCanSort.value
-    }
-    const title = newColumnTitle.value.trim()
-    if (title) col.title = title
-    // defaultValue 存用户最终值（''/0/false 都是有效默认值），null/undefined 表示不设
-    const dv = newColumnDefaultValue.value
-    if (dv !== null && dv !== undefined) col.defaultValue = dv
-    node.addColumn(col)
-
-    // 清空输入
-    newColumnName.value = ''
-    newColumnTitle.value = ''
-    newColumnBusinessType.value = 'text'
-    newColumnDefaultValue.value = ''
-    newColumnShowInList.value = true
-    newColumnShowInSearch.value = false
-    newColumnCanUpdate.value = true
-    newColumnCanSort.value = false
-
-    // 成功加完，关掉添加弹窗（列设置主弹窗保持打开，方便继续加）
-    showAddColumnDialog.value = false
-  } catch (err) {
-    columnError.value = err instanceof Error ? err.message : String(err)
-  }
-}
-
-/**
- * 行内修改某列的 title 显示名。
- * 调 node.updateColumnMeta 改状态，notifyChanged 持久化到 nodes.params。
- * columnsSig 守卫只拼 name+type，所以 title 变化不会触发 ensureAndLoad，零额外 IO。
- */
-function updateColumnTitle(index: number, value: string): void {
-  const trimmed = value.trim()
-  tableNode.value?.updateColumnMeta(index, { title: trimmed || undefined })
-}
-
-/** 切换列的 showInList 开关。纯 node state，不碰物理表。 */
-function nodeToggleShowInList(index: number, col: ColumnDef): void {
-  tableNode.value?.updateColumnMeta(index, { showInList: !resolveShowInList(col) })
-}
-
-/** 设置某列的 defaultValue。用户清空时存 null，openAddDialog 里会回退到 defaultValueForType。 */
-function nodeSetDefaultValue(index: number, value: unknown, col: ColumnDef): void {
-  // 动态 Input 组件 emit ''（text）/ 0（number）/ false（boolean）都算有效值
-  // 只有显式传 null 才表示"不设默认值"
-  const storageType = col.type
-  const fallback = defaultValueForType(storageType)
-  const dv = value === fallback ? null : value
-  tableNode.value?.updateColumnMeta(index, { defaultValue: dv })
-}
-
 /** 清空所有搜索条件 + 重置第一页 + 重新加载 */
 function resetSearch(): void {
   Object.keys(searchValues).forEach((k) => delete searchValues[k])
@@ -600,100 +468,29 @@ function resetSearch(): void {
   searchValuesVersion++
   loadPage()
 }
-
-/** 切换某列的 showInSearch 开关 */
-function nodeToggleShowInSearch(index: number, col: ColumnDef): void {
-  tableNode.value?.updateColumnMeta(index, { showInSearch: !col.showInSearch })
-}
-
-/** 切换某列的 canUpdate。默认 true（可改），false 时修改弹窗禁用。 */
-function nodeToggleCanUpdate(index: number, col: ColumnDef): void {
-  tableNode.value?.updateColumnMeta(index, { canUpdate: col.canUpdate === false })
-}
-
-/** 切换某列的 canSort。默认 false（不可排序）。 */
-function nodeToggleCanSort(index: number, col: ColumnDef): void {
-  tableNode.value?.updateColumnMeta(index, { canSort: !col.canSort })
-}
-
-async function removeColumnFromUI(colName: string): Promise<void> {
-  const node = tableNode.value
-  if (!node) return
-
-  const ok = confirm(t('table.confirmDeleteColumn', { name: colName }))
-  if (!ok) return
-
-  try {
-    // 1. 先改物理表
-    // @ts-ignore
-    const alterResult = await window.tableApi.removeColumn({
-      nodeId: node.id,
-      columnName: colName
-    })
-
-    if (!alterResult.ok) {
-      columnError.value = alterResult.error
-      return
-    }
-
-    // 2. 再改节点状态
-    const idx = node.columns.findIndex((c) => c.name === colName)
-    if (idx >= 0) {
-      node.removeColumn(idx)
-      // 显式 bump，不依赖 notifyChanged → onChanged 链路
-      columnsVersion.value++
-    }
-  } catch (err) {
-    columnError.value = err instanceof Error ? err.message : String(err)
-  }
-}
-/** 添加 SQL 查询端口（UI 入口，手动 bump 强制 computed 刷新） */
-function addQueryPortFromUI(): void {
-  tableNode.value?.addQueryPort()
-  sqlPortVersion.value++
-}
-
-/** 移除 SQL 查询端口对（带 confirm） */
-function removeQueryPortFromUI(id: string, idx: number): void {
-  const node = tableNode.value
-  if (!node) return
-  const ok = confirm(t('table.sqlPortConfirmDelete', { idx: idx + 1 }))
-  if (!ok) return
-  node.removeQueryPort(id)
-  sqlPortVersion.value++
-}
 </script>
 
 <template>
   <div class="tbl">
-    <!-- 头部 -->
-    <div class="tbl__header" @pointerdown="startDrag">
-      <span class="tbl__handle">{{ nodeTitle }}</span>
-      <div class="tbl__header-actions">
+    <NodeHeader :title="nodeTitle" @help="showHelp = true">
+      <template #actions>
         <button
-          class="tbl__add-btn tbl__add-btn--column"
+          class="tbl__config-btn"
           type="button"
-          @click="showColumnDialog = true"
-        >{{ $t('table.columnSettings') }}</button>
+          :title="$t('table.detailPageSizeLabel')"
+          @pointerdown.stop
+          @click.stop="openNodeDetail(props.id)"
+        >
+          <GearIcon />
+        </button>
         <button
-          class="tbl__add-btn tbl__add-btn--column"
-          type="button"
-          @click="showSqlPortDialog = true"
-          :title="$t('table.sqlPortTitle')"
-        >{{ $t('table.sqlPort') }}</button>
-        <button
-          class="tbl__help-btn"
+          class="tbl__refresh-btn"
           type="button"
           :title="$t('table.refreshTooltip')"
           @click="page = 1; resetSearch(); loadPage()"
         >⟳</button>
-        <button
-          class="tbl__help-btn"
-          type="button"
-          @click.stop="showHelp = true"
-        >?</button>
-      </div>
-    </div>
+      </template>
+    </NodeHeader>
 
     <!-- 工具栏：左侧搜索（可选），右侧新增（始终可见） -->
     <div class="tbl__search">
@@ -848,270 +645,6 @@ function removeQueryPortFromUI(id: string, idx: number): void {
       </div>
     </HelpDialog>
 
-    <!-- 列设置弹窗 -->
-    <HelpDialog
-      :visible="showColumnDialog"
-      :title="$t('table.columnSettings')"
-      :width="720"
-      @close="showColumnDialog = false"
-    >
-      <div v-if="tableNode" class="tbl-col-dialog">
-        <!-- 现有列列表 -->
-        <div class="tbl-col-dialog__section">
-          <div class="tbl-col-dialog__section-title">{{ $t('table.colSectionTitle') }}</div>
-          <div v-if="tableNode.columns.length === 0" class="tbl-col-dialog__empty">
-            {{ $t('table.colEmpty') }}
-          </div>
-          <table v-else class="tbl-col-dialog__table">
-            <thead>
-              <tr>
-                <th>{{ $t('table.colHeaderName') }}</th>
-                <th>{{ $t('table.colHeaderType') }}</th>
-                <th>{{ $t('table.colHeaderTitle') }}</th>
-                <th>{{ $t('table.colHeaderDefault') }}</th>
-                <th>{{ $t('table.colHeaderList') }}</th>
-                <th>{{ $t('table.colHeaderSearch') }}</th>
-                <th>{{ $t('table.colHeaderCanUpdate') }}</th>
-                <th>{{ $t('table.colHeaderCanSort') }}</th>
-                <th>{{ $t('table.colHeaderOperations') }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="(col, colIndex) in formColumns" :key="col.name" class="tbl-col-dialog__row">
-                <td class="tbl-col-dialog__name-cell">{{ col.name }}</td>
-                <td>
-                  <span class="tbl-col-dialog__type-tag">{{ $t('table.businessType.' + resolveBusinessType(col)) }}</span>
-                </td>
-                <td>
-                  <input
-                    class="tbl-form__input tbl-col-dialog__title-input"
-                    :value="col.title ?? ''"
-                    :placeholder="$t('table.titlePlaceholder')"
-                    @input="updateColumnTitle(colIndex, ($event.target as HTMLInputElement).value)"
-                  />
-                </td>
-                <td>
-                  <component
-                    :is="inputComponents[resolveBusinessType(col)]"
-                    :model-value="col.defaultValue ?? defaultValueForType(col.type)"
-                    @update:model-value="(v) => nodeSetDefaultValue(colIndex, v, col)"
-                    class="tbl-col-dialog__default-input"
-                    :node-id="props.id"
-                  />
-                </td>
-                <td class="tbl-col-dialog__toggle-cell">
-                  <label class="tbl-col-dialog__toggle" :title="resolveShowInList(col) ? $t('table.colVisible') : $t('table.colHidden')">
-                    <input
-                      type="checkbox"
-                      :checked="resolveShowInList(col)"
-                      @change="nodeToggleShowInList(colIndex, col)"
-                    />
-                  </label>
-                </td>
-                <td class="tbl-col-dialog__toggle-cell">
-                  <label class="tbl-col-dialog__toggle" :title="col.showInSearch ? $t('table.searchVisible') : $t('table.searchHidden')">
-                    <input
-                      type="checkbox"
-                      :checked="col.showInSearch === true"
-                      @change="nodeToggleShowInSearch(colIndex, col)"
-                    />
-                  </label>
-                </td>
-                <td class="tbl-col-dialog__toggle-cell">
-                  <label class="tbl-col-dialog__toggle" :title="col.canUpdate === false ? $t('table.canEditDisabled') : $t('table.canEditEnabled')">
-                    <input
-                      type="checkbox"
-                      :checked="col.canUpdate !== false"
-                      @change="nodeToggleCanUpdate(colIndex, col)"
-                    />
-                  </label>
-                </td>
-                <td class="tbl-col-dialog__toggle-cell">
-                  <label class="tbl-col-dialog__toggle" :title="col.canSort ? $t('table.sortEnabled') : $t('table.sortDisabled')">
-                    <input
-                      type="checkbox"
-                      :checked="col.canSort === true"
-                      @change="nodeToggleCanSort(colIndex, col)"
-                    />
-                  </label>
-                </td>
-                <td class="tbl-col-dialog__ops-cell">
-                  <button
-                    class="tbl-col-dialog__remove"
-                    type="button"
-                    @click="removeColumnFromUI(col.name)"
-                  >{{ $t('table.delete') }}</button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div v-if="columnError" class="tbl-col-dialog__error">{{ columnError }}</div>
-
-        <!-- 添加新列：一个按钮触发独立弹窗 -->
-        <div class="tbl-col-dialog__section">
-          <button
-            class="tbl-col-dialog__add-trigger"
-            type="button"
-            @click="openAddColumnDialog"
-          >{{ $t('table.addColumnTrigger') }}</button>
-        </div>
-
-        <div class="tbl-form__actions">
-          <button
-            class="tbl-form__btn tbl-form__btn--cancel"
-            type="button"
-            @click="showColumnDialog = false; columnError = ''"
-          >{{ $t('table.close') }}</button>
-        </div>
-      </div>
-    </HelpDialog>
-
-    <!-- 添加列弹窗 -->
-    <HelpDialog
-      :visible="showAddColumnDialog"
-      :title="$t('table.addColTitle')"
-      :width="440"
-      @close="closeAddColumnDialog"
-    >
-      <div class="tbl-add-col">
-        <div class="tbl-form__field">
-          <label class="tbl-form__label">{{ $t('table.addColNameLabel') }}</label>
-          <input
-            v-model="newColumnName"
-            type="text"
-            class="tbl-form__input"
-            :placeholder="$t('table.addColNamePlaceholder')"
-            @keydown.enter="addColumnFromUI"
-          />
-        </div>
-
-        <div class="tbl-form__field">
-          <label class="tbl-form__label">{{ $t('table.addColTitleLabel') }}</label>
-          <input
-            v-model="newColumnTitle"
-            type="text"
-            class="tbl-form__input"
-            :placeholder="$t('table.addColTitlePlaceholder')"
-            @keydown.enter="addColumnFromUI"
-          />
-        </div>
-
-        <div class="tbl-form__field">
-          <label class="tbl-form__label">{{ $t('table.addColBusinessTypeLabel') }}</label>
-          <select v-model="newColumnBusinessType" class="tbl-form__input tbl-col-dialog__select">
-            <option value="text">text（{{ $t('table.businessType.text') }}）</option>
-            <option value="textarea">textarea（{{ $t('table.businessType.textarea') }}）</option>
-            <option value="number">number（{{ $t('table.businessType.number') }}）</option>
-            <option value="boolean">boolean（{{ $t('table.businessType.boolean') }}）</option>
-            <option value="color">color（{{ $t('table.businessType.color') }}）</option>
-            <option value="time">time（{{ $t('table.businessType.time') }}）</option>
-            <option value="date">date（{{ $t('table.businessType.date') }}）</option>
-            <option value="image">image（{{ $t('table.businessType.image') }}）</option>
-            <option value="audio">audio（{{ $t('table.businessType.audio') }}）</option>
-          </select>
-        </div>
-
-        <div class="tbl-form__field">
-          <label class="tbl-form__label">{{ $t('table.addColDefaultLabel') }}</label>
-          <component
-            :is="inputComponents[newColumnBusinessType]"
-            v-model="newColumnDefaultValue"
-          />
-        </div>
-
-        <div class="tbl-add-col__toggles">
-          <label class="tbl-col-dialog__toggle" :title="$t('table.addColShowInListTitle')">
-            <input type="checkbox" v-model="newColumnShowInList" />
-            <span>{{ $t('table.addColShowInListLabel') }}</span>
-          </label>
-          <label class="tbl-col-dialog__toggle" :title="$t('table.addColShowInSearchTitle')">
-            <input type="checkbox" v-model="newColumnShowInSearch" />
-            <span>{{ $t('table.addColShowInSearchLabel') }}</span>
-          </label>
-          <label class="tbl-col-dialog__toggle" :title="$t('table.addColCanUpdateTitle')">
-            <input type="checkbox" v-model="newColumnCanUpdate" />
-            <span>{{ $t('table.addColCanUpdateLabel') }}</span>
-          </label>
-          <label class="tbl-col-dialog__toggle" :title="$t('table.addColCanSortTitle')">
-            <input type="checkbox" v-model="newColumnCanSort" />
-            <span>{{ $t('table.addColCanSortLabel') }}</span>
-          </label>
-        </div>
-
-        <div v-if="columnError" class="tbl-col-dialog__error">{{ columnError }}</div>
-
-        <div class="tbl-form__actions">
-          <button
-            class="tbl-form__btn tbl-form__btn--cancel"
-            type="button"
-            @click="closeAddColumnDialog"
-          >{{ $t('table.addColCancel') }}</button>
-          <button
-            class="tbl-form__btn tbl-form__btn--confirm"
-            type="button"
-            @click="addColumnFromUI"
-          >{{ $t('table.addColConfirm') }}</button>
-        </div>
-      </div>
-    </HelpDialog>
-
-    <!-- SQL 端口管理弹窗 -->
-    <HelpDialog
-      :visible="showSqlPortDialog"
-      :title="$t('table.sqlPortDialogTitle')"
-      :width="520"
-      @close="showSqlPortDialog = false"
-    >
-      <div class="tbl-col-dialog">
-        <div class="tbl-col-dialog__section">
-          <div class="tbl-col-dialog__section-title">{{ $t('table.sqlPortSectionTitle') }}</div>
-          <div v-if="sqlPortPairs.length === 0" class="tbl-col-dialog__empty">
-            {{ $t('table.sqlPortEmpty') }}
-          </div>
-          <table v-else class="tbl-col-dialog__table">
-            <thead>
-              <tr>
-                <th>{{ $t('table.colHeaderName') }}</th>
-                <th>{{ $t('table.colHeaderOperations') }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="(pair, idx) in sqlPortPairs" :key="pair.id" class="tbl-col-dialog__row">
-                <td class="tbl-col-dialog__name-cell">
-                  {{ pair.input.label?.zh ?? '' }} / {{ pair.output.label.zh }}
-                </td>
-                <td class="tbl-col-dialog__ops-cell">
-                  <button
-                    class="tbl-col-dialog__remove"
-                    type="button"
-                    @click="removeQueryPortFromUI(pair.id, idx)"
-                  >{{ $t('table.delete') }}</button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="tbl-col-dialog__section">
-          <button
-            class="tbl-col-dialog__add-trigger"
-            type="button"
-            @click="addQueryPortFromUI"
-          >{{ $t('table.sqlPortAdd') }}</button>
-        </div>
-
-        <div class="tbl-form__actions">
-          <button
-            class="tbl-form__btn tbl-form__btn--cancel"
-            type="button"
-            @click="showSqlPortDialog = false"
-          >{{ $t('table.close') }}</button>
-        </div>
-      </div>
-    </HelpDialog>
-
     <!-- 帮助弹窗 -->
     <HelpDialog
       :visible="showHelp"
@@ -1135,23 +668,9 @@ function removeQueryPortFromUI(id: string, idx: number): void {
   position: relative;
   display: flex;
   flex-direction: column;
-  padding: 8px;
+  padding: 0 8px 8px;
   gap: 4px;
   overflow: visible;
-
-  &__header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 2px 4px 4px;
-    border-bottom: 1px dashed @node-border-color;
-    flex-shrink: 0;
-
-    &-actions {
-      display: flex;
-      gap: 6px;
-    }
-  }
 
   &__search {
     display: flex;
@@ -1202,15 +721,6 @@ function removeQueryPortFromUI(id: string, idx: number): void {
     }
   }
 
-  &__handle {
-    cursor: grab;
-    user-select: none;
-    font-size: 12px;
-    color: @color-text-weak;
-
-    &:active { cursor: grabbing; }
-  }
-
   &__add-btn {
     all: unset;
     cursor: pointer;
@@ -1236,7 +746,25 @@ function removeQueryPortFromUI(id: string, idx: number): void {
     }
   }
 
-  &__help-btn {
+  &__config-btn {
+    all: unset;
+    cursor: pointer;
+    width: 20px;
+    height: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #f3f4f6;
+    color: #6b7280;
+    transition: background 0.15s, color 0.15s;
+    flex-shrink: 0;
+
+    svg { width: 12px; height: 12px; }
+    &:hover { background: #dbeafe; color: #2563eb; }
+  }
+
+  &__refresh-btn {
     all: unset;
     cursor: pointer;
     width: 18px;

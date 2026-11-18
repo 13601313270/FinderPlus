@@ -122,6 +122,15 @@ export function resolveShowInList(col: ColumnDef): boolean {
   return col.showInList !== false
 }
 
+/** ColumnType → 该类型新增行时的默认占位值 */
+export function defaultValueForType(type: ColumnType): unknown {
+  switch (type) {
+    case 'number': return 0
+    case 'boolean': return false
+    case 'string': return ''
+  }
+}
+
 /** 表格节点最小宽高，resize 时钳制 */
 const MIN_W = 360
 const MIN_H = 240
@@ -179,6 +188,9 @@ export class TableNode extends Node {
 
   /** 每次成功执行 INSERT/UPDATE/DELETE 时递增。render.vue 监听它来自动刷新表格数据。 */
   mutationsVersion = 0
+
+  /** 每页显示的记录数，默认 10。可在 detailPanel 里修改。 */
+  pageSize = 10
 
   constructor(id: string) {
     super(id)
@@ -730,7 +742,8 @@ export class TableNode extends Node {
       ...super.getSaveDataByState(),
       columns: this.columns,
       queryPortIds: this.queryPorts.map((p) => p.id),
-      box: this.box as readonly [number, number]
+      box: this.box as readonly [number, number],
+      pageSize: this.pageSize
     }
   }
 
@@ -756,6 +769,11 @@ export class TableNode extends Node {
     const box = state.box
     if (Array.isArray(box) && box.length === 2 && typeof box[0] === 'number' && typeof box[1] === 'number') {
       this.setBox(Math.round(box[0]), Math.round(box[1]))
+    }
+
+    // 恢复 pageSize；老存档没存则保持默认 10
+    if (typeof state.pageSize === 'number' && state.pageSize > 0) {
+      this.pageSize = state.pageSize
     }
   }
 
@@ -803,6 +821,14 @@ export class TableNode extends Node {
       Object.assign(this.columns[index], meta)
       this.notifyChanged()
     }
+  }
+
+  /** 设置每页记录数。改完会 notifyChanged，render.vue 的 onChanged 监听会自动 loadPage。 */
+  setPageSize(size: number): void {
+    const clamped = Math.max(1, Math.min(1000, Math.round(size)))
+    if (clamped === this.pageSize) return
+    this.pageSize = clamped
+    this.notifyChanged()
   }
 
   // —— 动态查询端口对管理 ——

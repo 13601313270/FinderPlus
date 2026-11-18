@@ -616,6 +616,7 @@ async function refreshLocalModels(): Promise<void> {
       window.localLlmApi?.getRecommendedModels() ?? Promise.resolve([]),
       window.localLlmApi?.listModels() ?? Promise.resolve({ loaded: null, busy: false, models: [], activeDownloads: [] })
     ])
+    console.log('[SettingsDialog] refreshLocalModels rec=', rec, 'list=', list)
     recommendedModels.value = rec
     localModels.value = list.models
     localLoaded.value = list.loaded
@@ -2585,7 +2586,7 @@ async function onDeleteCanvas(id: string, name: string): Promise<void> {
   }
   &__progress-bar {
     height: 100%;
-    background: linear-gradient(90deg, #667eea, #764ba2);
+    background: #7396e5;
     border-radius: 4px;
     transition: width 0.2s;
   }

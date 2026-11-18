@@ -474,5 +474,9 @@ export const messages = {
   effectiveModel: {
     zh: '当前生效：{model}',
     en: 'Effective: {model}'
+  },
+  refreshModels: {
+    zh: '从远程刷新模型列表',
+    en: 'Refresh models from provider'
   }
 } satisfies Record<string, LocalizedText>

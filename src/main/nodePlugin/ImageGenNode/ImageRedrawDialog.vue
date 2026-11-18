@@ -9,13 +9,19 @@
  * - initialProvider / initialModel → 弹窗内模型下拉的初始值
  */
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { IMAGE_PROVIDERS, readImageEndpoint, type ImageModelPreset, type ImageProviderId } from './providers'
+import {
+  IMAGE_PROVIDERS,
+  fetchImageModels,
+  readImageEndpoint,
+  resolveImageModelList,
+  type ImageProviderId
+} from './providers'
 import { useImageSettings } from '@renderer/composables/useImageSettings'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
 import { messages } from './i18n'
 
 const t = useLocalizedMessages(messages)
-const { hasKey } = useImageSettings()
+const { hasKey, getProviderKey } = useImageSettings()
 
 interface GenerateResult {
   file: File
@@ -41,6 +47,9 @@ const providers = Object.entries(IMAGE_PROVIDERS) as [ImageProviderId, typeof IM
 // —— 弹窗内临时的 provider/model（跟节点状态解耦）——
 const tempProvider = ref<ImageProviderId>(props.initialProvider)
 const tempModel = ref<string>(props.initialModel)
+
+// —— 远程模型列表状态 ——
+const modelListVersion = ref(0)
 
 // —— prompt 输入 ——
 const prompt = ref('')
@@ -112,9 +121,10 @@ onBeforeUnmount(() => {
 
 // —— 计算属性 ——
 const currentPreset = computed(() => IMAGE_PROVIDERS[tempProvider.value])
-const modelOptions = computed(
-  () => Object.entries(currentPreset.value.models) as [string, ImageModelPreset][]
-)
+const modelOptions = computed(() => {
+  void modelListVersion.value
+  return resolveImageModelList(tempProvider.value)
+})
 
 const tempEndpoint = computed(() => readImageEndpoint(tempProvider.value, tempModel.value))
 const modelSupportsRef = computed(() => tempEndpoint.value.maxReferenceImages > 0)
@@ -131,6 +141,17 @@ const canGenerate = computed(() =>
 function onProviderChange(val: ImageProviderId): void {
   tempProvider.value = val
   tempModel.value = ''
+  refreshModels()
+}
+
+async function refreshModels(): Promise<void> {
+  const pid = tempProvider.value
+  const preset = IMAGE_PROVIDERS[pid]
+  if (!preset.modelsUrl) return
+  const key = getProviderKey(pid)
+  if (!key.trim()) return
+  const { error } = await fetchImageModels(pid, key)
+  if (!error) modelListVersion.value++
 }
 
 async function onGenerate(): Promise<void> {

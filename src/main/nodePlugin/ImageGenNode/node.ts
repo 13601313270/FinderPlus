@@ -519,23 +519,23 @@ export class ImageGenNode extends Node {
       }
     }
 
-    const refCount = refResolved.images?.length ?? 0
-    // 接了参考图但当前模型不支持：提示用户换模型，参考图也不会被静默丢弃
-    if (refCount > 0 && endpoint.maxReferenceImages === 0) {
-      this.status = 'error'
-      this.errorMessage = `当前模型 ${endpoint.model} 不支持参考图，可切换到百炼的 qwen-image-2.0-2in1 / qwen-image-2.0-pro 或 wan2.6-image`
-      this.resultFile = null
-      this.notifyChanged()
-      return
-    }
+    // const refCount = refResolved.images?.length ?? 0
+    // // 接了参考图但当前模型不支持：提示用户换模型，参考图也不会被静默丢弃
+    // if (refCount > 0 && endpoint.maxReferenceImages === 0) {
+    //   this.status = 'error'
+    //   this.errorMessage = `当前模型 ${endpoint.model} 不支持参考图，可切换到百炼的 qwen-image-2.0-2in1 / qwen-image-2.0-pro 或 wan2.6-image`
+    //   this.resultFile = null
+    //   this.notifyChanged()
+    //   return
+    // }
     // 参考图数量超过当前模型上限：明确报错，不静默截断
-    if (refCount > endpoint.maxReferenceImages) {
-      this.status = 'error'
-      this.errorMessage = `参考图过多：当前模型 ${endpoint.model} 最多支持 ${endpoint.maxReferenceImages} 张，您接了 ${refCount} 张`
-      this.resultFile = null
-      this.notifyChanged()
-      return
-    }
+    // if (refCount > endpoint.maxReferenceImages) {
+    //   this.status = 'error'
+    //   this.errorMessage = `参考图过多：当前模型 ${endpoint.model} 最多支持 ${endpoint.maxReferenceImages} 张，您接了 ${refCount} 张`
+    //   this.resultFile = null
+    //   this.notifyChanged()
+    //   return
+    // }
 
     const myRequestId = ++this.requestId
     await this.fetchAndCommit(endpoint, prompt, this.displaySize, refResolved.images, myRequestId)

@@ -4,8 +4,9 @@ import { workspaceScene } from '../../engine/graph/SceneRegistry'
 import { ImageGenNode } from './node'
 import {
   IMAGE_PROVIDERS,
+  fetchImageModels,
   readImageEndpoint,
-  type ImageModelPreset,
+  resolveImageModelList,
   type ImageProviderId
 } from './providers'
 import { useImageSettings } from '@renderer/composables/useImageSettings'
@@ -21,11 +22,19 @@ import ImageRedrawDialog from './ImageRedrawDialog.vue'
 const props = defineProps<{ nodeId: string }>()
 
 const t = useLocalizedMessages(messages)
-const { hasKey } = useImageSettings()
+const { hasKey, getProviderKey } = useImageSettings()
 
 const providers = Object.entries(IMAGE_PROVIDERS) as [ImageProviderId, typeof IMAGE_PROVIDERS[ImageProviderId]][]
 
 const node = shallowRef<ImageGenNode | undefined>(undefined)
+
+// —— 远程模型列表加载状态 ——
+const modelListLoading = ref(false)
+const modelListError = ref('')
+/** 每次远程 fetch 完 +1，强迫 modelOptions computed 重算 */
+const modelListVersion = ref(0)
+/** 远程拉取结果的统计信息，供 UI 提示 */
+const modelListInfo = ref('')
 
 // —— 从 node 同步到本地的状态（detailPanel 自己订阅 onChanged）——
 const status = ref<'idle' | 'loading' | 'done' | 'error'>('idle')
@@ -111,10 +120,15 @@ const providerKeyOk = computed(() => hasKey(provider.value))
 /** 当前 provider 的预设 */
 const currentPreset = computed(() => IMAGE_PROVIDERS[provider.value])
 
-/** 当前 provider 下的模型选项 */
-const modelOptions = computed(
-  () => Object.entries(currentPreset.value.models) as [string, ImageModelPreset][]
-)
+/** 当前 provider 下的模型选项（远程 + 本地合并） */
+const modelOptions = computed(() => {
+  // 读一下 modelListVersion 强迫自己在远程 fetch 完后重算
+  void modelListVersion.value
+  return resolveImageModelList(provider.value)
+})
+
+/** 当前 provider 是否有 modelsUrl 支持远程拉取 */
+const supportsRemoteModels = computed(() => !!currentPreset.value.modelsUrl)
 
 /** 下拉候选：当前模型支持的尺寸 + 当前生效值（上游可能传入预设外的尺寸） */
 const sizeChoices = computed<readonly string[]>(() => {
@@ -142,6 +156,8 @@ function onProviderChange(v: ImageProviderId): void {
   provider.value = v
   model.value = ''
   node.value?.setProvider(v)
+  // 切换 provider 时自动尝试远程拉取（有 key 才拉）
+  refreshCurrentModels()
 }
 
 function onModelChange(v: string): void {
@@ -162,6 +178,44 @@ async function onStopClick(): Promise<void> {
   if (!confirmed) return
   node.value?.cancel()
 }
+
+// —— 远程模型列表刷新 ——
+
+async function refreshCurrentModels(): Promise<void> {
+  const pid = provider.value
+  const preset = IMAGE_PROVIDERS[pid]
+  if (!preset.modelsUrl) {
+    modelListInfo.value = ''
+    return
+  }
+  const key = getProviderKey(pid)
+  if (!key.trim()) {
+    modelListError.value = ''
+    modelListInfo.value = ''
+    return
+  }
+  modelListLoading.value = true
+  modelListError.value = ''
+  modelListInfo.value = ''
+  try {
+    const { ids, error } = await fetchImageModels(pid, key)
+    modelListError.value = error ?? ''
+    if (!error) {
+      modelListInfo.value = ids.length > 0
+        ? `远程 ${ids.length} 个生图模型`
+        : '远程未返回任何生图模型（可能 API Key 权限不足）'
+    }
+    // 强迫 modelOptions computed 重算（远程缓存已更新）
+    modelListVersion.value++
+  } finally {
+    modelListLoading.value = false
+  }
+}
+
+// provider 变化时也尝试拉一次（onProviderChange 内部已调，这里兜底覆盖节点初始化时的首次触发）
+watch(provider, () => {
+  refreshCurrentModels()
+})
 </script>
 
 <template>
@@ -186,7 +240,19 @@ async function onStopClick(): Promise<void> {
     </div>
 
     <div class="detail-panel__section">
-      <label class="detail-panel__label">{{ t('modelLabel') }}</label>
+      <label class="detail-panel__label">
+        {{ t('modelLabel') }}
+        <button
+          v-if="supportsRemoteModels"
+          class="detail-panel__refresh"
+          type="button"
+          :disabled="modelListLoading || !providerKeyOk"
+          :title="providerKeyOk ? t('refreshModels') : t('needApiKey')"
+          @click="refreshCurrentModels"
+        >
+          <span :class="['detail-panel__refresh-icon', { 'detail-panel__refresh-icon--spin': modelListLoading }]">↻</span>
+        </button>
+      </label>
       <select
         class="detail-panel__select"
         :value="model"
@@ -203,6 +269,12 @@ async function onStopClick(): Promise<void> {
           {{ id }}{{ preset.shape === 'dashscope-async' ? ' · ' + t('asyncTag') : '' }}{{ preset.maxReferenceImages ? ' · ' + t('refImagesTag', { n: preset.maxReferenceImages }) : '' }}
         </option>
       </select>
+      <div v-if="modelListError" class="detail-panel__hint detail-panel__hint--error">
+        {{ modelListError }}
+      </div>
+      <div v-else-if="modelListInfo" class="detail-panel__hint detail-panel__hint--info">
+        {{ modelListInfo }}
+      </div>
       <div class="detail-panel__hint">
         {{ t('effectiveModel', { model: effectiveModelLabel }) }}
       </div>
@@ -311,6 +383,43 @@ async function onStopClick(): Promise<void> {
     font-size: 12px;
     font-weight: 600;
     color: #374151;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  &__refresh {
+    all: unset;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    color: #6b7280;
+    font-size: 13px;
+    line-height: 1;
+    transition: background 0.12s, color 0.12s;
+
+    &:hover:not(:disabled) {
+      background: #e5e7eb;
+      color: #2563eb;
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.4;
+    }
+  }
+
+  &__refresh-icon {
+    display: inline-block;
+    line-height: 1;
+
+    &--spin {
+      animation: dpSpin 0.7s linear infinite;
+    }
   }
 
   &__select {
@@ -336,6 +445,14 @@ async function onStopClick(): Promise<void> {
     font-size: 11px;
     color: #9ca3af;
     line-height: 1.4;
+
+    &--error {
+      color: #dc2626;
+    }
+
+    &--info {
+      color: #2563eb;
+    }
   }
 
   &__warn {

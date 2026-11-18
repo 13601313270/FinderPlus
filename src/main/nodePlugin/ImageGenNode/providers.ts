@@ -59,6 +59,14 @@ export interface ImageProviderPreset {
   readonly asyncUrl?: string
   /** 异步任务查询地址前缀，拼上 task_id 即为查询接口 */
   readonly taskUrlPrefix?: string
+  /**
+   * 远程拉取可用模型列表的端点（GET，可选）。
+   * 各家格式不同：
+   * - OpenAI 兼容（siliconflow / openai / glm / tokenplan compatible-mode）→ data[].id
+   * - 百炼原生（dashscope / tokenplan 非 compatible）→ output.models[].model
+   * 缺省时 UI 只展示本地硬编码的 models。
+   */
+  readonly modelsUrl?: string
   readonly models: Readonly<Record<string, ImageModelPreset>>
   readonly defaultModel: string
 }
@@ -67,189 +75,46 @@ export const IMAGE_PROVIDERS: Readonly<Record<ImageProviderId, ImageProviderPres
   siliconflow: {
     label: '硅基流动 (SiliconFlow)',
     url: 'https://api.siliconflow.cn/v1/images/generations',
+    modelsUrl: 'https://api.siliconflow.cn/v1/models',
     shape: 'siliconflow',
     defaultModel: 'black-forest-labs/FLUX.2-pro',
-    models: {
-      // FLUX.2：Black Forest Labs 2025 新系列，高质量 + 精确文字渲染 + 4MP 编辑
-      'black-forest-labs/FLUX.2-pro': {
-        sizes: ['1024x1024', '1024x1536', '1536x1024', '768x1344', '1344x768']
-      },
-      'black-forest-labs/FLUX.2-flex': {
-        sizes: ['1024x1024', '1024x1536', '1536x1024', '768x1344', '1344x768']
-      },
-      // Z-Image / Z-Image-Turbo：阿里通义开源 6B 模型，2025-12 上线硅基流动
-      'Tongyi-MAI/Z-Image': {
-        sizes: ['1024x1024', '1024x1536', '1536x1024', '768x1344', '1344x768']
-      },
-      'Tongyi-MAI/Z-Image-Turbo': {
-        sizes: ['1024x1024', '1024x1536', '1536x1024', '768x1344', '1344x768']
-      },
-      'Kwai-Kolors/Kolors': {
-        sizes: ['1024x1024', '960x1280', '768x1024', '720x1440', '720x1280']
-      },
-      'black-forest-labs/FLUX.1-schnell': {
-        sizes: ['1024x1024', '1024x1536', '1536x1024', '768x1344']
-      },
-      'Qwen/Qwen-Image': {
-        sizes: ['1024x1024', '1328x1328', '1664x928', '928x1664', '1584x1056', '1056x1584']
-      }
-    }
+    models: {}
   },
   openai: {
     label: 'OpenAI (GPT-Image)',
     url: 'https://api.openai.com/v1/images/generations',
+    modelsUrl: 'https://api.openai.com/v1/models',
     shape: 'openai',
-    // 注：dall-e-3 / dall-e-2 分别于 2026-03-04 / 2025-11-05 下线，不再推荐
     defaultModel: 'gpt-image-1',
-    models: {
-      'gpt-image-1': {
-        sizes: ['1024x1024', '1536x1024', '1024x1536', 'auto']
-      },
-      'dall-e-3': {
-        sizes: ['1024x1024', '1792x1024', '1024x1792'],
-        supportsBase64Response: true
-      },
-      'dall-e-2': {
-        sizes: ['256x256', '512x512', '1024x1024'],
-        supportsBase64Response: true
-      }
-    }
+    models: {}
   },
   glm: {
     label: '智谱 (GLM-Image / CogView)',
     url: 'https://open.bigmodel.cn/api/paas/v4/images/generations',
+    modelsUrl: 'https://open.bigmodel.cn/api/paas/v4/models',
     shape: 'zhipu',
     defaultModel: 'glm-image',
-    models: {
-      // GLM-Image：智谱 2025-12 新旗舰，国产芯片训练，自回归 + 扩散混合架构
-      'glm-image': {
-        sizes: ['1024x1024', '768x1344', '864x1152', '1344x768', '1152x864', '1440x720', '720x1440']
-      },
-      'cogview-4': {
-        sizes: ['1024x1024', '768x1344', '864x1152', '1344x768', '1152x864', '1440x720', '720x1440']
-      },
-      'cogview-3-flash': {
-        sizes: ['1024x1024', '768x1344', '864x1152', '1344x768', '1152x864', '1440x720', '720x1440']
-      }
-    }
+    models: {}
   },
   dashscope: {
-    // 通义千问（Qwen-Image）与通义万相（Wan）共用同一个百炼 API Key，所以合成一个 provider
     label: '阿里云百炼 (通义千问 / 万相)',
     url: 'https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation',
     asyncUrl: 'https://dashscope.aliyuncs.com/api/v1/services/aigc/text2image/image-synthesis',
     taskUrlPrefix: 'https://dashscope.aliyuncs.com/api/v1/tasks/',
+    modelsUrl: 'https://dashscope.aliyuncs.com/api/v1/models',
     shape: 'dashscope-sync',
     defaultModel: 'qwen-image-3.0-pro',
-    models: {
-      // —— 同步（multimodal-generation，messages 协议）——
-
-      // Qwen-Image 3.0：新旗舰，支持复杂版面 / 10px 小字渲染 / 12 国语言，尺寸 512~2048 任取
-      'qwen-image-3.0-pro': {
-        sizes: ['1024x1024', '1328x1328', '1536x1024', '1024x1536', '1664x928', '928x1664', '2048x2048']
-      },
-      'qwen-image-3.0': {
-        sizes: ['1024x1024', '1328x1328', '1536x1024', '1024x1536', '1664x928', '928x1664', '2048x2048']
-      },
-      // Qwen-Image 2.1：T2I + I2I，**图生图/编辑最多 10 张参考图**（文档明确）
-      'qwen-image-2.1-pro': {
-        sizes: ['1024x1024', '1328x1328', '1536x1024', '1024x1536', '1664x928', '928x1664', '2048x2048'],
-        maxReferenceImages: 10
-      },
-      'qwen-image-2.1-turbo': {
-        sizes: ['1024x1024', '1328x1328', '1536x1024', '1024x1536', '1664x928', '928x1664', '2048x2048'],
-        maxReferenceImages: 10
-      },
-
-      // Wan 2.7：同步协议（multimodal-generation），支持文生图 / 文生组图 / 图生图 / 多图参考
-      'wan2.7-image-pro': {
-        sizes: ['1280x1280', '1440x1440', '1600x1280', '1280x1600', '2048x2048'],
-        maxReferenceImages: 4,
-        dashscopeEnableInterleave: 'interleave'
-      },
-      'wan2.7-image': {
-        sizes: ['1280x1280', '1440x1440', '1600x1280', '1280x1600'],
-        maxReferenceImages: 4,
-        dashscopeEnableInterleave: 'interleave'
-      },
-
-      // —— 存量 2.0 系列（保留兼容存量配置）——
-      'qwen-image-2.0-pro': {
-        sizes: ['1024x1024', '1328x1328', '1536x1024', '1024x1536', '1664x928', '928x1664', '2048x2048'],
-        maxReferenceImages: 3
-      },
-      'qwen-image-2.0-2in1': {
-        sizes: ['1024x1024', '1328x1328', '1536x1024', '1024x1536', '1664x928', '928x1664', '2048x2048'],
-        maxReferenceImages: 3
-      },
-      'qwen-image-2.0': {
-        sizes: ['1024x1024', '1328x1328', '1536x1024', '1024x1536', '1664x928', '928x1664', '2048x2048'],
-        maxReferenceImages: 3
-      },
-      'qwen-image': {
-        sizes: ['1024x1024', '1664x928', '1472x1140', '1328x1328', '1140x1472', '928x1664']
-      },
-      'qwen-image-max': {
-        sizes: ['1024x1024', '1664x928', '1472x1140', '1328x1328', '1140x1472', '928x1664']
-      },
-      'wan2.6-image': {
-        sizes: ['1280x1280', '1440x1440', '1600x1280', '1280x1600'],
-        maxReferenceImages: 4,
-        dashscopeEnableInterleave: 'edit'
-      },
-      'wan2.6-t2i': {
-        sizes: ['1280x1280', '1440x1440', '1600x1280', '1280x1600']
-      },
-
-      // —— 异步（提交任务 + 轮询；仅旧模型走异步，新 Wan 2.7 已支持同步）——
-      'wan2.5-t2i-preview': {
-        shape: 'dashscope-async',
-        sizes: ['1280x1280', '1440x1440', '1600x1280', '1280x1600']
-      },
-      'wanx2.1-t2i-turbo': {
-        shape: 'dashscope-async',
-        sizes: ['1024x1024', '720x1280', '1280x720', '768x1344', '1344x768']
-      }
-    }
+    models: {}
   },
-
-  // —— 千问 Token Plan（sk-sp- 前缀 Key，独立计费，端点完全不同于 DashScope）——
-  // host 固定：token-plan.cn-beijing.maas.aliyuncs.com
-  // 支持的图像模型：qwen-image-3.0-pro / 3.0 / 2.1-pro / 2.1-turbo 等（同步 multimodal-generation）
-  // 异步端点 / tasks 路径结构与 DashScope 完全一致，只是 host 换了
   tokenplan: {
     label: '千问 Token Plan',
     url: 'https://token-plan.cn-beijing.maas.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation',
     asyncUrl: 'https://token-plan.cn-beijing.maas.aliyuncs.com/api/v1/services/aigc/text2image/image-synthesis',
     taskUrlPrefix: 'https://token-plan.cn-beijing.maas.aliyuncs.com/api/v1/tasks/',
+    modelsUrl: 'https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1/models',
     shape: 'dashscope-sync',
     defaultModel: 'qwen-image-3.0-pro',
-    models: {
-      'qwen-image-3.0-pro': {
-        sizes: ['1024x1024', '1328x1328', '1536x1024', '1024x1536', '1664x928', '928x1664', '2048x2048']
-      },
-      'qwen-image-3.0': {
-        sizes: ['1024x1024', '1328x1328', '1536x1024', '1024x1536', '1664x928', '928x1664', '2048x2048']
-      },
-      'qwen-image-2.1-pro': {
-        sizes: ['1024x1024', '1328x1328', '1536x1024', '1024x1536', '1664x928', '928x1664', '2048x2048'],
-        maxReferenceImages: 10
-      },
-      'qwen-image-2.1-turbo': {
-        sizes: ['1024x1024', '1328x1328', '1536x1024', '1024x1536', '1664x928', '928x1664', '2048x2048'],
-        maxReferenceImages: 10
-      },
-      'wan2.7-image-pro': {
-        sizes: ['1280x1280', '1440x1440', '1600x1280', '1280x1600', '2048x2048'],
-        maxReferenceImages: 4,
-        dashscopeEnableInterleave: 'interleave'
-      },
-      'wan2.7-image': {
-        sizes: ['1280x1280', '1440x1440', '1600x1280', '1280x1600'],
-        maxReferenceImages: 4,
-        dashscopeEnableInterleave: 'interleave'
-      }
-    }
+    models: {}
   }
 }
 
@@ -358,16 +223,28 @@ export function readImageEndpoint(
   providerId: ImageProviderId,
   modelOverride = ''
 ): ResolvedImageEndpoint {
-  // provider 不认时回落默认
   const preset = IMAGE_PROVIDERS[providerId] ?? IMAGE_PROVIDERS.siliconflow
   const key = readImageProviderKey(providerId)
-  const model = (modelOverride?.trim() && preset.models[modelOverride.trim()])
-    ? modelOverride.trim()
-    : preset.defaultModel
-  const modelPreset = preset.models[model]
-  const sizes = modelPreset?.sizes ?? FALLBACK_IMAGE_SIZES
-  // 模型级协议优先（同一家下同步 / 异步混用，如百炼的 qwen-image 与万相 2.5）
-  const shape = modelPreset?.shape ?? preset.shape
+
+  // 模型选择逻辑：
+  // 1. 用户显式传了 modelOverride 且非空 → 用它
+  // 2. 远程缓存里有 defaultModel 且缓存非空 → 从缓存里取（校验它在远程可用）
+  // 3. 兜底 → 用 preset.defaultModel（纯字符串，不再查本地字典）
+  const remoteCached = getCachedImageModels(providerId)
+  let model: string
+  if (modelOverride?.trim()) {
+    model = modelOverride.trim()
+  } else if (remoteCached && remoteCached.includes(preset.defaultModel)) {
+    model = preset.defaultModel
+  } else {
+    model = preset.defaultModel
+  }
+
+  // 本地 models 字典已清空，所有模型元数据一律走兜底
+  // （尺寸等信息各服务商 models API 不返回，只能给 FALLBACK，让引擎层用默认尺寸请求）
+  const modelPreset: ImageModelPreset = { sizes: FALLBACK_IMAGE_SIZES }
+  const sizes = FALLBACK_IMAGE_SIZES
+  const shape = preset.shape
   const isAsyncTask = shape === 'dashscope-async'
 
   let requestUrl = isAsyncTask ? preset.asyncUrl ?? preset.url : preset.url
@@ -383,9 +260,9 @@ export function readImageEndpoint(
     model,
     sizes,
     defaultSize: sizes[0],
-    supportsBase64Response: modelPreset?.supportsBase64Response ?? false,
-    maxReferenceImages: modelPreset?.maxReferenceImages ?? 0,
-    dashscopeEnableInterleave: modelPreset?.dashscopeEnableInterleave
+    supportsBase64Response: modelPreset.supportsBase64Response ?? false,
+    maxReferenceImages: modelPreset.maxReferenceImages ?? 0,
+    dashscopeEnableInterleave: modelPreset.dashscopeEnableInterleave
   }
 }
 
@@ -567,3 +444,206 @@ export function extractTaskStatus(data: unknown): string {
   const status = asRecord(asRecord(data)?.output)?.task_status
   return typeof status === 'string' ? status : ''
 }
+
+// —— 远程模型列表拉取 ——
+
+/** 模型列表缓存 TTL（毫秒）：5 分钟内复用 */
+const REMOTE_MODEL_CACHE_TTL_MS = 5 * 60 * 1000
+
+/** 模块级缓存：按 provider 存远程返回的模型 ID + 时间戳 */
+interface RemoteModelCacheEntry { ids: string[]; fetchedAt: number }
+const remoteModelCache = new Map<ImageProviderId, RemoteModelCacheEntry>()
+
+/**
+ * 清空某个 provider 的缓存；不传则清空全部。
+ * UI 想强制刷新时调这个。
+ */
+export function clearRemoteImageModelCache(providerId?: ImageProviderId): void {
+  if (providerId) remoteModelCache.delete(providerId)
+  else remoteModelCache.clear()
+}
+
+/**
+ * 解析 OpenAI 兼容响应：{ data: [{ id: "xxx" }] }
+ */
+function parseOpenAICompatibleModels(body: unknown): string[] {
+  const data = Array.isArray(asRecord(body)?.data) ? (asRecord(body)!.data as unknown[]) : []
+  const ids: string[] = []
+  for (const item of data) {
+    const id = (item as Record<string, unknown>)?.id
+    if (typeof id === 'string' && id.trim()) ids.push(id.trim())
+  }
+  return ids
+}
+
+/**
+ * 判断模型 ID 是否属于生图 / 生视频（兜底过滤——OpenAI 兼容格式没 capabilities 字段时用）。
+ * 基于模型 ID 关键词匹配，不追求 100% 精确；本地白名单优先，这里只兜底。
+ */
+function isGenerativeMediaModelId(id: string): boolean {
+  const lower = id.toLowerCase()
+  // 生图 / 生视频特征词（任一命中即保留）
+  const positive = [
+    'image', 'img', 'flux', 'wan', 'wanx', 'dall', 'cogview', 'kolors',
+    'seedream', 'creative', 'diffusion', 'sdxl', 'stable-diffusion',
+    'z-image', 'text-to-image', 'video-to-image', 'text-to-video',
+    'kandinsky', 'luma', 'runway', 'pika', 'vidu', 'kling', 'pixverse'
+  ]
+  for (const kw of positive) if (lower.includes(kw)) return true
+  return false
+}
+
+/**
+ * 从远程拉回来的全量模型 ID 中，过滤掉明确非生图 / 生视频的那些。
+ * 本地 models 已清空，全部走关键词判断。
+ */
+function filterRemoteMediaModels(
+  ids: string[],
+  _providerId: ImageProviderId
+): string[] {
+  return ids.filter(isGenerativeMediaModelId)
+}
+
+/**
+ * 解析百炼原生响应：
+ *   { success, output: { models: [{ model, capabilities: [...] }] } }
+ * 如果 capabilities 里有 IG（Image Generation）就收进来；没带 capabilities 字段的也默认收下。
+ */
+function parseDashscopeNativeModels(body: unknown): string[] {
+  const root = asRecord(body)
+  if (!root) return []
+  if (root.success === false) return []
+  const output = asRecord(root.output)
+  if (!output) return []
+  const models = Array.isArray(output.models) ? (output.models as unknown[]) : []
+  const ids: string[] = []
+  for (const m of models) {
+    const rec = asRecord(m)
+    if (!rec) continue
+    const modelId = rec.model
+    if (typeof modelId !== 'string' || !modelId.trim()) continue
+    const caps = Array.isArray(rec.capabilities) ? (rec.capabilities as string[]) : undefined
+    if (caps && caps.length > 0 && !caps.includes('IG')) continue
+    ids.push(modelId.trim())
+  }
+  return ids
+}
+
+/**
+ * 判断 provider 的 models 端点走哪种格式。
+ * 百炼原生（dashscope / tokenplan）→ 带 capabilities 筛选的 native 格式
+ * 其他 → OpenAI 兼容格式
+ */
+function resolveImageModelsFormat(providerId: ImageProviderId): 'dashscope-native' | 'openai-compatible' {
+  // 只有阿里云百炼（dashscope）原生端点走百炼格式；
+  // 千问 Token Plan 的 models 端点在 compatible-mode 下，返回 OpenAI 兼容结构。
+  if (providerId === 'dashscope') return 'dashscope-native'
+  return 'openai-compatible'
+}
+
+/**
+ * 拉取某个 provider 远程可用的图像模型 ID 列表。
+ * 自动处理百炼的 capabilities=IG 筛选和分页。
+ *
+ * @returns 去重后的模型 ID 数组；失败返回空数组 + error 信息
+ */
+export async function fetchImageModels(
+  providerId: ImageProviderId,
+  key: string
+): Promise<{ ids: string[]; error?: string }> {
+  const preset = IMAGE_PROVIDERS[providerId]
+  if (!preset.modelsUrl) {
+    return { ids: [], error: '该 provider 未声明 modelsUrl' }
+  }
+  const trimmedKey = key.trim()
+  if (!trimmedKey) {
+    return { ids: [], error: '请先填入 API Key' }
+  }
+
+  const format = resolveImageModelsFormat(providerId)
+  const ids = new Set<string>()
+
+  try {
+    if (format === 'dashscope-native') {
+      // 百炼原生：带 capabilities=IG，page_size 直接拉满（200 够了，生图模型不会超过这个数）
+      const url = new URL(preset.modelsUrl)
+      url.searchParams.set('capabilities', 'IG')
+      url.searchParams.set('page_size', '200')
+      const res = await fetch(url.toString(), {
+        headers: { Authorization: `Bearer ${trimmedKey}` }
+      })
+      if (!res.ok) {
+        return { ids: [], error: `拉取失败（${res.status} ${res.statusText}）` }
+      }
+      const body = await res.json()
+      for (const id of parseDashscopeNativeModels(body)) ids.add(id)
+    } else {
+      // OpenAI 兼容：siliconflow / openai / glm
+      const res = await fetch(preset.modelsUrl, {
+        headers: { Authorization: `Bearer ${trimmedKey}` }
+      })
+      if (!res.ok) {
+        return { ids: [], error: `拉取失败（${res.status} ${res.statusText}）` }
+      }
+      const body = await res.json()
+      for (const id of parseOpenAICompatibleModels(body)) ids.add(id)
+    }
+  } catch (err) {
+    return { ids: [], error: err instanceof Error ? err.message : '网络请求异常' }
+  }
+
+  const result = filterRemoteMediaModels([...ids], providerId)
+  console.log('result---1', result)
+  remoteModelCache.set(providerId, { ids: result, fetchedAt: Date.now() })
+  return { ids: result }
+}
+
+/**
+ * 读取某个 provider 的缓存（不触发网络请求）。
+ * 超过 TTL 的视为没缓存。
+ */
+export function getCachedImageModels(providerId: ImageProviderId): string[] | null {
+  const entry = remoteModelCache.get(providerId)
+  if (!entry) return null
+  if (Date.now() - entry.fetchedAt > REMOTE_MODEL_CACHE_TTL_MS) return null
+  return entry.ids
+}
+
+/**
+ * 返回 UI 可直接消费的模型选项列表。
+ * 纯远程驱动：缓存里有什么就展示什么，没有就返回空数组。
+ * 所有模型元数据（sizes 等）统一给兜底值，不再查本地字典。
+ *
+ * 为什么本地不再维护 models：
+ *   5 家 provider 都有 /v1/models 接口，模型 ID 会随服务商更新，
+ *   本地硬编码会过期。远程拉 + 关键词过滤（只保留生图相关）是更可持续的做法。
+ */
+export function resolveImageModelList(
+  providerId: ImageProviderId
+): Array<[string, ImageModelPreset]> {
+  const preset = IMAGE_PROVIDERS[providerId]
+  const remote = getCachedImageModels(providerId)
+
+  if (!remote) return []
+
+  // 把 defaultModel 放到首位（如果远程有它），其余保持 API 返回顺序
+  const fallbackPreset: ImageModelPreset = { sizes: FALLBACK_IMAGE_SIZES }
+  const merged: Array<[string, ImageModelPreset]> = []
+  let defaultAdded = false
+  for (const id of remote) {
+    if (id === preset.defaultModel) {
+      merged.unshift([id, fallbackPreset])
+      defaultAdded = true
+    } else {
+      merged.push([id, fallbackPreset])
+    }
+  }
+  // 如果远程没返回 defaultModel，也把它塞进去给用户一个"默认"选项
+  if (!defaultAdded) {
+    merged.unshift([preset.defaultModel, fallbackPreset])
+  }
+  return merged
+}
+
+/** 远程模型缓存 TTL（供 UI 层展示 / 测试用） */
+export const IMAGE_MODEL_CACHE_TTL_MS = REMOTE_MODEL_CACHE_TTL_MS

@@ -595,6 +595,66 @@ const notificationApi = {
 }
 
 /**
+ * 本地 LLM API：把模型加载/对话/下载交给主进程（node-llama-cpp 原生 binding）。
+ */
+const localLlmApi = {
+  /** 推荐模型目录（给 UI 展示） */
+  getRecommendedModels: (): Promise<Array<{
+    id: string
+    label: string
+    sizeGb: number
+    ramGb: number
+    fileName: string
+  }>> => ipcRenderer.invoke('local:recommendedModels'),
+
+  /** 列出本地已下载模型 + 当前状态 */
+  listModels: (): Promise<{
+    loaded: string | null
+    busy: boolean
+    models: Array<{ name: string; path: string; size: number; sizeHuman: string }>
+    activeDownloads: string[]
+  }> => ipcRenderer.invoke('local:listModels'),
+
+  /** 加载一个模型到内存 */
+  loadModel: (modelPath: string): Promise<{ ok: true; modelName: string } | { ok: false; error: string }> =>
+    ipcRenderer.invoke('local:loadModel', modelPath),
+
+  /** 卸载当前模型（释放内存） */
+  unloadModel: (): Promise<{ ok: true }> => ipcRenderer.invoke('local:unloadModel'),
+
+  /** 单轮对话 */
+  chat: (args: { system?: string; prompt: string }): Promise<{ ok: true; content: string } | { ok: false; error: string }> =>
+    ipcRenderer.invoke('local:chat', args),
+
+  /** 下载一个推荐模型（带进度推送）。args.source 可选：'hf-mirror'（默认）或 'hf-official' */
+  downloadModel: (catalogId: string, source?: string): Promise<{ ok: true; path?: string; size?: number; skipped?: boolean; modelName?: string } | { ok: false; error: string }> =>
+    ipcRenderer.invoke('local:downloadModel', { catalogId, source }),
+
+  /** 取消下载 */
+  cancelDownload: (catalogId: string): Promise<{ ok: boolean }> =>
+    ipcRenderer.invoke('local:cancelDownload', catalogId),
+
+  /** 删除本地模型文件 */
+  deleteModel: (modelName: string): Promise<{ ok: true } | { ok: false; error: string }> =>
+    ipcRenderer.invoke('local:deleteModel', modelName),
+
+  /**
+   * 监听下载进度。
+   * 返回取消订阅函数。
+   */
+  onDownloadProgress: (
+    callback: (payload: { modelId: string; received: number; total: number | null; percent: number; speed: number }) => void
+  ): (() => void) => {
+    const handler = (
+      _e: Electron.IpcRendererEvent,
+      payload: { modelId: string; received: number; total: number | null; percent: number; speed: number }
+    ) => callback(payload)
+    ipcRenderer.on('local:downloadProgress', handler)
+    return () => ipcRenderer.removeListener('local:downloadProgress', handler)
+  }
+}
+
+/**
  * 表节点 API：动态建表 + 行级 CRUD。
  *
  * 所有操作都透传到主进程 sql.js 实例。主进程负责：
@@ -981,6 +1041,7 @@ if (process.contextIsolated) {
     contextBridge.exposeInMainWorld('tableApi', tableApi)
     contextBridge.exposeInMainWorld('browserApi', browserApi)
     contextBridge.exposeInMainWorld('canvasApi', canvasApi)
+    contextBridge.exposeInMainWorld('localLlmApi', localLlmApi)
     contextBridge.exposeInMainWorld('getCurrentCanvasId', getCurrentCanvasId)
     contextBridge.exposeInMainWorld('getStartupMode', getStartupMode)
   } catch (error) {
@@ -1026,6 +1087,8 @@ if (process.contextIsolated) {
   // @ts-ignore (define in dts)
   window.canvasApi = canvasApi
   // @ts-ignore (define in dts)
+  window.localLlmApi = localLlmApi
+  // @ts-ignore (define in dts)
   window.getCurrentCanvasId = getCurrentCanvasId
   // @ts-ignore (define in dts)
   window.getStartupMode = getStartupMode
@@ -1049,4 +1112,5 @@ export type FeishuApi = typeof feishuApi
 export type TableApi = typeof tableApi
 export type BrowserApi = typeof browserApi
 export type CanvasApi = typeof canvasApi
+export type LocalLlmApi = typeof localLlmApi
 export type GetCurrentCanvasId = typeof getCurrentCanvasId

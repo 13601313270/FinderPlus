@@ -5,6 +5,7 @@ import { MethodPort } from '../../engine/port/MethodPort'
 import { OutputPort } from '../../engine/port/OutputPort'
 import type { InputPortChangeSource } from '../../engine/node/Node'
 import { Node } from '../../engine/node/Node'
+// 本地 LLM 引擎动态 import——不在模块顶层加载，避免 vite 解析 node-llama-cpp 原生 binding 时阻塞
 
 /**
  * 大语言模型节点：
@@ -38,6 +39,7 @@ export interface ChatMessage {
 export type LLMProviderId =
   | 'deepseek' | 'openai' | 'kimi' | 'qwen' | 'glm'
   | 'minimax' | 'groq' | 'mistral' | 'siliconflow' | 'tokenplan'
+  | 'local'  // ← 本地 LLM（node-llama-cpp 原生推理）
 
 const CONFIG_KEY = 'canvasdesk.llm.config'
 const LEGACY_KEY = 'canvasdesk.llm.api_key'
@@ -66,7 +68,10 @@ const PROVIDER_PRESETS: Record<LLMProviderId, { url: string; defaultModel: strin
   mistral:     { url: 'https://api.mistral.ai/v1/chat/completions',                            defaultModel: 'mistral-small-latest' },
   siliconflow: { url: 'https://api.siliconflow.cn/v1/chat/completions',                        defaultModel: 'Qwen/Qwen2.5-7B-Instruct' },
   // 千问 Token Plan（sk-sp- 前缀 Key，独立计费，端点完全不同于 DashScope）
-  tokenplan:   { url: 'https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1/chat/completions', defaultModel: 'qwen3.7-plus' }
+  tokenplan:   { url: 'https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1/chat/completions', defaultModel: 'qwen3.7-plus' },
+  // 本地 LLM（node-llama-cpp 原生推理引擎）
+  // 不走 HTTP fetch，通过 IPC 调用主进程 LlmRunner
+  local:       { url: 'canvasdesk-local://llm', defaultModel: '' }
 }
 
 /** 节点可用的 provider 列表（遍历这个就行） */
@@ -485,6 +490,21 @@ export class LLMNode extends Node {
   /** 真正执行取值 + 检查 + fetch；由防抖定时器或手动触发 */
   private doFetch(): void {
     const { system, prompt } = this.resolveInputs()
+
+    // 本地 LLM：跳过 API Key 校验，走 IPC 而不是 fetch
+    if (this.provider === 'local') {
+      if (!prompt.trim()) {
+        this.status = 'idle'
+        this.response = ''
+        this.errorMessage = ''
+        this.notifyChanged()
+        return
+      }
+      const myRequestId = ++this.requestId
+      void this.localChatAndCommit(system, prompt, myRequestId)
+      return
+    }
+
     const key = readProviderKey(this.provider)
 
     if (!key) {
@@ -672,6 +692,57 @@ export class LLMNode extends Node {
       this.errorMessage = errMsg || '响应为空'
       this.status = 'error'
       this.failRun() // 失败 → running 兜底回到 dirty
+    }
+    this.notifyChanged()
+  }
+
+  /**
+   * 本地 LLM 推理：动态 import LlmRunner，不走 HTTP fetch。
+   * 结构和 fetchAndCommit 一致——beginRun → 推理 → commit → completeRun/failRun → notifyChanged。
+   */
+  private async localChatAndCommit(
+    system: string,
+    prompt: string,
+    myRequestId: number
+  ): Promise<void> {
+    this.beginRun()
+    this.status = 'loading'
+    this.errorMessage = ''
+    this.notifyChanged()
+
+    // 动态 import：只有真正调用时才加载 node-llama-cpp 原生引擎
+    const { chat } = await import(/* @vite-ignore */ '../../localModels/LlmRunner')
+    const result = await chat(system || 'You are a helpful assistant.', prompt)
+
+    // —— Stale-call 守卫 ——
+    if (this.requestId !== myRequestId) return
+
+    if (result.ok && result.content.length > 0) {
+      this.response = result.content
+      this.status = 'done'
+
+      // 连续对话模式：追加 user + assistant 到历史
+      if (this.chatMode) {
+        this.chatHistory.push({ role: 'user', content: prompt })
+        this.chatHistory.push({ role: 'assistant', content: result.content })
+      }
+
+      if (this.jsonMode) {
+        try {
+          const parsed = JSON.parse(result.content)
+          this.textOutput.commit(new JsonValue(parsed), { force: true })
+        } catch {
+          this.textOutput.commit(new StringValue(result.content), { force: true })
+        }
+      } else {
+        this.textOutput.commit(new StringValue(result.content), { force: true })
+      }
+      this.completeRun()
+    } else {
+      this.response = ''
+      this.errorMessage = !result.ok ? result.error : '响应为空'
+      this.status = 'error'
+      this.failRun()
     }
     this.notifyChanged()
   }

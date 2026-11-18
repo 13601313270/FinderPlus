@@ -18,6 +18,7 @@ import type {
   TableApi,
   BrowserApi,
   CanvasApi,
+  LocalLlmApi,
   GetCurrentCanvasId,
   GetStartupMode
 } from './index'
@@ -48,6 +49,8 @@ declare global {
     browserApi: BrowserApi
     /** 画布管理 API：list / create / rename / delete / openNewWindow */
     canvasApi: CanvasApi
+    /** 本地 LLM 模型 API：推荐模型目录 / 列表 / 加载 / 卸载 / 对话 / 下载 */
+    localLlmApi: LocalLlmApi
     /** 返回当前窗口绑定的 canvasId（从 URL query 读，默认 'default'） */
     getCurrentCanvasId: GetCurrentCanvasId
     /** 返回启动模式：'picker'=画布选择器窗口，null=正常画布窗口 */

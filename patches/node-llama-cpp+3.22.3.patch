@@ -1,0 +1,94 @@
+diff --git a/node_modules/node-llama-cpp/dist/bindings/utils/compileLLamaCpp.js b/node_modules/node-llama-cpp/dist/bindings/utils/compileLLamaCpp.js
+index 29aa4e7..d52f0b3 100644
+--- a/node_modules/node-llama-cpp/dist/bindings/utils/compileLLamaCpp.js
++++ b/node_modules/node-llama-cpp/dist/bindings/utils/compileLLamaCpp.js
+@@ -3,6 +3,17 @@ import { fileURLToPath } from "url";
+ import process from "process";
+ import os from "os";
+ import fs from "fs-extra";
++import { createRequire } from "module";
++const _require = createRequire(import.meta.url);
++// 运行时动态加载 @node-llama-cpp 平台子包，避免 vite/esbuild 静态扫描
++function _dynImport(pkg) {
++    try {
++        return Promise.resolve(_require(pkg));
++    }
++    catch (err) {
++        return Promise.reject(err);
++    }
++}
+ import chalk from "chalk";
+ import which from "which";
+ import { buildMetadataFileName, documentationPageUrls, llamaCppDirectory, llamaDirectory, llamaLocalBuildBinsDirectory, llamaPrebuiltBinsDirectory, llamaToolchainsDirectory } from "../../config.js";
+@@ -433,54 +444,54 @@ function getPrebuiltBinariesPackageDirectoryForBuildOptions(buildOptions) {
+     if (buildOptions.platform === "mac") {
+         if (buildOptions.arch === "arm64" && buildOptions.gpu === "metal")
+             // @ts-ignore
+-            return getBinariesPathFromModules(() => import("@node-llama-cpp/mac-arm64-metal"));
++            return getBinariesPathFromModules(() => _dynImport("@node-llama-cpp/mac-arm64-metal"));
+         else if (buildOptions.arch === "x64" && buildOptions.gpu === false)
+             // @ts-ignore
+-            return getBinariesPathFromModules(() => import("@node-llama-cpp/mac-x64"));
++            return getBinariesPathFromModules(() => _dynImport("@node-llama-cpp/mac-x64"));
+     }
+     else if (buildOptions.platform === "linux") {
+         if (buildOptions.arch === "x64") {
+             if (buildOptions.gpu === "cuda")
+                 return getBinariesPathFromModulesWithExtModule(
+                 // @ts-ignore
+-                () => import("@node-llama-cpp/linux-x64-cuda"), 
++                () => _dynImport("@node-llama-cpp/linux-x64-cuda"), 
+                 // @ts-ignore
+-                () => import("@node-llama-cpp/linux-x64-cuda-ext"));
++                () => _dynImport("@node-llama-cpp/linux-x64-cuda-ext"));
+             else if (buildOptions.gpu === "vulkan")
+                 // @ts-ignore
+-                return getBinariesPathFromModules(() => import("@node-llama-cpp/linux-x64-vulkan"));
++                return getBinariesPathFromModules(() => _dynImport("@node-llama-cpp/linux-x64-vulkan"));
+             else if (buildOptions.gpu === false)
+                 // @ts-ignore
+-                return getBinariesPathFromModules(() => import("@node-llama-cpp/linux-x64"));
++                return getBinariesPathFromModules(() => _dynImport("@node-llama-cpp/linux-x64"));
+         }
+         else if (buildOptions.arch === "arm64")
+             // @ts-ignore
+-            return getBinariesPathFromModules(() => import("@node-llama-cpp/linux-arm64"));
++            return getBinariesPathFromModules(() => _dynImport("@node-llama-cpp/linux-arm64"));
+         else if (buildOptions.arch === "arm")
+             // @ts-ignore
+-            return getBinariesPathFromModules(() => import("@node-llama-cpp/linux-armv7l"));
++            return getBinariesPathFromModules(() => _dynImport("@node-llama-cpp/linux-armv7l"));
+         else if (buildOptions.arch === "riscv64")
+             // @ts-ignore
+-            return getBinariesPathFromModules(() => import("@node-llama-cpp/linux-riscv64"));
++            return getBinariesPathFromModules(() => _dynImport("@node-llama-cpp/linux-riscv64"));
+     }
+     else if (buildOptions.platform === "win") {
+         if (buildOptions.arch === "x64") {
+             if (buildOptions.gpu === "cuda")
+                 return getBinariesPathFromModulesWithExtModule(
+                 // @ts-ignore
+-                () => import("@node-llama-cpp/win-x64-cuda"), 
++                () => _dynImport("@node-llama-cpp/win-x64-cuda"), 
+                 // @ts-ignore
+-                () => import("@node-llama-cpp/win-x64-cuda-ext"));
++                () => _dynImport("@node-llama-cpp/win-x64-cuda-ext"));
+             else if (buildOptions.gpu === "vulkan")
+                 // @ts-ignore
+-                return getBinariesPathFromModules(() => import("@node-llama-cpp/win-x64-vulkan"));
++                return getBinariesPathFromModules(() => _dynImport("@node-llama-cpp/win-x64-vulkan"));
+             else if (buildOptions.gpu === false)
+                 // @ts-ignore
+-                return getBinariesPathFromModules(() => import("@node-llama-cpp/win-x64"));
++                return getBinariesPathFromModules(() => _dynImport("@node-llama-cpp/win-x64"));
+         }
+         else if (buildOptions.arch === "arm64")
+             // @ts-ignore
+-            return getBinariesPathFromModules(() => import("@node-llama-cpp/win-arm64"));
++            return getBinariesPathFromModules(() => _dynImport("@node-llama-cpp/win-arm64"));
+     }
+     /* eslint-enable import/no-unresolved */
+     return null;
+diff --git a/node_modules/node-llama-cpp/dist/cli/cli.js b/node_modules/node-llama-cpp/dist/cli/cli.js
+old mode 100755
+new mode 100644

@@ -15,7 +15,13 @@ const MONACO_WORKERS = ['editorWorkerService', 'json', 'html', 'css', 'typescrip
 
 export default defineConfig({
   main: {
-    plugins: [externalizeDepsPlugin(), visualizer({ filename: 'dist/stats-main.html', open: false })]
+    plugins: [externalizeDepsPlugin(), visualizer({ filename: 'dist/stats-main.html', open: false })],
+    build: {
+      rollupOptions: {
+        // node-llama-cpp 是原生 module，必须原样留在 node_modules 不能被 bundle
+        external: (id) => id === 'node-llama-cpp' || id.startsWith('@node-llama-cpp/')
+      }
+    }
   },
   preload: {
     plugins: [externalizeDepsPlugin(), visualizer({ filename: 'dist/stats-preload.html', open: false })]
@@ -24,6 +30,19 @@ export default defineConfig({
     resolve: {
       alias: {
         '@renderer': rendererSrc
+      }
+    },
+    // renderer 是纯浏览器环境，node-llama-cpp 的依赖（ipull/chmodrp/cross-spawn 等）
+    // 里有 Node-only 的 import，vite 预构建时会尝试解析它们然后报错/卡住
+    // 直接让 renderer 跳过对 node-llama-cpp 生态 + src/main 的依赖追踪
+    optimizeDeps: {
+      exclude: ['node-llama-cpp', '@node-llama-cpp/*', 'ipull', 'chmodrp', 'cross-spawn']
+    },
+    build: {
+      rollupOptions: {
+        external: (id: string) =>
+          id.includes('/src/main/') ||
+          id.includes('node-llama-cpp')
       }
     },
     plugins: [

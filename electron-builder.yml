@@ -12,6 +12,11 @@ files:
   - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
 asarUnpack:
   - resources/**
+  # node-llama-cpp 原生引擎：.node/.dylib/.dll 必须原样保留，不能压进 asar
+  - "node_modules/node-llama-cpp/**/*.node"
+  - "node_modules/node-llama-cpp/**/*.dylib"
+  - "node_modules/node-llama-cpp/**/*.dll"
+  - "node_modules/node-llama-cpp/**/*.exe"
 mac:
   category: public.app-category.productivity
   # 仅构建 arm64（Apple Silicon）。如需覆盖 Intel Mac，再把 x64 加回来。

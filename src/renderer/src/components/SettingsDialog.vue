@@ -82,7 +82,7 @@ const {
 } = useOssBuckets()
 
 /** 左侧选中的分类 */
-type SectionKey = 'general' | 'appearance' | 'llm' | 'image' | 'nodes' | 'browser' | 'feishu' | 'oss' | 'canvases'
+type SectionKey = 'general' | 'appearance' | 'llm' | 'image' | 'nodes' | 'browser' | 'feishu' | 'oss' | 'canvases' | 'localLLM'
 const activeSection = ref<SectionKey>('general')
 
 /** 各 provider API Key 是否以明文显示 */
@@ -96,7 +96,7 @@ function toggleImageKeyVisible(key: string): void {
   imageKeyVisible.value[key] = !imageKeyVisible.value[key]
 }
 
-const SECTION_ORDER: SectionKey[] = ['general', 'appearance', 'llm', 'image', 'nodes', 'browser', 'feishu', 'oss', 'canvases']
+const SECTION_ORDER: SectionKey[] = ['general', 'appearance', 'llm', 'image', 'localLLM', 'nodes', 'browser', 'feishu', 'oss', 'canvases']
 
 function sectionLabel(key: SectionKey): string {
   switch (key) {
@@ -104,6 +104,7 @@ function sectionLabel(key: SectionKey): string {
     case 'appearance': return t('settingsDialog.groupAppearance')
     case 'llm':        return t('settingsDialog.groupLLM')
     case 'image':      return t('settingsDialog.groupImage')
+    case 'localLLM':   return '本地模型'
     case 'nodes':      return t('settingsDialog.groupNodes')
     case 'browser':    return t('settingsDialog.groupBrowser')
     case 'feishu':     return '飞书机器人'
@@ -580,6 +581,165 @@ async function onDeleteOssBucket(bucket: OssBucket): Promise<void> {
   if (!ok) return
   removeOssBucket(bucket.id)
 }
+
+// —— 本地 LLM 模型 section ——
+
+interface LocalModelInfo {
+  name: string
+  path: string
+  size: number
+  sizeHuman: string
+}
+interface RecommendedModel {
+  id: string
+  label: string
+  sizeGb: number
+  ramGb: number
+  fileName: string
+}
+
+const localModels = ref<LocalModelInfo[]>([])
+const localLoaded = ref<string | null>(null)
+const localBusy = ref(false)
+const recommendedModels = ref<RecommendedModel[]>([])
+const downloadingId = ref<string | null>(null)
+const downloadProgress = ref(0)
+const downloadProgressText = ref('')
+const localModelsLoading = ref(false)
+
+let progressUnsub: (() => void) | undefined
+
+async function refreshLocalModels(): Promise<void> {
+  localModelsLoading.value = true
+  try {
+    const [rec, list] = await Promise.all([
+      window.localLlmApi?.getRecommendedModels() ?? Promise.resolve([]),
+      window.localLlmApi?.listModels() ?? Promise.resolve({ loaded: null, busy: false, models: [], activeDownloads: [] })
+    ])
+    recommendedModels.value = rec
+    localModels.value = list.models
+    localLoaded.value = list.loaded
+    localBusy.value = list.busy
+  } catch (err) {
+    console.warn('[settings] 加载本地模型列表失败', err)
+  } finally {
+    localModelsLoading.value = false
+  }
+}
+
+function startProgressListener(): void {
+  if (progressUnsub) return
+  progressUnsub = window.localLlmApi?.onDownloadProgress((p) => {
+    if (downloadingId.value !== p.modelId) downloadingId.value = p.modelId
+    downloadProgress.value = p.percent
+    if (p.total) {
+      downloadProgressText.value = `${(p.received / 1024 / 1024).toFixed(0)} / ${(p.total / 1024 / 1024).toFixed(0)} MB`
+    } else {
+      downloadProgressText.value = `${(p.received / 1024 / 1024).toFixed(0)} MB`
+    }
+  })
+}
+
+function stopProgressListener(): void {
+  if (progressUnsub) { progressUnsub(); progressUnsub = undefined }
+}
+
+// —— 下载源选择 modal ——
+const sourceModalVisible = ref(false)
+const sourceModalTargetId = ref<string | null>(null)
+const selectedSource = ref<'hf-mirror' | 'hf-official'>('hf-mirror')
+
+const DOWNLOAD_SOURCE_OPTIONS = [
+  { value: 'hf-mirror' as const, label: '国内镜像（推荐）', hint: 'hf-mirror.com · 大陆直连最快' },
+  { value: 'hf-official' as const, label: 'HuggingFace 官方', hint: 'huggingface.co · 需科学上网' }
+]
+
+function openSourceSelector(modelId: string): void {
+  sourceModalTargetId.value = modelId
+  selectedSource.value = 'hf-mirror' // 默认国内镜像
+  sourceModalVisible.value = true
+}
+
+function closeSourceSelector(): void {
+  sourceModalVisible.value = false
+  sourceModalTargetId.value = null
+}
+
+async function confirmSourceAndDownload(): Promise<void> {
+  const id = sourceModalTargetId.value
+  const source = selectedSource.value
+  closeSourceSelector()
+  if (!id) return
+  await onDownloadLocalModel(id, source)
+}
+
+async function onDownloadLocalModel(id: string, source: string = 'hf-mirror'): Promise<void> {
+  if (!window.localLlmApi) return
+  const rec = recommendedModels.value.find((m) => m.id === id)
+  if (!rec) return
+
+  downloadingId.value = id
+  downloadProgress.value = 0
+  downloadProgressText.value = '连接中...'
+  startProgressListener()
+
+  try {
+    const result = await window.localLlmApi.downloadModel(id, source)
+    if (result.ok) {
+      // 下载完自动加载到内存？不，让用户自己点"加载"
+      await refreshLocalModels()
+    } else {
+      await window.showAlert(`下载失败：${result.error ?? '未知错误'}`)
+    }
+  } finally {
+    downloadingId.value = null
+    downloadProgress.value = 0
+    downloadProgressText.value = ''
+    stopProgressListener()
+  }
+}
+
+async function onCancelDownload(id: string): Promise<void> {
+  await window.localLlmApi?.cancelDownload(id)
+  downloadingId.value = null
+  downloadProgress.value = 0
+  downloadProgressText.value = ''
+}
+
+async function onLoadLocalModel(modelName: string): Promise<void> {
+  if (!window.localLlmApi) return
+  const model = localModels.value.find((m) => m.name === modelName)
+  if (!model) return
+  const result = await window.localLlmApi.loadModel(model.path)
+  if (!result.ok) {
+    await window.showAlert(`加载失败：${result.error}`)
+  }
+  await refreshLocalModels()
+}
+
+async function onUnloadLocalModel(): Promise<void> {
+  await window.localLlmApi?.unloadModel()
+  await refreshLocalModels()
+}
+
+async function onDeleteLocalModel(modelName: string): Promise<void> {
+  const ok = await window.showConfirm(
+    '删除本地模型',
+    `确定要删除本地模型"${modelName}"吗？删除后需重新下载才能使用。`
+  )
+  if (!ok) return
+  const result = await window.localLlmApi?.deleteModel(modelName)
+  if (result && !result.ok) {
+    await window.showAlert(`删除失败：${result.error}`)
+  }
+  await refreshLocalModels()
+}
+
+// 切到 localLLM tab 时刷新
+watch(activeSection, (key) => {
+  if (key === 'localLLM') void refreshLocalModels()
+  else stopProgressListener()
+})
 
 // —— 我的画布 tab ——
 interface CanvasRow {
@@ -1170,6 +1330,110 @@ async function onDeleteCanvas(id: string, name: string): Promise<void> {
               </section>
             </template>
 
+            <!-- ========== 本地 LLM 模型 ========== -->
+            <template v-if="activeSection === 'localLLM'">
+              <section class="gs-section">
+                <h4 class="gs-section__title">本地模型</h4>
+                <p class="gs-section__hint">下载小体积本地大语言模型（1~3B），直接在你的 Mac 上运行推理，无需网络。首次下载后完全离线可用。</p>
+                <p class="gs-section__hint gs-section__hint--warn">下载的模型保存在本地数据目录，不会随应用打包。用完点"卸载"可释放内存，磁盘空间可单独删除。</p>
+              </section>
+
+              <section class="gs-section">
+                <h4 class="gs-section__title">推荐模型</h4>
+                <p class="gs-section__hint">Mac 统一内存 8GB+ 可流畅运行。点击下载后自动加载到"已安装"列表。</p>
+
+                <div v-if="localModelsLoading" class="gs-canvases__loading">加载中...</div>
+
+                <div v-else class="gs-feishu__list">
+                  <div
+                    v-for="m in recommendedModels"
+                    :key="m.id"
+                    class="gs-feishu-card"
+                  >
+                    <div class="gs-feishu-card__info">
+                      <span class="gs-feishu-card__name">{{ m.label }}</span>
+                      <span class="gs-feishu-card__appid">约 {{ m.sizeGb }}GB 磁盘 · 建议 {{ m.ramGb }}GB 内存</span>
+                    </div>
+                    <div class="gs-feishu-card__actions">
+                      <!-- 下载中：进度条 + 取消 -->
+                      <template v-if="downloadingId === m.id">
+                        <div class="gs-local__progress">
+                          <div class="gs-local__progress-bar" :style="{ width: `${downloadProgress}%` }" />
+                          <span class="gs-local__progress-text">{{ downloadProgress.toFixed(0) }}% · {{ downloadProgressText }}</span>
+                        </div>
+                        <button
+                          class="gs-canvas-card__btn gs-canvas-card__btn--danger"
+                          type="button"
+                          @click="onCancelDownload(m.id)"
+                        >取消</button>
+                      </template>
+                      <!-- 已下载："已安装" 标识 -->
+                      <template v-else-if="localModels.some((lm) => lm.name === m.fileName)">
+                        <span class="gs-local__installed-badge">✓ 已安装</span>
+                      </template>
+                      <!-- 未下载：下载按钮（弹源选择） -->
+                      <template v-else>
+                        <button
+                          class="gs-canvas-card__btn gs-canvas-card__btn--primary"
+                          type="button"
+                          @click="openSourceSelector(m.id)"
+                        >下载</button>
+                      </template>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <section class="gs-section">
+                <h4 class="gs-section__title">已安装</h4>
+                <p class="gs-section__hint">下载后需要"加载到内存"才能在 LLM 节点里使用。加载会占用显存/内存约模型体积，用完可以卸载。</p>
+
+                <div v-if="localModelsLoading" class="gs-canvases__loading">加载中...</div>
+
+                <div v-else-if="localModels.length === 0" class="gs-canvases__empty">
+                  暂无已安装的本地模型，先从上方推荐列表下载一个吧。
+                </div>
+
+                <div v-else class="gs-feishu__list">
+                  <div
+                    v-for="m in localModels"
+                    :key="m.name"
+                    class="gs-feishu-card"
+                  >
+                    <div class="gs-feishu-card__info">
+                      <span class="gs-feishu-card__name">
+                        {{ m.name }}
+                        <span v-if="localLoaded === m.name" class="gs-local__loaded-badge">🟢 运行中</span>
+                      </span>
+                      <span class="gs-feishu-card__appid">{{ m.sizeHuman }}</span>
+                    </div>
+                    <div class="gs-feishu-card__actions">
+                      <button
+                        v-if="localLoaded !== m.name"
+                        class="gs-canvas-card__btn gs-canvas-card__btn--primary"
+                        type="button"
+                        :disabled="localBusy"
+                        @click="onLoadLocalModel(m.name)"
+                      >加载到内存</button>
+                      <button
+                        v-else
+                        class="gs-canvas-card__btn"
+                        type="button"
+                        :disabled="localBusy"
+                        @click="onUnloadLocalModel"
+                      >卸载</button>
+                      <button
+                        class="gs-canvas-card__btn gs-canvas-card__btn--danger"
+                        type="button"
+                        :disabled="localLoaded === m.name"
+                        @click="onDeleteLocalModel(m.name)"
+                      >删除</button>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            </template>
+
             <!-- ========== 我的画布 ========== -->
             <template v-if="activeSection === 'canvases'">
               <section class="gs-section">
@@ -1375,6 +1639,48 @@ async function onDeleteCanvas(id: string, name: string): Promise<void> {
                     :disabled="!ossBucketDraft.name.trim() || !ossBucketDraft.accessKeyId.trim() || !ossBucketDraft.accessKeySecret.trim() || !ossBucketDraft.region.trim() || !ossBucketDraft.bucket.trim()"
                     @click="onSaveOssBucket"
                   >保存</button>
+                </div>
+              </div>
+            </div>
+          </Teleport>
+
+          <!-- ========== 下载源选择 Modal ========== -->
+          <Teleport to="body">
+            <div v-if="sourceModalVisible" class="gs-mask" @click.self="closeSourceSelector">
+              <div class="gs-modal" @click.stop>
+                <div class="gs-modal__header">
+                  <span class="gs-modal__title">选择下载源</span>
+                  <button class="gs-modal__close" type="button" @click="closeSourceSelector">×</button>
+                </div>
+                <div class="gs-modal__body">
+                  <p class="gs-section__hint">选择从哪里下载模型。国内网络推荐用镜像，速度更快。</p>
+                  <div class="gs-source-list">
+                    <label
+                      v-for="opt in DOWNLOAD_SOURCE_OPTIONS"
+                      :key="opt.value"
+                      class="gs-source-item"
+                      :class="{ 'gs-source-item--active': selectedSource === opt.value }"
+                    >
+                      <input
+                        type="radio"
+                        :value="opt.value"
+                        v-model="selectedSource"
+                        class="gs-source-item__radio"
+                      />
+                      <div class="gs-source-item__info">
+                        <span class="gs-source-item__label">{{ opt.label }}</span>
+                        <span class="gs-source-item__hint">{{ opt.hint }}</span>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+                <div class="gs-modal__footer">
+                  <button class="gs-btn" type="button" @click="closeSourceSelector">取消</button>
+                  <button
+                    class="gs-btn gs-btn--primary"
+                    type="button"
+                    @click="confirmSourceAndDownload"
+                  >开始下载</button>
                 </div>
               </div>
             </div>
@@ -2261,6 +2567,105 @@ async function onDeleteCanvas(id: string, name: string): Promise<void> {
     white-space: nowrap;
 
     &:hover { background: #dbeafe; }
+  }
+}
+
+/* ===== 本地 LLM 模型 tab 样式 ===== */
+.gs-local {
+  &__progress {
+    position: relative;
+    display: inline-block;
+    min-width: 120px;
+    height: 24px;
+    border-radius: 4px;
+    background: #e5e7eb;
+    overflow: hidden;
+    margin-right: 8px;
+    vertical-align: middle;
+  }
+  &__progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #667eea, #764ba2);
+    border-radius: 4px;
+    transition: width 0.2s;
+  }
+  &__progress-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 11px;
+    color: #374151;
+    white-space: nowrap;
+    -webkit-text-stroke: 3px #e5e7eb;
+    font-weight: bold;
+    paint-order: stroke fill;
+  }
+  &__installed-badge {
+    font-size: 12px;
+    color: #16a34a;
+    background: #dcfce7;
+    padding: 4px 10px;
+    border-radius: 6px;
+    white-space: nowrap;
+  }
+  &__loaded-badge {
+    display: inline-block;
+    font-size: 11px;
+    color: #059669;
+    background: #d1fae5;
+    padding: 1px 8px;
+    border-radius: 10px;
+    margin-left: 6px;
+    vertical-align: middle;
+    animation: pulse-green 2s infinite;
+  }
+}
+
+@keyframes pulse-green {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* ===== 下载源选择 radio 卡片 ===== */
+.gs-source-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+.gs-source-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover { border-color: #c7d2fe; background: #fafbff; }
+  &--active {
+    border-color: #667eea;
+    background: #f0f2ff;
+  }
+  &__radio {
+    width: 16px; height: 16px; flex-shrink: 0;
+    accent-color: #667eea;
+  }
+  &__info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  &__label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1f2937;
+  }
+  &__hint {
+    font-size: 11px;
+    color: #6b7280;
   }
 }
 </style>

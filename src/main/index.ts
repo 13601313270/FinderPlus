@@ -18,6 +18,7 @@ import { openDatabase, closeDatabase, getDatabase, persist } from './db/database
 import { SqliteStorage } from './db/SqliteStorage'
 import { ensureCanvasDir, getCanvasDir, getCanvasRootDir, migrateLegacyRootFiles, ensureNodeDir, removeNodeDir, saveFileToNodeDir, readFileFromNodeDir, deleteFileFromNodeDir } from './paths'
 import type { MenuLabels } from '../preload'
+import { registerLocalModelIpcHandlers, cleanupLocalModels } from './localModels/ipcHandlers'
 
 /** canvasId 安全校验：只允许字母数字下划线、中划线、中文，防路径穿越和 SQL 注入 */
 const SAFE_CANVAS_ID = /^[a-zA-Z0-9_\-\u4e00-\u9fa5]+$/
@@ -2952,6 +2953,7 @@ app.whenReady().then(async () => {
   storage = new SqliteStorage(db)
 
   registerIpcHandlers()
+  registerLocalModelIpcHandlers()
 
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
@@ -2978,5 +2980,6 @@ app.on('window-all-closed', () => {
 app.on('before-quit', () => {
   stopCanvasWatcher()
   disposeFeishu()
+  cleanupLocalModels()
   closeDatabase()
 })

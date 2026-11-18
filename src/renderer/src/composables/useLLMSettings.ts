@@ -11,6 +11,7 @@ export type LLMProvider =
   | 'mistral'
   | 'siliconflow'
   | 'tokenplan'
+  | 'local'  // 本地 LLM（node-llama-cpp 原生推理引擎）
 
 /**
  * Provider 预设：端点 URL + 默认 model。
@@ -85,6 +86,13 @@ export const LLM_PROVIDERS: Record<LLMProvider, {
     url: 'https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1/chat/completions',
     modelsUrl: 'https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1/models',
     defaultModel: 'qwen3.7-plus'
+  },
+  // 本地 LLM：不走 HTTP fetch，通过 IPC 调主进程 LlmRunner
+  local: {
+    label: '本地模型',
+    url: 'canvasdesk-local://llm',
+    modelsUrl: '',  // 本地模型不支持 /models 端点
+    defaultModel: ''
   }
 }
 

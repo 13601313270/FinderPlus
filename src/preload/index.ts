@@ -1000,6 +1000,19 @@ const feishuApi = {
   }> => ipcRenderer.invoke('feishu:getFfmpegStatus'),
 
   /**
+   * 更新已发送的消息内容（PATCH /im/v1/messages/{message_id}）。
+   * 典型用途：卡片按钮点击后，把带按钮的审核卡替换成已处理状态卡。
+   */
+  update: (args: {
+    appId: string
+    appSecret: string
+    messageId: string
+    msgType?: 'text' | 'interactive' | 'image' | 'file' | 'audio' | 'media'
+    content: string
+  }): Promise<{ ok: true } | { ok: false; error: string }> =>
+    ipcRenderer.invoke('feishu:update', args),
+
+  /**
    * 监听飞书新消息（主进程 WS 长连接推过来的）。
    * 返回取消订阅函数。
    */

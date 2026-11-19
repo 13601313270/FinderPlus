@@ -665,6 +665,49 @@ export async function sendFeishuMessage(args: {
 }
 
 /**
+ * 更新已发送的消息内容（PATCH /im/v1/messages/{message_id}）。
+ * 最常见的用途：卡片按钮点击后，把带按钮的审核卡片替换成已处理状态卡片。
+ * 支持飞书 2.0 的 message.patch API。
+ */
+export async function updateFeishuMessagePipeline(args: {
+  appId: string
+  appSecret: string
+  messageId: string
+  /** 新的 msg_type，不传则沿用原类型（卡片更新通常用 interactive） */
+  msgType?: 'text' | 'interactive' | 'image' | 'file' | 'audio' | 'media'
+  /** 新的 content 字符串（interactive 传 JSON.stringify(card)，text 传 JSON.stringify({text})） */
+  content: string
+}): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (!args.appId || !args.appSecret) return { ok: false, error: 'App ID / App Secret 不能为空' }
+  if (!args.messageId) return { ok: false, error: 'messageId 不能为空' }
+  if (!args.content) return { ok: false, error: 'content 不能为空' }
+
+  let Lark: any
+  try {
+    Lark = await import('@larksuiteoapi/node-sdk')
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    return { ok: false, error: '飞书 SDK 加载失败: ' + msg }
+  }
+
+  try {
+    const client = new Lark.Client({ appId: args.appId, appSecret: args.appSecret })
+    await client.im.message.patch({
+      path: { message_id: args.messageId },
+      data: {
+        content: args.content,
+        ...(args.msgType ? { msg_type: args.msgType } : {})
+      }
+    })
+    return { ok: true }
+  } catch (err) {
+    const msg = extractFeishuError(err)
+    console.error(`[FeishuManager] 更新消息失败 (${args.messageId}):`, msg)
+    return { ok: false, error: msg }
+  }
+}
+
+/**
  * 一站式发送文件类消息（file/audio/media）。
  * 内部自动处理 ffmpeg 转码 → 上传 → 发送 → 清理临时文件的完整链路。
  *

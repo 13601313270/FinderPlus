@@ -12,7 +12,7 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import * as cheerio from 'cheerio'
 import * as iconv from 'iconv-lite'
 import OSS from 'ali-oss'
-import { startFeishu, stopFeishu, getFeishuStatus, disposeFeishu, sendFeishuMessage, uploadFeishuImage, sendFeishuFilePipeline, getFfmpegStatus, sendFeishuCardPipeline } from './feishu/FeishuManager'
+import { startFeishu, stopFeishu, getFeishuStatus, disposeFeishu, sendFeishuMessage, uploadFeishuImage, sendFeishuFilePipeline, getFfmpegStatus, sendFeishuCardPipeline, updateFeishuMessagePipeline } from './feishu/FeishuManager'
 import { startRecord as startBrowserRecord, stopRecord as stopBrowserRecord, isRecording as isBrowserRecording, checkFfmpeg as checkBrowserFfmpeg, appendAudioChunk as appendBrowserAudioChunk, markAudioDone as markBrowserAudioDone } from './BrowserRecorder'
 import { openDatabase, closeDatabase, getDatabase, persist } from './db/database'
 import { SqliteStorage } from './db/SqliteStorage'
@@ -2901,6 +2901,17 @@ ipcMain.handle('feishu:send', async (_e, args: {
   cardJson?: string
 }) => {
   return sendFeishuMessage(args)
+})
+
+// —— 飞书更新已发送消息（卡片按钮点击后把按钮卡替换成已处理状态卡）——
+ipcMain.handle('feishu:update', async (_e, args: {
+  appId: string
+  appSecret: string
+  messageId: string
+  msgType?: 'text' | 'interactive' | 'image' | 'file' | 'audio' | 'media'
+  content: string
+}) => {
+  return updateFeishuMessagePipeline(args)
 })
 
 // —— BrowserNode 视频录制 ——

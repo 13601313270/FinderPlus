@@ -79,6 +79,9 @@ export class HumanReviewNode extends Node {
   /** 收到音频类型待审核项时是否自动播放音频：默认 false（兼容旧数据） */
   private autoPlayAudio = false
 
+  /** 最后一张飞书审核卡片的状态（发完后存，approve/reject 后用来更新卡片为已处理状态） */
+  private _feishuCardState: { messageId: string; appId: string; appSecret: string; originalTitle: string } | undefined
+
   /** 卡片内 renderer 的 context：默认 tooltip（兼容旧数据） */
   private renderContext: RenderContext = 'tooltip'
 
@@ -604,6 +607,16 @@ export class HumanReviewNode extends Node {
         return
       }
 
+      // —— 存卡片状态（approve/reject 后用来更新卡片为已处理状态）——
+      if (sendRes?.messageId) {
+        this._feishuCardState = {
+          messageId: sendRes.messageId,
+          appId: creds.appId,
+          appSecret: creds.appSecret,
+          originalTitle: textLabel
+        }
+      }
+
       // —— HtmlFileValue：发完卡片后，紧接着发一条文件附件消息 ——
       if (htmlFileToSend) {
         try {
@@ -637,6 +650,8 @@ export class HumanReviewNode extends Node {
   approve(): void {
     if (!this.current || !this.approveOutput) return
     this.approveOutput.commit(this.current, { force: true })
+    // 更新飞书卡片为已处理状态
+    this._updateFeishuCard('approved')
     this.advance()
   }
 
@@ -647,7 +662,55 @@ export class HumanReviewNode extends Node {
     if (this.rejectReasonOutput) {
       this.rejectReasonOutput.commit(new StringValue(reason ?? ''), { force: true })
     }
+    // 更新飞书卡片为已处理状态（带理由）
+    this._updateFeishuCard('rejected', reason)
     this.advance()
+  }
+
+  /**
+   * 把飞书审核卡片更新成已处理状态（无按钮、显示处理结果）。
+   * 仅当发卡片时存了 messageId + creds 才执行；不执行也不影响正常流程。
+   */
+  private _updateFeishuCard(result: 'approved' | 'rejected', reason?: string): void {
+    const state = this._feishuCardState
+    if (!state) return
+    // 异步更新，不阻塞 Canvas 主流程
+    void (async () => {
+      const processedCard = {
+        schema: '2.0',
+        header: {
+          title: { tag: 'plain_text', content: '✅ 人工审核已完成' },
+          template: result === 'approved' ? 'green' : 'red'
+        },
+        body: {
+          elements: [
+            {
+              tag: 'markdown',
+              content: result === 'approved'
+                ? `**结果**: ✅ 已同意\n\n${state.originalTitle}`
+                : `**结果**: ❌ 已拒绝\n\n${state.originalTitle}${reason ? `\n\n**拒绝理由**: ${reason}` : ''}`
+            }
+          ]
+        }
+      }
+      try {
+        // @ts-ignore
+        const res = await window.feishuApi?.update({
+          appId: state.appId,
+          appSecret: state.appSecret,
+          messageId: state.messageId,
+          msgType: 'interactive',
+          content: JSON.stringify(processedCard)
+        })
+        if (res && !res.ok) {
+          console.warn('[HumanReviewNode] 更新飞书卡片失败:', res.error)
+        }
+      } catch (err) {
+        console.warn('[HumanReviewNode] 更新飞书卡片异常:', err)
+      }
+    })()
+    // 更新完清掉状态，避免 approve/reject 被重复调用时又更新一次
+    this._feishuCardState = undefined
   }
 
   /** 审核通过/拒绝后取下一个待审核项 */

@@ -24,6 +24,12 @@ import {
   type FeishuBot
 } from '@renderer/composables/useFeishuBots'
 import {
+  useFeishuPersons,
+  type FeishuPerson,
+  type ReceiveIdType as PersonReceiveIdType,
+  RECEIVE_ID_TYPE_OPTIONS
+} from '@renderer/composables/useFeishuPersons'
+import {
   useOssBuckets,
   type OssBucket
 } from '@renderer/composables/useOssBuckets'
@@ -90,6 +96,12 @@ const {
   update: updateFeishuBot,
   remove: removeFeishuBot
 } = useFeishuBots()
+const {
+  persons: feishuPersons,
+  add: addFeishuPerson,
+  update: updateFeishuPerson,
+  remove: removeFeishuPerson
+} = useFeishuPersons()
 const {
   buckets: ossBuckets,
   add: addOssBucket,
@@ -528,6 +540,67 @@ async function onDeleteFeishuBot(bot: FeishuBot): Promise<void> {
   )
   if (!ok) return
   removeFeishuBot(bot.id)
+}
+
+// —— 飞书联系人 ——
+interface FeishuPersonDraft {
+  mode: 'add' | 'edit'
+  id?: string
+  name: string
+  receiveId: string
+  receiveIdType: PersonReceiveIdType
+  botId: string
+}
+const feishuPersonModalVisible = ref(false)
+const feishuPersonDraft = ref<FeishuPersonDraft>({
+  mode: 'add', name: '', receiveId: '', receiveIdType: 'open_id', botId: ''
+})
+
+function showFeishuPersonModal(mode: 'add' | 'edit', person?: FeishuPerson): void {
+  if (mode === 'edit' && person) {
+    feishuPersonDraft.value = {
+      mode: 'edit',
+      id: person.id,
+      name: person.name,
+      receiveId: person.receiveId,
+      receiveIdType: person.receiveIdType,
+      botId: person.botId ?? ''
+    }
+  } else {
+    feishuPersonDraft.value = {
+      mode: 'add', name: '', receiveId: '', receiveIdType: 'open_id', botId: ''
+    }
+  }
+  feishuPersonModalVisible.value = true
+}
+
+function closeFeishuPersonModal(): void {
+  feishuPersonModalVisible.value = false
+}
+
+function onSaveFeishuPerson(): void {
+  const d = feishuPersonDraft.value
+  if (!d.name.trim() || !d.receiveId.trim() || !d.botId.trim()) return
+  if (d.mode === 'add') {
+    addFeishuPerson(d.name, d.receiveId, d.receiveIdType, d.botId)
+  } else if (d.id) {
+    updateFeishuPerson(d.id, {
+      name: d.name,
+      receiveId: d.receiveId,
+      receiveIdType: d.receiveIdType,
+      botId: d.botId
+    })
+  }
+  feishuPersonModalVisible.value = false
+}
+
+async function onDeleteFeishuPerson(person: FeishuPerson): Promise<void> {
+  const ok = await window.showConfirm(
+    '删除联系人',
+    `确定要删除联系人"${person.name}"吗？删除后，引用该联系人的通知节点将无法发送飞书消息（节点里的 personId 配置保留，但联系人不再存在）。`
+  )
+  if (!ok) return
+  removeFeishuPerson(person.id)
 }
 
 // —— OSS Bucket ——
@@ -1473,6 +1546,55 @@ async function onDeleteCanvas(id: string, name: string): Promise<void> {
                   </div>
                 </div>
               </section>
+
+              <!-- ========== 飞书联系人 ========== -->
+              <section class="gs-section">
+                <h4 class="gs-section__title">飞书联系人</h4>
+                <p class="gs-section__hint">
+                  配置常用的接收方（真人或群），通知节点只需下拉选，不用每次手动输 ID。
+                  每个联系人必须绑定机器人——open_id / union_id / user_id 是应用隔离的，哪个机器人发消息就必须绑定哪个。
+                </p>
+
+                <div class="gs-transfer__actions" style="margin-bottom: 12px;">
+                  <button
+                    class="gs-btn gs-btn--primary"
+                    type="button"
+                    @click="showFeishuPersonModal('add')"
+                  >+ 新增联系人</button>
+                </div>
+
+                <div v-if="feishuPersons.length === 0" class="gs-canvases__empty">
+                  暂无联系人，点击上方"新增联系人"按钮添加。
+                </div>
+
+                <div v-else class="gs-feishu__list">
+                  <div
+                    v-for="person in feishuPersons"
+                    :key="person.id"
+                    class="gs-feishu-card"
+                  >
+                    <div class="gs-feishu-card__info">
+                      <span class="gs-feishu-card__name">{{ person.name }}</span>
+                      <span class="gs-feishu-card__appid">
+                        {{ person.receiveIdType }}: {{ person.receiveId }}
+                        · 机器人: {{ feishuBots.find(b => b.id === person.botId)?.name ?? '已删除' }}
+                      </span>
+                    </div>
+                    <div class="gs-feishu-card__actions">
+                      <button
+                        class="gs-canvas-card__btn"
+                        type="button"
+                        @click="showFeishuPersonModal('edit', person)"
+                      >编辑</button>
+                      <button
+                        class="gs-canvas-card__btn gs-canvas-card__btn--danger"
+                        type="button"
+                        @click="onDeleteFeishuPerson(person)"
+                      >删除</button>
+                    </div>
+                  </div>
+                </div>
+              </section>
             </template>
 
             <!-- ========== OSS Bucket ========== -->
@@ -1823,6 +1945,65 @@ async function onDeleteCanvas(id: string, name: string): Promise<void> {
                     type="button"
                     :disabled="!feishuBotDraft.name.trim() || !feishuBotDraft.appId.trim() || !feishuBotDraft.appSecret.trim()"
                     @click="onSaveFeishuBot"
+                  >保存</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- ========== 飞书联系人 Modal ========== -->
+            <div v-if="feishuPersonModalVisible" class="gs-mask" @click.self="closeFeishuPersonModal">
+              <div class="gs-modal" @click.stop>
+                <div class="gs-modal__header">
+                  <span class="gs-modal__title">{{ feishuPersonDraft.mode === 'edit' ? '编辑飞书联系人' : '新增飞书联系人' }}</span>
+                  <button class="gs-modal__close" type="button" @click="closeFeishuPersonModal">×</button>
+                </div>
+                <div class="gs-modal__body">
+                  <label class="gs-field">
+                    <span class="gs-field__label">名称</span>
+                    <input
+                      class="gs-field__input"
+                      type="text"
+                      v-model="feishuPersonDraft.name"
+                      placeholder="如：老王、张三、运营群"
+                      maxlength="32"
+                    />
+                  </label>
+                  <label class="gs-field">
+                    <span class="gs-field__label">接收方 ID 类型</span>
+                    <select class="gs-field__input" v-model="feishuPersonDraft.receiveIdType">
+                      <option v-for="t in RECEIVE_ID_TYPE_OPTIONS" :key="t.value" :value="t.value">{{ t.label }}</option>
+                    </select>
+                  </label>
+                  <label class="gs-field">
+                    <span class="gs-field__label">接收方 ID</span>
+                    <input
+                      class="gs-field__input"
+                      type="text"
+                      v-model="feishuPersonDraft.receiveId"
+                      :placeholder="feishuPersonDraft.receiveIdType === 'chat_id' ? 'oc_xxxxxxxxxxxxxxxxx' : feishuPersonDraft.receiveIdType === 'open_id' ? 'ou_xxxxxxxxxxxxxxxxx' : '输入接收方 ID'"
+                    />
+                    <div class="gs-field__hint">
+                      重要：<strong>open_id / union_id / user_id 是应用隔离的</strong>——用哪个机器人发消息，这个 ID 必须是从那个机器人的 API 拿到的，不能混用。邮箱 / 群 chat_id 不受此限制。
+                    </div>
+                  </label>
+                  <label class="gs-field">
+                    <span class="gs-field__label">绑定机器人</span>
+                    <select class="gs-field__input" v-model="feishuPersonDraft.botId">
+                      <option value="" disabled>-- 请先在设置里添加机器人 --</option>
+                      <option v-for="b in feishuBots" :key="b.id" :value="b.id">{{ b.name }}（{{ b.appId }}）</option>
+                    </select>
+                    <div class="gs-field__hint">
+                      必选。open_id / union_id / user_id 是应用隔离的，哪个机器人发消息就必须绑定哪个。邮箱 / 群 chat_id 虽不隔离，也强制绑定以统一管理。
+                    </div>
+                  </label>
+                </div>
+                <div class="gs-modal__footer">
+                  <button class="gs-btn" type="button" @click="closeFeishuPersonModal">取消</button>
+                  <button
+                    class="gs-btn gs-btn--primary"
+                    type="button"
+                    :disabled="!feishuPersonDraft.name.trim() || !feishuPersonDraft.receiveId.trim() || !feishuPersonDraft.botId.trim()"
+                    @click="onSaveFeishuPerson"
                   >保存</button>
                 </div>
               </div>

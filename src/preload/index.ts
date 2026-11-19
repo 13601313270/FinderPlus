@@ -882,6 +882,37 @@ const feishuApi = {
     }
   },
 
+  /**
+   * 按 personId 从 localStorage 反查飞书联系人（与 SettingsDialog 里的全局飞书联系人列表同源）。
+   * 返回 receiveId + receiveIdType + 绑定的 botId（联系人现在必绑机器人）。
+   */
+  resolvePerson: (personId: string | undefined | null): {
+    receiveId: string
+    receiveIdType: 'chat_id' | 'open_id' | 'user_id' | 'union_id' | 'email'
+    botId: string
+  } | null => {
+    if (!personId) return null
+    try {
+      const raw = localStorage.getItem('canvasdesk.feishu.persons')
+      if (!raw) return null
+      const list = JSON.parse(raw) as any[]
+      const person = list.find((p) => p && typeof p.id === 'string' && p.id === personId)
+      if (!person) return null
+      const receiveId = typeof person.receiveId === 'string' ? person.receiveId.trim() : ''
+      const receiveIdType = person.receiveIdType
+      const botId = typeof person.botId === 'string' ? person.botId.trim() : ''
+      const VALID_TYPES = ['chat_id', 'open_id', 'user_id', 'union_id', 'email'] as const
+      if (!receiveId || !botId || !VALID_TYPES.includes(receiveIdType)) return null
+      return {
+        receiveId,
+        receiveIdType: receiveIdType as typeof VALID_TYPES[number],
+        botId
+      }
+    } catch {
+      return null
+    }
+  },
+
   /** 启动 WS 长连接。同一时刻只允许一组 App 凭证在连；换凭证时会先关旧的 */
   start: (args: { appId: string; appSecret: string }): Promise<{ ok: true } | { ok: false; error: string }> =>
     ipcRenderer.invoke('feishu:start', args),

@@ -40,10 +40,15 @@ export default defineConfig({
     },
     build: {
       rollupOptions: {
+        // renderer 是纯浏览器环境，但 LLMNode/node.ts 通过动态 import 链到
+        // src/main/localModels/*（有 Node-only 顶层 import）。
+        // 只 external localModels 目录（main 专用的原生 LLM 引擎），
+        // nodePlugin、engine 等共享代码仍正常 bundle 进 renderer。
         external: (id: string) =>
           id === 'electron' ||
           id.startsWith('electron/') ||
-          id.includes('node-llama-cpp')
+          id.includes('node-llama-cpp') ||
+          (typeof id === 'string' && id.includes(`${resolve(__dirname, 'src/main/localModels')}`))
       }
     },
     plugins: [

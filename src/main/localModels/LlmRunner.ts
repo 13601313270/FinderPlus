@@ -61,14 +61,14 @@ async function getChatSessionClass(): Promise<any> {
 
 // —— 模型存储目录 ——
 
-/** 模型存储目录：~/Library/Application Support/Finder+/models（Mac） */
+/** 模型存储目录：~/Library/Application Support/Finder+/models/llm（Mac）。留 models/ 给将来其他模型类型 */
 let modelsDir: string | null = null
 
 /** 获取模型目录（首次调用时创建）。导出给 ModelDownloader 用 */
 export function getModelsDir(): string {
   if (modelsDir) return modelsDir
   const { app } = requireElectron('electron') as typeof import('electron')
-  modelsDir = join(app.getPath('userData'), 'models')
+  modelsDir = join(app.getPath('userData'), 'models', 'llm')
   if (!existsSync(modelsDir)) {
     mkdirSync(modelsDir, { recursive: true })
   }

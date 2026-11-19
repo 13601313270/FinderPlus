@@ -98,18 +98,20 @@ const {
 } = useOssBuckets()
 
 /** 左侧选中的分类 */
-type SectionKey = 'general' | 'appearance' | 'ai' | 'localLLM' | 'localImage' | 'nodes' | 'browser' | 'feishu' | 'oss' | 'canvases'
+type SectionKey = 'general' | 'appearance' | 'ai' | 'localAI' | 'nodes' | 'browser' | 'feishu' | 'oss' | 'canvases'
 const activeSection = ref<SectionKey>('general')
 
-const SECTION_ORDER: SectionKey[] = ['general', 'appearance', 'ai', 'localLLM', 'localImage', 'nodes', 'browser', 'feishu', 'oss', 'canvases']
+/** 本地AI模型内部 tab：'llm' = 大语言模型，'image' = 文生图 */
+const localAITab = ref<'llm' | 'image'>('llm')
+
+const SECTION_ORDER: SectionKey[] = ['general', 'appearance', 'ai', 'localAI', 'nodes', 'browser', 'feishu', 'oss', 'canvases']
 
 function sectionLabel(key: SectionKey): string {
   switch (key) {
     case 'general':    return t('settingsDialog.groupGeneral')
     case 'appearance': return t('settingsDialog.groupAppearance')
     case 'ai':         return t('settingsDialog.groupCloudAI')
-    case 'localLLM':   return t('settingsDialog.groupLocalLLM')
-    case 'localImage': return '本地文生图'
+    case 'localAI':    return '本地AI模型'
     case 'nodes':      return t('settingsDialog.groupNodes')
     case 'browser':    return t('settingsDialog.groupBrowser')
     case 'feishu':     return '飞书机器人'
@@ -120,9 +122,15 @@ function sectionLabel(key: SectionKey): string {
 watch(visible, (v) => {
   if (v) {
     loadAIDraft()
-    // 调用方可以在 openSettings('nodes') 时指定聚焦 section；否则兜底第一个
-    const requested = targetSection.value as SectionKey | null
-    activeSection.value = requested && SECTION_ORDER.includes(requested) ? requested : 'general'
+    // 兼容旧的 targetSection：localLLM / localImage → 统一路由到 localAI 并设子 tab
+    const rawRequested = targetSection.value as string | null
+    if (rawRequested === 'localLLM' || rawRequested === 'localImage') {
+      localAITab.value = rawRequested === 'localImage' ? 'image' : 'llm'
+      activeSection.value = 'localAI'
+    } else {
+      const requested = rawRequested as SectionKey | null
+      activeSection.value = requested && SECTION_ORDER.includes(requested) ? requested : 'general'
+    }
   } else {
     // 关闭时重置密钥明文显示状态，避免下次打开意外泄露
     aiKeyVisible.value = {}
@@ -777,9 +785,12 @@ async function onDeleteImageModel(modelName: string): Promise<void> {
   await refreshLocalImageModels()
 }
 
-// 切到 localImage tab 时刷新
-watch(activeSection, (key) => {
-  if (key === 'localImage') void refreshLocalImageModels()
+// 切到本地AI模型 tab 或在 tab 内切换子 tab 时刷新对应列表
+watch([activeSection, localAITab], ([sec, tab]) => {
+  if (sec === 'localAI') {
+    if (tab === 'image') void refreshLocalImageModels()
+    if (tab === 'llm') void refreshLocalModels()
+  }
 })
 
 let progressUnsubs: Array<() => void> = []
@@ -930,10 +941,9 @@ async function onDeleteLocalModel(modelName: string): Promise<void> {
   await refreshLocalModels()
 }
 
-// 切到 localLLM tab 时刷新
+// 切走本地AI模型 section 时停止下载进度监听
 watch(activeSection, (key) => {
-  if (key === 'localLLM') void refreshLocalModels()
-  else stopProgressListener()
+  if (key !== 'localAI') stopProgressListener()
 })
 
 // —— 我的画布 tab ——
@@ -1472,171 +1482,192 @@ async function onDeleteCanvas(id: string, name: string): Promise<void> {
               </section>
             </template>
 
-            <!-- ========== 本地 AI 模型 ========== -->
-            <template v-if="activeSection === 'localLLM'">
+            <!-- ========== 本地 AI 模型（LLM + 文生图 合并） ========== -->
+            <template v-if="activeSection === 'localAI'">
+              <!-- 子 tab 切换 -->
               <section class="gs-section">
-                <h4 class="gs-section__title">{{ t('settingsDialog.groupLocalLLM') }}</h4>
-                <p class="gs-section__hint">下载小体积本地大语言模型（1~3B），直接在你的 Mac 上运行推理，无需网络。首次下载后完全离线可用。</p>
-                <p class="gs-section__hint gs-section__hint--warn">下载的模型保存在本地数据目录，不会随应用打包。用完点"停止"可释放内存，磁盘空间可单独删除。</p>
+                <div class="gs-localai__tabs">
+                  <button
+                    class="gs-localai__tab"
+                    :class="{ 'gs-localai__tab--active': localAITab === 'llm' }"
+                    type="button"
+                    @click="localAITab = 'llm'"
+                  >💬 大语言模型</button>
+                  <button
+                    class="gs-localai__tab"
+                    :class="{ 'gs-localai__tab--active': localAITab === 'image' }"
+                    type="button"
+                    @click="localAITab = 'image'"
+                  >🖼 文生图模型</button>
+                </div>
               </section>
 
-              <section class="gs-section">
-                <h4 class="gs-section__title">模型库</h4>
+              <!-- ===== LLM ===== -->
+              <template v-if="localAITab === 'llm'">
+                <section class="gs-section">
+                  <h4 class="gs-section__title">大语言模型</h4>
+                  <p class="gs-section__hint">下载小体积本地大语言模型（1~3B），直接在你的 Mac 上运行推理，无需网络。首次下载后完全离线可用。</p>
+                  <p class="gs-section__hint gs-section__hint--warn">下载的模型保存在本地数据目录，不会随应用打包。用完点"停止"可释放内存，磁盘空间可单独删除。</p>
+                </section>
 
-                <div v-if="localModelsLoading" class="gs-canvases__loading">加载中...</div>
+                <section class="gs-section">
+                  <h4 class="gs-section__title">模型库</h4>
 
-                <div v-else-if="mergedModels.length === 0" class="gs-canvases__empty">
-                  暂无本地模型。
-                </div>
+                  <div v-if="localModelsLoading" class="gs-canvases__loading">加载中...</div>
 
-                <div v-else class="gs-feishu__list">
-                  <div
-                    v-for="m in mergedModels"
-                    :key="m.uniqueKey"
-                    class="gs-feishu-card"
-                  >
-                    <div class="gs-feishu-card__info">
-                      <span class="gs-feishu-card__name">
-                        {{ m.label }}
-                        <span v-if="m.loaded" class="gs-local__loaded-badge">🟢 运行中</span>
-                      </span>
-                      <span class="gs-feishu-card__appid">{{ m.subtitle }}</span>
-                    </div>
-                    <div class="gs-feishu-card__actions">
-                      <!-- 下载中：进度条 + 取消 -->
-                      <template v-if="m.isDownloading">
-                        <div class="gs-local__progress">
-                          <div class="gs-local__progress-bar" :style="{ width: `${downloadProgress}%` }" />
-                          <span class="gs-local__progress-text">{{ downloadProgress.toFixed(0) }}% · {{ downloadProgressText }}</span>
-                        </div>
-                        <button
-                          class="gs-canvas-card__btn gs-canvas-card__btn--danger"
-                          type="button"
-                          @click="onCancelDownload(m.recommendedId!)"
-                        >取消</button>
-                      </template>
+                  <div v-else-if="mergedModels.length === 0" class="gs-canvases__empty">
+                    暂无本地模型。
+                  </div>
 
-                      <!-- 已下载：启动/停止 + 删除 -->
-                      <template v-else-if="m.isInstalled">
-                        <button
-                          v-if="!m.loaded"
-                          class="gs-canvas-card__btn gs-canvas-card__btn--primary"
-                          type="button"
-                          :disabled="localBusy"
-                          @click="onLoadLocalModel(m.installedName!)"
-                        >启动</button>
-                        <button
-                          v-else
-                          class="gs-canvas-card__btn"
-                          type="button"
-                          :disabled="localBusy"
-                          @click="onUnloadLocalModel(m.installedName!)"
-                        >停止</button>
-                        <button
-                          class="gs-canvas-card__btn gs-canvas-card__btn--danger"
-                          type="button"
-                          :disabled="m.loaded"
-                          @click="onDeleteLocalModel(m.installedName!)"
-                        >删除</button>
-                      </template>
+                  <div v-else class="gs-feishu__list">
+                    <div
+                      v-for="m in mergedModels"
+                      :key="m.uniqueKey"
+                      class="gs-feishu-card"
+                    >
+                      <div class="gs-feishu-card__info">
+                        <span class="gs-feishu-card__name">
+                          {{ m.label }}
+                          <span v-if="m.loaded" class="gs-local__loaded-badge">🟢 运行中</span>
+                        </span>
+                        <span class="gs-feishu-card__appid">{{ m.subtitle }}</span>
+                      </div>
+                      <div class="gs-feishu-card__actions">
+                        <!-- 下载中：进度条 + 取消 -->
+                        <template v-if="m.isDownloading">
+                          <div class="gs-local__progress">
+                            <div class="gs-local__progress-bar" :style="{ width: `${downloadProgress}%` }" />
+                            <span class="gs-local__progress-text">{{ downloadProgress.toFixed(0) }}% · {{ downloadProgressText }}</span>
+                          </div>
+                          <button
+                            class="gs-canvas-card__btn gs-canvas-card__btn--danger"
+                            type="button"
+                            @click="onCancelDownload(m.recommendedId!)"
+                          >取消</button>
+                        </template>
 
-                      <!-- 未下载：下载按钮 -->
-                      <template v-else>
-                        <button
-                          class="gs-canvas-card__btn gs-canvas-card__btn--primary"
-                          type="button"
-                          @click="openSourceSelector(m.recommendedId!)"
-                        >下载</button>
-                      </template>
+                        <!-- 已下载：启动/停止 + 删除 -->
+                        <template v-else-if="m.isInstalled">
+                          <button
+                            v-if="!m.loaded"
+                            class="gs-canvas-card__btn gs-canvas-card__btn--primary"
+                            type="button"
+                            :disabled="localBusy"
+                            @click="onLoadLocalModel(m.installedName!)"
+                          >启动</button>
+                          <button
+                            v-else
+                            class="gs-canvas-card__btn"
+                            type="button"
+                            :disabled="localBusy"
+                            @click="onUnloadLocalModel(m.installedName!)"
+                          >停止</button>
+                          <button
+                            class="gs-canvas-card__btn gs-canvas-card__btn--danger"
+                            type="button"
+                            :disabled="m.loaded"
+                            @click="onDeleteLocalModel(m.installedName!)"
+                          >删除</button>
+                        </template>
+
+                        <!-- 未下载：下载按钮 -->
+                        <template v-else>
+                          <button
+                            class="gs-canvas-card__btn gs-canvas-card__btn--primary"
+                            type="button"
+                            @click="openSourceSelector(m.recommendedId!)"
+                          >下载</button>
+                        </template>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </section>
-            </template>
+                </section>
+              </template>
 
-            <!-- ========== 本地文生图 ========== -->
-            <template v-if="activeSection === 'localImage'">
-              <section class="gs-section">
-                <h4 class="gs-section__title">本地文生图模型</h4>
-                <p class="gs-section__hint">下载小体积本地文生图模型（GGUF 量化格式），通过 Apple Silicon Metal 加速，直接在你的 Mac 上生成图片，无需网络。</p>
-                <p class="gs-section__hint gs-section__hint--warn">推荐体积 1.8~2.5GB，运行时会占用 3~4GB 内存。首次下载后完全离线可用。用完点"停止"可释放内存。</p>
-              </section>
+              <!-- ===== 文生图 ===== -->
+              <template v-if="localAITab === 'image'">
+                <section class="gs-section">
+                  <h4 class="gs-section__title">文生图模型</h4>
+                  <p class="gs-section__hint">下载小体积本地文生图模型（GGUF 量化格式），通过 Apple Silicon Metal 加速，直接在你的 Mac 上生成图片，无需网络。</p>
+                  <p class="gs-section__hint gs-section__hint--warn">推荐体积 1.8~2.5GB，运行时会占用 3~4GB 内存。首次下载后完全离线可用。用完点"停止"可释放内存。</p>
+                </section>
 
-              <section class="gs-section">
-                <h4 class="gs-section__title">模型库</h4>
+                <section class="gs-section">
+                  <h4 class="gs-section__title">模型库</h4>
 
-                <div v-if="imageModelsLoading" class="gs-canvases__loading">加载中...</div>
+                  <div v-if="imageModelsLoading" class="gs-canvases__loading">加载中...</div>
 
-                <div v-else-if="mergedImageModels.length === 0" class="gs-canvases__empty">
-                  暂无图片模型。点击下方"下载"按钮开始。
-                </div>
+                  <div v-else-if="mergedImageModels.length === 0" class="gs-canvases__empty">
+                    暂无图片模型。点击下方"下载"按钮开始。
+                  </div>
 
-                <div v-else class="gs-feishu__list">
-                  <div
-                    v-for="m in mergedImageModels"
-                    :key="m.uniqueKey"
-                    class="gs-feishu-card"
-                  >
-                    <div class="gs-feishu-card__info">
-                      <span class="gs-feishu-card__name">
-                        {{ m.label }}
-                        <span v-if="m.loaded" class="gs-local__loaded-badge">🟢 运行中</span>
-                      </span>
-                      <span class="gs-feishu-card__appid">
-                        {{ m.subtitle }}
-                        <span v-if="m.description" class="gs-local__desc">· {{ m.description }}</span>
-                      </span>
-                    </div>
-                    <div class="gs-feishu-card__actions">
-                      <!-- 下载中：进度条 + 取消 -->
-                      <template v-if="m.isDownloading">
-                        <div class="gs-local__progress">
-                          <div class="gs-local__progress-bar" :style="{ width: `${downloadProgress}%` }" />
-                          <span class="gs-local__progress-text">{{ downloadProgress.toFixed(0) }}% · {{ downloadProgressText }}</span>
-                        </div>
-                        <button
-                          class="gs-canvas-card__btn gs-canvas-card__btn--danger"
-                          type="button"
-                          @click="onCancelImageDownload(m.recommendedId!)"
-                        >取消</button>
-                      </template>
+                  <div v-else class="gs-feishu__list">
+                    <div
+                      v-for="m in mergedImageModels"
+                      :key="m.uniqueKey"
+                      class="gs-feishu-card"
+                    >
+                      <div class="gs-feishu-card__info">
+                        <span class="gs-feishu-card__name">
+                          {{ m.label }}
+                          <span v-if="m.loaded" class="gs-local__loaded-badge">🟢 运行中</span>
+                        </span>
+                        <span class="gs-feishu-card__appid">
+                          {{ m.subtitle }}
+                          <span v-if="m.description" class="gs-local__desc">· {{ m.description }}</span>
+                        </span>
+                      </div>
+                      <div class="gs-feishu-card__actions">
+                        <!-- 下载中：进度条 + 取消 -->
+                        <template v-if="m.isDownloading">
+                          <div class="gs-local__progress">
+                            <div class="gs-local__progress-bar" :style="{ width: `${downloadProgress}%` }" />
+                            <span class="gs-local__progress-text">{{ downloadProgress.toFixed(0) }}% · {{ downloadProgressText }}</span>
+                          </div>
+                          <button
+                            class="gs-canvas-card__btn gs-canvas-card__btn--danger"
+                            type="button"
+                            @click="onCancelImageDownload(m.recommendedId!)"
+                          >取消</button>
+                        </template>
 
-                      <!-- 已下载：启动/停止 + 删除 -->
-                      <template v-else-if="m.isInstalled">
-                        <button
-                          v-if="!m.loaded"
-                          class="gs-canvas-card__btn gs-canvas-card__btn--primary"
-                          type="button"
-                          :disabled="localImageBusy"
-                          @click="onLoadImageModel(m.installedName!)"
-                        >启动</button>
-                        <button
-                          v-else
-                          class="gs-canvas-card__btn"
-                          type="button"
-                          :disabled="localImageBusy"
-                          @click="onUnloadImageModel(m.installedName!)"
-                        >停止</button>
-                        <button
-                          class="gs-canvas-card__btn gs-canvas-card__btn--danger"
-                          type="button"
-                          :disabled="m.loaded"
-                          @click="onDeleteImageModel(m.installedName!)"
-                        >删除</button>
-                      </template>
+                        <!-- 已下载：启动/停止 + 删除 -->
+                        <template v-else-if="m.isInstalled">
+                          <button
+                            v-if="!m.loaded"
+                            class="gs-canvas-card__btn gs-canvas-card__btn--primary"
+                            type="button"
+                            :disabled="localImageBusy"
+                            @click="onLoadImageModel(m.installedName!)"
+                          >启动</button>
+                          <button
+                            v-else
+                            class="gs-canvas-card__btn"
+                            type="button"
+                            :disabled="localImageBusy"
+                            @click="onUnloadImageModel(m.installedName!)"
+                          >停止</button>
+                          <button
+                            class="gs-canvas-card__btn gs-canvas-card__btn--danger"
+                            type="button"
+                            :disabled="m.loaded"
+                            @click="onDeleteImageModel(m.installedName!)"
+                          >删除</button>
+                        </template>
 
-                      <!-- 未下载：下载按钮 -->
-                      <template v-else>
-                        <button
-                          class="gs-canvas-card__btn gs-canvas-card__btn--primary"
-                          type="button"
-                          @click="openSourceSelector(m.recommendedId!, 'image')"
-                        >下载</button>
-                      </template>
+                        <!-- 未下载：下载按钮 -->
+                        <template v-else>
+                          <button
+                            class="gs-canvas-card__btn gs-canvas-card__btn--primary"
+                            type="button"
+                            @click="openSourceSelector(m.recommendedId!, 'image')"
+                          >下载</button>
+                        </template>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </section>
+                </section>
+              </template>
             </template>
 
             <!-- ========== 我的画布 ========== -->
@@ -1897,6 +1928,35 @@ async function onDeleteCanvas(id: string, name: string): Promise<void> {
 </template>
 
 <style scoped lang="less">
+/* 本地AI模型 — 子 tab 切换（LLM / 文生图） */
+.gs-localai__tabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: #f4f5f8;
+  border-radius: 8px;
+  width: fit-content;
+}
+.gs-localai__tab {
+  padding: 6px 16px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #555;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  &:hover {
+    background: #e8eaef;
+  }
+}
+.gs-localai__tab--active {
+  background: #fff;
+  color: #2c6ff7;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
 .gs-mask {
   position: fixed;
   inset: 0;

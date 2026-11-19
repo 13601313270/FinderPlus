@@ -5,6 +5,28 @@ import { tmpdir } from 'node:os'
 import { join, extname } from 'node:path'
 import { randomBytes } from 'node:crypto'
 
+/** 飞书卡片按钮点击事件 payload——主进程推给 renderer 的轻量结构 */
+export interface FeishuCardActionPayload {
+  /** 卡片所在的消息 ID（open_message_id） */
+  openMessageId: string
+  /** 所在会话 chat_id */
+  chatId: string
+  /** 你塞在按钮 value 里的业务字段（原样返回） */
+  value: Record<string, unknown>
+  /** 操作人 open_id */
+  operatorOpenId?: string
+  /** 操作人 user_id */
+  operatorUserId?: string
+  /** 操作人 union_id */
+  operatorUnionId?: string
+  /** 操作人 email */
+  operatorEmail?: string
+  /** 飞书回调 event_id（去重用） */
+  eventId?: string
+  /** 到达时间戳 */
+  handledAt: number
+}
+
 /** 飞书消息事件 payload——主进程推给 renderer 的轻量结构 */
 export interface FeishuMessagePayload {
   messageId: string
@@ -212,6 +234,12 @@ function broadcastMessage(msg: FeishuMessagePayload): void {
   }
 }
 
+function broadcastCardAction(action: FeishuCardActionPayload): void {
+  for (const win of BrowserWindow.getAllWindows()) {
+    win.webContents.send('feishu:cardAction', action)
+  }
+}
+
 function setError(err: string): void {
   if (active) {
     active.state = 'error'
@@ -338,6 +366,41 @@ export async function startFeishu(appId: string, appSecret: string): Promise<{ o
           broadcastMessage(payload)
         } catch (err) {
           console.error('[FeishuManager] 消息处理异常:', err)
+        }
+      },
+
+      // —— 卡片按钮点击回调（Card JSON 2.0 的 behaviors callback / 1.0 的 value）——
+      'card.action.trigger': (data: any) => {
+        try {
+          console.log('[FeishuManager] card.action.trigger 原始事件:', JSON.stringify(data)?.slice(0, 800))
+
+          // WS 推送的 card.action.trigger 是平铺结构（没有 header/event 包裹层）：
+          // data.event_id                                ← 去重用
+          // data.context.{open_message_id, open_chat_id} ← 卡片所在消息和会话
+          // data.operator.{open_id, user_id, union_id}   ← 操作人
+          // data.action.value                             ← 按钮自定义回传数据
+          const actionId = data?.event_id as string | undefined
+          if (actionId && seenMessages.has('card:' + actionId)) return
+          if (actionId) markSeen('card:' + actionId)
+
+          const ctx = data?.context ?? {}
+          const operator = data?.operator ?? {}
+          const value: Record<string, unknown> = data?.action?.value ?? {}
+
+          const payload: FeishuCardActionPayload = {
+            openMessageId: ctx.open_message_id ?? '',
+            chatId: ctx.open_chat_id ?? '',
+            value,
+            operatorOpenId: typeof operator.open_id === 'string' && operator.open_id ? operator.open_id : undefined,
+            operatorUserId: typeof operator.user_id === 'string' && operator.user_id ? operator.user_id : undefined,
+            operatorUnionId: typeof operator.union_id === 'string' && operator.union_id ? operator.union_id : undefined,
+            handledAt: Date.now()
+          }
+
+          console.log('[FeishuManager] 卡片按钮被点击:', JSON.stringify(payload).slice(0, 300))
+          broadcastCardAction(payload)
+        } catch (err) {
+          console.error('[FeishuManager] card.action.trigger 处理异常:', err)
         }
       }
     })

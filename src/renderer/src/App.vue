@@ -138,6 +138,22 @@ async function stopLocalModel(name: string, kind: 'llm' | 'image'): Promise<void
 onMounted(() => {
   refreshLocalModelStatus()
   localModelRefreshTimer = setInterval(refreshLocalModelStatus, 3000)
+
+  // —— 全局监听飞书卡片按钮点击 → 根据 nodeId 路由到对应 HumanReviewNode ——
+  // @ts-ignore
+  window.feishuApi?.onCardAction?.((payload) => {
+    const nodeId = payload.value.nodeId
+    if (!nodeId || typeof nodeId !== 'string') return
+    const node = workspaceScene.getNode(nodeId)
+    if (!node || node.type !== 'human-review') return
+    const action = payload.value.action
+    // 动态 import 避免顶层循环依赖
+    import('../../main/nodePlugin/HumanReviewNode/node').then(({ HumanReviewNode }) => {
+      if (!(node instanceof HumanReviewNode)) return
+      if (action === 'approve') node.approve()
+      else if (action === 'reject') node.reject('')
+    })
+  })
 })
 
 onUnmounted(() => {

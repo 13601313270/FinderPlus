@@ -2888,7 +2888,7 @@ ipcMain.handle('feishu:sendCard', async (_e, args: {
   return sendFeishuCardPipeline(args)
 })
 
-// —— 飞书发送消息（给 FeishuSendNode 用）——
+// —— 飞书发送消息（给 FeishuSendNode / HumanReviewNode 用）——
 ipcMain.handle('feishu:send', async (_e, args: {
   appId: string
   appSecret: string
@@ -2898,6 +2898,7 @@ ipcMain.handle('feishu:send', async (_e, args: {
   text?: string
   imageKey?: string
   fileKey?: string
+  cardJson?: string
 }) => {
   return sendFeishuMessage(args)
 })

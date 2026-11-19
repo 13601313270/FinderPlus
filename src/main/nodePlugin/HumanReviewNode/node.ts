@@ -449,8 +449,11 @@ export class HumanReviewNode extends Node {
   /**
    * 飞书异步推送（HumanReviewNode 三个触发点复用）。
    *
-   * value 是 ImgFileValue 且 file 存在 → 先 uploadImage 拿 image_key → send 图片消息
-   * 其他类型 / null file → send 文本消息（textLabel）
+   * 一律发审核卡片（interactive）——包含 value 展示区 + 同意/拒绝按钮。
+   * 按钮 value 带 { action, nodeId }，回调里据此路由回对应节点。
+   *
+   * ImgFileValue：先 uploadImage 拿 image_key → 卡片 markdown 里用 <img image_key="xxx"> 嵌入
+   * 其他类型：displayLabel 直接进卡片 markdown
    *
    * 发送失败弹桌面通知（飞书错误码 + msg），方便用户定位配置问题。
    */
@@ -480,9 +483,17 @@ export class HumanReviewNode extends Node {
       return
     }
 
-    // —— 图片值：upload + send image ——
-    if (value instanceof ImgFileValue && !value.isNull && value.file) {
-      try {
+    try {
+      // —— 确保 WS 长连接已建立（收 card.action.trigger 按钮回调需要）——
+      // startFeishu 主进程是单例：同一凭证已连则跳过，不同凭证则关旧起新
+      // @ts-ignore
+      await window.feishuApi.start({ appId: creds.appId, appSecret: creds.appSecret }).catch(() => {
+        // WS 连接失败不阻塞发卡——REST 发消息不依赖 WS，只是收不到按钮回调
+      })
+
+      // —— 先处理图片：upload 拿 image_key，markdown 里嵌 <img> ——
+      let markdownBody = textLabel
+      if (value instanceof ImgFileValue && !value.isNull && value.file) {
         const buffer = await value.file.arrayBuffer()
         // @ts-ignore
         const uploadRes = await window.feishuApi?.uploadImage({
@@ -492,44 +503,75 @@ export class HumanReviewNode extends Node {
           buffer
         })
         if (!uploadRes?.ok) {
-          const errMsg = uploadRes?.error || '图片上传失败'
-          w.notificationApi?.show('飞书推送失败', errMsg)
+          w.notificationApi?.show('飞书推送失败', uploadRes?.error || '图片上传失败')
           return
         }
-        // @ts-ignore
-        const sendRes = await window.feishuApi?.send({
-          appId: creds.appId,
-          appSecret: creds.appSecret,
-          receiveId: person.receiveId,
-          receiveIdType: person.receiveIdType,
-          msgType: 'image',
-          imageKey: uploadRes.imageKey
-        })
-        if (sendRes && !sendRes.ok) {
-          const errMsg = sendRes.error || '未知错误'
-          w.notificationApi?.show('飞书推送失败', errMsg)
-        }
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err)
-        w.notificationApi?.show('飞书推送失败', msg)
+        markdownBody = `${textLabel}\n\n<img image_key="${uploadRes.imageKey}" width="320" height="240"/>`
+      } else if (value instanceof StringValue && !value.isNull) {
+        // 字符串值：内容本身放 markdown（截断到 1000 字符，避免卡片过长）
+        const raw = (value as unknown as { value?: string }).value ?? ''
+        const snippet = raw.length > 1000 ? raw.slice(0, 1000) + '…(已截断)' : raw
+        markdownBody = `${textLabel}\n\n\`\`\`\n${snippet}\n\`\`\``
+      } else if (value instanceof JsonValue && !value.isNull) {
+        // JSON 值：格式化后放 markdown 代码块
+        const raw = (value as unknown as { value?: unknown }).value
+        const pretty = JSON.stringify(raw, null, 2)
+        const snippet = pretty.length > 1500 ? pretty.slice(0, 1500) + '\n…(已截断)' : pretty
+        markdownBody = `${textLabel}\n\n\`\`\`json\n${snippet}\n\`\`\``
+      } else if (!value.isNull && typeof value.displayLabel === 'string') {
+        markdownBody = `${textLabel}\n\n**内容**: \`${value.displayLabel}\``
       }
-      return
-    }
 
-    // —— 其他类型：send text ——
-    // @ts-ignore
-    const result = await window.feishuApi?.send({
-      appId: creds.appId,
-      appSecret: creds.appSecret,
-      receiveId: person.receiveId,
-      receiveIdType: person.receiveIdType,
-      msgType: 'text',
-      text: textLabel
-    })
+      // —— 拼飞书卡片 JSON（Card JSON 2.0）——
+      const card = {
+        schema: '2.0',
+        config: { wide_screen_mode: true, enable_forward: false },
+        header: {
+          title: { tag: 'plain_text', content: textLabel.length > 30 ? textLabel.slice(0, 30) + '…' : textLabel },
+          template: 'orange'
+        },
+        body: {
+          elements: [
+            { tag: 'markdown', content: markdownBody },
+            { tag: 'hr' },
+            // schema 2.0：按钮直接放 body.elements 里，不需要 action tag 包裹
+            {
+              tag: 'button',
+              text: { tag: 'plain_text', content: '同意' },
+              type: 'primary',
+              behaviors: [{
+                type: 'callback',
+                value: { action: 'approve', nodeId: this.id, mode: this.mode }
+              }]
+            },
+            {
+              tag: 'button',
+              text: { tag: 'plain_text', content: '拒绝' },
+              type: 'danger',
+              behaviors: [{
+                type: 'callback',
+                value: { action: 'reject', nodeId: this.id, mode: this.mode }
+              }]
+            }
+          ]
+        }
+      }
 
-    if (result && !result.ok) {
-      const errMsg = result.error || '未知错误'
-      w.notificationApi?.show('飞书推送失败', errMsg)
+      // @ts-ignore
+      const sendRes = await window.feishuApi?.send({
+        appId: creds.appId,
+        appSecret: creds.appSecret,
+        receiveId: person.receiveId,
+        receiveIdType: person.receiveIdType,
+        msgType: 'interactive',
+        cardJson: JSON.stringify(card)
+      })
+      if (sendRes && !sendRes.ok) {
+        w.notificationApi?.show('飞书推送失败', sendRes.error || '未知错误')
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      w.notificationApi?.show('飞书推送失败', msg)
     }
   }
 

@@ -933,10 +933,12 @@ const feishuApi = {
     appSecret: string
     receiveId: string
     receiveIdType: 'chat_id' | 'open_id' | 'user_id' | 'union_id' | 'email'
-    msgType: 'text' | 'image' | 'file' | 'audio' | 'media'
+    msgType: 'text' | 'image' | 'file' | 'audio' | 'media' | 'interactive'
     text?: string
     imageKey?: string
     fileKey?: string
+    /** interactive 类型时必填——飞书卡片 JSON 字符串 */
+    cardJson?: string
   }): Promise<{ ok: true; messageId?: string } | { ok: false; error: string }> =>
     ipcRenderer.invoke('feishu:send', args),
 
@@ -1037,6 +1039,41 @@ const feishuApi = {
     ) => callback(payload)
     ipcRenderer.on('feishu:message', handler)
     return () => ipcRenderer.removeListener('feishu:message', handler)
+  },
+
+  /**
+   * 监听飞书卡片按钮点击事件（主进程 WS 长连接推过来的 card.action.trigger）。
+   * 返回取消订阅函数。
+   */
+  onCardAction: (
+    callback: (payload: {
+      openMessageId: string
+      chatId: string
+      value: Record<string, unknown>
+      operatorOpenId?: string
+      operatorUserId?: string
+      operatorUnionId?: string
+      operatorEmail?: string
+      eventId?: string
+      handledAt: number
+    }) => void
+  ): (() => void) => {
+    const handler = (
+      _e: Electron.IpcRendererEvent,
+      payload: {
+        openMessageId: string
+        chatId: string
+        value: Record<string, unknown>
+        operatorOpenId?: string
+        operatorUserId?: string
+        operatorUnionId?: string
+        operatorEmail?: string
+        eventId?: string
+        handledAt: number
+      }
+    ) => callback(payload)
+    ipcRenderer.on('feishu:cardAction', handler)
+    return () => ipcRenderer.removeListener('feishu:cardAction', handler)
   }
 }
 

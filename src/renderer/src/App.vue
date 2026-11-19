@@ -150,8 +150,13 @@ onMounted(() => {
     // 动态 import 避免顶层循环依赖
     import('../../main/nodePlugin/HumanReviewNode/node').then(({ HumanReviewNode }) => {
       if (!(node instanceof HumanReviewNode)) return
-      if (action === 'approve') node.approve()
-      else if (action === 'reject') node.reject('')
+      if (action === 'approve') {
+        node.approve()
+      } else if (action === 'reject') {
+        // 拒绝时从表单 form_value 里取理由（用户在卡片 input 里填的）
+        const reason = (payload.formValue?.reject_reason as string) ?? ''
+        node.reject(reason)
+      }
     })
   })
 })

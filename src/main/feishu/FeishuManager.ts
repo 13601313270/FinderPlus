@@ -13,6 +13,8 @@ export interface FeishuCardActionPayload {
   chatId: string
   /** 你塞在按钮 value 里的业务字段（原样返回） */
   value: Record<string, unknown>
+  /** 表单容器里用户提交的数据（input / select 等组件的 name → value）——仅 form submit 按钮点击时才有 */
+  formValue?: Record<string, unknown>
   /** 操作人 open_id */
   operatorOpenId?: string
   /** 操作人 user_id */
@@ -385,12 +387,17 @@ export async function startFeishu(appId: string, appSecret: string): Promise<{ o
 
           const ctx = data?.context ?? {}
           const operator = data?.operator ?? {}
-          const value: Record<string, unknown> = data?.action?.value ?? {}
+          const actionBlock = data?.action ?? {}
+          const value: Record<string, unknown> = actionBlock.value ?? {}
+          const formValue: Record<string, unknown> | undefined = actionBlock.form_value
+            ? (typeof actionBlock.form_value === 'object' ? actionBlock.form_value : {})
+            : undefined
 
           const payload: FeishuCardActionPayload = {
             openMessageId: ctx.open_message_id ?? '',
             chatId: ctx.open_chat_id ?? '',
             value,
+            formValue,
             operatorOpenId: typeof operator.open_id === 'string' && operator.open_id ? operator.open_id : undefined,
             operatorUserId: typeof operator.user_id === 'string' && operator.user_id ? operator.user_id : undefined,
             operatorUnionId: typeof operator.union_id === 'string' && operator.union_id ? operator.union_id : undefined,

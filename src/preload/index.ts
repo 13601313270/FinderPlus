@@ -1050,6 +1050,8 @@ const feishuApi = {
       openMessageId: string
       chatId: string
       value: Record<string, unknown>
+      /** 表单容器内用户提交的数据（form submit 按钮点击时才有） */
+      formValue?: Record<string, unknown>
       operatorOpenId?: string
       operatorUserId?: string
       operatorUnionId?: string
@@ -1064,6 +1066,7 @@ const feishuApi = {
         openMessageId: string
         chatId: string
         value: Record<string, unknown>
+        formValue?: Record<string, unknown>
         operatorOpenId?: string
         operatorUserId?: string
         operatorUnionId?: string

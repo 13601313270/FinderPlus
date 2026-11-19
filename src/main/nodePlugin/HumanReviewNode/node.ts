@@ -534,24 +534,41 @@ export class HumanReviewNode extends Node {
           elements: [
             { tag: 'markdown', content: markdownBody },
             { tag: 'hr' },
-            // schema 2.0：按钮直接放 body.elements 里，不需要 action tag 包裹
+            // 同意按钮：直接 callback，不需要理由
             {
               tag: 'button',
-              text: { tag: 'plain_text', content: '同意' },
+              text: { tag: 'plain_text', content: '✅ 同意' },
               type: 'primary',
               behaviors: [{
                 type: 'callback',
                 value: { action: 'approve', nodeId: this.id, mode: this.mode }
               }]
             },
+            // 拒绝：表单容器 + input（拒绝理由）+ submit 按钮（behaviors callback 里带 reject action）
             {
-              tag: 'button',
-              text: { tag: 'plain_text', content: '拒绝' },
-              type: 'danger',
-              behaviors: [{
-                type: 'callback',
-                value: { action: 'reject', nodeId: this.id, mode: this.mode }
-              }]
+              tag: 'form',
+              name: 'reject_form',
+              direction: 'vertical',
+              elements: [
+                {
+                  tag: 'input',
+                  name: 'reject_reason',
+                  placeholder: { tag: 'plain_text', content: '请输入拒绝理由（可选）' },
+                  input_type: 'multiline_text',
+                  rows: 2
+                },
+                {
+                  tag: 'button',
+                  name: 'btn_reject_submit',
+                  text: { tag: 'plain_text', content: '❌ 确认拒绝' },
+                  type: 'danger',
+                  form_action_type: 'submit',
+                  behaviors: [{
+                    type: 'callback',
+                    value: { action: 'reject', nodeId: this.id, mode: this.mode }
+                  }]
+                }
+              ]
             }
           ]
         }

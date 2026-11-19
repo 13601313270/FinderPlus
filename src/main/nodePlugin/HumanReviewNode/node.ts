@@ -491,7 +491,8 @@ export class HumanReviewNode extends Node {
         // WS 连接失败不阻塞发卡——REST 发消息不依赖 WS，只是收不到按钮回调
       })
 
-      // —— 先处理图片：upload 拿 image_key，markdown 里嵌 <img> ——
+      // —— 先处理图片：upload 拿 image_key，卡片里用独立 img element 展示 ——
+      let imageKey: string | undefined
       let markdownBody = textLabel
       if (value instanceof ImgFileValue && !value.isNull && value.file) {
         const buffer = await value.file.arrayBuffer()
@@ -506,7 +507,8 @@ export class HumanReviewNode extends Node {
           w.notificationApi?.show('飞书推送失败', uploadRes?.error || '图片上传失败')
           return
         }
-        markdownBody = `${textLabel}\n\n<img image_key="${uploadRes.imageKey}" width="320" height="240"/>`
+        imageKey = uploadRes.imageKey
+        markdownBody = `${textLabel}\n\n**文件**: \`${value.file.name}\``
       } else if (value instanceof StringValue && !value.isNull) {
         // 字符串值：内容本身放 markdown（截断到 1000 字符，避免卡片过长）
         const raw = (value as unknown as { value?: string }).value ?? ''
@@ -533,6 +535,10 @@ export class HumanReviewNode extends Node {
         body: {
           elements: [
             { tag: 'markdown', content: markdownBody },
+            // 图片值：独立 img element（Card JSON 2.0 必须用 img tag，markdown 不支持 <img>）
+            ...(imageKey
+              ? [{ tag: 'img', img_key: imageKey, alt: { tag: 'plain_text', content: '' } }]
+              : []),
             { tag: 'hr' },
             // 同意按钮：直接 callback，不需要理由
             {

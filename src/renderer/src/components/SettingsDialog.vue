@@ -8,15 +8,11 @@ import {
 } from '@renderer/composables/useLanguageSettings'
 import { useOnboarding } from '@renderer/composables/useOnboarding'
 import {
-  LLM_PROVIDERS,
-  useLLMSettings,
-  type LLMProvider
-} from '@renderer/composables/useLLMSettings'
-import {
-  IMAGE_PROVIDERS,
-  type ImageProviderId
-} from '../../../main/nodePlugin/ImageGenNode/providers'
-import { useImageSettings } from '@renderer/composables/useImageSettings'
+  AI_PROVIDERS,
+  loadAiGlobalConfig,
+  saveAiGlobalConfig,
+  type AiProviderId
+} from '../../../shared/aiProviders'
 import { usePaletteSettings } from '@renderer/composables/usePaletteSettings'
 import { useThemeSettings } from '@renderer/composables/useThemeSettings'
 import {
@@ -42,24 +38,44 @@ import { BrowserNode } from '../../../main/nodePlugin/BrowserNode/node'
 
 /**
  * 全局设置弹窗：左侧分类栏 + 右侧滚动内容。
- * 三个分组（sidebar nav）：通用 | 大语言模型设置 | 生图模型
+ * 主要分组（sidebar nav）：通用 | 外观 | AI 服务配置 | 本地模型 | ...
+ * 大语言模型设置 + 生图模型设置 已合并为 统一的 AI 服务配置（canvasdesk.ai.config）。
  */
 const { t } = useI18n()
 const { visible, targetSection, openSettings, closeSettings } = useGlobalSettings()
 const { language, setLanguage, languageOptions } = useLanguageSettings()
 const { restart: restartOnboarding } = useOnboarding()
-const {
-  initDraft: initLLMDraft,
-  draftKeys: llmDraftKeys,
-  saveProviderKey: saveLLMProviderKey,
-  clearKey: clearLLMKey
-} = useLLMSettings()
-const {
-  initDraft: initImageDraft,
-  draftKeys: imageDraftKeys,
-  saveProviderKey: saveImageProviderKey,
-  clearKey: clearImageKey
-} = useImageSettings()
+
+/** 统一的 AI 配置草稿（canvasdesk.ai.config） */
+const aiDraftKeys = ref<Record<AiProviderId, string>>({} as Record<AiProviderId, string>)
+const aiKeyVisible = ref<Record<string, boolean>>({})
+
+function toggleAIKeyVisible(key: string): void {
+  aiKeyVisible.value[key] = !aiKeyVisible.value[key]
+}
+
+function clearAIKey(key: AiProviderId): void {
+  aiDraftKeys.value = { ...aiDraftKeys.value, [key]: '' }
+}
+
+function loadAIDraft(): void {
+  const cfg = loadAiGlobalConfig()
+  const fresh: Partial<Record<AiProviderId, string>> = {}
+  for (const p of Object.keys(AI_PROVIDERS) as AiProviderId[]) {
+    fresh[p] = cfg.providers[p]?.key ?? ''
+  }
+  aiDraftKeys.value = fresh as Record<AiProviderId, string>
+}
+
+function saveAIDraft(): void {
+  console.log('[SettingsDialog] saveAIDraft called, aiDraftKeys=', JSON.stringify(aiDraftKeys.value, (_, v) => typeof v === 'string' && v.length > 6 ? v.slice(0, 3) + '...' : v))
+  const cfg = loadAiGlobalConfig()
+  for (const p of Object.keys(AI_PROVIDERS) as AiProviderId[]) {
+    cfg.providers[p].key = aiDraftKeys.value[p]?.trim() ?? ''
+  }
+  saveAiGlobalConfig(cfg)
+  console.log('[SettingsDialog] saveAIDraft done, cfg.providers=', JSON.stringify(cfg.providers, (_, v) => typeof v === 'string' && v.length > 6 ? v.slice(0, 3) + '...' : v))
+}
 const { hiddenTypes, toggleHidden, showAll } = usePaletteSettings()
 const { theme, resetTheme } = useThemeSettings()
 const {
@@ -82,28 +98,16 @@ const {
 } = useOssBuckets()
 
 /** 左侧选中的分类 */
-type SectionKey = 'general' | 'appearance' | 'llm' | 'image' | 'nodes' | 'browser' | 'feishu' | 'oss' | 'canvases' | 'localLLM'
+type SectionKey = 'general' | 'appearance' | 'ai' | 'localLLM' | 'nodes' | 'browser' | 'feishu' | 'oss' | 'canvases'
 const activeSection = ref<SectionKey>('general')
 
-/** 各 provider API Key 是否以明文显示 */
-const llmKeyVisible = ref<Record<string, boolean>>({})
-const imageKeyVisible = ref<Record<string, boolean>>({})
-
-function toggleLLMKeyVisible(key: string): void {
-  llmKeyVisible.value[key] = !llmKeyVisible.value[key]
-}
-function toggleImageKeyVisible(key: string): void {
-  imageKeyVisible.value[key] = !imageKeyVisible.value[key]
-}
-
-const SECTION_ORDER: SectionKey[] = ['general', 'appearance', 'llm', 'image', 'localLLM', 'nodes', 'browser', 'feishu', 'oss', 'canvases']
+const SECTION_ORDER: SectionKey[] = ['general', 'appearance', 'ai', 'localLLM', 'nodes', 'browser', 'feishu', 'oss', 'canvases']
 
 function sectionLabel(key: SectionKey): string {
   switch (key) {
     case 'general':    return t('settingsDialog.groupGeneral')
     case 'appearance': return t('settingsDialog.groupAppearance')
-    case 'llm':        return t('settingsDialog.groupLLM')
-    case 'image':      return t('settingsDialog.groupImage')
+    case 'ai':         return 'AI 服务配置'
     case 'localLLM':   return '本地模型'
     case 'nodes':      return t('settingsDialog.groupNodes')
     case 'browser':    return t('settingsDialog.groupBrowser')
@@ -112,24 +116,27 @@ function sectionLabel(key: SectionKey): string {
     case 'canvases':   return t('settingsDialog.groupCanvases')
   }
 }
-
-/** SettingsDialog 打开时同步初始化 LLM + Image draft，并处理侧边栏聚焦 */
 watch(visible, (v) => {
   if (v) {
-    initLLMDraft()
-    initImageDraft()
+    loadAIDraft()
     // 调用方可以在 openSettings('nodes') 时指定聚焦 section；否则兜底第一个
     const requested = targetSection.value as SectionKey | null
     activeSection.value = requested && SECTION_ORDER.includes(requested) ? requested : 'general'
   } else {
     // 关闭时重置密钥明文显示状态，避免下次打开意外泄露
-    llmKeyVisible.value = {}
-    imageKeyVisible.value = {}
+    aiKeyVisible.value = {}
   }
 })
 
-const llmProviders = Object.entries(LLM_PROVIDERS) as [LLMProvider, typeof LLM_PROVIDERS[LLMProvider]][]
-const imageProviders = Object.entries(IMAGE_PROVIDERS) as [ImageProviderId, typeof IMAGE_PROVIDERS[ImageProviderId]][]
+const aiProviders = Object.entries(AI_PROVIDERS) as [AiProviderId, typeof AI_PROVIDERS[AiProviderId]][]
+
+/** 能力标签显示名 */
+const CAPABILITY_LABEL: Record<string, string> = {
+  llm: 'LLM',
+  image: '生图',
+  tts: '文生音频',
+  stt: '语音识别'
+}
 
 /** 重置新手引导：清除 seen 标记并立即弹出 */
 function onRestartOnboarding(): void {
@@ -184,16 +191,14 @@ const transferBusy = ref(false)
 /** localStorage 中需要导出的 key（全部，但部分要剥离敏感信息） */
 const EXPORT_KEYS = [
   'canvasdesk.language',
-  'canvasdesk.llm.config',
-  'canvasdesk.image.config',
+  'canvasdesk.ai.config',
   'canvasdesk.tutorialSeen',
   'canvasdesk.palette.hiddenTypes'
 ]
 
 /**
  * 把一个 JSON 字符串里的所有 API Key 字段置空。
- * - LLM config：providers[*].key
- * - Image config：providers[*].key
+ * - AI 统一配置：providers[*].key
  */
 function stripApiKeys(raw: string): string {
   try {
@@ -348,27 +353,22 @@ onUnmounted(() => {
   unsubscribeCanvasChanged?.()
 })
 
-// —— LLM 保存反馈 ——
-/** 正在显示"已保存"反馈的 provider 集合 */
-const savedProviders = ref<Set<LLMProvider>>(new Set())
-const savedImageProviders = ref<Set<ImageProviderId>>(new Set())
-
-function onSaveProviderKey(provider: LLMProvider): void {
-  saveLLMProviderKey(provider)
-  // 短暂显示反馈
-  savedProviders.value.add(provider)
-  setTimeout(() => {
-    savedProviders.value.delete(provider)
-  }, 1500)
-}
-
-function onSaveImageProviderKey(provider: ImageProviderId): void {
-  saveImageProviderKey(provider)
-  savedImageProviders.value.add(provider)
-  setTimeout(() => {
-    savedImageProviders.value.delete(provider)
-  }, 1500)
-}
+// —— AI 配置自动保存（输入即保存，debounce 300ms） ——
+let aiSaveTimer: ReturnType<typeof setTimeout> | null = null
+const aiSaveState = ref<'idle' | 'saving' | 'saved'>('idle')
+watch(aiDraftKeys, () => {
+  aiSaveState.value = 'idle'
+  if (aiSaveTimer) clearTimeout(aiSaveTimer)
+  aiSaveTimer = setTimeout(() => {
+    aiSaveState.value = 'saving'
+    saveAIDraft()
+    aiSaveState.value = 'saved'
+    clearTimeout(aiSaveTimer!)
+    aiSaveTimer = null
+    // 1.2s 后回到 idle
+    setTimeout(() => { aiSaveState.value = 'idle' }, 1200)
+  }, 300)
+}, { deep: true })
 
 // —— 清空画布 ——
 /** 让 computed 响应 Scene 结构变化的 tick */
@@ -619,7 +619,6 @@ const mergedModels = computed(() => {
     isDownloading: boolean
   }
 
-  const installedSet = new Set(localModels.value.map(m => m.name))
   const recommendedFileNames = new Set(recommendedModels.value.map(r => r.fileName))
   const items: MergedItem[] = []
 
@@ -1083,27 +1082,39 @@ async function onDeleteCanvas(id: string, name: string): Promise<void> {
               </section>
             </template>
 
-            <!-- ========== 大语言模型设置 ========== -->
-            <template v-if="activeSection === 'llm'">
+            <!-- ========== AI 服务配置（统一后，输入即自动保存） ========== -->
+            <template v-if="activeSection === 'ai'">
               <section class="gs-section">
-                <h4 class="gs-section__title">{{ t('settingsDialog.llmTitle') }}</h4>
-                <p class="gs-section__hint">{{ t('settingsDialog.llmHint') }}</p>
+                <h4 class="gs-section__title">AI 服务配置</h4>
+                <p class="gs-section__hint">
+                  统一管理 LLM / 文生图 / 文生音频 / 语音识别 的服务商 Key。
+                  同一服务商只需填一次，所有相关节点都会读取这份配置。输入后自动保存。
+                  <span v-if="aiSaveState === 'saving'" style="color:#f59e0b;margin-left:8px;">保存中…</span>
+                  <span v-else-if="aiSaveState === 'saved'" style="color:#10b981;margin-left:8px;">已自动保存</span>
+                </p>
 
                 <div class="gs-llm__key-list">
                   <div
-                    v-for="[key, preset] in llmProviders"
+                    v-for="[key, preset] in aiProviders"
                     :key="key"
                     class="gs-llm__key-row"
                   >
                     <div class="gs-llm__key-header">
                       <span class="gs-llm__key-label">{{ preset.label }}</span>
+                      <span class="gs-llm__key-capabilities">
+                        <span
+                          v-for="cap in preset.capabilities"
+                          :key="cap"
+                          class="gs-llm__cap-badge"
+                        >{{ CAPABILITY_LABEL[cap] ?? cap }}</span>
+                      </span>
                     </div>
                     <div class="gs-llm__key-input-row">
                       <div class="gs-llm__input-wrap">
                         <input
-                          v-model="llmDraftKeys[key]"
+                          v-model="aiDraftKeys[key]"
                           class="gs-llm__input"
-                          :type="llmKeyVisible[key] ? 'text' : 'password'"
+                          :type="aiKeyVisible[key] ? 'text' : 'password'"
                           :placeholder="`${preset.label} API Key`"
                           autocomplete="off"
                           spellcheck="false"
@@ -1111,10 +1122,10 @@ async function onDeleteCanvas(id: string, name: string): Promise<void> {
                         <button
                           class="gs-llm__eye-btn"
                           type="button"
-                          :title="llmKeyVisible[key] ? t('settingsDialog.hideKey') : t('settingsDialog.showKey')"
-                          @click.stop="toggleLLMKeyVisible(key)"
+                          :title="aiKeyVisible[key] ? t('settingsDialog.hideKey') : t('settingsDialog.showKey')"
+                          @click.stop="toggleAIKeyVisible(key)"
                         >
-                          <svg v-if="llmKeyVisible[key]" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <svg v-if="aiKeyVisible[key]" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
                             <circle cx="12" cy="12" r="3" />
                           </svg>
@@ -1127,74 +1138,9 @@ async function onDeleteCanvas(id: string, name: string): Promise<void> {
                       <button
                         class="gs-btn gs-btn--ghost gs-btn--clear-sm"
                         type="button"
-                        :disabled="!llmDraftKeys[key]"
-                        @click="clearLLMKey(key)"
+                        :disabled="!aiDraftKeys[key]"
+                        @click="clearAIKey(key)"
                       >{{ t('settingsDialog.clear') }}</button>
-                      <button
-                        class="gs-btn gs-btn--primary gs-btn--save-sm"
-                        :class="{ 'gs-btn--saved': savedProviders.has(key) }"
-                        type="button"
-                        @click="onSaveProviderKey(key)"
-                      >{{ savedProviders.has(key) ? t('settingsDialog.saved') : t('settingsDialog.save') }}</button>
-                    </div>
-                  </div>
-                </div>
-              </section>
-            </template>
-
-            <!-- ========== 生图模型 ========== -->
-            <template v-if="activeSection === 'image'">
-              <section class="gs-section">
-                <h4 class="gs-section__title">{{ t('settingsDialog.imageTitle') }}</h4>
-                <p class="gs-section__hint">{{ t('settingsDialog.imageHint') }}</p>
-
-                <div class="gs-llm__key-list">
-                  <div
-                    v-for="[key, preset] in imageProviders"
-                    :key="key"
-                    class="gs-llm__key-row"
-                  >
-                    <div class="gs-llm__key-header">
-                      <span class="gs-llm__key-label">{{ preset.label }}</span>
-                    </div>
-                    <div class="gs-llm__key-input-row">
-                      <div class="gs-llm__input-wrap">
-                        <input
-                          v-model="imageDraftKeys[key]"
-                          class="gs-llm__input"
-                          :type="imageKeyVisible[key] ? 'text' : 'password'"
-                          :placeholder="`${preset.label} API Key`"
-                          autocomplete="off"
-                          spellcheck="false"
-                        />
-                        <button
-                          class="gs-llm__eye-btn"
-                          type="button"
-                          :title="imageKeyVisible[key] ? t('settingsDialog.hideKey') : t('settingsDialog.showKey')"
-                          @click.stop="toggleImageKeyVisible(key)"
-                        >
-                          <svg v-if="imageKeyVisible[key]" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                            <circle cx="12" cy="12" r="3" />
-                          </svg>
-                          <svg v-else viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
-                            <line x1="1" y1="1" x2="23" y2="23" />
-                          </svg>
-                        </button>
-                      </div>
-                      <button
-                        class="gs-btn gs-btn--ghost gs-btn--clear-sm"
-                        type="button"
-                        :disabled="!imageDraftKeys[key]"
-                        @click="clearImageKey(key)"
-                      >{{ t('settingsDialog.clear') }}</button>
-                      <button
-                        class="gs-btn gs-btn--primary gs-btn--save-sm"
-                        :class="{ 'gs-btn--saved': savedImageProviders.has(key) }"
-                        type="button"
-                        @click="onSaveImageProviderKey(key)"
-                      >{{ savedImageProviders.has(key) ? t('settingsDialog.saved') : t('settingsDialog.save') }}</button>
                     </div>
                   </div>
                 </div>
@@ -2000,6 +1946,22 @@ async function onDeleteCanvas(id: string, name: string): Promise<void> {
     font-size: 12px;
     font-weight: 600;
     color: #374151;
+  }
+
+  &__key-capabilities {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+
+  &__cap-badge {
+    font-size: 10px;
+    font-weight: 500;
+    padding: 1px 6px;
+    border-radius: 8px;
+    background: #e0e7ff;
+    color: #4338ca;
+    line-height: 16px;
   }
 
   &__key-status {

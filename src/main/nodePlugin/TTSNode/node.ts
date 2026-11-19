@@ -6,7 +6,7 @@ import { MethodPort } from '../../engine/port/MethodPort'
 import { OutputPort } from '../../engine/port/OutputPort'
 import { Node, type InputPortChangeSource } from '../../engine/node/Node'
 import { bytesToBase64 } from '../../engine/data/base64'
-import { readImageProviderKey } from '../ImageGenNode/providers'
+import { readProviderKey as _readUnifiedKey } from '../../../shared/aiProviders'
 import {
   resolveTtsEndpoint,
   getTtsModelIdsByProvider,
@@ -160,8 +160,8 @@ export class TTSNode extends Node {
 
   // —— 节点级配置 ——
 
-  private provider: TtsProviderId = 'dashscope'
-  private model: TtsModelId = getDefaultTtsModel('dashscope')
+  private provider: TtsProviderId = 'aliyun'
+  private model: TtsModelId = getDefaultTtsModel('aliyun')
   private voice = 'Cherry'
   private languageType: TtsLanguageType = 'Chinese'
   private instructions = '' // 仅 qwen3-tts-instruct-flash 有效
@@ -317,7 +317,7 @@ export class TTSNode extends Node {
 
   /** 当前 provider 是否配了 Key */
   get hasProviderKey(): boolean {
-    const key = readImageProviderKey(this.provider)
+    const key = _readUnifiedKey(this.provider)
     if (!key) return false
     // DashScope MAAS 端点还需要 WorkspaceId（Token Plan 不需要）
     if (isMaasModel(this.model)) {
@@ -395,10 +395,10 @@ export class TTSNode extends Node {
       this.notifyChanged()
       return
     }
-    const key = readImageProviderKey('dashscope')
+    const key = _readUnifiedKey('aliyun')
     if (!key) {
       this.customVoiceLoadState = 'error'
-      this.customVoiceLoadError = 'DashScope API Key 未配置'
+      this.customVoiceLoadError = '阿里云百炼 API Key 未配置'
       this.notifyChanged()
       return
     }
@@ -454,10 +454,10 @@ export class TTSNode extends Node {
       this.notifyChanged()
       return
     }
-    const key = readImageProviderKey('dashscope')
+    const key = _readUnifiedKey('aliyun')
     if (!key) {
       this.customVoiceCreateState = 'error'
-      this.customVoiceCreateError = 'DashScope API Key 未配置'
+      this.customVoiceCreateError = '阿里云百炼 API Key 未配置'
       this.notifyChanged()
       return
     }
@@ -852,9 +852,10 @@ export class TTSNode extends Node {
     super.initStateBySaveData(state)
 
     // provider：有存就用存的；没有存（兼容旧数据），根据 model 反推
-    const storedProvider = state.provider as TtsProviderId | undefined
-    if (storedProvider === 'dashscope' || storedProvider === 'tokenplan') {
-      this.provider = storedProvider
+    const storedProvider = state.provider as TtsProviderId | string | undefined
+    if (storedProvider === 'aliyun' || storedProvider === 'dashscope' || storedProvider === 'tokenplan') {
+      // dashscope 归一化为 aliyun
+      this.provider = storedProvider === 'dashscope' ? 'aliyun' : (storedProvider as TtsProviderId)
     } else {
       // 旧数据无 provider 字段：按 model 名推断
       const m = state.model as TtsModelId | undefined

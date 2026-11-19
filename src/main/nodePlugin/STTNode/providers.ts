@@ -18,12 +18,20 @@
  *     · Token Plan  https://token-plan.cn-beijing.maas.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation
  */
 
-import { readImageProviderKey, type ImageProviderId } from '../ImageGenNode/providers'
+import { readProviderKey as _readUnifiedKey } from '../../../shared/aiProviders'
+import type { ImageProviderId } from '../ImageGenNode/providers'
 
 export type SttProviderId = Extract<
   ImageProviderId,
-  'dashscope' | 'tokenplan' | 'siliconflow' | 'openai' | 'glm'
+  'aliyun' | 'tokenplan' | 'siliconflow' | 'openai' | 'glm'
 >
+
+/** 旧数据兼容：dashscope → aliyun */
+function normalizeSttProviderId(p: string): SttProviderId {
+  const all: string[] = ['aliyun', 'tokenplan', 'siliconflow', 'openai', 'glm']
+  const normalized = p === 'dashscope' ? 'aliyun' : p
+  return (all.includes(normalized) ? normalized : 'openai') as SttProviderId
+}
 
 export type SttRequestFormat = 'openai-multipart' | 'dashscope-json'
 
@@ -45,7 +53,7 @@ export const STT_PROVIDERS: Readonly<Record<SttProviderId, SttProviderPreset>> =
     label: '智谱 (GLM-ASR)',
     url: 'https://open.bigmodel.cn/api/paas/v4/audio/transcriptions'
   },
-  dashscope: {
+  aliyun: {
     label: '阿里云百炼 (Qwen-ASR)',
     url: 'https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation'
   },
@@ -65,8 +73,8 @@ export interface SttModelPreset {
 /** 模型表：同一个模型名可能出现在不同 provider 下，所以用数组 + (provider, model) 查找 */
 export const STT_MODELS: readonly (SttModelPreset & { id: string })[] = [
   // —— 阿里云百炼 ——
-  { id: 'qwen-audio-3.0-asr-flash', provider: 'dashscope', requestFormat: 'dashscope-json', endpointKind: 'maas' },
-  { id: 'qwen-audio-3.1-asr-flash', provider: 'dashscope', requestFormat: 'dashscope-json', endpointKind: 'maas' },
+  { id: 'qwen-audio-3.0-asr-flash', provider: 'aliyun', requestFormat: 'dashscope-json', endpointKind: 'maas' },
+  { id: 'qwen-audio-3.1-asr-flash', provider: 'aliyun', requestFormat: 'dashscope-json', endpointKind: 'maas' },
 
   // —— 千问 Token Plan ——
   { id: 'qwen-audio-3.0-asr-flash', provider: 'tokenplan', requestFormat: 'dashscope-json' },
@@ -115,7 +123,7 @@ export const STT_LANGUAGES: readonly { id: string; label: string }[] = [
 
 /** 该模型是否要求填写 WorkspaceId（仅百炼的 MAAS 端点需要） */
 export function isSttMaasModel(provider: SttProviderId, model: string): boolean {
-  if (provider !== 'dashscope') return false
+  if (provider !== 'aliyun') return false
   return STT_MODELS.some(m => m.provider === provider && m.id === model && m.endpointKind === 'maas')
 }
 
@@ -130,24 +138,25 @@ export interface ResolvedSttEndpoint {
 
 /** provider + model 查预设；找不到时回落到该 provider 的第一个模型 */
 export function resolveSttEndpoint(
-  provider: SttProviderId,
+  provider: string,
   model: string,
   workspaceId = ''
 ): ResolvedSttEndpoint {
-  const ids = getSttModelIdsByProvider(provider)
+  const normalized = normalizeSttProviderId(provider)
+  const ids = getSttModelIdsByProvider(normalized)
   const effectiveModel = ids.includes(model) ? model : (ids[0] ?? model)
-  const preset = STT_MODELS.find(m => m.provider === provider && m.id === effectiveModel)
+  const preset = STT_MODELS.find(m => m.provider === normalized && m.id === effectiveModel)
   const endpointKind = preset?.endpointKind ?? 'dashscope'
 
-  let url = STT_PROVIDERS[provider].url
-  if (provider === 'dashscope' && endpointKind === 'maas') {
+  let url = STT_PROVIDERS[normalized].url
+  if (normalized === 'aliyun' && endpointKind === 'maas') {
     url = `https://${workspaceId.trim()}.cn-beijing.maas.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation`
   }
 
   return {
-    provider,
+    provider: normalized,
     url,
-    key: readImageProviderKey(provider),
+    key: _readUnifiedKey(normalized),
     model: effectiveModel,
     requestFormat: preset?.requestFormat ?? 'openai-multipart',
     endpointKind

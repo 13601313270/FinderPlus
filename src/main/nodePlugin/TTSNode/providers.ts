@@ -22,10 +22,18 @@
  *   action:   create_voice / list_voice / query_voice / update_voice / delete_voice
  */
 
-import { readImageProviderKey, type ImageProviderId } from '../ImageGenNode/providers'
+import { readProviderKey as _readUnifiedKey } from '../../../shared/aiProviders'
+import type { ImageProviderId } from '../ImageGenNode/providers'
 
 /** TTS provider 复用 ImageGenNode 的 provider id（共用同一个 API Key 存储） */
-export type TtsProviderId = Extract<ImageProviderId, 'dashscope' | 'tokenplan'>
+export type TtsProviderId = Extract<ImageProviderId, 'aliyun' | 'tokenplan'>
+
+/** 旧数据兼容：dashscope → aliyun */
+function normalizeTtsProviderId(p: string): TtsProviderId {
+  const all: string[] = ['aliyun', 'tokenplan']
+  const normalized = p === 'dashscope' ? 'aliyun' : p
+  return (all.includes(normalized) ? normalized : 'aliyun') as TtsProviderId
+}
 
 // —— DashScope 按量付费的模型 ID ——
 export type DashscopeLegacyModelId = 'qwen3-tts-flash' | 'qwen3-tts-instruct-flash'
@@ -247,14 +255,14 @@ const TOKENPLAN_TTS_URL = 'https://token-plan.cn-beijing.maas.aliyuncs.com/api/v
 export const TTS_MODELS: Readonly<Record<string, TtsModelPreset>> = {
   // —— DashScope 按量付费 ——
   'qwen3-tts-flash': {
-    provider: 'dashscope',
+    provider: 'aliyun',
     endpointKind: 'dashscope',
     requestFormat: 'dashscope-sync',
     defaultVoice: 'Cherry',
     voices: TTS_VOICES_LEGACY
   },
   'qwen3-tts-instruct-flash': {
-    provider: 'dashscope',
+    provider: 'aliyun',
     endpointKind: 'dashscope',
     requestFormat: 'dashscope-sync',
     defaultVoice: 'Cherry',
@@ -262,7 +270,7 @@ export const TTS_MODELS: Readonly<Record<string, TtsModelPreset>> = {
     supportsInstructions: true
   },
   'qwen-audio-3.1-tts-flash': {
-    provider: 'dashscope',
+    provider: 'aliyun',
     endpointKind: 'maas',
     requestFormat: 'dashscope-maas',
     defaultVoice: 'longanhuan_v3.1',
@@ -273,7 +281,7 @@ export const TTS_MODELS: Readonly<Record<string, TtsModelPreset>> = {
     supportsCustomVoice: true
   },
   'qwen-audio-3.1-tts-plus': {
-    provider: 'dashscope',
+    provider: 'aliyun',
     endpointKind: 'maas',
     requestFormat: 'dashscope-maas',
     defaultVoice: 'longanlingxin_v3.1',
@@ -284,7 +292,7 @@ export const TTS_MODELS: Readonly<Record<string, TtsModelPreset>> = {
     supportsCustomVoice: true
   },
   'qwen-audio-3.1-tts-next': {
-    provider: 'dashscope',
+    provider: 'aliyun',
     endpointKind: 'maas',
     requestFormat: 'dashscope-audiogen',
     defaultFormat: 'wav',
@@ -324,7 +332,7 @@ export function getDefaultTtsModel(provider: TtsProviderId): TtsModelId {
 /** 是否 DashScope MAAS 端点模型（需要 WorkspaceId） */
 export function isMaasModel(model: TtsModelId): boolean {
   const p = TTS_MODELS[model]
-  return p?.endpointKind === 'maas' && p?.provider === 'dashscope'
+  return p?.endpointKind === 'maas' && p?.provider === 'aliyun'
 }
 
 /** 是否 Token Plan 模型（SpeechSynthesizer 端点，不需要 WorkspaceId） */
@@ -381,13 +389,14 @@ export interface ResolvedTtsEndpoint {
  * 零 Key 前缀分支，完全按 provider id 查表。
  */
 export function resolveTtsEndpoint(
-  providerId: TtsProviderId,
+  providerId: string,
   model: TtsModelId,
   workspaceId = ''
 ): ResolvedTtsEndpoint {
-  const preset = TTS_MODELS[model] ?? TTS_MODELS[getDefaultTtsModel(providerId)]
+  const normalized = normalizeTtsProviderId(providerId)
+  const preset = TTS_MODELS[model] ?? TTS_MODELS[getDefaultTtsModel(normalized)]
   // provider 不认时回落
-  const safeProvider: TtsProviderId = preset?.provider ?? providerId
+  const safeProvider: TtsProviderId = preset?.provider ?? normalized
 
   let url: string
   if (safeProvider === 'tokenplan') {
@@ -401,7 +410,7 @@ export function resolveTtsEndpoint(
   return {
     provider: safeProvider,
     url,
-    key: readImageProviderKey(safeProvider),
+    key: _readUnifiedKey(safeProvider),
     model,
     requestFormat: preset?.requestFormat ?? 'dashscope-sync',
     endpointKind: preset?.endpointKind ?? 'dashscope',

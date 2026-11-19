@@ -58,8 +58,17 @@ const running = computed(() => status.value === 'loading')
 const currentDefaultModel = computed(() => LLM_PROVIDERS[provider.value as LLMProvider]?.defaultModel ?? '')
 const currentPresetUrl = computed(() => LLM_PROVIDERS[provider.value as LLMProvider]?.url ?? '')
 const modelListForProvider = computed(() => modelLists.value[provider.value as LLMProvider] ?? [])
-const canPullModels = computed(() => !pullingModels.value && provider.value && hasKeyNow.value)
 const chatCount = computed(() => chatHistory.value.length)
+
+/** 下拉框里的选项：远程列表 + 当前 model（不在远程列表里就补进去）+ 默认模型（兜底） */
+const modelSelectOptions = computed<string[]>(() => {
+  const list = modelListForProvider.value.slice()
+  const cur = model.value
+  const def = currentDefaultModel.value
+  if (cur && !list.includes(cur)) list.unshift(cur)
+  if (def && !list.includes(def)) list.unshift(def)
+  return list
+})
 
 // —— 本地模型专用 ——
 const isLocal = computed(() => provider.value === 'local')
@@ -77,10 +86,35 @@ async function refreshLocalModels(): Promise<void> {
   }))
 }
 
-// provider 切到 local 时刷新一次本地列表
+/** 自动拉取 HTTP provider 的 /models 端点——进入面板或切换 provider 时触发 */
+let autoPullTimer: ReturnType<typeof setTimeout> | null = null
+function scheduleAutoPull(): void {
+  if (isLocal.value) return
+  // 防抖：provider 切换很快时不重复拉
+  if (autoPullTimer) clearTimeout(autoPullTimer)
+  autoPullTimer = setTimeout(async () => {
+    const key = getProviderKey(provider.value as LLMProvider)
+    if (!key) return
+    pullingModels.value = true
+    pullError.value = ''
+    try {
+      const { ok, error } = await fetchModels(provider.value as LLMProvider, key)
+      if (!ok && error) {
+        pullError.value = error
+      }
+    } finally {
+      pullingModels.value = false
+    }
+  }, 250)
+}
+
+// provider 切换时自动刷新（HTTP provider 拉模型列表，local 拉本地文件列表）
 watch(provider, async (val) => {
   if (val === 'local') {
+    pullError.value = ''
     await refreshLocalModels()
+  } else {
+    scheduleAutoPull()
   }
 })
 
@@ -102,16 +136,23 @@ onMounted(() => {
   offChanged = node.onChanged(() => {
     if (llmNode.value) sync(llmNode.value)
   })
+  // 进入面板时自动拉一次模型列表（HTTP provider 且有 key）
+  if (!isLocal.value) scheduleAutoPull()
 })
 
 onUnmounted(() => {
   offChanged?.()
   debouncedSetPrompt.cancel()
+  if (autoPullTimer) clearTimeout(autoPullTimer)
 })
 
 watch(() => props.nodeId, () => {
   const node = llmNode.value
-  if (node) sync(node)
+  if (node) {
+    sync(node)
+    // 切换到新节点也自动拉一次
+    if (!isLocal.value) scheduleAutoPull()
+  }
 })
 
 function sync(node: LLMNode): void {
@@ -136,12 +177,6 @@ function sync(node: LLMNode): void {
 function onProviderChange(e: Event): void {
   const val = (e.target as HTMLSelectElement).value as LLMProviderId
   llmNode.value?.setProvider(val)
-}
-
-function onModelInput(e: Event): void {
-  const val = (e.target as HTMLInputElement).value
-  model.value = val
-  llmNode.value?.setModel(val)
 }
 
 function onJsonModeChange(e: Event): void {
@@ -195,24 +230,6 @@ function onClearHistory(): void {
 function onGearClick(e: MouseEvent): void {
   e.stopPropagation()
   openGlobalSettings('llm')
-}
-
-async function onPullModels(): Promise<void> {
-  const key = getProviderKey(provider.value as LLMProvider)
-  if (!key) {
-    pullError.value = t('keyMissing')
-    return
-  }
-  pullingModels.value = true
-  pullError.value = ''
-  try {
-    const { ok, error } = await fetchModels(provider.value as LLMProvider, key)
-    if (!ok && error) {
-      pullError.value = error
-    }
-  } finally {
-    pullingModels.value = false
-  }
 }
 
 function onPickModel(e: Event): void {
@@ -305,30 +322,34 @@ function onPickLocalModel(e: Event): void {
           </div>
         </template>
 
-        <!-- HTTP provider：文本输入 + 模型列表下拉 + 拉取按钮 -->
+        <!-- HTTP provider：只有下拉框，进入/切换 provider 时自动拉取 -->
         <template v-else>
           <div class="detail-panel__model-row">
-            <input
-              class="detail-panel__input"
+            <select
+              class="detail-panel__select detail-panel__select--full"
               :value="model"
-              :placeholder="currentDefaultModel"
-              type="text"
-              spellcheck="false"
-              @input="onModelInput"
-            />
-            <select v-if="modelListForProvider.length > 0" class="detail-panel__select detail-panel__select--sm"
-              :value="model" @change="onPickModel">
-              <option value="">— —</option>
-              <option v-for="m in modelListForProvider" :key="m" :value="m">{{ m }}</option>
+              @change="onPickModel"
+            >
+              <option value="" disabled v-if="!modelSelectOptions.length">
+                {{ pullingModels ? '拉取中…' : '— 无可用模型 —' }}
+              </option>
+              <option value="" disabled v-else>— 选择模型 —</option>
+              <option v-for="m in modelSelectOptions" :key="m" :value="m">
+                {{ m }}{{ m === currentDefaultModel ? '  (默认)' : '' }}
+              </option>
             </select>
-            <button class="detail-panel__btn" type="button"
-              :disabled="!canPullModels || running"
-              :title="pullingModels ? '拉取中…' : '从 /models 端点拉取可用模型'"
-              @click="onPullModels">
-              {{ pullingModels ? '…' : '↻' }}
-            </button>
           </div>
-          <div v-if="pullError" class="detail-panel__error">{{ pullError }}</div>
+          <div v-if="pullingModels" class="detail-panel__hint-loading">
+            <span class="detail-panel__spinner" style="width:10px;height:10px;border-width:1.5px;" />
+            正在从 /models 端点拉取可用模型…
+          </div>
+          <div v-else-if="pullError" class="detail-panel__error">{{ pullError }}</div>
+          <div v-else-if="!hasKeyNow" class="detail-panel__muted">
+            请先在 <b>AI 服务配置</b> 里填入 API Key，将自动拉取可用模型列表。
+          </div>
+          <div v-else-if="modelSelectOptions.length === 0" class="detail-panel__muted">
+            拉取成功，但该 Key 下未返回任何可用模型。
+          </div>
         </template>
       </div>
     </div>
@@ -587,6 +608,19 @@ function onPickLocalModel(e: Event): void {
       padding: 6px 8px;
       font-size: 12px;
     }
+
+    &--full {
+      width: 100%;
+    }
+  }
+
+  &__hint-loading {
+    font-size: 11px;
+    color: #2563eb;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
   }
 
   &__model-row {

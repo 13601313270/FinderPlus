@@ -35,9 +35,9 @@ const localAudioName = ref('')
 
 const providerIds = Object.keys(STT_PROVIDERS) as SttProviderId[]
 
-const showWorkspace = computed(() => provider.value === 'dashscope')
+const showWorkspace = computed(() => provider.value === 'aliyun')
 const showLanguage = computed(
-  () => provider.value === 'dashscope' || provider.value === 'tokenplan' || provider.value === 'openai'
+  () => provider.value === 'aliyun' || provider.value === 'tokenplan' || provider.value === 'openai'
 )
 
 let offChanged: (() => void) | undefined

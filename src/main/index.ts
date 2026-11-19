@@ -347,7 +347,10 @@ function createWindow(canvasId: string = 'default'): BrowserWindow {
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false,
-      webviewTag: true
+      webviewTag: true,
+      /** Electron renderer 是桌面 app，不是浏览器标签页——关掉 webSecurity 才能让
+       *  token-plan.cn-beijing.maas.aliyuncs.com 等不支持 CORS 的提供商端点正常 fetch */
+      webSecurity: false
     }
   })
 
@@ -402,7 +405,8 @@ function createPickerWindow(): BrowserWindow {
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false,
-      webviewTag: true
+      webviewTag: true,
+      webSecurity: false
     }
   })
 

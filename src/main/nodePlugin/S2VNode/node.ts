@@ -6,7 +6,7 @@ import { InputPort } from '../../engine/port/InputPort'
 import { MethodPort } from '../../engine/port/MethodPort'
 import { OutputPort } from '../../engine/port/OutputPort'
 import { Node, type InputPortChangeSource } from '../../engine/node/Node'
-import { readImageProviderKey } from '../ImageGenNode/providers'
+import { readProviderKey as _readUnifiedKey } from '../../../shared/aiProviders'
 
 type S2VStatus = 'idle' | 'uploading' | 'detecting' | 'submitting' | 'polling' | 'done' | 'error'
 
@@ -298,7 +298,7 @@ export class S2VNode extends Node {
   get previewHash(): string { return this.resultHash }
 
   get hasDashscopeKey(): boolean {
-    return readImageProviderKey('dashscope').length > 0
+    return _readUnifiedKey('aliyun').length > 0
   }
   get hasWorkspaceId(): boolean {
     return this.workspaceId.length > 0
@@ -339,7 +339,7 @@ export class S2VNode extends Node {
 
   /** 核心流程：上传 → 检测（可选）→ 提交 → 轮询 → 下载 → commit */
   private async doGenerate(): Promise<void> {
-    const apiKey = readImageProviderKey('dashscope')
+    const apiKey = _readUnifiedKey('aliyun')
     if (!apiKey) {
       this.status = 'error'
       this.errorMessage = '请先在图片生成节点的设置里填写阿里云百炼的 API Key'

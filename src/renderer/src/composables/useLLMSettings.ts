@@ -1,25 +1,33 @@
 import { ref } from 'vue'
+import {
+  readProviderKey,
+  loadAiGlobalConfig,
+  saveAiGlobalConfig,
+  type AiProviderId
+} from '../../../shared/aiProviders'
 
+/**
+ * LLM Provider 预设：端点 URL + 默认 model。
+ * 所有 Provider 都遵循 OpenAI-compatible Chat Completions 协议（POST {url}，messages 数组），
+ * 并且都支持 GET {modelsUrl} 返回模型列表。
+ *
+ * ⚠️ 本文件已迁移到统一的 AI 配置存储（canvasdesk.ai.config）。
+ *    Key 读写全部走 shared/aiProviders.ts，不再自己管理 localStorage。
+ *    qwen + dashscope 已合并为 aliyun。
+ */
 export type LLMProvider =
   | 'deepseek'
   | 'openai'
   | 'kimi'
-  | 'qwen'
+  | 'aliyun'       // ← 原 qwen(LLM) + dashscope(生图/TTS/STT) 合并
   | 'glm'
   | 'minimax'
   | 'groq'
   | 'mistral'
   | 'siliconflow'
   | 'tokenplan'
-  | 'local'  // 本地 LLM（node-llama-cpp 原生推理引擎）
+  | 'local'
 
-/**
- * Provider 预设：端点 URL + 默认 model。
- * 所有 Provider 都遵循 OpenAI-compatible Chat Completions 协议（POST {url}，messages 数组），
- * 并且都支持 GET {modelsUrl} 返回模型列表。
- *
- * 新增 Provider 只需：在 LLMProvider union 加字面量、在这里加一条、在 node.ts PROVIDER_PRESETS 同步一条。
- */
 export const LLM_PROVIDERS: Record<LLMProvider, {
   label: string
   url: string          // chat completions endpoint（POST）
@@ -44,8 +52,8 @@ export const LLM_PROVIDERS: Record<LLMProvider, {
     modelsUrl: 'https://api.moonshot.cn/v1/models',
     defaultModel: 'moonshot-v1-8k'
   },
-  qwen: {
-    label: '通义千问 (DashScope)',
+  aliyun: {
+    label: '阿里云百炼 (DashScope)',
     url: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
     modelsUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1/models',
     defaultModel: 'qwen-plus'
@@ -103,77 +111,25 @@ export interface LLMNodeConfig {
   jsonMode: boolean  // 仅 deepseek 有效
 }
 
-/** 全局配置：只存每个 provider 的 API Key */
-interface LLMGlobalConfig {
-  providers: Record<LLMProvider, { key: string }>
+function allLlmProviderIds(): LLMProvider[] {
+  return Object.keys(LLM_PROVIDERS) as LLMProvider[]
 }
-
-const CONFIG_KEY = 'canvasdesk.llm.config'
-const LEGACY_KEY = 'canvasdesk.llm.api_key'
 
 function emptyKeyRecord(): Record<LLMProvider, string> {
   const o = {} as Record<LLMProvider, string>
-  for (const p of Object.keys(LLM_PROVIDERS) as LLMProvider[]) {
-    o[p] = ''
-  }
+  for (const p of allLlmProviderIds()) o[p] = ''
   return o
 }
 
 function emptyArrayRecord(): Record<LLMProvider, string[]> {
   const o = {} as Record<LLMProvider, string[]>
-  for (const p of Object.keys(LLM_PROVIDERS) as LLMProvider[]) {
-    o[p] = []
-  }
+  for (const p of allLlmProviderIds()) o[p] = []
   return o
-}
-
-function defaultGlobalConfig(): LLMGlobalConfig {
-  const providers = {} as Record<LLMProvider, { key: string }>
-  for (const p of Object.keys(LLM_PROVIDERS) as LLMProvider[]) {
-    providers[p] = { key: '' }
-  }
-  return { providers }
-}
-
-/** 从 localStorage 加载全局配置，带旧版迁移 */
-function loadGlobalConfig(): LLMGlobalConfig {
-  const base = defaultGlobalConfig()
-  try {
-    const raw = localStorage.getItem(CONFIG_KEY)
-    if (raw) {
-      const parsed = JSON.parse(raw) as Record<string, unknown>
-      // 旧版可能是 { provider, providers: { deepseek: { key, model, jsonMode } } }
-      // 新版是 { providers: { deepseek: { key } } }
-      const rawProviders = (parsed?.providers ?? {}) as Record<string, Record<string, unknown>>
-      for (const p of Object.keys(LLM_PROVIDERS) as LLMProvider[]) {
-        const pc = rawProviders[p]
-        if (pc && typeof pc === 'object') {
-          base.providers[p].key = typeof pc.key === 'string' ? pc.key : ''
-        }
-      }
-      return base
-    }
-  } catch {
-    // fall through
-  }
-  // 旧版兼容：只有 legacy api_key，按 deepseek 处理
-  const legacy = localStorage.getItem(LEGACY_KEY)
-  if (legacy) {
-    base.providers.deepseek.key = legacy
-    localStorage.removeItem(LEGACY_KEY)
-    localStorage.setItem(CONFIG_KEY, JSON.stringify(base))
-    return base
-  }
-  return base
-}
-
-function saveGlobalConfig(cfg: LLMGlobalConfig): void {
-  localStorage.setItem(CONFIG_KEY, JSON.stringify(cfg))
 }
 
 // —— 全局单例 ref，module 级别 ——
 // ⚠️ 必须 module 级：useLLMSettings() 被多个组件调用，只有 module 级才能共享同一份状态
-const globalConfig = ref<LLMGlobalConfig>(loadGlobalConfig())
+
 const draftKeys = ref<Record<LLMProvider, string>>(emptyKeyRecord())
 
 /** 模型列表缓存（按 provider 共享，避免重复拉取） */
@@ -186,54 +142,36 @@ export function resolveLLMEndpoint(provider: LLMProvider, modelOverride?: string
   return { url: preset.url, model }
 }
 
-/** 给引擎层（node.ts）用：按 provider 取 API Key */
-export function getProviderKey(provider: LLMProvider): string {
-  try {
-    const raw = localStorage.getItem(CONFIG_KEY)
-    if (raw) {
-      const cfg = JSON.parse(raw) as LLMGlobalConfig
-      return cfg.providers[provider]?.key ?? ''
-    }
-  } catch {
-    // fall through
-  }
-  return ''
+/** 给引擎层（node.ts）用：按 provider 取 API Key（已委托给统一模块） */
+export function getProviderKey(provider: string): string {
+  return readProviderKey(provider)
 }
 
 export function useLLMSettings() {
   /** SettingsDialog 打开时调用：把当前所有 key 装进 draftKeys */
   function initDraft(): void {
+    const cfg = loadAiGlobalConfig()
     const fresh = emptyKeyRecord()
-    for (const p of Object.keys(LLM_PROVIDERS) as LLMProvider[]) {
-      fresh[p] = globalConfig.value.providers[p]?.key ?? ''
+    for (const p of allLlmProviderIds()) {
+      fresh[p] = cfg.providers[p as AiProviderId]?.key ?? ''
     }
     draftKeys.value = fresh
   }
 
   /** 保存所有 provider 的 key 到全局配置 */
   function saveSettings(): void {
-    const providers = {} as Record<LLMProvider, { key: string }>
-    for (const p of Object.keys(LLM_PROVIDERS) as LLMProvider[]) {
-      providers[p] = { key: draftKeys.value[p].trim() }
+    const cfg = loadAiGlobalConfig()
+    for (const p of allLlmProviderIds()) {
+      cfg.providers[p as AiProviderId].key = draftKeys.value[p].trim()
     }
-    const newCfg: LLMGlobalConfig = { providers }
-    globalConfig.value = newCfg
-    saveGlobalConfig(newCfg)
+    saveAiGlobalConfig(cfg)
   }
 
   /** 只保存指定 provider 的 key，其他 provider 保持不变 */
   function saveProviderKey(provider: LLMProvider): void {
-    const providers = {} as Record<LLMProvider, { key: string }>
-    for (const p of Object.keys(LLM_PROVIDERS) as LLMProvider[]) {
-      if (p === provider) {
-        providers[p] = { key: draftKeys.value[p].trim() }
-      } else {
-        providers[p] = { key: globalConfig.value.providers[p]?.key ?? '' }
-      }
-    }
-    const newCfg: LLMGlobalConfig = { providers }
-    globalConfig.value = newCfg
-    saveGlobalConfig(newCfg)
+    const cfg = loadAiGlobalConfig()
+    cfg.providers[provider as AiProviderId].key = draftKeys.value[provider].trim()
+    saveAiGlobalConfig(cfg)
   }
 
   function clearKey(provider: LLMProvider): void {
@@ -242,7 +180,7 @@ export function useLLMSettings() {
 
   /** 某个 provider 是否配了 key */
   function hasKey(provider: LLMProvider): boolean {
-    return (globalConfig.value.providers[provider]?.key ?? '').length > 0
+    return (readProviderKey(provider as string) ?? '').length > 0
   }
 
   /**
@@ -279,8 +217,6 @@ export function useLLMSettings() {
   }
 
   return {
-    // 全局配置（只读）
-    globalConfig,
     modelLists,
     // 草稿
     draftKeys,

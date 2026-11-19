@@ -27,7 +27,7 @@ const node = computed(() => {
   return n instanceof TTSNode ? n : undefined
 })
 
-const provider = ref<TtsProviderId>('dashscope')
+const provider = ref<TtsProviderId>('aliyun')
 const model = ref<TtsModelId>('qwen3-tts-flash')
 const voice = ref('')
 const languageType = ref<TtsLanguageType>('Chinese')
@@ -230,7 +230,7 @@ function onCustomVoiceLabel(v: { voice_id: string; status?: string }): string {
         :value="provider"
         @change="(e: Event) => onProviderChange((e.target as HTMLSelectElement).value)"
       >
-        <option value="dashscope">阿里云百炼</option>
+        <option value="aliyun">阿里云百炼</option>
         <option value="tokenplan">千问 Token Plan</option>
       </select>
       <div class="detail-panel__hint" v-if="isTokenPlan">

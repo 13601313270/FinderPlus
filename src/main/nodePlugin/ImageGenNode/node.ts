@@ -636,8 +636,12 @@ export class ImageGenNode extends Node {
   initStateBySaveData(state: Record<string, unknown>): void {
     super.initStateBySaveData(state)
 
-    if (typeof state.provider === 'string' && IMAGE_PROVIDERS[state.provider as ImageProviderId]) {
-      this.provider = state.provider as ImageProviderId
+    if (typeof state.provider === 'string') {
+      // 兼容旧数据：dashscope → aliyun
+      const normalized = state.provider === 'dashscope' ? 'aliyun' : state.provider
+      if (IMAGE_PROVIDERS[normalized as ImageProviderId]) {
+        this.provider = normalized as ImageProviderId
+      }
     }
     if (typeof state.model === 'string') {
       this.model = state.model

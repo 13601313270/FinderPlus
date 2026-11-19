@@ -5,6 +5,7 @@ import { MethodPort } from '../../engine/port/MethodPort'
 import { OutputPort } from '../../engine/port/OutputPort'
 import type { InputPortChangeSource } from '../../engine/node/Node'
 import { Node } from '../../engine/node/Node'
+import { readProviderKey } from '../../../shared/aiProviders'
 // 本地 LLM 引擎动态 import——不在模块顶层加载，避免 vite 解析 node-llama-cpp 原生 binding 时阻塞
 
 /**
@@ -37,12 +38,18 @@ export interface ChatMessage {
 }
 
 export type LLMProviderId =
-  | 'deepseek' | 'openai' | 'kimi' | 'qwen' | 'glm'
+  | 'deepseek' | 'openai' | 'kimi' | 'aliyun' | 'glm'
   | 'minimax' | 'groq' | 'mistral' | 'siliconflow' | 'tokenplan'
   | 'local'  // ← 本地 LLM（node-llama-cpp 原生推理）
 
-const CONFIG_KEY = 'canvasdesk.llm.config'
-const LEGACY_KEY = 'canvasdesk.llm.api_key'
+// 兼容旧数据：节点保存的 provider 可能是 qwen（旧）或 aliyun（新）
+function normalizeLlmProviderId(p: string): LLMProviderId {
+  const all = ['deepseek', 'openai', 'kimi', 'aliyun', 'glm', 'minimax', 'groq', 'mistral', 'siliconflow', 'tokenplan', 'local']
+  const normalized = p === 'qwen' ? 'aliyun' : p
+  return (all.includes(normalized) ? normalized : 'deepseek') as LLMProviderId
+}
+
+/** 旧 storage key 定义已删除，Key 统一走 shared/aiProviders.ts */
 
 /** LLM 原始请求的返回结构，供 HarnessNode 等外部消费者使用 */
 export interface RawChatResponse {
@@ -61,7 +68,7 @@ const PROVIDER_PRESETS: Record<LLMProviderId, { url: string; defaultModel: strin
   deepseek:    { url: 'https://api.deepseek.com/chat/completions',                          defaultModel: 'deepseek-flash' },
   openai:      { url: 'https://api.openai.com/v1/chat/completions',                           defaultModel: 'gpt-4o-mini' },
   kimi:        { url: 'https://api.moonshot.cn/v1/chat/completions',                           defaultModel: 'moonshot-v1-8k' },
-  qwen:        { url: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',   defaultModel: 'qwen-plus' },
+  aliyun:      { url: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',   defaultModel: 'qwen-plus' },
   glm:         { url: 'https://open.bigmodel.cn/api/paas/v4/chat/completions',                defaultModel: 'glm-4' },
   minimax:     { url: 'https://api.minimax.chat/v1/text/chatcompletion_v2',                   defaultModel: 'abab6.5s-chat' },
   groq:        { url: 'https://api.groq.com/openai/v1/chat/completions',                       defaultModel: 'llama-3.3-70b-versatile' },
@@ -77,23 +84,7 @@ const PROVIDER_PRESETS: Record<LLMProviderId, { url: string; defaultModel: strin
 /** 节点可用的 provider 列表（遍历这个就行） */
 export const ALL_PROVIDERS: readonly LLMProviderId[] = Object.keys(PROVIDER_PRESETS) as LLMProviderId[]
 
-/** 按 provider 从全局配置取 API Key（localStorage） */
-function readProviderKey(provider: LLMProviderId): string {
-  try {
-    const raw = localStorage.getItem(CONFIG_KEY)
-    if (raw) {
-      const cfg = JSON.parse(raw) as { providers?: Record<string, { key?: string }> }
-      return cfg.providers?.[provider]?.key ?? ''
-    }
-  } catch {
-    // fall through
-  }
-  // 旧版兼容：只有 legacy api_key，按 deepseek 处理
-  if (provider === 'deepseek') {
-    return localStorage.getItem(LEGACY_KEY) ?? ''
-  }
-  return ''
-}
+// Key 读取直接委托给 shared/aiProviders.ts 的 readProviderKey（已做 qwen→aliyun 归一化）
 
 /** 从节点级 provider + model 算出最终的 URL 和 model 名 */
 function resolveEndpoint(
@@ -786,8 +777,10 @@ export class LLMNode extends Node {
   initStateBySaveData(state: Record<string, unknown>): void {
     super.initStateBySaveData(state)
 
-    if (typeof state.provider === 'string' && PROVIDER_PRESETS[state.provider as LLMProviderId]) {
-      this.provider = state.provider as LLMProviderId
+    if (typeof state.provider === 'string') {
+      const normalized = normalizeLlmProviderId(state.provider)
+      // normalized 一定会在 PROVIDER_PRESETS 里（normalizeLlmProviderId 会兜底）
+      this.provider = normalized
     }
     if (typeof state.model === 'string') {
       this.model = state.model

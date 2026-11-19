@@ -6,6 +6,8 @@ import type { Value } from '../../engine/data/Value'
 import { useLocalizedMessages } from '@renderer/composables/useLocalizedMessages'
 import { messages } from './i18n'
 import { resolveRenderer } from '@renderer/components/valueRenderers'
+import { useFeishuBots } from '@renderer/composables/useFeishuBots'
+import { useFeishuPersons } from '@renderer/composables/useFeishuPersons'
 
 const props = defineProps<{ nodeId: string }>()
 
@@ -31,6 +33,22 @@ const currentAutoPlayAudio = ref(false)
 
 // —— 卡片内 renderer context ——
 const currentContext = ref<RenderContext>('tooltip')
+
+// —— 飞书推送配置 ——
+const { bots } = useFeishuBots()
+const { persons } = useFeishuPersons()
+const feishuEnabled = ref(false)
+const feishuPersonId = ref('')
+
+/** 当前选中的联系人（只读详情卡用） */
+const selectedPerson = computed(() => persons.value.find((p) => p.id === feishuPersonId.value))
+
+/** 联系人绑定的机器人标签 */
+const personBotLabel = computed((): string => {
+  if (!selectedPerson.value) return '—'
+  const bot = bots.value.find((b) => b.id === selectedPerson.value!.botId)
+  return bot ? `${bot.name}（${bot.appId}）` : '已删除'
+})
 
 // —— 拒绝理由对话框 ——
 const showRejectDialog = ref(false)
@@ -61,6 +79,8 @@ function syncCurrent() {
   currentMode.value = n.reviewMode
   currentAutoPlayAudio.value = n.autoPlayAudioEnabled
   currentContext.value = n.cardRenderContext
+  feishuEnabled.value = n.getFeishuEnabled()
+  feishuPersonId.value = n.getFeishuPersonId()
   const cv = n.currentValue
   currentValue.value = cv
   currentKind.value = cv ? ((cv.constructor as unknown) as { VALUE_NAME: string }).VALUE_NAME : ''
@@ -94,6 +114,16 @@ function onAutoPlayToggle(e: Event): void {
 function onContextChange(e: Event): void {
   const v = (e.target as HTMLSelectElement).value as RenderContext
   reviewNode.value?.setCardRenderContext(v)
+}
+
+// —— 飞书推送配置 ——
+
+function onFeishuEnabledToggle(e: Event): void {
+  reviewNode.value?.setFeishuEnabled((e.target as HTMLInputElement).checked)
+}
+
+function onFeishuPersonIdChange(e: Event): void {
+  reviewNode.value?.setFeishuPersonId((e.target as HTMLSelectElement).value)
 }
 
 function onApprove(): void {
@@ -141,6 +171,31 @@ function onRejectMaskClick(): void {
         <option value="inline">{{ t('renderContextInline') }}</option>
         <option value="detail">{{ t('renderContextDetail') }}</option>
       </select>
+    </div>
+
+    <!-- 飞书推送配置 -->
+    <div class="review-panel__feishu">
+      <label class="review-panel__feishu-switch">
+        <input type="checkbox" :checked="feishuEnabled" @change="onFeishuEnabledToggle" />
+        <span>飞书推送</span>
+      </label>
+      <template v-if="feishuEnabled">
+        <div class="review-panel__feishu-row">
+          <label class="review-panel__feishu-label">联系人</label>
+          <select
+            class="review-panel__feishu-select"
+            :value="feishuPersonId"
+            @change="onFeishuPersonIdChange"
+          >
+            <option value="">-- 请先在设置里添加联系人 --</option>
+            <option v-for="p in persons" :key="p.id" :value="p.id">{{ p.name }}</option>
+          </select>
+        </div>
+        <div v-if="selectedPerson" class="review-panel__feishu-info">
+          <div><span class="review-panel__feishu-info-key">接收方</span>{{ selectedPerson.receiveIdType }}: {{ selectedPerson.receiveId }}</div>
+          <div><span class="review-panel__feishu-info-key">机器人</span>{{ personBotLabel }}</div>
+        </div>
+      </template>
     </div>
 
     <div class="review-panel__body">
@@ -378,6 +433,86 @@ function onRejectMaskClick(): void {
 
     &:not(:disabled):hover {
       background: #fef2f2;
+    }
+  }
+
+  // —— 飞书推送配置区 ——
+  &__feishu {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px 12px;
+    background: #fafbfc;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+
+    &-switch {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #374151;
+      cursor: pointer;
+      user-select: none;
+
+      input[type="checkbox"] {
+        margin: 0;
+        width: 14px;
+        height: 14px;
+        cursor: pointer;
+      }
+    }
+
+    &-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    &-label {
+      font-size: 11px;
+      color: #6b7280;
+      flex-shrink: 0;
+      min-width: 40px;
+    }
+
+    &-select {
+      flex: 1;
+      padding: 5px 8px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 12px;
+      color: #1f2937;
+      background: #fff;
+      cursor: pointer;
+      outline: none;
+      transition: border-color 0.15s;
+
+      &:hover { border-color: #9ca3af; }
+      &:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12); }
+    }
+
+    &-info {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 11px;
+      color: #374151;
+      line-height: 1.6;
+
+      &-key {
+        display: inline-block;
+        width: 52px;
+        color: #6b7280;
+        flex-shrink: 0;
+      }
+
+      > div {
+        word-break: break-all;
+      }
     }
   }
 }

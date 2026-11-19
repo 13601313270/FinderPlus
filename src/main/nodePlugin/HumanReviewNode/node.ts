@@ -2,6 +2,7 @@ import { NumberValue } from '../../engine/data/NumberValue'
 import { StringValue } from '../../engine/data/StringValue'
 import { FileValue } from '../../engine/data/FileValue'
 import { HtmlFileValue } from '../../engine/data/HtmlFileValue'
+import { ImgFileValue } from '../../engine/data/ImgFileValue'
 import { JsonValue } from '../../engine/data/JsonValue'
 import { InputPort } from '../../engine/port/InputPort'
 import { OutputPort } from '../../engine/port/OutputPort'
@@ -86,6 +87,14 @@ export class HumanReviewNode extends Node {
 
   /** 5 分钟超时再提醒的定时器；undefined 表示没有待触发的提醒 */
   private reminderTimer: ReturnType<typeof setTimeout> | undefined
+
+  // —— 飞书推送配置 ——
+
+  /** 是否启用飞书推送 */
+  private feishuEnabled = false
+
+  /** 全局飞书联系人 id（引用 SettingsDialog 里的飞书联系人列表；联系人必绑机器人） */
+  private feishuPersonId = ''
 
   constructor(id: string) {
     super(id)
@@ -174,6 +183,14 @@ export class HumanReviewNode extends Node {
     this.notifyChanged()
   }
 
+  // —— 飞书推送配置 getter/setter ——
+
+  getFeishuEnabled(): boolean { return this.feishuEnabled }
+  setFeishuEnabled(v: boolean): void { this.feishuEnabled = v; this.notifyChanged() }
+
+  getFeishuPersonId(): string { return this.feishuPersonId }
+  setFeishuPersonId(v: string): void { this.feishuPersonId = v.trim(); this.notifyChanged() }
+
   /** 取某 kind 的 renderer 视图状态（kind 不在表里返回空对象） */
   getRendererSaveState(kind: string): Record<string, unknown> {
     return this.rendererSaveStates[kind] ?? {}
@@ -245,6 +262,12 @@ export class HumanReviewNode extends Node {
       this.current = value
       this.scheduleReminder()
       this.notifyChanged()
+
+      // 覆盖模式：发飞书推送（不发系统通知——频繁覆盖场景下弹通知会骚扰用户，但飞书推送用户主动配置了就要发）
+      if (this.feishuEnabled && this.feishuPersonId) {
+        const label = value.displayLabel || '待审核项'
+        void this.sendFeishuAsync(value, `人工审核待处理（覆盖更新）：${label}`).catch(() => { /* noop */ })
+      }
       // 覆盖模式不发系统通知——频繁覆盖场景下弹通知会骚扰用户
       // 保持 dirty：有 current 待审核
       return
@@ -274,6 +297,10 @@ export class HumanReviewNode extends Node {
           ...(canvasId ? { canvasId } : {}),
           nodeId: this.id
         }).catch(() => { /* noop */ })
+      }
+      // 首次有待审核项 → 飞书推送（只发首次，避免队列积压连刷 N 条飞书）
+      if (this.feishuEnabled && this.feishuPersonId) {
+        void this.sendFeishuAsync(value, `人工审核待处理：${label}`).catch(() => { /* noop */ })
       }
       // 首次有待审核项 → 启动 5 分钟超时再提醒
       this.scheduleReminder()
@@ -396,6 +423,10 @@ export class HumanReviewNode extends Node {
           nodeId: this.id
         }).catch(() => { /* noop */ })
       }
+      // 5 分钟超时 → 飞书推送
+      if (this.feishuEnabled && this.feishuPersonId) {
+        void this.sendFeishuAsync(this.current!, `人工审核已超时 5 分钟：${label}`).catch(() => { /* noop */ })
+      }
       // 只提醒一次，发完清掉
       this.reminderTimer = undefined
     }, REMINDER_DELAY)
@@ -406,6 +437,88 @@ export class HumanReviewNode extends Node {
     if (this.reminderTimer !== undefined) {
       clearTimeout(this.reminderTimer)
       this.reminderTimer = undefined
+    }
+  }
+
+  /**
+   * 飞书异步推送（HumanReviewNode 三个触发点复用）。
+   *
+   * value 是 ImgFileValue 且 file 存在 → 先 uploadImage 拿 image_key → send 图片消息
+   * 其他类型 / null file → send 文本消息（textLabel）
+   *
+   * 发送失败弹桌面通知（飞书错误码 + msg），方便用户定位配置问题。
+   */
+  private async sendFeishuAsync(value: Value, textLabel: string): Promise<void> {
+    if (!this.feishuEnabled || !this.feishuPersonId) return
+
+    const w = window as unknown as {
+      notificationApi?: { show: (t: string, b?: string, m?: Record<string, unknown>) => Promise<unknown> }
+    }
+
+    // @ts-ignore
+    const person = window.feishuApi?.resolvePerson(this.feishuPersonId)
+    if (!person) {
+      w.notificationApi?.show('飞书推送失败', '联系人已删除或配置无效')
+      return
+    }
+
+    // @ts-ignore
+    const creds = window.feishuApi?.resolveBotCredentials(person.botId)
+    if (!creds) {
+      w.notificationApi?.show('飞书推送失败', '机器人凭证已删除或无效')
+      return
+    }
+
+    // —— 图片值：upload + send image ——
+    if (value instanceof ImgFileValue && !value.isNull && value.file) {
+      try {
+        const buffer = await value.file.arrayBuffer()
+        // @ts-ignore
+        const uploadRes = await window.feishuApi?.uploadImage({
+          appId: creds.appId,
+          appSecret: creds.appSecret,
+          fileName: value.file.name || 'image.png',
+          buffer
+        })
+        if (!uploadRes?.ok) {
+          const errMsg = uploadRes?.error || '图片上传失败'
+          w.notificationApi?.show('飞书推送失败', errMsg)
+          return
+        }
+        // @ts-ignore
+        const sendRes = await window.feishuApi?.send({
+          appId: creds.appId,
+          appSecret: creds.appSecret,
+          receiveId: person.receiveId,
+          receiveIdType: person.receiveIdType,
+          msgType: 'image',
+          imageKey: uploadRes.imageKey
+        })
+        if (sendRes && !sendRes.ok) {
+          const errMsg = sendRes.error || '未知错误'
+          w.notificationApi?.show('飞书推送失败', errMsg)
+        }
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err)
+        w.notificationApi?.show('飞书推送失败', msg)
+      }
+      return
+    }
+
+    // —— 其他类型：send text ——
+    // @ts-ignore
+    const result = await window.feishuApi?.send({
+      appId: creds.appId,
+      appSecret: creds.appSecret,
+      receiveId: person.receiveId,
+      receiveIdType: person.receiveIdType,
+      msgType: 'text',
+      text: textLabel
+    })
+
+    if (result && !result.ok) {
+      const errMsg = result.error || '未知错误'
+      w.notificationApi?.show('飞书推送失败', errMsg)
     }
   }
 
@@ -474,7 +587,9 @@ export class HumanReviewNode extends Node {
       mode: this.mode,
       autoPlayAudio: this.autoPlayAudio,
       renderContext: this.renderContext,
-      rendererSaveStates: this.rendererSaveStates
+      rendererSaveStates: this.rendererSaveStates,
+      feishuEnabled: this.feishuEnabled,
+      feishuPersonId: this.feishuPersonId
     }
   }
 
@@ -511,6 +626,9 @@ export class HumanReviewNode extends Node {
         }
       }
     }
+    // 恢复飞书推送开关 & 联系人
+    if (typeof state.feishuEnabled === 'boolean') this.feishuEnabled = state.feishuEnabled
+    if (typeof state.feishuPersonId === 'string') this.feishuPersonId = state.feishuPersonId.trim()
     // 队列和输出端口都由上游重新 commit 时自动重建
   }
 }

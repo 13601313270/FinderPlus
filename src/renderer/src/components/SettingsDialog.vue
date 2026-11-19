@@ -746,6 +746,13 @@ async function onDownloadImageModel(id: string, source: string = 'hf-mirror'): P
   if (!window.localImageApi) return
   const rec = recommendedImageModels.value.find(m => m.id === id)
   if (!rec) return
+
+  // 串行下载限制：已有下载在跑 → 提示并引导取消
+  if (downloadingId.value && downloadingId.value !== `img:${id}`) {
+    await window.showAlert('已有下载任务在进行中', '请先取消当前下载，再开始新的下载。')
+    return
+  }
+
   downloadingId.value = `img:${id}`
   downloadProgress.value = 0
   downloadProgressText.value = '连接中...'
@@ -906,6 +913,12 @@ async function onDownloadLocalModel(id: string, source: string = 'hf-mirror'): P
   if (!window.localLlmApi) return
   const rec = recommendedModels.value.find((m) => m.id === id)
   if (!rec) return
+
+  // 串行下载限制：已有下载在跑 → 提示并引导取消
+  if (downloadingId.value && downloadingId.value !== id) {
+    await window.showAlert('已有下载任务在进行中', '请先取消当前下载，再开始新的下载。')
+    return
+  }
 
   downloadingId.value = id
   downloadProgress.value = 0

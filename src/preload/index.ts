@@ -612,7 +612,8 @@ const localLlmApi = {
     loaded: string[]      // 多模型：已加载的模型文件名数组
     busy: boolean
     models: Array<{ name: string; path: string; size: number; sizeHuman: string }>
-    activeDownloads: string[]
+    /** 正在下载的模型及其当前进度（用于 UI 恢复状态） */
+    activeDownloads: Array<{ id: string; progress: { received: number; total: number | null; percent: number; speed: number } }>
   }> => ipcRenderer.invoke('local:listModels'),
 
   /** 加载一个模型到内存 */
@@ -680,7 +681,8 @@ const localImageApi = {
     loaded: string[]
     busy: boolean
     models: Array<{ name: string; path: string; size: number; sizeHuman: string }>
-    activeDownloads: string[]
+    /** 正在下载的模型及其当前进度（与 LLM 共用同一个下载队列） */
+    activeDownloads: Array<{ id: string; progress: { received: number; total: number | null; percent: number; speed: number } }>
   }> => ipcRenderer.invoke('local:image:listModels'),
 
   /** 加载一个图片模型到内存 */

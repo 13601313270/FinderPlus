@@ -52,7 +52,7 @@ export function registerLocalModelIpcHandlers(): void {
       loaded: r.getLoadedModels(),
       busy: r.isAnyBusy(),
       models,
-      activeDownloads: d.getActiveDownloads()
+      activeDownloads: d.getActiveDownloadsWithProgress()
     }
   })
 
@@ -158,7 +158,7 @@ export function registerLocalModelIpcHandlers(): void {
       loaded: r.getLoadedImageModels(),
       busy: r.isAnyImageBusy(),
       models,
-      activeDownloads: d.getActiveDownloads()   // 共用同一个下载队列
+      activeDownloads: d.getActiveDownloadsWithProgress()   // 共用同一个下载队列（带当前进度）
     }
   })
 

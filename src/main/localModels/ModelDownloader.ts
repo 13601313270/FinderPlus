@@ -303,3 +303,8 @@ export function cancelDownload(id: string): boolean {
 export function getActiveDownloads(): string[] {
   return [...activeDownloads.keys()]
 }
+
+/** 获取所有活跃下载及其当前进度（用于 renderer 重新挂载时恢复状态） */
+export function getActiveDownloadsWithProgress(): Array<{ id: string; progress: DownloadProgress }> {
+  return [...activeDownloads.entries()].map(([id, dl]) => ({ id, progress: { ...dl.progress } }))
+}

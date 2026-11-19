@@ -716,12 +716,25 @@ async function refreshLocalImageModels(): Promise<void> {
   try {
     const [rec, list] = await Promise.all([
       window.localImageApi?.getRecommendedModels() ?? Promise.resolve([]),
-      window.localImageApi?.listModels() ?? Promise.resolve({ loaded: [], busy: false, models: [], activeDownloads: [] })
+      window.localImageApi?.listModels() ?? Promise.resolve({ loaded: [], busy: false, models: [], activeDownloads: [] as Array<{ id: string; progress: any }> })
     ])
     recommendedImageModels.value = rec
     localImageModels.value = list.models
     localImageLoaded.value = list.loaded
     localImageBusy.value = list.busy
+
+    // 恢复后台下载状态（关闭弹窗再打开时，下载仍在继续）
+    if (list.activeDownloads.length > 0) {
+      const dl = list.activeDownloads[0]
+      downloadingId.value = `img:${dl.id}`
+      downloadProgress.value = dl.progress.percent
+      if (dl.progress.total) {
+        downloadProgressText.value = `${(dl.progress.received / 1024 / 1024).toFixed(0)} / ${(dl.progress.total / 1024 / 1024).toFixed(0)} MB`
+      } else {
+        downloadProgressText.value = `${(dl.progress.received / 1024 / 1024).toFixed(0)} MB`
+      }
+      startProgressListener()
+    }
   } catch (err) {
     console.warn('[settings] 加载图片模型列表失败', err)
   } finally {
@@ -800,13 +813,25 @@ async function refreshLocalModels(): Promise<void> {
   try {
     const [rec, list] = await Promise.all([
       window.localLlmApi?.getRecommendedModels() ?? Promise.resolve([]),
-      window.localLlmApi?.listModels() ?? Promise.resolve({ loaded: [], busy: false, models: [], activeDownloads: [] })
+      window.localLlmApi?.listModels() ?? Promise.resolve({ loaded: [], busy: false, models: [], activeDownloads: [] as Array<{ id: string; progress: any }> })
     ])
-    console.log('[SettingsDialog] refreshLocalModels rec=', rec, 'list=', list)
     recommendedModels.value = rec
     localModels.value = list.models
     localLoaded.value = list.loaded
     localBusy.value = list.busy
+
+    // 恢复后台下载状态（关闭弹窗再打开时，下载仍在继续）
+    if (list.activeDownloads.length > 0) {
+      const dl = list.activeDownloads[0]
+      downloadingId.value = dl.id  // LLM 不带前缀，直接用 catalog ID
+      downloadProgress.value = dl.progress.percent
+      if (dl.progress.total) {
+        downloadProgressText.value = `${(dl.progress.received / 1024 / 1024).toFixed(0)} / ${(dl.progress.total / 1024 / 1024).toFixed(0)} MB`
+      } else {
+        downloadProgressText.value = `${(dl.progress.received / 1024 / 1024).toFixed(0)} MB`
+      }
+      startProgressListener()
+    }
   } catch (err) {
     console.warn('[settings] 加载本地模型列表失败', err)
   } finally {

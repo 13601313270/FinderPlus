@@ -109,9 +109,19 @@ export const RECOMMENDED_LLM_MODELS: readonly ModelCatalogEntry[] = [
 export const RECOMMENDED_IMAGE_MODELS: readonly ModelCatalogEntry[] = [
   {
     type: 'image',
+    label: 'Qwen-Image-2.1 Q4_0',
+    id: 'qwen-image-2.1',
+    sizeGb: 4.0,
+    ramGb: 6,
+    description: '阿里通义千问团队开源，7B 参数，原生支持中文 prompt 与图片文字渲染，当前中文友好度最佳',
+    fileName: 'qwen_image_2.1-Q4_0.gguf',
+    buildUri: (s) => buildModelUri(s, 'leejet/Qwen-Image-2.1-GGUF', 'qwen_image_2.1-Q4_0.gguf')
+  },
+  {
+    type: 'image',
     label: 'FLUX.2-klein Q4_0',
     id: 'flux2-klein',
-    sizeGb: 2.5,
+    sizeGb: 2.3,
     ramGb: 4,
     description: '当前最强开源文生图，4B 参数，推荐首选',
     fileName: 'flux-2-klein-4b-Q4_0.gguf',
@@ -136,6 +146,16 @@ export const RECOMMENDED_IMAGE_MODELS: readonly ModelCatalogEntry[] = [
     description: 'Dev 版创意能力更强，适合精细控制（非商业许可）',
     fileName: 'flux1-dev-Q4_K_S.gguf',
     buildUri: (s) => buildModelUri(s, 'city96/FLUX.1-dev-gguf', 'flux1-dev-Q4_K_S.gguf')
+  },
+  {
+    type: 'image',
+    label: 'SD 1.5 Q4_0',
+    id: 'sd-1.5',
+    sizeGb: 1.48,
+    ramGb: 3.5,
+    description: '经典老牌，生态最全，LoRA/ControlNet 适配最多；对中文 prompt 理解较弱，建议配合 negativePrompt 使用',
+    fileName: 'stable-diffusion-v1-5-pruned-emaonly-Q4_0.gguf',
+    buildUri: (s) => buildModelUri(s, 'second-state/stable-diffusion-v1-5-GGUF', 'stable-diffusion-v1-5-pruned-emaonly-Q4_0.gguf')
   },
   {
     type: 'image',

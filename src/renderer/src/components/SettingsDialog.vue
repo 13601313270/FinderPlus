@@ -2132,6 +2132,8 @@ async function onDeleteCanvas(id: string, name: string): Promise<void> {
 .gs-transfer {
   &__actions {
     display: flex;
+    align-items: center;
+    margin-left: 8px;
     gap: 8px;
   }
 }
@@ -2900,7 +2902,6 @@ async function onDeleteCanvas(id: string, name: string): Promise<void> {
     border-radius: 4px;
     background: #e5e7eb;
     overflow: hidden;
-    margin-right: 8px;
     vertical-align: middle;
   }
   &__progress-bar {

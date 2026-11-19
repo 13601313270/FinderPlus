@@ -2133,7 +2133,6 @@ async function onDeleteCanvas(id: string, name: string): Promise<void> {
   &__actions {
     display: flex;
     align-items: center;
-    margin-left: 8px;
     gap: 8px;
   }
 }
@@ -2765,6 +2764,7 @@ async function onDeleteCanvas(id: string, name: string): Promise<void> {
     flex-direction: column;
     gap: 2px;
     min-width: 0;
+    margin-right: 4px;
   }
 
   &__name {

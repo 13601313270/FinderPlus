@@ -23,6 +23,14 @@ asarUnpack:
   - "node_modules/@node-llama-cpp/**/*.dylib"
   - "node_modules/@node-llama-cpp/**/*.dll"
   - "node_modules/@node-llama-cpp/**/*.so"
+  # stable-diffusion-cpp-node-api 原生引擎 + 平台子包
+  - "node_modules/stable-diffusion-cpp-node-api/**/*.node"
+  - "node_modules/stable-diffusion-cpp-node-api/**/*.dylib"
+  - "node_modules/@stable-diffusion-cpp-node-api/**/*.node"
+  - "node_modules/@stable-diffusion-cpp-node-api/**/*.dylib"
+  # sharp 原生二进制
+  - "node_modules/sharp/**/*.node"
+  - "node_modules/@img/**/*.node"
 mac:
   category: public.app-category.productivity
   # 仅构建 arm64（Apple Silicon）。如需覆盖 Intel Mac，再把 x64 加回来。

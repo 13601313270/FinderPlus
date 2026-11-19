@@ -86,31 +86,50 @@ const { openCenter: openHelpCenter } = useHelpCenter()
 const { openSettings } = useGlobalSettings()
 
 // —— 本地模型运行状态（工具栏左侧展示）——
-const loadedLocalModels = ref<string[]>([])
-const localModelBusy = ref(false)
+// loadedLocalLlmModels / loadedLocalImageModels 分别跟踪 LLM 和 文生图引擎
+// 合并后展示为 chip，前缀区分
+const loadedLocalLlmModels = ref<string[]>([])
+const loadedLocalImageModels = ref<string[]>([])
+const localImageBusy = ref(false)
 let localModelRefreshTimer: ReturnType<typeof setInterval> | null = null
 
+const loadedLocalModels = computed(() => {
+  const llms = loadedLocalLlmModels.value.map(n => ({ name: n, kind: 'llm' as const }))
+  const imgs = loadedLocalImageModels.value.map(n => ({ name: n, kind: 'image' as const }))
+  return [...llms, ...imgs]
+})
+
 async function refreshLocalModelStatus(): Promise<void> {
-  const api = (window as any).localLlmApi
-  if (!api) return
-  try {
-    const list = await api.listModels()
-    loadedLocalModels.value = list.loaded
-    localModelBusy.value = list.busy
-  } catch { /* 忽略 */ }
+  const llmApi = (window as any).localLlmApi
+  const imgApi = (window as any).localImageApi
+
+  if (llmApi) {
+    try {
+      const list = await llmApi.listModels()
+      loadedLocalLlmModels.value = list.loaded
+    } catch { /* 忽略 */ }
+  }
+
+  if (imgApi) {
+    try {
+      const list = await imgApi.listModels()
+      loadedLocalImageModels.value = list.loaded
+      localImageBusy.value = list.busy
+    } catch { /* 忽略 */ }
+  }
 }
 
-async function stopLocalModel(modelName: string): Promise<void> {
-  const api = (window as any).localLlmApi
+async function stopLocalModel(name: string, kind: 'llm' | 'image'): Promise<void> {
+  const api = kind === 'image' ? (window as any).localImageApi : (window as any).localLlmApi
   if (!api) return
   const ok = await (window as any).showConfirm?.(
-    '停止本地模型',
-    `确定要停止 "${modelName}" 吗？内存将被释放，下次使用需要重新启动。`
+    kind === 'image' ? '停止图片模型' : '停止本地模型',
+    `确定要停止 "${name}" 吗？内存将被释放，下次使用需要重新启动。`
   )
   if (!ok) return
   // 需要拿到完整路径
   const list = await api.listModels()
-  const m = list.models.find((m: any) => m.name === modelName)
+  const m = list.models.find((m: any) => m.name === name)
   if (!m) return
   await api.unloadModel(m.path)
   await refreshLocalModelStatus()
@@ -1486,15 +1505,17 @@ onUnmounted(() => {
           <div class="stage__local-models">
             <div class="stage__local-models-label">🖥 本地</div>
             <button
-              v-for="name in loadedLocalModels"
-              :key="name"
+              v-for="m in loadedLocalModels"
+              :key="`${m.kind}:${m.name}`"
               class="stage__local-model-chip"
+              :class="{ 'stage__local-model-chip--image': m.kind === 'image' }"
               type="button"
-              :disabled="localModelBusy"
-              :title="`${localModelBusy ? '模型推理中，无法停止' : '点击停止'}：${name}`"
-              @click="stopLocalModel(name)"
+              :disabled="m.kind === 'image' ? localImageBusy : false"
+              :title="`${m.kind === 'image' ? '图片模型' : 'LLM'} · 点击停止：${m.name}`"
+              @click="stopLocalModel(m.name, m.kind)"
             >
-              {{ name }}{{ localModelBusy ? ' ⏳' : ' ✕' }}
+              {{ m.kind === 'image' ? '🖼 ' : '💬 ' }}{{ m.name }}
+              {{ m.kind === 'image' && localImageBusy ? ' ⏳' : ' ✕' }}
             </button>
           </div>
         </template>

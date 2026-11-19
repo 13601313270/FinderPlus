@@ -660,6 +660,92 @@ const localLlmApi = {
 }
 
 /**
+ * 本地图片模型 API：文生图模型的下载 / 加载 / 生成。
+ *
+ * 和 localLlmApi 对称——同样是模型推荐目录、下载、加载、卸载、生成、取消、删除。
+ */
+const localImageApi = {
+  /** 推荐图片模型目录 */
+  getRecommendedModels: (): Promise<Array<{
+    id: string
+    label: string
+    sizeGb: number
+    ramGb: number
+    description: string
+    fileName: string
+  }>> => ipcRenderer.invoke('local:image:recommendedModels'),
+
+  /** 列出本地已下载图片模型 + 当前状态 */
+  listModels: (): Promise<{
+    loaded: string[]
+    busy: boolean
+    models: Array<{ name: string; path: string; size: number; sizeHuman: string }>
+    activeDownloads: string[]
+  }> => ipcRenderer.invoke('local:image:listModels'),
+
+  /** 加载一个图片模型到内存 */
+  loadModel: (modelPath: string): Promise<{ ok: true; modelName: string; versionName: string } | { ok: false; error: string }> =>
+    ipcRenderer.invoke('local:image:loadModel', modelPath),
+
+  /** 卸载图片模型。modelPath 可选：不传则卸载全部 */
+  unloadModel: (modelPath?: string): Promise<{ ok: true }> =>
+    ipcRenderer.invoke('local:image:unloadModel', modelPath),
+
+  /**
+   * 文生图。返回 base64（PNG 编码）+ 尺寸。
+   * 如果返回 AbortError 说明用户主动取消。
+   */
+  generate: (args: {
+    modelPath: string
+    prompt: string
+    width?: number
+    height?: number
+    steps?: number
+    cfg?: number
+    negativePrompt?: string
+    seed?: number
+  }): Promise<{ ok: true; width: number; height: number; base64: string } | { ok: false; error: string }> =>
+    ipcRenderer.invoke('local:image:generate', args),
+
+  /** 中止当前图片生成 */
+  cancelGenerate: (modelPath: string): Promise<{ ok: boolean }> =>
+    ipcRenderer.invoke('local:image:cancelGenerate', modelPath),
+
+  /** 下载一个推荐图片模型 */
+  downloadModel: (catalogId: string, source?: string): Promise<{ ok: true; path?: string; size?: number; skipped?: boolean; modelName?: string } | { ok: false; error: string }> =>
+    ipcRenderer.invoke('local:image:downloadModel', { catalogId, source }),
+
+  /** 取消图片模型下载 */
+  cancelDownload: (catalogId: string): Promise<{ ok: boolean }> =>
+    ipcRenderer.invoke('local:image:cancelDownload', catalogId),
+
+  /** 删除本地图片模型文件 */
+  deleteModel: (modelName: string): Promise<{ ok: true } | { ok: false; error: string }> =>
+    ipcRenderer.invoke('local:image:deleteModel', modelName),
+
+  /** 监听下载进度 */
+  onDownloadProgress: (
+    callback: (payload: { modelId: string; received: number; total: number | null; percent: number; speed: number }) => void
+  ): (() => void) => {
+    const handler = (
+      _e: Electron.IpcRendererEvent,
+      payload: { modelId: string; received: number; total: number | null; percent: number; speed: number }
+    ) => callback(payload)
+    ipcRenderer.on('local:image:downloadProgress', handler)
+    return () => ipcRenderer.removeListener('local:image:downloadProgress', handler)
+  },
+
+  /** 监听生成进度（每 step 触发一次） */
+  onGenerateProgress: (
+    callback: (payload: { step: number; steps: number }) => void
+  ): (() => void) => {
+    const handler = (_e: Electron.IpcRendererEvent, payload: { step: number; steps: number }) => callback(payload)
+    ipcRenderer.on('local:image:progress', handler)
+    return () => ipcRenderer.removeListener('local:image:progress', handler)
+  }
+}
+
+/**
  * 表节点 API：动态建表 + 行级 CRUD。
  *
  * 所有操作都透传到主进程 sql.js 实例。主进程负责：
@@ -1047,6 +1133,7 @@ if (process.contextIsolated) {
     contextBridge.exposeInMainWorld('browserApi', browserApi)
     contextBridge.exposeInMainWorld('canvasApi', canvasApi)
     contextBridge.exposeInMainWorld('localLlmApi', localLlmApi)
+    contextBridge.exposeInMainWorld('localImageApi', localImageApi)
     contextBridge.exposeInMainWorld('getCurrentCanvasId', getCurrentCanvasId)
     contextBridge.exposeInMainWorld('getStartupMode', getStartupMode)
   } catch (error) {
@@ -1094,6 +1181,8 @@ if (process.contextIsolated) {
   // @ts-ignore (define in dts)
   window.localLlmApi = localLlmApi
   // @ts-ignore (define in dts)
+  window.localImageApi = localImageApi
+  // @ts-ignore (define in dts)
   window.getCurrentCanvasId = getCurrentCanvasId
   // @ts-ignore (define in dts)
   window.getStartupMode = getStartupMode
@@ -1118,4 +1207,5 @@ export type TableApi = typeof tableApi
 export type BrowserApi = typeof browserApi
 export type CanvasApi = typeof canvasApi
 export type LocalLlmApi = typeof localLlmApi
+export type LocalImageApi = typeof localImageApi
 export type GetCurrentCanvasId = typeof getCurrentCanvasId

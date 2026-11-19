@@ -1,10 +1,18 @@
 /**
- * 模型下载——直接用 node-llama-cpp 自带的 createModelDownloader（底层是 ipull，成熟的多连接下载器）。
+ * 通用模型下载器——LLM + 文生图共用。
  *
- * 比自己写 http 下载靠谱得多：自动 Range 续传、自动重试、4 连接并行、HF 镜像配置。
+ * 底层用 node-llama-cpp 自带的 createModelDownloader（底层是 ipull）：
+ *   - 4 连接并行下载
+ *   - 自动 Range 续传
+ *   - 自动重试 / 重定向
+ *   - HF 镜像自动切换
+ *
+ * 为什么能给图片模型用？
+ *   createModelDownloader 是个纯下载工具——只要给它 URL + 输出目录，
+ *   它不关心下载的是 GGUF 大语言模型还是 GGUF 图片模型。
  */
 
-import { getModelsDir } from './LlmRunner'
+import { getLlmModelsDir, getImageModelsDir } from './modelsDir'
 
 // 缓存动态 import 的 node-llama-cpp 模块（它是纯 ESM，必须 await import()）
 let _nodeLlamaCpp: typeof import('node-llama-cpp') | null = null
@@ -28,28 +36,40 @@ export const DOWNLOAD_SOURCE_OPTIONS: { value: DownloadSource; label: string; hi
   }
 ]
 
-/**
- * 构造 modelUri —— 优先用 https:// 直链 URL，避开 hf: scheme 的 API manifest 探测。
- * hf-mirror.com 对 HF /api/models 返回 503，所以直接指文件最稳。
- */
+/** 构造 HF 直链 URL（huggingface.co / hf-mirror.com） */
 function buildModelUri(source: DownloadSource, repo: string, file: string): string {
   const base = source === 'hf-official' ? 'https://huggingface.co' : 'https://hf-mirror.com'
   return `${base}/${repo}/resolve/main/${file}`
 }
 
+/** 模型类型——决定下载到哪个子目录、用哪个 Runner */
+export type ModelType = 'llm' | 'image'
+
+/** 模型目录解析器——根据 type 返回对应子目录 */
+export function getModelDirByType(type: ModelType): string {
+  return type === 'llm' ? getLlmModelsDir() : getImageModelsDir()
+}
+
 export interface ModelCatalogEntry {
+  /** 模型类型——决定下载目录和运行引擎 */
+  type: ModelType
   label: string
   id: string
   sizeGb: number
   ramGb: number
+  /** 可选的描述文字（图片模型用来说明特点） */
+  description?: string
   /** 最终落盘文件名 */
   fileName: string
-  /** 构造完整 URL modelUri（根据源动态生成） */
+  /** 构造完整 URL（根据源动态生成） */
   buildUri: (source: DownloadSource) => string
 }
 
-export const RECOMMENDED_MODELS: readonly ModelCatalogEntry[] = [
+// ================ LLM 推荐模型 ================
+
+export const RECOMMENDED_LLM_MODELS: readonly ModelCatalogEntry[] = [
   {
+    type: 'llm',
     label: 'Qwen 2.5 1.5B Instruct (中文好)',
     id: 'qwen2.5-1.5b',
     sizeGb: 1.1,
@@ -58,6 +78,7 @@ export const RECOMMENDED_MODELS: readonly ModelCatalogEntry[] = [
     buildUri: (s) => buildModelUri(s, 'bartowski/Qwen2.5-1.5B-Instruct-GGUF', 'Qwen2.5-1.5B-Instruct-Q4_K_M.gguf')
   },
   {
+    type: 'llm',
     label: 'Meta Llama 3.2 1B Instruct (英文好)',
     id: 'llama3.2-1b',
     sizeGb: 0.7,
@@ -66,6 +87,7 @@ export const RECOMMENDED_MODELS: readonly ModelCatalogEntry[] = [
     buildUri: (s) => buildModelUri(s, 'bartowski/Llama-3.2-1B-Instruct-GGUF', 'Llama-3.2-1B-Instruct-Q4_K_M.gguf')
   },
   {
+    type: 'llm',
     label: 'Qwen 2.5 3B Instruct (效果更好)',
     id: 'qwen2.5-3b',
     sizeGb: 2.0,
@@ -75,6 +97,73 @@ export const RECOMMENDED_MODELS: readonly ModelCatalogEntry[] = [
   }
 ]
 
+// ================ 图片推荐模型 ================
+// 所有仓库/文件名都已在 huggingface.co 上验证存在
+//
+// 量化版本说明：
+//   Q4_0      — 最小，速度最快，质量略降
+//   Q4_K_S    — 小尺寸 K-quant，平衡性最好（推荐）
+//   Q4_K_M    — 中尺寸 K-quant，质量更好
+//   Q8_0      — 接近原始精度，但体积翻倍
+
+export const RECOMMENDED_IMAGE_MODELS: readonly ModelCatalogEntry[] = [
+  {
+    type: 'image',
+    label: 'FLUX.2-klein Q4_0',
+    id: 'flux2-klein',
+    sizeGb: 2.5,
+    ramGb: 4,
+    description: '当前最强开源文生图，4B 参数，推荐首选',
+    fileName: 'flux-2-klein-4b-Q4_0.gguf',
+    buildUri: (s) => buildModelUri(s, 'leejet/FLUX.2-klein-4B-GGUF', 'flux-2-klein-4b-Q4_0.gguf')
+  },
+  {
+    type: 'image',
+    label: 'FLUX.1-schnell Q4_K_M',
+    id: 'flux1-schnell',
+    sizeGb: 2.2,
+    ramGb: 3.5,
+    description: '4 步快速出图，质量很好，日常使用首选',
+    fileName: 'flux1-schnell-Q4_K_M.gguf',
+    buildUri: (s) => buildModelUri(s, 'unsloth/FLUX.1-schnell-GGUF', 'flux1-schnell-Q4_K_M.gguf')
+  },
+  {
+    type: 'image',
+    label: 'FLUX.1-dev Q4_K_S',
+    id: 'flux1-dev',
+    sizeGb: 3.0,
+    ramGb: 4,
+    description: 'Dev 版创意能力更强，适合精细控制（非商业许可）',
+    fileName: 'flux1-dev-Q4_K_S.gguf',
+    buildUri: (s) => buildModelUri(s, 'city96/FLUX.1-dev-gguf', 'flux1-dev-Q4_K_S.gguf')
+  },
+  {
+    type: 'image',
+    label: 'SDXL Turbo Q8_0',
+    id: 'sdxl-turbo',
+    sizeGb: 4.0,
+    ramGb: 6,
+    description: '1 步极速出图，风格化略弱；唯一的量化版本是 Q8_0（较大）',
+    fileName: 'sd_xl_turbo_1.0.q8_0.gguf',
+    buildUri: (s) => buildModelUri(s, 'OlegSkutte/sdxl-turbo-GGUF', 'sd_xl_turbo_1.0.q8_0.gguf')
+  }
+]
+
+/** 向后兼容导出——原有 LLM 代码引用的是这个 */
+export const RECOMMENDED_MODELS = RECOMMENDED_LLM_MODELS
+
+/** 按 type 查 catalog */
+export function getCatalogByType(type: ModelType): readonly ModelCatalogEntry[] {
+  return type === 'llm' ? RECOMMENDED_LLM_MODELS : RECOMMENDED_IMAGE_MODELS
+}
+
+/** 按 id 查 catalog entry（跨两种类型） */
+export function findCatalogEntry(id: string): ModelCatalogEntry | undefined {
+  return [...RECOMMENDED_LLM_MODELS, ...RECOMMENDED_IMAGE_MODELS].find(m => m.id === id)
+}
+
+// ================ 下载引擎（LLM + Image 共用） ================
+
 export interface DownloadProgress {
   received: number
   total: number | null
@@ -83,7 +172,7 @@ export interface DownloadProgress {
 }
 
 export type DownloadResult =
-  | { ok: true; path: string; size: number }
+  | { ok: true; path: string; size: number; skipped?: boolean }
   | { ok: false; error: string }
 
 export interface ActiveDownload {
@@ -94,9 +183,11 @@ export interface ActiveDownload {
 const activeDownloads = new Map<string, ActiveDownload>()
 
 /**
- * 下载一个模型（用 node-llama-cpp 自带的 ipull 下载器）。
+ * 下载任意类型的模型（LLM / Image 共用同一套引擎）。
  *
- * 自动处理：4 连接并行、Range 续传、重试、重定向、已存在跳过。
+ * @param catalogEntry  推荐目录条目（带 type 字段决定下载到哪个子目录）
+ * @param source        'hf-mirror'（默认）或 'hf-official'
+ * @param onProgress    进度回调（可选）
  */
 export function downloadModel(
   catalogEntry: ModelCatalogEntry,
@@ -109,7 +200,7 @@ export function downloadModel(
       return
     }
 
-    const modelsDir = getModelsDir()
+    const modelsDir = getModelDirByType(catalogEntry.type)
     const hfEndpoint = source === 'hf-official' ? 'https://huggingface.co' : 'https://hf-mirror.com'
 
     const active: ActiveDownload = {
@@ -131,7 +222,7 @@ export function downloadModel(
     let lastProgress = { received: 0, time: Date.now() }
 
     try {
-      console.log('[本地模型] 开始下载:', catalogEntry.id, '源:', source, 'endpoint:', hfEndpoint)
+      console.log(`[本地模型(${catalogEntry.type})] 开始下载:`, catalogEntry.id, '源:', source)
 
       const nlc = await getNlc()
       downloader = await nlc.createModelDownloader({
@@ -160,12 +251,12 @@ export function downloadModel(
         }
       })
 
-      // 如果 skipExisting 命中了 → 直接返回
+      // skipExisting 命中 → 直接返回
       if (downloader.totalSize > 0 && downloader.downloadedSize >= downloader.totalSize) {
-        console.log('[本地模型] 已存在，跳过下载:', catalogEntry.id)
+        console.log(`[本地模型(${catalogEntry.type})] 已存在，跳过:`, catalogEntry.id)
         const path = `${modelsDir}/${catalogEntry.fileName}`
         activeDownloads.delete(catalogEntry.id)
-        resolve({ ok: true, path, size: downloader.downloadedSize })
+        resolve({ ok: true, path, size: downloader.downloadedSize, skipped: true })
         return
       }
 
@@ -177,7 +268,6 @@ export function downloadModel(
         return
       }
 
-      // 100% 最终进度
       const total = downloader.downloadedSize || downloader.totalSize
       active.progress = {
         received: total,
@@ -187,11 +277,11 @@ export function downloadModel(
       }
       onProgress?.(active.progress)
 
-      console.log('[本地模型] ✓ 完成:', catalogEntry.id, finalPath, total, 'bytes')
+      console.log(`[本地模型(${catalogEntry.type})] ✓ 完成:`, catalogEntry.id, finalPath, total, 'bytes')
       activeDownloads.delete(catalogEntry.id)
       resolve({ ok: true, path: finalPath, size: total })
     } catch (err) {
-      console.error('[本地模型] ✗ 失败:', catalogEntry.id, (err as Error).message)
+      console.error(`[本地模型(${catalogEntry.type})] ✗ 失败:`, catalogEntry.id, (err as Error).message)
       activeDownloads.delete(catalogEntry.id)
       if (cancelled) {
         resolve({ ok: false, error: '下载已取消' })

@@ -23,9 +23,9 @@
 
 import { readProviderKey as _readUnifiedKey } from '../../../shared/aiProviders'
 
-export type ImageProviderId = 'siliconflow' | 'openai' | 'glm' | 'aliyun' | 'tokenplan'
+export type ImageProviderId = 'siliconflow' | 'openai' | 'glm' | 'aliyun' | 'tokenplan' | 'local'
 
-export type ImageRequestShape = 'openai' | 'siliconflow' | 'zhipu' | 'dashscope-sync' | 'dashscope-async'
+export type ImageRequestShape = 'openai' | 'siliconflow' | 'zhipu' | 'dashscope-sync' | 'dashscope-async' | 'local'
 
 export interface ImageModelPreset {
   /** 该模型支持的尺寸选项；第一项即默认尺寸 */
@@ -120,6 +120,17 @@ export const IMAGE_PROVIDERS: Readonly<Record<ImageProviderId, ImageProviderPres
     shape: 'dashscope-sync',
     defaultModel: 'qwen-image-3.0-pro',
     models: {}
+  },
+  local: {
+    label: '本地模型（Metal 加速）',
+    /** local shape 不走 HTTP，由 imageGenerationService.ts 直接调 IPC → ImageRunner */
+    url: '',
+    shape: 'local',
+    /** defaultModel 为空串——本地 provider 的模型列表从已加载图片模型动态读 */
+    defaultModel: '',
+    /** local provider 没有远程 modelsUrl；模型列表由 ImageGenDetailPanel 调 localImageApi.listModels() 填充 */
+    modelsUrl: undefined,
+    models: {}
   }
 }
 
@@ -138,7 +149,7 @@ export interface ImageGlobalConfig { providers: Record<ImageProviderId, { key: s
 function normalizeImageProviderId(p: string): ImageProviderId {
   const all = Object.keys(IMAGE_PROVIDERS) as string[]
   const normalized = p === 'dashscope' ? 'aliyun' : p
-  return (all.includes(normalized) ? normalized : 'aliyun') as ImageProviderId
+  return (all.includes(normalized) ? normalized : 'siliconflow') as ImageProviderId
 }
 
 /** 按 provider 从全局配置取 API Key（引擎层调用）—— 委托给统一模块 */
@@ -172,6 +183,11 @@ export interface ResolvedImageEndpoint {
  * 组装图像端点配置：
  * @param providerId  节点级选的 provider
  * @param modelOverride 节点级选的模型（空串或不认时回落到该 provider 的 defaultModel）
+ *
+ * local provider 特殊处理：
+ *   - key 永远为空（不需要 API Key）
+ *   - modelOverride 就是本地图片模型文件的完整路径（ImageGenDetailPanel 调 localImageApi 填的）
+ *   - model 留空表示"用户还没选模型"，引擎层会报错提示
  */
 export function readImageEndpoint(
   providerId: string,
@@ -179,6 +195,25 @@ export function readImageEndpoint(
 ): ResolvedImageEndpoint {
   const normalized = normalizeImageProviderId(providerId)
   const preset = IMAGE_PROVIDERS[normalized] ?? IMAGE_PROVIDERS.siliconflow
+
+  // —— local provider：跳过 key + 远程缓存逻辑 ——
+  if (normalized === 'local') {
+    const model = modelOverride?.trim() ?? ''
+    return {
+      provider: 'local',
+      label: preset.label,
+      requestUrl: '',
+      taskUrlPrefix: '',
+      shape: 'local',
+      key: '',            // local 不需要 key
+      model,              // 完整文件路径（local 分支直接拿这个去调 ImageRunner）
+      sizes: ['512x512', '768x768', '1024x1024'],
+      defaultSize: '1024x1024',
+      supportsBase64Response: true,
+      maxReferenceImages: 0
+    }
+  }
+
   const key = readImageProviderKey(normalized)
 
   // 模型选择逻辑：

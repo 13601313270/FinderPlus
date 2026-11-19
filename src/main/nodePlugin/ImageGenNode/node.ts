@@ -208,8 +208,10 @@ export class ImageGenNode extends Node {
     this.notifyChanged()
   }
 
-  /** 当前 provider 是否已配全局 Key —— UI 读它决定是否显示警告 */
+  /** 当前 provider 是否已配全局 Key —— UI 读它决定是否显示警告
+   *  local provider 不需要 key，永远返回 true */
   get hasProviderKey(): boolean {
+    if (this.provider === 'local') return true
     return readImageProviderKey(this.provider).length > 0
   }
 
@@ -468,7 +470,16 @@ export class ImageGenNode extends Node {
   private async doFetch(): Promise<void> {
     const endpoint = readImageEndpoint(this.provider, this.model)
 
-    if (!endpoint.key) {
+    // local provider 不需要 API key，但必须选了模型（完整文件路径）
+    if (this.provider === 'local') {
+      if (!endpoint.model) {
+        this.status = 'error'
+        this.errorMessage = '请先在节点内选择一个已加载的本地图片模型（下拉框里选）'
+        this.resultFile = null
+        this.notifyChanged()
+        return
+      }
+    } else if (!endpoint.key) {
       this.status = 'error'
       const label = IMAGE_PROVIDERS[this.provider].label
       this.errorMessage = `请在全局设置中为 ${label} 配置 API Key`

@@ -56,10 +56,8 @@ export function sleep(ms: number, signal?: AbortSignal): Promise<void> {
 
 /**
  * 发请求取图片数据。
- * 同步协议一次拿结果；百炼异步协议要先提交任务再轮询。
- *
- * @param isStale 轮询期间判断当前请求是否已过期（被后续请求取代 / cancel），
- *                调用方传入自己的 stale 判断逻辑。
+ * shape === 'local' 时走 IPC 调主进程 ImageRunner（不走 HTTP）；
+ * 其余同步/异步协议的行为不变。
  */
 export async function requestImage(
   endpoint: ResolvedImageEndpoint,
@@ -70,6 +68,56 @@ export async function requestImage(
   signal: AbortSignal
 ): Promise<{ result?: ExtractedImage; error?: string; cancelled?: boolean }> {
   let lastError: string | undefined
+
+  // —— local provider：直接调主进程 ImageRunner（通过 preload IPC）——
+  if (endpoint.shape === 'local') {
+    if (!endpoint.model) {
+      return { error: '请先选择一个已加载的本地图片模型（在设置 → 本地文生图里启动）' }
+    }
+    try {
+      const [wStr, hStr] = size.split('x').map(s => parseInt(s, 10))
+      const width = Number.isFinite(wStr) ? wStr : 1024
+      const height = Number.isFinite(hStr) ? hStr : 1024
+
+      // renderer 进程里没有 window.localImageApi 的类型，但 preload 暴露了
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const api = (window as any).localImageApi
+      if (!api) return { error: 'localImageApi 未注入（preload 版本过旧？）' }
+
+      // node-llama-cpp 的请求会由 AbortSignal 触发 ctx.abort()
+      // 但 localImageApi.generate 内部自己管 abort，这里只需要传给主进程
+      let abortCleanup: (() => void) | null = null
+      const abortController = new AbortController()
+      const onAbort = () => {
+        abortController.abort()
+        api.cancelGenerate?.(endpoint.model)
+      }
+      signal.addEventListener('abort', onAbort, { once: true })
+      abortCleanup = () => signal.removeEventListener('abort', onAbort)
+
+      const outcome = await api.generate({
+        modelPath: endpoint.model,
+        prompt,
+        width,
+        height,
+        steps: 20,
+        cfg: 7.0
+      })
+
+      abortCleanup()
+
+      if (signal.aborted) return { cancelled: true }
+      if (outcome.ok) {
+        return { result: { base64: outcome.base64 } }
+      }
+      return { error: outcome.error ?? '本地图片模型生成失败' }
+    } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        return { cancelled: true }
+      }
+      return { error: err instanceof Error ? err.message : '本地推理异常' }
+    }
+  }
 
   for (let attempt = 0; attempt <= POST_MAX_RETRIES; attempt++) {
     // 每轮重试都检查 stale / abort，避免在已取消的请求上浪费

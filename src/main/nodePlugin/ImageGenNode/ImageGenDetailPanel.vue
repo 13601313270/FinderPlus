@@ -114,21 +114,33 @@ watch(() => props.nodeId, () => {
 
 // —— 派生 computed ——
 
-/** 当前 provider 是否已配全局 Key —— 决定鉴权警告 */
-const providerKeyOk = computed(() => hasKey(provider.value))
+/** 当前 provider 是否已配全局 Key —— 决定鉴权警告
+ *  local provider 不需要 key，永远返回 true */
+const providerKeyOk = computed(() => provider.value === 'local' || hasKey(provider.value))
 
 /** 当前 provider 的预设 */
 const currentPreset = computed(() => IMAGE_PROVIDERS[provider.value])
 
-/** 当前 provider 下的模型选项（远程 + 本地合并） */
+/**
+ * 当前 provider 下的模型选项
+ * - local provider：从已加载图片模型列表动态读（调 localImageApi.listModels()）
+ * - 其他 provider：从远程缓存读（复用 resolveImageModelList）
+ */
+const localImageLoadedPaths = ref<string[]>([])
+
 const modelOptions = computed(() => {
+  // local provider 单独处理——不走远程缓存
+  if (provider.value === 'local') {
+    return localImageLoadedPaths.value
+      .map(path => [path, { sizes: ['512x512', '768x768', '1024x1024'] }] as [string, any])
+  }
   // 读一下 modelListVersion 强迫自己在远程 fetch 完后重算
   void modelListVersion.value
   return resolveImageModelList(provider.value)
 })
 
-/** 当前 provider 是否有 modelsUrl 支持远程拉取 */
-const supportsRemoteModels = computed(() => !!currentPreset.value.modelsUrl)
+/** 当前 provider 是否需要远程拉模型列表 */
+const supportsRemoteModels = computed(() => provider.value !== 'local' && !!currentPreset.value.modelsUrl)
 
 /** 下拉候选：当前模型支持的尺寸 + 当前生效值（上游可能传入预设外的尺寸） */
 const sizeChoices = computed<readonly string[]>(() => {
@@ -183,6 +195,37 @@ async function onStopClick(): Promise<void> {
 
 async function refreshCurrentModels(): Promise<void> {
   const pid = provider.value
+
+  // —— local provider：从 localImageApi 读已加载的图片模型文件 ——
+  if (pid === 'local') {
+    const api = (window as any).localImageApi
+    if (!api) {
+      modelListInfo.value = ''
+      modelListError.value = 'localImageApi 未注入'
+      return
+    }
+    modelListLoading.value = true
+    modelListError.value = ''
+    try {
+      const list = await api.listModels()
+      // localImageApi.listModels 返回 { loaded: string[] }（文件名），
+      // 但 modelOptions 需要完整路径（后端 generate 用），
+      // 从 list.models 里找 loaded 对应的完整 path
+      const paths: string[] = []
+      for (const loadedName of list.loaded) {
+        const m = list.models.find((m: any) => m.name === loadedName)
+        if (m) paths.push(m.path)
+      }
+      localImageLoadedPaths.value = paths
+      modelListInfo.value = paths.length > 0
+        ? `已加载 ${paths.length} 个本地图片模型`
+        : '还没有加载任何本地图片模型——请先到设置里启动'
+    } finally {
+      modelListLoading.value = false
+    }
+    return
+  }
+
   const preset = IMAGE_PROVIDERS[pid]
   if (!preset.modelsUrl) {
     modelListInfo.value = ''

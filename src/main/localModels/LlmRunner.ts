@@ -8,13 +8,9 @@
  * 打包配置：electron-builder.yml 的 asarUnpack + electron.vite.config.ts 的 external
  */
 
-import { existsSync, mkdirSync, readdirSync, statSync, rmSync } from 'node:fs'
+import { existsSync, readdirSync, statSync, rmSync } from 'node:fs'
 import { join, basename } from 'node:path'
-import { createRequire } from 'node:module'
-// ⚠️ 注意：不在顶层 import electron —— renderer 会通过 nodePlugin import 链间接加载这个文件，
-// electron 是 CJS 包不提供 ESM 命名导出，vite dev server 解析时会炸。
-// electron 只在 getModelsDir() 里用到，那里用 createRequire 同步获取 app。
-const requireElectron = createRequire(import.meta.url)
+import { getLlmModelsDir } from './modelsDir'
 
 // ESM 动态导入——node-llama-cpp 是纯 ESM 包，主进程代码（electron-vite 编译）里只能用动态 import
 // @vite-ignore：阻止 vite/esbuild 尝试静态解析 node-llama-cpp 内部的平台子包
@@ -61,18 +57,9 @@ async function getChatSessionClass(): Promise<any> {
 
 // —— 模型存储目录 ——
 
-/** 模型存储目录：~/Library/Application Support/Finder+/models/llm（Mac）。留 models/ 给将来其他模型类型 */
-let modelsDir: string | null = null
-
-/** 获取模型目录（首次调用时创建）。导出给 ModelDownloader 用 */
+/** LLM 模型目录（委托给共享模块）。导出给 ModelDownloader 用 */
 export function getModelsDir(): string {
-  if (modelsDir) return modelsDir
-  const { app } = requireElectron('electron') as typeof import('electron')
-  modelsDir = join(app.getPath('userData'), 'models', 'llm')
-  if (!existsSync(modelsDir)) {
-    mkdirSync(modelsDir, { recursive: true })
-  }
-  return modelsDir
+  return getLlmModelsDir()
 }
 
 // —— 多模型实例管理 ——

@@ -18,8 +18,12 @@ export default defineConfig({
     plugins: [externalizeDepsPlugin(), visualizer({ filename: 'dist/stats-main.html', open: false })],
     build: {
       rollupOptions: {
-        // node-llama-cpp 是原生 module，必须原样留在 node_modules 不能被 bundle
-        external: (id) => id === 'node-llama-cpp' || id.startsWith('@node-llama-cpp/')
+        // node-llama-cpp / stable-diffusion-cpp-node-api / sharp 是原生 module，
+        // 必须原样留在 node_modules 不能被 bundle
+        external: (id) =>
+          id === 'node-llama-cpp' || id.startsWith('@node-llama-cpp/') ||
+          id === 'stable-diffusion-cpp-node-api' || id.startsWith('@stable-diffusion-cpp-node-api/') ||
+          id === 'sharp' || id.startsWith('sharp/')
       }
     }
   },
@@ -36,7 +40,10 @@ export default defineConfig({
     // 里有 Node-only 的 import，vite 预构建时会尝试解析它们然后报错/卡住
     // 让 renderer 跳过对这些 Node-only 生态的依赖追踪
     optimizeDeps: {
-      exclude: ['node-llama-cpp', '@node-llama-cpp/*', 'ipull', 'chmodrp', 'cross-spawn', 'electron']
+      exclude: [
+        'node-llama-cpp', '@node-llama-cpp/*', 'ipull', 'chmodrp', 'cross-spawn', 'electron',
+        'stable-diffusion-cpp-node-api', '@stable-diffusion-cpp-node-api/*', 'sharp'
+      ]
     },
     build: {
       rollupOptions: {

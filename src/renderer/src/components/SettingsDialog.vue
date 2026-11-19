@@ -98,10 +98,10 @@ const {
 } = useOssBuckets()
 
 /** 左侧选中的分类 */
-type SectionKey = 'general' | 'appearance' | 'ai' | 'localLLM' | 'nodes' | 'browser' | 'feishu' | 'oss' | 'canvases'
+type SectionKey = 'general' | 'appearance' | 'ai' | 'localLLM' | 'localImage' | 'nodes' | 'browser' | 'feishu' | 'oss' | 'canvases'
 const activeSection = ref<SectionKey>('general')
 
-const SECTION_ORDER: SectionKey[] = ['general', 'appearance', 'ai', 'localLLM', 'nodes', 'browser', 'feishu', 'oss', 'canvases']
+const SECTION_ORDER: SectionKey[] = ['general', 'appearance', 'ai', 'localLLM', 'localImage', 'nodes', 'browser', 'feishu', 'oss', 'canvases']
 
 function sectionLabel(key: SectionKey): string {
   switch (key) {
@@ -109,6 +109,7 @@ function sectionLabel(key: SectionKey): string {
     case 'appearance': return t('settingsDialog.groupAppearance')
     case 'ai':         return t('settingsDialog.groupCloudAI')
     case 'localLLM':   return t('settingsDialog.groupLocalLLM')
+    case 'localImage': return '本地文生图'
     case 'nodes':      return t('settingsDialog.groupNodes')
     case 'browser':    return t('settingsDialog.groupBrowser')
     case 'feishu':     return '飞书机器人'
@@ -661,7 +662,127 @@ const mergedModels = computed(() => {
 })
 const localModelsLoading = ref(false)
 
-let progressUnsub: (() => void) | undefined
+// ================ 本地文生图模型（和上面 LLM 对称）================
+interface LocalImageModelInfo {
+  name: string; path: string; size: number; sizeHuman: string
+}
+interface RecommendedImageModel {
+  id: string; label: string; sizeGb: number; ramGb: number; fileName: string; description?: string
+}
+const localImageModels = ref<LocalImageModelInfo[]>([])
+const localImageLoaded = ref<string[]>([])
+const localImageBusy = ref(false)
+const recommendedImageModels = ref<RecommendedImageModel[]>([])
+const imageModelsLoading = ref(false)
+
+const mergedImageModels = computed(() => {
+  type Item = {
+    uniqueKey: string; label: string; subtitle: string; description?: string
+    recommendedId?: string; installedName?: string; isInstalled: boolean; loaded: boolean; isDownloading: boolean
+  }
+  const recFiles = new Set(recommendedImageModels.value.map(r => r.fileName))
+  const items: Item[] = []
+  for (const r of recommendedImageModels.value) {
+    const installed = localImageModels.value.find(m => m.name === r.fileName)
+    const loaded = installed ? localImageLoaded.value.includes(installed.name) : false
+    items.push({
+      uniqueKey: `rec-img:${r.id}`, label: r.label, description: r.description,
+      subtitle: installed ? `${installed.sizeHuman}` : `约 ${r.sizeGb}GB 磁盘 · 建议 ${r.ramGb}GB 内存`,
+      recommendedId: r.id, installedName: installed?.name,
+      isInstalled: !!installed, loaded, isDownloading: downloadingId.value === `img:${r.id}`
+    })
+  }
+  for (const m of localImageModels.value) {
+    if (recFiles.has(m.name)) continue
+    const loaded = localImageLoaded.value.includes(m.name)
+    items.push({
+      uniqueKey: `inst-img:${m.name}`, label: m.name, subtitle: m.sizeHuman,
+      installedName: m.name, isInstalled: true, loaded, isDownloading: false
+    })
+  }
+  return items
+})
+
+async function refreshLocalImageModels(): Promise<void> {
+  imageModelsLoading.value = true
+  try {
+    const [rec, list] = await Promise.all([
+      window.localImageApi?.getRecommendedModels() ?? Promise.resolve([]),
+      window.localImageApi?.listModels() ?? Promise.resolve({ loaded: [], busy: false, models: [], activeDownloads: [] })
+    ])
+    recommendedImageModels.value = rec
+    localImageModels.value = list.models
+    localImageLoaded.value = list.loaded
+    localImageBusy.value = list.busy
+  } catch (err) {
+    console.warn('[settings] 加载图片模型列表失败', err)
+  } finally {
+    imageModelsLoading.value = false
+  }
+}
+
+async function onDownloadImageModel(id: string, source: string = 'hf-mirror'): Promise<void> {
+  if (!window.localImageApi) return
+  const rec = recommendedImageModels.value.find(m => m.id === id)
+  if (!rec) return
+  downloadingId.value = `img:${id}`
+  downloadProgress.value = 0
+  downloadProgressText.value = '连接中...'
+  startProgressListener()
+  try {
+    const result = await window.localImageApi.downloadModel(id, source)
+    if (result.ok) {
+      await refreshLocalImageModels()
+    } else {
+      await window.showAlert(`下载失败：${result.error ?? '未知错误'}`)
+    }
+  } finally {
+    downloadingId.value = null
+    downloadProgress.value = 0
+    downloadProgressText.value = ''
+    stopProgressListener()
+  }
+}
+
+async function onCancelImageDownload(id: string): Promise<void> {
+  await window.localImageApi?.cancelDownload(id)
+  downloadingId.value = null
+  downloadProgress.value = 0
+  downloadProgressText.value = ''
+}
+
+async function onLoadImageModel(modelName: string): Promise<void> {
+  if (!window.localImageApi) return
+  const model = localImageModels.value.find(m => m.name === modelName)
+  if (!model) return
+  const result = await window.localImageApi.loadModel(model.path)
+  if (!result.ok) {
+    await window.showAlert(`加载失败：${result.error}`)
+  }
+  await refreshLocalImageModels()
+}
+
+async function onUnloadImageModel(modelName: string): Promise<void> {
+  const model = localImageModels.value.find(m => m.name === modelName)
+  if (!model) return
+  await window.localImageApi?.unloadModel(model.path)
+  await refreshLocalImageModels()
+}
+
+async function onDeleteImageModel(modelName: string): Promise<void> {
+  const ok = await window.showConfirm('删除本地图片模型', `确定要删除"${modelName}"吗？删除后需重新下载才能使用。`)
+  if (!ok) return
+  const result = await window.localImageApi?.deleteModel(modelName)
+  if (result && !result.ok) await window.showAlert(`删除失败：${result.error}`)
+  await refreshLocalImageModels()
+}
+
+// 切到 localImage tab 时刷新
+watch(activeSection, (key) => {
+  if (key === 'localImage') void refreshLocalImageModels()
+})
+
+let progressUnsubs: Array<() => void> = []
 
 async function refreshLocalModels(): Promise<void> {
   localModelsLoading.value = true
@@ -682,26 +803,37 @@ async function refreshLocalModels(): Promise<void> {
   }
 }
 
+// 统一处理下载进度——不管 LLM 还是 Image，都更新同一个 UI 状态
+function handleDownloadProgress(p: { modelId: string; received: number; total: number | null; percent: number }): void {
+  // 图片模型的 modelId 带前缀（onDownloadImageModel 里设的是 `img:${id}`），
+  // 但 IPC 推送来的 p.modelId 是原始 id。为了区分，用 downloadingId 来匹配。
+  // 这里下载是串行的（一次只下一个），所以直接更新就行。
+  downloadProgress.value = p.percent
+  if (p.total) {
+    downloadProgressText.value = `${(p.received / 1024 / 1024).toFixed(0)} / ${(p.total / 1024 / 1024).toFixed(0)} MB`
+  } else {
+    downloadProgressText.value = `${(p.received / 1024 / 1024).toFixed(0)} MB`
+  }
+}
+
 function startProgressListener(): void {
-  if (progressUnsub) return
-  progressUnsub = window.localLlmApi?.onDownloadProgress((p) => {
-    if (downloadingId.value !== p.modelId) downloadingId.value = p.modelId
-    downloadProgress.value = p.percent
-    if (p.total) {
-      downloadProgressText.value = `${(p.received / 1024 / 1024).toFixed(0)} / ${(p.total / 1024 / 1024).toFixed(0)} MB`
-    } else {
-      downloadProgressText.value = `${(p.received / 1024 / 1024).toFixed(0)} MB`
-    }
-  })
+  if (progressUnsubs.length > 0) return
+  // 同时监听 LLM 和 Image 的下载进度（底层共用同一个下载队列）
+  const unsubLLM = window.localLlmApi?.onDownloadProgress(handleDownloadProgress)
+  const unsubImg = window.localImageApi?.onDownloadProgress(handleDownloadProgress)
+  if (unsubLLM) progressUnsubs.push(unsubLLM)
+  if (unsubImg) progressUnsubs.push(unsubImg)
 }
 
 function stopProgressListener(): void {
-  if (progressUnsub) { progressUnsub(); progressUnsub = undefined }
+  for (const u of progressUnsubs) u()
+  progressUnsubs = []
 }
 
 // —— 下载源选择 modal ——
 const sourceModalVisible = ref(false)
 const sourceModalTargetId = ref<string | null>(null)
+const sourceModalTargetType = ref<'llm' | 'image'>('llm')
 const selectedSource = ref<'hf-mirror' | 'hf-official'>('hf-mirror')
 
 const DOWNLOAD_SOURCE_OPTIONS = [
@@ -709,8 +841,9 @@ const DOWNLOAD_SOURCE_OPTIONS = [
   { value: 'hf-official' as const, label: 'HuggingFace 官方', hint: 'huggingface.co · 需科学上网' }
 ]
 
-function openSourceSelector(modelId: string): void {
+function openSourceSelector(modelId: string, type: 'llm' | 'image' = 'llm'): void {
   sourceModalTargetId.value = modelId
+  sourceModalTargetType.value = type
   selectedSource.value = 'hf-mirror' // 默认国内镜像
   sourceModalVisible.value = true
 }
@@ -723,9 +856,14 @@ function closeSourceSelector(): void {
 async function confirmSourceAndDownload(): Promise<void> {
   const id = sourceModalTargetId.value
   const source = selectedSource.value
+  const type = sourceModalTargetType.value
   closeSourceSelector()
   if (!id) return
-  await onDownloadLocalModel(id, source)
+  if (type === 'image') {
+    await onDownloadImageModel(id, source)
+  } else {
+    await onDownloadLocalModel(id, source)
+  }
 }
 
 async function onDownloadLocalModel(id: string, source: string = 'hf-mirror'): Promise<void> {
@@ -1408,6 +1546,91 @@ async function onDeleteCanvas(id: string, name: string): Promise<void> {
                           class="gs-canvas-card__btn gs-canvas-card__btn--primary"
                           type="button"
                           @click="openSourceSelector(m.recommendedId!)"
+                        >下载</button>
+                      </template>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            </template>
+
+            <!-- ========== 本地文生图 ========== -->
+            <template v-if="activeSection === 'localImage'">
+              <section class="gs-section">
+                <h4 class="gs-section__title">本地文生图模型</h4>
+                <p class="gs-section__hint">下载小体积本地文生图模型（GGUF 量化格式），通过 Apple Silicon Metal 加速，直接在你的 Mac 上生成图片，无需网络。</p>
+                <p class="gs-section__hint gs-section__hint--warn">推荐体积 1.8~2.5GB，运行时会占用 3~4GB 内存。首次下载后完全离线可用。用完点"停止"可释放内存。</p>
+              </section>
+
+              <section class="gs-section">
+                <h4 class="gs-section__title">模型库</h4>
+
+                <div v-if="imageModelsLoading" class="gs-canvases__loading">加载中...</div>
+
+                <div v-else-if="mergedImageModels.length === 0" class="gs-canvases__empty">
+                  暂无图片模型。点击下方"下载"按钮开始。
+                </div>
+
+                <div v-else class="gs-feishu__list">
+                  <div
+                    v-for="m in mergedImageModels"
+                    :key="m.uniqueKey"
+                    class="gs-feishu-card"
+                  >
+                    <div class="gs-feishu-card__info">
+                      <span class="gs-feishu-card__name">
+                        {{ m.label }}
+                        <span v-if="m.loaded" class="gs-local__loaded-badge">🟢 运行中</span>
+                      </span>
+                      <span class="gs-feishu-card__appid">
+                        {{ m.subtitle }}
+                        <span v-if="m.description" class="gs-local__desc">· {{ m.description }}</span>
+                      </span>
+                    </div>
+                    <div class="gs-feishu-card__actions">
+                      <!-- 下载中：进度条 + 取消 -->
+                      <template v-if="m.isDownloading">
+                        <div class="gs-local__progress">
+                          <div class="gs-local__progress-bar" :style="{ width: `${downloadProgress}%` }" />
+                          <span class="gs-local__progress-text">{{ downloadProgress.toFixed(0) }}% · {{ downloadProgressText }}</span>
+                        </div>
+                        <button
+                          class="gs-canvas-card__btn gs-canvas-card__btn--danger"
+                          type="button"
+                          @click="onCancelImageDownload(m.recommendedId!)"
+                        >取消</button>
+                      </template>
+
+                      <!-- 已下载：启动/停止 + 删除 -->
+                      <template v-else-if="m.isInstalled">
+                        <button
+                          v-if="!m.loaded"
+                          class="gs-canvas-card__btn gs-canvas-card__btn--primary"
+                          type="button"
+                          :disabled="localImageBusy"
+                          @click="onLoadImageModel(m.installedName!)"
+                        >启动</button>
+                        <button
+                          v-else
+                          class="gs-canvas-card__btn"
+                          type="button"
+                          :disabled="localImageBusy"
+                          @click="onUnloadImageModel(m.installedName!)"
+                        >停止</button>
+                        <button
+                          class="gs-canvas-card__btn gs-canvas-card__btn--danger"
+                          type="button"
+                          :disabled="m.loaded"
+                          @click="onDeleteImageModel(m.installedName!)"
+                        >删除</button>
+                      </template>
+
+                      <!-- 未下载：下载按钮 -->
+                      <template v-else>
+                        <button
+                          class="gs-canvas-card__btn gs-canvas-card__btn--primary"
+                          type="button"
+                          @click="openSourceSelector(m.recommendedId!, 'image')"
                         >下载</button>
                       </template>
                     </div>

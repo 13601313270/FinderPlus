@@ -1695,6 +1695,7 @@ async function onDeleteCanvas(id: string, name: string): Promise<void> {
   overflow: hidden;
   user-select: text;
   -webkit-user-select: text;
+  margin: 0 12px;
 
   &__header {
     flex-shrink: 0;

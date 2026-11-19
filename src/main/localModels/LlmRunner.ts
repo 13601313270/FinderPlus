@@ -220,11 +220,14 @@ export async function chat(modelPath: string, system: string, prompt: string): P
   }
 
   entry.busy = true
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let session: any = null
   try {
     const SessionClass = await getChatSessionClass()
-    const session = new SessionClass({
+    session = new SessionClass({
       contextSequence: entry.context.getSequence(),
-      systemPrompt: system || 'You are a helpful assistant.'
+      systemPrompt: system || 'You are a helpful assistant.',
+      autoDisposeSequence: true // 让 session.dispose() 时自动释放 contextSequence，归还到池子里
     })
     entry.currentSession = session
 
@@ -236,8 +239,13 @@ export async function chat(modelPath: string, system: string, prompt: string): P
     const msg = err instanceof Error ? err.message : String(err)
     return { ok: false, error: msg }
   } finally {
-    entry.busy = false
+    // 必须 dispose session，这样 autoDisposeSequence=true 才会触发 sequence.dispose()
+    // 把 sequence 归还到 context 的池子里，否则下一次 getSequence() 会报 "No sequences left"
+    if (session && typeof session.dispose === 'function') {
+      try { session.dispose() } catch { /* 忽略 */ }
+    }
     entry.currentSession = null
+    entry.busy = false
   }
 }
 

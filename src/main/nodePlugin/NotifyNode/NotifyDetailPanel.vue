@@ -8,7 +8,7 @@ import { useFeishuPersons } from '@renderer/composables/useFeishuPersons'
 /**
  * 通知节点的详情面板中间栏：
  * - 多行 textarea，配置自定义通知文字
- * - 飞书推送通道：开关 + 联系人下拉（必选） + 机器人下拉（可选 override）
+ * - 飞书推送通道：开关 + 联系人下拉（机器人身份由联系人条目决定，节点不做 override）
  *
  * 接收 props: { nodeId }，自己到 workspaceScene 拿节点实例。
  */
@@ -27,29 +27,15 @@ const templateValue = ref('')
 // —— 飞书推送表单状态 ——
 const feishuEnabled = ref(false)
 const feishuPersonId = ref('')
-const feishuBotId = ref('') // 可选 override
 
 /** 当前选中的联系人 */
 const selectedPerson = computed(() => persons.value.find((p) => p.id === feishuPersonId.value))
 
-/** 联系人绑定的机器人标签（现在是必绑的） */
+/** 联系人绑定的机器人标签（只读展示） */
 const personBotLabel = computed((): string => {
   if (!selectedPerson.value) return '—'
   const bot = bots.value.find((b) => b.id === selectedPerson.value!.botId)
   return bot ? `${bot.name}（${bot.appId}）` : '已删除'
-})
-
-/** 生效的机器人来源描述（优先级：节点 override > 联系人绑定） */
-const effectiveBotLabel = computed((): string => {
-  if (feishuBotId.value) {
-    const bot = bots.value.find((b) => b.id === feishuBotId.value)
-    return bot ? `${bot.name}（节点指定）` : '已删除（节点指定）'
-  }
-  if (selectedPerson.value) {
-    const bot = bots.value.find((b) => b.id === selectedPerson.value!.botId)
-    return bot ? `${bot.name}（联系人绑定）` : '已删除（联系人绑定）'
-  }
-  return '未配置'
 })
 
 let offChanged: (() => void) | undefined
@@ -71,7 +57,6 @@ function sync(node: NotifyNode): void {
   templateValue.value = node.getTextTemplate()
   feishuEnabled.value = node.getFeishuEnabled()
   feishuPersonId.value = node.getFeishuPersonId()
-  feishuBotId.value = node.getFeishuBotId()
 }
 
 // —— 事件处理 ——
@@ -88,10 +73,6 @@ function onFeishuEnabledToggle(v: boolean): void {
 
 function onFeishuPersonIdChange(v: string): void {
   notifyNode.value?.setFeishuPersonId(v)
-}
-
-function onFeishuBotIdChange(v: string): void {
-  notifyNode.value?.setFeishuBotId(v)
 }
 
 // 当 panel 激活时（nodeId 变化）重新 sync
@@ -155,29 +136,14 @@ watch(() => props.nodeId, () => {
             <span class="person-info__val">{{ selectedPerson.receiveIdType }}: {{ selectedPerson.receiveId }}</span>
           </div>
           <div class="person-info__row">
-            <span class="person-info__key">绑定机器人</span>
+            <span class="person-info__key">机器人</span>
             <span class="person-info__val">{{ personBotLabel }}</span>
           </div>
         </div>
 
-        <label class="field">
-          <span class="field__label">机器人 override（可选）</span>
-          <select
-            class="field__input"
-            :value="feishuBotId"
-            :disabled="!notifyNode"
-            @change="onFeishuBotIdChange(($event.target as HTMLSelectElement).value)"
-          >
-            <option value="">-- 用联系人绑定的默认机器人 --</option>
-            <option v-for="b in bots" :key="b.id" :value="b.id">{{ b.name }}（{{ b.appId }}）</option>
-          </select>
-          <p class="field__hint">
-            留空则用联系人绑定的默认机器人；选了就覆盖。当前生效：{{ effectiveBotLabel }}
-          </p>
-        </label>
-
         <p class="field__hint">
-          启用后，每次收到输入值会同时向飞书发送一条文本消息（消息正文复用通知文字配置）。
+          启用后，每次收到输入值会向该联系人发一条飞书文本消息（正文复用通知文字）。
+          机器人由联系人决定——open_id / union_id / user_id 是应用隔离的，必须用绑定的那个机器人发。
           机器人需要先在飞书开放平台开通 <code>im:message</code> 权限；发给群聊时机器人必须已在群内。
         </p>
       </template>
@@ -305,7 +271,7 @@ watch(() => props.nodeId, () => {
 
   &__key {
     color: #6b7280;
-    width: 64px;
+    width: 56px;
     flex-shrink: 0;
   }
 

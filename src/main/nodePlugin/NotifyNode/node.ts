@@ -14,7 +14,7 @@ import { ImgFileCollectionValue } from '../../engine/data/ImgFileCollectionValue
 
 /**
  * 通知节点（Notify）：终端节点，收到任意值时发起系统级通知；
- * 可选扩展飞书推送通道——以指定飞书机器人身份向指定联系人发文本消息。
+ * 可选扩展飞书推送通道——以联系人绑定的飞书机器人身份向该联系人发文本消息。
  *
  * 行为：
  * - 单输入端口，接受所有内置 Value 子类
@@ -22,9 +22,9 @@ import { ImgFileCollectionValue } from '../../engine/data/ImgFileCollectionValue
  * - 无输出端口——通知是终端语义，不向下游传播
  * - 同步节点：发完通知 + 飞书推送后立即 completeRun()
  *
- * 飞书推送配置逻辑：
- * - feishuPersonId 引用全局飞书联系人列表（SettingsDialog 配置）
- * - feishuBotId 是可选 override：节点显式选了 → 用它；没选 → 用联系人绑定的默认机器人
+ * 飞书推送配置：只存 feishuPersonId（引用全局飞书联系人列表）。
+ * 机器人身份、接收方 ID、ID 类型全由联系人条目决定——联系人绑定的机器人必是唯一正确选择
+ * （open_id / union_id / user_id 是应用隔离的，换别的机器人发会 cross app）。
  */
 export class NotifyNode extends Node {
   static readonly TYPE = 'notify'
@@ -46,11 +46,8 @@ export class NotifyNode extends Node {
   /** 是否启用飞书推送 */
   private feishuEnabled = false
 
-  /** 全局飞书联系人 id（引用 SettingsDialog 里的飞书联系人列表） */
+  /** 全局飞书联系人 id（引用 SettingsDialog 里的飞书联系人列表；联系人必绑机器人） */
   private feishuPersonId = ''
-
-  /** 全局机器人 id（可选 override；为空则用联系人绑定的默认机器人） */
-  private feishuBotId = ''
 
   constructor(id: string) {
     super(id)
@@ -82,9 +79,6 @@ export class NotifyNode extends Node {
 
   getFeishuPersonId(): string { return this.feishuPersonId }
   setFeishuPersonId(v: string): void { this.feishuPersonId = v.trim(); this.notifyChanged() }
-
-  getFeishuBotId(): string { return this.feishuBotId }
-  setFeishuBotId(v: string): void { this.feishuBotId = v.trim(); this.notifyChanged() }
 
   isPositionAcceptFileDrop(_relativeX: number, _relativeY: number): boolean {
     return false
@@ -124,7 +118,7 @@ export class NotifyNode extends Node {
       }).catch(() => { /* noop */ })
     }
 
-    // 飞书推送（可选）：启用 + 配置齐全才发，发丢了不影响节点逻辑
+    // 飞书推送（可选）：启用 + 配置齐全才发，发失败弹桌面通知
     if (this.feishuEnabled) {
       void this.sendFeishuAsync(body).catch(() => { /* noop */ })
     }
@@ -134,17 +128,14 @@ export class NotifyNode extends Node {
   }
 
   /**
-   * 飞书异步推送：resolvePerson 拿联系人 → 决定最终 botId → resolveBotCredentials → send。
-   * 优先级：节点 feishuBotId > 联系人绑定的 botId；都没 → 跳过。
+   * 飞书异步推送：resolvePerson 拿联系人（含 botId / receiveId / receiveIdType）
+   * → resolveBotCredentials 拿 appId/appSecret → feishuApi.send 发文本。
    *
-   * 发送失败时弹桌面通知（飞书错误码 + msg），方便用户定位配置问题——
-   * open_id cross app / 权限未开 / 机器人未入群 等错误都能直接看到。
+   * 发送失败弹桌面通知（飞书错误码 + msg），方便用户定位配置问题。
    */
   private async sendFeishuAsync(text: string): Promise<void> {
-    // 拿 notificationApi 引用，后面发错用
     const w = window as unknown as {
       notificationApi?: { show: (t: string, b?: string, m?: Record<string, unknown>) => Promise<unknown> }
-      getCurrentCanvasId?: () => string
     }
 
     if (!this.feishuPersonId) return
@@ -156,15 +147,8 @@ export class NotifyNode extends Node {
       return
     }
 
-    // 决定最终 botId：节点的 override 优先；没 override 就用联系人绑定的（必绑）
-    const finalBotId = this.feishuBotId || person.botId
-    if (!finalBotId) {
-      w.notificationApi?.show('飞书推送失败', '未绑定机器人：请在设置页编辑该联系人')
-      return
-    }
-
     // @ts-ignore
-    const creds = window.feishuApi?.resolveBotCredentials(finalBotId)
+    const creds = window.feishuApi?.resolveBotCredentials(person.botId)
     if (!creds) {
       w.notificationApi?.show('飞书推送失败', '机器人凭证已删除或无效')
       return
@@ -193,8 +177,7 @@ export class NotifyNode extends Node {
       ...super.getSaveDataByState(),
       textTemplate: this.textTemplate,
       feishuEnabled: this.feishuEnabled,
-      feishuPersonId: this.feishuPersonId,
-      feishuBotId: this.feishuBotId
+      feishuPersonId: this.feishuPersonId
     }
   }
 
@@ -208,6 +191,8 @@ export class NotifyNode extends Node {
 
     if (typeof _state.feishuEnabled === 'boolean') this.feishuEnabled = _state.feishuEnabled
     if (typeof _state.feishuPersonId === 'string') this.feishuPersonId = _state.feishuPersonId
-    if (typeof _state.feishuBotId === 'string') this.feishuBotId = _state.feishuBotId
+
+    // 历史迁移：以前 feishuBotId 是节点 override，现在删除
+    // 不读不写就是迁移——联系人绑定的 botId 才是唯一正确来源
   }
 }

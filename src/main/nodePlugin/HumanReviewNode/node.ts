@@ -524,6 +524,16 @@ export class HumanReviewNode extends Node {
         markdownBody = `${textLabel}\n\n**内容**: \`${value.displayLabel}\``
       }
 
+      // —— HtmlFileValue：卡片里只显示文件名，紧接着单独发一条 file 附件消息 ——
+      let htmlFileToSend: { fileName: string; buffer: ArrayBuffer } | undefined
+      if (value instanceof HtmlFileValue && !value.isNull && value.file) {
+        htmlFileToSend = {
+          fileName: value.file.name || 'index.html',
+          buffer: await value.file.arrayBuffer()
+        }
+        markdownBody = `${textLabel}\n\n**HTML 文件**: \`${value.file.name}\`\n\n_点击下方文件附件查看完整内容_`
+      }
+
       // —— 拼飞书卡片 JSON（Card JSON 2.0）——
       const card = {
         schema: '2.0',
@@ -591,6 +601,29 @@ export class HumanReviewNode extends Node {
       })
       if (sendRes && !sendRes.ok) {
         w.notificationApi?.show('飞书推送失败', sendRes.error || '未知错误')
+        return
+      }
+
+      // —— HtmlFileValue：发完卡片后，紧接着发一条文件附件消息 ——
+      if (htmlFileToSend) {
+        try {
+          // @ts-ignore
+          const fileRes = await window.feishuApi?.sendFile({
+            appId: creds.appId,
+            appSecret: creds.appSecret,
+            receiveId: person.receiveId,
+            receiveIdType: person.receiveIdType,
+            kind: 'file',
+            fileName: htmlFileToSend.fileName,
+            buffer: htmlFileToSend.buffer
+          })
+          if (fileRes && !fileRes.ok) {
+            w.notificationApi?.show('飞书 HTML 文件发送失败', fileRes.error || '未知错误')
+          }
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err)
+          w.notificationApi?.show('飞书 HTML 文件发送失败', msg)
+        }
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)

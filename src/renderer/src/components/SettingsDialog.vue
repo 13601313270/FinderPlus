@@ -107,8 +107,8 @@ function sectionLabel(key: SectionKey): string {
   switch (key) {
     case 'general':    return t('settingsDialog.groupGeneral')
     case 'appearance': return t('settingsDialog.groupAppearance')
-    case 'ai':         return 'AI 服务配置'
-    case 'localLLM':   return '本地模型'
+    case 'ai':         return t('settingsDialog.groupCloudAI')
+    case 'localLLM':   return t('settingsDialog.groupLocalLLM')
     case 'nodes':      return t('settingsDialog.groupNodes')
     case 'browser':    return t('settingsDialog.groupBrowser')
     case 'feishu':     return '飞书机器人'
@@ -128,7 +128,9 @@ watch(visible, (v) => {
   }
 })
 
-const aiProviders = Object.entries(AI_PROVIDERS) as [AiProviderId, typeof AI_PROVIDERS[AiProviderId]][]
+/** 云端 AI 服务商列表（过滤掉不需要 API Key 的 provider，比如本地模型） */
+const aiProviders = (Object.entries(AI_PROVIDERS) as [AiProviderId, typeof AI_PROVIDERS[AiProviderId]][])
+  .filter(([, preset]) => preset.requiresKey)
 
 /** 能力标签显示名 */
 const CAPABILITY_LABEL: Record<string, string> = {
@@ -1082,10 +1084,10 @@ async function onDeleteCanvas(id: string, name: string): Promise<void> {
               </section>
             </template>
 
-            <!-- ========== AI 服务配置（统一后，输入即自动保存） ========== -->
+            <!-- ========== 云端 AI 服务商（统一后，输入即自动保存） ========== -->
             <template v-if="activeSection === 'ai'">
               <section class="gs-section">
-                <h4 class="gs-section__title">AI 服务配置</h4>
+                <h4 class="gs-section__title">{{ t('settingsDialog.groupCloudAI') }}</h4>
                 <p class="gs-section__hint">
                   统一管理 LLM / 文生图 / 文生音频 / 语音识别 的服务商 Key。
                   同一服务商只需填一次，所有相关节点都会读取这份配置。输入后自动保存。
@@ -1332,10 +1334,10 @@ async function onDeleteCanvas(id: string, name: string): Promise<void> {
               </section>
             </template>
 
-            <!-- ========== 本地 LLM 模型 ========== -->
+            <!-- ========== 本地 AI 模型 ========== -->
             <template v-if="activeSection === 'localLLM'">
               <section class="gs-section">
-                <h4 class="gs-section__title">本地模型</h4>
+                <h4 class="gs-section__title">{{ t('settingsDialog.groupLocalLLM') }}</h4>
                 <p class="gs-section__hint">下载小体积本地大语言模型（1~3B），直接在你的 Mac 上运行推理，无需网络。首次下载后完全离线可用。</p>
                 <p class="gs-section__hint gs-section__hint--warn">下载的模型保存在本地数据目录，不会随应用打包。用完点"停止"可释放内存，磁盘空间可单独删除。</p>
               </section>

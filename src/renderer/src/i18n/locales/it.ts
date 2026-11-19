@@ -40,6 +40,8 @@ const it: Language = {
     groupCanvases: "I miei canvas",
 
     groupAppearance: 'Appearance',
+    groupCloudAI: "Fornitori AI cloud",
+    groupLocalLLM: "Modelli AI locali",
     appearanceTitle: 'Canvas Appearance Theme',
     appearanceHint: 'Customize the canvas background, grid dots, edge lines and node border colors. Changes take effect immediately and are saved automatically.',
     themeCanvasBg: 'Canvas background',

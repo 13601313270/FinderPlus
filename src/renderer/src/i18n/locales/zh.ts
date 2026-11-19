@@ -45,6 +45,8 @@ const zh: Language = {
     // 侧边栏分类
     groupGeneral: '通用',
     groupAppearance: '外观',
+    groupCloudAI: "云端 AI 服务商",
+    groupLocalLLM: "本地 AI 模型",
     groupLLM: '大语言模型设置',
     groupImage: '生图模型',
 

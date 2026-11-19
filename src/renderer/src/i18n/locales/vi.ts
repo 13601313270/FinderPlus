@@ -40,6 +40,8 @@ const vi: Language = {
 
     /** 外观主题设置 */
     groupAppearance: 'Giao diện',
+    groupCloudAI: "Nhà cung cấp AI đám mây",
+    groupLocalLLM: "Mô hình AI cục bộ",
     appearanceTitle: 'Canvas Appearance Theme',
     appearanceHint: 'Customize the canvas background, grid dots, edge lines and node border colors. Changes take effect immediately and are saved automatically.',
     themeCanvasBg: 'Canvas Background',

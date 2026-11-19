@@ -627,6 +627,10 @@ const localLlmApi = {
   chat: (args: { modelPath: string; system?: string; prompt: string }): Promise<{ ok: true; content: string } | { ok: false; error: string }> =>
     ipcRenderer.invoke('local:chat', args),
 
+  /** 中止指定模型当前正在进行的推理（给"停止"按钮用） */
+  cancelChat: (modelPath: string): Promise<{ ok: boolean }> =>
+    ipcRenderer.invoke('local:cancelChat', modelPath),
+
   /** 下载一个推荐模型（带进度推送）。args.source 可选：'hf-mirror'（默认）或 'hf-official' */
   downloadModel: (catalogId: string, source?: string): Promise<{ ok: true; path?: string; size?: number; skipped?: boolean; modelName?: string } | { ok: false; error: string }> =>
     ipcRenderer.invoke('local:downloadModel', { catalogId, source }),

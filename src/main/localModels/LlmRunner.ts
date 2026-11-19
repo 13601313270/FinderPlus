@@ -86,6 +86,8 @@ interface LoadedModel {
   currentSession: any | null
   /** 是否正在推理（该模型实例内防并发） */
   busy: boolean
+  /** 当前推理的 AbortController——让外部可以中途 abort session.prompt() */
+  currentAbortController: AbortController | null
 }
 
 /** 所有已加载模型，key = 模型完整路径 */
@@ -149,7 +151,8 @@ export async function loadModel(modelPath: string): Promise<{ ok: true; modelNam
       model,
       context,
       currentSession: null,
-      busy: false
+      busy: false,
+      currentAbortController: null
     })
 
     return { ok: true, modelName: basename(modelPath) }
@@ -205,10 +208,28 @@ export type ChatResult =
   | { ok: false; error: string }
 
 /**
+ * 中止指定模型当前正在进行的推理。
+ * 供 renderer 侧点击"停止"按钮时通过 IPC 调用。
+ * 如果模型当前没在推理，此函数静默 no-op。
+ */
+export function abortChat(modelPath: string): void {
+  const entry = loadedModels.get(modelPath)
+  if (!entry || !entry.currentAbortController) return
+  try {
+    entry.currentAbortController.abort()
+  } catch { /* 忽略 */ }
+}
+
+/**
  * 单轮对话：指定模型路径，system prompt + user prompt → assistant 回复。
  * 每次调用重新创建 session（简单模式，不保留连续对话历史）。
  *
  * 注意：LlamaChatSession.prompt() 直接返回 responseText 字符串（不是对象）。
+ *
+ * 中止机制：内部创建 AbortController，外部通过 abortChat(modelPath) 触发 abort，
+ * session.prompt({ signal, stopOnAbortSignal: true }) 会提前退出并抛 AbortError。
+ * AbortError 会被 rethrow（不包装成 { ok: false }），让 IPC invoke 正常 reject，
+ * renderer 侧据此区分"用户主动取消"和"真正出错"两种情况。
  */
 export async function chat(modelPath: string, system: string, prompt: string): Promise<ChatResult> {
   const entry = loadedModels.get(modelPath)
@@ -220,6 +241,8 @@ export async function chat(modelPath: string, system: string, prompt: string): P
   }
 
   entry.busy = true
+  const abortController = new AbortController()
+  entry.currentAbortController = abortController
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let session: any = null
   try {
@@ -232,10 +255,18 @@ export async function chat(modelPath: string, system: string, prompt: string): P
     entry.currentSession = session
 
     // session.prompt() 直接返回 responseText 字符串（node-llama-cpp v3 API）
-    const responseText = await session.prompt(prompt) as unknown as string
+    // signal 让 abortController.abort() 能中途打断生成
+    const responseText = await session.prompt(prompt, {
+      signal: abortController.signal,
+      stopOnAbortSignal: true
+    }) as unknown as string
 
     return { ok: true, content: responseText ?? '' }
   } catch (err) {
+    // AbortError 表示用户主动取消——rethrow 让 IPC invoke reject，由 renderer 侧静默处理
+    if (err instanceof DOMException && err.name === 'AbortError') {
+      throw err
+    }
     const msg = err instanceof Error ? err.message : String(err)
     return { ok: false, error: msg }
   } finally {
@@ -245,6 +276,7 @@ export async function chat(modelPath: string, system: string, prompt: string): P
       try { session.dispose() } catch { /* 忽略 */ }
     }
     entry.currentSession = null
+    entry.currentAbortController = null
     entry.busy = false
   }
 }

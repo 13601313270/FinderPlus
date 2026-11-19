@@ -39,6 +39,8 @@ const tr: Language = {
     groupCanvases: "Benim tuvalim",
 
     groupAppearance: 'Appearance',
+    groupCloudAI: "Bulut AI Sağlayıcıları",
+    groupLocalLLM: "Yerel AI Modelleri",
     appearanceTitle: 'Canvas Appearance Theme',
     appearanceHint: 'Customize the canvas background, grid dots, edge lines and node border colors. Changes take effect immediately and are saved automatically.',
     themeCanvasBg: 'Canvas background',

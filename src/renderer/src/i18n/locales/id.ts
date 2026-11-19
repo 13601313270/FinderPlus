@@ -40,6 +40,8 @@ const id: Language = {
     groupCanvases: "Kanvas Saya",
 
     groupAppearance: 'Appearance',
+    groupCloudAI: "Penyedia AI Cloud",
+    groupLocalLLM: "Model AI Lokal",
     appearanceTitle: 'Canvas Appearance Theme',
     appearanceHint: 'Customize the canvas background, grid dots, edge lines and node border colors. Changes take effect immediately and are saved automatically.',
     themeCanvasBg: 'Canvas background',

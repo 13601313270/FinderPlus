@@ -40,6 +40,8 @@ const ko: Language = {
     groupCanvases: "내 캔버스",
 
     groupAppearance: 'Appearance',
+    groupCloudAI: "클라우드 AI 제공업체",
+    groupLocalLLM: "로컬 AI 모델",
     appearanceTitle: 'Canvas Appearance Theme',
     appearanceHint: 'Customize the canvas background, grid dots, edge lines and node border colors. Changes take effect immediately and are saved automatically.',
     themeCanvasBg: 'Canvas background',

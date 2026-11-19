@@ -66,6 +66,8 @@ export type Language = {
     groupCanvases: string
     /** 外观主题设置 */
     groupAppearance: string
+    groupCloudAI: string
+    groupLocalLLM: string
     appearanceTitle: string
     appearanceHint: string
     themeCanvasBg: string

@@ -398,7 +398,8 @@ export class LLMNode extends Node {
 
   /**
    * 取消当前进行中的推理：
-   * - abort 掉 in-flight fetch
+   * - abort 掉 in-flight fetch（HTTP provider）
+   * - 通知主进程 abort 本地 LLM 的 session.prompt()（local provider）
    * - 递增 requestId 防 stale 响应
    * - 切回 idle，清空 response + errorMessage
    */
@@ -409,6 +410,11 @@ export class LLMNode extends Node {
     }
     this.abortController?.abort()
     this.abortController = null
+    // 本地 LLM：额外通知主进程 abort 正在跑的 session.prompt()
+    // fire-and-forget——取消本身不需要等返回
+    if (this.provider === 'local' && this.model && typeof window !== 'undefined') {
+      void (window as any).localLlmApi?.cancelChat(this.model)
+    }
     this.requestId++
     if (this.status === 'loading') {
       this.status = 'idle'
@@ -717,13 +723,34 @@ export class LLMNode extends Node {
       result = { ok: false, error: '请在节点里选择要使用的本地模型（model 字段填完整路径）' }
     } else if (typeof window !== 'undefined' && (window as any).localLlmApi?.chat) {
       // renderer 环境：走 preload bridge 的 IPC，让 main 进程执行推理
-      result = await (window as any).localLlmApi.chat({ modelPath, system, prompt })
+      // 主进程 abort 时会 rethrow AbortError，IPC invoke 正常 reject
+      try {
+        result = await (window as any).localLlmApi.chat({ modelPath, system, prompt })
+      } catch (err) {
+        const isAbort = (err instanceof DOMException && err.name === 'AbortError')
+          || (err instanceof Error && err.name === 'AbortError')
+        if (isAbort) {
+          // 用户主动取消——cancel() 已经把 status 切回 idle 了，这里什么都不做直接返回
+          return
+        }
+        // 其他异常包装成 error result 统一走下面的错误分支
+        const msg = err instanceof Error ? err.message : String(err)
+        result = { ok: false, error: `本地 LLM 调用异常：${msg}` }
+      }
     } else {
       // main 环境：动态 import LlmRunner 原生引擎
       // @vite-ignore：阻止 vite/esbuild 尝试静态解析 node-llama-cpp 依赖链
       // （renderer 环境的代码也会被 vite 扫描，需要彻底跳过对 LlmRunner 的解析）
-      const mod = await import(/* @vite-ignore */ '../../localModels/LlmRunner')
-      result = await mod.chat(modelPath, system || 'You are a helpful assistant.', prompt)
+      try {
+        const mod = await import(/* @vite-ignore */ '../../localModels/LlmRunner')
+        result = await mod.chat(modelPath, system || 'You are a helpful assistant.', prompt)
+      } catch (err) {
+        const isAbort = (err instanceof DOMException && err.name === 'AbortError')
+          || (err instanceof Error && err.name === 'AbortError')
+        if (isAbort) return // 同上——主环境也静默
+        const msg = err instanceof Error ? err.message : String(err)
+        result = { ok: false, error: `本地 LLM 调用异常：${msg}` }
+      }
     }
 
     // —— Stale-call 守卫 ——

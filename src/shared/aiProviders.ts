@@ -42,53 +42,66 @@ export interface AiProviderPreset {
   label: string
   /** 该服务商的 AI 能力位 */
   capabilities: readonly AiProviderCapability[]
+  /** 是否需要用户填 API Key 才能使用。本地模型（node-llama-cpp 原生推理）不需要 */
+  requiresKey?: boolean
 }
 
 /** 统一 Provider 注册表 */
 export const AI_PROVIDERS: Readonly<Record<AiProviderId, AiProviderPreset>> = {
   deepseek: {
     label: 'DeepSeek',
-    capabilities: ['llm']
+    capabilities: ['llm'],
+    requiresKey: true
   },
   openai: {
     label: 'OpenAI',
-    capabilities: ['llm', 'image', 'stt']
+    capabilities: ['llm', 'image', 'stt'],
+    requiresKey: true
   },
   kimi: {
     label: 'Kimi (Moonshot)',
-    capabilities: ['llm']
+    capabilities: ['llm'],
+    requiresKey: true
   },
   aliyun: {
     label: '阿里云百炼',
-    capabilities: ['llm', 'image', 'tts', 'stt']
+    capabilities: ['llm', 'image', 'tts', 'stt'],
+    requiresKey: true
   },
   glm: {
     label: '智谱 (GLM)',
-    capabilities: ['llm', 'image', 'stt']
+    capabilities: ['llm', 'image', 'stt'],
+    requiresKey: true
   },
   minimax: {
     label: 'MiniMax',
-    capabilities: ['llm']
+    capabilities: ['llm'],
+    requiresKey: true
   },
   groq: {
     label: 'Groq',
-    capabilities: ['llm']
+    capabilities: ['llm'],
+    requiresKey: true
   },
   mistral: {
     label: 'Mistral AI',
-    capabilities: ['llm']
+    capabilities: ['llm'],
+    requiresKey: true
   },
   siliconflow: {
     label: '硅基流动 (SiliconFlow)',
-    capabilities: ['llm', 'image', 'stt']
+    capabilities: ['llm', 'image', 'stt'],
+    requiresKey: true
   },
   tokenplan: {
     label: '千问 Token Plan',
-    capabilities: ['llm', 'image', 'tts', 'stt']
+    capabilities: ['llm', 'image', 'tts', 'stt'],
+    requiresKey: true
   },
   local: {
     label: '本地模型',
     capabilities: ['llm']
+    // requiresKey 不写就是 false——本地模型走 node-llama-cpp 原生推理，不需要 API Key
   }
 }
 

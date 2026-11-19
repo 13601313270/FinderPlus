@@ -40,6 +40,8 @@ const ja: Language = {
     groupCanvases: "マイキャンバス",
 
     groupAppearance: 'Appearance',
+    groupCloudAI: "クラウド AI プロバイダー",
+    groupLocalLLM: "ローカル AI モデル",
     appearanceTitle: 'Canvas Appearance Theme',
     appearanceHint: 'Customize the canvas background, grid dots, edge lines and node border colors. Changes take effect immediately and are saved automatically.',
     themeCanvasBg: 'Canvas background',

@@ -40,6 +40,8 @@ const ru: Language = {
     groupCanvases: "Мои холсты",
 
     groupAppearance: 'Appearance',
+    groupCloudAI: "Облачные провайдеры ИИ",
+    groupLocalLLM: "Локальные ИИ-модели",
     appearanceTitle: 'Canvas Appearance Theme',
     appearanceHint: 'Customize the canvas background, grid dots, edge lines and node border colors. Changes take effect immediately and are saved automatically.',
     themeCanvasBg: 'Canvas background',

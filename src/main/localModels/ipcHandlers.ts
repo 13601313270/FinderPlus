@@ -76,6 +76,14 @@ export function registerLocalModelIpcHandlers(): void {
     return r.chat(args.modelPath, args.system ?? '', args.prompt)
   })
 
+  // —— 中止当前正在进行的本地 LLM 推理 ——
+  ipcMain.handle('local:cancelChat', async (_e, modelPath: string) => {
+    if (!modelPath) return { ok: false }
+    const r = await runner()
+    r.abortChat(modelPath)
+    return { ok: true }
+  })
+
   // —— 下载模型（带进度回调 + 源选择）——
   ipcMain.handle(
     'local:downloadModel',

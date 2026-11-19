@@ -39,14 +39,15 @@ const { bots } = useFeishuBots()
 const { persons } = useFeishuPersons()
 const feishuEnabled = ref(false)
 const feishuPersonId = ref('')
+const feishuBotId = ref('')
 
 /** 当前选中的联系人（只读详情卡用） */
 const selectedPerson = computed(() => persons.value.find((p) => p.id === feishuPersonId.value))
 
-/** 联系人绑定的机器人标签 */
-const personBotLabel = computed((): string => {
-  if (!selectedPerson.value) return '—'
-  const bot = bots.value.find((b) => b.id === selectedPerson.value!.botId)
+/** 当前选中的机器人标签 */
+const selectedBotLabel = computed((): string => {
+  if (!feishuBotId.value) return '未选择'
+  const bot = bots.value.find((b) => b.id === feishuBotId.value)
   return bot ? `${bot.name}（${bot.appId}）` : '已删除'
 })
 
@@ -81,6 +82,7 @@ function syncCurrent() {
   currentContext.value = n.cardRenderContext
   feishuEnabled.value = n.getFeishuEnabled()
   feishuPersonId.value = n.getFeishuPersonId()
+  feishuBotId.value = n.getFeishuBotId()
   const cv = n.currentValue
   currentValue.value = cv
   currentKind.value = cv ? ((cv.constructor as unknown) as { VALUE_NAME: string }).VALUE_NAME : ''
@@ -124,6 +126,10 @@ function onFeishuEnabledToggle(e: Event): void {
 
 function onFeishuPersonIdChange(e: Event): void {
   reviewNode.value?.setFeishuPersonId((e.target as HTMLSelectElement).value)
+}
+
+function onFeishuBotIdChange(e: Event): void {
+  reviewNode.value?.setFeishuBotId((e.target as HTMLSelectElement).value)
 }
 
 function onApprove(): void {
@@ -193,7 +199,20 @@ function onRejectMaskClick(): void {
         </div>
         <div v-if="selectedPerson" class="review-panel__feishu-info">
           <div><span class="review-panel__feishu-info-key">接收方</span>{{ selectedPerson.receiveIdType }}: {{ selectedPerson.receiveId }}</div>
-          <div><span class="review-panel__feishu-info-key">机器人</span>{{ personBotLabel }}</div>
+        </div>
+        <div class="review-panel__feishu-row">
+          <label class="review-panel__feishu-label">飞书机器人</label>
+          <select
+            class="review-panel__feishu-select"
+            :value="feishuBotId"
+            @change="onFeishuBotIdChange"
+          >
+            <option value="" disabled>-- 请先在设置里添加机器人 --</option>
+            <option v-for="b in bots" :key="b.id" :value="b.id">{{ b.name }}（{{ b.appId }}）</option>
+          </select>
+        </div>
+        <div class="review-panel__feishu-info">
+          <div><span class="review-panel__feishu-info-key">当前生效机器人</span>{{ selectedBotLabel }}</div>
         </div>
       </template>
     </div>

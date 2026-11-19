@@ -549,11 +549,10 @@ interface FeishuPersonDraft {
   name: string
   receiveId: string
   receiveIdType: PersonReceiveIdType
-  botId: string
 }
 const feishuPersonModalVisible = ref(false)
 const feishuPersonDraft = ref<FeishuPersonDraft>({
-  mode: 'add', name: '', receiveId: '', receiveIdType: 'open_id', botId: ''
+  mode: 'add', name: '', receiveId: '', receiveIdType: 'union_id'
 })
 
 function showFeishuPersonModal(mode: 'add' | 'edit', person?: FeishuPerson): void {
@@ -563,12 +562,11 @@ function showFeishuPersonModal(mode: 'add' | 'edit', person?: FeishuPerson): voi
       id: person.id,
       name: person.name,
       receiveId: person.receiveId,
-      receiveIdType: person.receiveIdType,
-      botId: person.botId ?? ''
+      receiveIdType: person.receiveIdType
     }
   } else {
     feishuPersonDraft.value = {
-      mode: 'add', name: '', receiveId: '', receiveIdType: 'open_id', botId: ''
+      mode: 'add', name: '', receiveId: '', receiveIdType: 'union_id'
     }
   }
   feishuPersonModalVisible.value = true
@@ -580,15 +578,14 @@ function closeFeishuPersonModal(): void {
 
 function onSaveFeishuPerson(): void {
   const d = feishuPersonDraft.value
-  if (!d.name.trim() || !d.receiveId.trim() || !d.botId.trim()) return
+  if (!d.name.trim() || !d.receiveId.trim()) return
   if (d.mode === 'add') {
-    addFeishuPerson(d.name, d.receiveId, d.receiveIdType, d.botId)
+    addFeishuPerson(d.name, d.receiveId, d.receiveIdType)
   } else if (d.id) {
     updateFeishuPerson(d.id, {
       name: d.name,
       receiveId: d.receiveId,
-      receiveIdType: d.receiveIdType,
-      botId: d.botId
+      receiveIdType: d.receiveIdType
     })
   }
   feishuPersonModalVisible.value = false
@@ -601,6 +598,116 @@ async function onDeleteFeishuPerson(person: FeishuPerson): Promise<void> {
   )
   if (!ok) return
   removeFeishuPerson(person.id)
+}
+
+// —— 飞书验证码获取子弹窗 ——
+const codeModalVisible = ref(false)
+const codeModalBotId = ref('')
+const codeModalCode = ref('')
+const codeModalCountdown = ref(0)
+const codeModalStatus = ref<'idle' | 'connecting' | 'waiting' | 'success' | 'timeout' | 'error'>('idle')
+const codeModalError = ref('')
+let codeModalTimer: ReturnType<typeof setInterval> | undefined
+let codeModalMessageUnsub: (() => void) | undefined
+
+function gen6DigitCode(): string {
+  return Math.floor(100000 + Math.random() * 900000).toString()
+}
+
+function openCodeModal(): void {
+  if (feishuBots.value.length === 0) {
+    window.showAlert?.('请先在设置里添加飞书机器人')
+    return
+  }
+  codeModalBotId.value = feishuBots.value[0].id
+  codeModalCode.value = gen6DigitCode()
+  codeModalCountdown.value = 60
+  codeModalStatus.value = 'idle'
+  codeModalError.value = ''
+  codeModalVisible.value = true
+}
+
+function closeCodeModal(): void {
+  codeModalCleanup()
+  codeModalVisible.value = false
+}
+
+function codeModalCleanup(): void {
+  if (codeModalTimer) { clearInterval(codeModalTimer); codeModalTimer = undefined }
+  if (codeModalMessageUnsub) { codeModalMessageUnsub(); codeModalMessageUnsub = undefined }
+}
+
+async function startCodeMatching(): Promise<void> {
+  const bot = feishuBots.value.find((b) => b.id === codeModalBotId.value)
+  if (!bot) {
+    codeModalError.value = '请先选择机器人'
+    codeModalStatus.value = 'error'
+    return
+  }
+
+  codeModalStatus.value = 'connecting'
+  codeModalError.value = ''
+
+  // 启动 WS 连接（如果正在连接同一个 bot 会复用，不同 bot 会先关旧的）
+  // @ts-ignore
+  const startRes = await window.feishuApi?.start({ appId: bot.appId, appSecret: bot.appSecret })
+  // @ts-ignore
+  if (!startRes?.ok) {
+    // @ts-ignore
+    const statusRes = await window.feishuApi?.getStatus()
+    if (statusRes?.state === 'error') {
+      // @ts-ignore
+      codeModalError.value = startRes?.error || 'WS 连接失败'
+      codeModalStatus.value = 'error'
+      return
+    }
+  }
+
+  // 注册 message listener
+  const targetCode = codeModalCode.value
+  // @ts-ignore
+  codeModalMessageUnsub = window.feishuApi?.onMessage((payload: any) => {
+    // 用 word boundary 匹配独立的 6 位数字
+    const re = new RegExp(`\\b${targetCode}\\b`)
+    if (!re.test(payload?.text ?? '')) return
+
+    // 命中！关监听、清倒计时
+    codeModalCleanup()
+
+    // 选 receiveId：优先 union_id（跨应用统一），fallback user_id / email
+    let receiveId = payload.senderUnionId
+    let receiveIdType: PersonReceiveIdType = 'union_id'
+    if (!receiveId && payload.senderUserId) {
+      receiveId = payload.senderUserId
+      receiveIdType = 'user_id'
+    } else if (!receiveId && payload.senderEmail) {
+      receiveId = payload.senderEmail
+      receiveIdType = 'email'
+    } else if (!receiveId && payload.senderOpenId) {
+      // open_id 应用隔离，但当前 WS 连的就是这个 bot，临时用
+      // 让用户手动改——因为我们的联系人体系已经去掉 open_id 选项了
+      receiveId = payload.senderOpenId
+      receiveIdType = 'union_id' // 占位，提醒用户改
+    }
+
+    feishuPersonDraft.value.receiveId = receiveId || ''
+    feishuPersonDraft.value.receiveIdType = receiveIdType
+
+    codeModalStatus.value = 'success'
+    setTimeout(() => {
+      codeModalVisible.value = false
+    }, 1500)
+  })
+
+  // 60 秒倒计时
+  codeModalStatus.value = 'waiting'
+  codeModalTimer = setInterval(() => {
+    codeModalCountdown.value--
+    if (codeModalCountdown.value <= 0) {
+      codeModalCleanup()
+      codeModalStatus.value = 'timeout'
+    }
+  }, 1000)
 }
 
 // —— OSS Bucket ——
@@ -1551,8 +1658,9 @@ async function onDeleteCanvas(id: string, name: string): Promise<void> {
               <section class="gs-section">
                 <h4 class="gs-section__title">飞书联系人</h4>
                 <p class="gs-section__hint">
-                  配置常用的接收方（真人或群），通知节点只需下拉选，不用每次手动输 ID。
-                  每个联系人必须绑定机器人——open_id / union_id / user_id 是应用隔离的，哪个机器人发消息就必须绑定哪个。
+                  配置常用的接收方（真人或群），节点下拉选即可。
+                  支持 union_id / user_id / 邮箱 / 群 chat_id——全是跨应用统一的，不绑定具体机器人。
+                  机器人身份由发送节点自己选（NotifyNode / HumanReviewNode / FeishuSendNode 里选）。
                 </p>
 
                 <div class="gs-transfer__actions" style="margin-bottom: 12px;">
@@ -1577,7 +1685,6 @@ async function onDeleteCanvas(id: string, name: string): Promise<void> {
                       <span class="gs-feishu-card__name">{{ person.name }}</span>
                       <span class="gs-feishu-card__appid">
                         {{ person.receiveIdType }}: {{ person.receiveId }}
-                        · 机器人: {{ feishuBots.find(b => b.id === person.botId)?.name ?? '已删除' }}
                       </span>
                     </div>
                     <div class="gs-feishu-card__actions">
@@ -1980,20 +2087,19 @@ async function onDeleteCanvas(id: string, name: string): Promise<void> {
                       class="gs-field__input"
                       type="text"
                       v-model="feishuPersonDraft.receiveId"
-                      :placeholder="feishuPersonDraft.receiveIdType === 'chat_id' ? 'oc_xxxxxxxxxxxxxxxxx' : feishuPersonDraft.receiveIdType === 'open_id' ? 'ou_xxxxxxxxxxxxxxxxx' : '输入接收方 ID'"
+                      :placeholder="feishuPersonDraft.receiveIdType === 'chat_id' ? 'oc_xxxxxxxxxxxxxxxxx' : feishuPersonDraft.receiveIdType === 'union_id' ? 'on_xxxxxxxxxxxxxxxxx' : '输入接收方 ID'"
                     />
                     <div class="gs-field__hint">
-                      重要：<strong>open_id / union_id / user_id 是应用隔离的</strong>——用哪个机器人发消息，这个 ID 必须是从那个机器人的 API 拿到的，不能混用。邮箱 / 群 chat_id 不受此限制。
+                      不支持 open_id——它是应用隔离的，跨自建应用就失效，不属于"联系人"领域概念。
+                      四种 ID（union_id / user_id / 邮箱 / chat_id）全是跨应用统一的，任选其一。
                     </div>
-                  </label>
-                  <label class="gs-field">
-                    <span class="gs-field__label">绑定机器人</span>
-                    <select class="gs-field__input" v-model="feishuPersonDraft.botId">
-                      <option value="" disabled>-- 请先在设置里添加机器人 --</option>
-                      <option v-for="b in feishuBots" :key="b.id" :value="b.id">{{ b.name }}（{{ b.appId }}）</option>
-                    </select>
-                    <div class="gs-field__hint">
-                      必选。open_id / union_id / user_id 是应用隔离的，哪个机器人发消息就必须绑定哪个。邮箱 / 群 chat_id 虽不隔离，也强制绑定以统一管理。
+                    <div style="margin-top: 8px;">
+                      <button class="gs-btn gs-btn--primary" type="button" @click="openCodeModal">
+                        🤖 用数字验证码自动获取
+                      </button>
+                      <span class="gs-field__hint" style="display: inline-block; margin-left: 8px;">
+                        选一个机器人 → 显示 6 位码 → 发给它 → 自动填入
+                      </span>
                     </div>
                   </label>
                 </div>
@@ -2002,9 +2108,79 @@ async function onDeleteCanvas(id: string, name: string): Promise<void> {
                   <button
                     class="gs-btn gs-btn--primary"
                     type="button"
-                    :disabled="!feishuPersonDraft.name.trim() || !feishuPersonDraft.receiveId.trim() || !feishuPersonDraft.botId.trim()"
+                    :disabled="!feishuPersonDraft.name.trim() || !feishuPersonDraft.receiveId.trim()"
                     @click="onSaveFeishuPerson"
                   >保存</button>
+                </div>
+              </div>
+            </div>
+          </Teleport>
+
+          <!-- ========== 飞书验证码获取子弹窗 ========== -->
+          <Teleport to="body">
+            <div v-if="codeModalVisible" class="gs-mask" @click.self="closeCodeModal">
+              <div class="gs-modal" @click.stop>
+                <div class="gs-modal__header">
+                  <span class="gs-modal__title">用数字验证码自动获取联系人 ID</span>
+                  <button class="gs-modal__close" type="button" @click="closeCodeModal">×</button>
+                </div>
+                <div class="gs-modal__body">
+                  <p class="gs-field__hint">
+                    1. 选一个机器人（验证码会发送到这个机器人的 WS 长连接里）<br/>
+                    2. 点"开始监听"，显示 6 位码 <br/>
+                    3. 用飞书 App 给这个机器人发一条消息，包含这 6 位码（如 "384728" 或 "验证码 384728"）<br/>
+                    4. 系统自动识别发送人，填好联系人表单
+                  </p>
+
+                  <label class="gs-field">
+                    <span class="gs-field__label">机器人</span>
+                    <select class="gs-field__input" v-model="codeModalBotId">
+                      <option v-for="b in feishuBots" :key="b.id" :value="b.id">{{ b.name }}（{{ b.appId }}）</option>
+                    </select>
+                  </label>
+
+                  <div v-if="codeModalStatus === 'idle'" style="text-align: center; padding: 12px 0;">
+                    <button class="gs-btn gs-btn--primary" type="button" @click="startCodeMatching">
+                      开始监听
+                    </button>
+                  </div>
+
+                  <div v-else-if="codeModalStatus === 'connecting'" style="text-align: center; padding: 24px 0;">
+                    <div style="font-size: 14px; color: var(--gs-text-muted);">正在建立飞书 WS 连接…</div>
+                  </div>
+
+                  <div v-else-if="codeModalStatus === 'waiting'" style="text-align: center; padding: 16px 0;">
+                    <div style="font-size: 14px; color: var(--gs-text-muted); margin-bottom: 12px;">
+                      请在飞书 App 里给机器人发送下面这 6 位数字：
+                    </div>
+                    <div style="font-size: 48px; font-weight: 700; letter-spacing: 12px; font-family: monospace; color: var(--gs-text-primary);">
+                      {{ codeModalCode }}
+                    </div>
+                    <div style="margin-top: 12px;">
+                      <span style="font-size: 13px; color: var(--gs-text-muted);">剩余 {{ codeModalCountdown }} 秒</span>
+                    </div>
+                  </div>
+
+                  <div v-else-if="codeModalStatus === 'success'" style="text-align: center; padding: 24px 0;">
+                    <div style="font-size: 24px;">✅</div>
+                    <div style="font-size: 14px; color: var(--gs-text-primary); margin-top: 8px;">已识别！正在自动填入表单…</div>
+                  </div>
+
+                  <div v-else-if="codeModalStatus === 'timeout'" style="text-align: center; padding: 24px 0;">
+                    <div style="font-size: 24px;">⏱️</div>
+                    <div style="font-size: 14px; color: var(--gs-text-primary); margin-top: 8px;">60 秒内未收到验证码</div>
+                    <div style="margin-top: 12px;">
+                      <button class="gs-btn gs-btn--primary" type="button" @click="openCodeModal">重新获取</button>
+                    </div>
+                  </div>
+
+                  <div v-else-if="codeModalStatus === 'error'" style="text-align: center; padding: 24px 0;">
+                    <div style="font-size: 24px;">❌</div>
+                    <div style="font-size: 14px; color: var(--gs-text-primary); margin-top: 8px;">{{ codeModalError }}</div>
+                  </div>
+                </div>
+                <div class="gs-modal__footer">
+                  <button class="gs-btn" type="button" @click="closeCodeModal">关闭</button>
                 </div>
               </div>
             </div>

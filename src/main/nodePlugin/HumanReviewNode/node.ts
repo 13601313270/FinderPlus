@@ -93,8 +93,11 @@ export class HumanReviewNode extends Node {
   /** 是否启用飞书推送 */
   private feishuEnabled = false
 
-  /** 全局飞书联系人 id（引用 SettingsDialog 里的飞书联系人列表；联系人必绑机器人） */
+  /** 全局飞书联系人 id（引用 SettingsDialog 里的飞书联系人列表） */
   private feishuPersonId = ''
+
+  /** 全局机器人 id（联系人不再绑 botId，节点自己选发送管道） */
+  private feishuBotId = ''
 
   constructor(id: string) {
     super(id)
@@ -190,6 +193,9 @@ export class HumanReviewNode extends Node {
 
   getFeishuPersonId(): string { return this.feishuPersonId }
   setFeishuPersonId(v: string): void { this.feishuPersonId = v.trim(); this.notifyChanged() }
+
+  getFeishuBotId(): string { return this.feishuBotId }
+  setFeishuBotId(v: string): void { this.feishuBotId = v.trim(); this.notifyChanged() }
 
   /** 取某 kind 的 renderer 视图状态（kind 不在表里返回空对象） */
   getRendererSaveState(kind: string): Record<string, unknown> {
@@ -455,6 +461,11 @@ export class HumanReviewNode extends Node {
       notificationApi?: { show: (t: string, b?: string, m?: Record<string, unknown>) => Promise<unknown> }
     }
 
+    if (!this.feishuBotId) {
+      w.notificationApi?.show('飞书推送失败', '请先在人工审核节点配置里选择飞书机器人')
+      return
+    }
+
     // @ts-ignore
     const person = window.feishuApi?.resolvePerson(this.feishuPersonId)
     if (!person) {
@@ -463,7 +474,7 @@ export class HumanReviewNode extends Node {
     }
 
     // @ts-ignore
-    const creds = window.feishuApi?.resolveBotCredentials(person.botId)
+    const creds = window.feishuApi?.resolveBotCredentials(this.feishuBotId)
     if (!creds) {
       w.notificationApi?.show('飞书推送失败', '机器人凭证已删除或无效')
       return
@@ -589,7 +600,8 @@ export class HumanReviewNode extends Node {
       renderContext: this.renderContext,
       rendererSaveStates: this.rendererSaveStates,
       feishuEnabled: this.feishuEnabled,
-      feishuPersonId: this.feishuPersonId
+      feishuPersonId: this.feishuPersonId,
+      feishuBotId: this.feishuBotId
     }
   }
 
@@ -626,9 +638,10 @@ export class HumanReviewNode extends Node {
         }
       }
     }
-    // 恢复飞书推送开关 & 联系人
+    // 恢复飞书推送配置
     if (typeof state.feishuEnabled === 'boolean') this.feishuEnabled = state.feishuEnabled
     if (typeof state.feishuPersonId === 'string') this.feishuPersonId = state.feishuPersonId.trim()
+    if (typeof state.feishuBotId === 'string') this.feishuBotId = state.feishuBotId.trim()
     // 队列和输出端口都由上游重新 commit 时自动重建
   }
 }

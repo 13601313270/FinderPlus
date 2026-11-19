@@ -11,7 +11,7 @@ export interface FeishuMessagePayload {
   chatId: string
   /** 群聊 / 单聊 */
   chatType: 'group' | 'p2p'
-  /** 发送人 ID（来自 sender_id 中第一个有值的字段） */
+  /** 发送人 ID（来自 sender_id 中第一个有值的字段）——向下兼容 */
   senderId: string
   /** 发送人 ID 类型 */
   senderIdType: 'open_id' | 'user_id' | 'union_id' | 'email'
@@ -20,6 +20,16 @@ export interface FeishuMessagePayload {
   /** 消息文本 */
   text: string
   handledAt: number
+
+  // —— 扩展：完整 sender_id 四字段（飞书事件里同时有这四个，全部广播给 renderer） ——
+  /** sender_id.open_id — 应用隔离 */
+  senderOpenId?: string
+  /** sender_id.union_id — 同租户跨应用统一 */
+  senderUnionId?: string
+  /** sender_id.user_id — 企业员工编号 */
+  senderUserId?: string
+  /** sender_id.email — 邮箱 */
+  senderEmail?: string
 }
 
 export type FeishuConnState = 'idle' | 'connecting' | 'connected' | 'error'
@@ -318,7 +328,11 @@ export async function startFeishu(appId: string, appSecret: string): Promise<{ o
             senderIdType,
             senderName: senderId || 'unknown',
             text,
-            handledAt: Date.now()
+            handledAt: Date.now(),
+            senderOpenId: typeof sid.open_id === 'string' && sid.open_id ? sid.open_id : undefined,
+            senderUnionId: typeof sid.union_id === 'string' && sid.union_id ? sid.union_id : undefined,
+            senderUserId: typeof sid.user_id === 'string' && sid.user_id ? sid.user_id : undefined,
+            senderEmail: typeof sid.email === 'string' && sid.email ? sid.email : undefined
           }
 
           broadcastMessage(payload)

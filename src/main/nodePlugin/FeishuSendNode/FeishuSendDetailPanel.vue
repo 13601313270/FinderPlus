@@ -1,40 +1,41 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, shallowRef } from 'vue'
 import { workspaceScene } from '../../engine/graph/SceneRegistry'
-import { FeishuSendNode, type ReceiveIdType } from './node'
+import { FeishuSendNode } from './node'
 import { useFeishuBots } from '@renderer/composables/useFeishuBots'
+import { useFeishuPersons } from '@renderer/composables/useFeishuPersons'
 
 const props = defineProps<{ nodeId: string }>()
 
 const node = shallowRef<FeishuSendNode | undefined>(undefined)
 
 const { bots } = useFeishuBots()
+const { persons } = useFeishuPersons()
 
 const botId = ref('')
-const receiveId = ref('')
-const receiveIdType = ref<ReceiveIdType>('chat_id')
+const personId = ref('')
 const autoSend = ref(false)
-
-const ALL_TYPES: { value: ReceiveIdType; label: string }[] = [
-  { value: 'chat_id', label: '群 chat_id' },
-  { value: 'open_id', label: '用户 open_id' },
-  { value: 'user_id', label: '员工 user_id' },
-  { value: 'union_id', label: 'union_id' },
-  { value: 'email', label: '邮箱' }
-]
 
 let unsubscribe: (() => void) | undefined
 
-const selectedBotLabel = computed((): string => {
-  if (!botId.value) return '未选择'
-  const bot = bots.value.find((b) => b.id === botId.value)
-  return bot ? `${bot.name}（${bot.appId}）` : '已删除'
+const selectedPerson = computed(() => persons.value.find((p) => p.id === personId.value))
+
+/** 生效的机器人 label（用于提示文案） */
+const effectiveBotLabel = computed((): string => {
+  if (botId.value) {
+    const bot = bots.value.find((b) => b.id === botId.value)
+    return bot ? `${bot.name}（节点显式指定）` : '已删除'
+  }
+  if (selectedPerson.value) {
+    const bot = bots.value.find((b) => b.id === selectedPerson.value!.botId)
+    return bot ? `${bot.name}（联系人绑定）` : '已删除（联系人绑定）'
+  }
+  return '未配置'
 })
 
 function syncFromNode(n: FeishuSendNode): void {
-  botId.value = n.displayBotId
-  receiveId.value = n.displayReceiveId
-  receiveIdType.value = n.displayReceiveIdType
+  botId.value = (n as any).botId ?? n.displayBotId
+  personId.value = n.displayPersonId
   autoSend.value = n.displayAutoSend
 }
 
@@ -42,12 +43,8 @@ function onBotIdChange(v: string): void {
   node.value?.setBotId(v)
 }
 
-function onReceiveIdInput(v: string): void {
-  node.value?.setReceiveId(v)
-}
-
-function onReceiveIdTypeChange(v: ReceiveIdType): void {
-  node.value?.setReceiveIdType(v)
+function onPersonIdChange(v: string): void {
+  node.value?.setPersonId(v)
 }
 
 function onAutoSendToggle(v: boolean): void {
@@ -81,49 +78,55 @@ onUnmounted(() => {
 <template>
   <div class="panel">
     <section class="section">
+      <h3 class="section__title">接收方</h3>
+
+      <label class="field">
+        <span class="field__label">选择联系人</span>
+        <select
+          class="field__input"
+          :value="personId"
+          @change="(e: Event) => onPersonIdChange((e.target as HTMLSelectElement).value)"
+        >
+          <option value="">-- 请先在设置里添加联系人（或用 InputPort 外部传入） --</option>
+          <option v-for="p in persons" :key="p.id" :value="p.id">{{ p.name }}</option>
+        </select>
+      </label>
+
+      <div v-if="selectedPerson" class="person-info">
+        <div class="person-info__row">
+          <span class="person-info__key">接收方</span>
+          <span class="person-info__val">{{ selectedPerson.receiveIdType }}: {{ selectedPerson.receiveId }}</span>
+        </div>
+        <div class="person-info__row">
+          <span class="person-info__key">绑定机器人</span>
+          <span class="person-info__val">{{ bots.find(b => b.id === selectedPerson.botId)?.name ?? '已删除' }}</span>
+        </div>
+      </div>
+
+      <p class="field__hint">
+        选中联系人后，接收方 ID / 类型 / 机器人全由联系人条目决定。
+        也可以在节点卡片上绑线到 <code>receiveId</code> / <code>receiveIdType</code> 输入端口，外部传入会覆盖面板配置。
+      </p>
+    </section>
+
+    <section class="section">
       <h3 class="section__title">飞书机器人</h3>
 
       <label class="field">
-        <span class="field__label">选择机器人</span>
+        <span class="field__label">显式指定（可选）</span>
         <select
           class="field__input"
           :value="botId"
           @change="(e: Event) => onBotIdChange((e.target as HTMLSelectElement).value)"
         >
-          <option value="">-- 请先在设置里添加机器人 --</option>
+          <option value="">-- 用联系人绑定的机器人 --</option>
           <option v-for="b in bots" :key="b.id" :value="b.id">{{ b.name }}（{{ b.appId }}）</option>
         </select>
       </label>
 
       <p class="field__hint">
-        机器人列表在 <strong>设置 → 飞书机器人</strong> 里管理。当前选择：{{ selectedBotLabel }}
+        留空时用联系人绑定的机器人；显式选了会覆盖。当前生效：{{ effectiveBotLabel }}
       </p>
-    </section>
-
-    <section class="section">
-      <h3 class="section__title">接收方</h3>
-
-      <label class="field">
-        <span class="field__label">ID 类型</span>
-        <select
-          class="field__input"
-          :value="receiveIdType"
-          @change="onReceiveIdTypeChange(($event.target as HTMLSelectElement).value as ReceiveIdType)"
-        >
-          <option v-for="t in ALL_TYPES" :key="t.value" :value="t.value">{{ t.label }}</option>
-        </select>
-      </label>
-
-      <label class="field">
-        <span class="field__label">接收方 ID</span>
-        <input
-          class="field__input"
-          type="text"
-          :value="receiveId"
-          :placeholder="receiveIdType === 'chat_id' ? 'oc_xxxxxxxxxxxxxxxxx' : receiveIdType === 'open_id' ? 'ou_xxxxxxxxxxxxxxxxx' : '输入接收方 ID'"
-          @input="onReceiveIdInput(($event.target as HTMLInputElement).value)"
-        />
-      </label>
     </section>
 
     <section class="section">
@@ -153,7 +156,7 @@ onUnmounted(() => {
       <button
         class="test-btn"
         type="button"
-        :disabled="!node?.displayBotId || !node?.displayReceiveId"
+        :disabled="!node?.displayCanSend"
         @click="onTestSend"
       >
         测试发送
@@ -225,6 +228,37 @@ onUnmounted(() => {
     color: @color-text-weak;
     margin: 4px 0 0;
     line-height: 1.5;
+
+    code {
+      background: #f3f4f6;
+      padding: 0 3px;
+      border-radius: 3px;
+      font-size: 11px;
+    }
+  }
+}
+
+.person-info {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 11px;
+  color: #374151;
+  line-height: 1.6;
+
+  &__row {
+    display: flex;
+  }
+
+  &__key {
+    width: 56px;
+    color: #6b7280;
+    flex-shrink: 0;
+  }
+
+  &__val {
+    word-break: break-all;
   }
 }
 

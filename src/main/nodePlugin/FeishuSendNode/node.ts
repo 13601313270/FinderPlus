@@ -65,13 +65,19 @@ export class FeishuSendNode extends Node {
 
   // —— 用户配置 ——
 
-  /** 全局机器人 id（引用 SettingsDialog 里的飞书机器人列表） */
+  /** 全局机器人 id（引用 SettingsDialog 里的飞书机器人列表；优先于联系人绑定的） */
   private botId = ''
 
-  /** 接收方 ID（群 chat_id 或用户 open_id 等） */
+  /** 全局飞书联系人 id（引用 SettingsDialog 里的飞书联系人列表）。
+   *  选中后 receiveId / receiveIdType / botId 都由联系人条目决定——
+   *  但 InputPort 外部传 receiveId / receiveIdType 仍然优先。 */
+  private personId = ''
+
+  /** 接收方 ID（群 chat_id 或用户 open_id 等）。
+   *  历史兜底：未选 personId 且 InputPort 没值时用这个。 */
   private receiveId = ''
 
-  /** 接收方 ID 类型 */
+  /** 接收方 ID 类型。历史兜底同上。 */
   private receiveIdType: ReceiveIdType = 'chat_id'
 
   /** 自动发送开关：输入文本变化时自动触发发送（默认 false，手动发送） */
@@ -150,9 +156,15 @@ export class FeishuSendNode extends Node {
 
   // —— UI 读的状态 ——
 
+  /** 面板里显式选的 botId（可能为空，空=用联系人绑定的） */
   get displayBotId(): string { return this.botId }
-  get displayReceiveId(): string { return this.receiveId }
-  get displayReceiveIdType(): ReceiveIdType { return this.receiveIdType }
+  get displayPersonId(): string { return this.personId }
+  /** 当前生效的 botId（effective：显式选的 → 联系人绑定的） */
+  get displayEffectiveBotId(): string { return this.getEffectiveBotId() }
+  /** 当前生效的 receiveId（effective：InputPort → 联系人 → 旧面板） */
+  get displayReceiveId(): string { return this.getEffectiveReceiveId() }
+  /** 当前生效的 receiveIdType（effective：InputPort → 联系人 → 旧面板） */
+  get displayReceiveIdType(): ReceiveIdType { return this.getEffectiveReceiveIdType() }
   get displayAutoSend(): boolean { return this.autoSend }
   get displaySendState(): SendState { return this.sendState }
   get displaySendError(): string { return this.sendError }
@@ -168,13 +180,33 @@ export class FeishuSendNode extends Node {
    * 底层读 localStorage（和 SettingsDialog 里的全局机器人列表同源）。
    */
   private resolveCredentials(): { appId: string; appSecret: string } | null {
+    const botId = this.getEffectiveBotId()
+    if (!botId) return null
     // @ts-ignore — 只在 renderer 里执行，window.feishuApi 一定存在
-    return window.feishuApi.resolveBotCredentials(this.botId)
+    return window.feishuApi.resolveBotCredentials(botId)
   }
 
   /**
-   * 取当前生效的 receiveId：优先输入端口有值时用端口值，
-   * 否则用面板手动配置的兜底值。
+   * 取当前生效的 botId：
+   * - 面板里显式选了 botId → 用它（InputPort 模式下用户必须手动选机器人）
+   * - 没选 botId 但选了 personId → 用联系人绑定的 botId
+   * - 都没 → 空串
+   */
+  private getEffectiveBotId(): string {
+    if (this.botId) return this.botId
+    if (this.personId) {
+      // @ts-ignore — resolvePerson 挂在 window.feishuApi
+      const person = window.feishuApi?.resolvePerson(this.personId)
+      if (person?.botId) return person.botId
+    }
+    return ''
+  }
+
+  /**
+   * 取当前生效的 receiveId：
+   * 1. receiveId Port 有值 → 优先用端口值（外部绑线覆盖）
+   * 2. 选了 personId → 从联系人条目取
+   * 3. 旧面板手动填的 receiveId（历史兜底）
    */
   private getEffectiveReceiveId(): string {
     const vals = this.receiveIdPort.value
@@ -182,12 +214,19 @@ export class FeishuSendNode extends Node {
       const v = vals[0].value as string
       if (v) return v
     }
+    if (this.personId) {
+      // @ts-ignore
+      const person = window.feishuApi?.resolvePerson(this.personId)
+      if (person?.receiveId) return person.receiveId
+    }
     return this.receiveId
   }
 
   /**
-   * 取当前生效的 receiveIdType：优先输入端口有值时用端口值，
-   * 否则用面板手动配置的兜底值。
+   * 取当前生效的 receiveIdType：
+   * 1. receiveIdType Port 有合法值 → 优先用端口值
+   * 2. 选了 personId → 从联系人条目取
+   * 3. 旧面板手动选的 receiveIdType（历史兜底）
    */
   private getEffectiveReceiveIdType(): ReceiveIdType {
     const vals = this.receiveIdTypePort.value
@@ -195,6 +234,13 @@ export class FeishuSendNode extends Node {
       const v = vals[0].value as string
       if (ALL_RECEIVE_ID_TYPES.includes(v as ReceiveIdType)) {
         return v as ReceiveIdType
+      }
+    }
+    if (this.personId) {
+      // @ts-ignore
+      const person = window.feishuApi?.resolvePerson(this.personId)
+      if (person?.receiveIdType && ALL_RECEIVE_ID_TYPES.includes(person.receiveIdType)) {
+        return person.receiveIdType
       }
     }
     return this.receiveIdType
@@ -260,6 +306,13 @@ export class FeishuSendNode extends Node {
     this.notifyChanged()
   }
 
+  setPersonId(v: string): void {
+    const trimmed = v.trim()
+    if (this.personId === trimmed) return
+    this.personId = trimmed
+    this.notifyChanged()
+  }
+
   setReceiveId(v: string): void {
     if (this.receiveId === v) return
     this.receiveId = v.trim()
@@ -282,10 +335,10 @@ export class FeishuSendNode extends Node {
 
   /** 是否具备发送的所有前置条件——按消息类型分别校验 */
   private canSend(): string | null {
-    if (!this.botId) return '请先选择飞书机器人'
+    if (!this.getEffectiveBotId()) return '请先选择飞书机器人（或在联系人里绑定）'
     const creds = this.resolveCredentials()
     if (!creds) return '机器人凭证未找到，请检查设置里的飞书机器人列表'
-    if (!this.getEffectiveReceiveId()) return '请先填写接收方 ID'
+    if (!this.getEffectiveReceiveId()) return '请先选择接收方（选联系人或用 InputPort 外部传入）'
 
     const msgType = this.getCurrentMsgType()
     if (msgType === 'text') {
@@ -536,6 +589,7 @@ export class FeishuSendNode extends Node {
     return {
       ...super.getSaveDataByState(),
       botId: this.botId,
+      personId: this.personId,
       receiveId: this.receiveId,
       receiveIdType: this.receiveIdType,
       autoSend: this.autoSend
@@ -545,13 +599,14 @@ export class FeishuSendNode extends Node {
   initStateBySaveData(state: Record<string, unknown>): void {
     super.initStateBySaveData(state)
 
-    // 新版：直接 botId
+    // 新版：直接 botId / personId
     if (typeof state.botId === 'string') {
       this.botId = state.botId
     } else if (typeof state.appId === 'string' && typeof state.appSecret === 'string') {
       // 旧版迁移：节点里存的 appId/appSecret → 新版改由全局 SettingsDialog 管理
       this.botId = ''
     }
+    if (typeof state.personId === 'string') this.personId = state.personId
     if (typeof state.receiveId === 'string') this.receiveId = state.receiveId
     if (typeof state.autoSend === 'boolean') this.autoSend = state.autoSend
 

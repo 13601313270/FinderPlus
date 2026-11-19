@@ -46,8 +46,11 @@ export class NotifyNode extends Node {
   /** 是否启用飞书推送 */
   private feishuEnabled = false
 
-  /** 全局飞书联系人 id（引用 SettingsDialog 里的飞书联系人列表；联系人必绑机器人） */
+  /** 全局飞书联系人 id（引用 SettingsDialog 里的飞书联系人列表） */
   private feishuPersonId = ''
+
+  /** 全局机器人 id（联系人不再绑 botId，节点自己选发送管道） */
+  private feishuBotId = ''
 
   constructor(id: string) {
     super(id)
@@ -79,6 +82,9 @@ export class NotifyNode extends Node {
 
   getFeishuPersonId(): string { return this.feishuPersonId }
   setFeishuPersonId(v: string): void { this.feishuPersonId = v.trim(); this.notifyChanged() }
+
+  getFeishuBotId(): string { return this.feishuBotId }
+  setFeishuBotId(v: string): void { this.feishuBotId = v.trim(); this.notifyChanged() }
 
   isPositionAcceptFileDrop(_relativeX: number, _relativeY: number): boolean {
     return false
@@ -128,9 +134,10 @@ export class NotifyNode extends Node {
   }
 
   /**
-   * 飞书异步推送：resolvePerson 拿联系人（含 botId / receiveId / receiveIdType）
-   * → resolveBotCredentials 拿 appId/appSecret → feishuApi.send 发文本。
+   * 飞书异步推送：resolvePerson 拿联系人（receiveId / receiveIdType）
+   * → resolveBotCredentials 拿凭证 → feishuApi.send 发文本。
    *
+   * 联系人不再绑定 botId，机器人身份由节点自己选（feishuBotId）。
    * 发送失败弹桌面通知（飞书错误码 + msg），方便用户定位配置问题。
    */
   private async sendFeishuAsync(text: string): Promise<void> {
@@ -139,6 +146,10 @@ export class NotifyNode extends Node {
     }
 
     if (!this.feishuPersonId) return
+    if (!this.feishuBotId) {
+      w.notificationApi?.show('飞书推送失败', '请先在通知节点配置里选择飞书机器人')
+      return
+    }
 
     // @ts-ignore — resolvePerson 挂在 window.feishuApi 上
     const person = window.feishuApi?.resolvePerson(this.feishuPersonId)
@@ -148,7 +159,7 @@ export class NotifyNode extends Node {
     }
 
     // @ts-ignore
-    const creds = window.feishuApi?.resolveBotCredentials(person.botId)
+    const creds = window.feishuApi?.resolveBotCredentials(this.feishuBotId)
     if (!creds) {
       w.notificationApi?.show('飞书推送失败', '机器人凭证已删除或无效')
       return
@@ -177,7 +188,8 @@ export class NotifyNode extends Node {
       ...super.getSaveDataByState(),
       textTemplate: this.textTemplate,
       feishuEnabled: this.feishuEnabled,
-      feishuPersonId: this.feishuPersonId
+      feishuPersonId: this.feishuPersonId,
+      feishuBotId: this.feishuBotId
     }
   }
 
@@ -190,9 +202,7 @@ export class NotifyNode extends Node {
     }
 
     if (typeof _state.feishuEnabled === 'boolean') this.feishuEnabled = _state.feishuEnabled
-    if (typeof _state.feishuPersonId === 'string') this.feishuPersonId = _state.feishuPersonId
-
-    // 历史迁移：以前 feishuBotId 是节点 override，现在删除
-    // 不读不写就是迁移——联系人绑定的 botId 才是唯一正确来源
+    if (typeof _state.feishuPersonId === 'string') this.feishuPersonId = _state.feishuPersonId.trim()
+    if (typeof _state.feishuBotId === 'string') this.feishuBotId = _state.feishuBotId.trim()
   }
 }

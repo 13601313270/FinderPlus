@@ -695,6 +695,54 @@ export class LLMNode extends Node {
   }
 
   /**
+   * 检测"模型未加载"错误，弹 confirm 让用户一键加载并重试。renderer 环境专用。
+   * 主进程环境没有 UI，直接原样返回。
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private async tryAutoLoadLocalModel(
+    result: { ok: true; content: string } | { ok: false; error: string },
+    modelPath: string,
+    system: string,
+    prompt: string
+  ): Promise<{ ok: true; content: string } | { ok: false; error: string }> {
+    // 成功 / 不是未加载错误 → 原样返回
+    if (result.ok || !result.error.includes('模型未加载')) return result
+    // 没 window 就没法弹 UI（main 环境静默）
+    if (typeof window === 'undefined') return result
+
+    const showConfirm = (window as any).showConfirm
+    const showAlert = (window as any).showAlert
+    const api = (window as any).localLlmApi
+    if (!showConfirm || !api?.loadModel) return result
+
+    const modelName = modelPath.split(/[\\/]/).pop() ?? modelPath
+    const confirmed = await showConfirm(
+      '本地模型未加载',
+      `模型 "${modelName}" 当前未加载到内存，是否现在启动？`
+    )
+    if (!confirmed) return result
+
+    // 用户点了"是"——调主进程加载
+    const loadResult = await api.loadModel(modelPath)
+    if (!loadResult?.ok) {
+      if (showAlert) await showAlert('加载失败', loadResult?.error ?? '未知错误')
+      return result // 加载失败，还是原来的 error result
+    }
+
+    // 加载成功 → 自动重试一次
+    try {
+      return await api.chat({ modelPath, system, prompt })
+    } catch (err) {
+      // AbortError rethrow 让上层 cancel 流程接住
+      const isAbort = (err instanceof DOMException && err.name === 'AbortError')
+        || (err instanceof Error && err.name === 'AbortError')
+      if (isAbort) throw err
+      const msg = err instanceof Error ? err.message : String(err)
+      return { ok: false, error: `本地 LLM 调用异常：${msg}` }
+    }
+  }
+
+  /**
    * 本地 LLM 推理：动态 import LlmRunner，不走 HTTP fetch。
    * 结构和 fetchAndCommit 一致——beginRun → 推理 → commit → completeRun/failRun → notifyChanged。
    *
@@ -751,6 +799,11 @@ export class LLMNode extends Node {
         const msg = err instanceof Error ? err.message : String(err)
         result = { ok: false, error: `本地 LLM 调用异常：${msg}` }
       }
+    }
+
+    // —— 模型未加载 → 弹 confirm → 自动加载 + 重试（renderer 环境专用）——
+    if (modelPath) {
+      result = await this.tryAutoLoadLocalModel(result, modelPath, system, prompt)
     }
 
     // —— Stale-call 守卫 ——

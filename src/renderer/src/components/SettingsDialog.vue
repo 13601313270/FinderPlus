@@ -578,15 +578,13 @@ function closeFeishuPersonModal(): void {
 
 function onSaveFeishuPerson(): void {
   const d = feishuPersonDraft.value
-  if (!d.name.trim() || !d.receiveId.trim()) return
+  if (!d.name.trim()) return
   if (d.mode === 'add') {
+    if (!d.receiveId.trim()) return
     addFeishuPerson(d.name, d.receiveId, d.receiveIdType)
   } else if (d.id) {
-    updateFeishuPerson(d.id, {
-      name: d.name,
-      receiveId: d.receiveId,
-      receiveIdType: d.receiveIdType
-    })
+    // 编辑模式：只允许改名称，receiveId / receiveIdType 保持不变
+    updateFeishuPerson(d.id, { name: d.name })
   }
   feishuPersonModalVisible.value = false
 }
@@ -2075,40 +2073,47 @@ async function onDeleteCanvas(id: string, name: string): Promise<void> {
                       maxlength="32"
                     />
                   </label>
-                  <label class="gs-field">
-                    <span class="gs-field__label">接收方 ID 类型</span>
-                    <select class="gs-field__input" v-model="feishuPersonDraft.receiveIdType">
-                      <option v-for="t in RECEIVE_ID_TYPE_OPTIONS" :key="t.value" :value="t.value">{{ t.label }}</option>
-                    </select>
-                  </label>
-                  <label class="gs-field">
-                    <span class="gs-field__label">接收方 ID</span>
-                    <input
-                      class="gs-field__input"
-                      type="text"
-                      v-model="feishuPersonDraft.receiveId"
-                      :placeholder="feishuPersonDraft.receiveIdType === 'chat_id' ? 'oc_xxxxxxxxxxxxxxxxx' : feishuPersonDraft.receiveIdType === 'union_id' ? 'on_xxxxxxxxxxxxxxxxx' : '输入接收方 ID'"
-                    />
-                    <div class="gs-field__hint">
-                      不支持 open_id——它是应用隔离的，跨自建应用就失效，不属于"联系人"领域概念。
-                      四种 ID（union_id / user_id / 邮箱 / chat_id）全是跨应用统一的，任选其一。
+                  <template v-if="feishuPersonDraft.mode === 'add'">
+                    <label class="gs-field">
+                      <span class="gs-field__label">接收方 ID 类型</span>
+                      <select class="gs-field__input" v-model="feishuPersonDraft.receiveIdType">
+                        <option v-for="t in RECEIVE_ID_TYPE_OPTIONS" :key="t.value" :value="t.value">{{ t.label }}</option>
+                      </select>
+                    </label>
+                    <label class="gs-field">
+                      <span class="gs-field__label">接收方 ID</span>
+                      <input
+                        class="gs-field__input"
+                        type="text"
+                        v-model="feishuPersonDraft.receiveId"
+                        :placeholder="feishuPersonDraft.receiveIdType === 'chat_id' ? 'oc_xxxxxxxxxxxxxxxxx' : feishuPersonDraft.receiveIdType === 'union_id' ? 'on_xxxxxxxxxxxxxxxxx' : '输入接收方 ID'"
+                      />
+                      <div class="gs-field__hint">
+                        不支持 open_id——它是应用隔离的，跨自建应用就失效，不属于"联系人"领域概念。
+                        四种 ID（union_id / user_id / 邮箱 / chat_id）全是跨应用统一的，任选其一。
+                      </div>
+                      <div style="margin-top: 8px;">
+                        <button class="gs-btn gs-btn--primary" type="button" @click="openCodeModal">
+                          🤖 用数字验证码自动获取
+                        </button>
+                        <span class="gs-field__hint" style="display: inline-block; margin-left: 8px;">
+                          选一个机器人 → 显示 6 位码 → 发给它 → 自动填入
+                        </span>
+                      </div>
+                    </label>
+                  </template>
+                  <template v-else>
+                    <div class="gs-field__hint" style="margin-top: -4px;">
+                      已保存的接收方 ID 不可修改（<strong>{{ feishuPersonDraft.receiveIdType }}</strong>: <code>{{ feishuPersonDraft.receiveId }}</code>）。如需更换，请删除后重新新增。
                     </div>
-                    <div style="margin-top: 8px;">
-                      <button class="gs-btn gs-btn--primary" type="button" @click="openCodeModal">
-                        🤖 用数字验证码自动获取
-                      </button>
-                      <span class="gs-field__hint" style="display: inline-block; margin-left: 8px;">
-                        选一个机器人 → 显示 6 位码 → 发给它 → 自动填入
-                      </span>
-                    </div>
-                  </label>
+                  </template>
                 </div>
                 <div class="gs-modal__footer">
                   <button class="gs-btn" type="button" @click="closeFeishuPersonModal">取消</button>
                   <button
                     class="gs-btn gs-btn--primary"
                     type="button"
-                    :disabled="!feishuPersonDraft.name.trim() || !feishuPersonDraft.receiveId.trim()"
+                    :disabled="!feishuPersonDraft.name.trim() || (feishuPersonDraft.mode === 'add' && !feishuPersonDraft.receiveId.trim())"
                     @click="onSaveFeishuPerson"
                   >保存</button>
                 </div>

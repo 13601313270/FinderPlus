@@ -31,6 +31,8 @@ export interface FeishuPerson {
   receiveId: string
   /** 接收方 ID 类型 */
   receiveIdType: ReceiveIdType
+  /** 是否启用；关闭时所有发送给此联系人的操作自动跳过 */
+  enabled: boolean
   /** 创建时间戳 */
   createdAt: number
 }
@@ -61,6 +63,7 @@ function load(): FeishuPerson[] {
         name: v.name.trim().slice(0, 32),
         receiveId: v.receiveId.trim(),
         receiveIdType: v.receiveIdType,
+        enabled: v.enabled !== false,  // 老数据没有 enabled 字段 → 默认 true
         createdAt: typeof v.createdAt === 'number' ? v.createdAt : Date.now()
       }))
   } catch {
@@ -78,7 +81,7 @@ function genId(): string {
   return Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4)
 }
 
-/** 新增一个联系人；name / receiveId 必须非空 */
+/** 新增一个联系人；name / receiveId 必须非空；默认 enabled=true */
 function add(
   name: string,
   receiveId: string,
@@ -90,6 +93,7 @@ function add(
     name: trimmedName,
     receiveId: receiveId.trim(),
     receiveIdType,
+    enabled: true,
     createdAt: Date.now()
   }
   persons.value = [...persons.value, person]
@@ -100,7 +104,7 @@ function add(
 /** 更新联系人；字段为空串则保留原值 */
 function update(
   id: string,
-  patch: Partial<Pick<FeishuPerson, 'name' | 'receiveId' | 'receiveIdType'>>
+  patch: Partial<Pick<FeishuPerson, 'name' | 'receiveId' | 'receiveIdType' | 'enabled'>>
 ): void {
   const list = persons.value.map((it) => {
     if (it.id !== id) return it
@@ -108,8 +112,19 @@ function update(
       ...it,
       name: patch.name !== undefined ? patch.name.trim().slice(0, 32) || it.name : it.name,
       receiveId: patch.receiveId !== undefined ? patch.receiveId.trim() : it.receiveId,
-      receiveIdType: patch.receiveIdType !== undefined ? patch.receiveIdType : it.receiveIdType
+      receiveIdType: patch.receiveIdType !== undefined ? patch.receiveIdType : it.receiveIdType,
+      enabled: patch.enabled !== undefined ? !!patch.enabled : it.enabled
     }
+  })
+  persons.value = list
+  save(list)
+}
+
+/** 切换某个联系人的启用状态 */
+function toggleEnabled(id: string): void {
+  const list = persons.value.map((it) => {
+    if (it.id !== id) return it
+    return { ...it, enabled: !it.enabled }
   })
   persons.value = list
   save(list)
@@ -144,5 +159,5 @@ export const RECEIVE_ID_TYPE_OPTIONS: { value: ReceiveIdType; label: string }[] 
 ]
 
 export function useFeishuPersons() {
-  return { persons, add, update, remove, find, getLabel }
+  return { persons, add, update, remove, find, getLabel, toggleEnabled }
 }

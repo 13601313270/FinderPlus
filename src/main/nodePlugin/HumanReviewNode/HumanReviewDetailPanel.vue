@@ -183,7 +183,7 @@ function onRejectMaskClick(): void {
     <div class="review-panel__feishu">
       <label class="review-panel__feishu-switch">
         <input type="checkbox" :checked="feishuEnabled" @change="onFeishuEnabledToggle" />
-        <span>飞书推送</span>
+        <span style="width: 48px">飞书推送</span>
       </label>
       <template v-if="feishuEnabled">
         <div class="review-panel__feishu-row">
@@ -197,9 +197,9 @@ function onRejectMaskClick(): void {
             <option v-for="p in persons" :key="p.id" :value="p.id">{{ p.name }}</option>
           </select>
         </div>
-        <div v-if="selectedPerson" class="review-panel__feishu-info">
+        <!-- <div v-if="selectedPerson" class="review-panel__feishu-info">
           <div><span class="review-panel__feishu-info-key">接收方</span>{{ selectedPerson.receiveIdType }}: {{ selectedPerson.receiveId }}</div>
-        </div>
+        </div> -->
         <div class="review-panel__feishu-row">
           <label class="review-panel__feishu-label">飞书机器人</label>
           <select
@@ -208,12 +208,12 @@ function onRejectMaskClick(): void {
             @change="onFeishuBotIdChange"
           >
             <option value="" disabled>-- 请先在设置里添加机器人 --</option>
-            <option v-for="b in bots" :key="b.id" :value="b.id">{{ b.name }}（{{ b.appId }}）</option>
+            <option v-for="b in bots" :key="b.id" :value="b.id">{{ b.name }}</option>
           </select>
         </div>
-        <div class="review-panel__feishu-info">
+        <!-- <div class="review-panel__feishu-info">
           <div><span class="review-panel__feishu-info-key">当前生效机器人</span>{{ selectedBotLabel }}</div>
-        </div>
+        </div> -->
       </template>
     </div>
 
@@ -459,7 +459,7 @@ function onRejectMaskClick(): void {
   &__feishu {
     flex-shrink: 0;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     gap: 8px;
     padding: 10px 12px;
     background: #fafbfc;
@@ -469,6 +469,7 @@ function onRejectMaskClick(): void {
     &-switch {
       display: flex;
       align-items: center;
+      flex-shrink: 0;
       gap: 8px;
       font-size: 12px;
       font-weight: 600;
@@ -487,14 +488,13 @@ function onRejectMaskClick(): void {
     &-row {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
     }
 
     &-label {
       font-size: 11px;
       color: #6b7280;
       flex-shrink: 0;
-      min-width: 40px;
     }
 
     &-select {
@@ -503,6 +503,7 @@ function onRejectMaskClick(): void {
       border: 1px solid #d1d5db;
       border-radius: 6px;
       font-size: 12px;
+      width: 120px;
       color: #1f2937;
       background: #fff;
       cursor: pointer;

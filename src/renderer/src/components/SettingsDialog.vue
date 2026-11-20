@@ -100,7 +100,8 @@ const {
   persons: feishuPersons,
   add: addFeishuPerson,
   update: updateFeishuPerson,
-  remove: removeFeishuPerson
+  remove: removeFeishuPerson,
+  toggleEnabled: toggleFeishuPersonEnabled
 } = useFeishuPersons()
 const {
   buckets: ossBuckets,
@@ -126,7 +127,7 @@ function sectionLabel(key: SectionKey): string {
     case 'localAI':    return '本地AI模型'
     case 'nodes':      return t('settingsDialog.groupNodes')
     case 'browser':    return t('settingsDialog.groupBrowser')
-    case 'feishu':     return '飞书机器人'
+    case 'feishu':     return '飞书'
     case 'oss':        return 'OSS Bucket'
     case 'canvases':   return t('settingsDialog.groupCanvases')
   }
@@ -1678,14 +1679,29 @@ async function onDeleteCanvas(id: string, name: string): Promise<void> {
                     v-for="person in feishuPersons"
                     :key="person.id"
                     class="gs-feishu-card"
+                    :class="{ 'gs-feishu-card--disabled': person.enabled === false }"
                   >
                     <div class="gs-feishu-card__info">
-                      <span class="gs-feishu-card__name">{{ person.name }}</span>
+                      <div class="gs-feishu-card__name-row">
+                        <span class="gs-feishu-card__name">{{ person.name }}</span>
+                        <span
+                          v-if="person.enabled === false"
+                          class="gs-feishu-card__badge"
+                        >已停用</span>
+                      </div>
                       <span class="gs-feishu-card__appid">
                         {{ person.receiveIdType }}: {{ person.receiveId }}
                       </span>
                     </div>
                     <div class="gs-feishu-card__actions">
+                      <label class="gs-switch" :title="person.enabled === false ? '已停用：全局不会发送给此联系人' : '已启用'">
+                        <input
+                          type="checkbox"
+                          :checked="person.enabled !== false"
+                          @change="toggleFeishuPersonEnabled(person.id)"
+                        />
+                        <span class="gs-switch__track"></span>
+                      </label>
                       <button
                         class="gs-canvas-card__btn"
                         type="button"
@@ -3145,6 +3161,75 @@ async function onDeleteCanvas(id: string, name: string): Promise<void> {
     display: flex;
     gap: 6px;
     flex-shrink: 0;
+    align-items: center;
+  }
+
+  &__name-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  &__badge {
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 10px;
+    background: #fef3c7;
+    color: #b45309;
+    font-weight: 500;
+  }
+
+  &--disabled {
+    opacity: 0.55;
+    border-color: #d1d5db;
+
+    .gs-feishu-card__name { color: #6b7280; text-decoration: line-through; text-decoration-color: #d1d5db; }
+  }
+}
+
+// —— 开关样式 ——
+.gs-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+
+  input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  &__track {
+    width: 34px;
+    height: 18px;
+    border-radius: 10px;
+    background: #d1d5db;
+    position: relative;
+    transition: background 0.2s;
+    flex-shrink: 0;
+
+    &::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #fff;
+      transition: transform 0.2s;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+    }
+  }
+
+  input:checked + &__track {
+    background: #3b82f6;
+  }
+  input:checked + &__track::after {
+    transform: translateX(16px);
   }
 }
 

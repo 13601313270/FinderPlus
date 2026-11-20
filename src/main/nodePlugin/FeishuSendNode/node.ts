@@ -194,19 +194,15 @@ export class FeishuSendNode extends Node {
    */
   private getEffectiveBotId(): string {
     if (this.botId) return this.botId
-    if (this.personId) {
-      // @ts-ignore — resolvePerson 挂在 window.feishuApi
-      const person = window.feishuApi?.resolvePerson(this.personId)
-      if (person?.botId) return person.botId
-    }
+    // 联系人不再绑定 botId，botId 必须由节点自己选
     return ''
   }
 
   /**
    * 取当前生效的 receiveId：
    * 1. receiveId Port 有值 → 优先用端口值（外部绑线覆盖）
-   * 2. 选了 personId → 从联系人条目取
-   * 3. 旧面板手动填的 receiveId（历史兜底）
+   * 2. 选了 personId → 从联系人条目取（联系人被删/禁用 → 返回空，不 fallback 硬编码值）
+   * 3. 都没有 → 旧面板手动填的 receiveId（历史兜底，仅当未配 personId 时生效）
    */
   private getEffectiveReceiveId(): string {
     const vals = this.receiveIdPort.value
@@ -217,7 +213,8 @@ export class FeishuSendNode extends Node {
     if (this.personId) {
       // @ts-ignore
       const person = window.feishuApi?.resolvePerson(this.personId)
-      if (person?.receiveId) return person.receiveId
+      if (!person) return ''  // 联系人被删或禁用 → 跳过，不 fallback 硬编码值
+      if (person.receiveId) return person.receiveId
     }
     return this.receiveId
   }
@@ -225,8 +222,8 @@ export class FeishuSendNode extends Node {
   /**
    * 取当前生效的 receiveIdType：
    * 1. receiveIdType Port 有合法值 → 优先用端口值
-   * 2. 选了 personId → 从联系人条目取
-   * 3. 旧面板手动选的 receiveIdType（历史兜底）
+   * 2. 选了 personId → 从联系人条目取（联系人被删/禁用 → 返回空）
+   * 3. 都没有 → 旧面板手动选的 receiveIdType（历史兜底，仅当未配 personId 时生效）
    */
   private getEffectiveReceiveIdType(): ReceiveIdType {
     const vals = this.receiveIdTypePort.value
@@ -239,7 +236,8 @@ export class FeishuSendNode extends Node {
     if (this.personId) {
       // @ts-ignore
       const person = window.feishuApi?.resolvePerson(this.personId)
-      if (person?.receiveIdType && ALL_RECEIVE_ID_TYPES.includes(person.receiveIdType)) {
+      if (!person) return '' as ReceiveIdType  // 联系人被删或禁用
+      if (person.receiveIdType && ALL_RECEIVE_ID_TYPES.includes(person.receiveIdType)) {
         return person.receiveIdType
       }
     }

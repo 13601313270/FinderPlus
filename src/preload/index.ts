@@ -898,6 +898,8 @@ const feishuApi = {
       const list = JSON.parse(raw) as any[]
       const person = list.find((p) => p && typeof p.id === 'string' && p.id === personId)
       if (!person) return null
+      // 联系人被关闭 → 视为不存在，所有发送链路自动跳过
+      if (person.enabled === false) return null
       const receiveId = typeof person.receiveId === 'string' ? person.receiveId.trim() : ''
       const receiveIdType = person.receiveIdType
       const VALID_TYPES = ['chat_id', 'union_id', 'user_id', 'email'] as const

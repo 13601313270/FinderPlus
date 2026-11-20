@@ -18,21 +18,6 @@ const autoSend = ref(false)
 
 let unsubscribe: (() => void) | undefined
 
-const selectedPerson = computed(() => persons.value.find((p) => p.id === personId.value))
-
-/** 生效的机器人 label（用于提示文案） */
-const effectiveBotLabel = computed((): string => {
-  if (botId.value) {
-    const bot = bots.value.find((b) => b.id === botId.value)
-    return bot ? `${bot.name}（节点显式指定）` : '已删除'
-  }
-  if (selectedPerson.value) {
-    const bot = bots.value.find((b) => b.id === selectedPerson.value!.botId)
-    return bot ? `${bot.name}（联系人绑定）` : '已删除（联系人绑定）'
-  }
-  return '未配置'
-})
-
 function syncFromNode(n: FeishuSendNode): void {
   botId.value = (n as any).botId ?? n.displayBotId
   personId.value = n.displayPersonId
@@ -77,74 +62,61 @@ onUnmounted(() => {
 
 <template>
   <div class="panel">
-    <section class="section">
+    <section class="section row">
       <h3 class="section__title">接收方</h3>
 
       <label class="field">
-        <span class="field__label">选择联系人</span>
-        <select
-          class="field__input"
-          :value="personId"
-          @change="(e: Event) => onPersonIdChange((e.target as HTMLSelectElement).value)"
-        >
-          <option value="">-- 请先在设置里添加联系人（或用 InputPort 外部传入） --</option>
+        <!-- <span class="field__label">选择联系人</span> -->
+        <select class="field__input" style="width: 200px" :value="personId"
+          @change="(e: Event) => onPersonIdChange((e.target as HTMLSelectElement).value)">
+          <!-- <option value="">-- 请先在设置里添加联系人（或用 InputPort 外部传入） --</option> -->
           <option v-for="p in persons" :key="p.id" :value="p.id">{{ p.name }}</option>
         </select>
       </label>
 
-      <div v-if="selectedPerson" class="person-info">
+      <!-- <div v-if="selectedPerson" class="person-info">
         <div class="person-info__row">
           <span class="person-info__key">接收方</span>
           <span class="person-info__val">{{ selectedPerson.receiveIdType }}: {{ selectedPerson.receiveId }}</span>
         </div>
-        <div class="person-info__row">
-          <span class="person-info__key">绑定机器人</span>
-          <span class="person-info__val">{{ bots.find(b => b.id === selectedPerson.botId)?.name ?? '已删除' }}</span>
-        </div>
-      </div>
+      </div> -->
 
-      <p class="field__hint">
-        选中联系人后，接收方 ID / 类型 / 机器人全由联系人条目决定。
+      <!-- <p class="field__hint">
+        选中联系人后，接收方 ID / 类型由联系人条目决定。
         也可以在节点卡片上绑线到 <code>receiveId</code> / <code>receiveIdType</code> 输入端口，外部传入会覆盖面板配置。
-      </p>
+      </p> -->
     </section>
 
-    <section class="section">
+    <section class="section row">
       <h3 class="section__title">飞书机器人</h3>
 
       <label class="field">
-        <span class="field__label">显式指定（可选）</span>
-        <select
-          class="field__input"
-          :value="botId"
-          @change="(e: Event) => onBotIdChange((e.target as HTMLSelectElement).value)"
-        >
-          <option value="">-- 用联系人绑定的机器人 --</option>
-          <option v-for="b in bots" :key="b.id" :value="b.id">{{ b.name }}（{{ b.appId }}）</option>
+        <!-- <span class="field__label">选择机器人</span> -->
+        <select class="field__input" style="width: 200px" :value="botId"
+          @change="(e: Event) => onBotIdChange((e.target as HTMLSelectElement).value)">
+          <!-- <option value="" disabled>请先在设置里添加机器人 --</option> -->
+          <option v-for="b in bots" :key="b.id" :value="b.id">{{ b.name }}</option>
         </select>
       </label>
 
-      <p class="field__hint">
-        留空时用联系人绑定的机器人；显式选了会覆盖。当前生效：{{ effectiveBotLabel }}
-      </p>
+      <!-- <p class="field__hint">
+        必选。联系人不再绑定机器人（跨应用统一的 ID 不需要固定管道），每个节点自己选发送身份。当前生效：{{ effectiveBotLabel }}
+      </p> -->
     </section>
 
-    <section class="section">
-      <h3 class="section__title">发送行为</h3>
+    <section class="section row">
+      <h3 class="section__title">自动发送</h3>
 
       <label class="switch-row">
-        <span class="switch-row__label">自动发送</span>
+        <!-- <span class="switch-row__label">自动发送</span> -->
         <label class="switch">
-          <input type="checkbox" :checked="autoSend" @change="onAutoSendToggle(($event.target as HTMLInputElement).checked)" />
+          <input type="checkbox" :checked="autoSend"
+            @change="onAutoSendToggle(($event.target as HTMLInputElement).checked)" />
           <span class="switch__track">
             <span class="switch__thumb"></span>
           </span>
         </label>
       </label>
-
-      <p class="field__hint">
-        关闭时需要手动点节点卡片上的「发送」按钮；开启后 text 输入端口收到值就自动发。
-      </p>
     </section>
 
     <section class="section">
@@ -153,12 +125,7 @@ onUnmounted(() => {
         <span v-if="currentTextPreview" class="preview-text">{{ currentTextPreview }}</span>
         <span v-else class="preview-empty">消息内容由 text 输入端口提供</span>
       </div>
-      <button
-        class="test-btn"
-        type="button"
-        :disabled="!node?.displayCanSend"
-        @click="onTestSend"
-      >
+      <button class="test-btn" type="button" :disabled="!node?.displayCanSend" @click="onTestSend">
         测试发送
       </button>
     </section>
@@ -189,6 +156,11 @@ onUnmounted(() => {
   flex-direction: column;
   gap: 8px;
 
+  &.row {
+    flex-direction: row;
+    align-items: center;
+  }
+
   &__title {
     margin: 0;
     font-size: 12px;
@@ -196,6 +168,8 @@ onUnmounted(() => {
     color: @color-text-weak;
     text-transform: uppercase;
     letter-spacing: 0.04em;
+    width: 70px;
+    flex-shrink: 0;
   }
 }
 
@@ -279,7 +253,9 @@ onUnmounted(() => {
   height: 18px;
   cursor: pointer;
 
-  input { display: none; }
+  input {
+    display: none;
+  }
 
   &__track {
     position: absolute;
@@ -301,11 +277,11 @@ onUnmounted(() => {
     transition: transform 0.15s ease;
   }
 
-  input:checked ~ &__track {
+  input:checked~&__track {
     background: #22c55e;
   }
 
-  input:checked ~ &__track .switch__thumb {
+  input:checked~&__track .switch__thumb {
     transform: translateX(18px);
   }
 }

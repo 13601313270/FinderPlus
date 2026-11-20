@@ -17,10 +17,10 @@ const DEFAULT_BOX: [number, number] = [200, 130]
 const MIN_W = 180
 const MIN_H = 120
 
-/** 接收方 ID 类型 */
-export type ReceiveIdType = 'chat_id' | 'open_id' | 'user_id' | 'union_id' | 'email'
+/** 接收方 ID 类型——去掉 open_id（应用隔离，不属于联系人领域概念） */
+export type ReceiveIdType = 'chat_id' | 'union_id' | 'user_id' | 'email'
 
-const ALL_RECEIVE_ID_TYPES: ReceiveIdType[] = ['chat_id', 'open_id', 'user_id', 'union_id', 'email']
+const ALL_RECEIVE_ID_TYPES: ReceiveIdType[] = ['chat_id', 'union_id', 'user_id', 'email']
 
 /** 发送状态枚举 */
 export type SendState = 'idle' | 'sending' | 'success' | 'error'
@@ -65,11 +65,11 @@ export class FeishuSendNode extends Node {
 
   // —— 用户配置 ——
 
-  /** 全局机器人 id（引用 SettingsDialog 里的飞书机器人列表；优先于联系人绑定的） */
+  /** 全局机器人 id（引用 SettingsDialog 里的飞书机器人列表；必选——联系人不再绑定 botId） */
   private botId = ''
 
   /** 全局飞书联系人 id（引用 SettingsDialog 里的飞书联系人列表）。
-   *  选中后 receiveId / receiveIdType / botId 都由联系人条目决定——
+   *  选中后 receiveId / receiveIdType 由联系人条目决定——
    *  但 InputPort 外部传 receiveId / receiveIdType 仍然优先。 */
   private personId = ''
 
@@ -187,15 +187,11 @@ export class FeishuSendNode extends Node {
   }
 
   /**
-   * 取当前生效的 botId：
-   * - 面板里显式选了 botId → 用它（InputPort 模式下用户必须手动选机器人）
-   * - 没选 botId 但选了 personId → 用联系人绑定的 botId
-   * - 都没 → 空串
+   * 取当前生效的 botId：面板里显式选的 botId（必选，联系人不再绑定 botId）。
+   * 没选就返回空串——canSend() 会报校验失败。
    */
   private getEffectiveBotId(): string {
-    if (this.botId) return this.botId
-    // 联系人不再绑定 botId，botId 必须由节点自己选
-    return ''
+    return this.botId
   }
 
   /**
@@ -333,7 +329,7 @@ export class FeishuSendNode extends Node {
 
   /** 是否具备发送的所有前置条件——按消息类型分别校验 */
   private canSend(): string | null {
-    if (!this.getEffectiveBotId()) return '请先选择飞书机器人（或在联系人里绑定）'
+    if (!this.getEffectiveBotId()) return '请先选择飞书机器人'
     const creds = this.resolveCredentials()
     if (!creds) return '机器人凭证未找到，请检查设置里的飞书机器人列表'
     if (!this.getEffectiveReceiveId()) return '请先选择接收方（选联系人或用 InputPort 外部传入）'

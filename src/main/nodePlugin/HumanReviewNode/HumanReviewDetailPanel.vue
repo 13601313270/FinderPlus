@@ -41,16 +41,6 @@ const feishuEnabled = ref(false)
 const feishuPersonId = ref('')
 const feishuBotId = ref('')
 
-/** 当前选中的联系人（只读详情卡用） */
-const selectedPerson = computed(() => persons.value.find((p) => p.id === feishuPersonId.value))
-
-/** 当前选中的机器人标签 */
-const selectedBotLabel = computed((): string => {
-  if (!feishuBotId.value) return '未选择'
-  const bot = bots.value.find((b) => b.id === feishuBotId.value)
-  return bot ? `${bot.name}（${bot.appId}）` : '已删除'
-})
-
 // —— 拒绝理由对话框 ——
 const showRejectDialog = ref(false)
 const rejectReasonInput = ref('')
